@@ -14,25 +14,35 @@
 /* ─── Reset & Variables ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg:        #f5f5f7;
-  --card:      #ffffff;
+  /* UI base (shared across all tabs) */
+  --bg:        #F1F5F9;
+  --card:      #FFFFFF;
   --card2:     #f0f0f5;
-  --accent:    #0066ff;
-  --accent-bg: #e8f0ff;
-  --green:     #28a745;
-  --green-bg:  #e8f5eb;
+  --text:      #0F172A;
+  --text2:     #64748B;
+  --text3:     #94A3B8;
+  --border:    #E2E8F0;
+
+  /* Semantic muscle/color palette (used independently of theme) */
+  --green:     #22c55e;
+  --green-bg:  #dcfce7;
   --orange:    #ff8c00;
   --orange-bg: #fff3e0;
   --purple:    #7b2fff;
   --purple-bg: #f3ecff;
   --red:       #e53e3e;
   --red-bg:    #ffeaea;
-  --text:      #111827;
-  --text2:     #4b5563;
-  --text3:     #9ca3af;
-  --border:    #e5e7eb;
-  --shadow:    0 1px 4px rgba(0,0,0,0.07);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+
+  /* Default accent (used by Mehr-Tab and anywhere no theme is active) */
+  --accent:               #0066ff;
+  --accent-bg:            rgba(0, 102, 255, 0.12);
+  --accent-dark:          #0048d0;
+  --gradient:             linear-gradient(135deg, #0a2a6b, #0066ff);
+  --section-tint:         rgba(0, 102, 255, 0.18);
+  --card-accent-border:   rgba(0, 102, 255, 0.35);
+
+  --shadow:    0 1px 4px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.09);
   --radius:    14px;
   --radius-sm: 8px;
   --nav-h:     60px;
@@ -41,8 +51,64 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   -webkit-text-size-adjust: 100%;
 }
+
+/* ─── Per-tab themes (applied to body) ─── */
+body.theme-overview {
+  --accent:             #0891B2;
+  --accent-bg:          rgba(8, 145, 178, 0.12);
+  --accent-dark:        #0C4A6E;
+  --gradient:           linear-gradient(135deg, #0C4A6E, #0891B2);
+  --section-tint:       rgba(6, 182, 212, 0.18);
+  --card-accent-border: rgba(6, 182, 212, 0.35);
+}
+body.theme-workouts {
+  --accent:             #10B981;
+  --accent-bg:          rgba(16, 185, 129, 0.12);
+  --accent-dark:        #059669;
+  --gradient:           linear-gradient(135deg, #064E3B, #10B981);
+  --section-tint:       rgba(16, 185, 129, 0.20);
+  --card-accent-border: rgba(5, 150, 105, 0.35);
+}
+body.theme-history {
+  --accent:             #F59E0B;
+  --accent-bg:          rgba(245, 158, 11, 0.12);
+  --accent-dark:        #78350F;
+  --gradient:           linear-gradient(135deg, #78350F, #F59E0B);
+  --section-tint:       rgba(245, 158, 11, 0.20);
+  --card-accent-border: rgba(245, 158, 11, 0.35);
+}
+/* body.theme-mehr keeps the default (blue) */
 html, body { height: 100%; width: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
-body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
+body { display: flex; flex-direction: column; padding-top: var(--safe-t); transition: background 0.25s ease; }
+
+/* Themed tabs use the accent gradient as the page background */
+body.theme-overview,
+body.theme-workouts,
+body.theme-history {
+  background: var(--gradient);
+  background-attachment: fixed;
+}
+/* Header texts adapt to the dark themed backgrounds */
+body.theme-overview .ph h1,
+body.theme-workouts .ph h1,
+body.theme-history .ph h1   { color: #fff; }
+body.theme-overview .ph-sub,
+body.theme-workouts .ph-sub,
+body.theme-history .ph-sub  { color: rgba(255,255,255,0.78); }
+body.theme-overview .ph-sub-accent,
+body.theme-workouts .ph-sub-accent,
+body.theme-history .ph-sub-accent { color: #fff; font-weight: 700; }
+/* Sticky workout header background needs to be transparent so the gradient shows */
+body.theme-workouts #screen-workouts .ph { background: transparent; }
+body.theme-workouts #wo-sub-text { color: rgba(255,255,255,0.85); }
+body.theme-workouts #wo-sub-dot   { background: #fff !important; }
+body.theme-workouts .pause-btn-v2 { background: rgba(255,255,255,0.95); border-color: transparent; }
+body.theme-workouts .pause-btn-v2 svg { fill: var(--accent-dark); }
+/* History dropdown sits on the dark gradient – swap to glass look */
+body.theme-history .hist-action-dd {
+  background: rgba(255,255,255,0.95); border-color: transparent;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
 
 /* ─── Scroll area ─── */
 #app {
@@ -167,22 +233,8 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
 /* ══════════════════════════════════════
    SCREEN: WORKOUTS (AKTIV)
 ══════════════════════════════════════ */
-#screen-active {
-  position: fixed; inset: 0; z-index: 200;
-  background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch;
-  padding-top: var(--safe-t);
-  padding-bottom: calc(68px + var(--safe-b));
-  display: none;
-}
-#screen-active.open { display: block; }
-
-.wo-toolbar {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 12px 16px; background: var(--bg);
-  position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border);
-}
-.wo-toolbar-left h2 { font-size: 20px; font-weight: 700; }
-.wo-toolbar-left p  { font-size: 12px; color: var(--text3); margin-top: 1px; }
+/* Sticky workout header */
+#screen-workouts .ph { position: sticky; top: 0; background: var(--bg); z-index: 10; }
 
 /* Session summary card */
 .session-card { margin: 12px 14px; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
@@ -379,8 +431,6 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
   .stats-row, .stats-row-v2, .two-col-grid { max-width: 520px; margin: 0 auto 12px; }
   .info-row, .plan-carousel, .ex-tab-bar, .ex-tab-v2-bar { padding-left: calc((100vw - 520px)/2 + 14px); }
   .ph-left h1 { font-size: 28px; }
-  #screen-active { max-width: 560px; left: 50%; transform: translateX(-50%); }
-  .wo-bottom-bar { max-width: 560px; left: 50%; transform: translateX(-50%); }
 }
 
 /* ─── Util ─── */
@@ -408,24 +458,26 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
 /* ─ Header subline with inline accent ─ */
 .ph-sub-accent { color: var(--accent); font-weight: 600; }
 
-/* ─ NEW Hero (Übersicht) with dumbbell illustration ─ */
+/* ─ NEW Hero (Übersicht) – white card on themed gradient bg ─ */
 .hero-v2 {
   margin: 0 14px 12px; border-radius: 18px;
-  background: var(--card); box-shadow: var(--shadow);
+  background: var(--card); box-shadow: var(--shadow-md);
   padding: 18px 18px 20px; display: flex; gap: 12px; align-items: stretch;
   position: relative; overflow: hidden;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
+  border: 1px solid var(--card-accent-border);
 }
 .hero-v2-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .hero-v2-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
-.hero-v2-title { font-size: 22px; font-weight: 800; line-height: 1.15; margin-bottom: 10px; letter-spacing: -0.4px; }
-.hero-v2-meta { font-size: 13px; color: var(--text3); margin-bottom: 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.hero-v2-title { font-size: 22px; font-weight: 800; line-height: 1.15; margin-bottom: 10px; letter-spacing: -0.4px; color: var(--text); }
+.hero-v2-meta { font-size: 13px; color: var(--text2); margin-bottom: 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .hero-v2-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text3); }
-.hero-v2-meta svg { width: 14px; height: 14px; stroke: var(--text3); fill: none; stroke-width: 1.8; }
-.hero-v2-btn { align-self: flex-start; padding: 13px 22px; border-radius: 12px; background: var(--accent); color: #fff; border: none; font-size: 15px; font-weight: 600; display: inline-flex; gap: 8px; align-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: 0 2px 8px rgba(0,102,255,0.25); }
+.hero-v2-meta svg { width: 14px; height: 14px; stroke: var(--text2); fill: none; stroke-width: 1.8; }
+.hero-v2-btn { align-self: flex-start; padding: 13px 22px; border-radius: 12px; background: var(--gradient); color: #fff; border: none; font-size: 15px; font-weight: 700; display: inline-flex; gap: 8px; align-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
+.hero-v2-btn svg { fill: #fff !important; }
 .hero-v2-btn:active { transform: scale(.97); }
 
-/* Dumbbell SVG container */
+/* Dumbbell SVG container – small accent halo on white card */
 .hero-v2-art { width: 110px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative; }
 .hero-v2-art .glow {
   position: absolute; inset: 8px; border-radius: 50%;
@@ -520,47 +572,51 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
    WORKOUT (Active session) – Mockup v2
 ═══════════════════════════════════ */
 
-/* Override session card with gradient */
+/* Session card (Workouts active/preview) – white card on themed gradient bg */
 .session-card-v2 {
   margin: 12px 14px; border-radius: 18px;
-  background: linear-gradient(135deg, #eef4ff 0%, #f6f9ff 60%, #ffffff 100%);
-  box-shadow: var(--shadow);
+  background: var(--card);
+  box-shadow: var(--shadow-md);
   padding: 16px 18px;
   position: relative; overflow: hidden;
+  border: 1px solid var(--card-accent-border);
 }
 .scv2-pill {
   display: inline-block; padding: 5px 12px; border-radius: 20px;
-  background: rgba(255,255,255,0.7); border: 1.5px solid var(--accent);
+  background: var(--accent-bg); border: 1.5px solid var(--accent);
   color: var(--accent); font-size: 10px; font-weight: 700;
   letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;
 }
 .scv2-row { display: flex; gap: 14px; align-items: flex-start; }
-.scv2-title { font-size: 20px; font-weight: 800; line-height: 1.2; margin-bottom: 6px; letter-spacing: -0.3px; }
-.scv2-meta { font-size: 13px; color: var(--text3); display: flex; gap: 6px; align-items: center; }
-.scv2-meta svg { width: 13px; height: 13px; stroke: var(--text3); fill: none; stroke-width: 1.8; }
+.scv2-title { font-size: 20px; font-weight: 800; line-height: 1.2; margin-bottom: 6px; letter-spacing: -0.3px; color: var(--text); }
+.scv2-meta { font-size: 13px; color: var(--text2); display: flex; gap: 6px; align-items: center; }
+.scv2-meta svg { width: 13px; height: 13px; stroke: var(--text2); fill: none; stroke-width: 1.8; }
 .scv2-icon-circle {
   width: 60px; height: 60px; border-radius: 50%;
-  background: rgba(255,255,255,0.8); border: 1.5px solid var(--accent-bg);
+  background: var(--accent-bg); border: 1.5px solid var(--card-accent-border);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  color: var(--accent);
 }
-.scv2-icon-circle svg { width: 30px; height: 30px; fill: var(--accent); }
+.scv2-icon-circle svg { width: 30px; height: 30px; stroke: var(--accent) !important; }
 .scv2-progress-label { font-size: 13px; color: var(--text2); margin-top: 14px; margin-bottom: 6px; }
-.scv2-progress-bar { background: rgba(255,255,255,0.6); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 16px; }
+.scv2-progress-bar { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 16px; }
 .scv2-progress-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s; }
 .scv2-buttons { display: flex; gap: 10px; }
 .scv2-btn-primary {
   flex: 1; padding: 13px 20px; border-radius: 12px;
-  background: var(--accent); color: #fff; border: none;
-  font-size: 15px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  background: var(--gradient); color: #fff; border: none;
+  font-size: 15px; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  box-shadow: 0 2px 8px rgba(0,102,255,0.25);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
 }
+.scv2-btn-primary svg { fill: #fff !important; }
 .scv2-btn-secondary {
   padding: 13px 20px; border-radius: 12px;
-  background: rgba(255,255,255,0.85); color: var(--text); border: 1.5px solid var(--border);
+  background: var(--card); color: var(--text); border: 1.5px solid var(--border);
   font-size: 15px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
 }
+.scv2-btn-secondary svg { fill: var(--text) !important; }
 
 /* Pause button (in header) */
 .pause-btn-v2 {
@@ -598,6 +654,7 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
   margin: 0 14px 12px; background: var(--card); border-radius: 14px;
   box-shadow: var(--shadow); overflow: hidden;
   border-left: 4px solid var(--c, var(--accent));
+  scroll-margin-top: 90px; /* leave room for sticky header */
 }
 .aex-v2-header { display: flex; align-items: flex-start; gap: 10px; padding: 14px 14px 10px; }
 .aex-v2-num {
@@ -676,23 +733,25 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
   background: var(--card); border-radius: 16px; box-shadow: var(--shadow);
   padding: 12px;
 }
-.stat-card-v2.bg-blue   { background: linear-gradient(140deg, #e8f0ff 0%, #f5f9ff 100%); }
-.stat-card-v2.bg-purple { background: linear-gradient(140deg, #f3ecff 0%, #faf6ff 100%); }
-.stat-card-v2.bg-orange { background: linear-gradient(140deg, #fff3e0 0%, #fffaf2 100%); }
+/* Amber-tone gradients for Verlauf stat cards */
+.stat-card-v2.bg-blue   { background: linear-gradient(140deg, #FEF3C7 0%, #FEFBE5 100%); }
+.stat-card-v2.bg-purple { background: linear-gradient(140deg, #FDE68A 0%, #FEF3C7 100%); }
+.stat-card-v2.bg-orange { background: linear-gradient(140deg, #FCD34D 0%, #FDE68A 100%); }
 
 .stat-bubble {
   width: 40px; height: 40px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   margin-bottom: 8px;
 }
-.stat-bubble.b-blue   { background: var(--accent);     }
-.stat-bubble.b-purple { background: var(--purple);     }
-.stat-bubble.b-orange { background: var(--orange);     }
+/* Amber-tone bubbles (light → deep) */
+.stat-bubble.b-blue   { background: #F59E0B; }   /* amber 500 */
+.stat-bubble.b-purple { background: #D97706; }   /* amber 600 */
+.stat-bubble.b-orange { background: #92400E; }   /* amber 800 / brown */
 .stat-bubble svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 2; }
 
 .stat-card-v2-label { font-size: 11.5px; color: var(--text2); font-weight: 600; margin-bottom: 2px; }
-.stat-card-v2-val { font-size: 22px; font-weight: 800; line-height: 1.1; letter-spacing: -0.4px; }
-.stat-card-v2-val.text-orange { color: var(--orange); }
+.stat-card-v2-val { font-size: 22px; font-weight: 800; line-height: 1.1; letter-spacing: -0.4px; color: #78350F; }
+.stat-card-v2-val.text-orange { color: #92400E; }
 .stat-card-v2-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
 
 .chart-card-v2 {
@@ -786,6 +845,11 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
 .program-form-row label { font-size: 12px; color: var(--text3); font-weight: 600; }
 .program-form-row input { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 15px; }
 .program-form-row input:focus { outline: none; border-color: var(--accent); }
+.program-form-row-2col { display: flex; gap: 10px; }
+.program-form-row-2col > div { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.plan-day-actions { display: flex; gap: 6px; margin-left: auto; }
+.plan-day-actions button { border: none; background: var(--bg); color: var(--text3); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.plan-day-actions button.del { color: var(--red); background: var(--red-bg); }
   </style>
 </head>
 <body>
@@ -798,9 +862,6 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
       <div class="ph-left">
         <h1>Krafttracker</h1>
         <div class="ph-sub" id="ov-week-info">Woche 1 • <span class="ph-sub-accent">0 von 3</span> Workouts absolviert</div>
-      </div>
-      <div class="ph-action" onclick="showScreen('history')" aria-label="Kalender">
-        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       </div>
     </div>
 
@@ -817,36 +878,24 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
       </div>
       <div class="hero-v2-art">
         <div class="glow"></div>
-        <!-- 3D-style dumbbell SVG -->
-        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="dbBlueA" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#3a82ff"/>
-              <stop offset="1" stop-color="#0048d0"/>
-            </linearGradient>
-            <linearGradient id="dbBlueB" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#5b95ff"/>
-              <stop offset="1" stop-color="#0a52e0"/>
-            </linearGradient>
-            <radialGradient id="dbShine" cx="0.3" cy="0.3" r="0.7">
-              <stop offset="0" stop-color="#9ec0ff" stop-opacity=".9"/>
-              <stop offset="1" stop-color="#0066ff" stop-opacity="0"/>
-            </radialGradient>
-          </defs>
+        <!-- 3D-style dumbbell SVG – uses currentColor so it matches the active tab accent -->
+        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="color:var(--accent)">
           <!-- bar -->
-          <rect x="36" y="55" width="48" height="10" rx="3" fill="url(#dbBlueA)"/>
-          <!-- left weight -->
-          <rect x="18" y="38" width="22" height="44" rx="5" fill="url(#dbBlueB)"/>
-          <rect x="20" y="40" width="6" height="40" rx="3" fill="url(#dbShine)" opacity=".6"/>
+          <rect x="36" y="55" width="48" height="10" rx="3" fill="currentColor" opacity="0.95"/>
+          <!-- left weight body -->
+          <rect x="18" y="38" width="22" height="44" rx="5" fill="currentColor"/>
+          <!-- left highlight -->
+          <rect x="20" y="40" width="6" height="40" rx="3" fill="#fff" opacity="0.4"/>
           <!-- left cap -->
-          <rect x="10" y="44" width="12" height="32" rx="4" fill="#0a52e0"/>
-          <!-- right weight -->
-          <rect x="80" y="38" width="22" height="44" rx="5" fill="url(#dbBlueB)"/>
-          <rect x="82" y="40" width="6" height="40" rx="3" fill="url(#dbShine)" opacity=".6"/>
+          <rect x="10" y="44" width="12" height="32" rx="4" fill="currentColor" opacity="0.8" style="filter:brightness(0.7)"/>
+          <!-- right weight body -->
+          <rect x="80" y="38" width="22" height="44" rx="5" fill="currentColor"/>
+          <!-- right highlight -->
+          <rect x="82" y="40" width="6" height="40" rx="3" fill="#fff" opacity="0.4"/>
           <!-- right cap -->
-          <rect x="98" y="44" width="12" height="32" rx="4" fill="#0a52e0"/>
+          <rect x="98" y="44" width="12" height="32" rx="4" fill="currentColor" opacity="0.8" style="filter:brightness(0.7)"/>
           <!-- highlight on bar -->
-          <rect x="38" y="56" width="44" height="2" rx="1" fill="#9ec0ff" opacity=".6"/>
+          <rect x="38" y="56" width="44" height="2" rx="1" fill="#fff" opacity="0.4"/>
         </svg>
       </div>
     </div>
@@ -861,15 +910,11 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
       </div>
     </div>
 
-    <!-- Trainingsplan section with 7-day strip -->
+    <!-- Wochenplan section with 7-day strip -->
     <div class="plan-section-card">
       <div class="plan-section-head">
-        <h3>Trainingsplan</h3>
+        <h3>Wochenplan</h3>
         <a onclick="showScreen('mehr')">Plan bearbeiten</a>
-      </div>
-      <div class="next7-head">
-        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span>Nächste 7 Tage</span>
       </div>
       <div class="next7-strip" id="ov-next7-strip"></div>
     </div>
@@ -898,18 +943,38 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
 
   </div><!-- /overview -->
 
-  <!-- ══ SCREEN: WORKOUTS (placeholder when no active) ══ -->
+  <!-- ══ SCREEN: WORKOUTS ══ -->
   <div id="screen-workouts" class="screen">
-    <div class="ph"><div class="ph-left"><h1>Workouts</h1></div></div>
-    <div id="wo-no-active" class="hidden">
-      <div class="empty" style="padding-top:60px">
-        <div class="ei">🏋️</div>
-        <h3>Kein aktives Workout</h3>
-        <p>Starte ein Workout über die Übersicht.</p>
+    <div class="ph" id="wo-ph">
+      <div class="ph-left">
+        <h1>Workout</h1>
+        <div class="ph-sub" id="wo-sub" style="display:inline-flex;align-items:center;gap:6px">
+          <span id="wo-sub-dot" style="width:8px;height:8px;background:var(--accent);border-radius:50%;display:none"></span>
+          <span id="wo-sub-text">Wochenplan</span>
+        </div>
       </div>
-      <div style="padding: 0 14px;">
-        <button class="btn btn-primary btn-full" onclick="showScreen('overview');heroAction()">Workout starten</button>
+      <div class="pause-btn-v2 hidden" onclick="pauseTimer()" id="pause-btn">
+        <svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
       </div>
+    </div>
+
+    <!-- Wochenplan-Strip (always visible at top) -->
+    <div style="padding:0 14px 12px">
+      <div class="next7-strip" id="wo-week-strip"></div>
+    </div>
+
+    <!-- Session card (active or preview) -->
+    <div id="wo-session-card-wrap"></div>
+
+    <!-- Exercise tab bar -->
+    <div class="ex-tab-v2-bar" id="ex-tab-bar"></div>
+
+    <!-- Exercise cards -->
+    <div id="active-ex-list"></div>
+
+    <!-- Add exercise (only visible in active mode) -->
+    <div id="wo-add-ex-wrap" style="padding:0 14px 8px;display:none">
+      <button class="btn btn-ghost btn-full" onclick="openAddExModal()">+ Übung hinzufügen</button>
     </div>
   </div>
 
@@ -1003,19 +1068,25 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
     <div class="ph"><div class="ph-left"><h1>Mehr</h1></div></div>
 
     <div class="mehr-section">
-      <div class="mehr-section-title">Programm</div>
+      <div class="mehr-section-title">Trainingsplan</div>
       <div class="mehr-card">
         <div class="program-form-row">
-          <label>Name des Programms</label>
+          <label>Name des Trainingsplans</label>
           <input type="text" id="prog-name" placeholder="z. B. Mein Aufbau-Block" onchange="saveProgramForm()">
         </div>
         <div class="program-form-row">
           <label>Gesamtdauer (Wochen)</label>
-          <input type="number" id="prog-weeks" min="1" max="52" onchange="saveProgramForm()">
+          <input type="number" id="prog-weeks" min="1" max="104" onchange="onWeeksChange()">
         </div>
-        <div class="program-form-row">
-          <label>Startdatum</label>
-          <input type="date" id="prog-start" onchange="saveProgramForm()">
+        <div class="program-form-row program-form-row-2col">
+          <div>
+            <label>Startdatum</label>
+            <input type="date" id="prog-start" onchange="onStartDateChange()">
+          </div>
+          <div>
+            <label>Enddatum</label>
+            <input type="date" id="prog-end" onchange="onEndDateChange()">
+          </div>
         </div>
       </div>
     </div>
@@ -1026,8 +1097,9 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
     </div>
 
     <div class="mehr-section">
-      <div class="mehr-section-title">Trainingstage bearbeiten</div>
+      <div class="mehr-section-title">Trainingstage</div>
       <div class="mehr-card" id="mehr-plan-list"></div>
+      <button class="btn btn-outline btn-full" style="margin-top:10px" onclick="addNewPlanDay()">+ Trainingstag hinzufügen</button>
     </div>
 
     <div class="mehr-section">
@@ -1058,60 +1130,6 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
 
 </div><!-- /app -->
 
-<!-- ══ ACTIVE WORKOUT OVERLAY ══ -->
-<div id="screen-active">
-  <!-- Header -->
-  <div class="ph" style="background:var(--bg);position:sticky;top:0;z-index:10">
-    <div class="ph-left">
-      <h1>Workout</h1>
-      <div class="ph-sub" id="wo-sub" style="display:inline-flex;align-items:center;gap:6px">
-        <span style="width:8px;height:8px;background:var(--accent);border-radius:50%;display:inline-block"></span>
-        <span id="wo-sub-text">Aktive Session</span>
-      </div>
-    </div>
-    <div class="pause-btn-v2" onclick="pauseTimer()" id="pause-btn">
-      <svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
-    </div>
-  </div>
-
-  <!-- Session card v2 -->
-  <div class="session-card-v2" id="sc-card">
-    <div class="scv2-pill">AKTIVE SESSION</div>
-    <div class="scv2-row">
-      <div style="flex:1;min-width:0">
-        <div class="scv2-title" id="sc-title">–</div>
-        <div class="scv2-meta" id="sc-meta">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span id="sc-meta-text">– Übungen • – Sätze</span>
-        </div>
-      </div>
-      <div class="scv2-icon-circle">
-        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6" stroke="currentColor" stroke-width="2" fill="none"/></svg>
-      </div>
-    </div>
-    <div class="scv2-progress-label" id="sc-progress-label"></div>
-    <div class="scv2-progress-bar"><div class="scv2-progress-fill" id="sc-progress-bar" style="width:0%"></div></div>
-    <div class="scv2-buttons">
-      <button class="scv2-btn-primary" onclick="scrollToNextExercise()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
-        Workout fortsetzen
-      </button>
-      <button class="scv2-btn-secondary" onclick="confirmFinish()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>
-        Beenden
-      </button>
-    </div>
-  </div>
-
-  <!-- Exercise tab bar v2 -->
-  <div class="ex-tab-v2-bar" id="ex-tab-bar"></div>
-
-  <!-- Exercise cards -->
-  <div id="active-ex-list"></div>
-  <div style="padding:0 14px 8px">
-    <button class="btn btn-ghost btn-full" onclick="openAddExModal()">+ Übung hinzufügen</button>
-  </div>
-</div>
 
 <!-- ══ BOTTOM NAV ══ -->
 <nav id="bottom-nav">
@@ -1199,10 +1217,11 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
         <select class="form-select" id="new-ex-muscle">
           <option value="chest">Brust</option>
           <option value="back">Rücken</option>
+          <option value="biceps">Bizeps</option>
+          <option value="triceps">Trizeps</option>
           <option value="shoulders">Schultern</option>
-          <option value="arms">Arme</option>
           <option value="legs">Beine</option>
-          <option value="core">Core / Bauch</option>
+          <option value="core">Bauch</option>
         </select>
       </div>
       <button class="btn btn-primary btn-full" onclick="saveNewEx()">Übung erstellen</button>
@@ -1218,8 +1237,9 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); }
     <div class="sheet-body">
       <p style="font-size:15px;color:var(--text2);margin-bottom:20px;line-height:1.5">Dein Workout wird gespeichert. Neue PRs werden erkannt und im Verlauf angezeigt.</p>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <button class="btn btn-primary btn-full" onclick="finishWorkout()">💾 Ja, Workout speichern</button>
+        <button class="btn btn-primary btn-full" onclick="finishWorkout()">💾 Workout speichern</button>
         <button class="btn btn-ghost btn-full" onclick="closeModal('modal-finish')">Weiter trainieren</button>
+        <button class="btn btn-danger btn-full" onclick="discardWorkout()">🗑 Training abbrechen und löschen</button>
       </div>
     </div>
   </div>
@@ -1250,9 +1270,9 @@ const DEFAULT_EXERCISES = [
   { id:'shoulder_press',  name:'Schulterdrücken',       muscle:'shoulders', category:'push', isCustom:false },
   { id:'lateral_raise',   name:'Seitheben',             muscle:'shoulders', category:'push', isCustom:false },
   { id:'front_raise',     name:'Frontheben',            muscle:'shoulders', category:'push', isCustom:false },
-  { id:'tricep_pushdown', name:'Trizeps Pushdown',      muscle:'arms',      category:'push', isCustom:false },
-  { id:'tricep_overhead', name:'Trizeps Overhead',      muscle:'arms',      category:'push', isCustom:false },
-  { id:'dips',            name:'Dips',                  muscle:'arms',      category:'push', isCustom:false },
+  { id:'tricep_pushdown', name:'Trizeps Pushdown',      muscle:'triceps',   category:'push', isCustom:false },
+  { id:'tricep_overhead', name:'Trizeps Overhead',      muscle:'triceps',   category:'push', isCustom:false },
+  { id:'dips',            name:'Dips',                  muscle:'triceps',   category:'push', isCustom:false },
   // Pull
   { id:'deadlift',        name:'Kreuzheben',            muscle:'back',      category:'pull', isCustom:false },
   { id:'pullup',          name:'Klimmzüge',             muscle:'back',      category:'pull', isCustom:false },
@@ -1261,9 +1281,9 @@ const DEFAULT_EXERCISES = [
   { id:'barbell_row',     name:'Langhantel Rudern',     muscle:'back',      category:'pull', isCustom:false },
   { id:'face_pull',       name:'Face Pull',             muscle:'back',      category:'pull', isCustom:false },
   { id:'shrug',           name:'Schulterziehen',        muscle:'shoulders', category:'pull', isCustom:false },
-  { id:'bicep_curl',      name:'Bizeps Curls',          muscle:'arms',      category:'pull', isCustom:false },
-  { id:'hammer_curl',     name:'Hammer Curls',          muscle:'arms',      category:'pull', isCustom:false },
-  { id:'chin_up',         name:'Chin-ups',              muscle:'back',      category:'pull', isCustom:false },
+  { id:'bicep_curl',      name:'Bizeps Curls',          muscle:'biceps',    category:'pull', isCustom:false },
+  { id:'hammer_curl',     name:'Hammer Curls',          muscle:'biceps',    category:'pull', isCustom:false },
+  { id:'chin_up',         name:'Chin-ups',              muscle:'biceps',    category:'pull', isCustom:false },
   // Legs
   { id:'squat',           name:'Kniebeuge',             muscle:'legs',      category:'legs', isCustom:false },
   { id:'leg_press',       name:'Beinpresse',            muscle:'legs',      category:'legs', isCustom:false },
@@ -1301,7 +1321,15 @@ const DEFAULT_PROGRAM = {
   name: 'Mein Programm',
   weeksTotal: 12,
   startDate: null,   // ms timestamp; set on first save
+  endDate: null,     // ms timestamp; recomputed from start + weeksTotal if missing
 };
+
+function _msToDate(ms) { return ms ? new Date(ms).toISOString().slice(0,10) : ''; }
+function _dateToMs(str) { return str ? new Date(str).getTime() : null; }
+function _weeksBetween(startMs, endMs) {
+  if (!startMs || !endMs) return 0;
+  return Math.max(1, Math.round((endMs - startMs) / (7*24*3600*1000)));
+}
 
 // Mo, Di, Mi, Do, Fr, Sa, So
 const DEFAULT_WEEKPLAN = [
@@ -1316,27 +1344,56 @@ const DEFAULT_WEEKPLAN = [
 
 // Muscle metadata (icons + colors for Verlauf and PR cards)
 const MUSCLE_META = {
-  chest:     { name:'Brust',     color:'#0066ff', bg:'#e8f0ff', icon:'shirt' },
-  back:      { name:'Rücken',    color:'#14b8a6', bg:'#d1faf3', icon:'shirt-back' },
-  shoulders: { name:'Schultern', color:'#7b2fff', bg:'#f3ecff', icon:'shoulders' },
-  arms:      { name:'Arme',      color:'#ff8c00', bg:'#fff3e0', icon:'arm' },
-  legs:      { name:'Beine',     color:'#ec4899', bg:'#fce7f3', icon:'leg' },
-  core:      { name:'Bauch',     color:'#22c55e', bg:'#e8f5eb', icon:'core' },
+  chest:     { name:'Brust',     color:'#0066ff', bg:'#e8f0ff', icon:'chest' },
+  back:      { name:'Rücken',    color:'#22c55e', bg:'#dcfce7', icon:'back' },
+  biceps:    { name:'Bizeps',    color:'#ef4444', bg:'#fee2e2', icon:'biceps' },
+  triceps:   { name:'Trizeps',   color:'#ff8c00', bg:'#fff3e0', icon:'triceps' },
+  shoulders: { name:'Schultern', color:'#06b6d4', bg:'#cffafe', icon:'shoulders' },
+  legs:      { name:'Beine',     color:'#8b6b3d', bg:'#f3e8d8', icon:'leg' },
+  core:      { name:'Bauch',     color:'#7b2fff', bg:'#f3ecff', icon:'core' },
 };
-const MUSCLE_ORDER = ['chest','back','shoulders','arms','legs','core'];
+const MUSCLE_ORDER = ['chest','back','biceps','triceps','shoulders','legs','core'];
 
-// Workout-screen colors cycled per exercise position
-const EX_POS_COLORS = [
-  { c:'#0066ff', bg:'#e8f0ff' },
-  { c:'#7b2fff', bg:'#f3ecff' },
-  { c:'#14b8a6', bg:'#d1faf3' },
-  { c:'#ff8c00', bg:'#fff3e0' },
-  { c:'#22c55e', bg:'#e8f5eb' },
-  { c:'#94a3b8', bg:'#eef0f4' },
-];
+// Map old 'arms' / unknown exercises to specific muscle (by id keyword fallback)
+function inferMuscleFromName(name) {
+  const n = (name||'').toLowerCase();
+  if (/tricep|triz|pushdown|dip|skullcrusher/i.test(n)) return 'triceps';
+  if (/bicep|curl|chin|biz/i.test(n)) return 'biceps';
+  return 'triceps';
+}
+
+// Color for a workout exercise card – based on its muscle group
+function colorForExercise(workoutEx) {
+  const ex = getEx(workoutEx.exId || workoutEx.id);
+  const muscleKey = ex ? ex.muscle : 'chest';
+  return { c: muscleColor(muscleKey), bg: muscleBg(muscleKey) };
+}
+
+// Migration helpers
+const ARMS_TO_NEW = {
+  'tricep_pushdown':'triceps','tricep_overhead':'triceps','dips':'triceps',
+  'bicep_curl':'biceps','hammer_curl':'biceps','chin_up':'biceps',
+};
+function migrateExerciseMuscle(ex) {
+  if (ex.muscle === 'arms') {
+    ex.muscle = ARMS_TO_NEW[ex.id] || inferMuscleFromName(ex.name);
+  }
+  return ex;
+}
 
 const DB = {
-  getExercises() { const s = localStorage.getItem('ft_exercises'); return s ? JSON.parse(s) : [...DEFAULT_EXERCISES]; },
+  getExercises() {
+    const s = localStorage.getItem('ft_exercises');
+    if (!s) return [...DEFAULT_EXERCISES];
+    let list = JSON.parse(s);
+    let migrated = false;
+    list = list.map(ex => {
+      if (ex.muscle === 'arms') { migrated = true; return migrateExerciseMuscle({...ex}); }
+      return ex;
+    });
+    if (migrated) localStorage.setItem('ft_exercises', JSON.stringify(list));
+    return list;
+  },
   saveExercises(v) { localStorage.setItem('ft_exercises', JSON.stringify(v)); },
   getPlan() { const s = localStorage.getItem('ft_plan2'); return s ? JSON.parse(s) : JSON.parse(JSON.stringify(DEFAULT_PLAN)); },
   savePlan(v) { localStorage.setItem('ft_plan2', JSON.stringify(v)); },
@@ -1348,9 +1405,9 @@ const DB = {
   clearActive() { localStorage.removeItem('ft_active'); },
   getProgram() {
     const s = localStorage.getItem('ft_program');
-    if (s) return JSON.parse(s);
-    const p = { ...DEFAULT_PROGRAM, startDate: Date.now() };
-    localStorage.setItem('ft_program', JSON.stringify(p));
+    let p = s ? JSON.parse(s) : { ...DEFAULT_PROGRAM };
+    if (!p.startDate) p.startDate = Date.now();
+    if (!p.endDate)   p.endDate   = p.startDate + (p.weeksTotal||12) * 7*24*3600*1000;
     return p;
   },
   saveProgram(v) { localStorage.setItem('ft_program', JSON.stringify(v)); },
@@ -1378,7 +1435,8 @@ function muscleIconSvg(muscleKey, size = 16) {
     chest:        '<path d="M6 6h4l1 2h2l1-2h4v5a4 4 0 0 1-3 4l-1 2h-4l-1-2a4 4 0 0 1-3-4z"/>',
     back:         '<path d="M8 4h8l2 4-1 4v4l-2 2-1-3h-4l-1 3-2-2v-4l-1-4z"/>',
     shoulders:    '<path d="M4 11c2-4 5-5 8-5s6 1 8 5"/><circle cx="6" cy="13" r="2"/><circle cx="18" cy="13" r="2"/><path d="M9 14h6"/>',
-    arms:         '<path d="M9 4c-1 2-1 4 0 6l1 3-2 5h3l1-4 2 1 2-4-2-2 1-3-2-2z"/>',
+    biceps:       '<path d="M5 14l3-2 1-3 3-3 4 1-1 3 2 1-2 3-1 4-3-1-3 1z"/><circle cx="14" cy="9" r="1"/>',
+    triceps:      '<path d="M4 8l3 3 2 1 2 4 2 4h3l1-2 2-1-1-3-3-3-2-1-3-3-2-2z"/>',
     legs:         '<path d="M9 3h6l-1 9-1 4-1 5h-2l-1-9-1-4z"/><path d="M9 12h6"/>',
     core:         '<path d="M7 5h10v4H7zM7 11h10v4H7zM7 17h10v3H7z"/>',
   };
@@ -1386,8 +1444,6 @@ function muscleIconSvg(muscleKey, size = 16) {
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" style="stroke:${color};fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round">${path}</svg>`;
 }
 
-// Position color for active workout exercise (index-based cycle)
-function posColor(i) { return EX_POS_COLORS[i % EX_POS_COLORS.length]; }
 function typeCls(t) { return 'type-' + (t || 'free'); }
 function fmtTimer(s) { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60; return h>0?`${h}:${pad(m)}:${pad(ss)}`:`${pad(m)}:${pad(ss)}`; }
 function fmtDur(s) { if(!s)return'0 min'; const h=Math.floor(s/3600),m=Math.floor((s%3600)/60); return h>0?`${h}h ${m}min`:`${m} min`; }
@@ -1551,6 +1607,10 @@ function showScreen(name) {
   document.getElementById('screen-'+name).classList.add('active');
   const navEl = document.getElementById('nav-'+name);
   if (navEl) navEl.classList.add('active');
+
+  // Switch body theme class so CSS variables (accent / gradient / tint) update per tab
+  document.body.className = 'theme-' + name;
+
   if (name === 'overview') renderOverview();
   if (name === 'workouts') renderWorkoutsScreen();
   if (name === 'history') renderHistory();
@@ -1752,6 +1812,19 @@ function heroAction() {
 // STARTING A WORKOUT
 // ═══════════════════════════════════════════════
 
+// Build sets for a fresh workout exercise: copy from last workout per-set, fall back to targetReps
+function buildSetsForExercise(exId, targetSets, targetReps) {
+  const last = getLastExData(exId);
+  return Array.from({length: targetSets}, (_, idx) => {
+    const lastSet = last && last.sets && last.sets[idx];
+    return {
+      weight: lastSet && lastSet.weight ? String(lastSet.weight) : (last ? String(last.maxWeight) : ''),
+      reps:   lastSet && lastSet.reps   ? String(lastSet.reps)   : String(targetReps),
+      done: false,
+    };
+  });
+}
+
 function startWorkout(dayId) {
   if (DB.getActive()) {
     if (!confirm('Es läuft noch ein Workout. Neu starten?')) return;
@@ -1763,15 +1836,13 @@ function startWorkout(dayId) {
   const exercises = (day ? day.exercises : []).map(pe => {
     const ex = getEx(pe.exId);
     if (!ex) return null;
-    const last = getLastExData(pe.exId);
-    const defaultW = last ? String(last.maxWeight) : '';
     return {
       exId: pe.exId,
       id: pe.exId,
       name: ex.name,
       targetSets: pe.targetSets,
       targetReps: pe.targetReps,
-      sets: Array.from({length: pe.targetSets}, () => ({ weight: defaultW, reps: String(pe.targetReps), done: false })),
+      sets: buildSetsForExercise(pe.exId, pe.targetSets, pe.targetReps),
       notes: '',
       done: false
     };
@@ -1779,17 +1850,14 @@ function startWorkout(dayId) {
 
   const wo = { id:'wo_'+Date.now(), planDayId: dayId, planDayName: day ? day.name : 'Freestyle', startTs: Date.now(), exercises };
   DB.saveActive(wo);
-  showActiveWorkout(wo);
-}
-
-function resumeWorkout() {
-  const wo = DB.getActive();
-  if (wo) showActiveWorkout(wo);
-}
-
-function showScreen_workouts_with_active() {
+  // Set selected day to match
+  const wp = DB.getWeekPlan();
+  const idx = wp.findIndex(d => d.planDayId === dayId);
+  if (idx >= 0) selectedWorkoutDayIdx = idx;
   showScreen('workouts');
 }
+
+function resumeWorkout() { showScreen('workouts'); }
 
 // ═══════════════════════════════════════════════
 // ACTIVE WORKOUT
@@ -1798,36 +1866,248 @@ function showScreen_workouts_with_active() {
 let timerInterval = null;
 let timerPaused = false;
 
-function showActiveWorkout(wo) {
-  const el = document.getElementById('screen-active');
-  el.classList.add('open');
-  // Update nav
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('nav-workouts').classList.add('active');
-  renderActiveWorkout();
-  startTimer();
+function buildSessionCard(active, planDay, selDay, isPreview) {
+  const totalSets = active
+    ? active.exercises.reduce((a,e)=>a+e.sets.length, 0)
+    : (planDay ? planDay.exercises.reduce((a,e)=>a+e.targetSets, 0) : 0);
+  const exCount = active ? active.exercises.length : (planDay ? planDay.exercises.length : 0);
+  const doneEx = active ? active.exercises.filter(e=>e.done).length : 0;
+  const title = `${dayFullName(selDay.dayKey)}${planDay ? ' — '+planDay.name : ''}`;
+  const pct = !isPreview && active && active.exercises.length
+    ? (doneEx / active.exercises.length * 100) : 0;
+  const pillText = isPreview ? 'VORSCHAU' : 'AKTIVE SESSION';
+  const progLine = isPreview
+    ? `<div class="scv2-progress-label">Geplant: ${exCount} Übungen • ${totalSets} Sätze</div>`
+    : `<div class="scv2-progress-label">${doneEx} von ${active.exercises.length} Übungen abgeschlossen</div>
+       <div class="scv2-progress-bar"><div class="scv2-progress-fill" style="width:${pct}%"></div></div>`;
+  const buttons = isPreview
+    ? `<div class="scv2-buttons">
+         <button class="scv2-btn-primary" onclick="startWorkout('${planDay.id}')">
+           <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
+           Workout starten
+         </button>
+       </div>`
+    : `<div class="scv2-buttons">
+         <button class="scv2-btn-primary" onclick="scrollToNextExercise()">
+           <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
+           Workout fortsetzen
+         </button>
+         <button class="scv2-btn-secondary" onclick="confirmFinish()">
+           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>
+           Beenden
+         </button>
+       </div>`;
+  return `<div class="session-card-v2">
+    <div class="scv2-pill">${pillText}</div>
+    <div class="scv2-row">
+      <div style="flex:1;min-width:0">
+        <div class="scv2-title">${title}</div>
+        <div class="scv2-meta">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>${exCount} Übungen • ${totalSets} Sätze</span>
+        </div>
+      </div>
+      <div class="scv2-icon-circle">
+        <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+      </div>
+    </div>
+    ${progLine}
+    ${buttons}
+  </div>`;
+}
+
+function buildRestCard(selDay) {
+  return `<div class="session-card-v2" style="background:linear-gradient(135deg,#f5f7fa 0%,#fafbfc 100%)">
+    <div class="scv2-pill" style="border-color:var(--text3);color:var(--text2)">RUHETAG</div>
+    <div class="scv2-row">
+      <div style="flex:1">
+        <div class="scv2-title">${dayFullName(selDay.dayKey)}</div>
+        <div class="scv2-meta"><span>Heute ist kein Training geplant.</span></div>
+      </div>
+      <div class="scv2-icon-circle" style="border-color:var(--border)">
+        <svg viewBox="0 0 24 24" style="stroke:var(--text3);fill:none;stroke-width:1.8;width:30px;height:30px"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      </div>
+    </div>
+  </div>`;
+}
+
+function dayFullName(key) {
+  return ({mon:'Montag',tue:'Dienstag',wed:'Mittwoch',thu:'Donnerstag',fri:'Freitag',sat:'Samstag',sun:'Sonntag'})[key] || key;
+}
+
+let selectedWorkoutDayIdx = null;
+
+function ensureSelectedDayIdx() {
+  if (selectedWorkoutDayIdx !== null) return;
+  const today = new Date(); const todayIdx = (today.getDay()+6)%7;
+  const wo = DB.getActive();
+  if (wo) {
+    const wp = DB.getWeekPlan();
+    const idx = wp.findIndex(d => d.planDayId === wo.planDayId);
+    if (idx >= 0) { selectedWorkoutDayIdx = idx; return; }
+  }
+  selectedWorkoutDayIdx = todayIdx;
+}
+
+function selectWorkoutDay(idx) {
+  selectedWorkoutDayIdx = idx;
+  renderWorkoutsScreen();
+}
+
+function renderWorkoutWeekStrip() {
+  ensureSelectedDayIdx();
+  const days = getCurrentWeekDays();
+  const wp = DB.getWeekPlan();
+  const active = DB.getActive();
+  const activeDayId = active ? active.planDayId : null;
+  const dumbbellIcon = '<svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>';
+  const restIcon = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg>';
+  const checkIcon = '<svg viewBox="0 0 24 24" style="stroke:#fff;stroke-width:2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+
+  document.getElementById('wo-week-strip').innerHTML = days.map((d, i) => {
+    const selected = i === selectedWorkoutDayIdx;
+    const isActiveDay = activeDayId && wp[i].planDayId === activeDayId;
+    const cls = `next7-chip ${selected ? 'today' : ''} ${d.isRest ? 'rest' : ''}`;
+    const topLabel = d.isToday ? 'Heute' : (d.isTomorrow ? 'Morgen' : '');
+    const mid = d.planDay ? d.planDay.name : 'Ruhe';
+    let bot = d.time ? `${d.time} Uhr` : '–';
+    let centerIcon;
+    if (isActiveDay) {
+      centerIcon = `<div class="n7-icon-wrap" style="background:var(--accent)"><svg viewBox="0 0 24 24" style="stroke:#fff;fill:none;stroke-width:2"><polygon points="5 3 19 12 5 21" fill="#fff"/></svg></div>`;
+      bot = '<span style="color:var(--accent);font-weight:600">Läuft</span>';
+    } else if (d.dayDone && d.planDay) {
+      centerIcon = `<div class="n7-icon-wrap" style="background:var(--accent)">${checkIcon}</div>`;
+      bot = '<span style="display:inline-flex;align-items:center;gap:3px;color:var(--green);font-weight:600">' +
+            '<svg width="11" height="11" viewBox="0 0 24 24" style="stroke:var(--green);stroke-width:3;fill:none"><polyline points="20 6 9 17 4 12"/></svg> Erledigt</span>';
+    } else if (d.isRest) {
+      centerIcon = `<div class="n7-icon-wrap">${restIcon}</div>`;
+    } else {
+      centerIcon = `<div class="n7-icon-wrap">${dumbbellIcon}</div>`;
+    }
+    return `<div class="${cls}" onclick="selectWorkoutDay(${i})">
+      <div class="n7-top">${topLabel ? `<span class="lbl">${topLabel}</span>`:''}${d.label}</div>
+      ${centerIcon}
+      <div class="n7-mid">${mid}</div>
+      <div class="n7-bot">${bot}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderWorkoutsScreen() {
+  ensureSelectedDayIdx();
+  const wp = DB.getWeekPlan();
+  const plan = DB.getPlan();
+  const selDay = wp[selectedWorkoutDayIdx];
+  const planDay = selDay && selDay.planDayId ? plan.find(d => d.id === selDay.planDayId) : null;
+  const active = DB.getActive();
+  const activeOnSelected = active && planDay && active.planDayId === planDay.id;
+
+  // Header subtitle
+  const dotEl = document.getElementById('wo-sub-dot');
+  const subEl = document.getElementById('wo-sub-text');
+  const pauseEl = document.getElementById('pause-btn');
+  if (activeOnSelected) {
+    dotEl.style.display = 'inline-block';
+    subEl.textContent = 'Aktive Session';
+    pauseEl.classList.remove('hidden');
+  } else if (planDay) {
+    dotEl.style.display = 'none';
+    subEl.textContent = 'Vorschau';
+    pauseEl.classList.add('hidden');
+  } else {
+    dotEl.style.display = 'none';
+    subEl.textContent = 'Wochenplan';
+    pauseEl.classList.add('hidden');
+  }
+
+  // Week strip
+  renderWorkoutWeekStrip();
+
+  // Session card
+  const wrap = document.getElementById('wo-session-card-wrap');
+  if (activeOnSelected) {
+    wrap.innerHTML = buildSessionCard(active, planDay, selDay, false);
+  } else if (planDay) {
+    wrap.innerHTML = buildSessionCard(null, planDay, selDay, true);
+  } else {
+    wrap.innerHTML = buildRestCard(selDay);
+  }
+
+  // Tabs + cards
+  if (activeOnSelected) {
+    renderActiveWorkout();
+    document.getElementById('wo-add-ex-wrap').style.display = '';
+    if (!timerInterval) startTimer();
+  } else if (planDay) {
+    renderPreviewWorkout(planDay);
+    document.getElementById('wo-add-ex-wrap').style.display = 'none';
+    stopTimer();
+  } else {
+    document.getElementById('ex-tab-bar').innerHTML = '';
+    document.getElementById('active-ex-list').innerHTML = '';
+    document.getElementById('wo-add-ex-wrap').style.display = 'none';
+    stopTimer();
+  }
+}
+
+function renderPreviewWorkout(planDay) {
+  // Tab bar (read-only)
+  document.getElementById('ex-tab-bar').innerHTML = planDay.exercises.map((pe, i) => {
+    const ex = getEx(pe.exId);
+    if (!ex) return '';
+    const col = colorForExercise({ exId: pe.exId });
+    return `<div class="ex-tab-v2" style="--c:${col.c}" onclick="scrollToEx(${i})">
+      <div class="ex-tab-v2-num">${i+1}</div>
+      <div class="ex-tab-v2-name">${ex.name}</div>
+      <div class="ex-tab-v2-prog"><div class="ex-tab-v2-prog-fill" style="width:0%"></div></div>
+    </div>`;
+  }).join('');
+
+  // Cards (read-only target view)
+  document.getElementById('active-ex-list').innerHTML = planDay.exercises.map((pe, ei) => {
+    const ex = getEx(pe.exId);
+    if (!ex) return '';
+    const col = colorForExercise({ exId: pe.exId });
+    const last = getLastExData(pe.exId);
+    const targetW = last ? `${last.maxWeight} kg` : '–';
+    const lastStr = last ? `Zuletzt: ${last.sets.length}×${last.sets[0]?.reps||'?'} @ ${last.maxWeight} kg` : '';
+    return `<div class="aex-v2" id="aex-${ei}" style="--c:${col.c};--c-bg:${col.bg}">
+      <div class="aex-v2-header">
+        <div class="aex-v2-num">${ei+1}</div>
+        <div class="aex-v2-info">
+          <div class="aex-v2-name">${ex.name}</div>
+          <div class="aex-v2-target"><b>Ziel: ${pe.targetSets}×${pe.targetReps}</b> • <span style="color:var(--text3)">Letztes Gewicht:</span> <b>${targetW}</b></div>
+          ${lastStr ? `<div class="aex-v2-last">${lastStr}</div>` : ''}
+        </div>
+      </div>
+      <div class="aex-v2-body" style="opacity:0.85">
+        <div class="aex-v2-table">
+          <div class="aex-v2-row head" style="grid-template-columns:50px ${Array(pe.targetSets).fill('1fr').join(' ')}">
+            <span class="ax-lbl">Satz</span>${Array.from({length:pe.targetSets},(_,si)=>`<span class="num-cell">${si+1}</span>`).join('')}
+          </div>
+          <div class="aex-v2-row" style="grid-template-columns:50px ${Array(pe.targetSets).fill('1fr').join(' ')}">
+            <span class="ax-lbl">kg</span>${Array(pe.targetSets).fill(`<div class="aex-v2-inp" style="background:var(--bg);color:var(--text3);display:flex;align-items:center;justify-content:center">${last?last.maxWeight:'–'}</div>`).join('')}
+          </div>
+          <div class="aex-v2-row" style="grid-template-columns:50px ${Array(pe.targetSets).fill('1fr').join(' ')}">
+            <span class="ax-lbl">Wdh.</span>${Array(pe.targetSets).fill(`<div class="aex-v2-inp" style="background:var(--bg);color:var(--text3);display:flex;align-items:center;justify-content:center">${pe.targetReps}</div>`).join('')}
+          </div>
+        </div>
+        <div class="aex-v2-notes">
+          <div class="aex-v2-notes-lbl">Notizen</div>
+          <div style="font-size:12px;color:var(--text3);line-height:1.4">Werden nach dem Start erfasst.</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderActiveWorkout() {
   const wo = DB.getActive();
   if (!wo) return;
 
-  // Session card
-  const plan = DB.getPlan();
-  const planDay = plan.find(d => d.id === wo.planDayId);
-  const todayLabel = dayLabel();
-  const titleText = `${todayLabel}${planDay ? ' — '+planDay.name : ' — Freestyle'}`;
-  document.getElementById('sc-title').textContent = titleText;
-  const totalSets = wo.exercises.reduce((a,e) => a + e.sets.length, 0);
-  const doneEx = wo.exercises.filter(e => e.done).length;
-  document.getElementById('sc-meta-text').textContent = `${wo.exercises.length} Übungen • ${totalSets} Sätze`;
-  document.getElementById('sc-progress-label').textContent = `${doneEx} von ${wo.exercises.length} Übungen abgeschlossen`;
-  const pct = wo.exercises.length ? (doneEx / wo.exercises.length * 100) : 0;
-  document.getElementById('sc-progress-bar').style.width = pct + '%';
-
   // Tab bar (colored cards)
   document.getElementById('ex-tab-bar').innerHTML = wo.exercises.map((ex, i) => {
-    const col = posColor(i);
+    const col = colorForExercise(ex);
     const setsDone = ex.sets.filter(s=>s.done).length;
     const setsTotal = ex.sets.length;
     const setPct = setsTotal ? (setsDone/setsTotal*100) : 0;
@@ -1842,7 +2122,7 @@ function renderActiveWorkout() {
 
   // Exercise cards
   document.getElementById('active-ex-list').innerHTML = wo.exercises.map((ex, ei) => {
-    const col = posColor(ei);
+    const col = colorForExercise(ex);
     const last = getLastExData(ex.exId || ex.id);
     const lastStr = last ? `Zuletzt: ${last.sets.length}×${last.sets[0]?.reps||'?'} @ ${last.maxWeight} kg` : '';
     const targetW = last ? `${last.maxWeight} kg` : '–';
@@ -1904,9 +2184,26 @@ function updateBottomBar() { /* bottom bar removed in v2 */ }
 
 function updateSet(ei, si, field, value) {
   const wo = DB.getActive();
-  wo.exercises[ei].sets[si][field] = value;
+  if (!wo) return;
+  const ex = wo.exercises[ei];
+  ex.sets[si][field] = value;
+  // Auto-propagate to subsequent (non-done) sets only
+  for (let k = si + 1; k < ex.sets.length; k++) {
+    if (!ex.sets[k].done) ex.sets[k][field] = value;
+  }
   DB.saveActive(wo);
-  updateBottomBar();
+  // Refresh just the affected inputs without full re-render to avoid losing focus
+  document.querySelectorAll(`.aex-v2[id="aex-${ei}"] .aex-v2-inp`).forEach((inp, idx) => {
+    // Each row has nSets inputs; we have 2 rows (kg + Wdh.)
+    // Order in DOM: row1=kg (all sets), row2=Wdh (all sets)
+    const nSets = ex.sets.length;
+    const rowIsKg = idx < nSets;
+    const setIdx  = idx % nSets;
+    if (setIdx <= si) return;          // don't touch earlier sets
+    if (ex.sets[setIdx].done) return;  // don't touch done sets
+    if (rowIsKg && field === 'weight') inp.value = value;
+    if (!rowIsKg && field === 'reps')  inp.value = value;
+  });
 }
 
 function updateNotes(ei, value) {
@@ -1915,11 +2212,26 @@ function updateNotes(ei, value) {
 
 function toggleExDone(ei, checked) {
   const wo = DB.getActive();
+  if (!wo) return;
   wo.exercises[ei].done = checked;
-  // Mark all sets as done
+  // Mark all sets as done/undone
   wo.exercises[ei].sets.forEach(s => s.done = checked);
   DB.saveActive(wo);
-  renderActiveWorkout();
+  renderWorkoutsScreen();
+
+  // Auto-scroll
+  setTimeout(() => {
+    if (checked) {
+      const nextIdx = wo.exercises.findIndex(e => !e.done);
+      if (nextIdx >= 0) {
+        scrollToEx(nextIdx);
+      } else {
+        // All done → scroll to top so user sees the "Beenden" button
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('app').scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  }, 50);
 }
 
 function addSet(ei) {
@@ -1927,7 +2239,7 @@ function addSet(ei) {
   const lastSet = wo.exercises[ei].sets.slice(-1)[0] || {};
   wo.exercises[ei].sets.push({ weight: lastSet.weight||'', reps: lastSet.reps||'', done: false });
   DB.saveActive(wo);
-  renderActiveWorkout();
+  renderWorkoutsScreen();
 }
 
 function removeSet(ei) {
@@ -1935,15 +2247,17 @@ function removeSet(ei) {
   if (wo.exercises[ei].sets.length > 1) {
     wo.exercises[ei].sets.pop();
     DB.saveActive(wo);
-    renderActiveWorkout();
+    renderWorkoutsScreen();
   }
 }
 
 function scrollToEx(i) {
   const el = document.getElementById('aex-'+i);
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  // Update active tab
-  document.querySelectorAll('.ex-tab').forEach((t,idx) => t.classList.toggle('active', idx===i));
+  if (!el) return;
+  // Use scroll-margin-top via scrollIntoView — works with the CSS setting we added.
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Update active tab highlight
+  document.querySelectorAll('.ex-tab-v2').forEach((t,idx) => t.classList.toggle('active', idx===i));
 }
 
 function scrollToNextExercise() {
@@ -1996,11 +2310,14 @@ function renderAddExList(q) {
 function addExToWorkout(exId) {
   const ex = getEx(exId); if (!ex) return;
   const wo = DB.getActive();
-  const last = getLastExData(exId);
-  wo.exercises.push({ exId, id:exId, name:ex.name, targetSets:3, targetReps:8, sets:[{weight:last?String(last.maxWeight):'',reps:'8',done:false}], notes:'', done:false });
+  wo.exercises.push({
+    exId, id:exId, name:ex.name, targetSets:3, targetReps:8,
+    sets: buildSetsForExercise(exId, 3, 8),
+    notes:'', done:false
+  });
   DB.saveActive(wo);
   closeModal('modal-add-ex');
-  renderActiveWorkout();
+  renderWorkoutsScreen();
   showToast(`${ex.name} hinzugefügt`);
 }
 
@@ -2026,7 +2343,7 @@ function finishWorkout() {
   stopTimer();
 
   closeModal('modal-finish');
-  document.getElementById('screen-active').classList.remove('open');
+  selectedWorkoutDayIdx = null; // reset to today
 
   if (prs.length) showToast(`${prs.length} neuer PR! 🏆`);
   else showToast('Workout gespeichert! 💪');
@@ -2034,16 +2351,14 @@ function finishWorkout() {
   showScreen('overview');
 }
 
-// ═══════════════════════════════════════════════
-// SCREEN: WORKOUTS (NO ACTIVE)
-// ═══════════════════════════════════════════════
-function renderWorkoutsScreen() {
-  const wo = document.getElementById('wo-no-active');
-  if (DB.getActive()) {
-    resumeWorkout();
-  } else {
-    wo.classList.remove('hidden');
-  }
+function discardWorkout() {
+  if (!confirm('Workout wirklich abbrechen und löschen? Alle Eingaben gehen verloren.')) return;
+  stopTimer();
+  DB.clearActive();
+  closeModal('modal-finish');
+  selectedWorkoutDayIdx = null;
+  showToast('Workout verworfen');
+  showScreen('overview');
 }
 
 // ═══════════════════════════════════════════════
@@ -2164,23 +2479,31 @@ function renderVolumeChart(ws) {
   const lastIdx = sortedKeys.length - 1;
   const ctx = canvas.getContext('2d');
   const isKg = volumeUnit === 'kg';
+  // Read the current theme accent (so the chart matches the active tab)
+  const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#0066ff';
+  const accentRGB = (() => {
+    // Convert hex to "r,g,b" for rgba()
+    const h = accent.replace('#','');
+    if (h.length !== 6) return '0,102,255';
+    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)].join(',');
+  })();
   volumeChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: sortedKeys,
       datasets: [{
         data: sortedKeys.map(k => Math.round(weekMap[k])),
-        borderColor: '#0066ff',
+        borderColor: accent,
         backgroundColor: (ctx2) => {
           const c = ctx2.chart.ctx;
           const g = c.createLinearGradient(0,0,0,200);
-          g.addColorStop(0,'rgba(0,102,255,0.20)');
-          g.addColorStop(1,'rgba(0,102,255,0.00)');
+          g.addColorStop(0,`rgba(${accentRGB},0.22)`);
+          g.addColorStop(1,`rgba(${accentRGB},0.00)`);
           return g;
         },
         borderWidth: 2.5,
         pointBackgroundColor: '#fff',
-        pointBorderColor: '#0066ff',
+        pointBorderColor: accent,
         pointBorderWidth: 2,
         pointRadius: 5,
         tension: 0.35, fill: true
@@ -2218,7 +2541,7 @@ function renderVolumeChart(ws) {
         const h = 22;
         const x = last.x - w/2;
         const y = last.y - h - 8;
-        c.fillStyle = '#0066ff';
+        c.fillStyle = accent;
         c.beginPath(); c.roundRect(x, y, w, h, 6); c.fill();
         c.fillStyle = '#fff';
         c.textBaseline = 'middle';
@@ -2325,17 +2648,20 @@ let editingDayIdx = null;
 
 function renderMehr() {
   const plan = DB.getPlan();
-  const colors = ['#ff8c00','#28a745','#7b2fff'];
+  const colors = ['#0066ff','#22c55e','#7b2fff','#ff8c00','#06b6d4','#ef4444','#8b6b3d'];
   document.getElementById('mehr-plan-list').innerHTML = plan.map((d, i) => {
     const setCount = d.exercises.reduce((a,e) => a+e.targetSets, 0);
     const color = d.color || colors[i % colors.length];
-    return `<div class="plan-day-row" onclick="openPlanDayModal(${i})">
+    return `<div class="plan-day-row">
       <div class="pdr-num" style="background:${color}">${i+1}</div>
-      <div class="pdr-info">
+      <div class="pdr-info" onclick="openPlanDayModal(${i})" style="cursor:pointer">
         <div class="pdr-name">${d.name}</div>
         <div class="pdr-sub">${d.exercises.length} Übungen • ${setCount} Sätze</div>
       </div>
-      <span class="pdr-arrow">›</span>
+      <div class="plan-day-actions">
+        <button onclick="event.stopPropagation();openPlanDayModal(${i})" title="Bearbeiten">✎</button>
+        <button class="del" onclick="event.stopPropagation();deletePlanDay(${i})" title="Löschen">✕</button>
+      </div>
     </div>`;
   }).join('');
 
@@ -2343,7 +2669,8 @@ function renderMehr() {
   const p = DB.getProgram();
   document.getElementById('prog-name').value = p.name || '';
   document.getElementById('prog-weeks').value = p.weeksTotal || 12;
-  document.getElementById('prog-start').value = p.startDate ? new Date(p.startDate).toISOString().slice(0,10) : '';
+  document.getElementById('prog-start').value = _msToDate(p.startDate);
+  document.getElementById('prog-end').value   = _msToDate(p.endDate);
 
   // Weekplan
   const wp = DB.getWeekPlan();
@@ -2365,11 +2692,45 @@ function renderMehr() {
 function saveProgramForm() {
   const p = DB.getProgram();
   p.name = document.getElementById('prog-name').value.trim() || 'Mein Programm';
-  p.weeksTotal = Math.max(1, parseInt(document.getElementById('prog-weeks').value) || 12);
-  const startStr = document.getElementById('prog-start').value;
-  p.startDate = startStr ? new Date(startStr).getTime() : Date.now();
   DB.saveProgram(p);
-  showToast('Programm aktualisiert');
+}
+
+// User changed Gesamtdauer → recompute Enddatum
+function onWeeksChange() {
+  const p = DB.getProgram();
+  const weeks = Math.max(1, parseInt(document.getElementById('prog-weeks').value) || 1);
+  p.weeksTotal = weeks;
+  if (!p.startDate) p.startDate = Date.now();
+  p.endDate = p.startDate + weeks * 7*24*3600*1000;
+  DB.saveProgram(p);
+  document.getElementById('prog-end').value = _msToDate(p.endDate);
+  showToast('Trainingsplan aktualisiert');
+}
+
+// User changed Startdatum → keep weeks fixed, recompute Enddatum
+function onStartDateChange() {
+  const p = DB.getProgram();
+  const start = _dateToMs(document.getElementById('prog-start').value);
+  if (!start) return;
+  p.startDate = start;
+  p.endDate = start + (p.weeksTotal||12) * 7*24*3600*1000;
+  DB.saveProgram(p);
+  document.getElementById('prog-end').value = _msToDate(p.endDate);
+  showToast('Trainingsplan aktualisiert');
+}
+
+// User changed Enddatum → recompute Gesamtdauer
+function onEndDateChange() {
+  const p = DB.getProgram();
+  const end = _dateToMs(document.getElementById('prog-end').value);
+  if (!end) return;
+  if (!p.startDate) p.startDate = Date.now();
+  if (end <= p.startDate) { showToast('Enddatum muss nach Startdatum sein'); document.getElementById('prog-end').value = _msToDate(p.endDate); return; }
+  p.endDate = end;
+  p.weeksTotal = _weeksBetween(p.startDate, end);
+  DB.saveProgram(p);
+  document.getElementById('prog-weeks').value = p.weeksTotal;
+  showToast('Trainingsplan aktualisiert');
 }
 
 function saveWeekPlanRow(i, field, value) {
@@ -2393,6 +2754,35 @@ function openPlanDayModal(idx) {
   document.getElementById('plan-day-name-input').value = day.name;
   renderPlanDayExList(day);
   openModal('modal-plan-day');
+}
+
+function addNewPlanDay() {
+  const name = prompt('Name des neuen Trainingstags:', 'Neuer Tag');
+  if (!name || !name.trim()) return;
+  const plan = DB.getPlan();
+  const id = 'day_' + Date.now();
+  plan.push({ id, name: name.trim(), color: null, exercises: [] });
+  DB.savePlan(plan);
+  renderMehr();
+  showToast(`"${name.trim()}" hinzugefügt`);
+  openPlanDayModal(plan.length - 1);
+}
+
+function deletePlanDay(idx) {
+  const plan = DB.getPlan();
+  const day = plan[idx];
+  if (!day) return;
+  if (!confirm(`Trainingstag "${day.name}" wirklich löschen?\nEr wird auch aus dem Wochenplan entfernt.`)) return;
+  const removedId = day.id;
+  plan.splice(idx, 1);
+  DB.savePlan(plan);
+  // Clean up weekplan references
+  const wp = DB.getWeekPlan();
+  let wpChanged = false;
+  wp.forEach(d => { if (d.planDayId === removedId) { d.planDayId = null; d.time=''; wpChanged = true; } });
+  if (wpChanged) DB.saveWeekPlan(wp);
+  renderMehr();
+  showToast('Trainingstag gelöscht');
 }
 
 function renderPlanDayExList(day) {
@@ -2479,7 +2869,10 @@ function saveNewEx() {
   const muscle = document.getElementById('new-ex-muscle').value;
   const exs = DB.getExercises();
   const id = 'custom_' + Date.now();
-  exs.push({ id, name, muscle, category: muscle === 'legs' ? 'legs' : (muscle === 'back' || muscle === 'arms' ? 'pull' : 'push'), isCustom: true });
+  const cat = muscle === 'legs' ? 'legs'
+            : (muscle === 'back' || muscle === 'biceps') ? 'pull'
+            : 'push';
+  exs.push({ id, name, muscle, category: cat, isCustom: true });
   DB.saveExercises(exs);
   closeModal('modal-new-ex');
   // Re-open plan add modal (if it was open)
@@ -2559,9 +2952,10 @@ if ('serviceWorker' in navigator) {
 document.addEventListener('DOMContentLoaded', () => {
   const activeWo = DB.getActive();
   if (activeWo) {
-    showActiveWorkout(activeWo);
+    showScreen('workouts');
+  } else {
+    showScreen('overview');
   }
-  renderOverview();
 });
 </script>
 </body>
