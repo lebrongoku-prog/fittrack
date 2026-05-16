@@ -36,6 +36,7 @@
   /* Default accent (used by Mehr-Tab and anywhere no theme is active) */
   --accent:               #0066ff;
   --accent-bg:            rgba(0, 102, 255, 0.12);
+  --accent-soft:          #DBE9FF;     /* solid, light tint of the accent */
   --accent-dark:          #0048d0;
   --gradient:             linear-gradient(135deg, #0a2a6b, #0066ff);
   --section-tint:         rgba(0, 102, 255, 0.18);
@@ -56,6 +57,7 @@
 body.theme-overview {
   --accent:             #0891B2;
   --accent-bg:          rgba(8, 145, 178, 0.12);
+  --accent-soft:        #CFFAFE;       /* cyan-100 */
   --accent-dark:        #0C4A6E;
   --gradient:           linear-gradient(135deg, #0C4A6E, #0891B2);
   --section-tint:       rgba(6, 182, 212, 0.18);
@@ -64,6 +66,7 @@ body.theme-overview {
 body.theme-workouts {
   --accent:             #10B981;
   --accent-bg:          rgba(16, 185, 129, 0.12);
+  --accent-soft:        #D1FAE5;       /* emerald-100 */
   --accent-dark:        #059669;
   --gradient:           linear-gradient(135deg, #064E3B, #10B981);
   --section-tint:       rgba(16, 185, 129, 0.20);
@@ -72,6 +75,7 @@ body.theme-workouts {
 body.theme-history {
   --accent:             #F59E0B;
   --accent-bg:          rgba(245, 158, 11, 0.12);
+  --accent-soft:        #FEF3C7;       /* amber-100 */
   --accent-dark:        #78350F;
   --gradient:           linear-gradient(135deg, #78350F, #F59E0B);
   --section-tint:       rgba(245, 158, 11, 0.20);
@@ -458,10 +462,10 @@ body.theme-history .hist-action-dd {
 /* ─ Header subline with inline accent ─ */
 .ph-sub-accent { color: var(--accent); font-weight: 600; }
 
-/* ─ NEW Hero (Übersicht) – white card on themed gradient bg ─ */
+/* ─ NEW Hero (Übersicht) – soft-accent card on themed gradient bg ─ */
 .hero-v2 {
   margin: 0 14px 12px; border-radius: 18px;
-  background: var(--card); box-shadow: var(--shadow-md);
+  background: var(--accent-soft); box-shadow: var(--shadow-md);
   padding: 18px 18px 20px; display: flex; gap: 12px; align-items: stretch;
   position: relative; overflow: hidden;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
@@ -521,52 +525,55 @@ body.theme-history .hist-action-dd {
 .next7-strip { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
 .next7-strip::-webkit-scrollbar { display: none; }
 .next7-chip {
-  flex-shrink: 0; min-width: 92px; padding: 12px 10px; border-radius: 14px;
-  background: #fafbfc; border: 1.5px solid var(--border);
+  flex-shrink: 0; min-width: 86px; padding: 12px 10px; border-radius: 12px;
+  background: transparent; border: 1.5px dashed var(--border);
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
+  text-align: center;
 }
-.next7-chip.today { border-color: var(--accent); background: var(--accent-bg); }
-.next7-chip.rest { opacity: 0.7; }
-.n7-top { font-size: 12px; font-weight: 700; color: var(--text2); text-align: center; }
+/* Training day = filled with soft accent, solid border */
+.next7-chip.training {
+  background: var(--accent-soft);
+  border: 1.5px solid var(--card-accent-border);
+}
+/* Rest day stays subtle: dashed outline, muted text */
+.next7-chip.rest .n7-mid { color: var(--text3); font-weight: 500; }
+.next7-chip.rest .n7-top { color: var(--text3); }
+/* Today highlight – stronger border + accent-colored */
+.next7-chip.today.training { border: 2px solid var(--accent); }
+.next7-chip.today.rest     { border: 2px solid var(--text2); border-style: solid; }
+/* Completed: reduced opacity so it visually fades */
+.next7-chip.done { opacity: 0.55; }
+
+.n7-top { font-size: 12px; font-weight: 700; color: var(--text); }
 .n7-top .lbl { display: block; font-size: 10px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
-.next7-chip.today .n7-top .lbl { color: var(--accent); }
-.n7-icon-wrap {
-  width: 28px; height: 28px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--card2);
-}
-.next7-chip.today .n7-icon-wrap { background: #fff; }
-.n7-icon-wrap svg { width: 16px; height: 16px; stroke: var(--text2); fill: none; stroke-width: 1.8; }
-.next7-chip.today .n7-icon-wrap svg { stroke: var(--accent); }
-.next7-chip.rest .n7-icon-wrap svg { stroke: var(--text3); }
-.n7-mid { font-size: 12px; font-weight: 600; text-align: center; line-height: 1.2; min-height: 28px; display: flex; align-items: center; }
-.next7-chip.rest .n7-mid { color: var(--text3); }
-.n7-bot { font-size: 11px; color: var(--text3); }
-.next7-chip.today .n7-bot { color: var(--accent); font-weight: 600; }
+.next7-chip.training .n7-top .lbl { color: var(--accent-dark); }
+.next7-chip.today    .n7-top .lbl { color: var(--accent); }
+.n7-mid { font-size: 13px; font-weight: 600; line-height: 1.2; color: var(--text); }
+.next7-chip.training .n7-mid { color: var(--accent-dark); }
 
-/* ─ Two-col grid for Volumen + PR cards ─ */
-.two-col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 14px 14px; }
-.tc-card { background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 16px 14px; }
-.tc-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.tc-card-title { font-size: 14px; font-weight: 700; }
-.tc-card-head svg { width: 16px; height: 16px; stroke: var(--text3); fill: none; stroke-width: 1.8; }
+/* ─ Stacked grid for Volumen + PR cards (one per row, full width) ─ */
+.two-col-grid { display: flex; flex-direction: column; gap: 12px; padding: 0 14px 14px; }
+.tc-card { background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 16px 18px; }
+.tc-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.tc-card-title { font-size: 16px; font-weight: 700; }
+.tc-card-head svg { width: 18px; height: 18px; stroke: var(--text3); fill: none; stroke-width: 1.8; }
 .tc-card-head svg.star { fill: var(--accent); stroke: var(--accent); }
-.tc-muscle-row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 8px; }
-.tc-muscle-row:last-child { margin-bottom: 0; }
-.tc-muscle-name { min-width: 56px; font-weight: 500; color: var(--text2); }
-.tc-muscle-bar { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
-.tc-muscle-fill { height: 100%; background: var(--accent); border-radius: 3px; }
-.tc-muscle-val { font-size: 11px; font-weight: 600; color: var(--text2); min-width: 42px; text-align: right; }
+.tc-muscle-row { display: flex; align-items: center; gap: 12px; font-size: 14px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.tc-muscle-row:last-child { border-bottom: none; }
+.tc-muscle-name { min-width: 84px; font-weight: 500; color: var(--text); }
+.tc-muscle-bar { flex: 1; height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.tc-muscle-fill { height: 100%; background: var(--accent); border-radius: 4px; }
+.tc-muscle-val { font-size: 13px; font-weight: 600; color: var(--text2); min-width: 60px; text-align: right; }
 
-.tc-pr-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.tc-pr-row:last-child { margin-bottom: 0; }
-.tc-pr-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.tc-pr-icon svg { width: 14px; height: 14px; }
+.tc-pr-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.tc-pr-row:last-child { border-bottom: none; }
+.tc-pr-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.tc-pr-icon svg { width: 18px; height: 18px; }
 .tc-pr-info { flex: 1; min-width: 0; }
-.tc-pr-name { font-size: 11.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tc-pr-sub { font-size: 10px; color: var(--text3); margin-top: 1px; }
-.tc-pr-val { font-size: 12px; font-weight: 700; color: var(--green); white-space: nowrap; }
+.tc-pr-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tc-pr-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.tc-pr-val { font-size: 15px; font-weight: 700; color: var(--green); white-space: nowrap; }
 
 /* ═══════════════════════════════════
    WORKOUT (Active session) – Mockup v2
@@ -1709,38 +1716,18 @@ function dayLabel(label) {
 
 function renderNext7Strip(days) {
   const root = document.getElementById('ov-next7-strip');
-  const dumbbellIcon = '<svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>';
-  const restIcon = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg>';
-  const checkIcon = '<svg viewBox="0 0 24 24" style="stroke:#fff;stroke-width:2.5"><polyline points="20 6 9 17 4 12"/></svg>';
-  const planIcon = (planDay) => planDay && planDay.id === 'pull' ? '<svg viewBox="0 0 24 24"><path d="M7 6h10v3l-2 1v4l2 1v3H7v-3l2-1v-4L7 9z"/></svg>' : dumbbellIcon;
-
   root.innerHTML = days.map((d, i) => {
-    const cls = `next7-chip${d.isToday ? ' today' : ''}${d.isRest ? ' rest' : ''}`;
+    const classes = ['next7-chip'];
+    if (d.isToday) classes.push('today');
+    if (d.isRest) classes.push('rest'); else classes.push('training');
+    if (d.dayDone && d.planDay) classes.push('done');
     const topLabel = d.isToday ? 'Heute' : (d.isTomorrow ? 'Morgen' : '');
-    const topMain = d.label;
     const mid = d.planDay ? d.planDay.name : 'Ruhe';
-    let bot = d.time ? `${d.time} Uhr` : '–';
-    if (d.dayDone && d.planDay) {
-      bot = '<span style="display:inline-flex;align-items:center;gap:3px;color:var(--green);font-weight:600">' +
-            '<svg width="11" height="11" viewBox="0 0 24 24" style="stroke:var(--green);stroke-width:3;fill:none"><polyline points="20 6 9 17 4 12"/></svg> Erledigt</span>';
-    } else if (d.isRest) {
-      bot = '–';
-    }
-    let centerIcon;
-    if (d.dayDone && d.planDay) {
-      centerIcon = `<div class="n7-icon-wrap" style="background:var(--accent)">${checkIcon}</div>`;
-    } else if (d.isRest) {
-      centerIcon = `<div class="n7-icon-wrap">${restIcon}</div>`;
-    } else {
-      centerIcon = `<div class="n7-icon-wrap">${planIcon(d.planDay)}</div>`;
-    }
     const onclick = d.planDay && d.isToday && !d.dayDone
       ? `onclick="startWorkout('${d.planDay.id}')"` : '';
-    return `<div class="${cls}" ${onclick}>
-      <div class="n7-top">${topLabel ? `<span class="lbl">${topLabel}</span>`:''}${topMain}</div>
-      ${centerIcon}
+    return `<div class="${classes.join(' ')}" ${onclick}>
+      <div class="n7-top">${topLabel ? `<span class="lbl">${topLabel}</span>`:''}${d.label}</div>
       <div class="n7-mid">${mid}</div>
-      <div class="n7-bot">${bot}</div>
     </div>`;
   }).join('');
 }
@@ -1769,9 +1756,9 @@ function renderOvPRs() {
   const el = document.getElementById('ov-prs');
   const prs = getAllPRs();
   if (!prs.length) {
-    el.innerHTML = '<p style="font-size:11.5px;color:var(--text3);text-align:center;padding:14px 0">Noch keine PRs erreicht</p>'; return;
+    el.innerHTML = '<p style="font-size:13px;color:var(--text3);text-align:center;padding:14px 0">Noch keine PRs erreicht</p>'; return;
   }
-  const top = prs.slice(0,3);
+  const top = prs.slice(0,5);
   el.innerHTML = top.map(pr => {
     const ex = getEx(pr.exId);
     const muscleKey = ex ? ex.muscle : 'chest';
