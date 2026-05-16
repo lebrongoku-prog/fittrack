@@ -480,6 +480,24 @@ body.theme-history .hist-action-dd {
 .hero-v2-btn { align-self: flex-start; padding: 13px 22px; border-radius: 12px; background: var(--gradient); color: #fff; border: none; font-size: 15px; font-weight: 700; display: inline-flex; gap: 8px; align-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
 .hero-v2-btn svg { fill: #fff !important; }
 .hero-v2-btn:active { transform: scale(.97); }
+/* Wide button variant (used in Workouts hero) */
+.hero-v2-btn.stretch { align-self: stretch; justify-content: center; padding: 14px 22px; }
+
+/* Active-mode extras inside hero-v2 */
+.hero-v2-progress-label { font-size: 13px; color: var(--text2); margin-top: 2px; margin-bottom: 6px; }
+.hero-v2-progress-bar { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 14px; }
+.hero-v2-progress-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s; }
+.hero-v2-button-row { display: flex; gap: 8px; align-self: stretch; }
+.hero-v2-button-row .hero-v2-btn { flex: 1; padding: 13px 14px; align-self: auto; }
+.hero-v2-btn-danger {
+  padding: 13px 14px; border-radius: 12px; border: none;
+  background: var(--red-bg); color: var(--red);
+  font-size: 15px; font-weight: 700;
+  display: inline-flex; gap: 6px; align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.hero-v2-btn-danger svg { fill: var(--red); }
+.hero-v2-btn-danger:active { transform: scale(.97); }
 
 /* Dumbbell SVG container – small accent halo on white card */
 .hero-v2-art { width: 110px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative; }
@@ -539,9 +557,11 @@ body.theme-history .hist-action-dd {
 /* Rest day stays subtle: dashed outline, muted text */
 .next7-chip.rest .n7-mid { color: var(--text3); font-weight: 500; }
 .next7-chip.rest .n7-top { color: var(--text3); }
-/* Today highlight – stronger border + accent-colored */
-.next7-chip.today.training { border: 2px solid var(--accent); }
-.next7-chip.today.rest     { border: 2px solid var(--text2); border-style: solid; }
+/* Today / Selected highlight – stronger border + accent-colored */
+.next7-chip.today.training,
+.next7-chip.selected.training { border: 2px solid var(--accent); }
+.next7-chip.today.rest,
+.next7-chip.selected.rest     { border: 2px solid var(--text2); border-style: solid; }
 /* Completed: reduced opacity so it visually fades */
 .next7-chip.done { opacity: 0.55; }
 
@@ -875,7 +895,7 @@ body.theme-history .hist-action-dd {
     <!-- Hero v2 with dumbbell illustration -->
     <div class="hero-v2" id="ov-hero" onclick="heroAction()">
       <div class="hero-v2-text">
-        <div class="hero-v2-label" id="ov-hero-label">HEUTE / NÄCHSTE SESSION</div>
+        <div class="hero-v2-label" id="ov-hero-label">NÄCHSTE SESSION</div>
         <div class="hero-v2-title" id="ov-hero-title">–</div>
         <div class="hero-v2-meta" id="ov-hero-meta"></div>
         <button class="hero-v2-btn" id="ov-hero-btn">
@@ -1145,7 +1165,7 @@ body.theme-history .hist-action-dd {
     <span>Übersicht</span>
   </div>
   <div class="nav-btn" id="nav-workouts" onclick="showScreen('workouts')">
-    <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+    <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
     <span>Workouts</span>
   </div>
   <div class="nav-btn" id="nav-history" onclick="showScreen('history')">
@@ -1352,7 +1372,7 @@ const DEFAULT_WEEKPLAN = [
 // Muscle metadata (icons + colors for Verlauf and PR cards)
 const MUSCLE_META = {
   chest:     { name:'Brust',     color:'#0066ff', bg:'#e8f0ff', icon:'chest' },
-  back:      { name:'Rücken',    color:'#22c55e', bg:'#dcfce7', icon:'back' },
+  back:      { name:'Rücken',    color:'#4F46E5', bg:'#E0E7FF', icon:'back' },
   biceps:    { name:'Bizeps',    color:'#ef4444', bg:'#fee2e2', icon:'biceps' },
   triceps:   { name:'Trizeps',   color:'#ff8c00', bg:'#fff3e0', icon:'triceps' },
   shoulders: { name:'Schultern', color:'#06b6d4', bg:'#cffafe', icon:'shoulders' },
@@ -1642,11 +1662,12 @@ function renderOverview() {
 
   // ─ Hero card ─
   let heroDay = null;
-  let heroLabel = 'HEUTE / NÄCHSTE SESSION';
+  let heroLabel = 'NÄCHSTE SESSION';
   if (activeWo) {
     heroLabel = 'AKTIVES WORKOUT';
     heroDay = plan.find(d => d.id === activeWo.planDayId);
   } else if (todayEntry.planDay && !todayEntry.dayDone) {
+    heroLabel = 'NÄCHSTE SESSION';
     heroDay = todayEntry.planDay;
   } else {
     // Find next upcoming
@@ -1853,6 +1874,19 @@ function resumeWorkout() { showScreen('workouts'); }
 let timerInterval = null;
 let timerPaused = false;
 
+function heroDumbbellSvg() {
+  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="color:var(--accent)">
+    <rect x="36" y="55" width="48" height="10" rx="3" fill="currentColor" opacity="0.95"/>
+    <rect x="18" y="38" width="22" height="44" rx="5" fill="currentColor"/>
+    <rect x="20" y="40" width="6" height="40" rx="3" fill="#fff" opacity="0.4"/>
+    <rect x="10" y="44" width="12" height="32" rx="4" fill="currentColor" opacity="0.8" style="filter:brightness(0.7)"/>
+    <rect x="80" y="38" width="22" height="44" rx="5" fill="currentColor"/>
+    <rect x="82" y="40" width="6" height="40" rx="3" fill="#fff" opacity="0.4"/>
+    <rect x="98" y="44" width="12" height="32" rx="4" fill="currentColor" opacity="0.8" style="filter:brightness(0.7)"/>
+    <rect x="38" y="56" width="44" height="2" rx="1" fill="#fff" opacity="0.4"/>
+  </svg>`;
+}
+
 function buildSessionCard(active, planDay, selDay, isPreview) {
   const totalSets = active
     ? active.exercises.reduce((a,e)=>a+e.sets.length, 0)
@@ -1860,46 +1894,51 @@ function buildSessionCard(active, planDay, selDay, isPreview) {
   const exCount = active ? active.exercises.length : (planDay ? planDay.exercises.length : 0);
   const doneEx = active ? active.exercises.filter(e=>e.done).length : 0;
   const title = `${dayFullName(selDay.dayKey)}${planDay ? ' — '+planDay.name : ''}`;
+  const label = isPreview ? 'VORSCHAU' : 'AKTIVE SESSION';
+  const meta = `${exCount} Übungen • ${totalSets} Sätze`;
   const pct = !isPreview && active && active.exercises.length
     ? (doneEx / active.exercises.length * 100) : 0;
-  const pillText = isPreview ? 'VORSCHAU' : 'AKTIVE SESSION';
-  const progLine = isPreview
-    ? `<div class="scv2-progress-label">Geplant: ${exCount} Übungen • ${totalSets} Sätze</div>`
-    : `<div class="scv2-progress-label">${doneEx} von ${active.exercises.length} Übungen abgeschlossen</div>
-       <div class="scv2-progress-bar"><div class="scv2-progress-fill" style="width:${pct}%"></div></div>`;
+
+  const middle = isPreview ? '' : `
+    <div class="hero-v2-progress-label">${doneEx} von ${active.exercises.length} Übungen abgeschlossen</div>
+    <div class="hero-v2-progress-bar"><div class="hero-v2-progress-fill" style="width:${pct}%"></div></div>`;
+
   const buttons = isPreview
-    ? `<div class="scv2-buttons">
-         <button class="scv2-btn-primary" onclick="startWorkout('${planDay.id}')">
-           <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
-           Workout starten
-         </button>
-       </div>`
-    : `<div class="scv2-buttons">
-         <button class="scv2-btn-primary" onclick="scrollToNextExercise()">
+    ? `<button class="hero-v2-btn stretch" onclick="startWorkout('${planDay.id}')">
+         <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
+         Workout starten
+       </button>`
+    : `<div class="hero-v2-button-row">
+         <button class="hero-v2-btn" onclick="scrollToNextExercise()">
            <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
            Workout fortsetzen
          </button>
-         <button class="scv2-btn-secondary" onclick="confirmFinish()">
+         <button class="hero-v2-btn-danger" onclick="confirmFinish()">
            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>
            Beenden
          </button>
        </div>`;
-  return `<div class="session-card-v2">
-    <div class="scv2-pill">${pillText}</div>
-    <div class="scv2-row">
-      <div style="flex:1;min-width:0">
-        <div class="scv2-title">${title}</div>
-        <div class="scv2-meta">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span>${exCount} Übungen • ${totalSets} Sätze</span>
-        </div>
+
+  return `<div class="hero-v2">
+    <div class="hero-v2-text">
+      <div class="hero-v2-label">${label}</div>
+      <div class="hero-v2-title">${title}</div>
+      <div class="hero-v2-meta">
+        <span style="display:inline-flex;gap:5px;align-items:center">
+          <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
+          ${exCount} Übungen</span>
+        <span class="dot"></span>
+        <span style="display:inline-flex;gap:5px;align-items:center">
+          <svg viewBox="0 0 24 24"><polyline points="12 2 22 8 12 14 2 8 12 2"/><polyline points="2 12 12 18 22 12"/><polyline points="2 16 12 22 22 16"/></svg>
+          ${totalSets} Sätze</span>
       </div>
-      <div class="scv2-icon-circle">
-        <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6" stroke="currentColor" stroke-width="2" fill="none"/></svg>
-      </div>
+      ${middle}
+      ${buttons}
     </div>
-    ${progLine}
-    ${buttons}
+    <div class="hero-v2-art">
+      <div class="glow"></div>
+      ${heroDumbbellSvg()}
+    </div>
   </div>`;
 }
 
@@ -1944,38 +1983,16 @@ function selectWorkoutDay(idx) {
 function renderWorkoutWeekStrip() {
   ensureSelectedDayIdx();
   const days = getCurrentWeekDays();
-  const wp = DB.getWeekPlan();
-  const active = DB.getActive();
-  const activeDayId = active ? active.planDayId : null;
-  const dumbbellIcon = '<svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>';
-  const restIcon = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg>';
-  const checkIcon = '<svg viewBox="0 0 24 24" style="stroke:#fff;stroke-width:2.5"><polyline points="20 6 9 17 4 12"/></svg>';
-
   document.getElementById('wo-week-strip').innerHTML = days.map((d, i) => {
-    const selected = i === selectedWorkoutDayIdx;
-    const isActiveDay = activeDayId && wp[i].planDayId === activeDayId;
-    const cls = `next7-chip ${selected ? 'today' : ''} ${d.isRest ? 'rest' : ''}`;
+    const classes = ['next7-chip'];
+    if (i === selectedWorkoutDayIdx) classes.push('selected');
+    if (d.isRest) classes.push('rest'); else classes.push('training');
+    if (d.dayDone && d.planDay) classes.push('done');
     const topLabel = d.isToday ? 'Heute' : (d.isTomorrow ? 'Morgen' : '');
     const mid = d.planDay ? d.planDay.name : 'Ruhe';
-    let bot = d.time ? `${d.time} Uhr` : '–';
-    let centerIcon;
-    if (isActiveDay) {
-      centerIcon = `<div class="n7-icon-wrap" style="background:var(--accent)"><svg viewBox="0 0 24 24" style="stroke:#fff;fill:none;stroke-width:2"><polygon points="5 3 19 12 5 21" fill="#fff"/></svg></div>`;
-      bot = '<span style="color:var(--accent);font-weight:600">Läuft</span>';
-    } else if (d.dayDone && d.planDay) {
-      centerIcon = `<div class="n7-icon-wrap" style="background:var(--accent)">${checkIcon}</div>`;
-      bot = '<span style="display:inline-flex;align-items:center;gap:3px;color:var(--green);font-weight:600">' +
-            '<svg width="11" height="11" viewBox="0 0 24 24" style="stroke:var(--green);stroke-width:3;fill:none"><polyline points="20 6 9 17 4 12"/></svg> Erledigt</span>';
-    } else if (d.isRest) {
-      centerIcon = `<div class="n7-icon-wrap">${restIcon}</div>`;
-    } else {
-      centerIcon = `<div class="n7-icon-wrap">${dumbbellIcon}</div>`;
-    }
-    return `<div class="${cls}" onclick="selectWorkoutDay(${i})">
+    return `<div class="${classes.join(' ')}" onclick="selectWorkoutDay(${i})">
       <div class="n7-top">${topLabel ? `<span class="lbl">${topLabel}</span>`:''}${d.label}</div>
-      ${centerIcon}
       <div class="n7-mid">${mid}</div>
-      <div class="n7-bot">${bot}</div>
     </div>`;
   }).join('');
 }
@@ -2063,7 +2080,7 @@ function renderPreviewWorkout(planDay) {
         <div class="aex-v2-num">${ei+1}</div>
         <div class="aex-v2-info">
           <div class="aex-v2-name">${ex.name}</div>
-          <div class="aex-v2-target"><b>Ziel: ${pe.targetSets}×${pe.targetReps}</b> • <span style="color:var(--text3)">Letztes Gewicht:</span> <b>${targetW}</b></div>
+          <div class="aex-v2-target"><b>Ziel: ${pe.targetSets}×${pe.targetReps}</b></div>
           ${lastStr ? `<div class="aex-v2-last">${lastStr}</div>` : ''}
         </div>
       </div>
@@ -2132,7 +2149,7 @@ function renderActiveWorkout() {
         <div class="aex-v2-num">${ei+1}</div>
         <div class="aex-v2-info">
           <div class="aex-v2-name">${ex.name}</div>
-          <div class="aex-v2-target"><b>Ziel: ${ex.targetSets||3}×${ex.targetReps||8}</b> • <span style="color:var(--text3)">Letztes Gewicht:</span> <b>${targetW}</b></div>
+          <div class="aex-v2-target"><b>Ziel: ${ex.targetSets||3}×${ex.targetReps||8}</b></div>
           ${lastStr ? `<div class="aex-v2-last">${lastStr}</div>` : ''}
         </div>
         <label class="aex-v2-done ${ex.done?'checked':''}">
@@ -2330,12 +2347,12 @@ function finishWorkout() {
   stopTimer();
 
   closeModal('modal-finish');
-  selectedWorkoutDayIdx = null; // reset to today
 
   if (prs.length) showToast(`${prs.length} neuer PR! 🏆`);
   else showToast('Workout gespeichert! 💪');
 
-  showScreen('overview');
+  // Stay on the Workouts tab — re-render so it switches from Active → Vorschau
+  renderWorkoutsScreen();
 }
 
 function discardWorkout() {
@@ -2343,9 +2360,8 @@ function discardWorkout() {
   stopTimer();
   DB.clearActive();
   closeModal('modal-finish');
-  selectedWorkoutDayIdx = null;
   showToast('Workout verworfen');
-  showScreen('overview');
+  renderWorkoutsScreen();
 }
 
 // ═══════════════════════════════════════════════
