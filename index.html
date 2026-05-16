@@ -237,8 +237,8 @@ body.theme-history .hist-action-dd {
 /* ══════════════════════════════════════
    SCREEN: WORKOUTS (AKTIV)
 ══════════════════════════════════════ */
-/* Sticky workout header */
-#screen-workouts .ph { position: sticky; top: 0; background: var(--bg); z-index: 10; }
+/* Workout header scrolls with content */
+#screen-workouts .ph { background: transparent; }
 
 /* Session summary card */
 .session-card { margin: 12px 14px; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
@@ -462,10 +462,10 @@ body.theme-history .hist-action-dd {
 /* ─ Header subline with inline accent ─ */
 .ph-sub-accent { color: var(--accent); font-weight: 600; }
 
-/* ─ NEW Hero (Übersicht) – soft-accent card on themed gradient bg ─ */
+/* ─ NEW Hero (Übersicht & Workouts) – white card on themed gradient bg ─ */
 .hero-v2 {
   margin: 0 14px 12px; border-radius: 18px;
-  background: var(--accent-soft); box-shadow: var(--shadow-md);
+  background: var(--card); box-shadow: var(--shadow-md);
   padding: 18px 18px 20px; display: flex; gap: 12px; align-items: stretch;
   position: relative; overflow: hidden;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
@@ -483,12 +483,18 @@ body.theme-history .hist-action-dd {
 /* Wide button variant (used in Workouts hero) */
 .hero-v2-btn.stretch { align-self: stretch; justify-content: center; padding: 14px 22px; }
 
-/* Active-mode extras inside hero-v2 */
-.hero-v2-progress-label { font-size: 13px; color: var(--text2); margin-top: 2px; margin-bottom: 6px; }
+/* Active-mode: hero-v2 becomes column with top row + full-width bottom row */
+.hero-v2.active-mode { flex-direction: column; gap: 0; }
+.hero-v2.active-mode .hero-v2-top { display: flex; gap: 12px; align-items: stretch; width: 100%; }
+.hero-v2.active-mode .hero-v2-text { flex: 1; }
+.hero-v2.active-mode .hero-v2-text .hero-v2-meta { margin-bottom: 0; }
+.hero-v2.active-mode .hero-v2-bottom { width: 100%; margin-top: 14px; }
+.hero-v2-progress-label { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
 .hero-v2-progress-bar { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 14px; }
 .hero-v2-progress-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s; }
-.hero-v2-button-row { display: flex; gap: 8px; align-self: stretch; }
+.hero-v2-button-row { display: flex; gap: 8px; width: 100%; }
 .hero-v2-button-row .hero-v2-btn { flex: 1; padding: 13px 14px; align-self: auto; }
+.hero-v2-button-row .hero-v2-btn-danger { flex: 0 0 auto; min-width: 110px; }
 .hero-v2-btn-danger {
   padding: 13px 14px; border-radius: 12px; border: none;
   background: var(--red-bg); color: var(--red);
@@ -549,9 +555,9 @@ body.theme-history .hist-action-dd {
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   text-align: center;
 }
-/* Training day = filled with soft accent, solid border */
+/* Training day = white card with solid accent-tinted border */
 .next7-chip.training {
-  background: var(--accent-soft);
+  background: var(--card);
   border: 1.5px solid var(--card-accent-border);
 }
 /* Rest day stays subtle: dashed outline, muted text */
@@ -665,6 +671,13 @@ body.theme-history .hist-action-dd {
   display: flex; flex-direction: column; gap: 6px;
 }
 .ex-tab-v2.active { border-color: var(--c, var(--accent)); box-shadow: 0 0 0 1px var(--c, var(--accent)); }
+/* Done: green-tinted chip */
+.ex-tab-v2.done {
+  background: var(--green-bg);
+  border-color: var(--green);
+}
+.ex-tab-v2.done .ex-tab-v2-num { background: var(--green); }
+.ex-tab-v2.done .ex-tab-v2-name { color: var(--green); }
 .ex-tab-v2-num {
   width: 22px; height: 22px; border-radius: 50%;
   background: var(--c, var(--accent)); color: #fff;
@@ -673,16 +686,26 @@ body.theme-history .hist-action-dd {
 }
 .ex-tab-v2.muted .ex-tab-v2-num { background: var(--neutral); }
 .ex-tab-v2-name { font-size: 11.5px; font-weight: 600; line-height: 1.25; min-height: 28px; }
-.ex-tab-v2-prog { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
-.ex-tab-v2-prog-fill { height: 100%; background: var(--c, var(--accent)); border-radius: 2px; }
 
 /* Active exercise card – v2 with colored left border + notes panel */
 .aex-v2 {
   margin: 0 14px 12px; background: var(--card); border-radius: 14px;
   box-shadow: var(--shadow); overflow: hidden;
   border-left: 4px solid var(--c, var(--accent));
-  scroll-margin-top: 90px; /* leave room for sticky header */
+  scroll-margin-top: 20px;
+  transition: background 0.2s ease;
 }
+/* Done: entire card turns green-tinted */
+.aex-v2.done {
+  background: var(--green-bg);
+  border-left-color: var(--green);
+}
+.aex-v2.done .aex-v2-num     { background: var(--green); }
+.aex-v2.done .aex-v2-target  { color: var(--green); }
+.aex-v2.done .aex-v2-notes   { background: rgba(255,255,255,0.6); }
+.aex-v2.done .aex-v2-notes-lbl { color: var(--green); }
+.aex-v2.done .aex-v2-inp     { background: #fff; }
+.aex-v2.done .aex-v2-inp.done-inp { background: var(--green); color: #fff; border-color: var(--green); }
 .aex-v2-header { display: flex; align-items: flex-start; gap: 10px; padding: 14px 14px 10px; }
 .aex-v2-num {
   width: 32px; height: 32px; border-radius: 50%;
@@ -1899,45 +1922,61 @@ function buildSessionCard(active, planDay, selDay, isPreview) {
   const pct = !isPreview && active && active.exercises.length
     ? (doneEx / active.exercises.length * 100) : 0;
 
-  const middle = isPreview ? '' : `
-    <div class="hero-v2-progress-label">${doneEx} von ${active.exercises.length} Übungen abgeschlossen</div>
-    <div class="hero-v2-progress-bar"><div class="hero-v2-progress-fill" style="width:${pct}%"></div></div>`;
+  const metaHTML = `<div class="hero-v2-meta">
+    <span style="display:inline-flex;gap:5px;align-items:center">
+      <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
+      ${exCount} Übungen</span>
+    <span class="dot"></span>
+    <span style="display:inline-flex;gap:5px;align-items:center">
+      <svg viewBox="0 0 24 24"><polyline points="12 2 22 8 12 14 2 8 12 2"/><polyline points="2 12 12 18 22 12"/><polyline points="2 16 12 22 22 16"/></svg>
+      ${totalSets} Sätze</span>
+  </div>`;
 
-  const buttons = isPreview
-    ? `<button class="hero-v2-btn stretch" onclick="startWorkout('${planDay.id}')">
-         <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
-         Workout starten
-       </button>`
-    : `<div class="hero-v2-button-row">
-         <button class="hero-v2-btn" onclick="scrollToNextExercise()">
-           <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
-           Workout fortsetzen
-         </button>
-         <button class="hero-v2-btn-danger" onclick="confirmFinish()">
-           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>
-           Beenden
-         </button>
-       </div>`;
-
-  return `<div class="hero-v2">
-    <div class="hero-v2-text">
-      <div class="hero-v2-label">${label}</div>
-      <div class="hero-v2-title">${title}</div>
-      <div class="hero-v2-meta">
-        <span style="display:inline-flex;gap:5px;align-items:center">
-          <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
-          ${exCount} Übungen</span>
-        <span class="dot"></span>
-        <span style="display:inline-flex;gap:5px;align-items:center">
-          <svg viewBox="0 0 24 24"><polyline points="12 2 22 8 12 14 2 8 12 2"/><polyline points="2 12 12 18 22 12"/><polyline points="2 16 12 22 22 16"/></svg>
-          ${totalSets} Sätze</span>
+  if (isPreview) {
+    // Preview: classic hero-v2 row layout, single stretched button
+    return `<div class="hero-v2">
+      <div class="hero-v2-text">
+        <div class="hero-v2-label">${label}</div>
+        <div class="hero-v2-title">${title}</div>
+        ${metaHTML}
+        <button class="hero-v2-btn stretch" onclick="startWorkout('${planDay.id}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
+          Workout starten
+        </button>
       </div>
-      ${middle}
-      ${buttons}
+      <div class="hero-v2-art">
+        <div class="glow"></div>
+        ${heroDumbbellSvg()}
+      </div>
+    </div>`;
+  }
+
+  // Active mode: top row (text + dumbbell), bottom row (progress + buttons, full width)
+  return `<div class="hero-v2 active-mode">
+    <div class="hero-v2-top">
+      <div class="hero-v2-text">
+        <div class="hero-v2-label">${label}</div>
+        <div class="hero-v2-title">${title}</div>
+        ${metaHTML}
+      </div>
+      <div class="hero-v2-art">
+        <div class="glow"></div>
+        ${heroDumbbellSvg()}
+      </div>
     </div>
-    <div class="hero-v2-art">
-      <div class="glow"></div>
-      ${heroDumbbellSvg()}
+    <div class="hero-v2-bottom">
+      <div class="hero-v2-progress-label">${doneEx} von ${active.exercises.length} Übungen abgeschlossen</div>
+      <div class="hero-v2-progress-bar"><div class="hero-v2-progress-fill" style="width:${pct}%"></div></div>
+      <div class="hero-v2-button-row">
+        <button class="hero-v2-btn" onclick="scrollToNextExercise()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
+          Workout fortsetzen
+        </button>
+        <button class="hero-v2-btn-danger" onclick="confirmFinish()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>
+          Beenden
+        </button>
+      </div>
     </div>
   </div>`;
 }
@@ -2109,18 +2148,14 @@ function renderActiveWorkout() {
   const wo = DB.getActive();
   if (!wo) return;
 
-  // Tab bar (colored cards)
+  // Tab bar (colored cards) — no inner progress bar, "done" state turns the whole chip green
   document.getElementById('ex-tab-bar').innerHTML = wo.exercises.map((ex, i) => {
     const col = colorForExercise(ex);
-    const setsDone = ex.sets.filter(s=>s.done).length;
-    const setsTotal = ex.sets.length;
-    const setPct = setsTotal ? (setsDone/setsTotal*100) : 0;
     const isActive = !ex.done && i === wo.exercises.findIndex(e => !e.done);
-    return `<div class="ex-tab-v2 ${isActive?'active':''} ${ex.done?'muted':''}" id="tab-${i}"
+    return `<div class="ex-tab-v2 ${isActive?'active':''} ${ex.done?'done':''}" id="tab-${i}"
               style="--c:${col.c}" onclick="scrollToEx(${i})">
       <div class="ex-tab-v2-num">${i+1}</div>
       <div class="ex-tab-v2-name">${ex.name}</div>
-      <div class="ex-tab-v2-prog"><div class="ex-tab-v2-prog-fill" style="width:${setPct}%"></div></div>
     </div>`;
   }).join('');
 
@@ -2144,7 +2179,7 @@ function renderActiveWorkout() {
               onchange="updateSet(${ei},${si},'reps',this.value)" ${s.done?'disabled':''}>`
     ).join('');
 
-    return `<div class="aex-v2" id="aex-${ei}" style="--c:${col.c};--c-bg:${col.bg}">
+    return `<div class="aex-v2 ${ex.done?'done':''}" id="aex-${ei}" style="--c:${col.c};--c-bg:${col.bg}">
       <div class="aex-v2-header">
         <div class="aex-v2-num">${ei+1}</div>
         <div class="aex-v2-info">
