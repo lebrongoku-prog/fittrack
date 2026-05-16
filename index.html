@@ -483,18 +483,17 @@ body.theme-history .hist-action-dd {
 /* Wide button variant (used in Workouts hero) */
 .hero-v2-btn.stretch { align-self: stretch; justify-content: center; padding: 14px 22px; }
 
-/* Column layout: both Vorschau and Aktiv keep the same height */
+/* Column layout: both Vorschau and Aktiv keep the same height.
+   Same min-height in Übersicht-Hero and Workouts-Hero so both tabs match. */
 .hero-v2.col-layout {
   flex-direction: column; gap: 14px;
   justify-content: space-between;
+  min-height: 250px;
 }
 .hero-v2.col-layout .hero-v2-top { display: flex; gap: 12px; align-items: stretch; width: 100%; }
 .hero-v2.col-layout .hero-v2-text { flex: 1; min-width: 0; }
 .hero-v2.col-layout .hero-v2-text .hero-v2-meta { margin-bottom: 0; }
 .hero-v2.col-layout .hero-v2-bottom { width: 100%; }
-
-/* Workouts session card: pin a min-height so Vorschau ↔ Aktiv don't resize */
-#wo-session-card-wrap .hero-v2 { min-height: 250px; }
 
 .hero-v2-progress-label { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
 .hero-v2-progress-bar { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 14px; }
@@ -557,7 +556,7 @@ body.theme-history .hist-action-dd {
 .next7-strip::-webkit-scrollbar { display: none; }
 .next7-chip {
   flex-shrink: 0; min-width: 86px; padding: 12px 10px; border-radius: 12px;
-  background: transparent; border: 1.5px dashed var(--border);
+  background: transparent; border: 2px dashed var(--border);
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   text-align: center;
@@ -565,19 +564,17 @@ body.theme-history .hist-action-dd {
 /* Training day = white card with solid accent-tinted border */
 .next7-chip.training {
   background: var(--card);
-  border: 1.5px solid var(--card-accent-border);
+  border: 2px solid var(--card-accent-border);
 }
 /* Rest day stays subtle: dashed outline, muted text */
 .next7-chip.rest .n7-mid { color: var(--text3); font-weight: 500; }
 .next7-chip.rest .n7-top { color: var(--text3); }
-/* Today / Selected highlight – stronger border + soft accent fill */
-.next7-chip.today.training,
-.next7-chip.selected.training {
-  border: 2px solid var(--accent);
-  background: var(--accent-soft);
-}
-.next7-chip.today.rest,
-.next7-chip.selected.rest     { border: 2px solid var(--text2); border-style: solid; }
+/* Today: soft accent fill + accent border (lighter emphasis) */
+.next7-chip.today.training { border: 2px solid var(--accent); background: var(--accent-soft); }
+.next7-chip.today.rest     { border: 2px solid var(--text2); }
+/* Selected (clicked, not today): red border only */
+.next7-chip.selected.training,
+.next7-chip.selected.rest  { border: 2px solid var(--red); }
 /* Completed: reduced opacity so it visually fades */
 .next7-chip.done { opacity: 0.55; }
 
@@ -676,7 +673,7 @@ body.theme-history .hist-action-dd {
 .ex-tab-v2-bar::-webkit-scrollbar { display: none; }
 .ex-tab-v2 {
   flex-shrink: 0; width: 110px; padding: 10px 10px 12px; border-radius: 14px;
-  background: var(--card); border: 1.5px solid var(--border);
+  background: var(--c-bg, var(--card)); border: 1.5px solid var(--border);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   display: flex; flex-direction: column; gap: 6px;
 }
@@ -697,9 +694,9 @@ body.theme-history .hist-action-dd {
 .ex-tab-v2.muted .ex-tab-v2-num { background: var(--neutral); }
 .ex-tab-v2-name { font-size: 11.5px; font-weight: 600; line-height: 1.25; min-height: 28px; color: var(--c, var(--text)); }
 
-/* Active exercise card – v2 with colored left border + notes panel */
+/* Active exercise card – v2 with colored left border + light muscle-tint bg */
 .aex-v2 {
-  margin: 0 14px 12px; background: var(--card); border-radius: 14px;
+  margin: 0 14px 12px; background: var(--c-bg, var(--card)); border-radius: 14px;
   box-shadow: var(--shadow); overflow: hidden;
   border-left: 4px solid var(--c, var(--accent));
   scroll-margin-top: 20px;
@@ -751,7 +748,7 @@ body.theme-history .hist-action-dd {
   padding: 10px 12px;
   display: flex; flex-direction: column;
 }
-.aex-v2-notes-lbl { font-size: 12px; font-weight: 700; color: var(--c, var(--accent)); margin-bottom: 4px; }
+.aex-v2-notes-lbl { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 4px; }
 .aex-v2-notes-area {
   flex: 1; min-height: 60px; background: transparent; border: none;
   font-size: 12px; color: var(--text2); line-height: 1.4;
@@ -925,38 +922,33 @@ body.theme-history .hist-action-dd {
       </div>
     </div>
 
-    <!-- Hero v2 with dumbbell illustration -->
-    <div class="hero-v2" id="ov-hero" onclick="heroAction()">
-      <div class="hero-v2-text">
-        <div class="hero-v2-label" id="ov-hero-label">NÄCHSTE SESSION</div>
-        <div class="hero-v2-title" id="ov-hero-title">–</div>
-        <div class="hero-v2-meta" id="ov-hero-meta"></div>
+    <!-- Hero v2 with dumbbell illustration – col-layout (matches Workouts hero) -->
+    <div class="hero-v2 col-layout" id="ov-hero" onclick="heroAction()">
+      <div class="hero-v2-top">
+        <div class="hero-v2-text">
+          <div class="hero-v2-label" id="ov-hero-label">NÄCHSTE SESSION</div>
+          <div class="hero-v2-title" id="ov-hero-title">–</div>
+          <div class="hero-v2-meta" id="ov-hero-meta"></div>
+        </div>
+        <div class="hero-v2-art">
+          <div class="glow"></div>
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="color:var(--accent)">
+            <rect x="36" y="55" width="48" height="10" rx="3" fill="currentColor" opacity="0.95"/>
+            <rect x="18" y="38" width="22" height="44" rx="5" fill="currentColor"/>
+            <rect x="20" y="40" width="6" height="40" rx="3" fill="#fff" opacity="0.4"/>
+            <rect x="10" y="44" width="12" height="32" rx="4" fill="currentColor" opacity="0.8" style="filter:brightness(0.7)"/>
+            <rect x="80" y="38" width="22" height="44" rx="5" fill="currentColor"/>
+            <rect x="82" y="40" width="6" height="40" rx="3" fill="#fff" opacity="0.4"/>
+            <rect x="98" y="44" width="12" height="32" rx="4" fill="currentColor" opacity="0.8" style="filter:brightness(0.7)"/>
+            <rect x="38" y="56" width="44" height="2" rx="1" fill="#fff" opacity="0.4"/>
+          </svg>
+        </div>
+      </div>
+      <div class="hero-v2-bottom">
         <button class="hero-v2-btn" id="ov-hero-btn">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
           <span id="ov-hero-btn-label">Workout starten</span>
         </button>
-      </div>
-      <div class="hero-v2-art">
-        <div class="glow"></div>
-        <!-- 3D-style dumbbell SVG – uses currentColor so it matches the active tab accent -->
-        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="color:var(--accent)">
-          <!-- bar -->
-          <rect x="36" y="55" width="48" height="10" rx="3" fill="currentColor" opacity="0.95"/>
-          <!-- left weight body -->
-          <rect x="18" y="38" width="22" height="44" rx="5" fill="currentColor"/>
-          <!-- left highlight -->
-          <rect x="20" y="40" width="6" height="40" rx="3" fill="#fff" opacity="0.4"/>
-          <!-- left cap -->
-          <rect x="10" y="44" width="12" height="32" rx="4" fill="currentColor" opacity="0.8" style="filter:brightness(0.7)"/>
-          <!-- right weight body -->
-          <rect x="80" y="38" width="22" height="44" rx="5" fill="currentColor"/>
-          <!-- right highlight -->
-          <rect x="82" y="40" width="6" height="40" rx="3" fill="#fff" opacity="0.4"/>
-          <!-- right cap -->
-          <rect x="98" y="44" width="12" height="32" rx="4" fill="currentColor" opacity="0.8" style="filter:brightness(0.7)"/>
-          <!-- highlight on bar -->
-          <rect x="38" y="56" width="44" height="2" rx="1" fill="#fff" opacity="0.4"/>
-        </svg>
       </div>
     </div>
 
@@ -2029,7 +2021,9 @@ function renderWorkoutWeekStrip() {
   const days = getCurrentWeekDays();
   document.getElementById('wo-week-strip').innerHTML = days.map((d, i) => {
     const classes = ['next7-chip'];
-    if (i === selectedWorkoutDayIdx) classes.push('selected');
+    if (d.isToday) classes.push('today');
+    // Selected only when user actively picked a non-today day
+    if (i === selectedWorkoutDayIdx && !d.isToday) classes.push('selected');
     if (d.isRest) classes.push('rest'); else classes.push('training');
     if (d.dayDone && d.planDay) classes.push('done');
     const topLabel = d.isToday ? 'Heute' : (d.isTomorrow ? 'Morgen' : '');
@@ -2104,10 +2098,9 @@ function renderPreviewWorkout(planDay) {
     const ex = getEx(pe.exId);
     if (!ex) return '';
     const col = colorForExercise({ exId: pe.exId });
-    return `<div class="ex-tab-v2" style="--c:${col.c}" onclick="scrollToEx(${i})">
+    return `<div class="ex-tab-v2" style="--c:${col.c};--c-bg:${col.bg}" onclick="scrollToEx(${i})">
       <div class="ex-tab-v2-num">${i+1}</div>
       <div class="ex-tab-v2-name">${ex.name}</div>
-      <div class="ex-tab-v2-prog"><div class="ex-tab-v2-prog-fill" style="width:0%"></div></div>
     </div>`;
   }).join('');
 
@@ -2158,7 +2151,7 @@ function renderActiveWorkout() {
     const col = colorForExercise(ex);
     const isActive = !ex.done && i === wo.exercises.findIndex(e => !e.done);
     return `<div class="ex-tab-v2 ${isActive?'active':''} ${ex.done?'done':''}" id="tab-${i}"
-              style="--c:${col.c}" onclick="scrollToEx(${i})">
+              style="--c:${col.c};--c-bg:${col.bg}" onclick="scrollToEx(${i})">
       <div class="ex-tab-v2-num">${i+1}</div>
       <div class="ex-tab-v2-name">${ex.name}</div>
     </div>`;
