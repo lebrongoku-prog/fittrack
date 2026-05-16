@@ -483,17 +483,24 @@ body.theme-history .hist-action-dd {
 /* Wide button variant (used in Workouts hero) */
 .hero-v2-btn.stretch { align-self: stretch; justify-content: center; padding: 14px 22px; }
 
-/* Active-mode: hero-v2 becomes column with top row + full-width bottom row */
-.hero-v2.active-mode { flex-direction: column; gap: 0; }
-.hero-v2.active-mode .hero-v2-top { display: flex; gap: 12px; align-items: stretch; width: 100%; }
-.hero-v2.active-mode .hero-v2-text { flex: 1; }
-.hero-v2.active-mode .hero-v2-text .hero-v2-meta { margin-bottom: 0; }
-.hero-v2.active-mode .hero-v2-bottom { width: 100%; margin-top: 14px; }
+/* Column layout: both Vorschau and Aktiv keep the same height */
+.hero-v2.col-layout {
+  flex-direction: column; gap: 14px;
+  justify-content: space-between;
+}
+.hero-v2.col-layout .hero-v2-top { display: flex; gap: 12px; align-items: stretch; width: 100%; }
+.hero-v2.col-layout .hero-v2-text { flex: 1; min-width: 0; }
+.hero-v2.col-layout .hero-v2-text .hero-v2-meta { margin-bottom: 0; }
+.hero-v2.col-layout .hero-v2-bottom { width: 100%; }
+
+/* Workouts session card: pin a min-height so Vorschau ↔ Aktiv don't resize */
+#wo-session-card-wrap .hero-v2 { min-height: 250px; }
+
 .hero-v2-progress-label { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
 .hero-v2-progress-bar { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 14px; }
 .hero-v2-progress-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s; }
 .hero-v2-button-row { display: flex; gap: 8px; width: 100%; }
-.hero-v2-button-row .hero-v2-btn { flex: 1; padding: 13px 14px; align-self: auto; }
+.hero-v2-button-row .hero-v2-btn { flex: 1; padding: 13px 14px; align-self: auto; justify-content: center; }
 .hero-v2-button-row .hero-v2-btn-danger { flex: 0 0 auto; min-width: 110px; }
 .hero-v2-btn-danger {
   padding: 13px 14px; border-radius: 12px; border: none;
@@ -563,9 +570,12 @@ body.theme-history .hist-action-dd {
 /* Rest day stays subtle: dashed outline, muted text */
 .next7-chip.rest .n7-mid { color: var(--text3); font-weight: 500; }
 .next7-chip.rest .n7-top { color: var(--text3); }
-/* Today / Selected highlight – stronger border + accent-colored */
+/* Today / Selected highlight – stronger border + soft accent fill */
 .next7-chip.today.training,
-.next7-chip.selected.training { border: 2px solid var(--accent); }
+.next7-chip.selected.training {
+  border: 2px solid var(--accent);
+  background: var(--accent-soft);
+}
 .next7-chip.today.rest,
 .next7-chip.selected.rest     { border: 2px solid var(--text2); border-style: solid; }
 /* Completed: reduced opacity so it visually fades */
@@ -685,7 +695,7 @@ body.theme-history .hist-action-dd {
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .ex-tab-v2.muted .ex-tab-v2-num { background: var(--neutral); }
-.ex-tab-v2-name { font-size: 11.5px; font-weight: 600; line-height: 1.25; min-height: 28px; }
+.ex-tab-v2-name { font-size: 11.5px; font-weight: 600; line-height: 1.25; min-height: 28px; color: var(--c, var(--text)); }
 
 /* Active exercise card – v2 with colored left border + notes panel */
 .aex-v2 {
@@ -701,8 +711,8 @@ body.theme-history .hist-action-dd {
   border-left-color: var(--green);
 }
 .aex-v2.done .aex-v2-num     { background: var(--green); }
+.aex-v2.done .aex-v2-name    { color: var(--green); }
 .aex-v2.done .aex-v2-target  { color: var(--green); }
-.aex-v2.done .aex-v2-notes   { background: rgba(255,255,255,0.6); }
 .aex-v2.done .aex-v2-notes-lbl { color: var(--green); }
 .aex-v2.done .aex-v2-inp     { background: #fff; }
 .aex-v2.done .aex-v2-inp.done-inp { background: var(--green); color: #fff; border-color: var(--green); }
@@ -714,7 +724,7 @@ body.theme-history .hist-action-dd {
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .aex-v2-info { flex: 1; min-width: 0; }
-.aex-v2-name { font-size: 16px; font-weight: 700; }
+.aex-v2-name { font-size: 16px; font-weight: 700; color: var(--c, var(--text)); }
 .aex-v2-target { font-size: 12px; color: var(--c, var(--accent)); margin-top: 3px; font-weight: 500; }
 .aex-v2-target b { font-weight: 700; }
 .aex-v2-last { font-size: 12px; color: var(--text3); margin-top: 1px; }
@@ -737,7 +747,7 @@ body.theme-history .hist-action-dd {
 
 .aex-v2-notes {
   width: 132px; flex-shrink: 0;
-  background: var(--c-bg, var(--accent-bg)); border-radius: 12px;
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
   padding: 10px 12px;
   display: flex; flex-direction: column;
 }
@@ -747,7 +757,7 @@ body.theme-history .hist-action-dd {
   font-size: 12px; color: var(--text2); line-height: 1.4;
   resize: none; font-family: inherit; padding: 0;
 }
-.aex-v2-notes-area::placeholder { color: var(--c, var(--accent)); opacity: 0.55; }
+.aex-v2-notes-area::placeholder { color: var(--text3); }
 .aex-v2-notes-area:focus { outline: none; }
 
 .aex-v2-done {
@@ -1932,38 +1942,33 @@ function buildSessionCard(active, planDay, selDay, isPreview) {
       ${totalSets} Sätze</span>
   </div>`;
 
+  const topRow = `<div class="hero-v2-top">
+    <div class="hero-v2-text">
+      <div class="hero-v2-label">${label}</div>
+      <div class="hero-v2-title">${title}</div>
+      ${metaHTML}
+    </div>
+    <div class="hero-v2-art">
+      <div class="glow"></div>
+      ${heroDumbbellSvg()}
+    </div>
+  </div>`;
+
   if (isPreview) {
-    // Preview: classic hero-v2 row layout, single stretched button
-    return `<div class="hero-v2">
-      <div class="hero-v2-text">
-        <div class="hero-v2-label">${label}</div>
-        <div class="hero-v2-title">${title}</div>
-        ${metaHTML}
+    return `<div class="hero-v2 col-layout">
+      ${topRow}
+      <div class="hero-v2-bottom">
         <button class="hero-v2-btn stretch" onclick="startWorkout('${planDay.id}')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
           Workout starten
         </button>
       </div>
-      <div class="hero-v2-art">
-        <div class="glow"></div>
-        ${heroDumbbellSvg()}
-      </div>
     </div>`;
   }
 
-  // Active mode: top row (text + dumbbell), bottom row (progress + buttons, full width)
-  return `<div class="hero-v2 active-mode">
-    <div class="hero-v2-top">
-      <div class="hero-v2-text">
-        <div class="hero-v2-label">${label}</div>
-        <div class="hero-v2-title">${title}</div>
-        ${metaHTML}
-      </div>
-      <div class="hero-v2-art">
-        <div class="glow"></div>
-        ${heroDumbbellSvg()}
-      </div>
-    </div>
+  // Active mode — same outer structure as preview, expanded bottom block
+  return `<div class="hero-v2 col-layout active-mode">
+    ${topRow}
     <div class="hero-v2-bottom">
       <div class="hero-v2-progress-label">${doneEx} von ${active.exercises.length} Übungen abgeschlossen</div>
       <div class="hero-v2-progress-bar"><div class="hero-v2-progress-fill" style="width:${pct}%"></div></div>
@@ -2211,10 +2216,10 @@ function renderActiveWorkout() {
                     onchange="updateNotes(${ei},this.value)">${ex.notes||''}</textarea>
         </div>
       </div>
-      <div class="aex-v2-actions">
+      ${ex.done ? '' : `<div class="aex-v2-actions">
         <button class="btn btn-ghost btn-sm" onclick="addSet(${ei})">+ Satz</button>
         ${ex.sets.length > 1 ? `<button class="btn btn-ghost btn-sm" onclick="removeSet(${ei})">− Satz</button>` : ''}
-      </div>
+      </div>`}
     </div>`;
   }).join('');
 }
