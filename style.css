@@ -1300,24 +1300,26 @@ body.theme-history .hist-action-dd {
    iPhone landscape (≤932px) bleibt im Mobile-Layout.
    ═══════════════════════════════════════════════ */
 @media (min-width: 1024px) {
-  /* Screen-Inhalt auf 1200px begrenzen + zentrieren (sonst zu viel Leere auf Ultra-Wide) */
-  .screen {
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
-  }
+  /* Content nutzt die volle Bildschirmbreite (keine max-width-Begrenzung) */
 
-  /* ÜBERSICHT — 2-Spalten via Grid + class/id-based placement */
+  /* ÜBERSICHT — Hero volle Breite, darunter 2-Spalten */
   #screen-overview.active {
     display: grid;
     grid-template-columns: 1fr 1fr;
     column-gap: 0;
     align-items: start;
   }
-  #screen-overview.active > .ph { grid-column: 1 / -1; }
-  #screen-overview.active > #ov-hero-wrap,
+  #screen-overview.active > .ph,
+  #screen-overview.active > #ov-hero-wrap { grid-column: 1 / -1; }
   #screen-overview.active > .program-card { grid-column: 1; }
   #screen-overview.active > .plan-section-card { grid-column: 2; }
+
+  /* Wochenplan-Kacheln verteilen sich gleichmäßig über die verfügbare Breite
+     (statt 86px-Min-Width und linksbündig zu klemmen) */
+  .next7-strip > .next7-chip {
+    flex: 1;
+    min-width: 100px;
+  }
 
   /* WORKOUTS — Übungs-Liste 2-spaltig */
   #active-ex-list {
