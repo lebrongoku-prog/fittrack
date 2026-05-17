@@ -1658,13 +1658,29 @@ let editingDayIdx = null;
 
 function renderMehr() {
   const plan = DB.getPlan();
+  // Map: planDayId → [Wochentag-Labels, in Reihenfolge Mo-So]
+  // Wird genutzt, um aktive Trainingstage visuell hervorzuheben
+  const weekPlan = DB.getWeekPlan();
+  const dayLabelsFor = {};
+  weekPlan.forEach(w => {
+    if (w.planDayId) {
+      if (!dayLabelsFor[w.planDayId]) dayLabelsFor[w.planDayId] = [];
+      dayLabelsFor[w.planDayId].push(w.label);
+    }
+  });
   document.getElementById('mehr-plan-list').innerHTML = plan.map((d, i) => {
     const setCount = d.exercises.reduce((a,e) => a+e.targetSets, 0);
-    return `<div class="plan-day-row">
+    const usedOn = dayLabelsFor[d.id] || [];
+    const activeCls = usedOn.length ? ' active' : '';
+    const chips = usedOn.length
+      ? `<div class="pdr-days">${usedOn.map(lbl => `<span class="pdr-day-chip">${lbl}</span>`).join('')}</div>`
+      : '';
+    return `<div class="plan-day-row${activeCls}">
       <div class="pdr-info" onclick="openPlanDayModal(${i})" style="cursor:pointer">
         <div class="pdr-name">${pd(d.name)}</div>
         <div class="pdr-sub">${d.exercises.length} Übungen • ${setCount} Sätze</div>
       </div>
+      ${chips}
       <div class="plan-day-actions">
         <button onclick="event.stopPropagation();openPlanDayModal(${i})" title="Bearbeiten">✎</button>
         <button class="del" onclick="event.stopPropagation();deletePlanDay(${i})" title="Löschen">✕</button>
