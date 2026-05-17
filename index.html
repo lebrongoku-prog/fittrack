@@ -331,6 +331,16 @@
           <div class="mehr-row-action">›</div>
         </div>
         <input type="file" id="import-input" accept=".json" style="display:none" onchange="importData(event)">
+        <div class="divider"></div>
+        <div class="mehr-row" onclick="document.getElementById('plan-import-input').click()" style="cursor:pointer">
+          <div class="mehr-row-icon" style="background:#e8eaff">📋</div>
+          <div class="mehr-row-info">
+            <div class="mehr-row-label">Trainingsplan importieren</div>
+            <div class="mehr-row-sub">Plan-JSON einlesen (Trainingstage + Übungen)</div>
+          </div>
+          <div class="mehr-row-action">›</div>
+        </div>
+        <input type="file" id="plan-import-input" accept=".json" style="display:none" onchange="importTrainingPlan(event)">
       </div>
     </div>
 
@@ -542,6 +552,22 @@
     <div class="sheet-handle"></div>
     <div class="sheet-title" id="hist-detail-title">Session</div>
     <div class="sheet-body" id="hist-detail-body"></div>
+  </div>
+</div>
+
+<!-- Trainingsplan-Import Entscheidung -->
+<div id="modal-plan-import" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Trainingsplan importieren?</div>
+    <div class="sheet-body">
+      <p id="plan-import-summary" style="font-size:14px;color:var(--text2);margin-bottom:18px;line-height:1.5"></p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-primary btn-full" onclick="confirmPlanImport('replace')">Bestehenden Plan ersetzen</button>
+        <button class="btn btn-outline btn-full" onclick="confirmPlanImport('append')">An bestehenden Plan anhängen</button>
+        <button class="btn btn-ghost btn-full" onclick="cancelPlanImport()">Abbrechen</button>
+      </div>
+    </div>
   </div>
 </div>
 

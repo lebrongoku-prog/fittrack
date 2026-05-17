@@ -578,12 +578,17 @@ function ensureTimerActive() {
 // ═══════════════════════════════════════════════
 
 // Build sets for a fresh workout exercise: copy from last workout per-set, fall back to targetReps
-function buildSetsForExercise(exId, targetSets, targetReps) {
+function buildSetsForExercise(exId, targetSets, targetReps, targetWeight) {
   const last = getLastExData(exId);
   return Array.from({length: targetSets}, (_, idx) => {
     const lastSet = last && last.sets && last.sets[idx];
+    // Gewichts-Fallback-Kette: letzter Satz → letztes Workout max → Plan-Zielgewicht → leer
+    let weight = '';
+    if (lastSet && lastSet.weight) weight = String(lastSet.weight);
+    else if (last) weight = String(last.maxWeight);
+    else if (targetWeight) weight = String(targetWeight);
     return {
-      weight: lastSet && lastSet.weight ? String(lastSet.weight) : (last ? String(last.maxWeight) : ''),
+      weight,
       reps:   lastSet && lastSet.reps   ? String(lastSet.reps)   : String(targetReps),
       done: false,
     };
@@ -614,7 +619,7 @@ function _doStartWorkout(dayId) {
       name: ex.name,
       targetSets: pe.targetSets,
       targetReps: pe.targetReps,
-      sets: buildSetsForExercise(pe.exId, pe.targetSets, pe.targetReps),
+      sets: buildSetsForExercise(pe.exId, pe.targetSets, pe.targetReps, pe.targetWeight),
       notes: '',
       done: false
     };
@@ -2440,6 +2445,185 @@ function importData(event) {
     } catch { showToast('Fehler beim Lesen der Datei'); event.target.value=''; }
   };
   reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════
+// TRAININGSPLAN-IMPORT (strukturiertes JSON)
+// ═══════════════════════════════════════════════
+// Format: { format: 'fittrack-plan-import', version: 1, program?: {...}, trainingDays: [...] }
+// Erlaubt: Plan ersetzen oder anhängen, Programm-Daten optional übernehmen,
+//          existierende Übungen werden by-name wiederverwendet (case-insensitive).
+
+const VALID_MUSCLES = ['chest','back','shoulders','biceps','triceps','legs','core'];
+
+let pendingPlanImport = null;
+
+function importTrainingPlan(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    event.target.value = '';
+    let data;
+    try { data = JSON.parse(e.target.result); }
+    catch { showToast('Datei ist kein gültiges JSON'); return; }
+    if (data.format !== 'fittrack-plan-import') {
+      showToast('Falsches Format — erwartet "fittrack-plan-import"');
+      return;
+    }
+    if (!Array.isArray(data.trainingDays) || data.trainingDays.length === 0) {
+      showToast('Import enthält keine Trainingstage');
+      return;
+    }
+    // Quick-Validate jedes Trainings-Tag
+    for (const day of data.trainingDays) {
+      if (!day.name || typeof day.name !== 'string') {
+        showToast('Trainingstag ohne Name gefunden — Import abgebrochen');
+        return;
+      }
+      if (!Array.isArray(day.exercises)) {
+        showToast(`Trainingstag "${day.name}" hat keine Übungs-Liste`);
+        return;
+      }
+    }
+    pendingPlanImport = data;
+    // Summary aufbauen
+    const dayCount = data.trainingDays.length;
+    const totalEx = data.trainingDays.reduce((s, d) => s + d.exercises.length, 0);
+    const progInfo = data.program
+      ? `<br><br>Enthält außerdem Programm-Daten ("${escapeHtml(data.program.name || 'unbenannt')}", ${data.program.weeksTotal || '?'} Wochen).`
+      : '';
+    document.getElementById('plan-import-summary').innerHTML =
+      `<strong>${dayCount}</strong> Trainingstage mit insgesamt <strong>${totalEx}</strong> Übungen werden importiert.${progInfo}<br><br>Wie soll mit deinem bestehenden Plan verfahren werden?`;
+    openModal('modal-plan-import');
+  };
+  reader.readAsText(file);
+}
+
+function cancelPlanImport() {
+  closeModal('modal-plan-import');
+  pendingPlanImport = null;
+}
+
+function confirmPlanImport(mode) {
+  closeModal('modal-plan-import');
+  if (!pendingPlanImport) return;
+  if (pendingPlanImport.program) {
+    // Step 2: Programm-Daten übernehmen?
+    setTimeout(() => {
+      confirmAction(
+        'Programm-Daten übernehmen?',
+        `Möchtest du Name, Wochenanzahl und Startdatum aus dem Import übernehmen? Bei "Abbrechen" werden nur die Trainingstage importiert (dein aktuelles Programm bleibt erhalten).`,
+        () => applyPlanImport(mode, true),
+        {
+          confirmLabel: 'Programm übernehmen',
+          onCancel: () => applyPlanImport(mode, false),
+        }
+      );
+    }, 100);
+  } else {
+    applyPlanImport(mode, false);
+  }
+}
+
+function applyPlanImport(mode, useProgramData) {
+  const data = pendingPlanImport;
+  pendingPlanImport = null;
+  if (!data) return;
+
+  const exs = DB.getExercises();
+  const existingPlan = DB.getPlan();
+  let newExCount = 0;
+  let reusedExCount = 0;
+
+  // Hilfsfunktion: existierende Übung by-name finden (case-insensitive)
+  const findExByName = (name) => {
+    const norm = name.trim().toLowerCase();
+    return exs.find(e => e.name.trim().toLowerCase() === norm);
+  };
+
+  // ID-Generator mit Kollisionsschutz (Date.now() + Counter)
+  let _idCounter = 0;
+  const genId = (prefix) => `${prefix}_${Date.now()}_${_idCounter++}`;
+
+  // Aus dem Import die neuen Trainingstage bauen
+  const importedDays = data.trainingDays.map(day => {
+    const exercises = (day.exercises || []).map(ie => {
+      // Existierende Übung wiederverwenden oder neu anlegen
+      let ex = findExByName(ie.name);
+      if (ex) {
+        reusedExCount++;
+      } else {
+        // Neue Übung
+        const muscle = VALID_MUSCLES.includes(ie.muscle) ? ie.muscle : inferMuscleFromName(ie.name);
+        const category = muscle === 'legs' ? 'legs'
+                       : (muscle === 'back' || muscle === 'biceps') ? 'pull'
+                       : 'push';
+        ex = {
+          id: genId('custom'),
+          name: ie.name.trim(),
+          muscle,
+          category,
+          isCustom: true,
+          notes: (typeof ie.notes === 'string' ? ie.notes : ''),
+        };
+        exs.push(ex);
+        newExCount++;
+      }
+      const planEx = {
+        exId: ex.id,
+        targetSets: Number.isFinite(+ie.targetSets) ? +ie.targetSets : 3,
+        targetReps: Number.isFinite(+ie.targetReps) ? +ie.targetReps : 8,
+      };
+      if (Number.isFinite(+ie.targetWeight) && +ie.targetWeight > 0) {
+        planEx.targetWeight = +ie.targetWeight;
+      }
+      return planEx;
+    });
+    return {
+      id: genId('day'),
+      name: day.name.trim(),
+      color: null,
+      exercises,
+    };
+  });
+
+  // Plan zusammenfügen
+  const newPlan = mode === 'replace' ? importedDays : [...existingPlan, ...importedDays];
+
+  // Speichern (DB.save* löst auto Drive-Sync aus)
+  DB.saveExercises(exs);
+  DB.savePlan(newPlan);
+
+  // Programm-Daten ggf. übernehmen
+  if (useProgramData && data.program) {
+    const prog = DB.getProgram();
+    if (data.program.name) prog.name = String(data.program.name).trim();
+    if (Number.isFinite(+data.program.weeksTotal) && +data.program.weeksTotal > 0) {
+      prog.weeksTotal = +data.program.weeksTotal;
+    }
+    if (data.program.startDate) {
+      const ms = _dateToMs(data.program.startDate);
+      if (ms) {
+        prog.startDate = ms;
+        prog.endDate = ms + (prog.weeksTotal || 12) * 7 * 24 * 3600 * 1000;
+      }
+    }
+    DB.saveProgram(prog);
+  }
+
+  // UI-Refresh
+  if (currentScreen === 'mehr') renderMehr();
+  else if (currentScreen === 'overview') renderOverview();
+  else if (currentScreen === 'exercises') renderExercises();
+
+  // Summary-Toast
+  const parts = [
+    `${importedDays.length} Trainingstage ${mode === 'replace' ? 'ersetzt' : 'angehängt'}`,
+    newExCount ? `${newExCount} neue Übung${newExCount === 1 ? '' : 'en'} erstellt` : null,
+    reusedExCount ? `${reusedExCount} existierende wiederverwendet` : null,
+  ].filter(Boolean);
+  showToast(parts.join(' • ') + ' ✓');
 }
 
 // ═══════════════════════════════════════════════
