@@ -1362,21 +1362,17 @@ body.theme-history .hist-action-dd {
   #screen-history.active > .lg-col1 { grid-column: 1; }
   #screen-history.active > .lg-col2 { grid-column: 2; }
 
-  /* MEHR — CSS Multi-Column für natürliches Balancing (Sections rutschen je nach Höhe) */
+  /* MEHR — explizites Grid mit lg-col1/lg-col2-Klassen (sauberer als CSS-Columns,
+     keine Spalten-Trennlinien-Artefakte, Titel auf gleicher Höhe) */
   #screen-mehr.active {
-    column-count: 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     column-gap: 0;
-    column-fill: balance;
+    align-items: start;
   }
-  #screen-mehr.active > .ph {
-    column-span: all;
-  }
-  #screen-mehr.active > .mehr-section {
-    break-inside: avoid;
-    -webkit-column-break-inside: avoid;
-    page-break-inside: avoid;
-    display: block; /* CSS columns sicherer mit display:block */
-  }
+  #screen-mehr.active > .ph { grid-column: 1 / -1; }
+  #screen-mehr.active > .lg-col1 { grid-column: 1; }
+  #screen-mehr.active > .lg-col2 { grid-column: 2; }
 }
 
 /* Conflict-Modal: side-by-side */
