@@ -263,7 +263,9 @@ function getCurrentWeekDays() {
       idx: i, date: d, label: wpEntry.label, dayKey: wpEntry.dayKey,
       planDay, planDayId: wpEntry.planDayId,
       isToday, isPast, isFuture, isTomorrow, dayDone,
-      isRest: !wpEntry.planDayId,
+      // Ruhetag wenn: kein planDayId zugewiesen ODER die zugewiesene ID existiert nicht
+      // mehr (verwaiste Referenz nach Plan-Import mit "Ersetzen")
+      isRest: !planDay,
     });
   }
   return out;
@@ -2598,6 +2600,10 @@ function applyPlanImport(mode, useProgramData) {
   DB.saveExercises(exs);
   DB.savePlan(newPlan);
 
+  // Beim "Ersetzen" können im Wochenplan jetzt verwaiste Trainingstag-IDs liegen
+  // → automatisch auf Ruhetag zurücksetzen
+  if (mode === 'replace') cleanupOrphanWeekplan();
+
   // Trainingsplan-Daten ggf. übernehmen (akzeptiert sowohl `trainingPlan` als auch Legacy `program`)
   const tp = data.trainingPlan || data.program;
   if (useProgramData && tp) {
@@ -2794,19 +2800,37 @@ async function driveGetValidToken() {
 }
 
 // ─── Drive-API Wrapper ───────────────────────────────
+// Mit Timeout (30s default, 60s für Uploads) via AbortController.
+// Verhindert, dass hängende fetch()-Calls den Sync-State dauerhaft blockieren.
 async function driveApi(path, opts = {}) {
   const token = await driveGetValidToken();
   const url = path.startsWith('http') ? path : `https://www.googleapis.com/drive/v3/${path}`;
   const headers = Object.assign({ Authorization: `Bearer ${token}` }, opts.headers || {});
-  const resp = await fetch(url, Object.assign({}, opts, { headers }));
+  const timeoutMs = opts.timeout || (opts.method === 'PATCH' || opts.method === 'POST' ? 60000 : 30000);
+
+  const doFetch = async (authHeader) => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const fetchOpts = Object.assign({}, opts, {
+        headers: Object.assign({}, headers, authHeader ? { Authorization: authHeader } : {}),
+        signal: ctrl.signal,
+      });
+      return await fetch(url, fetchOpts);
+    } catch (err) {
+      if (err.name === 'AbortError') throw new Error(`Drive-Request Timeout nach ${timeoutMs/1000}s`);
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+
+  let resp = await doFetch();
   if (resp.status === 401) {
     // Token abgelaufen → einmal neu holen und wiederholen
     driveClearToken();
     const token2 = await driveGetValidToken();
-    headers.Authorization = `Bearer ${token2}`;
-    const resp2 = await fetch(url, Object.assign({}, opts, { headers }));
-    if (!resp2.ok) throw new Error(`Drive ${resp2.status}: ${await resp2.text().catch(()=>resp2.statusText)}`);
-    return resp2;
+    resp = await doFetch(`Bearer ${token2}`);
   }
   if (!resp.ok) throw new Error(`Drive ${resp.status}: ${await resp.text().catch(()=>resp.statusText)}`);
   return resp;
@@ -3153,7 +3177,28 @@ if ('serviceWorker' in navigator) {
 // ═══════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════
+// Daten-Hygiene: verwaiste Wochenplan-Referenzen entfernen.
+// Kann nach einem Plan-Import mit "Ersetzen" passieren, wenn der Wochenplan
+// noch auf alte (jetzt gelöschte) Trainingstag-IDs zeigt.
+function cleanupOrphanWeekplan() {
+  const wp = DB.getWeekPlan();
+  const plan = DB.getPlan();
+  const planIds = new Set(plan.map(p => p.id));
+  let dirty = false;
+  for (const d of wp) {
+    if (d.planDayId && !planIds.has(d.planDayId)) {
+      d.planDayId = null;
+      dirty = true;
+    }
+  }
+  if (dirty) DB.saveWeekPlan(wp); // löst markLocalChange → Drive-Sync aus
+  return dirty;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  // Erst Daten-Hygiene, dann rendern — verhindert, dass UI verwaiste Referenzen
+  // kurzzeitig anzeigt, bevor der Render-Fix sie als Ruhetag interpretiert.
+  cleanupOrphanWeekplan();
   const activeWo = DB.getActive();
   if (activeWo) {
     showScreen('workouts');
