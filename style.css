@@ -1362,13 +1362,17 @@ body.theme-history .hist-action-dd {
   #screen-history.active > .lg-col1 { grid-column: 1; }
   #screen-history.active > .lg-col2 { grid-column: 2; }
 
-  /* MEHR — explizites Grid mit lg-col1/lg-col2-Klassen (sauberer als CSS-Columns,
-     keine Spalten-Trennlinien-Artefakte, Titel auf gleicher Höhe) */
+  /* MEHR — explizites Grid mit lg-col1/lg-col2-Klassen.
+     `grid-auto-flow: dense` ist hier essentiell: Ohne diese Flag würden die drei
+     col1-Sektionen (Trainingsplan/Wochenplan/Trainingstage) zuerst untereinander in
+     Spalte 1 stapeln und Cloud-Sync würde erst weit unten in Spalte 2 beginnen, weil
+     das Standard-Sparse-Placement den Cursor nicht zurückspringen lässt. */
   #screen-mehr.active {
     display: grid;
     grid-template-columns: 1fr 1fr;
     column-gap: 0;
     align-items: start;
+    grid-auto-flow: dense;
   }
   #screen-mehr.active > .ph { grid-column: 1 / -1; }
   #screen-mehr.active > .lg-col1 { grid-column: 1; }
