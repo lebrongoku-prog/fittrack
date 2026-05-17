@@ -1,9 +1,19 @@
 // FitTrack Service Worker — Offline-Support
-const CACHE = 'fittrack-v1';
+const CACHE = 'fittrack-v3';
 const ASSETS = [
   './',
   './index.html',
+  './style.css',
+  './app.js',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js'
+];
+
+// Domains, die NIE gecacht werden dürfen (Auth/API — sonst stale OAuth-Antworten)
+const NO_CACHE_HOSTS = [
+  'accounts.google.com',
+  'apis.google.com',
+  'oauth2.googleapis.com',
+  'www.googleapis.com',
 ];
 
 self.addEventListener('install', e => {
@@ -21,6 +31,13 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+  // Google-Auth/API immer direkt durchreichen (network-only)
+  if (NO_CACHE_HOSTS.includes(url.hostname)) {
+    e.respondWith(fetch(e.request).catch(() => new Response('', { status: 504 })));
+    return;
+  }
+  // Standard cache-first für App-Assets
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
