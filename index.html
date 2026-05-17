@@ -81,6 +81,15 @@ body.theme-history {
   --section-tint:       rgba(245, 158, 11, 0.20);
   --card-accent-border: rgba(245, 158, 11, 0.35);
 }
+body.theme-exercises {
+  --accent:             #1E40AF;       /* blue-800 (Marineblau) */
+  --accent-bg:          rgba(30, 64, 175, 0.12);
+  --accent-soft:        #DBEAFE;       /* blue-100 */
+  --accent-dark:        #1E3A8A;       /* blue-900 */
+  --gradient:           linear-gradient(135deg, #172554, #1E40AF);
+  --section-tint:       rgba(30, 64, 175, 0.18);
+  --card-accent-border: rgba(30, 64, 175, 0.35);
+}
 /* body.theme-mehr keeps the default (blue) */
 html, body { height: 100%; width: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
 body { display: flex; flex-direction: column; padding-top: var(--safe-t); transition: background 0.25s ease; }
@@ -88,20 +97,24 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); transi
 /* Themed tabs use the accent gradient as the page background */
 body.theme-overview,
 body.theme-workouts,
-body.theme-history {
+body.theme-history,
+body.theme-exercises {
   background: var(--gradient);
   background-attachment: fixed;
 }
 /* Header texts adapt to the dark themed backgrounds */
 body.theme-overview .ph h1,
 body.theme-workouts .ph h1,
-body.theme-history .ph h1   { color: #fff; }
+body.theme-history .ph h1,
+body.theme-exercises .ph h1  { color: #fff; }
 body.theme-overview .ph-sub,
 body.theme-workouts .ph-sub,
-body.theme-history .ph-sub  { color: rgba(255,255,255,0.78); }
+body.theme-history .ph-sub,
+body.theme-exercises .ph-sub { color: rgba(255,255,255,0.78); }
 body.theme-overview .ph-sub-accent,
 body.theme-workouts .ph-sub-accent,
-body.theme-history .ph-sub-accent { color: #fff; font-weight: 700; }
+body.theme-history .ph-sub-accent,
+body.theme-exercises .ph-sub-accent { color: #fff; font-weight: 700; }
 /* Sticky workout header background needs to be transparent so the gradient shows */
 body.theme-workouts #screen-workouts .ph { background: transparent; }
 body.theme-workouts #wo-sub-text { color: rgba(255,255,255,0.85); }
@@ -390,6 +403,15 @@ body.theme-history .hist-action-dd {
 @keyframes slideUp { from { transform: translateY(60px); opacity: .6; } to { transform: translateY(0); opacity: 1; } }
 .sheet-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--border); margin: 10px auto 14px; }
 .sheet-title { font-size: 17px; font-weight: 700; padding: 0 20px 14px; border-bottom: 1px solid var(--border); }
+.sheet-title.with-back { display: flex; align-items: center; gap: 10px; padding-left: 14px; }
+.sheet-back-btn {
+  width: 32px; height: 32px; flex-shrink: 0;
+  border-radius: 8px; border: none; background: var(--card2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.sheet-back-btn svg { width: 18px; height: 18px; stroke: var(--text); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.sheet-back-btn:active { transform: scale(.95); }
 .sheet-body { padding: 16px 20px; }
 .sheet-list { max-height: 45vh; overflow-y: auto; }
 .sheet-item { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid var(--border); cursor: pointer; -webkit-tap-highlight-color: transparent; }
@@ -397,6 +419,12 @@ body.theme-history .hist-action-dd {
 .sheet-item:active { opacity: .6; }
 .sheet-item-name { font-size: 15px; font-weight: 500; }
 .sheet-item-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+/* Muscle-color left stripe for exercise catalog items */
+.sheet-item.muscle-coded {
+  border-left: 4px solid var(--c, var(--border));
+  padding-left: 12px; padding-right: 4px;
+  border-radius: 2px;
+}
 .sheet-search { width: 100%; background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 14px; font-size: 16px; color: var(--text); margin-bottom: 10px; }
 .sheet-search:focus { outline: none; border-color: var(--accent); }
 .form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
@@ -430,7 +458,8 @@ body.theme-history .hist-action-dd {
 /* ─── Responsive ─── */
 @media (min-width: 560px) {
   .card, .hero-card, .ov-ex-card, .chart-card, .mehr-section, .aex-card, .session-card,
-  .hero-v2, .program-card, .plan-section-card, .session-card-v2, .chart-card-v2, .aex-v2
+  .hero-v2, .program-card, .plan-section-card, .session-card-v2, .chart-card-v2, .aex-v2,
+  .ex-group
     { max-width: 520px; margin-left: auto; margin-right: auto; }
   .stats-row, .stats-row-v2, .two-col-grid { max-width: 520px; margin: 0 auto 12px; }
   .info-row, .plan-carousel, .ex-tab-bar, .ex-tab-v2-bar { padding-left: calc((100vw - 520px)/2 + 14px); }
@@ -483,32 +512,80 @@ body.theme-history .hist-action-dd {
 /* Wide button variant (used in Workouts hero) */
 .hero-v2-btn.stretch { align-self: stretch; justify-content: center; padding: 14px 22px; }
 
-/* Column layout: both Vorschau and Aktiv keep the same height.
-   Same min-height in Übersicht-Hero and Workouts-Hero so both tabs match. */
+/* Column layout: Vorschau and Aktiv share matching natural heights
+   (top row dominated by dumbbell, bottom row buttons with same vertical padding). */
 .hero-v2.col-layout {
   flex-direction: column; gap: 14px;
   justify-content: space-between;
-  min-height: 250px;
 }
 .hero-v2.col-layout .hero-v2-top { display: flex; gap: 12px; align-items: stretch; width: 100%; }
 .hero-v2.col-layout .hero-v2-text { flex: 1; min-width: 0; }
 .hero-v2.col-layout .hero-v2-text .hero-v2-meta { margin-bottom: 0; }
 .hero-v2.col-layout .hero-v2-bottom { width: 100%; }
 
+/* Inline progress bar (used inside hero-v2-text in active mode) */
+.hero-v2-progress-bar-thin { background: rgba(0,0,0,0.08); border-radius: 2px; height: 4px; overflow: hidden; margin-top: 6px; }
+.hero-v2-progress-fill-thin { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s; }
+
+/* Active-mode hero gets the light tab-accent fill (matches today-chip color) */
+.hero-v2.active-mode { background: var(--accent-soft); }
+
+/* Rest-day hero (Übersicht when today is a rest day) – compact, dumbbell dimmed */
+.hero-v2.rest-mode {
+  flex-direction: row; gap: 12px; align-items: center;
+  min-height: 0; padding: 16px 18px;
+}
+.hero-v2.rest-mode .hero-v2-text .hero-v2-label { color: var(--text3); margin-bottom: 6px; }
+.hero-v2.rest-mode .hero-v2-text .hero-v2-title { font-size: 18px; margin-bottom: 0; color: var(--text); }
+.hero-v2.rest-mode .hero-v2-art { width: 80px; opacity: 0.35; }
+.hero-v2.rest-mode .hero-v2-art svg { width: 100%; height: auto; }
+
+/* Title row: title left + prominent timer right.
+   align-items: flex-start so the title's top position stays stable
+   when the timer appears (active mode). */
+.hero-v2-title-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.hero-v2-title-row .hero-v2-title { flex: 1; min-width: 0; margin-bottom: 0; }
+.hero-v2-timer {
+  flex-shrink: 0; white-space: nowrap;
+  font-size: 22px; font-weight: 800; line-height: 1.15;
+  letter-spacing: 0.4px;
+  color: var(--accent-dark);
+  font-variant-numeric: tabular-nums;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: 0 1px 4px rgba(15,23,42,0.06);
+}
+
 .hero-v2-progress-label { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
 .hero-v2-progress-bar { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 14px; }
 .hero-v2-progress-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s; }
-.hero-v2-button-row { display: flex; gap: 8px; width: 100%; }
-.hero-v2-button-row .hero-v2-btn { flex: 1; padding: 13px 14px; align-self: auto; justify-content: center; }
-.hero-v2-button-row .hero-v2-btn-danger { flex: 0 0 auto; min-width: 110px; }
+.hero-v2-button-row { display: flex; gap: 6px; width: 100%; }
+.hero-v2-button-row .hero-v2-btn { flex: 1; padding: 14px 10px; align-self: auto; justify-content: center; font-size: 14px; white-space: nowrap; }
+/* "Nächste Übung" – solid accent-dark (no gradient) */
+.hero-v2-btn-next { background: var(--accent-dark) !important; box-shadow: none !important; }
+
+.hero-v2-button-row .hero-v2-btn-pause {
+  flex: 1;
+  padding: 14px 10px; border-radius: 12px; border: none;
+  background: #475569; color: #fff; font-size: 14px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.hero-v2-button-row .hero-v2-btn-pause svg { fill: #fff; }
+.hero-v2-button-row .hero-v2-btn-pause:active { transform: scale(.97); }
+.hero-v2-button-row .hero-v2-btn-danger { flex: 0 0 auto; min-width: 96px; padding: 14px 12px; font-size: 14px; }
+/* Wenn alle Übungen erledigt sind: zwei Buttons teilen den Platz */
+.hero-v2-button-row.two-buttons .hero-v2-btn-danger { flex: 1; min-width: 0; }
 .hero-v2-btn-danger {
   padding: 13px 14px; border-radius: 12px; border: none;
-  background: var(--red-bg); color: var(--red);
+  background: var(--red); color: #fff;
   font-size: 15px; font-weight: 700;
   display: inline-flex; gap: 6px; align-items: center; justify-content: center;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.hero-v2-btn-danger svg { fill: var(--red); }
+.hero-v2-btn-danger svg { fill: #fff; }
 .hero-v2-btn-danger:active { transform: scale(.97); }
 
 /* Dumbbell SVG container – small accent halo on white card */
@@ -694,9 +771,9 @@ body.theme-history .hist-action-dd {
 .ex-tab-v2.muted .ex-tab-v2-num { background: var(--neutral); }
 .ex-tab-v2-name { font-size: 11.5px; font-weight: 600; line-height: 1.25; min-height: 28px; color: var(--c, var(--text)); }
 
-/* Active exercise card – v2 with colored left border + light muscle-tint bg */
+/* Active exercise card – v2 with colored left border + white bg */
 .aex-v2 {
-  margin: 0 14px 12px; background: var(--c-bg, var(--card)); border-radius: 14px;
+  margin: 0 14px 12px; background: var(--card); border-radius: 14px;
   box-shadow: var(--shadow); overflow: hidden;
   border-left: 4px solid var(--c, var(--accent));
   scroll-margin-top: 20px;
@@ -744,7 +821,7 @@ body.theme-history .hist-action-dd {
 
 .aex-v2-notes {
   width: 132px; flex-shrink: 0;
-  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--card2); border: 1px solid transparent; border-radius: 10px;
   padding: 10px 12px;
   display: flex; flex-direction: column;
 }
@@ -790,25 +867,25 @@ body.theme-history .hist-action-dd {
   background: var(--card); border-radius: 16px; box-shadow: var(--shadow);
   padding: 12px;
 }
-/* Amber-tone gradients for Verlauf stat cards */
-.stat-card-v2.bg-blue   { background: linear-gradient(140deg, #FEF3C7 0%, #FEFBE5 100%); }
-.stat-card-v2.bg-purple { background: linear-gradient(140deg, #FDE68A 0%, #FEF3C7 100%); }
-.stat-card-v2.bg-orange { background: linear-gradient(140deg, #FCD34D 0%, #FDE68A 100%); }
+/* All three Verlauf cards share the same flat tab-accent-soft fill */
+.stat-card-v2.bg-blue,
+.stat-card-v2.bg-purple,
+.stat-card-v2.bg-orange { background: var(--accent-soft); }
 
 .stat-bubble {
   width: 40px; height: 40px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   margin-bottom: 8px;
 }
-/* Amber-tone bubbles (light → deep) */
-.stat-bubble.b-blue   { background: #F59E0B; }   /* amber 500 */
-.stat-bubble.b-purple { background: #D97706; }   /* amber 600 */
-.stat-bubble.b-orange { background: #92400E; }   /* amber 800 / brown */
+/* Uniform accent bubbles */
+.stat-bubble.b-blue,
+.stat-bubble.b-purple,
+.stat-bubble.b-orange { background: var(--accent); }
 .stat-bubble svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 2; }
 
 .stat-card-v2-label { font-size: 11.5px; color: var(--text2); font-weight: 600; margin-bottom: 2px; }
-.stat-card-v2-val { font-size: 22px; font-weight: 800; line-height: 1.1; letter-spacing: -0.4px; color: #78350F; }
-.stat-card-v2-val.text-orange { color: #92400E; }
+.stat-card-v2-val { font-size: 22px; font-weight: 800; line-height: 1.1; letter-spacing: -0.4px; color: var(--accent-dark); }
+.stat-card-v2-val.text-orange { color: var(--accent-dark); }
 .stat-card-v2-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
 
 .chart-card-v2 {
@@ -882,6 +959,161 @@ body.theme-history .hist-action-dd {
 .sess-v2-arrow { color: var(--text3); font-size: 18px; }
 
 /* ═══════════════════════════════════
+   ÜBUNGEN – Catalog tab
+═══════════════════════════════════ */
+.ex-add-btn {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: rgba(255,255,255,0.95); border: 1px solid transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.ex-add-btn svg { width: 18px; height: 18px; stroke: var(--accent-dark); fill: none; stroke-width: 2.2; }
+
+.ex-sort-btn {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: rgba(255,255,255,0.95); border: 1px solid transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.ex-sort-btn svg { width: 18px; height: 18px; stroke: var(--accent-dark); fill: none; stroke-width: 1.8; }
+.ex-sort-btn .ex-sort-ic-muscle { fill: var(--accent-dark); stroke: none; }
+.ex-sort-btn[data-mode="muscle"] .ex-sort-ic-plan { display: none; }
+.ex-sort-btn[data-mode="plan"]   .ex-sort-ic-muscle { display: none; }
+
+.ex-group { margin: 0 14px 16px; }
+.ex-group-title {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+  margin: 0 4px 8px;
+  color: rgba(255,255,255,0.92);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.ex-group-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mc, var(--accent)); }
+.ex-group-title .count { color: rgba(255,255,255,0.65); font-weight: 600; }
+
+.ex-list { background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+.ex-item + .ex-item { border-top: 1px solid var(--border); }
+.ex-item-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 14px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.ex-item-stripe { width: 4px; align-self: stretch; border-radius: 2px; background: var(--mc, var(--accent)); flex-shrink: 0; }
+.ex-item-name { flex: 1; font-size: 15px; font-weight: 500; color: var(--text); }
+.ex-item-note-indicator {
+  font-size: 11px; padding: 2px 7px; border-radius: 10px;
+  background: var(--accent-bg); color: var(--accent); font-weight: 600;
+}
+.ex-item-plan-tag {
+  font-size: 11px; padding: 2px 7px; border-radius: 10px;
+  background: var(--green-bg); color: var(--green); font-weight: 600;
+}
+.ex-item-using { margin-top: 12px; }
+.ex-item-using-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; font-weight: 600; }
+.ex-item-using-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.ex-item-day-chip {
+  padding: 4px 10px; border-radius: 10px;
+  background: var(--accent-bg); color: var(--accent); font-size: 12px; font-weight: 600;
+}
+.ex-item-using-empty { font-size: 12px; color: var(--text3); font-style: italic; }
+
+/* Stats-Block: 2-Spalten-Karten (PR links, Letzte Ausführung rechts) */
+.ex-item-stats { display: flex; gap: 8px; margin-bottom: 14px; }
+.ex-stat {
+  background: var(--card2); border-radius: 10px; padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 4px; min-width: 0;
+}
+.ex-stat.ex-stat-pr   { flex: 0 0 auto; min-width: 88px; }
+.ex-stat.ex-stat-last { flex: 1; min-width: 0; }
+.ex-stat-key {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase; color: var(--text3);
+}
+.ex-stat-val { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
+.ex-stat-val.muted { color: var(--text3); font-weight: 500; }
+.ex-stat-val .date { color: var(--text3); font-weight: 500; font-size: 12px; margin-left: 4px; }
+
+/* Plan-Add-Modal: gruppierter Übungen-Katalog (analog Übungen-Tab) */
+.sheet .ex-group { margin: 8px 0 14px; max-width: none; }
+.sheet .ex-group:first-child { margin-top: 4px; }
+.sheet .ex-group-title { color: var(--text2); }
+.sheet .ex-group-title .count { color: var(--text3); }
+.sheet .ex-list { box-shadow: none; border: 1px solid var(--border); }
+.sheet .ex-item-head { padding: 11px 14px; gap: 10px; }
+.sheet .ex-item-add-icon { color: var(--accent); font-size: 22px; font-weight: 700; line-height: 1; }
+.sheet .ex-item.in-current-day { opacity: 0.5; pointer-events: none; }
+.sheet .ex-item.in-current-day .ex-item-add-icon { color: var(--green); }
+
+/* Plan-Add-Modal: Multi-Select Checkbox am rechten Rand des Items */
+.plan-add-check {
+  width: 22px; height: 22px; flex-shrink: 0;
+  border: 2px solid var(--border); border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: transparent; line-height: 1;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.plan-add-check.checked { background: var(--accent); border-color: var(--accent); color: #fff; }
+.plan-add-check.in-day  { background: var(--green); border-color: var(--green); color: #fff; }
+.plan-add-footer {
+  margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+/* Trainingstag-Auswahl-Liste (Modal "Zu welchem Trainingstag hinzufügen?") */
+.day-pick-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  -webkit-tap-highlight-color: transparent;
+}
+.day-pick-row:last-child { border-bottom: none; }
+.day-pick-row.not-in-day { cursor: pointer; }
+.day-pick-row.in-day .day-pick-info { opacity: 0.7; }
+.day-pick-info { flex: 1; min-width: 0; }
+.day-pick-name { font-size: 15px; font-weight: 600; color: var(--text); }
+.day-pick-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.day-pick-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.day-pick-icon { color: var(--accent); font-size: 22px; font-weight: 700; line-height: 1; }
+.day-pick-icon.done { color: var(--green); }
+.day-pick-remove {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--red-bg); color: var(--red); border: none;
+  font-size: 22px; font-weight: 700; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.day-pick-remove:active { transform: scale(.95); }
+.ex-item-chev { color: var(--text3); font-size: 14px; transition: transform 0.2s; flex-shrink: 0; }
+.ex-item.open .ex-item-chev { transform: rotate(180deg); }
+
+.ex-item-body {
+  padding: 0 14px 14px;
+  display: none;
+}
+.ex-item.open .ex-item-body { display: block; }
+.ex-item-body-label { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+.ex-notes-area {
+  width: 100%; background: var(--card2); border: 1px solid transparent; border-radius: 8px;
+  padding: 10px 12px; font-size: 14px; min-height: 70px; font-family: inherit; line-height: 1.4;
+  color: var(--text); resize: vertical;
+}
+.ex-notes-area:focus { outline: none; border-color: var(--accent); background: #fff; }
+.ex-notes-area::placeholder { color: var(--text3); }
+
+.ex-item-actions {
+  display: flex; gap: 6px; margin-top: 10px;
+}
+.ex-item-actions button {
+  flex: 1; min-width: 0; padding: 8px 8px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text2); font-size: 13px; font-weight: 600;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  white-space: nowrap;
+}
+.ex-item-actions button.primary { color: var(--accent); border-color: var(--accent); background: var(--accent-bg); }
+.ex-item-actions button.danger  { color: var(--red); border-color: var(--red-bg); background: var(--red-bg); }
+.ex-item-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ═══════════════════════════════════
    MEHR – additional sections
 ═══════════════════════════════════ */
 .weekplan-row { padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
@@ -891,11 +1123,6 @@ body.theme-history .hist-action-dd {
 .weekplan-select {
   flex: 1; background: var(--bg); border: 1px solid var(--border);
   border-radius: 8px; padding: 8px 10px; font-size: 14px; -webkit-appearance: none;
-}
-.weekplan-time-inp {
-  width: 80px; background: var(--bg); border: 1px solid var(--border);
-  border-radius: 8px; padding: 8px 10px; font-size: 14px;
-  text-align: center;
 }
 .program-form-row { padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
 .program-form-row + .program-form-row { border-top: 1px solid var(--border); }
@@ -922,35 +1149,8 @@ body.theme-history .hist-action-dd {
       </div>
     </div>
 
-    <!-- Hero v2 with dumbbell illustration – col-layout (matches Workouts hero) -->
-    <div class="hero-v2 col-layout" id="ov-hero" onclick="heroAction()">
-      <div class="hero-v2-top">
-        <div class="hero-v2-text">
-          <div class="hero-v2-label" id="ov-hero-label">NÄCHSTE SESSION</div>
-          <div class="hero-v2-title" id="ov-hero-title">–</div>
-          <div class="hero-v2-meta" id="ov-hero-meta"></div>
-        </div>
-        <div class="hero-v2-art">
-          <div class="glow"></div>
-          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="color:var(--accent)">
-            <rect x="36" y="55" width="48" height="10" rx="3" fill="currentColor" opacity="0.95"/>
-            <rect x="18" y="38" width="22" height="44" rx="5" fill="currentColor"/>
-            <rect x="20" y="40" width="6" height="40" rx="3" fill="#fff" opacity="0.4"/>
-            <rect x="10" y="44" width="12" height="32" rx="4" fill="currentColor" opacity="0.8" style="filter:brightness(0.7)"/>
-            <rect x="80" y="38" width="22" height="44" rx="5" fill="currentColor"/>
-            <rect x="82" y="40" width="6" height="40" rx="3" fill="#fff" opacity="0.4"/>
-            <rect x="98" y="44" width="12" height="32" rx="4" fill="currentColor" opacity="0.8" style="filter:brightness(0.7)"/>
-            <rect x="38" y="56" width="44" height="2" rx="1" fill="#fff" opacity="0.4"/>
-          </svg>
-        </div>
-      </div>
-      <div class="hero-v2-bottom">
-        <button class="hero-v2-btn" id="ov-hero-btn">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
-          <span id="ov-hero-btn-label">Workout starten</span>
-        </button>
-      </div>
-    </div>
+    <!-- Hero v2 (rendered dynamically via buildSessionCard) -->
+    <div id="ov-hero-wrap"></div>
 
     <!-- Program / Training week card -->
     <div class="program-card" id="ov-program-card" onclick="showScreen('mehr')">
@@ -1005,9 +1205,6 @@ body.theme-history .hist-action-dd {
           <span id="wo-sub-text">Wochenplan</span>
         </div>
       </div>
-      <div class="pause-btn-v2 hidden" onclick="pauseTimer()" id="pause-btn">
-        <svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
-      </div>
     </div>
 
     <!-- Wochenplan-Strip (always visible at top) -->
@@ -1028,6 +1225,35 @@ body.theme-history .hist-action-dd {
     <div id="wo-add-ex-wrap" style="padding:0 14px 8px;display:none">
       <button class="btn btn-ghost btn-full" onclick="openAddExModal()">+ Übung hinzufügen</button>
     </div>
+  </div>
+
+  <!-- ══ SCREEN: ÜBUNGEN (Catalog) ══ -->
+  <div id="screen-exercises" class="screen">
+    <div class="ph">
+      <div class="ph-left">
+        <h1>Übungen</h1>
+        <div class="ph-sub" id="ex-subline">Übungskatalog sortiert nach Muskelgruppen</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <div class="ex-sort-btn" id="ex-sort-btn" data-mode="muscle" onclick="toggleExSortMode()" title="Sortierung wechseln">
+          <svg class="ex-sort-ic-muscle" viewBox="0 0 24 24">
+            <rect x="3" y="4" width="18" height="3.2" rx="1.5"/>
+            <rect x="3" y="10.5" width="18" height="3.2" rx="1.5"/>
+            <rect x="3" y="17" width="18" height="3.2" rx="1.5"/>
+          </svg>
+          <svg class="ex-sort-ic-plan" viewBox="0 0 24 24">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
+        <div class="ex-add-btn" onclick="openNewExModal('exercises')" title="Neue Übung erstellen">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+      </div>
+    </div>
+    <div id="exercises-groups"></div>
   </div>
 
   <!-- ══ SCREEN: VERLAUF ══ -->
@@ -1193,6 +1419,10 @@ body.theme-history .hist-action-dd {
     <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
     <span>Workouts</span>
   </div>
+  <div class="nav-btn" id="nav-exercises" onclick="showScreen('exercises')">
+    <svg viewBox="0 0 24 24"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>
+    <span>Übungen</span>
+  </div>
   <div class="nav-btn" id="nav-history" onclick="showScreen('history')">
     <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
     <span>Verlauf</span>
@@ -1243,12 +1473,18 @@ body.theme-history .hist-action-dd {
 <div id="modal-add-to-plan" class="overlay hidden">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-title">Übung zum Plan hinzufügen</div>
+    <div class="sheet-title with-back">
+      <button class="sheet-back-btn" onclick="exitPlanAddModal()" aria-label="Zurück zum Trainingsplan">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span>Übungen zum Plan hinzufügen</span>
+    </div>
     <div class="sheet-body">
       <input class="sheet-search" type="search" placeholder="🔍 Übung suchen…" id="plan-add-search" oninput="filterPlanAdd()" autocomplete="off">
       <div class="sheet-list" id="plan-add-list"></div>
-      <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
-        <button class="btn btn-ghost btn-full" onclick="openNewExModal()">+ Neue Übung erstellen</button>
+      <div class="plan-add-footer">
+        <button class="btn btn-primary btn-full" id="plan-add-confirm" onclick="confirmPlanAddSelection()" disabled>Hinzufügen</button>
+        <button class="btn btn-ghost btn-full" onclick="openNewExModal('plan')">+ Neue Übung erstellen</button>
       </div>
     </div>
   </div>
@@ -1277,6 +1513,65 @@ body.theme-history .hist-action-dd {
         </select>
       </div>
       <button class="btn btn-primary btn-full" onclick="saveNewEx()">Übung erstellen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generischer Bestätigungs-Dialog (Ersatz für confirm(), funktioniert auch in PWA) -->
+<div id="modal-confirm-action" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="confirm-action-title">Wirklich?</div>
+    <div class="sheet-body">
+      <p id="confirm-action-msg" style="font-size:15px;color:var(--text2);margin-bottom:18px;line-height:1.5"></p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-full" id="confirm-action-yes" onclick="confirmActionYes()">Bestätigen</button>
+        <button class="btn btn-ghost btn-full" onclick="confirmActionNo()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Generischer Name-Input-Dialog (Ersatz für prompt(), funktioniert auch in PWA) -->
+<div id="modal-name-input" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="name-input-title">Name eingeben</div>
+    <div class="sheet-body">
+      <input type="text" id="name-input-field" class="form-input" placeholder="Name" autocomplete="off">
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn btn-ghost btn-full" onclick="cancelNameInput()">Abbrechen</button>
+        <button class="btn btn-primary btn-full" onclick="confirmNameInput()">Hinzufügen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Übung zu einem Trainingstag hinzufügen (aus Übungen-Tab) -->
+<div id="modal-ex-to-day" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="modal-ex-to-day-title">Zu welchem Trainingstag hinzufügen?</div>
+    <div class="sheet-body">
+      <div id="ex-to-day-list"></div>
+      <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+        <button class="btn btn-outline btn-full" onclick="createNewPlanDayAndAddEx()">+ Trainingstag hinzufügen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm next session start (from Übersicht hero) -->
+<div id="modal-confirm-start" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Möchtest du die nächste Session starten?</div>
+    <div class="sheet-body">
+      <p id="modal-confirm-start-info" style="font-size:14px;color:var(--text2);margin-bottom:18px;line-height:1.5"></p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-primary btn-full" onclick="confirmStartYes()">Ja, jetzt starten</button>
+        <button class="btn btn-ghost btn-full" onclick="confirmStartNo()">Nein</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1385,13 +1680,13 @@ function _weeksBetween(startMs, endMs) {
 
 // Mo, Di, Mi, Do, Fr, Sa, So
 const DEFAULT_WEEKPLAN = [
-  { dayKey:'mon', label:'Mo', planDayId:'push', time:'17:30' },
-  { dayKey:'tue', label:'Di', planDayId:'pull', time:'17:30' },
-  { dayKey:'wed', label:'Mi', planDayId:'legs', time:'17:30' },
-  { dayKey:'thu', label:'Do', planDayId:null,   time:''      },
-  { dayKey:'fri', label:'Fr', planDayId:'push', time:'17:30' },
-  { dayKey:'sat', label:'Sa', planDayId:'pull', time:'10:00' },
-  { dayKey:'sun', label:'So', planDayId:null,   time:''      },
+  { dayKey:'mon', label:'Mo', planDayId:'push' },
+  { dayKey:'tue', label:'Di', planDayId:'pull' },
+  { dayKey:'wed', label:'Mi', planDayId:'legs' },
+  { dayKey:'thu', label:'Do', planDayId:null   },
+  { dayKey:'fri', label:'Fr', planDayId:'push' },
+  { dayKey:'sat', label:'Sa', planDayId:'pull' },
+  { dayKey:'sun', label:'So', planDayId:null   },
 ];
 
 // Muscle metadata (icons + colors for Verlauf and PR cards)
@@ -1404,7 +1699,7 @@ const MUSCLE_META = {
   legs:      { name:'Beine',     color:'#8b6b3d', bg:'#f3e8d8', icon:'leg' },
   core:      { name:'Bauch',     color:'#7b2fff', bg:'#f3ecff', icon:'core' },
 };
-const MUSCLE_ORDER = ['chest','back','biceps','triceps','shoulders','legs','core'];
+const MUSCLE_ORDER = ['chest','back','shoulders','biceps','triceps','core','legs'];
 
 // Map old 'arms' / unknown exercises to specific muscle (by id keyword fallback)
 function inferMuscleFromName(name) {
@@ -1436,13 +1731,25 @@ function migrateExerciseMuscle(ex) {
 const DB = {
   getExercises() {
     const s = localStorage.getItem('ft_exercises');
-    if (!s) return [...DEFAULT_EXERCISES];
-    let list = JSON.parse(s);
+    let list = s ? JSON.parse(s) : DEFAULT_EXERCISES.map(e => ({...e}));
     let migrated = false;
     list = list.map(ex => {
       if (ex.muscle === 'arms') { migrated = true; return migrateExerciseMuscle({...ex}); }
       return ex;
     });
+    // Migrate notes: if any exercise lacks a notes field, populate from the most recent workout note.
+    if (list.some(ex => ex.notes === undefined)) {
+      const ws = JSON.parse(localStorage.getItem('ft_workouts') || '[]');
+      const latestNote = {};
+      [...ws].sort((a,b) => b.startTs - a.startTs).forEach(w => {
+        (w.exercises || []).forEach(we => {
+          const id = we.exId || we.id;
+          if (we.notes && !latestNote[id]) latestNote[id] = we.notes;
+        });
+      });
+      list = list.map(ex => ex.notes === undefined ? { ...ex, notes: latestNote[ex.id] || '' } : ex);
+      migrated = true;
+    }
     if (migrated) localStorage.setItem('ft_exercises', JSON.stringify(list));
     return list;
   },
@@ -1550,7 +1857,7 @@ function getCurrentWeekDays() {
   for (let i=0; i<7; i++) {
     const d = new Date(mon); d.setDate(mon.getDate() + i);
     const dEnd = new Date(d); dEnd.setHours(23,59,59,999);
-    const wpEntry = wp[i] || { planDayId:null, time:'', label:'?', dayKey:'' };
+    const wpEntry = wp[i] || { planDayId:null, label:'?', dayKey:'' };
     const planDay = wpEntry.planDayId ? plan.find(p => p.id === wpEntry.planDayId) : null;
     // Did we already do this planDay today/this week (any workout that day)?
     const dayDone = ws.some(w => w.startTs >= d.getTime() && w.startTs <= dEnd.getTime());
@@ -1559,8 +1866,8 @@ function getCurrentWeekDays() {
     const isFuture= i > todayIdx;
     const isTomorrow = i === todayIdx + 1;
     out.push({
-      idx: i, date: d, label: wpEntry.label,
-      planDay, planDayId: wpEntry.planDayId, time: wpEntry.time,
+      idx: i, date: d, label: wpEntry.label, dayKey: wpEntry.dayKey,
+      planDay, planDayId: wpEntry.planDayId,
       isToday, isPast, isFuture, isTomorrow, dayDone,
       isRest: !wpEntry.planDayId,
     });
@@ -1640,10 +1947,40 @@ function getLastExData(exId) {
     if (ex && ex.sets.length) {
       const maxW = Math.max(...ex.sets.map(s => parseFloat(s.weight)||0));
       const repsStr = ex.sets.map(s => s.reps||'?').join('/');
-      return { maxWeight: maxW, sets: ex.sets, repsStr };
+      return { maxWeight: maxW, sets: ex.sets, repsStr, date: w.startTs };
     }
   }
   return null;
+}
+
+// Compact format for the last-execution row.
+// Uniform sets → "3×12 @ 10 kg". Varying → "12@10, 10@8, 8@6 kg".
+function formatLastSets(sets) {
+  if (!sets || !sets.length) return null;
+  const n = sets.length;
+  const w0 = String(sets[0].weight || '');
+  const r0 = String(sets[0].reps || '');
+  const uniform = sets.every(s => String(s.weight || '') === w0 && String(s.reps || '') === r0);
+  if (uniform) {
+    return `${n}×${r0 || '–'} @ ${w0 || '–'} kg`;
+  }
+  return sets.map(s => `${s.reps || '–'}@${s.weight || '–'}`).join(', ') + ' kg';
+}
+
+// Highest weight ever lifted for an exercise across all workouts.
+function getExercisePR(exId) {
+  const ws = DB.getWorkouts();
+  let maxW = 0;
+  ws.forEach(w => {
+    w.exercises.forEach(we => {
+      if ((we.exId || we.id) !== exId) return;
+      we.sets.forEach(s => {
+        const v = parseFloat(s.weight) || 0;
+        if (v > maxW) maxW = v;
+      });
+    });
+  });
+  return maxW > 0 ? maxW : null;
 }
 
 // ═══════════════════════════════════════════════
@@ -1665,8 +2002,11 @@ function showScreen(name) {
 
   if (name === 'overview') renderOverview();
   if (name === 'workouts') renderWorkoutsScreen();
+  if (name === 'exercises') renderExercises();
   if (name === 'history') renderHistory();
   if (name === 'mehr') renderMehr();
+
+  ensureTimerActive();
 }
 
 // ═══════════════════════════════════════════════
@@ -1686,49 +2026,28 @@ function renderOverview() {
   subEl.innerHTML = `Woche ${prog.num} • <span class="ph-sub-accent">${wStatus.done} von ${wStatus.planned||plan.length}</span> Workouts absolviert`;
 
   // ─ Hero card ─
-  let heroDay = null;
-  let heroLabel = 'NÄCHSTE SESSION';
+  // Decision tree:
+  //   1. Active workout → full hero in active mode
+  //   2. Today is a training day (not done) → preview hero for today's plan day
+  //   3. Today is a rest day OR done → compact Ruhetag hero (today's status)
+  //   4. No plan at all → "Kein Workout geplant" rest-hero
+  const wrap = document.getElementById('ov-hero-wrap');
   if (activeWo) {
-    heroLabel = 'AKTIVES WORKOUT';
-    heroDay = plan.find(d => d.id === activeWo.planDayId);
+    const heroDay = plan.find(d => d.id === activeWo.planDayId);
+    wrap.innerHTML = buildSessionCard(activeWo, heroDay, todayEntry, false, {
+      label: 'AKTIVE SESSION',
+      continueOnClick: 'heroActionContinue()',
+    });
   } else if (todayEntry.planDay && !todayEntry.dayDone) {
-    heroLabel = 'NÄCHSTE SESSION';
-    heroDay = todayEntry.planDay;
+    wrap.innerHTML = buildSessionCard(null, todayEntry.planDay, todayEntry, true, {
+      label: 'NÄCHSTE SESSION',
+      previewOnClick: `requestStartFromOverview('${todayEntry.planDay.id}')`,
+    });
   } else {
-    // Find next upcoming
-    const upcoming = week7.find(d => (d.isToday && d.planDay && !d.dayDone) || (d.isFuture && d.planDay))
-                    || (function(){
-                      // Look into following week
-                      const wp = DB.getWeekPlan();
-                      for (let i=0;i<7;i++) {
-                        const w = wp[i]; if (w.planDayId) return { planDay: plan.find(p=>p.id===w.planDayId), label:w.label, time:w.time, isToday:false };
-                      } return null;
-                    })();
-    heroDay = upcoming ? upcoming.planDay : null;
+    // Today is rest day (or already done) → compact Ruhetag hero
+    wrap.innerHTML = buildRestHero(true);
   }
-
-  const heroDayLabel = todayEntry.isToday ? dayLabel(todayEntry.label) :
-                       (week7.find(d => d.isFuture && d.planDay) || {}).label || '';
-  const heroTitle = heroDay ? `${heroDayLabel}${heroDayLabel?' — ':''}${heroDay.name}` : 'Kein Workout geplant';
-  document.getElementById('ov-hero-label').textContent = heroLabel;
-  document.getElementById('ov-hero-title').textContent = heroTitle;
-
-  // Meta with two SVG icons (dumbbell + stacked layers)
-  if (heroDay) {
-    const exCount = heroDay.exercises.length;
-    const setCount = heroDay.exercises.reduce((a,e)=>a+e.targetSets, 0);
-    document.getElementById('ov-hero-meta').innerHTML =
-      `<span style="display:inline-flex;gap:5px;align-items:center">
-         <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
-         ${exCount} Übungen</span>
-       <span class="dot"></span>
-       <span style="display:inline-flex;gap:5px;align-items:center">
-         <svg viewBox="0 0 24 24"><polyline points="12 2 22 8 12 14 2 8 12 2"/><polyline points="2 12 12 18 22 12"/><polyline points="2 16 12 22 22 16"/></svg>
-         ${setCount} Sätze</span>`;
-  } else {
-    document.getElementById('ov-hero-meta').innerHTML = '<span>Erstelle einen Plan unter „Mehr".</span>';
-  }
-  document.getElementById('ov-hero-btn-label').textContent = activeWo ? 'Fortsetzen' : 'Workout starten';
+  ensureTimerActive();
 
   // ─ Program card ─
   document.getElementById('ov-program-num').textContent = prog.num;
@@ -1823,22 +2142,61 @@ function renderOvPRs() {
 }
 
 function heroAction() {
+  // Legacy entry point kept for safety; new flow goes through requestStartFromOverview().
   const activeWo = DB.getActive();
-  if (activeWo) {
-    resumeWorkout();
-  } else {
-    // pick today's planned day, else next planned day
-    const week7 = getCurrentWeekDays();
-    const todayEntry = week7.find(d => d.isToday);
-    const upcoming = (todayEntry && todayEntry.planDay) ? todayEntry
-                  : week7.find(d => d.isFuture && d.planDay);
-    if (upcoming && upcoming.planDay) {
-      startWorkout(upcoming.planDay.id);
-    } else {
-      const nextDay = getNextPlanDay();
-      if (nextDay) startWorkout(nextDay.id);
-    }
+  if (activeWo) { resumeWorkout(); return; }
+  const week7 = getCurrentWeekDays();
+  const todayEntry = week7.find(d => d.isToday);
+  const upcoming = (todayEntry && todayEntry.planDay) ? todayEntry
+                : week7.find(d => d.isFuture && d.planDay);
+  const targetId = (upcoming && upcoming.planDay) ? upcoming.planDay.id
+                : (getNextPlanDay() ? getNextPlanDay().id : null);
+  if (targetId) requestStartFromOverview(targetId);
+}
+
+// Ask the user before starting a workout from the Übersicht hero.
+let pendingStartDayId = null;
+function requestStartFromOverview(dayId) {
+  pendingStartDayId = dayId;
+  const day = DB.getPlan().find(d => d.id === dayId);
+  if (day) {
+    const exCount = day.exercises.length;
+    const setCount = day.exercises.reduce((a,e)=>a+e.targetSets, 0);
+    document.getElementById('modal-confirm-start-info').textContent =
+      `${day.name} — ${exCount} Übungen • ${setCount} Sätze`;
   }
+  openModal('modal-confirm-start');
+}
+function confirmStartYes() {
+  closeModal('modal-confirm-start');
+  if (pendingStartDayId) {
+    const id = pendingStartDayId;
+    pendingStartDayId = null;
+    startWorkout(id); // already navigates to Workouts tab
+  }
+}
+function confirmStartNo() {
+  closeModal('modal-confirm-start');
+  pendingStartDayId = null;
+}
+
+// "Nächste Übung" auf der Hero — navigiert + scrollt zur nächsten unerledigten Übung.
+function heroActionContinue() {
+  if (currentScreen === 'overview') {
+    showScreen('workouts');
+    // Workouts-Tab hat gerade gerendert; im nächsten Frame zur nächsten Übung scrollen
+    requestAnimationFrame(() => scrollToNextExercise());
+  } else {
+    scrollToNextExercise();
+  }
+}
+
+// Keep the active-session timer running across tabs (but not while paused).
+function ensureTimerActive() {
+  const wo = DB.getActive();
+  const shouldRun = !!wo && !wo.paused;
+  if (shouldRun && !timerInterval) startTimer();
+  if (!shouldRun && timerInterval) stopTimer();
 }
 
 // ═══════════════════════════════════════════════
@@ -1860,10 +2218,17 @@ function buildSetsForExercise(exId, targetSets, targetReps) {
 
 function startWorkout(dayId) {
   if (DB.getActive()) {
-    if (!confirm('Es läuft noch ein Workout. Neu starten?')) return;
-    stopTimer();
-    DB.clearActive();
+    confirmAction('Workout läuft bereits',
+      'Es läuft noch ein Workout. Neu starten? Die aktuelle Session wird verworfen.',
+      () => { stopTimer(); DB.clearActive(); _doStartWorkout(dayId); },
+      { danger: true, confirmLabel: 'Neu starten' }
+    );
+    return;
   }
+  _doStartWorkout(dayId);
+}
+
+function _doStartWorkout(dayId) {
   const plan = DB.getPlan();
   const day = plan.find(d => d.id === dayId);
   const exercises = (day ? day.exercises : []).map(pe => {
@@ -1912,19 +2277,23 @@ function heroDumbbellSvg() {
   </svg>`;
 }
 
-function buildSessionCard(active, planDay, selDay, isPreview) {
+function buildSessionCard(active, planDay, selDay, isPreview, opts) {
+  opts = opts || {};
   const totalSets = active
     ? active.exercises.reduce((a,e)=>a+e.sets.length, 0)
     : (planDay ? planDay.exercises.reduce((a,e)=>a+e.targetSets, 0) : 0);
   const exCount = active ? active.exercises.length : (planDay ? planDay.exercises.length : 0);
   const doneEx = active ? active.exercises.filter(e=>e.done).length : 0;
   const title = `${dayFullName(selDay.dayKey)}${planDay ? ' — '+planDay.name : ''}`;
-  const label = isPreview ? 'VORSCHAU' : 'AKTIVE SESSION';
+  const label = opts.label || (isPreview ? 'VORSCHAU' : 'AKTIVE SESSION');
   const meta = `${exCount} Übungen • ${totalSets} Sätze`;
   const pct = !isPreview && active && active.exercises.length
     ? (doneEx / active.exercises.length * 100) : 0;
+  const timerBlock = (!isPreview && active)
+    ? `<div class="hero-v2-timer">${fmtTimer(Math.floor(getElapsedMs(active)/1000))}</div>`
+    : '';
 
-  const metaHTML = `<div class="hero-v2-meta">
+  const metaPreview = `<div class="hero-v2-meta">
     <span style="display:inline-flex;gap:5px;align-items:center">
       <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
       ${exCount} Übungen</span>
@@ -1934,11 +2303,23 @@ function buildSessionCard(active, planDay, selDay, isPreview) {
       ${totalSets} Sätze</span>
   </div>`;
 
+  // Active-mode meta is more compact: progress label + thin bar replace the meta row
+  const metaActive = `<div class="hero-v2-meta">
+    <span>${doneEx} von ${active ? active.exercises.length : exCount} Übungen abgeschlossen</span>
+  </div>
+  <div class="hero-v2-progress-bar-thin"><div class="hero-v2-progress-fill-thin" style="width:${pct}%"></div></div>`;
+
+  // Title-row in both modes so the title's top position stays stable
+  const titleBlock = `<div class="hero-v2-title-row">
+    <div class="hero-v2-title">${title}</div>
+    ${timerBlock}
+  </div>`;
+
   const topRow = `<div class="hero-v2-top">
     <div class="hero-v2-text">
       <div class="hero-v2-label">${label}</div>
-      <div class="hero-v2-title">${title}</div>
-      ${metaHTML}
+      ${titleBlock}
+      ${isPreview ? metaPreview : metaActive}
     </div>
     <div class="hero-v2-art">
       <div class="glow"></div>
@@ -1947,10 +2328,11 @@ function buildSessionCard(active, planDay, selDay, isPreview) {
   </div>`;
 
   if (isPreview) {
+    const previewOnClick = opts.previewOnClick || `startWorkout('${planDay.id}')`;
     return `<div class="hero-v2 col-layout">
       ${topRow}
       <div class="hero-v2-bottom">
-        <button class="hero-v2-btn stretch" onclick="startWorkout('${planDay.id}')">
+        <button class="hero-v2-btn stretch" onclick="${previewOnClick}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
           Workout starten
         </button>
@@ -1958,22 +2340,48 @@ function buildSessionCard(active, planDay, selDay, isPreview) {
     </div>`;
   }
 
-  // Active mode — same outer structure as preview, expanded bottom block
+  // Active mode — same outer structure as preview; bottom is only the button row
+  const continueOnClick = opts.continueOnClick || 'scrollToNextExercise()';
+  const paused = !!(active && active.paused);
+  const pauseLabel = paused ? 'Workout fortsetzen' : 'Workout pausieren';
+  const pauseIcon = paused
+    ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>'
+    : '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+
+  const allDone = active && active.exercises.length > 0 && active.exercises.every(e => e.done);
+  const nextBtn = allDone ? '' : `
+        <button class="hero-v2-btn hero-v2-btn-next" onclick="${continueOnClick}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,4 15,12 5,20"/><rect x="17" y="4" width="2.6" height="16" rx="1"/></svg>
+          Nächste Übung
+        </button>`;
+  const rowClass = allDone ? 'hero-v2-button-row two-buttons' : 'hero-v2-button-row';
+
   return `<div class="hero-v2 col-layout active-mode">
     ${topRow}
     <div class="hero-v2-bottom">
-      <div class="hero-v2-progress-label">${doneEx} von ${active.exercises.length} Übungen abgeschlossen</div>
-      <div class="hero-v2-progress-bar"><div class="hero-v2-progress-fill" style="width:${pct}%"></div></div>
-      <div class="hero-v2-button-row">
-        <button class="hero-v2-btn" onclick="scrollToNextExercise()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
-          Workout fortsetzen
+      <div class="${rowClass}">
+        ${nextBtn}
+        <button class="hero-v2-btn-pause" onclick="togglePauseWorkout()" aria-label="${pauseLabel}">
+          ${pauseIcon}
+          ${pauseLabel}
         </button>
         <button class="hero-v2-btn-danger" onclick="confirmFinish()">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>
           Beenden
         </button>
       </div>
+    </div>
+  </div>`;
+}
+
+function buildRestHero(isToday) {
+  return `<div class="hero-v2 rest-mode">
+    <div class="hero-v2-text" style="flex:1">
+      <div class="hero-v2-label">RUHETAG</div>
+      <div class="hero-v2-title">${isToday ? 'Heute ist Ruhetag' : 'Kein Workout geplant'}</div>
+    </div>
+    <div class="hero-v2-art">
+      ${heroDumbbellSvg()}
     </div>
   </div>`;
 }
@@ -2022,8 +2430,8 @@ function renderWorkoutWeekStrip() {
   document.getElementById('wo-week-strip').innerHTML = days.map((d, i) => {
     const classes = ['next7-chip'];
     if (d.isToday) classes.push('today');
-    // Selected only when user actively picked a non-today day
-    if (i === selectedWorkoutDayIdx && !d.isToday) classes.push('selected');
+    // Selected: any day the user picked (incl. today)
+    if (i === selectedWorkoutDayIdx) classes.push('selected');
     if (d.isRest) classes.push('rest'); else classes.push('training');
     if (d.dayDone && d.planDay) classes.push('done');
     const topLabel = d.isToday ? 'Heute' : (d.isTomorrow ? 'Morgen' : '');
@@ -2047,19 +2455,15 @@ function renderWorkoutsScreen() {
   // Header subtitle
   const dotEl = document.getElementById('wo-sub-dot');
   const subEl = document.getElementById('wo-sub-text');
-  const pauseEl = document.getElementById('pause-btn');
   if (activeOnSelected) {
     dotEl.style.display = 'inline-block';
     subEl.textContent = 'Aktive Session';
-    pauseEl.classList.remove('hidden');
   } else if (planDay) {
     dotEl.style.display = 'none';
     subEl.textContent = 'Vorschau';
-    pauseEl.classList.add('hidden');
   } else {
     dotEl.style.display = 'none';
     subEl.textContent = 'Wochenplan';
-    pauseEl.classList.add('hidden');
   }
 
   // Week strip
@@ -2093,16 +2497,8 @@ function renderWorkoutsScreen() {
 }
 
 function renderPreviewWorkout(planDay) {
-  // Tab bar (read-only)
-  document.getElementById('ex-tab-bar').innerHTML = planDay.exercises.map((pe, i) => {
-    const ex = getEx(pe.exId);
-    if (!ex) return '';
-    const col = colorForExercise({ exId: pe.exId });
-    return `<div class="ex-tab-v2" style="--c:${col.c};--c-bg:${col.bg}" onclick="scrollToEx(${i})">
-      <div class="ex-tab-v2-num">${i+1}</div>
-      <div class="ex-tab-v2-name">${ex.name}</div>
-    </div>`;
-  }).join('');
+  // (Mini-Kacheln im Workouts-Tab wurden entfernt)
+  document.getElementById('ex-tab-bar').innerHTML = '';
 
   // Cards (read-only target view)
   document.getElementById('active-ex-list').innerHTML = planDay.exercises.map((pe, ei) => {
@@ -2121,7 +2517,7 @@ function renderPreviewWorkout(planDay) {
           ${lastStr ? `<div class="aex-v2-last">${lastStr}</div>` : ''}
         </div>
       </div>
-      <div class="aex-v2-body" style="opacity:0.85">
+      <div class="aex-v2-body">
         <div class="aex-v2-table">
           <div class="aex-v2-row head" style="grid-template-columns:50px ${Array(pe.targetSets).fill('1fr').join(' ')}">
             <span class="ax-lbl">Satz</span>${Array.from({length:pe.targetSets},(_,si)=>`<span class="num-cell">${si+1}</span>`).join('')}
@@ -2135,7 +2531,8 @@ function renderPreviewWorkout(planDay) {
         </div>
         <div class="aex-v2-notes">
           <div class="aex-v2-notes-lbl">Notizen</div>
-          <div style="font-size:12px;color:var(--text3);line-height:1.4">Werden nach dem Start erfasst.</div>
+          <textarea class="aex-v2-notes-area" data-ex-id="${ex.id}"
+                    onchange="saveExerciseNote('${ex.id}', this.value)">${ex.notes || ''}</textarea>
         </div>
       </div>
     </div>`;
@@ -2146,16 +2543,8 @@ function renderActiveWorkout() {
   const wo = DB.getActive();
   if (!wo) return;
 
-  // Tab bar (colored cards) — no inner progress bar, "done" state turns the whole chip green
-  document.getElementById('ex-tab-bar').innerHTML = wo.exercises.map((ex, i) => {
-    const col = colorForExercise(ex);
-    const isActive = !ex.done && i === wo.exercises.findIndex(e => !e.done);
-    return `<div class="ex-tab-v2 ${isActive?'active':''} ${ex.done?'done':''}" id="tab-${i}"
-              style="--c:${col.c};--c-bg:${col.bg}" onclick="scrollToEx(${i})">
-      <div class="ex-tab-v2-num">${i+1}</div>
-      <div class="ex-tab-v2-name">${ex.name}</div>
-    </div>`;
-  }).join('');
+  // (Mini-Kacheln im Workouts-Tab wurden entfernt)
+  document.getElementById('ex-tab-bar').innerHTML = '';
 
   // Exercise cards
   document.getElementById('active-ex-list').innerHTML = wo.exercises.map((ex, ei) => {
@@ -2205,8 +2594,8 @@ function renderActiveWorkout() {
         </div>
         <div class="aex-v2-notes">
           <div class="aex-v2-notes-lbl">Notizen</div>
-          <textarea class="aex-v2-notes-area" placeholder="z. B. Tempo, Gefühl, Hinweise…"
-                    onchange="updateNotes(${ei},this.value)">${ex.notes||''}</textarea>
+          <textarea class="aex-v2-notes-area" data-ex-id="${ex.exId || ex.id}"
+                    onchange="updateNotes(${ei},this.value)">${(getEx(ex.exId || ex.id)?.notes) || ''}</textarea>
         </div>
       </div>
       ${ex.done ? '' : `<div class="aex-v2-actions">
@@ -2244,7 +2633,17 @@ function updateSet(ei, si, field, value) {
 }
 
 function updateNotes(ei, value) {
-  const wo = DB.getActive(); wo.exercises[ei].notes = value; DB.saveActive(wo);
+  const wo = DB.getActive();
+  if (!wo) return;
+  const workoutEx = wo.exercises[ei];
+  const id = workoutEx.exId || workoutEx.id;
+  // Persist to the GLOBAL exercise note (single source of truth)
+  const exs = DB.getExercises();
+  const ex = exs.find(e => e.id === id);
+  if (ex) { ex.notes = value; DB.saveExercises(exs); }
+  // Mirror onto the workout entry so the saved session history keeps a snapshot
+  workoutEx.notes = value;
+  DB.saveActive(wo);
 }
 
 function toggleExDone(ei, checked) {
@@ -2314,19 +2713,44 @@ function startTimer() {
 function stopTimer() {
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 }
-const PAUSE_ICON_SVG = '<svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
-const PLAY_ICON_SVG  = '<svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor" stroke="none"/></svg>';
-function pauseTimer() {
-  const btn = document.getElementById('pause-btn');
-  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; btn.innerHTML = PLAY_ICON_SVG; }
-  else { timerInterval = setInterval(updateTimerDisplay, 1000); btn.innerHTML = PAUSE_ICON_SVG; }
+// (Legacy pauseTimer removed — pause is now controlled via togglePauseWorkout in the hero.)
+// Effective elapsed time for a workout, taking pause periods into account.
+function getElapsedMs(wo) {
+  if (!wo) return 0;
+  const paused = !!wo.paused;
+  const pausedTotal = wo.pausedTotal || 0;
+  const now = paused ? (wo.pausedAt || Date.now()) : Date.now();
+  return Math.max(0, now - wo.startTs - pausedTotal);
 }
+
 function updateTimerDisplay() {
   const wo = DB.getActive();
+  if (!wo) { stopTimer(); return; }
+  const elapsed = Math.floor(getElapsedMs(wo) / 1000);
+  const t = '• ' + fmtTimer(elapsed);
+  document.querySelectorAll('.hero-v2-timer').forEach(el => el.textContent = t);
+}
+
+// Pause / resume the active workout (real freeze).
+function togglePauseWorkout() {
+  const wo = DB.getActive();
   if (!wo) return;
-  const elapsed = Math.floor((Date.now() - wo.startTs) / 1000);
-  const subEl = document.getElementById('wo-sub-text');
-  if (subEl) subEl.textContent = 'Aktive Session • ' + fmtTimer(elapsed);
+  if (wo.paused) {
+    // Resume: account for the pause duration
+    const pauseLen = Date.now() - (wo.pausedAt || Date.now());
+    wo.pausedTotal = (wo.pausedTotal || 0) + pauseLen;
+    wo.pausedAt = null;
+    wo.paused = false;
+  } else {
+    wo.paused = true;
+    wo.pausedAt = Date.now();
+  }
+  DB.saveActive(wo);
+  ensureTimerActive();
+  updateTimerDisplay();
+  // Re-render so the button label updates everywhere
+  if (currentScreen === 'overview') renderOverview();
+  else if (currentScreen === 'workouts') renderWorkoutsScreen();
 }
 
 function openAddExModal() {
@@ -2338,11 +2762,14 @@ function filterAddEx() { renderAddExList(document.getElementById('add-ex-search'
 function renderAddExList(q) {
   const exs = DB.getExercises();
   const filtered = q ? exs.filter(e => e.name.toLowerCase().includes(q.toLowerCase())) : exs;
-  document.getElementById('add-ex-list').innerHTML = filtered.map(e =>
-    `<div class="sheet-item" onclick="addExToWorkout('${e.id}')">
+  const sorted = [...filtered].sort((a,b) => a.name.localeCompare(b.name, 'de'));
+  document.getElementById('add-ex-list').innerHTML = sorted.map(e => {
+    const col = muscleColor(e.muscle);
+    return `<div class="sheet-item muscle-coded" style="--c:${col}" onclick="addExToWorkout('${e.id}')">
       <div><div class="sheet-item-name">${e.name}</div><div class="sheet-item-sub">${muscleName(e.muscle)}</div></div>
       <span style="color:var(--accent);font-size:20px">+</span>
-    </div>`).join('') || '<p style="color:var(--text3);text-align:center;padding:20px">Keine Übung gefunden</p>';
+    </div>`;
+  }).join('') || '<p style="color:var(--text3);text-align:center;padding:20px">Keine Übung gefunden</p>';
 }
 function addExToWorkout(exId) {
   const ex = getEx(exId); if (!ex) return;
@@ -2364,7 +2791,7 @@ function finishWorkout() {
   const wo = DB.getActive();
   if (!wo) return;
   stopTimer();
-  const duration = Math.floor((Date.now() - wo.startTs) / 1000);
+  const duration = Math.floor(getElapsedMs(wo) / 1000);
   // Clean sets (remove empty ones)
   const cleanEx = wo.exercises.map(ex => ({
     ...ex,
@@ -2384,17 +2811,24 @@ function finishWorkout() {
   if (prs.length) showToast(`${prs.length} neuer PR! 🏆`);
   else showToast('Workout gespeichert! 💪');
 
-  // Stay on the Workouts tab — re-render so it switches from Active → Vorschau
-  renderWorkoutsScreen();
+  // Aktuellen Tab neu rendern — egal ob Workouts oder Übersicht, der Active-Mode endet sofort
+  if (currentScreen === 'overview') renderOverview();
+  else if (currentScreen === 'workouts') renderWorkoutsScreen();
 }
 
 function discardWorkout() {
-  if (!confirm('Workout wirklich abbrechen und löschen? Alle Eingaben gehen verloren.')) return;
-  stopTimer();
-  DB.clearActive();
-  closeModal('modal-finish');
-  showToast('Workout verworfen');
-  renderWorkoutsScreen();
+  confirmAction('Workout abbrechen?',
+    'Workout wirklich abbrechen und löschen? Alle Eingaben gehen verloren.',
+    () => {
+      stopTimer();
+      DB.clearActive();
+      closeModal('modal-finish');
+      showToast('Workout verworfen');
+      if (currentScreen === 'overview') renderOverview();
+      else if (currentScreen === 'workouts') renderWorkoutsScreen();
+    },
+    { danger: true, confirmLabel: 'Abbrechen & löschen' }
+  );
 }
 
 // ═══════════════════════════════════════════════
@@ -2684,12 +3118,9 @@ let editingDayIdx = null;
 
 function renderMehr() {
   const plan = DB.getPlan();
-  const colors = ['#0066ff','#22c55e','#7b2fff','#ff8c00','#06b6d4','#ef4444','#8b6b3d'];
   document.getElementById('mehr-plan-list').innerHTML = plan.map((d, i) => {
     const setCount = d.exercises.reduce((a,e) => a+e.targetSets, 0);
-    const color = d.color || colors[i % colors.length];
     return `<div class="plan-day-row">
-      <div class="pdr-num" style="background:${color}">${i+1}</div>
       <div class="pdr-info" onclick="openPlanDayModal(${i})" style="cursor:pointer">
         <div class="pdr-name">${d.name}</div>
         <div class="pdr-sub">${d.exercises.length} Übungen • ${setCount} Sätze</div>
@@ -2717,10 +3148,7 @@ function renderMehr() {
       plan.map(p => `<option value="${p.id}" ${selected===p.id?'selected':''}>${p.name}</option>`).join('');
     return `<div class="weekplan-row">
       <span class="weekplan-day-name ${i===todayIdx?'today':''}">${d.label}</span>
-      <select class="weekplan-select" onchange="saveWeekPlanRow(${i},'planDayId',this.value)">${options}</select>
-      <input class="weekplan-time-inp" type="time" value="${d.time||''}"
-             onchange="saveWeekPlanRow(${i},'time',this.value)"
-             ${d.planDayId?'':'disabled'}>
+      <select class="weekplan-select" onchange="saveWeekPlanDay(${i},this.value)">${options}</select>
     </div>`;
   }).join('');
 }
@@ -2769,15 +3197,10 @@ function onEndDateChange() {
   showToast('Trainingsplan aktualisiert');
 }
 
-function saveWeekPlanRow(i, field, value) {
+function saveWeekPlanDay(i, value) {
   const wp = DB.getWeekPlan();
   if (!wp[i]) return;
-  if (field === 'planDayId') {
-    wp[i].planDayId = value || null;
-    if (!value) wp[i].time = '';
-  } else {
-    wp[i][field] = value;
-  }
+  wp[i].planDayId = value || null;
   DB.saveWeekPlan(wp);
   renderMehr();
 }
@@ -2792,33 +3215,391 @@ function openPlanDayModal(idx) {
   openModal('modal-plan-day');
 }
 
+// Generischer Confirm-Helper (ersetzt confirm(), das in PWA-Mode oft blockiert wird).
+let _confirmActionCb = null;
+let _confirmActionCancelCb = null;
+function confirmAction(title, message, onConfirm, opts) {
+  opts = opts || {};
+  _confirmActionCb = onConfirm || null;
+  _confirmActionCancelCb = opts.onCancel || null;
+  document.getElementById('confirm-action-title').textContent = title;
+  document.getElementById('confirm-action-msg').textContent = message;
+  const btn = document.getElementById('confirm-action-yes');
+  btn.textContent = opts.confirmLabel || 'Bestätigen';
+  btn.className = `btn btn-full ${opts.danger ? 'btn-danger' : 'btn-primary'}`;
+  openModal('modal-confirm-action');
+}
+function confirmActionYes() {
+  const cb = _confirmActionCb;
+  _confirmActionCb = null;
+  _confirmActionCancelCb = null;
+  closeModal('modal-confirm-action');
+  if (cb) cb();
+}
+function confirmActionNo() {
+  const cb = _confirmActionCancelCb;
+  _confirmActionCb = null;
+  _confirmActionCancelCb = null;
+  closeModal('modal-confirm-action');
+  if (cb) cb();
+}
+
+// Generischer Name-Input-Helper (ersetzt prompt(), das in PWA-Mode oft blockiert wird).
+let _nameInputCallback = null;
+let _nameInputCancelCb = null;
+function promptForName(title, defaultValue, onConfirm, onCancel) {
+  _nameInputCallback = onConfirm || null;
+  _nameInputCancelCb = onCancel || null;
+  document.getElementById('name-input-title').textContent = title;
+  const field = document.getElementById('name-input-field');
+  field.value = defaultValue || '';
+  openModal('modal-name-input');
+  setTimeout(() => { field.focus(); field.select(); }, 120);
+  // Enter-Taste = bestätigen
+  field.onkeydown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); confirmNameInput(); }
+    else if (e.key === 'Escape') { e.preventDefault(); cancelNameInput(); }
+  };
+}
+function confirmNameInput() {
+  const val = (document.getElementById('name-input-field').value || '').trim();
+  const cb = _nameInputCallback;
+  _nameInputCallback = null;
+  _nameInputCancelCb = null;
+  closeModal('modal-name-input');
+  if (val && cb) cb(val);
+}
+function cancelNameInput() {
+  const cb = _nameInputCancelCb;
+  _nameInputCallback = null;
+  _nameInputCancelCb = null;
+  closeModal('modal-name-input');
+  if (cb) cb();
+}
+
 function addNewPlanDay() {
-  const name = prompt('Name des neuen Trainingstags:', 'Neuer Tag');
-  if (!name || !name.trim()) return;
+  promptForName('Name des neuen Trainingstags', 'Neuer Tag', (name) => {
+    const plan = DB.getPlan();
+    const id = 'day_' + Date.now();
+    plan.push({ id, name, color: null, exercises: [] });
+    DB.savePlan(plan);
+    renderMehr();
+    showToast(`„${name}" hinzugefügt`);
+    openPlanDayModal(plan.length - 1);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// SCREEN: ÜBUNGEN (Catalog)
+// ═══════════════════════════════════════════════
+let openExerciseId = null;   // currently expanded exercise in catalog
+let exSortMode = 'muscle';   // 'muscle' | 'plan'
+
+function getPlanDaysUsingExercise(exId) {
+  return DB.getPlan().filter(d => d.exercises.some(e => e.exId === exId));
+}
+
+function toggleExSortMode() {
+  exSortMode = exSortMode === 'muscle' ? 'plan' : 'muscle';
+  const btn = document.getElementById('ex-sort-btn');
+  if (btn) btn.dataset.mode = exSortMode;
+  renderExercises();
+}
+
+function buildExItemHTML(ex, context) {
+  const meta = MUSCLE_META[ex.muscle] || MUSCLE_META.chest;
+  // In by-plan view, an exercise may appear in multiple days — use a composite key
+  // (dayId + exId) so only the tapped instance expands.
+  const uniqueKey = (context && context.dayId) ? `${context.dayId}__${ex.id}` : ex.id;
+  const isOpen = uniqueKey === openExerciseId;
+  const noteIndicator = (ex.notes && ex.notes.trim())
+    ? '<span class="ex-item-note-indicator">Notiz</span>' : '';
+  const usingDays = getPlanDaysUsingExercise(ex.id);
+  const planTag = usingDays.length
+    ? '<span class="ex-item-plan-tag">Im Plan</span>' : '';
+  const usingBlock = usingDays.length
+    ? `<div class="ex-item-using">
+         <div class="ex-item-using-label">Verwendet in:</div>
+         <div class="ex-item-using-list">
+           ${usingDays.map(d => `<span class="ex-item-day-chip">${d.name}</span>`).join('')}
+         </div>
+       </div>`
+    : `<div class="ex-item-using">
+         <div class="ex-item-using-empty">Wird aktuell in keinem Trainingstag verwendet.</div>
+       </div>`;
+
+  // Stats
+  const pr = getExercisePR(ex.id);
+  const last = getLastExData(ex.id);
+  const prVal = pr != null
+    ? `<div class="ex-stat-val">${pr} kg</div>`
+    : `<div class="ex-stat-val muted">Noch keine</div>`;
+  let lastVal;
+  if (last) {
+    const dateStr = new Date(last.date).toLocaleDateString('de-DE',
+      { day:'numeric', month:'long', year:'2-digit' });
+    const fmt = formatLastSets(last.sets) || '–';
+    lastVal = `<div class="ex-stat-val">${fmt}<span class="date">· ${dateStr}</span></div>`;
+  } else {
+    lastVal = `<div class="ex-stat-val muted">Noch keine</div>`;
+  }
+  const statsBlock = `<div class="ex-item-stats">
+    <div class="ex-stat ex-stat-pr">
+      <div class="ex-stat-key">PR</div>
+      ${prVal}
+    </div>
+    <div class="ex-stat ex-stat-last">
+      <div class="ex-stat-key">Letzte Ausführung</div>
+      ${lastVal}
+    </div>
+  </div>`;
+
+  return `<div class="ex-item ${isOpen?'open':''}" id="ex-item-${uniqueKey}" style="--mc:${meta.color}">
+    <div class="ex-item-head" onclick="toggleExItem('${uniqueKey}')">
+      <div class="ex-item-stripe"></div>
+      <div class="ex-item-name">${ex.name}</div>
+      ${noteIndicator}
+      ${planTag}
+      <span class="ex-item-chev">▾</span>
+    </div>
+    <div class="ex-item-body">
+      ${statsBlock}
+      <div class="ex-item-body-label">Notizen</div>
+      <textarea class="ex-notes-area" placeholder="z. B. Form-Tipps, Hinweise, Bemerkungen…"
+                onchange="saveExerciseNote('${ex.id}', this.value)">${ex.notes||''}</textarea>
+      ${usingBlock}
+      <div class="ex-item-actions">
+        <button class="primary" onclick="openAddExerciseToPlanDay('${ex.id}')">+ Zum Plan</button>
+        <button onclick="editExerciseFromCatalog('${ex.id}')">✎ Bearbeiten</button>
+        <button class="danger" onclick="deleteExerciseFromCatalog('${ex.id}')" title="Löschen">✕ Löschen</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderExercises() {
+  const btn = document.getElementById('ex-sort-btn');
+  if (btn) btn.dataset.mode = exSortMode;
+  const subEl = document.getElementById('ex-subline');
+  if (subEl) {
+    subEl.textContent = exSortMode === 'plan'
+      ? 'Übungskatalog sortiert nach Trainingstagen'
+      : 'Übungskatalog sortiert nach Muskelgruppen';
+  }
+  if (exSortMode === 'plan') {
+    renderExercisesByPlan();
+  } else {
+    renderExercisesByMuscle();
+  }
+}
+
+function renderExercisesByPlan() {
   const plan = DB.getPlan();
-  const id = 'day_' + Date.now();
-  plan.push({ id, name: name.trim(), color: null, exercises: [] });
+  const exMap = {};
+  DB.getExercises().forEach(e => exMap[e.id] = e);
+
+  const groupsHTML = plan.map(day => {
+    // Plan-Reihenfolge beibehalten; Übungen die im Plan stehen aber nicht mehr existieren überspringen
+    const items = day.exercises.map(pe => exMap[pe.exId]).filter(Boolean);
+    if (!items.length) return '';
+    const itemsHTML = items.map(ex => buildExItemHTML(ex, { dayId: day.id })).join('');
+    return `<div class="ex-group">
+      <div class="ex-group-title">
+        <span class="dot" style="background:rgba(255,255,255,0.7)"></span>
+        ${day.name}
+        <span class="count">(${items.length})</span>
+      </div>
+      <div class="ex-list">${itemsHTML}</div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  document.getElementById('exercises-groups').innerHTML = groupsHTML ||
+    '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Noch keine Trainingstage mit Übungen vorhanden.</p>';
+}
+
+function renderExercisesByMuscle() {
+  const exs = DB.getExercises();
+  const byMuscle = {};
+  MUSCLE_ORDER.forEach(m => byMuscle[m] = []);
+  exs.forEach(e => { if (byMuscle[e.muscle]) byMuscle[e.muscle].push(e); });
+
+  const groupsHTML = MUSCLE_ORDER.map(m => {
+    const meta = MUSCLE_META[m];
+    const items = byMuscle[m].sort((a,b) => a.name.localeCompare(b.name, 'de'));
+    if (!items.length) return '';
+    const itemsHTML = items.map(ex => buildExItemHTML(ex)).join('');
+    return `<div class="ex-group" style="--mc:${meta.color}">
+      <div class="ex-group-title">
+        <span class="dot"></span>
+        ${meta.name}
+        <span class="count">(${items.length})</span>
+      </div>
+      <div class="ex-list">${itemsHTML}</div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  document.getElementById('exercises-groups').innerHTML = groupsHTML ||
+    '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Keine Übungen vorhanden. Füge eine neue Übung hinzu.</p>';
+}
+
+function toggleExItem(id) {
+  openExerciseId = (openExerciseId === id) ? null : id;
+  renderExercises();
+}
+
+function saveExerciseNote(id, value) {
+  const exs = DB.getExercises();
+  const ex = exs.find(e => e.id === id);
+  if (!ex) return;
+  ex.notes = value;
+  DB.saveExercises(exs);
+  // If we're currently viewing an active workout, refresh notes textarea(s) for this exercise
+  if (DB.getActive()) {
+    document.querySelectorAll(`.aex-v2-notes-area[data-ex-id="${id}"]`).forEach(t => {
+      if (document.activeElement !== t) t.value = value;
+    });
+  }
+}
+
+function editExerciseFromCatalog(id) {
+  newExContext = 'edit-from-catalog';
+  editingExerciseId = id;
+  const ex = DB.getExercises().find(e => e.id === id);
+  if (!ex) return;
+  document.getElementById('new-ex-name').value = ex.name;
+  document.getElementById('new-ex-muscle').value = ex.muscle;
+  document.querySelector('#modal-new-ex .sheet-title').textContent = 'Übung bearbeiten';
+  openModal('modal-new-ex');
+}
+
+function deleteExerciseFromCatalog(id) {
+  const ex = DB.getExercises().find(e => e.id === id);
+  if (!ex) return;
+  const plan = DB.getPlan();
+  const usedInPlan = plan.some(d => d.exercises.some(e => e.exId === id));
+  const msg = usedInPlan
+    ? `„${ex.name}" wird in mindestens einem Trainingstag verwendet. Trotzdem löschen? Die Übung wird automatisch aus dem Plan entfernt.`
+    : `„${ex.name}" wirklich löschen?`;
+  confirmAction('Übung löschen?', msg, () => {
+    if (usedInPlan) {
+      const p = DB.getPlan();
+      p.forEach(d => { d.exercises = d.exercises.filter(e => e.exId !== id); });
+      DB.savePlan(p);
+    }
+    const exs = DB.getExercises().filter(e => e.id !== id);
+    DB.saveExercises(exs);
+    if (openExerciseId === id) openExerciseId = null;
+    renderExercises();
+    showToast('Übung gelöscht');
+  }, { danger: true, confirmLabel: 'Löschen' });
+}
+
+// "Zum Plan hinzufügen" aus dem Übungen-Tab
+let exerciseToAddId = null;
+
+function openAddExerciseToPlanDay(exId) {
+  exerciseToAddId = exId;
+  const ex = DB.getExercises().find(e => e.id === exId);
+  document.getElementById('modal-ex-to-day-title').textContent =
+    ex ? `„${ex.name}" zu welchem Trainingstag?` : 'Zu welchem Trainingstag hinzufügen?';
+  renderExToDayList();
+  openModal('modal-ex-to-day');
+}
+
+function renderExToDayList() {
+  const plan = DB.getPlan();
+  const html = plan.map((d, i) => {
+    const setCount = d.exercises.reduce((a,e)=>a+e.targetSets, 0);
+    const alreadyIn = d.exercises.some(e => e.exId === exerciseToAddId);
+    const cls = `day-pick-row${alreadyIn ? ' in-day' : ' not-in-day'}`;
+    const onclickAttr = alreadyIn ? '' : `onclick="addExerciseToPlanDay(${i})"`;
+    const subExtra = alreadyIn ? ' · Bereits enthalten' : '';
+    const actions = alreadyIn
+      ? `<span class="day-pick-icon done">✓</span>
+         <button class="day-pick-remove" onclick="event.stopPropagation();removeExerciseFromPlanDay(${i})" aria-label="Entfernen">−</button>`
+      : `<span class="day-pick-icon">+</span>`;
+    return `<div class="${cls}" ${onclickAttr}>
+      <div class="day-pick-info">
+        <div class="day-pick-name">${d.name}</div>
+        <div class="day-pick-sub">${d.exercises.length} Übungen · ${setCount} Sätze${subExtra}</div>
+      </div>
+      <div class="day-pick-actions">${actions}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('ex-to-day-list').innerHTML = html ||
+    '<p style="color:var(--text3);text-align:center;padding:20px">Noch keine Trainingstage. Lege zuerst einen unter „Mehr" an.</p>';
+}
+
+function removeExerciseFromPlanDay(dayIdx) {
+  if (!exerciseToAddId) return;
+  const plan = DB.getPlan();
+  if (!plan[dayIdx]) return;
+  const before = plan[dayIdx].exercises.length;
+  plan[dayIdx].exercises = plan[dayIdx].exercises.filter(e => e.exId !== exerciseToAddId);
+  if (plan[dayIdx].exercises.length === before) return;
   DB.savePlan(plan);
-  renderMehr();
-  showToast(`"${name.trim()}" hinzugefügt`);
-  openPlanDayModal(plan.length - 1);
+  const ex = DB.getExercises().find(e => e.id === exerciseToAddId);
+  showToast(`„${ex?.name||'Übung'}" aus „${plan[dayIdx].name}" entfernt`);
+  renderExToDayList();       // Modal-Liste neu zeichnen
+  renderExercises();         // Übungen-Tab im Hintergrund aktualisieren
+}
+
+function addExerciseToPlanDay(dayIdx) {
+  if (!exerciseToAddId) return;
+  const plan = DB.getPlan();
+  if (!plan[dayIdx]) return;
+  plan[dayIdx].exercises.push({ exId: exerciseToAddId, targetSets: 3, targetReps: 8 });
+  DB.savePlan(plan);
+  const ex = DB.getExercises().find(e => e.id === exerciseToAddId);
+  const dayName = plan[dayIdx].name;
+  closeModal('modal-ex-to-day');
+  exerciseToAddId = null;
+  showToast(`„${ex?.name||'Übung'}" zu „${dayName}" hinzugefügt`);
+  renderExercises(); // refresh "Im Plan"-Tag & "Verwendet in"-Liste
+}
+
+function createNewPlanDayAndAddEx() {
+  const exId = exerciseToAddId;
+  if (!exId) return;
+  // Erst Day-Picker schließen, dann Name-Input öffnen
+  closeModal('modal-ex-to-day');
+  setTimeout(() => {
+    promptForName('Name des neuen Trainingstags', 'Neuer Tag',
+      (name) => {
+        const plan = DB.getPlan();
+        const id = 'day_' + Date.now();
+        plan.push({ id, name, color: null, exercises: [{ exId, targetSets: 3, targetReps: 8 }] });
+        DB.savePlan(plan);
+        const ex = DB.getExercises().find(e => e.id === exId);
+        showToast(`„${ex?.name||'Übung'}" zu „${name}" hinzugefügt`);
+        exerciseToAddId = null;
+        renderExercises();
+      },
+      () => { exerciseToAddId = null; }
+    );
+  }, 100);
 }
 
 function deletePlanDay(idx) {
   const plan = DB.getPlan();
   const day = plan[idx];
   if (!day) return;
-  if (!confirm(`Trainingstag "${day.name}" wirklich löschen?\nEr wird auch aus dem Wochenplan entfernt.`)) return;
-  const removedId = day.id;
-  plan.splice(idx, 1);
-  DB.savePlan(plan);
-  // Clean up weekplan references
-  const wp = DB.getWeekPlan();
-  let wpChanged = false;
-  wp.forEach(d => { if (d.planDayId === removedId) { d.planDayId = null; d.time=''; wpChanged = true; } });
-  if (wpChanged) DB.saveWeekPlan(wp);
-  renderMehr();
-  showToast('Trainingstag gelöscht');
+  confirmAction('Trainingstag löschen?',
+    `„${day.name}" wirklich löschen? Er wird auch aus dem Wochenplan entfernt.`,
+    () => {
+      const p = DB.getPlan();
+      const removedId = day.id;
+      p.splice(idx, 1);
+      DB.savePlan(p);
+      const wp = DB.getWeekPlan();
+      let wpChanged = false;
+      wp.forEach(d => { if (d.planDayId === removedId) { d.planDayId = null; wpChanged = true; } });
+      if (wpChanged) DB.saveWeekPlan(wp);
+      renderMehr();
+      showToast('Trainingstag gelöscht');
+    },
+    { danger: true, confirmLabel: 'Löschen' }
+  );
 }
 
 function renderPlanDayExList(day) {
@@ -2863,24 +3644,102 @@ function savePlanDay() {
   showToast('Plan gespeichert');
 }
 
+let planAddSelection = new Set();
+
 function openAddToPlanModal() {
   document.getElementById('plan-add-search').value = '';
+  planAddSelection.clear();
   renderPlanAddList('');
+  updatePlanAddSubmitBtn();
   openModal('modal-add-to-plan');
 }
 
 function filterPlanAdd() { renderPlanAddList(document.getElementById('plan-add-search').value); }
 
+function togglePlanAddSelection(exId) {
+  if (planAddSelection.has(exId)) planAddSelection.delete(exId);
+  else planAddSelection.add(exId);
+  renderPlanAddList(document.getElementById('plan-add-search').value);
+  updatePlanAddSubmitBtn();
+}
+
+function updatePlanAddSubmitBtn() {
+  const btn = document.getElementById('plan-add-confirm');
+  if (!btn) return;
+  const n = planAddSelection.size;
+  btn.disabled = n === 0;
+  btn.textContent = n === 0 ? 'Hinzufügen' : `${n} Übung${n>1?'en':''} hinzufügen`;
+}
+
+function exitPlanAddModal() {
+  planAddSelection.clear();
+  closeModal('modal-add-to-plan');
+}
+
+function confirmPlanAddSelection() {
+  if (planAddSelection.size === 0) return;
+  const plan = DB.getPlan();
+  if (!plan[editingDayIdx]) return;
+  let added = 0;
+  planAddSelection.forEach(exId => {
+    plan[editingDayIdx].exercises.push({ exId, targetSets: 3, targetReps: 8 });
+    added++;
+  });
+  DB.savePlan(plan);
+  planAddSelection.clear();
+  closeModal('modal-add-to-plan');
+  renderPlanDayExList(plan[editingDayIdx]);
+  showToast(`${added} Übung${added>1?'en':''} hinzugefügt`);
+}
+
 function renderPlanAddList(q) {
   const exs = DB.getExercises();
   const plan = DB.getPlan();
   const existing = new Set((plan[editingDayIdx]?.exercises || []).map(e => e.exId));
-  const filtered = exs.filter(e => !existing.has(e.id) && (!q || e.name.toLowerCase().includes(q.toLowerCase())));
-  document.getElementById('plan-add-list').innerHTML = filtered.map(e =>
-    `<div class="sheet-item" onclick="addToPlanDay('${e.id}')">
-      <div><div class="sheet-item-name">${e.name}</div><div class="sheet-item-sub">${muscleName(e.muscle)}</div></div>
-      <span style="color:var(--accent);font-size:20px">+</span>
-    </div>`).join('') || '<p style="color:var(--text3);text-align:center;padding:20px">Keine Übung gefunden</p>';
+  const query = (q || '').toLowerCase();
+
+  const byMuscle = {};
+  MUSCLE_ORDER.forEach(m => byMuscle[m] = []);
+  exs.forEach(e => {
+    if (query && !e.name.toLowerCase().includes(query)) return;
+    if (byMuscle[e.muscle]) byMuscle[e.muscle].push(e);
+  });
+
+  const groupsHTML = MUSCLE_ORDER.map(m => {
+    const meta = MUSCLE_META[m];
+    const items = byMuscle[m].sort((a,b) => a.name.localeCompare(b.name, 'de'));
+    if (!items.length) return '';
+    const itemsHTML = items.map(ex => {
+      const usingDays = getPlanDaysUsingExercise(ex.id);
+      const planTag = usingDays.length
+        ? '<span class="ex-item-plan-tag">Im Plan</span>'
+        : '';
+      const inCurrent = existing.has(ex.id);
+      const selected = planAddSelection.has(ex.id);
+      const cls = `ex-item${inCurrent ? ' in-current-day' : ''}`;
+      const checkCls = inCurrent ? 'in-day' : (selected ? 'checked' : '');
+      const onclickAttr = inCurrent ? '' : `onclick="togglePlanAddSelection('${ex.id}')"`;
+      return `<div class="${cls}" style="--mc:${meta.color}" ${onclickAttr}>
+        <div class="ex-item-head">
+          <div class="ex-item-stripe"></div>
+          <div class="ex-item-name">${ex.name}</div>
+          ${planTag}
+          <span class="plan-add-check ${checkCls}">✓</span>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="ex-group" style="--mc:${meta.color}">
+      <div class="ex-group-title">
+        <span class="dot"></span>
+        ${meta.name}
+        <span class="count">(${items.length})</span>
+      </div>
+      <div class="ex-list">${itemsHTML}</div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  document.getElementById('plan-add-list').innerHTML = groupsHTML ||
+    '<p style="color:var(--text3);text-align:center;padding:20px">Keine Übung gefunden</p>';
 }
 
 function addToPlanDay(exId) {
@@ -2893,9 +3752,15 @@ function addToPlanDay(exId) {
   if (ex) showToast(`${ex.name} hinzugefügt`);
 }
 
-function openNewExModal() {
+let editingExerciseId = null;
+let newExContext = 'plan'; // 'plan' | 'exercises' | 'edit-from-catalog'
+
+function openNewExModal(context) {
+  newExContext = context || 'plan';
+  editingExerciseId = null;
   document.getElementById('new-ex-name').value = '';
   document.getElementById('new-ex-muscle').value = 'chest';
+  document.querySelector('#modal-new-ex .sheet-title').textContent = 'Neue Übung erstellen';
   openModal('modal-new-ex');
 }
 
@@ -2904,15 +3769,43 @@ function saveNewEx() {
   if (!name) { showToast('Bitte Namen eingeben'); return; }
   const muscle = document.getElementById('new-ex-muscle').value;
   const exs = DB.getExercises();
-  const id = 'custom_' + Date.now();
   const cat = muscle === 'legs' ? 'legs'
             : (muscle === 'back' || muscle === 'biceps') ? 'pull'
             : 'push';
-  exs.push({ id, name, muscle, category: cat, isCustom: true });
+
+  // Edit-mode (from exercises catalog)
+  if (editingExerciseId) {
+    const ex = exs.find(e => e.id === editingExerciseId);
+    if (ex) {
+      ex.name = name;
+      ex.muscle = muscle;
+      ex.category = cat;
+      DB.saveExercises(exs);
+    }
+    editingExerciseId = null;
+    closeModal('modal-new-ex');
+    if (currentScreen === 'exercises') renderExercises();
+    showToast('Übung aktualisiert');
+    return;
+  }
+
+  // Create new
+  const id = 'custom_' + Date.now();
+  exs.push({ id, name, muscle, category: cat, isCustom: true, notes: '' });
   DB.saveExercises(exs);
   closeModal('modal-new-ex');
-  // Re-open plan add modal (if it was open)
-  openAddToPlanModal();
+
+  if (newExContext === 'exercises' || currentScreen === 'exercises') {
+    openExerciseId = id;
+    renderExercises();
+  } else {
+    // Plan-Kontext: neue Übung gleich auto-selektieren und bestehende Auswahl beibehalten
+    planAddSelection.add(id);
+    document.getElementById('plan-add-search').value = '';
+    renderPlanAddList('');
+    updatePlanAddSubmitBtn();
+    openModal('modal-add-to-plan');
+  }
   showToast(`"${name}" erstellt`);
 }
 
@@ -2937,16 +3830,21 @@ function importData(event) {
   reader.onload = e => {
     try {
       const data = JSON.parse(e.target.result);
-      if (!data.workouts || !data.plan || !data.exercises) { showToast('Ungültige Datei'); return; }
+      if (!data.workouts || !data.plan || !data.exercises) { showToast('Ungültige Datei'); event.target.value=''; return; }
       const exportDate = data.exportedAt ? new Date(data.exportedAt).toLocaleDateString('de-DE') : 'unbekannt';
-      if (!confirm(`Backup vom ${exportDate} importieren?\nAlle aktuellen Daten werden überschrieben.`)) { event.target.value=''; return; }
-      DB.saveWorkouts(data.workouts);
-      DB.savePlan(data.plan);
-      DB.saveExercises(data.exercises);
-      event.target.value='';
-      showToast(`${data.workouts.length} Workouts importiert ✓`);
-      renderMehr();
-    } catch { showToast('Fehler beim Lesen der Datei'); }
+      confirmAction('Backup importieren?',
+        `Backup vom ${exportDate} importieren? Alle aktuellen Daten werden überschrieben.`,
+        () => {
+          DB.saveWorkouts(data.workouts);
+          DB.savePlan(data.plan);
+          DB.saveExercises(data.exercises);
+          showToast(`${data.workouts.length} Workouts importiert ✓`);
+          renderMehr();
+        },
+        { danger: true, confirmLabel: 'Importieren' }
+      );
+      event.target.value = '';
+    } catch { showToast('Fehler beim Lesen der Datei'); event.target.value=''; }
   };
   reader.readAsText(file);
 }
