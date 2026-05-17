@@ -59,7 +59,7 @@ const DEFAULT_PLAN = [
 ];
 
 const DEFAULT_PROGRAM = {
-  name: 'Mein Programm',
+  name: 'Mein Trainingsplan',
   weeksTotal: 12,
   startDate: null,   // ms timestamp; set on first save
   endDate: null,     // ms timestamp; recomputed from start + weeksTotal if missing
@@ -454,7 +454,7 @@ function renderOverview() {
   segbar.innerHTML = Array.from({length: segCount}, (_,i) =>
     `<div class="program-card-seg ${i < segDone ? 'done':''}"></div>`).join('');
   document.getElementById('ov-program-side').innerHTML =
-    `KW ${isoWeekNum()}<br>${prog.name||'Programm'}`;
+    `KW ${isoWeekNum()}<br>${prog.name||'Trainingsplan'}`;
   document.getElementById('ov-program-label').textContent = 'TRAININGSWOCHE';
 
   // ─ 7-day strip ─
@@ -1390,7 +1390,7 @@ function renderHistory() {
 
   // Trainings-Programmwoche
   document.getElementById('hist-week-num').textContent = `Woche ${prog.num}`;
-  document.getElementById('hist-week-sub').textContent = `${prog.total}-Wochen-Programm`;
+  document.getElementById('hist-week-sub').textContent = `${prog.total}-Wochen-Trainingsplan`;
 
   // Volume chart by week
   renderVolumeChart(ws);
@@ -1696,7 +1696,7 @@ function renderMehr() {
 
 function saveProgramForm() {
   const p = DB.getProgram();
-  p.name = document.getElementById('prog-name').value.trim() || 'Mein Programm';
+  p.name = document.getElementById('prog-name').value.trim() || 'Mein Trainingsplan';
   DB.saveProgram(p);
 }
 
@@ -2490,8 +2490,10 @@ function importTrainingPlan(event) {
     // Summary aufbauen
     const dayCount = data.trainingDays.length;
     const totalEx = data.trainingDays.reduce((s, d) => s + d.exercises.length, 0);
-    const progInfo = data.program
-      ? `<br><br>Enthält außerdem Programm-Daten ("${escapeHtml(data.program.name || 'unbenannt')}", ${data.program.weeksTotal || '?'} Wochen).`
+    // Akzeptiert `trainingPlan` (UI-konsistent) und `program` (Legacy)
+    const tp = data.trainingPlan || data.program;
+    const progInfo = tp
+      ? `<br><br>Enthält außerdem Trainingsplan-Daten ("${escapeHtml(tp.name || 'unbenannt')}", ${tp.weeksTotal || '?'} Wochen).`
       : '';
     document.getElementById('plan-import-summary').innerHTML =
       `<strong>${dayCount}</strong> Trainingstage mit insgesamt <strong>${totalEx}</strong> Übungen werden importiert.${progInfo}<br><br>Wie soll mit deinem bestehenden Plan verfahren werden?`;
@@ -2508,15 +2510,16 @@ function cancelPlanImport() {
 function confirmPlanImport(mode) {
   closeModal('modal-plan-import');
   if (!pendingPlanImport) return;
-  if (pendingPlanImport.program) {
-    // Step 2: Programm-Daten übernehmen?
+  const tp = pendingPlanImport.trainingPlan || pendingPlanImport.program;
+  if (tp) {
+    // Step 2: Trainingsplan-Daten übernehmen?
     setTimeout(() => {
       confirmAction(
-        'Programm-Daten übernehmen?',
-        `Möchtest du Name, Wochenanzahl und Startdatum aus dem Import übernehmen? Bei "Abbrechen" werden nur die Trainingstage importiert (dein aktuelles Programm bleibt erhalten).`,
+        'Trainingsplan-Daten übernehmen?',
+        `Möchtest du Name, Wochenanzahl und Startdatum aus dem Import übernehmen? Bei "Abbrechen" werden nur die Trainingstage importiert (dein aktueller Trainingsplan bleibt erhalten).`,
         () => applyPlanImport(mode, true),
         {
-          confirmLabel: 'Programm übernehmen',
+          confirmLabel: 'Trainingsplan übernehmen',
           onCancel: () => applyPlanImport(mode, false),
         }
       );
@@ -2595,15 +2598,16 @@ function applyPlanImport(mode, useProgramData) {
   DB.saveExercises(exs);
   DB.savePlan(newPlan);
 
-  // Programm-Daten ggf. übernehmen
-  if (useProgramData && data.program) {
+  // Trainingsplan-Daten ggf. übernehmen (akzeptiert sowohl `trainingPlan` als auch Legacy `program`)
+  const tp = data.trainingPlan || data.program;
+  if (useProgramData && tp) {
     const prog = DB.getProgram();
-    if (data.program.name) prog.name = String(data.program.name).trim();
-    if (Number.isFinite(+data.program.weeksTotal) && +data.program.weeksTotal > 0) {
-      prog.weeksTotal = +data.program.weeksTotal;
+    if (tp.name) prog.name = String(tp.name).trim();
+    if (Number.isFinite(+tp.weeksTotal) && +tp.weeksTotal > 0) {
+      prog.weeksTotal = +tp.weeksTotal;
     }
-    if (data.program.startDate) {
-      const ms = _dateToMs(data.program.startDate);
+    if (tp.startDate) {
+      const ms = _dateToMs(tp.startDate);
       if (ms) {
         prog.startDate = ms;
         prog.endDate = ms + (prog.weeksTotal || 12) * 7 * 24 * 3600 * 1000;
