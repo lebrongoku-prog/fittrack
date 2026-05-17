@@ -52,6 +52,15 @@
       <div class="next7-strip" id="ov-next7-strip"></div>
     </div>
 
+    <!-- Letzte Sessions (kompakter Rückblick) -->
+    <div class="plan-section-card" id="ov-recent-sessions-card">
+      <div class="plan-section-head">
+        <h3>Letzte Sessions</h3>
+        <a onclick="showScreen('history')">Alle anzeigen</a>
+      </div>
+      <div id="ov-recent-sessions-list"></div>
+    </div>
+
   </div><!-- /overview -->
 
   <!-- ══ SCREEN: WORKOUTS ══ -->
@@ -158,7 +167,7 @@
     </div>
 
     <!-- Volume development chart v2 -->
-    <div class="chart-card-v2">
+    <div class="chart-card-v2 lg-span-2">
       <div class="chart-card-v2-head">
         <span class="chart-card-v2-title">Volumenentwicklung</span>
         <div class="chart-card-v2-toggle" onclick="toggleVolumeUnit()">
@@ -172,7 +181,7 @@
     </div>
 
     <!-- Muscle group volume v2 -->
-    <div class="chart-card-v2">
+    <div class="chart-card-v2 lg-col1">
       <div class="chart-card-v2-head"><span class="chart-card-v2-title">Volumen pro Muskelgruppe</span></div>
       <div class="muscle-bars-v2" id="muscle-bars">
         <p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>
@@ -180,7 +189,7 @@
     </div>
 
     <!-- PRs v2 -->
-    <div class="chart-card-v2">
+    <div class="chart-card-v2 lg-col2">
       <div class="chart-card-v2-head"><span class="chart-card-v2-title">PRs & Bestleistungen</span></div>
       <div class="pr-list-v2" id="hist-pr-list">
         <p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine PRs</p>
@@ -188,7 +197,7 @@
     </div>
 
     <!-- Recent sessions v2 -->
-    <div class="chart-card-v2">
+    <div class="chart-card-v2 lg-span-2">
       <div class="chart-card-v2-head">
         <span class="chart-card-v2-title">Letzte Sessions</span>
         <a style="font-size:13px;color:var(--accent);font-weight:600;cursor:pointer" onclick="showAllSessions()">Alle anzeigen</a>
@@ -204,7 +213,7 @@
   <div id="screen-mehr" class="screen">
     <div class="ph"><div class="ph-left"><h1>Mehr</h1></div></div>
 
-    <div class="mehr-section">
+    <div class="mehr-section lg-col1">
       <div class="mehr-section-title">Trainingsplan</div>
       <div class="mehr-card">
         <div class="program-form-row">
@@ -228,18 +237,18 @@
       </div>
     </div>
 
-    <div class="mehr-section">
+    <div class="mehr-section lg-col1">
       <div class="mehr-section-title">Wochenplan (Mo – So)</div>
       <div class="mehr-card" id="mehr-weekplan"></div>
     </div>
 
-    <div class="mehr-section">
+    <div class="mehr-section lg-col1">
       <div class="mehr-section-title">Trainingstage</div>
       <div class="mehr-card" id="mehr-plan-list"></div>
       <button class="btn btn-outline btn-full" style="margin-top:10px" onclick="addNewPlanDay()">+ Trainingstag hinzufügen</button>
     </div>
 
-    <div class="mehr-section">
+    <div class="mehr-section lg-col2">
       <div class="mehr-section-title">Cloud-Sync (Google Drive)</div>
       <div class="mehr-card" id="drive-card">
         <!-- Disconnected state -->
@@ -301,7 +310,7 @@
       </div>
     </div>
 
-    <div class="mehr-section">
+    <div class="mehr-section lg-col2">
       <div class="mehr-section-title">Daten &amp; Sicherheit</div>
       <div class="mehr-card">
         <div class="mehr-row" onclick="exportData()" style="cursor:pointer">

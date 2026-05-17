@@ -1295,6 +1295,79 @@ body.theme-history .hist-action-dd {
 .drive-log-warn .drive-log-msg { color: #ca8a04; font-weight: 600; }
 .drive-log-error .drive-log-msg { color: #dc2626; font-weight: 600; }
 
+/* ═══════════════════════════════════════════════
+   LANDSCAPE / WIDE-SCREEN LAYOUT (ab 1024px)
+   iPhone landscape (≤932px) bleibt im Mobile-Layout.
+   ═══════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  /* Screen-Inhalt auf 1200px begrenzen + zentrieren (sonst zu viel Leere auf Ultra-Wide) */
+  .screen {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ÜBERSICHT — 2-Spalten via Grid + class/id-based placement */
+  #screen-overview.active {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 0;
+    align-items: start;
+  }
+  #screen-overview.active > .ph { grid-column: 1 / -1; }
+  #screen-overview.active > #ov-hero-wrap,
+  #screen-overview.active > .program-card { grid-column: 1; }
+  #screen-overview.active > .plan-section-card { grid-column: 2; }
+
+  /* WORKOUTS — Übungs-Liste 2-spaltig */
+  #active-ex-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 12px;
+    align-items: start;
+  }
+
+  /* ÜBUNGEN — Muskelgruppen 2-spaltig (Accordion-Blöcke nebeneinander) */
+  #exercises-groups {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 14px;
+    align-items: start;
+  }
+  /* In landscape muss jede Muskelgruppen-Gruppe ihre eigenen horizontalen Margins
+     verlieren, da der Grid-gap das übernimmt — sonst doppelter Abstand */
+  #exercises-groups > .ex-group { margin-left: 14px; margin-right: 14px; }
+
+  /* VERLAUF — gemischt: einige Karten Vollbreite, zwei nebeneinander, via Klassen */
+  #screen-history.active {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 0;
+    align-items: start;
+  }
+  #screen-history.active > .ph,
+  #screen-history.active > .stats-row-v2,
+  #screen-history.active > .lg-span-2 { grid-column: 1 / -1; }
+  #screen-history.active > .lg-col1 { grid-column: 1; }
+  #screen-history.active > .lg-col2 { grid-column: 2; }
+
+  /* MEHR — CSS Multi-Column für natürliches Balancing (Sections rutschen je nach Höhe) */
+  #screen-mehr.active {
+    column-count: 2;
+    column-gap: 0;
+    column-fill: balance;
+  }
+  #screen-mehr.active > .ph {
+    column-span: all;
+  }
+  #screen-mehr.active > .mehr-section {
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+    page-break-inside: avoid;
+    display: block; /* CSS columns sicherer mit display:block */
+  }
+}
+
 /* Conflict-Modal: side-by-side */
 .drive-conflict-compare {
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px;

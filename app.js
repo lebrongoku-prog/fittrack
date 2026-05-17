@@ -460,7 +460,33 @@ function renderOverview() {
   // ─ 7-day strip ─
   renderNext7Strip(week7);
 
-  // ─ Two-col compact cards ─
+  // ─ Letzte Sessions (kompakt, 3 jüngste) ─
+  renderRecentSessionsOnOverview();
+}
+
+function renderRecentSessionsOnOverview() {
+  const container = document.getElementById('ov-recent-sessions-list');
+  if (!container) return;
+  const ws = DB.getWorkouts().slice(0, 3);
+  if (!ws.length) {
+    container.innerHTML = '<p style="font-size:13px;color:var(--text3);padding:8px 0;text-align:center;margin:0">Noch keine Workouts</p>';
+    return;
+  }
+  const plan = DB.getPlan();
+  container.innerHTML = ws.map((w, i) => {
+    const day = plan.find(d => d.id === w.planDayId);
+    const dayName = day ? day.name : (w.planDayName || 'Freestyle');
+    return `<div class="sess-v2-row" onclick="showHistDetail(${i})">
+      <div class="sess-v2-icon">
+        <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
+      </div>
+      <div class="sess-v2-info">
+        <div class="sess-v2-name">${pd(dayName)}</div>
+        <div class="sess-v2-meta">${fmtDateShort(w.startTs)} • ${fmtDur(w.duration)}</div>
+      </div>
+      <div class="sess-v2-arrow">›</div>
+    </div>`;
+  }).join('');
 }
 
 function dayLabel(label) {
@@ -1584,8 +1610,37 @@ function showHistDetail(i) {
     w.exercises.map(ex => {
       const setsStr = ex.sets.map((s,i) => `<div class="hist-set-row"><span>Satz ${i+1}:</span><span>${s.weight||'–'} kg × ${s.reps||'–'} Wdh.</span></div>`).join('');
       return `<div class="hist-ex-block"><div class="hist-ex-title">${ex.name}</div>${setsStr}${ex.notes?`<div style="font-size:12px;color:var(--text3);margin-top:4px">📝 ${ex.notes}</div>`:''}</div>`;
-    }).join('');
+    }).join('') +
+    `<button class="btn btn-danger btn-full" style="margin-top:18px" onclick="deleteSession(${i})">🗑 Session löschen</button>`;
   openModal('modal-hist-detail');
+}
+
+function deleteSession(i) {
+  const ws = DB.getWorkouts();
+  const w = ws[i];
+  if (!w) return;
+  const plan = DB.getPlan();
+  const day = plan.find(d => d.id === w.planDayId);
+  const dayName = day ? day.name : (w.planDayName || 'Freestyle');
+  const dateStr = fmtDate(w.startTs);
+  // Erst hist-detail-Modal schließen, dann confirmAction öffnen (z-index/DOM-Order-Schutz)
+  closeModal('modal-hist-detail');
+  setTimeout(() => {
+    confirmAction(
+      'Session löschen?',
+      `${dayName} vom ${dateStr} wirklich löschen? Volumen und PRs werden neu berechnet.`,
+      () => {
+        const ws2 = DB.getWorkouts();
+        ws2.splice(i, 1);
+        DB.saveWorkouts(ws2); // löst markLocalChange → Drive-Sync aus
+        showToast('Session gelöscht');
+        // Aktuellen Screen neu rendern, damit Stats/Charts/Listen aktualisiert werden
+        if (currentScreen === 'history') renderHistory();
+        else if (currentScreen === 'overview') renderOverview();
+      },
+      { danger: true, confirmLabel: 'Löschen' }
+    );
+  }, 80);
 }
 
 // ═══════════════════════════════════════════════
