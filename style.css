@@ -1300,7 +1300,16 @@ body.theme-history .hist-action-dd {
    iPhone landscape (≤932px) bleibt im Mobile-Layout.
    ═══════════════════════════════════════════════ */
 @media (min-width: 1024px) {
-  /* Content nutzt die volle Bildschirmbreite (keine max-width-Begrenzung) */
+  /* WICHTIG: Override der älteren Tablet-Regel ab 560px, die Karten auf max-width:520px
+     centriert hatte. Ab 1024px sollen Karten die volle (Grid-)Zellenbreite nutzen. */
+  .card, .hero-card, .ov-ex-card, .chart-card, .mehr-section, .aex-card, .session-card,
+  .hero-v2, .program-card, .plan-section-card, .session-card-v2, .chart-card-v2, .aex-v2,
+  .ex-group, .stats-row, .stats-row-v2, .two-col-grid {
+    max-width: none;
+    margin-left: 14px;
+    margin-right: 14px;
+  }
+  .info-row, .plan-carousel, .ex-tab-bar, .ex-tab-v2-bar { padding-left: 14px; }
 
   /* ÜBERSICHT — Hero volle Breite, darunter 2-Spalten */
   #screen-overview.active {
