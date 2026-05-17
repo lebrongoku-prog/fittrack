@@ -1199,6 +1199,12 @@ body.theme-history .hist-action-dd {
    GOOGLE DRIVE SYNC UI
    ═══════════════════════════════════════════════ */
 
+/* Innerer Padding-Wrapper (analog zu .mehr-row 14px 16px) — gibt Status + Button + Log Atem */
+#drive-disconnected,
+#drive-connected {
+  padding: 14px 16px;
+}
+
 /* Status-Block oben in der Card */
 .drive-status {
   display: flex; align-items: center; gap: 12px;
