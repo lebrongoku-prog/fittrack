@@ -1655,6 +1655,12 @@ function deleteSession(i) {
 // ═══════════════════════════════════════════════
 
 let editingDayIdx = null;
+let mehrInactivePlanExpanded = false; // Toggle für die kollabierbare "Andere Trainingstage"-Sektion
+
+function toggleMehrInactivePlans() {
+  mehrInactivePlanExpanded = !mehrInactivePlanExpanded;
+  renderMehr();
+}
 
 function renderMehr() {
   const plan = DB.getPlan();
@@ -1668,14 +1674,15 @@ function renderMehr() {
       dayLabelsFor[w.planDayId].push(w.label);
     }
   });
-  document.getElementById('mehr-plan-list').innerHTML = plan.map((d, i) => {
+
+  // Eine einzelne Trainingstag-Zeile rendern (Index bleibt erhalten für openPlanDayModal/deletePlanDay)
+  const renderRow = (d, i, isActive) => {
     const setCount = d.exercises.reduce((a,e) => a+e.targetSets, 0);
     const usedOn = dayLabelsFor[d.id] || [];
-    const activeCls = usedOn.length ? ' active' : '';
     const chips = usedOn.length
       ? `<div class="pdr-days">${usedOn.map(lbl => `<span class="pdr-day-chip">${lbl}</span>`).join('')}</div>`
       : '';
-    return `<div class="plan-day-row${activeCls}">
+    return `<div class="plan-day-row${isActive ? ' active' : ''}">
       <div class="pdr-info" onclick="openPlanDayModal(${i})" style="cursor:pointer">
         <div class="pdr-name">${pd(d.name)}</div>
         <div class="pdr-sub">${d.exercises.length} Übungen • ${setCount} Sätze</div>
@@ -1686,7 +1693,37 @@ function renderMehr() {
         <button class="del" onclick="event.stopPropagation();deletePlanDay(${i})" title="Löschen">✕</button>
       </div>
     </div>`;
-  }).join('');
+  };
+
+  // In aktive (Wochenplan-zugewiesen) vs inaktive Tage aufteilen — Original-Index für Edit/Delete erhalten
+  const activeRows = [], inactiveRows = [];
+  plan.forEach((d, i) => {
+    if (dayLabelsFor[d.id]) activeRows.push(renderRow(d, i, true));
+    else inactiveRows.push(renderRow(d, i, false));
+  });
+
+  // Render-Strategie:
+  // - 0 aktive: Alle direkt anzeigen (keine Trennung sinnvoll)
+  // - 0 inaktive: Nur aktive (kein kollabierbarer Header nötig)
+  // - Beides vorhanden: Aktive oben + kollabierbarer "Andere Trainingstage (N)"-Header
+  let html;
+  if (activeRows.length === 0) {
+    html = inactiveRows.length
+      ? inactiveRows.join('')
+      : '<div class="plan-day-empty">Noch keine Trainingstage erstellt</div>';
+  } else if (inactiveRows.length === 0) {
+    html = activeRows.join('');
+  } else {
+    const expanded = mehrInactivePlanExpanded;
+    html = activeRows.join('') +
+      `<div class="plan-day-collapse-header${expanded ? ' expanded' : ''}" onclick="toggleMehrInactivePlans()">
+         <span class="plan-day-collapse-arrow">${expanded ? '▾' : '▸'}</span>
+         <span class="plan-day-collapse-label">Andere Trainingstage</span>
+         <span class="plan-day-collapse-count">${inactiveRows.length}</span>
+       </div>` +
+      (expanded ? inactiveRows.join('') : '');
+  }
+  document.getElementById('mehr-plan-list').innerHTML = html;
 
   // Program form
   const p = DB.getProgram();
