@@ -1664,13 +1664,17 @@ function toggleMehrInactivePlans() {
 
 function renderMehr() {
   const plan = DB.getPlan();
-  // Map: planDayId → [Wochentag-Labels, in Reihenfolge Mo-So]
-  // Wird genutzt, um aktive Trainingstage visuell hervorzuheben
+  // Map: planDayId → [Wochentag-Labels in Mo-So-Reihenfolge]
+  // Plus: frühester Wochentag-Index pro planDayId (für Sortierung der aktiven Liste)
   const weekPlan = DB.getWeekPlan();
   const dayLabelsFor = {};
-  weekPlan.forEach(w => {
+  const earliestDayIdx = {};
+  weekPlan.forEach((w, idx) => {
     if (w.planDayId) {
-      if (!dayLabelsFor[w.planDayId]) dayLabelsFor[w.planDayId] = [];
+      if (!dayLabelsFor[w.planDayId]) {
+        dayLabelsFor[w.planDayId] = [];
+        earliestDayIdx[w.planDayId] = idx;
+      }
       dayLabelsFor[w.planDayId].push(w.label);
     }
   });
@@ -1695,12 +1699,19 @@ function renderMehr() {
     </div>`;
   };
 
-  // In aktive (Wochenplan-zugewiesen) vs inaktive Tage aufteilen — Original-Index für Edit/Delete erhalten
-  const activeRows = [], inactiveRows = [];
+  // In aktive (Wochenplan-zugewiesen) vs inaktive Tage aufteilen — Original-Index für Edit/Delete erhalten.
+  // Aktive werden nach frühestem zugewiesenen Wochentag (Mo→So) sortiert,
+  // inaktive bleiben in Plan-Reihenfolge (Import-Order).
+  const activeBucket = [], inactiveRows = [];
   plan.forEach((d, i) => {
-    if (dayLabelsFor[d.id]) activeRows.push(renderRow(d, i, true));
-    else inactiveRows.push(renderRow(d, i, false));
+    if (dayLabelsFor[d.id]) {
+      activeBucket.push({ sortIdx: earliestDayIdx[d.id], html: renderRow(d, i, true) });
+    } else {
+      inactiveRows.push(renderRow(d, i, false));
+    }
   });
+  activeBucket.sort((a, b) => a.sortIdx - b.sortIdx);
+  const activeRows = activeBucket.map(r => r.html);
 
   // Render-Strategie:
   // - 0 aktive: Alle direkt anzeigen (keine Trennung sinnvoll)
