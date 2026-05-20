@@ -2750,7 +2750,9 @@ function deletePlanDay(idx) {
       let wpChanged = false;
       wp.forEach(d => { if (d.planDayId === removedId) { d.planDayId = null; wpChanged = true; } });
       if (wpChanged) DB.saveWeekPlan(wp);
-      renderMehr();
+      // Aktuellen Screen neu rendern — Trainingstage-Liste wohnt jetzt im Plan-Detail-Screen
+      if (currentScreen === 'plan-detail') renderPlanDetail();
+      else if (currentScreen === 'mehr') renderMehr();
       showToast('Trainingstag gelöscht');
     },
     { danger: true, confirmLabel: 'Löschen' }
