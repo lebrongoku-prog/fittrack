@@ -56,9 +56,45 @@
     <div class="plan-section-card" id="ov-recent-sessions-card">
       <div class="plan-section-head">
         <h3>Letzte Sessions</h3>
-        <a onclick="showScreen('history')">Alle anzeigen</a>
       </div>
       <div id="ov-recent-sessions-list"></div>
+    </div>
+
+    <!-- Volumenentwicklung (vom Verlauf-Tab verschoben) -->
+    <div class="chart-card-v2 lg-span-2">
+      <div class="chart-card-v2-head">
+        <span class="chart-card-v2-title">Volumenentwicklung</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="hist-action-dd" onclick="openHistRangeDropdown()" id="hist-range-btn">
+            <svg viewBox="0 0 24 24" style="stroke:var(--accent);fill:none;stroke-width:1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span id="hist-range-label">30 Tage</span>
+            <svg viewBox="0 0 24 24" style="stroke:var(--accent);fill:none;stroke-width:1.8;width:12px;height:12px"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="chart-card-v2-toggle" onclick="toggleVolumeUnit()">
+            <span id="vol-unit-label">Kg</span>
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--text2);fill:none;stroke-width:1.8"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="volume-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Volumen pro Muskelgruppe -->
+    <div class="chart-card-v2 lg-col1">
+      <div class="chart-card-v2-head"><span class="chart-card-v2-title">Volumen pro Muskelgruppe</span></div>
+      <div class="muscle-bars-v2" id="muscle-bars">
+        <p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>
+      </div>
+    </div>
+
+    <!-- PRs & Bestleistungen -->
+    <div class="chart-card-v2 lg-col2">
+      <div class="chart-card-v2-head"><span class="chart-card-v2-title">PRs & Bestleistungen</span></div>
+      <div class="pr-list-v2" id="hist-pr-list">
+        <p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine PRs</p>
+      </div>
     </div>
 
   </div><!-- /overview -->
@@ -124,97 +160,34 @@
     <div id="exercises-groups"></div>
   </div>
 
-  <!-- ══ SCREEN: VERLAUF ══ -->
-  <div id="screen-history" class="screen">
+  <!-- ══ SCREEN: TRAININGSPLÄNE (Liste) ══ -->
+  <div id="screen-plans" class="screen">
     <div class="ph">
       <div class="ph-left">
-        <h1>Verlauf</h1>
-        <div class="ph-sub">Fortschritt &amp; Historie</div>
+        <h1>Trainingspläne</h1>
+        <div class="ph-sub" id="plans-subline">Übersicht aller Pläne</div>
       </div>
-      <div class="hist-action-dd" onclick="openHistRangeDropdown()" id="hist-range-btn">
-        <svg viewBox="0 0 24 24" style="stroke:var(--accent);fill:none;stroke-width:1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span id="hist-range-label">30 Tage</span>
-        <svg viewBox="0 0 24 24" style="stroke:var(--accent);fill:none;stroke-width:1.8;width:12px;height:12px"><polyline points="6 9 12 15 18 9"/></svg>
+      <div class="ex-add-btn" onclick="createNewPlan()" title="Neuen Trainingsplan erstellen">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </div>
+    </div>
+    <div id="plans-list"></div>
+  </div>
+
+  <!-- ══ SCREEN: TRAININGSPLAN-DETAIL ══ -->
+  <div id="screen-plan-detail" class="screen">
+    <div class="ph plan-detail-ph">
+      <button class="sheet-back-btn" onclick="closePlanDetail()" aria-label="Zurück zur Liste">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="ph-left">
+        <h1 id="plan-detail-title">Trainingsplan</h1>
+        <div class="ph-sub" id="plan-detail-subline"></div>
       </div>
     </div>
 
-    <!-- 3 stat-cards -->
-    <div class="stats-row-v2">
-      <div class="stat-card-v2 bg-blue">
-        <div class="stat-bubble b-blue">
-          <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
-        </div>
-        <div class="stat-card-v2-label">Workouts gesamt</div>
-        <div class="stat-card-v2-val" id="hist-total-wo">0</div>
-        <div class="stat-card-v2-sub" id="hist-total-sub">Letzte 30 Tage</div>
-      </div>
-      <div class="stat-card-v2 bg-purple">
-        <div class="stat-bubble b-purple">
-          <svg viewBox="0 0 24 24"><path d="M7 4h10v3a5 5 0 0 1-10 0z"/><path d="M5 6h2M17 6h2"/><path d="M9 13l-1 4h8l-1-4"/><path d="M7 21h10"/></svg>
-        </div>
-        <div class="stat-card-v2-label">Neue PRs</div>
-        <div class="stat-card-v2-val" id="hist-prs">0</div>
-        <div class="stat-card-v2-sub" id="hist-pr-period">Letzte 30 Tage</div>
-      </div>
-      <div class="stat-card-v2 bg-orange">
-        <div class="stat-bubble b-orange">
-          <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        </div>
-        <div class="stat-card-v2-label">Trainingswoche</div>
-        <div class="stat-card-v2-val text-orange"><span id="hist-week-num">Woche 1</span></div>
-        <div class="stat-card-v2-sub" id="hist-week-sub">Trainingsplan</div>
-      </div>
-    </div>
-
-    <!-- Volume development chart v2 -->
-    <div class="chart-card-v2 lg-span-2">
-      <div class="chart-card-v2-head">
-        <span class="chart-card-v2-title">Volumenentwicklung</span>
-        <div class="chart-card-v2-toggle" onclick="toggleVolumeUnit()">
-          <span id="vol-unit-label">Kg</span>
-          <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--text2);fill:none;stroke-width:1.8"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-      </div>
-      <div class="chart-wrap">
-        <canvas id="volume-chart"></canvas>
-      </div>
-    </div>
-
-    <!-- Muscle group volume v2 -->
-    <div class="chart-card-v2 lg-col1">
-      <div class="chart-card-v2-head"><span class="chart-card-v2-title">Volumen pro Muskelgruppe</span></div>
-      <div class="muscle-bars-v2" id="muscle-bars">
-        <p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>
-      </div>
-    </div>
-
-    <!-- PRs v2 -->
-    <div class="chart-card-v2 lg-col2">
-      <div class="chart-card-v2-head"><span class="chart-card-v2-title">PRs & Bestleistungen</span></div>
-      <div class="pr-list-v2" id="hist-pr-list">
-        <p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine PRs</p>
-      </div>
-    </div>
-
-    <!-- Recent sessions v2 -->
-    <div class="chart-card-v2 lg-span-2">
-      <div class="chart-card-v2-head">
-        <span class="chart-card-v2-title">Letzte Sessions</span>
-        <a style="font-size:13px;color:var(--accent);font-weight:600;cursor:pointer" onclick="showAllSessions()">Alle anzeigen</a>
-      </div>
-      <div class="sess-list-v2" id="hist-sessions">
-        <p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Workouts</p>
-      </div>
-    </div>
-
-  </div><!-- /history -->
-
-  <!-- ══ SCREEN: MEHR ══ -->
-  <div id="screen-mehr" class="screen">
-    <div class="ph"><div class="ph-left"><h1>Mehr</h1></div></div>
-
-    <div class="mehr-section lg-col1">
-      <div class="mehr-section-title">Trainingsplan</div>
+    <div class="mehr-section">
+      <div class="mehr-section-title">Trainingsplan-Daten</div>
       <div class="mehr-card">
         <div class="program-form-row">
           <label>Name des Trainingsplans</label>
@@ -237,18 +210,46 @@
       </div>
     </div>
 
-    <div class="mehr-section lg-col1">
+    <div class="mehr-section">
       <div class="mehr-section-title">Wochenplan (Mo – So)</div>
       <div class="mehr-card" id="mehr-weekplan"></div>
     </div>
 
-    <div class="mehr-section lg-col2">
+    <div class="mehr-section">
       <div class="mehr-section-title">Trainingstage</div>
       <div class="mehr-card" id="mehr-plan-list"></div>
       <button class="btn btn-outline btn-full" style="margin-top:10px" onclick="addNewPlanDay()">+ Trainingstag hinzufügen</button>
     </div>
 
-    <div class="mehr-section lg-col2">
+    <div class="mehr-section">
+      <div class="mehr-section-title">Aktionen</div>
+      <div class="mehr-card">
+        <div class="mehr-row" id="plan-archive-row" onclick="togglePlanArchive()" style="cursor:pointer">
+          <div class="mehr-row-icon" style="background:var(--accent-bg)">📦</div>
+          <div class="mehr-row-info">
+            <div class="mehr-row-label" id="plan-archive-label">Plan archivieren</div>
+            <div class="mehr-row-sub">Versteckt den Plan aus der Hauptliste, bleibt aber zugänglich</div>
+          </div>
+          <div class="mehr-row-action">›</div>
+        </div>
+        <div class="divider"></div>
+        <div class="mehr-row" onclick="deleteCurrentPlan()" style="cursor:pointer">
+          <div class="mehr-row-icon" style="background:var(--red-bg)">🗑</div>
+          <div class="mehr-row-info">
+            <div class="mehr-row-label" style="color:var(--red,#d33)">Plan löschen</div>
+            <div class="mehr-row-sub">Trainingstage und Wochenplan dieses Plans gehen verloren</div>
+          </div>
+          <div class="mehr-row-action">›</div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /plan-detail -->
+
+  <!-- ══ SCREEN: MEHR ══ -->
+  <div id="screen-mehr" class="screen">
+    <div class="ph"><div class="ph-left"><h1>Mehr</h1></div></div>
+
+    <div class="mehr-section lg-col1">
       <div class="mehr-section-title">Cloud-Sync (Google Drive)</div>
       <div class="mehr-card" id="drive-card">
         <!-- Disconnected state -->
@@ -363,9 +364,9 @@
     <svg viewBox="0 0 24 24"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>
     <span>Übungen</span>
   </div>
-  <div class="nav-btn" id="nav-history" onclick="showScreen('history')">
-    <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-    <span>Verlauf</span>
+  <div class="nav-btn" id="nav-plans" onclick="showScreen('plans')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Trainingspläne</span>
   </div>
   <div class="nav-btn" id="nav-mehr" onclick="showScreen('mehr')">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
@@ -555,7 +556,7 @@
   </div>
 </div>
 
-<!-- Trainingsplan-Import Entscheidung -->
+<!-- Trainingsplan-Import Bestätigung -->
 <div id="modal-plan-import" class="overlay hidden">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -563,8 +564,7 @@
     <div class="sheet-body">
       <p id="plan-import-summary" style="font-size:14px;color:var(--text2);margin-bottom:18px;line-height:1.5"></p>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <button class="btn btn-primary btn-full" onclick="confirmPlanImport('replace')">Bestehenden Plan ersetzen</button>
-        <button class="btn btn-outline btn-full" onclick="confirmPlanImport('append')">An bestehenden Plan anhängen</button>
+        <button class="btn btn-primary btn-full" onclick="confirmPlanImport()">Importieren</button>
         <button class="btn btn-ghost btn-full" onclick="cancelPlanImport()">Abbrechen</button>
       </div>
     </div>

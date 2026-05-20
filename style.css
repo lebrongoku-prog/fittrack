@@ -59,7 +59,7 @@ body.theme-workouts {
   --section-tint:       rgba(16, 185, 129, 0.20);
   --card-accent-border: rgba(5, 150, 105, 0.35);
 }
-body.theme-history {
+body.theme-plans {
   --accent:             #F59E0B;
   --accent-bg:          rgba(245, 158, 11, 0.12);
   --accent-soft:        #FEF3C7;       /* amber-100 */
@@ -84,7 +84,7 @@ body { display: flex; flex-direction: column; padding-top: var(--safe-t); transi
 /* Themed tabs use the accent gradient as the page background */
 body.theme-overview,
 body.theme-workouts,
-body.theme-history,
+body.theme-plans,
 body.theme-exercises {
   background: var(--gradient);
   background-attachment: fixed;
@@ -92,15 +92,15 @@ body.theme-exercises {
 /* Header texts adapt to the dark themed backgrounds */
 body.theme-overview .ph h1,
 body.theme-workouts .ph h1,
-body.theme-history .ph h1,
+body.theme-plans .ph h1,
 body.theme-exercises .ph h1  { color: #fff; }
 body.theme-overview .ph-sub,
 body.theme-workouts .ph-sub,
-body.theme-history .ph-sub,
+body.theme-plans .ph-sub,
 body.theme-exercises .ph-sub { color: rgba(255,255,255,0.78); }
 body.theme-overview .ph-sub-accent,
 body.theme-workouts .ph-sub-accent,
-body.theme-history .ph-sub-accent,
+body.theme-plans .ph-sub-accent,
 body.theme-exercises .ph-sub-accent { color: #fff; font-weight: 700; }
 /* Sticky workout header background needs to be transparent so the gradient shows */
 body.theme-workouts #screen-workouts .ph { background: transparent; }
@@ -109,7 +109,7 @@ body.theme-workouts #wo-sub-dot   { background: #fff !important; }
 body.theme-workouts .pause-btn-v2 { background: rgba(255,255,255,0.95); border-color: transparent; }
 body.theme-workouts .pause-btn-v2 svg { fill: var(--accent-dark); }
 /* History dropdown sits on the dark gradient – swap to glass look */
-body.theme-history .hist-action-dd {
+body.theme-plans .hist-action-dd {
   background: rgba(255,255,255,0.95); border-color: transparent;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
@@ -420,6 +420,79 @@ body.theme-history .hist-action-dd {
   font-size: 13px; color: var(--text3);
   font-style: italic;
 }
+
+/* ═══════════════════════════════════════════════
+   TRAININGSPLÄNE — Listen-Ansicht
+   ═══════════════════════════════════════════════ */
+.plan-list-row {
+  margin: 0 14px 10px;
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.plan-list-row.active { box-shadow: inset 4px 0 0 0 var(--accent), var(--shadow); }
+.plan-list-info { flex: 1; min-width: 0; }
+.plan-list-name { font-size: 16px; font-weight: 700; color: var(--text); }
+.plan-list-meta { font-size: 12px; color: var(--text3); margin-top: 3px; line-height: 1.4; }
+.plan-list-action { color: var(--text3); font-size: 18px; flex-shrink: 0; }
+
+/* Status-Chips für Pläne */
+.plan-status-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+  padding: 4px 9px; border-radius: 6px; flex-shrink: 0;
+  text-transform: none;
+}
+.plan-status-chip-active   { background: #FEF3C7; color: #78350F; }   /* Amber */
+.plan-status-chip-future   { background: #DBEAFE; color: #1E3A8A; }   /* Blau (kommt noch) */
+.plan-status-chip-past     { background: var(--card2); color: var(--text3); }
+.plan-status-chip-archived { background: var(--card2); color: var(--text3); }
+
+.plan-status-past .plan-list-name,
+.plan-status-archived .plan-list-name { color: var(--text2); }
+.plan-status-past .plan-list-meta,
+.plan-status-archived .plan-list-meta { color: var(--text3); }
+.plan-status-past, .plan-status-archived { opacity: 0.85; }
+
+/* Archivierte-Pläne kollabierbarer Header */
+.plans-list-archive-header {
+  margin: 16px 14px 8px;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  font-size: 13px; font-weight: 600; color: var(--text2);
+  box-shadow: var(--shadow);
+  user-select: none; -webkit-user-select: none;
+}
+
+/* Plan-Detail-Screen: ph mit Zurück-Pfeil links neben Titel */
+.plan-detail-ph {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 18px 16px 10px;
+}
+.plan-detail-ph .sheet-back-btn {
+  flex-shrink: 0;
+  background: var(--card);
+  border: none;
+  border-radius: 10px;
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  box-shadow: var(--shadow);
+  margin-top: 4px;
+}
+.plan-detail-ph .sheet-back-btn svg {
+  width: 18px; height: 18px;
+  stroke: var(--text2); fill: none; stroke-width: 2.2;
+}
+.plan-detail-ph .ph-left { flex: 1; min-width: 0; }
+body.theme-plans .plan-detail-ph .sheet-back-btn { background: rgba(255,255,255,0.95); }
+body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark); }
 .pdr-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
 .pdr-info { flex: 1; }
 .pdr-name { font-size: 15px; font-weight: 600; }
@@ -1398,6 +1471,10 @@ body.theme-history .hist-action-dd {
   #screen-overview.active > #ov-hero-wrap { grid-column: 1 / -1; }
   #screen-overview.active > .program-card { grid-column: 1; }
   #screen-overview.active > .plan-section-card { grid-column: 2; }
+  /* Stats-Karten in Übersicht (vom alten Verlauf-Tab) */
+  #screen-overview.active > .lg-span-2 { grid-column: 1 / -1; }
+  #screen-overview.active > .lg-col1 { grid-column: 1; }
+  #screen-overview.active > .lg-col2 { grid-column: 2; }
 
   /* Wochenplan-Kacheln verteilen sich gleichmäßig über die verfügbare Breite
      (statt 86px-Min-Width und linksbündig zu klemmen) */
@@ -1425,18 +1502,11 @@ body.theme-history .hist-action-dd {
      verlieren, da der Grid-gap das übernimmt — sonst doppelter Abstand */
   #exercises-groups > .ex-group { margin-left: 14px; margin-right: 14px; }
 
-  /* VERLAUF — gemischt: einige Karten Vollbreite, zwei nebeneinander, via Klassen */
-  #screen-history.active {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: 0;
-    align-items: start;
-  }
-  #screen-history.active > .ph,
-  #screen-history.active > .stats-row-v2,
-  #screen-history.active > .lg-span-2 { grid-column: 1 / -1; }
-  #screen-history.active > .lg-col1 { grid-column: 1; }
-  #screen-history.active > .lg-col2 { grid-column: 2; }
+  /* TRAININGSPLÄNE-Liste: einfache Single-Column-Liste, kein Grid nötig */
+  #screen-plans.active,
+  #screen-plan-detail.active { display: block; }
+  /* Plan-Detail nutzt das gleiche Theme wie Plans-Liste (Amber). Die mehr-section-Logik mit
+     dem Auto-Flow-dense-Grid für lg-col1/lg-col2 ist hier nicht nötig — alles flow-block. */
 
   /* MEHR — explizites Grid mit lg-col1/lg-col2-Klassen.
      `grid-auto-flow: dense` ist hier essentiell: Ohne diese Flag würden die drei

@@ -122,6 +122,59 @@ function migrateExerciseMuscle(ex) {
   return ex;
 }
 
+// ═══════════════════════════════════════════════
+// MULTI-PLAN DATA MODEL
+// ═══════════════════════════════════════════════
+// ft_plans = Liste aller Trainingspläne (jeder mit eigenen trainingDays + weekPlan).
+// editingPlanId = ID des Plans der gerade bearbeitet wird (Plan-Detail-View).
+//                 null = bearbeite den aktuell aktiven Plan (per Datum).
+// Migration: Beim ersten App-Start mit Multi-Plan-Code wird ft_program + ft_plan2 +
+// ft_weekplan automatisch in einen einzigen ersten Plan überführt.
+
+let editingPlanId = null;
+
+function _resolveEditPlan() {
+  const plans = DB.getPlans();
+  if (editingPlanId) return plans.find(p => p.id === editingPlanId);
+  return _findActivePlanIn(plans);
+}
+function _findActivePlanIn(plans) {
+  const now = Date.now();
+  return plans.find(p => !p.archived && p.startDate <= now && now <= p.endDate) || null;
+}
+function getActivePlan() { return _findActivePlanIn(DB.getPlans()); }
+
+function migrateToMultiPlan() {
+  if (localStorage.getItem('ft_plans')) return; // schon migriert
+  const oldProgramRaw = localStorage.getItem('ft_program');
+  const oldPlanRaw = localStorage.getItem('ft_plan2');
+  const oldWeekplanRaw = localStorage.getItem('ft_weekplan');
+  // Frische Installation → leere Liste
+  if (!oldProgramRaw && !oldPlanRaw && !oldWeekplanRaw) {
+    localStorage.setItem('ft_plans', JSON.stringify([]));
+    return;
+  }
+  let prog = { ...DEFAULT_PROGRAM };
+  try { if (oldProgramRaw) prog = JSON.parse(oldProgramRaw); } catch {}
+  let trainingDays = [];
+  try { if (oldPlanRaw) trainingDays = JSON.parse(oldPlanRaw); } catch {}
+  let weekPlan = JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
+  try { if (oldWeekplanRaw) weekPlan = JSON.parse(oldWeekplanRaw); } catch {}
+  const startDate = prog.startDate || Date.now();
+  const weeksTotal = prog.weeksTotal || 12;
+  const endDate = prog.endDate || (startDate + weeksTotal * 7 * 24 * 3600 * 1000);
+  const plan = {
+    id: 'plan_' + Date.now(),
+    name: prog.name || 'Mein Trainingsplan',
+    weeksTotal, startDate, endDate,
+    trainingDays, weekPlan,
+    archived: false,
+    createdAt: Date.now(),
+  };
+  localStorage.setItem('ft_plans', JSON.stringify([plan]));
+  // ft_program/ft_plan2/ft_weekplan bleiben als Notfall-Backup erhalten
+}
+
 const DB = {
   getExercises() {
     const s = localStorage.getItem('ft_exercises');
@@ -148,27 +201,70 @@ const DB = {
     return list;
   },
   saveExercises(v) { localStorage.setItem('ft_exercises', JSON.stringify(v)); markLocalChange(); },
-  getPlan() { const s = localStorage.getItem('ft_plan2'); return s ? JSON.parse(s) : JSON.parse(JSON.stringify(DEFAULT_PLAN)); },
-  savePlan(v) { localStorage.setItem('ft_plan2', JSON.stringify(v)); markLocalChange(); },
+
+  // Multi-Plan: Raw-Zugriff
+  getPlans() {
+    const s = localStorage.getItem('ft_plans');
+    return s ? JSON.parse(s) : [];
+  },
+  savePlans(plans) {
+    localStorage.setItem('ft_plans', JSON.stringify(plans));
+    markLocalChange();
+  },
+
+  // Backwards-Compat: getPlan/savePlan/getProgram/saveProgram/getWeekPlan/saveWeekPlan
+  // operieren auf dem aktuell bearbeiteten Plan (editingPlanId) bzw. fallback aktiver Plan.
+  // Damit funktionieren alle existierenden Mutator-Funktionen ohne Signatur-Änderung.
+  getPlan() {
+    const p = _resolveEditPlan();
+    return p ? p.trainingDays : JSON.parse(JSON.stringify(DEFAULT_PLAN));
+  },
+  savePlan(trainingDays) {
+    const targetId = editingPlanId || (getActivePlan()?.id);
+    if (!targetId) return;
+    const plans = this.getPlans();
+    const p = plans.find(pl => pl.id === targetId);
+    if (!p) return;
+    p.trainingDays = trainingDays;
+    this.savePlans(plans);
+  },
+  getProgram() {
+    const p = _resolveEditPlan();
+    if (!p) return { name: 'Mein Trainingsplan', weeksTotal: 12, startDate: Date.now(), endDate: Date.now() + 12*7*24*3600*1000 };
+    return { name: p.name, weeksTotal: p.weeksTotal, startDate: p.startDate, endDate: p.endDate };
+  },
+  saveProgram(prog) {
+    const targetId = editingPlanId || (getActivePlan()?.id);
+    if (!targetId) return;
+    const plans = this.getPlans();
+    const p = plans.find(pl => pl.id === targetId);
+    if (!p) return;
+    p.name = prog.name;
+    p.weeksTotal = prog.weeksTotal;
+    p.startDate = prog.startDate;
+    p.endDate = prog.endDate;
+    this.savePlans(plans);
+  },
+  getWeekPlan() {
+    const p = _resolveEditPlan();
+    return p ? p.weekPlan : JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
+  },
+  saveWeekPlan(wp) {
+    const targetId = editingPlanId || (getActivePlan()?.id);
+    if (!targetId) return;
+    const plans = this.getPlans();
+    const p = plans.find(pl => pl.id === targetId);
+    if (!p) return;
+    p.weekPlan = wp;
+    this.savePlans(plans);
+  },
+
   getWorkouts() { const s = localStorage.getItem('ft_workouts'); return s ? JSON.parse(s) : []; },
   saveWorkouts(v) { localStorage.setItem('ft_workouts', JSON.stringify(v)); markLocalChange(); },
   addWorkout(w) { const ws = this.getWorkouts(); ws.unshift(w); this.saveWorkouts(ws); },
   getActive() { const s = localStorage.getItem('ft_active'); return s ? JSON.parse(s) : null; },
   saveActive(v) { localStorage.setItem('ft_active', JSON.stringify(v)); },
   clearActive() { localStorage.removeItem('ft_active'); },
-  getProgram() {
-    const s = localStorage.getItem('ft_program');
-    let p = s ? JSON.parse(s) : { ...DEFAULT_PROGRAM };
-    if (!p.startDate) p.startDate = Date.now();
-    if (!p.endDate)   p.endDate   = p.startDate + (p.weeksTotal||12) * 7*24*3600*1000;
-    return p;
-  },
-  saveProgram(v) { localStorage.setItem('ft_program', JSON.stringify(v)); markLocalChange(); },
-  getWeekPlan() {
-    const s = localStorage.getItem('ft_weekplan');
-    return s ? JSON.parse(s) : JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
-  },
-  saveWeekPlan(v) { localStorage.setItem('ft_weekplan', JSON.stringify(v)); markLocalChange(); },
 };
 
 // ═══════════════════════════════════════════════
@@ -218,16 +314,17 @@ function getWeekInfo() {
   return { weekNum: diffWeeks+1, doneThisWeek: done, total: plan.length };
 }
 
-// Get current program week based on startDate
+// Get current program week based on startDate of the ACTIVE plan (not editing context)
 function getProgramWeek() {
-  const p = DB.getProgram();
-  const start = p.startDate || Date.now();
+  const active = getActivePlan();
+  if (!active) return { num: 0, total: 0, name: 'Kein aktiver Trainingsplan' };
+  const start = active.startDate || Date.now();
   const monStart = new Date(start);
   monStart.setHours(0,0,0,0);
   monStart.setDate(monStart.getDate() - ((monStart.getDay()+6)%7)); // Mon of start-week
   const diffMs = Date.now() - monStart.getTime();
   const week = Math.floor(diffMs / (7*24*3600*1000)) + 1;
-  return { num: Math.min(Math.max(week,1), p.weeksTotal), total: p.weeksTotal, name: p.name };
+  return { num: Math.min(Math.max(week,1), active.weeksTotal), total: active.weeksTotal, name: active.name };
 }
 
 // Get current ISO calendar week
@@ -239,14 +336,15 @@ function isoWeekNum(d=new Date()) {
   return 1 + Math.round(((date-week1)/86400000 - 3 + ((week1.getDay()+6)%7))/7);
 }
 
-// Build the 7-day list starting Monday for the current week
+// Build the 7-day list starting Monday for the current week — uses ACTIVE plan, not edit context
 function getCurrentWeekDays() {
   const today = new Date(); today.setHours(0,0,0,0);
   const todayIdx = (today.getDay()+6) % 7;   // 0=Mon
   const mon = new Date(today); mon.setDate(mon.getDate() - todayIdx);
-  const wp = DB.getWeekPlan();
+  const active = getActivePlan();
+  const wp = active ? active.weekPlan : JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
+  const plan = active ? active.trainingDays : [];
   const ws = DB.getWorkouts();
-  const plan = DB.getPlan();
   const out = [];
   for (let i=0; i<7; i++) {
     const d = new Date(mon); d.setDate(mon.getDate() + i);
@@ -271,7 +369,7 @@ function getCurrentWeekDays() {
   return out;
 }
 
-// Workouts completed in the current Mon-Sun week
+// Workouts completed in the current Mon-Sun week — uses ACTIVE plan
 function getWeekStatus() {
   const today = new Date(); today.setHours(0,0,0,0);
   const todayIdx = (today.getDay()+6) % 7;
@@ -279,13 +377,16 @@ function getWeekStatus() {
   const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
   const ws = DB.getWorkouts();
   const done = ws.filter(w => w.startTs >= mon.getTime() && w.startTs <= sun.getTime()).length;
-  const wp = DB.getWeekPlan();
+  const active = getActivePlan();
+  const wp = active ? active.weekPlan : [];
   const planned = wp.filter(d => d.planDayId).length;
   return { done, planned };
 }
 
 function getNextPlanDay() {
-  const plan = DB.getPlan();
+  const active = getActivePlan();
+  if (!active) return null;
+  const plan = active.trainingDays;
   const ws = DB.getWorkouts();
   if (plan.length === 0) return null;
   if (ws.length === 0) return plan[0];
@@ -404,13 +505,22 @@ function showScreen(name) {
   const navEl = document.getElementById('nav-'+name);
   if (navEl) navEl.classList.add('active');
 
-  // Switch body theme class so CSS variables (accent / gradient / tint) update per tab
-  document.body.className = 'theme-' + name;
+  // Switch body theme class so CSS variables (accent / gradient / tint) update per tab.
+  // plan-detail teilt sich Theme + Akzentfarbe mit der Plans-Liste (Amber).
+  const themeName = (name === 'plan-detail') ? 'plans' : name;
+  document.body.className = 'theme-' + themeName;
+
+  // Beim Verlassen des Plan-Detail-Screens den Edit-Kontext zurücksetzen.
+  // Edit-Kontext bleibt erhalten, wenn man von plan-detail in einen anderen Tab wechselt
+  // (z.B. Übungen-Tab, um Übungen zum aktuell editierten Plan hinzuzufügen).
+  // Erst der Wechsel zurück zur Plans-Liste (oder Wechsel zwischen den Plans/Plan-Detail-Tabs) löst Reset aus.
+  if (name === 'plans') editingPlanId = null;
 
   if (name === 'overview') renderOverview();
   if (name === 'workouts') renderWorkoutsScreen();
   if (name === 'exercises') renderExercises();
-  if (name === 'history') renderHistory();
+  if (name === 'plans') renderPlans();
+  if (name === 'plan-detail') renderPlanDetail();
   if (name === 'mehr') renderMehr();
 
   ensureTimerActive();
@@ -492,6 +602,10 @@ function renderOverview() {
 
   // ─ Letzte Sessions (kompakt, 3 jüngste) ─
   renderRecentSessionsOnOverview();
+
+  // ─ Stats-Karten (Volumenentwicklung, Muskelgruppen-Volumen, PRs) ─
+  // Diese 3 Karten wurden vom alten Verlauf-Tab in die Übersicht verschoben.
+  renderHomeStats();
 }
 
 function renderRecentSessionsOnOverview() {
@@ -719,7 +833,10 @@ function startWorkout(dayId) {
 }
 
 function _doStartWorkout(dayId) {
-  const plan = DB.getPlan();
+  // Workout-Start läuft immer auf den aktiven Plan (nicht den Edit-Kontext)
+  const active = getActivePlan();
+  if (!active) { showToast('Kein aktiver Trainingsplan'); return; }
+  const plan = active.trainingDays;
   const day = plan.find(d => d.id === dayId);
   const exercises = (day ? day.exercises : []).map(pe => {
     const ex = getEx(pe.exId);
@@ -1527,7 +1644,7 @@ function setHistRange(days) {
   const label = days === 365 ? '1 Jahr' : `${days} Tage`;
   document.getElementById('hist-range-label').textContent = label;
   closeModal('modal-hist-range');
-  renderHistory();
+  renderHomeStats();
 }
 
 function toggleVolumeUnit() {
@@ -1541,72 +1658,30 @@ function filterWorkoutsByRange(ws, days) {
   return ws.filter(w => w.startTs >= cutoff);
 }
 
-function showAllSessions() {
-  histRangeDays = 365;
-  document.getElementById('hist-range-label').textContent = '1 Jahr';
-  renderHistory();
-}
-
-function renderHistory() {
+// Rendert die 3 Stats-Karten (Volumenentwicklung, Muskelgruppen-Volumen, PRs) in der Übersicht.
+// Wird aus renderOverview aufgerufen — der frühere Verlauf-Tab existiert nicht mehr.
+function renderHomeStats() {
   const allWs = DB.getWorkouts();
   const ws = filterWorkoutsByRange(allWs, histRangeDays);
-  const prog = getProgramWeek();
-
-  document.getElementById('hist-total-wo').textContent = ws.length;
-  const rangeLabel = histRangeDays === 365 ? 'Letztes Jahr' : `Letzte ${histRangeDays} Tage`;
-  document.getElementById('hist-total-sub').textContent = rangeLabel;
-  document.getElementById('hist-pr-period').textContent = rangeLabel;
-
-  // PRs in selected range
-  const recentPrs = ws.filter(w => w.prs && w.prs.length).reduce((a,w) => a + w.prs.length, 0);
-  document.getElementById('hist-prs').textContent = recentPrs;
-
-  // Trainings-Programmwoche
-  document.getElementById('hist-week-num').textContent = `Woche ${prog.num}`;
-  document.getElementById('hist-week-sub').textContent = `${prog.total}-Wochen-Trainingsplan`;
-
   // Volume chart by week
   renderVolumeChart(ws);
-
   // Muscle bars
   const volEl = document.getElementById('muscle-bars');
-  if (ws.length) {
-    const vol = calcMuscleVolume(ws);
-    renderMuscleBars(vol, volEl);
-  } else {
-    volEl.innerHTML = '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>';
+  if (volEl) {
+    if (ws.length) {
+      const vol = calcMuscleVolume(ws);
+      renderMuscleBars(vol, volEl);
+    } else {
+      volEl.innerHTML = '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>';
+    }
   }
-
   // PR list
   const prs = getAllPRs();
   const prEl = document.getElementById('hist-pr-list');
-  prEl.innerHTML = prs.length ? prs.slice(0,10).map((pr, idx) => prHTML(pr, idx+1)).join('') :
-    '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine PRs</p>';
-
-  // Sessions
-  const sessEl = document.getElementById('hist-sessions');
-  if (!ws.length) {
-    sessEl.innerHTML = '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Workouts</p>';
-  } else {
-    const plan = DB.getPlan();
-    sessEl.innerHTML = ws.slice(0,8).map((w,i) => {
-      const day = plan.find(d => d.id === w.planDayId);
-      const dayName = dayOfWeek(w.startTs);
-      const title = `${dayName} — ${day ? day.name : (w.planDayName || 'Freestyle')}`;
-      const totalSets = w.exercises.reduce((a,e)=>a+e.sets.length, 0);
-      const dateStr = new Date(w.startTs).toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'});
-      const meta = `${dateStr} • ${w.exercises.length} Übungen • ${totalSets} Sätze`;
-      return `<div class="sess-v2-row" onclick="showHistDetail(${i})">
-        <div class="sess-v2-icon">
-          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        </div>
-        <div class="sess-v2-info">
-          <div class="sess-v2-name">${title}</div>
-          <div class="sess-v2-meta">${meta}</div>
-        </div>
-        <span class="sess-v2-arrow">›</span>
-      </div>`;
-    }).join('');
+  if (prEl) {
+    prEl.innerHTML = prs.length
+      ? prs.slice(0,10).map((pr, idx) => prHTML(pr, idx+1)).join('')
+      : '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine PRs</p>';
   }
 }
 
@@ -1813,8 +1888,7 @@ function deleteSession(i) {
         DB.saveWorkouts(ws2); // löst markLocalChange → Drive-Sync aus
         showToast('Session gelöscht');
         // Aktuellen Screen neu rendern, damit Stats/Charts/Listen aktualisiert werden
-        if (currentScreen === 'history') renderHistory();
-        else if (currentScreen === 'overview') renderOverview();
+        if (currentScreen === 'overview') renderOverview();
       },
       { danger: true, confirmLabel: 'Löschen' }
     );
@@ -1834,29 +1908,141 @@ function toggleMehrInactivePlans() {
 }
 
 function renderMehr() {
-  const plan = DB.getPlan();
-  // Map: planDayId → [Wochentag-Labels in Mo-So-Reihenfolge]
-  // Plus: frühester Wochentag-Index pro planDayId (für Sortierung der aktiven Liste)
-  const weekPlan = DB.getWeekPlan();
+  // Mehr-Tab enthält jetzt nur noch Cloud-Sync + Daten&Sicherheit.
+  // Trainingsplan-Daten/Wochenplan/Trainingstage sind in den Plan-Detail-Screen umgezogen.
+  if (typeof renderDriveStatus === 'function') renderDriveStatus();
+}
+
+// ═══════════════════════════════════════════════
+// SCREEN: TRAININGSPLÄNE (Liste + Detail)
+// ═══════════════════════════════════════════════
+
+// Auto-archivierung: Pläne deren Enddatum > 30 Tage in der Vergangenheit liegt
+// werden automatisch als archived markiert (wenn nicht schon). Wird beim Rendern der Liste aufgerufen.
+function autoArchiveOldPlans() {
+  const plans = DB.getPlans();
+  const cutoff = Date.now() - 30 * 24 * 3600 * 1000;
+  let dirty = false;
+  for (const p of plans) {
+    if (!p.archived && p.endDate && p.endDate < cutoff) {
+      p.archived = true;
+      dirty = true;
+    }
+  }
+  if (dirty) DB.savePlans(plans);
+}
+
+// Status eines Plans relativ zu heute
+function planStatus(p) {
+  if (p.archived) return 'archived';
+  const now = Date.now();
+  if (p.startDate > now) return 'future';
+  if (p.endDate < now) return 'past';
+  return 'active';
+}
+const PLAN_STATUS_LABEL = { active: 'Aktuell', future: 'Zukunft', past: 'Beendet', archived: 'Archiviert' };
+
+function fmtDateRange(start, end) {
+  const fmt = (ts) => new Date(ts).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return `${fmt(start)} – ${fmt(end)}`;
+}
+
+let plansArchiveExpanded = false; // Toggle für die kollabierbare "Archivierte Pläne"-Sektion
+function togglePlansArchive() {
+  plansArchiveExpanded = !plansArchiveExpanded;
+  renderPlans();
+}
+
+function renderPlans() {
+  autoArchiveOldPlans();
+  const plans = DB.getPlans();
+  const active = plans.filter(p => !p.archived).sort((a,b) => a.startDate - b.startDate);
+  const archived = plans.filter(p => p.archived).sort((a,b) => b.startDate - a.startDate);
+
+  const subEl = document.getElementById('plans-subline');
+  if (subEl) {
+    if (!plans.length) subEl.textContent = 'Noch keine Trainingspläne erstellt';
+    else subEl.textContent = `${active.length} aktiv${archived.length ? ` • ${archived.length} archiviert` : ''}`;
+  }
+
+  const renderRow = (p) => {
+    const status = planStatus(p);
+    const dayCount = (p.trainingDays || []).length;
+    const dayInfo = dayCount === 0 ? 'Keine Trainingstage' : `${dayCount} Trainingstag${dayCount === 1 ? '' : 'e'}`;
+    const isCurrent = status === 'active';
+    return `<div class="plan-list-row plan-status-${status}${isCurrent ? ' active' : ''}" onclick="openPlanDetail('${p.id}')">
+      <div class="plan-list-info">
+        <div class="plan-list-name">${escapeHtml(p.name)}</div>
+        <div class="plan-list-meta">${fmtDateRange(p.startDate, p.endDate)} • ${p.weeksTotal} Wochen • ${dayInfo}</div>
+      </div>
+      <span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>
+      <div class="plan-list-action">›</div>
+    </div>`;
+  };
+
+  let html = '';
+  if (!active.length && !archived.length) {
+    html = `<div class="plan-day-empty" style="margin:24px 14px">Noch keine Trainingspläne — tippe auf das + oben rechts, um deinen ersten Plan anzulegen.</div>`;
+  } else {
+    html += active.map(renderRow).join('');
+    if (archived.length) {
+      const expanded = plansArchiveExpanded;
+      html += `<div class="plans-list-archive-header${expanded ? ' expanded' : ''}" onclick="togglePlansArchive()">
+        <span class="plan-day-collapse-arrow">${expanded ? '▾' : '▸'}</span>
+        <span class="plan-day-collapse-label">Archivierte Pläne</span>
+        <span class="plan-day-collapse-count">${archived.length}</span>
+      </div>`;
+      if (expanded) html += archived.map(renderRow).join('');
+    }
+  }
+  document.getElementById('plans-list').innerHTML = html;
+}
+
+function renderPlanDetail() {
+  const plans = DB.getPlans();
+  const plan = plans.find(p => p.id === editingPlanId);
+  if (!plan) { showScreen('plans'); return; }
+
+  // Header
+  document.getElementById('plan-detail-title').textContent = plan.name;
+  const status = planStatus(plan);
+  document.getElementById('plan-detail-subline').innerHTML =
+    `${fmtDateRange(plan.startDate, plan.endDate)} <span class="plan-status-chip plan-status-chip-${status}" style="margin-left:8px">${PLAN_STATUS_LABEL[status]}</span>`;
+
+  // Program form
+  document.getElementById('prog-name').value = plan.name || '';
+  document.getElementById('prog-weeks').value = plan.weeksTotal || 12;
+  document.getElementById('prog-start').value = _msToDate(plan.startDate);
+  document.getElementById('prog-end').value   = _msToDate(plan.endDate);
+
+  // Weekplan dropdowns
+  const wp = plan.weekPlan || JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
+  const trainingDays = plan.trainingDays || [];
+  const today = new Date(); const todayIdx = (today.getDay()+6)%7;
+  document.getElementById('mehr-weekplan').innerHTML = wp.map((d, i) => {
+    const selected = d.planDayId || '';
+    const options = `<option value="" ${selected===''?'selected':''}>Ruhetag</option>` +
+      trainingDays.map(td => `<option value="${td.id}" ${selected===td.id?'selected':''}>${td.name}</option>`).join('');
+    return `<div class="weekplan-row">
+      <span class="weekplan-day-name ${i===todayIdx?'today':''}">${d.label}</span>
+      <select class="weekplan-select" onchange="saveWeekPlanDay(${i},this.value)">${options}</select>
+    </div>`;
+  }).join('');
+
+  // Trainingstage-Liste mit aktiv/inaktiv-Split (analog zu altem renderMehr)
   const dayLabelsFor = {};
   const earliestDayIdx = {};
-  weekPlan.forEach((w, idx) => {
+  wp.forEach((w, idx) => {
     if (w.planDayId) {
-      if (!dayLabelsFor[w.planDayId]) {
-        dayLabelsFor[w.planDayId] = [];
-        earliestDayIdx[w.planDayId] = idx;
-      }
+      if (!dayLabelsFor[w.planDayId]) { dayLabelsFor[w.planDayId] = []; earliestDayIdx[w.planDayId] = idx; }
       dayLabelsFor[w.planDayId].push(w.label);
     }
   });
-
-  // Eine einzelne Trainingstag-Zeile rendern (Index bleibt erhalten für openPlanDayModal/deletePlanDay)
-  const renderRow = (d, i, isActive) => {
+  const renderDayRow = (d, i, isActive) => {
     const setCount = d.exercises.reduce((a,e) => a+e.targetSets, 0);
     const usedOn = dayLabelsFor[d.id] || [];
     const chips = usedOn.length
-      ? `<div class="pdr-days">${usedOn.map(lbl => `<span class="pdr-day-chip">${lbl}</span>`).join('')}</div>`
-      : '';
+      ? `<div class="pdr-days">${usedOn.map(lbl => `<span class="pdr-day-chip">${lbl}</span>`).join('')}</div>` : '';
     return `<div class="plan-day-row${isActive ? ' active' : ''}">
       <div class="pdr-info" onclick="openPlanDayModal(${i})" style="cursor:pointer">
         <div class="pdr-name">${pd(d.name)}</div>
@@ -1869,66 +2055,93 @@ function renderMehr() {
       </div>
     </div>`;
   };
-
-  // In aktive (Wochenplan-zugewiesen) vs inaktive Tage aufteilen — Original-Index für Edit/Delete erhalten.
-  // Aktive werden nach frühestem zugewiesenen Wochentag (Mo→So) sortiert,
-  // inaktive bleiben in Plan-Reihenfolge (Import-Order).
   const activeBucket = [], inactiveRows = [];
-  plan.forEach((d, i) => {
-    if (dayLabelsFor[d.id]) {
-      activeBucket.push({ sortIdx: earliestDayIdx[d.id], html: renderRow(d, i, true) });
-    } else {
-      inactiveRows.push(renderRow(d, i, false));
-    }
+  trainingDays.forEach((d, i) => {
+    if (dayLabelsFor[d.id]) activeBucket.push({ sortIdx: earliestDayIdx[d.id], html: renderDayRow(d, i, true) });
+    else inactiveRows.push(renderDayRow(d, i, false));
   });
   activeBucket.sort((a, b) => a.sortIdx - b.sortIdx);
   const activeRows = activeBucket.map(r => r.html);
-
-  // Render-Strategie:
-  // - 0 aktive: Alle direkt anzeigen (keine Trennung sinnvoll)
-  // - 0 inaktive: Nur aktive (kein kollabierbarer Header nötig)
-  // - Beides vorhanden: Aktive oben + kollabierbarer "Andere Trainingstage (N)"-Header
-  let html;
+  let listHtml;
   if (activeRows.length === 0) {
-    html = inactiveRows.length
+    listHtml = inactiveRows.length
       ? inactiveRows.join('')
       : '<div class="plan-day-empty">Noch keine Trainingstage erstellt</div>';
   } else if (inactiveRows.length === 0) {
-    html = activeRows.join('');
+    listHtml = activeRows.join('');
   } else {
     const expanded = mehrInactivePlanExpanded;
-    html = activeRows.join('') +
+    listHtml = activeRows.join('') +
       `<div class="plan-day-collapse-header${expanded ? ' expanded' : ''}" onclick="toggleMehrInactivePlans()">
          <span class="plan-day-collapse-arrow">${expanded ? '▾' : '▸'}</span>
          <span class="plan-day-collapse-label">Andere Trainingstage</span>
          <span class="plan-day-collapse-count">${inactiveRows.length}</span>
-       </div>` +
-      (expanded ? inactiveRows.join('') : '');
+       </div>` + (expanded ? inactiveRows.join('') : '');
   }
-  document.getElementById('mehr-plan-list').innerHTML = html;
+  document.getElementById('mehr-plan-list').innerHTML = listHtml;
 
-  // Program form
-  const p = DB.getProgram();
-  document.getElementById('prog-name').value = p.name || '';
-  document.getElementById('prog-weeks').value = p.weeksTotal || 12;
-  document.getElementById('prog-start').value = _msToDate(p.startDate);
-  document.getElementById('prog-end').value   = _msToDate(p.endDate);
+  // Archiv-Label aktualisieren
+  document.getElementById('plan-archive-label').textContent = plan.archived ? 'Aus Archiv holen' : 'Plan archivieren';
+}
 
-  // Weekplan
-  const wp = DB.getWeekPlan();
-  const today = new Date(); const todayIdx = (today.getDay()+6)%7;
-  document.getElementById('mehr-weekplan').innerHTML = wp.map((d, i) => {
-    const selected = d.planDayId || '';
-    const options = `<option value="" ${selected===''?'selected':''}>Ruhetag</option>` +
-      plan.map(p => `<option value="${p.id}" ${selected===p.id?'selected':''}>${p.name}</option>`).join('');
-    return `<div class="weekplan-row">
-      <span class="weekplan-day-name ${i===todayIdx?'today':''}">${d.label}</span>
-      <select class="weekplan-select" onchange="saveWeekPlanDay(${i},this.value)">${options}</select>
-    </div>`;
-  }).join('');
+// ─── Plan CRUD ───────────────────────────────────────
+function createNewPlan() {
+  promptForName('Name des neuen Trainingsplans', 'Neuer Trainingsplan', (name) => {
+    const plans = DB.getPlans();
+    const startDate = Date.now();
+    const weeksTotal = 12;
+    const endDate = startDate + weeksTotal * 7 * 24 * 3600 * 1000;
+    const newPlan = {
+      id: 'plan_' + Date.now() + '_' + Math.floor(Math.random()*10000),
+      name, weeksTotal, startDate, endDate,
+      trainingDays: [],
+      weekPlan: JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN)),
+      archived: false,
+      createdAt: Date.now(),
+    };
+    plans.push(newPlan);
+    DB.savePlans(plans);
+    showToast(`Trainingsplan "${name}" erstellt`);
+    openPlanDetail(newPlan.id);
+  });
+}
 
-  // Drive-Sync-Status refreshen (Card ist statisch in index.html, Inhalt dynamisch)
-  if (typeof renderDriveStatus === 'function') renderDriveStatus();
+function openPlanDetail(planId) {
+  editingPlanId = planId;
+  showScreen('plan-detail');
+}
+
+function closePlanDetail() {
+  editingPlanId = null;
+  showScreen('plans');
+}
+
+function togglePlanArchive() {
+  const plans = DB.getPlans();
+  const plan = plans.find(p => p.id === editingPlanId);
+  if (!plan) return;
+  plan.archived = !plan.archived;
+  DB.savePlans(plans);
+  showToast(plan.archived ? 'Plan archiviert' : 'Plan aus Archiv geholt');
+  renderPlanDetail();
+}
+
+function deleteCurrentPlan() {
+  const plans = DB.getPlans();
+  const plan = plans.find(p => p.id === editingPlanId);
+  if (!plan) return;
+  confirmAction(
+    'Trainingsplan löschen?',
+    `"${plan.name}" und alle zugehörigen Trainingstage werden unwiderruflich gelöscht. Bereits absolvierte Workouts bleiben im Verlauf erhalten.`,
+    () => {
+      const ps = DB.getPlans().filter(p => p.id !== editingPlanId);
+      DB.savePlans(ps);
+      editingPlanId = null;
+      showScreen('plans');
+      showToast('Trainingsplan gelöscht');
+    },
+    { danger: true, confirmLabel: 'Löschen' }
+  );
 }
 
 function saveProgramForm() {
@@ -2741,7 +2954,6 @@ function importTrainingPlan(event) {
       showToast('Import enthält keine Trainingstage');
       return;
     }
-    // Quick-Validate jedes Trainings-Tag
     for (const day of data.trainingDays) {
       if (!day.name || typeof day.name !== 'string') {
         showToast('Trainingstag ohne Name gefunden — Import abgebrochen');
@@ -2753,16 +2965,13 @@ function importTrainingPlan(event) {
       }
     }
     pendingPlanImport = data;
-    // Summary aufbauen
     const dayCount = data.trainingDays.length;
     const totalEx = data.trainingDays.reduce((s, d) => s + d.exercises.length, 0);
-    // Akzeptiert `trainingPlan` (UI-konsistent) und `program` (Legacy)
     const tp = data.trainingPlan || data.program;
-    const progInfo = tp
-      ? `<br><br>Enthält außerdem Trainingsplan-Daten ("${escapeHtml(tp.name || 'unbenannt')}", ${tp.weeksTotal || '?'} Wochen).`
-      : '';
+    const tpName = tp?.name ? `"${escapeHtml(tp.name)}"` : '"Importierter Plan"';
+    const tpWeeks = tp?.weeksTotal || 12;
     document.getElementById('plan-import-summary').innerHTML =
-      `<strong>${dayCount}</strong> Trainingstage mit insgesamt <strong>${totalEx}</strong> Übungen werden importiert.${progInfo}<br><br>Wie soll mit deinem bestehenden Plan verfahren werden?`;
+      `Ein neuer Trainingsplan ${tpName} mit <strong>${dayCount}</strong> Trainingstagen und insgesamt <strong>${totalEx}</strong> Übungen wird erstellt (Dauer ${tpWeeks} Wochen). Bestehende Pläne bleiben unverändert.`;
     openModal('modal-plan-import');
   };
   reader.readAsText(file);
@@ -2773,57 +2982,34 @@ function cancelPlanImport() {
   pendingPlanImport = null;
 }
 
-function confirmPlanImport(mode) {
+function confirmPlanImport() {
   closeModal('modal-plan-import');
-  if (!pendingPlanImport) return;
-  const tp = pendingPlanImport.trainingPlan || pendingPlanImport.program;
-  if (tp) {
-    // Step 2: Trainingsplan-Daten übernehmen?
-    setTimeout(() => {
-      confirmAction(
-        'Trainingsplan-Daten übernehmen?',
-        `Möchtest du Name, Wochenanzahl und Startdatum aus dem Import übernehmen? Bei "Abbrechen" werden nur die Trainingstage importiert (dein aktueller Trainingsplan bleibt erhalten).`,
-        () => applyPlanImport(mode, true),
-        {
-          confirmLabel: 'Trainingsplan übernehmen',
-          onCancel: () => applyPlanImport(mode, false),
-        }
-      );
-    }, 100);
-  } else {
-    applyPlanImport(mode, false);
-  }
+  applyPlanImport();
 }
 
-function applyPlanImport(mode, useProgramData) {
+function applyPlanImport() {
   const data = pendingPlanImport;
   pendingPlanImport = null;
   if (!data) return;
 
   const exs = DB.getExercises();
-  const existingPlan = DB.getPlan();
   let newExCount = 0;
   let reusedExCount = 0;
 
-  // Hilfsfunktion: existierende Übung by-name finden (case-insensitive)
   const findExByName = (name) => {
     const norm = name.trim().toLowerCase();
     return exs.find(e => e.name.trim().toLowerCase() === norm);
   };
 
-  // ID-Generator mit Kollisionsschutz (Date.now() + Counter)
   let _idCounter = 0;
   const genId = (prefix) => `${prefix}_${Date.now()}_${_idCounter++}`;
 
-  // Aus dem Import die neuen Trainingstage bauen
   const importedDays = data.trainingDays.map(day => {
     const exercises = (day.exercises || []).map(ie => {
-      // Existierende Übung wiederverwenden oder neu anlegen
       let ex = findExByName(ie.name);
       if (ex) {
         reusedExCount++;
       } else {
-        // Neue Übung
         const muscle = VALID_MUSCLES.includes(ie.muscle) ? ie.muscle : inferMuscleFromName(ie.name);
         const category = muscle === 'legs' ? 'legs'
                        : (muscle === 'back' || muscle === 'biceps') ? 'pull'
@@ -2831,8 +3017,7 @@ function applyPlanImport(mode, useProgramData) {
         ex = {
           id: genId('custom'),
           name: ie.name.trim(),
-          muscle,
-          category,
+          muscle, category,
           isCustom: true,
           notes: (typeof ie.notes === 'string' ? ie.notes : ''),
         };
@@ -2849,52 +3034,40 @@ function applyPlanImport(mode, useProgramData) {
       }
       return planEx;
     });
-    return {
-      id: genId('day'),
-      name: day.name.trim(),
-      color: null,
-      exercises,
-    };
+    return { id: genId('day'), name: day.name.trim(), color: null, exercises };
   });
 
-  // Plan zusammenfügen
-  const newPlan = mode === 'replace' ? importedDays : [...existingPlan, ...importedDays];
-
-  // Speichern (DB.save* löst auto Drive-Sync aus)
-  DB.saveExercises(exs);
-  DB.savePlan(newPlan);
-
-  // Beim "Ersetzen" können im Wochenplan jetzt verwaiste Trainingstag-IDs liegen
-  // → automatisch auf Ruhetag zurücksetzen
-  if (mode === 'replace') cleanupOrphanWeekplan();
-
-  // Trainingsplan-Daten ggf. übernehmen (akzeptiert sowohl `trainingPlan` als auch Legacy `program`)
+  // Plan-Metadaten extrahieren (oder Defaults)
   const tp = data.trainingPlan || data.program;
-  if (useProgramData && tp) {
-    const prog = DB.getProgram();
-    if (tp.name) prog.name = String(tp.name).trim();
-    if (Number.isFinite(+tp.weeksTotal) && +tp.weeksTotal > 0) {
-      prog.weeksTotal = +tp.weeksTotal;
-    }
-    if (tp.startDate) {
-      const ms = _dateToMs(tp.startDate);
-      if (ms) {
-        prog.startDate = ms;
-        prog.endDate = ms + (prog.weeksTotal || 12) * 7 * 24 * 3600 * 1000;
-      }
-    }
-    DB.saveProgram(prog);
-  }
+  const planName = tp?.name?.trim() || 'Importierter Trainingsplan';
+  const weeksTotal = Number.isFinite(+tp?.weeksTotal) && +tp.weeksTotal > 0 ? +tp.weeksTotal : 12;
+  const startDate = tp?.startDate ? (_dateToMs(tp.startDate) || Date.now()) : Date.now();
+  const endDate = startDate + weeksTotal * 7 * 24 * 3600 * 1000;
+
+  // Neuen Plan erstellen
+  const plans = DB.getPlans();
+  const newPlan = {
+    id: 'plan_' + Date.now() + '_' + Math.floor(Math.random()*10000),
+    name: planName,
+    weeksTotal, startDate, endDate,
+    trainingDays: importedDays,
+    weekPlan: JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN)),
+    archived: false,
+    createdAt: Date.now(),
+  };
+  plans.push(newPlan);
+  DB.savePlans(plans);
+  DB.saveExercises(exs);
 
   // UI-Refresh
-  if (currentScreen === 'mehr') renderMehr();
+  if (currentScreen === 'plans') renderPlans();
   else if (currentScreen === 'overview') renderOverview();
   else if (currentScreen === 'exercises') renderExercises();
 
-  // Summary-Toast
   const parts = [
-    `${importedDays.length} Trainingstage ${mode === 'replace' ? 'ersetzt' : 'angehängt'}`,
-    newExCount ? `${newExCount} neue Übung${newExCount === 1 ? '' : 'en'} erstellt` : null,
+    `Trainingsplan "${planName}" erstellt`,
+    `${importedDays.length} Trainingstage`,
+    newExCount ? `${newExCount} neue Übung${newExCount === 1 ? '' : 'en'}` : null,
     reusedExCount ? `${reusedExCount} existierende wiederverwendet` : null,
   ].filter(Boolean);
   showToast(parts.join(' • ') + ' ✓');
@@ -3144,31 +3317,56 @@ async function driveUploadFile(id, payload) {
 // ─── Daten-Bundle (lokal → Cloud) ────────────────────
 function collectLocalData() {
   return {
-    version: DRIVE_DATA_VERSION,
+    version: 2, // v2 = Multi-Plan-Struktur (plans-Array statt einzeln plan/program/weekplan)
     exportedAt: new Date().toISOString(),
     lastLocalChange: driveGetLastLocalChange(),
     exercises: DB.getExercises(),
-    plan: DB.getPlan(),
+    plans: DB.getPlans(),
     workouts: DB.getWorkouts(),
-    program: DB.getProgram(),
-    weekplan: DB.getWeekPlan(),
   };
 }
 
-// Validierung + Anwendung von Cloud-Daten
+// Validierung + Anwendung von Cloud-Daten. Akzeptiert sowohl neues Multi-Plan-Format (v2)
+// als auch altes Single-Plan-Format (v1) — letzteres wird beim Anwenden in v2 migriert.
 function driveApplyCloudData(data) {
-  // Hartes Schema-Check
   if (!data || typeof data !== 'object') throw new Error('Cloud-Daten leer');
   if (!Array.isArray(data.exercises)) throw new Error('Cloud-Daten: exercises fehlt/ungültig');
-  if (!Array.isArray(data.plan)) throw new Error('Cloud-Daten: plan fehlt/ungültig');
   if (!Array.isArray(data.workouts)) throw new Error('Cloud-Daten: workouts fehlt/ungültig');
-  // Apply ohne markLocalChange-Trigger
+
+  let plansArray;
+  if (Array.isArray(data.plans)) {
+    plansArray = data.plans;
+  } else if (Array.isArray(data.plan)) {
+    // Legacy v1: einzelner Plan/Program/Weekplan → in einen Plan migrieren
+    const prog = data.program || {};
+    const wp = Array.isArray(data.weekplan) ? data.weekplan : JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
+    const startDate = prog.startDate || Date.now();
+    const weeksTotal = prog.weeksTotal || 12;
+    plansArray = [{
+      id: 'plan_' + Date.now(),
+      name: prog.name || 'Mein Trainingsplan',
+      weeksTotal, startDate,
+      endDate: prog.endDate || (startDate + weeksTotal * 7 * 24 * 3600 * 1000),
+      trainingDays: data.plan,
+      weekPlan: wp,
+      archived: false,
+      createdAt: Date.now(),
+    }];
+  } else {
+    throw new Error('Cloud-Daten: weder plans noch plan vorhanden');
+  }
+
+  // Apply
   localStorage.setItem('ft_exercises', JSON.stringify(data.exercises));
-  localStorage.setItem('ft_plan2', JSON.stringify(data.plan));
+  localStorage.setItem('ft_plans', JSON.stringify(plansArray));
   localStorage.setItem('ft_workouts', JSON.stringify(data.workouts));
-  if (data.program) localStorage.setItem('ft_program', JSON.stringify(data.program));
-  if (data.weekplan) localStorage.setItem('ft_weekplan', JSON.stringify(data.weekplan));
-  // Wichtig: lokale Änderungs-Marke auf 0 zurücksetzen — sonst denkt der Sync, wir hätten lokale Änderungen
+  // Legacy-Keys bei v1-Migration sauber halten (sonst würde migrateToMultiPlan beim nächsten App-Start nochmal greifen)
+  if (Array.isArray(data.plan)) {
+    localStorage.removeItem('ft_program');
+    localStorage.removeItem('ft_plan2');
+    localStorage.removeItem('ft_weekplan');
+  }
+  // Lokale Änderungs-Marke zurücksetzen
   localStorage.setItem('ft_drive_last_local_change', '0');
 }
 
@@ -3444,20 +3642,21 @@ if ('serviceWorker' in navigator) {
 // INIT
 // ═══════════════════════════════════════════════
 // Daten-Hygiene: verwaiste Wochenplan-Referenzen entfernen.
-// Kann nach einem Plan-Import mit "Ersetzen" passieren, wenn der Wochenplan
-// noch auf alte (jetzt gelöschte) Trainingstag-IDs zeigt.
+// Iteriert durch ALLE Pläne und reinigt jeweils deren weekPlan, falls dort eine
+// Trainingstag-ID referenziert wird, die im trainingDays-Array nicht (mehr) existiert.
 function cleanupOrphanWeekplan() {
-  const wp = DB.getWeekPlan();
-  const plan = DB.getPlan();
-  const planIds = new Set(plan.map(p => p.id));
+  const plans = DB.getPlans();
   let dirty = false;
-  for (const d of wp) {
-    if (d.planDayId && !planIds.has(d.planDayId)) {
-      d.planDayId = null;
-      dirty = true;
+  for (const plan of plans) {
+    const dayIds = new Set((plan.trainingDays || []).map(d => d.id));
+    for (const d of (plan.weekPlan || [])) {
+      if (d.planDayId && !dayIds.has(d.planDayId)) {
+        d.planDayId = null;
+        dirty = true;
+      }
     }
   }
-  if (dirty) DB.saveWeekPlan(wp); // löst markLocalChange → Drive-Sync aus
+  if (dirty) DB.savePlans(plans);
   return dirty;
 }
 
@@ -3490,8 +3689,10 @@ function initScrollHideNav() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Erst Daten-Hygiene, dann rendern — verhindert, dass UI verwaiste Referenzen
-  // kurzzeitig anzeigt, bevor der Render-Fix sie als Ruhetag interpretiert.
+  // Daten-Migration: altes ft_program/ft_plan2/ft_weekplan in neue ft_plans-Struktur
+  migrateToMultiPlan();
+  // Daten-Hygiene: verwaiste Wochenplan-Referenzen entfernen (legacy fallback, falls noch
+  // jemand auf den ft_weekplan-Key zugreift — mit Multi-Plan sind die weekPlans pro Plan)
   cleanupOrphanWeekplan();
   const activeWo = DB.getActive();
   if (activeWo) {
