@@ -597,6 +597,87 @@ function buildSetsForExercise(exId, targetSets, targetReps, targetWeight) {
   });
 }
 
+// ─── Plan ↔ Active-Workout Sync ───────────────────────
+// Wenn der Plan eines Trainingstags mutiert wird (Übung hinzufügen/entfernen,
+// targetSets/targetReps ändern, etc.) UND gerade ein aktives Workout läuft, das
+// auf genau diesen Trainingstag verweist, werden die Plan-Änderungen auf das
+// aktive Workout angewendet.
+//
+// Regeln (per User-Entscheidung):
+// • Neue Plan-Übung → ans Ende des aktiven Workouts anhängen
+// • Plan-Übung entfernt → aus aktivem Workout auch entfernen (Confirm bei Daten via
+//   confirmActiveWorkoutDataLoss vor dem Entfernen)
+// • targetSets erhöht → fehlende Sätze anhängen. Verringert → nichts ändern (Schutz)
+// • targetReps → wird übernommen (cosmetic, beeinflusst nur künftige Sätze)
+// • Reihenfolge im Plan ändert sich → aktive Reihenfolge bleibt unberührt
+function syncActiveWorkoutWithPlanDay(planDayId) {
+  const wo = DB.getActive();
+  if (!wo || wo.planDayId !== planDayId) return;
+  const plan = DB.getPlan();
+  const planDay = plan.find(d => d.id === planDayId);
+  if (!planDay) return;
+
+  const planExIds = new Set(planDay.exercises.map(pe => pe.exId));
+  // 1) Übungen aus aktivem Workout entfernen, die nicht mehr im Plan sind
+  wo.exercises = wo.exercises.filter(ae => planExIds.has(ae.exId));
+
+  // 2) Existierende Übungen updaten (targetReps + Sätze auffüllen, nie kürzen)
+  const activeMap = {};
+  wo.exercises.forEach(ae => { activeMap[ae.exId] = ae; });
+  for (const pe of planDay.exercises) {
+    const ae = activeMap[pe.exId];
+    if (!ae) continue;
+    ae.targetReps = pe.targetReps;
+    if (pe.targetSets > ae.targetSets) {
+      const diff = pe.targetSets - ae.targetSets;
+      const newSets = Array.from({length: diff}, () => ({
+        weight: pe.targetWeight ? String(pe.targetWeight) : '',
+        reps: String(pe.targetReps),
+        done: false,
+      }));
+      ae.sets = ae.sets.concat(newSets);
+      ae.targetSets = pe.targetSets;
+    }
+  }
+
+  // 3) Neue Übungen aus dem Plan anhängen
+  const activeIds = new Set(wo.exercises.map(ae => ae.exId));
+  for (const pe of planDay.exercises) {
+    if (activeIds.has(pe.exId)) continue;
+    const ex = getEx(pe.exId);
+    if (!ex) continue;
+    wo.exercises.push({
+      exId: pe.exId, id: pe.exId, name: ex.name,
+      targetSets: pe.targetSets, targetReps: pe.targetReps,
+      sets: buildSetsForExercise(pe.exId, pe.targetSets, pe.targetReps, pe.targetWeight),
+      notes: '', done: false,
+    });
+  }
+
+  DB.saveActive(wo);
+  if (currentScreen === 'workouts') renderWorkoutsScreen();
+}
+
+// Vor dem Entfernen einer/mehrerer Übungen aus dem Plan checken, ob im aktiven
+// Workout (falls vorhanden + gleicher Trainingstag) bereits Daten zu diesen
+// Übungen eingetragen wurden. Falls ja → Bestätigungs-Dialog vor dem Löschen.
+function confirmActiveWorkoutDataLoss(planDayId, exIdsToRemove, onConfirm) {
+  const wo = DB.getActive();
+  if (!wo || wo.planDayId !== planDayId) { onConfirm(); return; }
+  const ids = new Set(exIdsToRemove);
+  const affected = wo.exercises.filter(ae =>
+    ids.has(ae.exId) && ae.sets.some(s => s.weight || s.reps)
+  );
+  if (!affected.length) { onConfirm(); return; }
+  const names = affected.map(ae => `„${ae.name}"`).join(', ');
+  confirmAction(
+    'Übung mit eingetragenen Daten entfernen?',
+    `${names} hat im laufenden Workout schon eingetragene Sätze. Beim Entfernen aus dem Plan wird die Übung auch aus dem aktiven Workout gestrichen — die Daten gehen verloren. Trotzdem entfernen?`,
+    onConfirm,
+    { danger: true, confirmLabel: 'Entfernen' }
+  );
+}
+
 function startWorkout(dayId) {
   if (DB.getActive()) {
     confirmAction('Workout läuft bereits',
@@ -1274,12 +1355,23 @@ function renderAddExList(q) {
 function addExToWorkout(exId) {
   const ex = getEx(exId); if (!ex) return;
   const wo = DB.getActive();
+  // 1) Übung dem aktiven Workout hinzufügen
   wo.exercises.push({
     exId, id:exId, name:ex.name, targetSets:3, targetReps:8,
     sets: buildSetsForExercise(exId, 3, 8),
     notes:'', done:false
   });
   DB.saveActive(wo);
+  // 2) Übung auch in den Plan-Trainingstag eintragen (sofern verlinkt, nicht doppelt)
+  // → künftige Workouts dieses Tags enthalten die Übung automatisch
+  if (wo.planDayId) {
+    const plan = DB.getPlan();
+    const day = plan.find(d => d.id === wo.planDayId);
+    if (day && !day.exercises.some(pe => pe.exId === exId)) {
+      day.exercises.push({ exId, targetSets: 3, targetReps: 8 });
+      DB.savePlan(plan);
+    }
+  }
   closeModal('modal-add-ex');
   renderWorkoutsScreen();
   showToast(`${ex.name} hinzugefügt`);
@@ -2156,14 +2248,21 @@ function removeExerciseFromPlanDay(dayIdx) {
   if (!exerciseToAddId) return;
   const plan = DB.getPlan();
   if (!plan[dayIdx]) return;
-  const before = plan[dayIdx].exercises.length;
-  plan[dayIdx].exercises = plan[dayIdx].exercises.filter(e => e.exId !== exerciseToAddId);
-  if (plan[dayIdx].exercises.length === before) return;
-  DB.savePlan(plan);
-  const ex = DB.getExercises().find(e => e.id === exerciseToAddId);
-  showToast(`„${ex?.name||'Übung'}" aus ${pd(plan[dayIdx].name)} entfernt`);
-  renderExToDayList();       // Modal-Liste neu zeichnen
-  renderExercises();         // Übungen-Tab im Hintergrund aktualisieren
+  const dayId = plan[dayIdx].id;
+  const exId = exerciseToAddId;
+  confirmActiveWorkoutDataLoss(dayId, [exId], () => {
+    const p = DB.getPlan();
+    if (!p[dayIdx]) return;
+    const before = p[dayIdx].exercises.length;
+    p[dayIdx].exercises = p[dayIdx].exercises.filter(e => e.exId !== exId);
+    if (p[dayIdx].exercises.length === before) return;
+    DB.savePlan(p);
+    syncActiveWorkoutWithPlanDay(p[dayIdx].id);
+    const ex = DB.getExercises().find(e => e.id === exId);
+    showToast(`„${ex?.name||'Übung'}" aus ${pd(p[dayIdx].name)} entfernt`);
+    renderExToDayList();       // Modal-Liste neu zeichnen
+    renderExercises();         // Übungen-Tab im Hintergrund aktualisieren
+  });
 }
 
 function addExerciseToPlanDay(dayIdx) {
@@ -2172,6 +2271,7 @@ function addExerciseToPlanDay(dayIdx) {
   if (!plan[dayIdx]) return;
   plan[dayIdx].exercises.push({ exId: exerciseToAddId, targetSets: 3, targetReps: 8 });
   DB.savePlan(plan);
+  syncActiveWorkoutWithPlanDay(plan[dayIdx].id);
   const ex = DB.getExercises().find(e => e.id === exerciseToAddId);
   const dayName = plan[dayIdx].name;
   closeModal('modal-ex-to-day');
@@ -2306,13 +2406,21 @@ function updatePlanTarget(exIdx, field, value) {
   const plan = DB.getPlan();
   plan[editingDayIdx].exercises[exIdx][field] = parseInt(value) || 1;
   DB.savePlan(plan);
+  syncActiveWorkoutWithPlanDay(plan[editingDayIdx].id);
 }
 
 function removePlanEx(exIdx) {
   const plan = DB.getPlan();
-  plan[editingDayIdx].exercises.splice(exIdx, 1);
-  DB.savePlan(plan);
-  renderPlanDayExList(plan[editingDayIdx]);
+  if (!plan[editingDayIdx] || !plan[editingDayIdx].exercises[exIdx]) return;
+  const dayId = plan[editingDayIdx].id;
+  const exId = plan[editingDayIdx].exercises[exIdx].exId;
+  confirmActiveWorkoutDataLoss(dayId, [exId], () => {
+    const p = DB.getPlan();
+    p[editingDayIdx].exercises.splice(exIdx, 1);
+    DB.savePlan(p);
+    syncActiveWorkoutWithPlanDay(p[editingDayIdx].id);
+    renderPlanDayExList(p[editingDayIdx]);
+  });
 }
 
 function savePlanDay() {
@@ -2366,6 +2474,7 @@ function confirmPlanAddSelection() {
     added++;
   });
   DB.savePlan(plan);
+  syncActiveWorkoutWithPlanDay(plan[editingDayIdx].id);
   planAddSelection.clear();
   closeModal('modal-add-to-plan');
   renderPlanDayExList(plan[editingDayIdx]);
@@ -2426,6 +2535,7 @@ function addToPlanDay(exId) {
   const plan = DB.getPlan();
   plan[editingDayIdx].exercises.push({ exId, targetSets:3, targetReps:8 });
   DB.savePlan(plan);
+  syncActiveWorkoutWithPlanDay(plan[editingDayIdx].id);
   closeModal('modal-add-to-plan');
   renderPlanDayExList(plan[editingDayIdx]);
   const ex = getEx(exId);
