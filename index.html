@@ -572,7 +572,7 @@
   </div>
 </div>
 
-<!-- Picker: Trainingstag aus anderem Plan zum Kopieren wählen -->
+<!-- Picker: Trainingstag(e) aus anderem Plan zum Kopieren wählen — Multi-Select -->
 <div id="modal-copy-plan-day" class="overlay hidden">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -580,10 +580,14 @@
       <button class="sheet-back-btn" onclick="closeModal('modal-copy-plan-day');openModal('modal-plan-day-source');" aria-label="Zurück">
         <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <span>Trainingstag zum Kopieren wählen</span>
+      <span>Trainingstage zum Kopieren wählen</span>
     </div>
     <div class="sheet-body">
       <div class="sheet-list" id="copy-plan-day-list"></div>
+      <div class="plan-add-footer">
+        <button class="btn btn-primary btn-full" id="copy-plan-day-confirm" onclick="confirmCopyPlanDays()" disabled>Kopieren</button>
+        <button class="btn btn-ghost btn-full" onclick="closeModal('modal-copy-plan-day')">Abbrechen</button>
+      </div>
     </div>
   </div>
 </div>

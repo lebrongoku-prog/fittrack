@@ -2312,50 +2312,113 @@ function addNewPlanDayFromScratch() {
   });
 }
 
+// Multi-Select Copy-Picker: Liste aller kopierbarer Trainingstage über alle Pläne
+// (inkl. archivierter). Erlaubt Mehrfach-Auswahl + inline-Aufklappen für Übungs-Vorschau (read-only).
+let _copyPlanDaySources = []; // Cached: [{planId, planName, day}, ...]
+let _copyPlanDaySelected = new Set();
+let _copyPlanDayExpanded = new Set();
+
 function openCopyPlanDayPicker() {
   closeModal('modal-plan-day-source');
-  // Liste aller kopierbarer Trainingstage über alle Pläne (inkl. archivierter)
+  _copyPlanDaySources = [];
+  _copyPlanDaySelected.clear();
+  _copyPlanDayExpanded.clear();
   const allPlans = DB.getPlans();
-  const items = [];
   for (const pl of allPlans) {
     for (const td of (pl.trainingDays || [])) {
-      items.push({ planId: pl.id, planName: pl.name, day: td });
+      _copyPlanDaySources.push({ planId: pl.id, planName: pl.name, day: td });
     }
   }
-  const html = items.length ? items.map((it, idx) => {
-    const dayCount = it.day.exercises.length;
-    const setCount = it.day.exercises.reduce((a,e) => a + (e.targetSets||0), 0);
-    return `<div class="sheet-item" onclick="copyPlanDayFrom(${idx})">
-      <div>
-        <div class="sheet-item-name">${escapeHtml(it.day.name)}</div>
-        <div class="sheet-item-sub">aus ${escapeHtml(it.planName)} • ${dayCount} Übungen • ${setCount} Sätze</div>
-      </div>
-      <span style="color:var(--accent);font-size:18px">+</span>
-    </div>`;
-  }).join('') : '<p style="color:var(--text3);text-align:center;padding:20px">Keine Trainingstage zum Kopieren verfügbar</p>';
-  document.getElementById('copy-plan-day-list').innerHTML = html;
-  _copyPlanDaySources = items;
+  renderCopyPlanDayList();
   openModal('modal-copy-plan-day');
 }
 
-let _copyPlanDaySources = []; // Cached für Copy-Picker-Auswahl
+function renderCopyPlanDayList() {
+  const exs = DB.getExercises();
+  const exMap = {};
+  exs.forEach(e => { exMap[e.id] = e; });
+  const list = document.getElementById('copy-plan-day-list');
+  if (!_copyPlanDaySources.length) {
+    list.innerHTML = '<p style="color:var(--text3);text-align:center;padding:20px">Keine Trainingstage zum Kopieren verfügbar</p>';
+    document.getElementById('copy-plan-day-confirm').disabled = true;
+    document.getElementById('copy-plan-day-confirm').textContent = 'Kopieren';
+    return;
+  }
+  list.innerHTML = _copyPlanDaySources.map((it, idx) => {
+    const dayCount = it.day.exercises.length;
+    const setCount = it.day.exercises.reduce((a,e) => a + (e.targetSets||0), 0);
+    const selected = _copyPlanDaySelected.has(idx);
+    const expanded = _copyPlanDayExpanded.has(idx);
+    const exList = expanded ? `
+      <div class="copy-day-ex-list">
+        ${dayCount === 0
+          ? '<div class="copy-day-ex-empty">Keine Übungen in diesem Trainingstag</div>'
+          : it.day.exercises.map(pe => {
+              const ex = exMap[pe.exId];
+              const name = ex ? ex.name : '(unbekannte Übung)';
+              const weightStr = pe.targetWeight ? ` @ ${pe.targetWeight} kg` : '';
+              return `<div class="copy-day-ex-row">
+                <span class="copy-day-ex-name">${escapeHtml(name)}</span>
+                <span class="copy-day-ex-meta">${pe.targetSets}×${pe.targetReps}${weightStr}</span>
+              </div>`;
+            }).join('')
+        }
+      </div>` : '';
+    return `<div class="copy-day-row${selected ? ' selected' : ''}${expanded ? ' expanded' : ''}">
+      <div class="copy-day-head" onclick="toggleCopyPlanDaySelection(${idx})">
+        <div class="copy-day-info">
+          <div class="copy-day-name">${escapeHtml(it.day.name)}</div>
+          <div class="copy-day-sub">aus ${escapeHtml(it.planName)} • ${dayCount} Übungen • ${setCount} Sätze</div>
+        </div>
+        <button class="copy-day-expand" onclick="event.stopPropagation();toggleCopyPlanDayExpand(${idx})" aria-label="Übungen anzeigen">
+          ${expanded ? '▾' : '▸'}
+        </button>
+        <span class="copy-day-checkbox" aria-label="Auswahl">${selected ? '●' : '○'}</span>
+      </div>
+      ${exList}
+    </div>`;
+  }).join('');
+  // Footer-Button aktualisieren
+  const btn = document.getElementById('copy-plan-day-confirm');
+  const n = _copyPlanDaySelected.size;
+  btn.disabled = n === 0;
+  btn.textContent = n === 0 ? 'Kopieren' : (n === 1 ? '1 Trainingstag kopieren' : `${n} Trainingstage kopieren`);
+}
 
-function copyPlanDayFrom(srcIdx) {
-  const src = _copyPlanDaySources[srcIdx];
-  if (!src) return;
-  // Deep-copy mit frischer ID. Übungen behalten ihre exId-Referenzen (Übungen sind global).
-  const newDay = {
-    id: 'day_' + Date.now() + '_' + Math.floor(Math.random()*10000),
-    name: src.day.name,
-    color: src.day.color || null,
-    exercises: src.day.exercises.map(e => ({ ...e })),
-  };
+function toggleCopyPlanDaySelection(idx) {
+  if (_copyPlanDaySelected.has(idx)) _copyPlanDaySelected.delete(idx);
+  else _copyPlanDaySelected.add(idx);
+  renderCopyPlanDayList();
+}
+function toggleCopyPlanDayExpand(idx) {
+  if (_copyPlanDayExpanded.has(idx)) _copyPlanDayExpanded.delete(idx);
+  else _copyPlanDayExpanded.add(idx);
+  renderCopyPlanDayList();
+}
+
+function confirmCopyPlanDays() {
+  if (_copyPlanDaySelected.size === 0) return;
+  // Zielreihenfolge: in Reihenfolge der Sources (nicht in Auswahl-Klickreihenfolge)
+  const selectedIdxs = [..._copyPlanDaySelected].sort((a,b) => a - b);
   const plan = DB.getPlan();
-  plan.push(newDay);
+  let counter = 0;
+  for (const idx of selectedIdxs) {
+    const src = _copyPlanDaySources[idx];
+    if (!src) continue;
+    plan.push({
+      id: 'day_' + Date.now() + '_' + (counter++) + '_' + Math.floor(Math.random()*10000),
+      name: src.day.name,
+      color: src.day.color || null,
+      exercises: src.day.exercises.map(e => ({ ...e })),
+    });
+  }
   DB.savePlan(plan);
   closeModal('modal-copy-plan-day');
   if (currentScreen === 'plan-detail') renderPlanDetail();
-  showToast(`${pd(newDay.name)} kopiert ✓`);
+  const n = selectedIdxs.length;
+  showToast(n === 1 ? 'Trainingstag kopiert ✓' : `${n} Trainingstage kopiert ✓`);
+  _copyPlanDaySelected.clear();
+  _copyPlanDayExpanded.clear();
 }
 
 // ═══════════════════════════════════════════════
