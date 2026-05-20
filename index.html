@@ -164,7 +164,7 @@
   <div id="screen-plans" class="screen">
     <div class="ph">
       <div class="ph-left">
-        <h1>Trainingspläne</h1>
+        <h1>Trainingsplan</h1>
         <div class="ph-sub" id="plans-subline">Übersicht aller Pläne</div>
       </div>
       <div class="ex-add-btn" onclick="createNewPlan()" title="Neuen Trainingsplan erstellen">
@@ -366,7 +366,7 @@
   </div>
   <div class="nav-btn" id="nav-plans" onclick="showScreen('plans')">
     <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    <span>Trainingspläne</span>
+    <span>Trainingsplan</span>
   </div>
   <div class="nav-btn" id="nav-mehr" onclick="showScreen('mehr')">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
@@ -553,6 +553,38 @@
     <div class="sheet-handle"></div>
     <div class="sheet-title" id="hist-detail-title">Session</div>
     <div class="sheet-body" id="hist-detail-body"></div>
+  </div>
+</div>
+
+<!-- Auswahl: neuen Trainingstag erstellen oder aus anderem Plan kopieren -->
+<div id="modal-plan-day-source" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Trainingstag hinzufügen</div>
+    <div class="sheet-body">
+      <p style="font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.5">Wie möchtest du den Trainingstag anlegen?</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-primary btn-full" onclick="addNewPlanDayFromScratch()">Neuen Trainingstag erstellen</button>
+        <button class="btn btn-outline btn-full" onclick="openCopyPlanDayPicker()" id="copy-plan-day-btn">Aus anderem Plan kopieren</button>
+        <button class="btn btn-ghost btn-full" onclick="closeModal('modal-plan-day-source')">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Picker: Trainingstag aus anderem Plan zum Kopieren wählen -->
+<div id="modal-copy-plan-day" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title with-back">
+      <button class="sheet-back-btn" onclick="closeModal('modal-copy-plan-day');openModal('modal-plan-day-source');" aria-label="Zurück">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span>Trainingstag zum Kopieren wählen</span>
+    </div>
+    <div class="sheet-body">
+      <div class="sheet-list" id="copy-plan-day-list"></div>
+    </div>
   </div>
 </div>
 

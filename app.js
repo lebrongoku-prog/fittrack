@@ -491,6 +491,8 @@ let currentScreen = 'overview';
 // Erstbesuch eines Tabs → Default 0 (oben).
 const tabScrollPositions = {};
 
+const TAB_ORDER = ['overview', 'workouts', 'exercises', 'plans', 'mehr'];
+
 function showScreen(name) {
   const app = document.getElementById('app');
   // Scroll-Position des aktuellen (ausgehenden) Tabs sichern, bevor currentScreen überschrieben wird
@@ -498,10 +500,21 @@ function showScreen(name) {
     tabScrollPositions[currentScreen] = app.scrollTop;
   }
 
+  // Richtung der Tab-Switch-Animation bestimmen (für Slide-In von links/rechts)
+  const oldIdx = TAB_ORDER.indexOf(currentScreen);
+  const newIdx = TAB_ORDER.indexOf(name);
+  let fromLeft = false;
+  if (currentScreen === 'plan-detail' && name === 'plans') fromLeft = true; // back-nav
+  else if (oldIdx >= 0 && newIdx >= 0 && newIdx < oldIdx) fromLeft = true;
+
   currentScreen = name;
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active', 'enter-from-left');
+  });
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('screen-'+name).classList.add('active');
+  const newScreen = document.getElementById('screen-'+name);
+  if (fromLeft) newScreen.classList.add('enter-from-left');
+  newScreen.classList.add('active');
   const navEl = document.getElementById('nav-'+name);
   if (navEl) navEl.classList.add('active');
 
@@ -1904,7 +1917,9 @@ let mehrInactivePlanExpanded = false; // Toggle für die kollabierbare "Andere T
 
 function toggleMehrInactivePlans() {
   mehrInactivePlanExpanded = !mehrInactivePlanExpanded;
-  renderMehr();
+  // Trainingstage-Liste wird jetzt im Plan-Detail-Screen gerendert, nicht mehr im Mehr-Tab.
+  if (currentScreen === 'plan-detail') renderPlanDetail();
+  else if (currentScreen === 'mehr') renderMehr();
 }
 
 function renderMehr() {
@@ -1967,13 +1982,11 @@ function renderPlans() {
 
   const renderRow = (p) => {
     const status = planStatus(p);
-    const dayCount = (p.trainingDays || []).length;
-    const dayInfo = dayCount === 0 ? 'Keine Trainingstage' : `${dayCount} Trainingstag${dayCount === 1 ? '' : 'e'}`;
     const isCurrent = status === 'active';
     return `<div class="plan-list-row plan-status-${status}${isCurrent ? ' active' : ''}" onclick="openPlanDetail('${p.id}')">
       <div class="plan-list-info">
         <div class="plan-list-name">${escapeHtml(p.name)}</div>
-        <div class="plan-list-meta">${fmtDateRange(p.startDate, p.endDate)} • ${p.weeksTotal} Wochen • ${dayInfo}</div>
+        <div class="plan-list-meta">${fmtDateRange(p.startDate, p.endDate)} • ${p.weeksTotal} Wochen</div>
       </div>
       <span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>
       <div class="plan-list-action">›</div>
@@ -2268,16 +2281,81 @@ function cancelNameInput() {
   if (cb) cb();
 }
 
+// "+ Trainingstag hinzufügen": zeigt ein Source-Modal (Neu oder Kopie aus anderem Plan).
+// Wenn keine anderen Trainingstage in irgendeinem Plan existieren, springt direkt in den
+// Neu-Erstellen-Flow (Kopie wäre sinnlos).
 function addNewPlanDay() {
+  const allPlans = DB.getPlans();
+  const editingId = editingPlanId;
+  const hasCopyableSources = allPlans.some(pl => (pl.trainingDays || []).length > 0);
+  if (!hasCopyableSources) {
+    // Direkt in den Neu-Flow
+    addNewPlanDayFromScratch();
+    return;
+  }
+  // Copy-Button im Source-Modal ggf. dimmen, wenn nur der aktuell editierte Plan Tage hat
+  const btn = document.getElementById('copy-plan-day-btn');
+  if (btn) btn.disabled = false;
+  openModal('modal-plan-day-source');
+}
+
+function addNewPlanDayFromScratch() {
+  closeModal('modal-plan-day-source');
   promptForName('Name des neuen Trainingstags', 'Neuer Tag', (name) => {
     const plan = DB.getPlan();
     const id = 'day_' + Date.now();
     plan.push({ id, name, color: null, exercises: [] });
     DB.savePlan(plan);
-    renderMehr();
+    if (currentScreen === 'plan-detail') renderPlanDetail();
     showToast(`${pd(name)} hinzugefügt`);
     openPlanDayModal(plan.length - 1);
   });
+}
+
+function openCopyPlanDayPicker() {
+  closeModal('modal-plan-day-source');
+  // Liste aller kopierbarer Trainingstage über alle Pläne (inkl. archivierter)
+  const allPlans = DB.getPlans();
+  const items = [];
+  for (const pl of allPlans) {
+    for (const td of (pl.trainingDays || [])) {
+      items.push({ planId: pl.id, planName: pl.name, day: td });
+    }
+  }
+  const html = items.length ? items.map((it, idx) => {
+    const dayCount = it.day.exercises.length;
+    const setCount = it.day.exercises.reduce((a,e) => a + (e.targetSets||0), 0);
+    return `<div class="sheet-item" onclick="copyPlanDayFrom(${idx})">
+      <div>
+        <div class="sheet-item-name">${escapeHtml(it.day.name)}</div>
+        <div class="sheet-item-sub">aus ${escapeHtml(it.planName)} • ${dayCount} Übungen • ${setCount} Sätze</div>
+      </div>
+      <span style="color:var(--accent);font-size:18px">+</span>
+    </div>`;
+  }).join('') : '<p style="color:var(--text3);text-align:center;padding:20px">Keine Trainingstage zum Kopieren verfügbar</p>';
+  document.getElementById('copy-plan-day-list').innerHTML = html;
+  _copyPlanDaySources = items;
+  openModal('modal-copy-plan-day');
+}
+
+let _copyPlanDaySources = []; // Cached für Copy-Picker-Auswahl
+
+function copyPlanDayFrom(srcIdx) {
+  const src = _copyPlanDaySources[srcIdx];
+  if (!src) return;
+  // Deep-copy mit frischer ID. Übungen behalten ihre exId-Referenzen (Übungen sind global).
+  const newDay = {
+    id: 'day_' + Date.now() + '_' + Math.floor(Math.random()*10000),
+    name: src.day.name,
+    color: src.day.color || null,
+    exercises: src.day.exercises.map(e => ({ ...e })),
+  };
+  const plan = DB.getPlan();
+  plan.push(newDay);
+  DB.savePlan(plan);
+  closeModal('modal-copy-plan-day');
+  if (currentScreen === 'plan-detail') renderPlanDetail();
+  showToast(`${pd(newDay.name)} kopiert ✓`);
 }
 
 // ═══════════════════════════════════════════════
@@ -2293,8 +2371,13 @@ function toggleExGroup(key) {
   renderExercises();
 }
 
+// "Im aktuellen Plan"-Logik: sucht IMMER im aktiven Plan (per Datum), nie im Edit-Kontext.
+// Wenn der User gerade einen neuen Plan editiert, soll der Übungen-Tab trotzdem zeigen,
+// in welchen Trainingstagen des AKTIVEN Plans (= heute laufender Plan) eine Übung verwendet wird.
 function getPlanDaysUsingExercise(exId) {
-  return DB.getPlan().filter(d => d.exercises.some(e => e.exId === exId));
+  const active = getActivePlan();
+  if (!active) return [];
+  return active.trainingDays.filter(d => d.exercises.some(e => e.exId === exId));
 }
 
 function toggleExSortMode() {
@@ -2313,7 +2396,7 @@ function buildExItemHTML(ex, context) {
   const noteIndicator = ''; // "Notiz"-Tag entfernt — Notiz ist im aufgeklappten Body sichtbar
   const usingDays = getPlanDaysUsingExercise(ex.id);
   const planTag = usingDays.length
-    ? '<span class="ex-item-plan-tag">Im Plan</span>' : '';
+    ? '<span class="ex-item-plan-tag">Im aktuellen Plan</span>' : '';
   const usingBlock = usingDays.length
     ? `<div class="ex-item-using">
          <div class="ex-item-using-label">Verwendet in:</div>
@@ -2788,7 +2871,7 @@ function renderPlanAddList(q) {
     const itemsHTML = items.map(ex => {
       const usingDays = getPlanDaysUsingExercise(ex.id);
       const planTag = usingDays.length
-        ? '<span class="ex-item-plan-tag">Im Plan</span>'
+        ? '<span class="ex-item-plan-tag">Im aktuellen Plan</span>'
         : '';
       const inCurrent = existing.has(ex.id);
       const selected = planAddSelection.has(ex.id);
@@ -3660,6 +3743,43 @@ function cleanupOrphanWeekplan() {
   return dirty;
 }
 
+// Swipe-Geste auf iPhone: Wischen nach links/rechts wechselt zum Nachbar-Tab in der
+// Bottom-Nav-Reihenfolge. Funktioniert nur auf Top-Level-Tabs (nicht im Plan-Detail).
+// Wird unterdrückt bei Touches auf interaktiven Elementen und bei vertikalem Scroll.
+function initSwipeGestures() {
+  const app = document.getElementById('app');
+  if (!app) return;
+  let startX = 0, startY = 0, startTime = 0, tracking = false;
+  app.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) { tracking = false; return; }
+    const t = e.target;
+    // Skip wenn auf interaktivem Element ODER horizontal-scrollbarem Strip
+    if (t.closest('input, textarea, select, button, .next7-strip, .sheet, .overlay')) {
+      tracking = false; return;
+    }
+    if (!TAB_ORDER.includes(currentScreen)) { tracking = false; return; }
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    startTime = Date.now();
+    tracking = true;
+  }, { passive: true });
+
+  app.addEventListener('touchend', (e) => {
+    if (!tracking || e.changedTouches.length !== 1) return;
+    tracking = false;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    const dt = Date.now() - startTime;
+    if (Math.abs(dx) < 60) return;                  // zu kurze Distanz
+    if (Math.abs(dx) < Math.abs(dy) * 1.6) return;  // zu vertikal → wahrscheinlich Scroll
+    if (dt > 500) return;                            // zu langsam → wahrscheinlich keine Geste
+    const cur = TAB_ORDER.indexOf(currentScreen);
+    if (cur < 0) return;
+    if (dx < 0 && cur < TAB_ORDER.length - 1) showScreen(TAB_ORDER[cur + 1]);
+    else if (dx > 0 && cur > 0)               showScreen(TAB_ORDER[cur - 1]);
+  }, { passive: true });
+}
+
 // Auto-Hide der Bottom-Nav beim Scrollen — runter = verstecken, rauf = wieder zeigen.
 // Throttled via requestAnimationFrame für ruckelfreies Verhalten.
 // _navLastScrollY ist module-level, damit showScreen es beim Tab-Wechsel zurücksetzen kann
@@ -3704,4 +3824,6 @@ document.addEventListener('DOMContentLoaded', () => {
   driveInit();
   // Bottom-Nav versteckt sich beim Runterscrollen, taucht beim Hochscrollen wieder auf
   initScrollHideNav();
+  // Touch-Geste auf iPhone: Wischen nach links/rechts wechselt Tabs
+  initSwipeGestures();
 });

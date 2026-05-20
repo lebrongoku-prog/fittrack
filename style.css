@@ -121,7 +121,20 @@ body.theme-plans .hist-action-dd {
   padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
 }
 .screen { display: none; }
-.screen.active { display: block; }
+.screen.active {
+  display: block;
+  animation: screen-enter-right 0.22s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+/* Richtungs-abhängige Tab-Wechsel-Animation (subtle Slide + Fade) */
+.screen.active.enter-from-left { animation-name: screen-enter-left; }
+@keyframes screen-enter-right {
+  from { opacity: 0.4; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes screen-enter-left {
+  from { opacity: 0.4; transform: translateX(-28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
 
 /* ─── Bottom Nav ─── */
 #bottom-nav {
@@ -493,6 +506,12 @@ body.theme-plans .hist-action-dd {
 .plan-detail-ph .ph-left { flex: 1; min-width: 0; }
 body.theme-plans .plan-detail-ph .sheet-back-btn { background: rgba(255,255,255,0.95); }
 body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark); }
+/* "+ Trainingstag hinzufügen"-Button im Plan-Detail-Screen: weißer Hintergrund
+   damit er auf dem Amber-Gradient nicht untergeht */
+#screen-plan-detail .btn-outline {
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
 .pdr-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
 .pdr-info { flex: 1; }
 .pdr-name { font-size: 15px; font-weight: 600; }
