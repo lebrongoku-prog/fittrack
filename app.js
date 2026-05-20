@@ -1314,6 +1314,11 @@ function finishWorkout() {
   // Aktuellen Tab neu rendern — egal ob Workouts oder Übersicht, der Active-Mode endet sofort
   if (currentScreen === 'overview') renderOverview();
   else if (currentScreen === 'workouts') renderWorkoutsScreen();
+
+  // Drive-Sync: einziger automatischer Auslöser ist das Workout-Ende.
+  // Bei dieser Gelegenheit landen ALLE aufgelaufenen lokalen Änderungen
+  // (auch reine Plan-/Übungs-/Wochenplan-Änderungen seit dem letzten Sync) in der Cloud.
+  if (driveIsEnabled()) driveTriggerSync('Workout beendet');
 }
 
 function discardWorkout() {
@@ -1901,6 +1906,13 @@ function addNewPlanDay() {
 // ═══════════════════════════════════════════════
 let openExerciseId = null;   // currently expanded exercise in catalog
 let exSortMode = 'muscle';   // 'muscle' | 'plan'
+const collapsedExGroups = new Set(); // Set of group keys (muscle-key oder planDay-id) die eingeklappt sind
+
+function toggleExGroup(key) {
+  if (collapsedExGroups.has(key)) collapsedExGroups.delete(key);
+  else collapsedExGroups.add(key);
+  renderExercises();
+}
 
 function getPlanDaysUsingExercise(exId) {
   return DB.getPlan().filter(d => d.exercises.some(e => e.exId === exId));
@@ -2009,11 +2021,13 @@ function renderExercisesByPlan() {
     const items = day.exercises.map(pe => exMap[pe.exId]).filter(Boolean);
     if (!items.length) return '';
     const itemsHTML = items.map(ex => buildExItemHTML(ex, { dayId: day.id })).join('');
-    return `<div class="ex-group">
-      <div class="ex-group-title">
+    const isCollapsed = collapsedExGroups.has('plan:' + day.id);
+    return `<div class="ex-group${isCollapsed ? ' collapsed' : ''}">
+      <div class="ex-group-title" onclick="toggleExGroup('plan:${day.id}')">
         <span class="dot" style="background:rgba(255,255,255,0.7)"></span>
         ${pd(day.name)}
         <span class="count">(${items.length})</span>
+        <span class="ex-group-arrow">${isCollapsed ? '▸' : '▾'}</span>
       </div>
       <div class="ex-list">${itemsHTML}</div>
     </div>`;
@@ -2034,11 +2048,13 @@ function renderExercisesByMuscle() {
     const items = byMuscle[m].sort((a,b) => a.name.localeCompare(b.name, 'de'));
     if (!items.length) return '';
     const itemsHTML = items.map(ex => buildExItemHTML(ex)).join('');
-    return `<div class="ex-group" style="--mc:${meta.color}">
-      <div class="ex-group-title">
+    const isCollapsed = collapsedExGroups.has('muscle:' + m);
+    return `<div class="ex-group${isCollapsed ? ' collapsed' : ''}" style="--mc:${meta.color}">
+      <div class="ex-group-title" onclick="toggleExGroup('muscle:${m}')">
         <span class="dot"></span>
         ${meta.name}
         <span class="count">(${items.length})</span>
+        <span class="ex-group-arrow">${isCollapsed ? '▸' : '▾'}</span>
       </div>
       <div class="ex-list">${itemsHTML}</div>
     </div>`;
@@ -2792,9 +2808,11 @@ function clearDriveLog() {
 }
 
 // ─── markLocalChange (hook aus DB.save*) ──────────────
+// Markiert nur den Änderungs-Zeitpunkt für die Konflikt-Erkennung.
+// Drive-Sync wird NICHT automatisch bei jeder Änderung getriggert — nur explizit
+// am Ende eines Workouts (`finishWorkout`) oder manuell via "Jetzt synchronisieren".
 function markLocalChange() {
   localStorage.setItem('ft_drive_last_local_change', String(Date.now()));
-  if (driveIsEnabled()) driveTriggerSync('lokale Änderung');
 }
 
 // ─── Debounced trigger ───────────────────────────────
@@ -3259,6 +3277,32 @@ function cleanupOrphanWeekplan() {
   return dirty;
 }
 
+// Auto-Hide der Bottom-Nav beim Scrollen — runter = verstecken, rauf = wieder zeigen.
+// Throttled via requestAnimationFrame für ruckelfreies Verhalten.
+function initScrollHideNav() {
+  const app = document.getElementById('app');
+  const nav = document.getElementById('bottom-nav');
+  if (!app || !nav) return;
+  let lastY = 0;
+  let ticking = false;
+  app.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const cur = app.scrollTop;
+      const delta = cur - lastY;
+      if (cur < 60) {
+        nav.classList.remove('nav-hidden'); // nah am oberen Rand → immer sichtbar
+      } else if (Math.abs(delta) > 5) {
+        if (delta > 0) nav.classList.add('nav-hidden');     // runter scrollen → verstecken
+        else            nav.classList.remove('nav-hidden'); // rauf scrollen → wieder zeigen
+      }
+      lastY = cur;
+      ticking = false;
+    });
+  }, { passive: true });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Erst Daten-Hygiene, dann rendern — verhindert, dass UI verwaiste Referenzen
   // kurzzeitig anzeigt, bevor der Render-Fix sie als Ruhetag interpretiert.
@@ -3271,4 +3315,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   // Drive-Sync initialisieren (versucht stillen Auto-Login, lädt Cloud-Daten falls verbunden)
   driveInit();
+  // Bottom-Nav versteckt sich beim Runterscrollen, taucht beim Hochscrollen wieder auf
+  initScrollHideNav();
 });
