@@ -1061,6 +1061,19 @@ body.theme-history .hist-action-dd {
 /* Eingeklappter Zustand: Übungs-Liste ausblenden */
 .ex-group.collapsed .ex-list { display: none; }
 
+/* Add-Ex-Modal: Muskelgruppen-Sektion mit Kompakt-Items (sheet-item) statt Accordion-Cards */
+.sheet-ex-group { margin: 6px 0 12px; }
+.sheet-ex-group:first-child { margin-top: 0; }
+.sheet-ex-group .ex-group-title {
+  color: var(--text2);
+  margin: 4px 4px 6px;
+}
+.sheet-ex-group .ex-group-title .count { color: var(--text3); }
+.sheet-ex-group .ex-group-title .ex-group-arrow { color: var(--text3); }
+.sheet-ex-group.collapsed .sheet-ex-group-list { display: none; }
+/* Die Items selbst (.sheet-item) behalten ihre bestehende Styling-Logik
+   mit Border-Bottom — :last-child entfernt die Border am Ende jeder Gruppe automatisch. */
+
 .ex-list { background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
 .ex-item + .ex-item { border-top: 1px solid var(--border); }
 .ex-item-head {

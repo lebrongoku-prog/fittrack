@@ -385,7 +385,18 @@ function getExercisePR(exId) {
 
 let currentScreen = 'overview';
 
+// Pro Tab merken wir uns die zuletzt eingenommene Scroll-Position des #app-Containers.
+// Beim Verlassen eines Tabs speichern, beim Betreten wiederherstellen.
+// Erstbesuch eines Tabs → Default 0 (oben).
+const tabScrollPositions = {};
+
 function showScreen(name) {
+  const app = document.getElementById('app');
+  // Scroll-Position des aktuellen (ausgehenden) Tabs sichern, bevor currentScreen überschrieben wird
+  if (app && currentScreen && currentScreen !== name) {
+    tabScrollPositions[currentScreen] = app.scrollTop;
+  }
+
   currentScreen = name;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -403,6 +414,23 @@ function showScreen(name) {
   if (name === 'mehr') renderMehr();
 
   ensureTimerActive();
+
+  // Scroll-Position des neuen Tabs wiederherstellen (oder 0 beim Erstbesuch).
+  // Synchron + nach Frame als Safety-Net, weil manche Renders (Chart.js im Verlauf)
+  // erst nach Paint die endgültige Höhe haben.
+  if (app) {
+    const target = tabScrollPositions[name] || 0;
+    app.scrollTop = target;
+    _navLastScrollY = target; // verhindert dass die nav-hide-Logik den Sprung als "scroll" fehlinterpretiert
+    const nav = document.getElementById('bottom-nav');
+    if (nav) nav.classList.remove('nav-hidden');
+    requestAnimationFrame(() => {
+      if (currentScreen === name && app.scrollTop !== target) {
+        app.scrollTop = target;
+        _navLastScrollY = target;
+      }
+    });
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -1340,17 +1368,63 @@ function openAddExModal() {
   openModal('modal-add-ex');
 }
 function filterAddEx() { renderAddExList(document.getElementById('add-ex-search').value); }
+
+// Eigener Collapse-State fürs Add-Ex-Modal (unabhängig vom Übungen-Tab).
+// Default: alle Muskelgruppen aufgeklappt (Set bleibt leer).
+const collapsedAddExGroups = new Set();
+function toggleAddExGroup(muscleKey) {
+  if (collapsedAddExGroups.has(muscleKey)) collapsedAddExGroups.delete(muscleKey);
+  else collapsedAddExGroups.add(muscleKey);
+  renderAddExList(document.getElementById('add-ex-search').value);
+}
+
 function renderAddExList(q) {
   const exs = DB.getExercises();
-  const filtered = q ? exs.filter(e => e.name.toLowerCase().includes(q.toLowerCase())) : exs;
-  const sorted = [...filtered].sort((a,b) => a.name.localeCompare(b.name, 'de'));
-  document.getElementById('add-ex-list').innerHTML = sorted.map(e => {
-    const col = muscleColor(e.muscle);
-    return `<div class="sheet-item muscle-coded" style="--c:${col}" onclick="addExToWorkout('${e.id}')">
-      <div><div class="sheet-item-name">${e.name}</div><div class="sheet-item-sub">${muscleName(e.muscle)}</div></div>
-      <span style="color:var(--accent);font-size:20px">+</span>
+  const query = (q || '').trim().toLowerCase();
+  // Filter
+  const filtered = query
+    ? exs.filter(e => e.name.toLowerCase().includes(query))
+    : exs;
+  // Gruppieren nach Muskelgruppe (in MUSCLE_ORDER-Reihenfolge), innerhalb alphabetisch
+  const byMuscle = {};
+  MUSCLE_ORDER.forEach(m => byMuscle[m] = []);
+  filtered.forEach(e => { if (byMuscle[e.muscle]) byMuscle[e.muscle].push(e); });
+  MUSCLE_ORDER.forEach(m => byMuscle[m].sort((a,b) => a.name.localeCompare(b.name, 'de')));
+
+  const hasResults = MUSCLE_ORDER.some(m => byMuscle[m].length);
+  if (!hasResults) {
+    document.getElementById('add-ex-list').innerHTML =
+      '<p style="color:var(--text3);text-align:center;padding:20px">Keine Übung gefunden</p>';
+    return;
+  }
+
+  // Bei aktiver Suche: alle Gruppen mit Treffern automatisch aufgeklappt anzeigen
+  // (damit Treffer sichtbar sind, ohne dass der User erst expandieren muss).
+  // Ohne Suche: Standard-Collapse-State pro Gruppe respektieren.
+  const groupsHTML = MUSCLE_ORDER.map(m => {
+    const items = byMuscle[m];
+    if (!items.length) return '';
+    const meta = MUSCLE_META[m];
+    const isCollapsed = !query && collapsedAddExGroups.has(m);
+    const itemsHTML = items.map(e => {
+      const col = muscleColor(e.muscle);
+      return `<div class="sheet-item muscle-coded" style="--c:${col}" onclick="addExToWorkout('${e.id}')">
+        <div><div class="sheet-item-name">${e.name}</div><div class="sheet-item-sub">${muscleName(e.muscle)}</div></div>
+        <span style="color:var(--accent);font-size:20px">+</span>
+      </div>`;
+    }).join('');
+    return `<div class="sheet-ex-group${isCollapsed ? ' collapsed' : ''}" style="--mc:${meta.color}">
+      <div class="ex-group-title" onclick="toggleAddExGroup('${m}')">
+        <span class="dot"></span>
+        ${meta.name}
+        <span class="count">(${items.length})</span>
+        <span class="ex-group-arrow">${isCollapsed ? '▸' : '▾'}</span>
+      </div>
+      <div class="sheet-ex-group-list">${itemsHTML}</div>
     </div>`;
-  }).join('') || '<p style="color:var(--text3);text-align:center;padding:20px">Keine Übung gefunden</p>';
+  }).filter(Boolean).join('');
+
+  document.getElementById('add-ex-list').innerHTML = groupsHTML;
 }
 function addExToWorkout(exId) {
   const ex = getEx(exId); if (!ex) return;
@@ -3389,25 +3463,27 @@ function cleanupOrphanWeekplan() {
 
 // Auto-Hide der Bottom-Nav beim Scrollen — runter = verstecken, rauf = wieder zeigen.
 // Throttled via requestAnimationFrame für ruckelfreies Verhalten.
+// _navLastScrollY ist module-level, damit showScreen es beim Tab-Wechsel zurücksetzen kann
+// (sonst würde der programmatische scrollTop-Sprung als "User scrollt nach unten" interpretiert).
+let _navLastScrollY = 0;
 function initScrollHideNav() {
   const app = document.getElementById('app');
   const nav = document.getElementById('bottom-nav');
   if (!app || !nav) return;
-  let lastY = 0;
   let ticking = false;
   app.addEventListener('scroll', () => {
     if (ticking) return;
     ticking = true;
     requestAnimationFrame(() => {
       const cur = app.scrollTop;
-      const delta = cur - lastY;
+      const delta = cur - _navLastScrollY;
       if (cur < 60) {
         nav.classList.remove('nav-hidden'); // nah am oberen Rand → immer sichtbar
       } else if (Math.abs(delta) > 5) {
         if (delta > 0) nav.classList.add('nav-hidden');     // runter scrollen → verstecken
         else            nav.classList.remove('nav-hidden'); // rauf scrollen → wieder zeigen
       }
-      lastY = cur;
+      _navLastScrollY = cur;
       ticking = false;
     });
   }, { passive: true });
