@@ -486,74 +486,84 @@ function getExercisePR(exId) {
 
 let currentScreen = 'overview';
 
-// Pro Tab merken wir uns die zuletzt eingenommene Scroll-Position des #app-Containers.
-// Beim Verlassen eines Tabs speichern, beim Betreten wiederherstellen.
-// Erstbesuch eines Tabs → Default 0 (oben).
-const tabScrollPositions = {};
-
 const TAB_ORDER = ['overview', 'workouts', 'exercises', 'plans', 'mehr'];
 
-function showScreen(name) {
-  const app = document.getElementById('app');
-  // Scroll-Position des aktuellen (ausgehenden) Tabs sichern, bevor currentScreen überschrieben wird
-  if (app && currentScreen && currentScreen !== name) {
-    tabScrollPositions[currentScreen] = app.scrollTop;
-  }
+// Wenn JS gerade einen Scroll programmatisch ausloest, soll der Scroll-Listener
+// nicht zusaetzlich currentScreen/Theme/Renderer triggern (vermeidet Doppel-Render).
+let _suppressScrollSync = false;
 
-  // Richtung der Tab-Switch-Animation bestimmen (für Slide-In von links/rechts)
-  const oldIdx = TAB_ORDER.indexOf(currentScreen);
-  const newIdx = TAB_ORDER.indexOf(name);
-  let fromLeft = false;
-  if (currentScreen === 'plan-detail' && name === 'plans') fromLeft = true; // back-nav
-  else if (oldIdx >= 0 && newIdx >= 0 && newIdx < oldIdx) fromLeft = true;
-
-  currentScreen = name;
-  document.querySelectorAll('.screen').forEach(s => {
-    s.classList.remove('active', 'enter-from-left');
+// Programmatic scroll des Tab-Containers zum Tab `name`.
+// Verwendet behavior:'auto' (instant) entsprechend der Nutzer-Praeferenz "direkt springen".
+function _scrollTabContainerTo(name) {
+  const container = document.getElementById('tab-container');
+  if (!container) return;
+  const idx = TAB_ORDER.indexOf(name);
+  if (idx < 0) return;
+  const target = idx * container.clientWidth;
+  _suppressScrollSync = true;
+  container.scrollTo({ left: target, behavior: 'auto' });
+  // Sync-Flag nach Frame wieder freigeben (scrollend-Event kommt nicht zuverlaessig auf allen Browsern).
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { _suppressScrollSync = false; });
   });
+}
+
+// Setzt body-Theme-Klasse + Bottom-Nav-Highlight + ruft den Renderer fuer den Tab auf.
+function _applyTabState(name) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const newScreen = document.getElementById('screen-'+name);
-  if (fromLeft) newScreen.classList.add('enter-from-left');
-  newScreen.classList.add('active');
   const navEl = document.getElementById('nav-'+name);
   if (navEl) navEl.classList.add('active');
 
-  // Switch body theme class so CSS variables (accent / gradient / tint) update per tab.
-  // plan-detail teilt sich Theme + Akzentfarbe mit der Plans-Liste (Amber).
+  // Body-Theme: plan-detail teilt sich Theme + Akzentfarbe mit der Plans-Liste (Amber).
   const themeName = (name === 'plan-detail') ? 'plans' : name;
   document.body.className = 'theme-' + themeName;
 
-  // Beim Verlassen des Plan-Detail-Screens den Edit-Kontext zurücksetzen.
-  // Edit-Kontext bleibt erhalten, wenn man von plan-detail in einen anderen Tab wechselt
-  // (z.B. Übungen-Tab, um Übungen zum aktuell editierten Plan hinzuzufügen).
-  // Erst der Wechsel zurück zur Plans-Liste (oder Wechsel zwischen den Plans/Plan-Detail-Tabs) löst Reset aus.
+  // Beim Wechsel zur Plans-Liste den Edit-Kontext zuruecksetzen.
   if (name === 'plans') editingPlanId = null;
 
   if (name === 'overview') renderOverview();
-  if (name === 'workouts') renderWorkoutsScreen();
-  if (name === 'exercises') renderExercises();
-  if (name === 'plans') renderPlans();
-  if (name === 'plan-detail') renderPlanDetail();
-  if (name === 'mehr') renderMehr();
+  else if (name === 'workouts') renderWorkoutsScreen();
+  else if (name === 'exercises') renderExercises();
+  else if (name === 'plans') renderPlans();
+  else if (name === 'plan-detail') renderPlanDetail();
+  else if (name === 'mehr') renderMehr();
 
   ensureTimerActive();
 
-  // Scroll-Position des neuen Tabs wiederherstellen (oder 0 beim Erstbesuch).
-  // Synchron + nach Frame als Safety-Net, weil manche Renders (Chart.js im Verlauf)
-  // erst nach Paint die endgültige Höhe haben.
-  if (app) {
-    const target = tabScrollPositions[name] || 0;
-    app.scrollTop = target;
-    _navLastScrollY = target; // verhindert dass die nav-hide-Logik den Sprung als "scroll" fehlinterpretiert
-    const nav = document.getElementById('bottom-nav');
-    if (nav) nav.classList.remove('nav-hidden');
-    requestAnimationFrame(() => {
-      if (currentScreen === name && app.scrollTop !== target) {
-        app.scrollTop = target;
-        _navLastScrollY = target;
-      }
-    });
+  // Bottom-Nav beim Tab-Wechsel immer sichtbar.
+  const nav = document.getElementById('bottom-nav');
+  if (nav) nav.classList.remove('nav-hidden');
+}
+
+function showScreen(name) {
+  // Plan-Detail ist ein Vollbild-Overlay UEBER dem Tab-Container.
+  const planDetailEl = document.getElementById('screen-plan-detail');
+  const tabContainer = document.getElementById('tab-container');
+
+  if (name === 'plan-detail') {
+    currentScreen = 'plan-detail';
+    if (planDetailEl) {
+      planDetailEl.classList.add('active');
+      // Beim Oeffnen ganz oben starten — sonst zeigt Overlay alte Scroll-Position vom letzten Mal
+      planDetailEl.scrollTop = 0;
+    }
+    _applyTabState('plan-detail');
+    return;
   }
+
+  // Wechsel von plan-detail zurueck zu einem normalen Tab → Overlay schliessen
+  if (planDetailEl && planDetailEl.classList.contains('active')) {
+    planDetailEl.classList.remove('active');
+  }
+
+  // Wenn der Ziel-Tab nicht in der TAB_ORDER ist, ignorieren
+  if (!TAB_ORDER.includes(name)) return;
+
+  currentScreen = name;
+  // Programmatisch zum Tab scrollen (instant, kein smooth — Nutzer-Praeferenz)
+  if (tabContainer) _scrollTabContainerTo(name);
+
+  _applyTabState(name);
 }
 
 // ═══════════════════════════════════════════════
@@ -1308,8 +1318,9 @@ function toggleExDone(ei, checked) {
       if (nextIdx >= 0) {
         scrollToEx(nextIdx);
       } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        document.getElementById('app').scrollTo({ top: 0, behavior: 'smooth' });
+        // Active-Workout lebt im Workouts-Tab — diesen Tab nach oben scrollen
+        const wo = document.getElementById('screen-workouts');
+        if (wo) wo.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
   }, 50);
@@ -1328,8 +1339,8 @@ function skipExercise(ei) {
     if (nextIdx >= 0) {
       scrollToEx(nextIdx);
     } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      document.getElementById('app').scrollTo({ top: 0, behavior: 'smooth' });
+      const wo2 = document.getElementById('screen-workouts');
+      if (wo2) wo2.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, 50);
 }
@@ -3808,69 +3819,103 @@ function cleanupOrphanWeekplan() {
   return dirty;
 }
 
-// Swipe-Geste auf iPhone: Wischen nach links/rechts wechselt zum Nachbar-Tab in der
-// Bottom-Nav-Reihenfolge. Funktioniert nur auf Top-Level-Tabs (nicht im Plan-Detail).
-// Wird unterdrückt bei Touches auf interaktiven Elementen und bei vertikalem Scroll.
-function initSwipeGestures() {
-  const app = document.getElementById('app');
-  if (!app) return;
-  let startX = 0, startY = 0, startTime = 0, tracking = false;
-  app.addEventListener('touchstart', (e) => {
-    if (e.touches.length !== 1) { tracking = false; return; }
-    const t = e.target;
-    // Skip wenn auf interaktivem Element ODER horizontal-scrollbarem Strip
-    if (t.closest('input, textarea, select, button, .next7-strip, .sheet, .overlay')) {
-      tracking = false; return;
-    }
-    if (!TAB_ORDER.includes(currentScreen)) { tracking = false; return; }
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    startTime = Date.now();
-    tracking = true;
-  }, { passive: true });
-
-  app.addEventListener('touchend', (e) => {
-    if (!tracking || e.changedTouches.length !== 1) return;
-    tracking = false;
-    const dx = e.changedTouches[0].clientX - startX;
-    const dy = e.changedTouches[0].clientY - startY;
-    const dt = Date.now() - startTime;
-    if (Math.abs(dx) < 60) return;                  // zu kurze Distanz
-    if (Math.abs(dx) < Math.abs(dy) * 1.6) return;  // zu vertikal → wahrscheinlich Scroll
-    if (dt > 500) return;                            // zu langsam → wahrscheinlich keine Geste
-    const cur = TAB_ORDER.indexOf(currentScreen);
-    if (cur < 0) return;
-    if (dx < 0 && cur < TAB_ORDER.length - 1) showScreen(TAB_ORDER[cur + 1]);
-    else if (dx > 0 && cur > 0)               showScreen(TAB_ORDER[cur - 1]);
-  }, { passive: true });
-}
-
-// Auto-Hide der Bottom-Nav beim Scrollen — runter = verstecken, rauf = wieder zeigen.
-// Throttled via requestAnimationFrame für ruckelfreies Verhalten.
-// _navLastScrollY ist module-level, damit showScreen es beim Tab-Wechsel zurücksetzen kann
-// (sonst würde der programmatische scrollTop-Sprung als "User scrollt nach unten" interpretiert).
-let _navLastScrollY = 0;
-function initScrollHideNav() {
-  const app = document.getElementById('app');
-  const nav = document.getElementById('bottom-nav');
-  if (!app || !nav) return;
+// Horizontal-Snap-Scroll-Sync: Wenn der Nutzer per Wisch-Geste auf einen anderen Tab
+// snappt, erkennen wir den neuen Tab via scrollLeft und triggern den Renderer / Theme.
+// Programmatische Scrolls (showScreen) werden via _suppressScrollSync uebergangen.
+function initTabScrollSync() {
+  const container = document.getElementById('tab-container');
+  if (!container) return;
   let ticking = false;
-  app.addEventListener('scroll', () => {
+  let lastReported = currentScreen;
+  let settleTimer = null;
+
+  container.addEventListener('scroll', () => {
+    if (_suppressScrollSync) return;
     if (ticking) return;
     ticking = true;
     requestAnimationFrame(() => {
-      const cur = app.scrollTop;
-      const delta = cur - _navLastScrollY;
-      if (cur < 60) {
-        nav.classList.remove('nav-hidden'); // nah am oberen Rand → immer sichtbar
-      } else if (Math.abs(delta) > 5) {
-        if (delta > 0) nav.classList.add('nav-hidden');     // runter scrollen → verstecken
-        else            nav.classList.remove('nav-hidden'); // rauf scrollen → wieder zeigen
-      }
-      _navLastScrollY = cur;
       ticking = false;
+      const w = container.clientWidth;
+      if (w <= 0) return;
+      // Aktuell sichtbaren Tab anhand der naechstgelegenen Snap-Position bestimmen
+      const idx = Math.round(container.scrollLeft / w);
+      const clamped = Math.max(0, Math.min(TAB_ORDER.length - 1, idx));
+      const name = TAB_ORDER[clamped];
+
+      // Sofortiger Theme-/Nav-Wechsel waehrend des Snappings — Renderer kommt erst beim Settle.
+      if (name !== lastReported) {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        const navEl = document.getElementById('nav-'+name);
+        if (navEl) navEl.classList.add('active');
+        const themeName = (name === 'plan-detail') ? 'plans' : name;
+        document.body.className = 'theme-' + themeName;
+        lastReported = name;
+      }
+
+      // Settle-Detection: kein Scroll-Event mehr fuer 90 ms → Renderer + currentScreen-Sync
+      if (settleTimer) clearTimeout(settleTimer);
+      settleTimer = setTimeout(() => {
+        // Snap-Position exakt? Sonst nochmal nachschnappen (defensive: manche Geraete snappen unsauber)
+        const exact = clamped * w;
+        if (Math.abs(container.scrollLeft - exact) > 1) {
+          _suppressScrollSync = true;
+          container.scrollTo({ left: exact, behavior: 'auto' });
+          requestAnimationFrame(() => { _suppressScrollSync = false; });
+        }
+        if (currentScreen !== name) {
+          currentScreen = name;
+          _applyTabState(name);
+        }
+      }, 90);
     });
   }, { passive: true });
+
+  // Beim Resize Snap-Position neu berechnen (Tab-Breiten haengen an clientWidth).
+  window.addEventListener('resize', () => {
+    if (!TAB_ORDER.includes(currentScreen)) return;
+    _scrollTabContainerTo(currentScreen);
+  });
+}
+
+// Auto-Hide der Bottom-Nav beim vertikalen Scrollen IM AKTIVEN TAB.
+// Jeder Tab hat seinen eigenen scrollContainer → wir haengen den Listener an alle 5 Tabs an,
+// reagieren aber nur, wenn der Listener vom aktuell aktiven Tab feuert.
+// _navLastScrollY ist module-level, damit ein programmatisch verursachter scrollTop-Sprung
+// nicht faelschlich als "User scrollt runter" interpretiert wird.
+let _navLastScrollY = 0;
+function initScrollHideNav() {
+  const nav = document.getElementById('bottom-nav');
+  if (!nav) return;
+  const _navTickingByTab = new Map();
+
+  function attachToScreen(screenEl, tabName) {
+    if (!screenEl) return;
+    screenEl.addEventListener('scroll', () => {
+      // Nur reagieren, wenn dieser Tab gerade der sichtbare ist
+      if (currentScreen !== tabName) return;
+      if (_navTickingByTab.get(tabName)) return;
+      _navTickingByTab.set(tabName, true);
+      requestAnimationFrame(() => {
+        const cur = screenEl.scrollTop;
+        const delta = cur - _navLastScrollY;
+        if (cur < 60) {
+          nav.classList.remove('nav-hidden');
+        } else if (Math.abs(delta) > 5) {
+          if (delta > 0) nav.classList.add('nav-hidden');
+          else           nav.classList.remove('nav-hidden');
+        }
+        _navLastScrollY = cur;
+        _navTickingByTab.set(tabName, false);
+      });
+    }, { passive: true });
+  }
+
+  TAB_ORDER.forEach(tabName => {
+    attachToScreen(document.getElementById('screen-'+tabName), tabName);
+  });
+  // Plan-Detail-Overlay hat eigenes Scrollen — auch dort Nav-Hide aktiv halten.
+  const planDetail = document.getElementById('screen-plan-detail');
+  if (planDetail) attachToScreen(planDetail, 'plan-detail');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -3889,6 +3934,6 @@ document.addEventListener('DOMContentLoaded', () => {
   driveInit();
   // Bottom-Nav versteckt sich beim Runterscrollen, taucht beim Hochscrollen wieder auf
   initScrollHideNav();
-  // Touch-Geste auf iPhone: Wischen nach links/rechts wechselt Tabs
-  initSwipeGestures();
+  // Tab-Wechsel per nativem horizontalem Snap-Scroll am Tab-Container
+  initTabScrollSync();
 });

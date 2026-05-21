@@ -21,6 +21,11 @@
 
 <div id="app">
 
+  <!-- Horizontaler Snap-Container, der die 5 Haupt-Tabs nebeneinander haelt.
+       Wischen wechselt nativ den Tab (scroll-snap-type: x mandatory).
+       Plan-Detail liegt ausserhalb des Containers als Vollbild-Overlay. -->
+  <div id="tab-container">
+
   <!-- ══ SCREEN: ÜBERSICHT ══ -->
   <div id="screen-overview" class="screen active">
     <div class="ph">
@@ -174,77 +179,6 @@
     <div id="plans-list"></div>
   </div>
 
-  <!-- ══ SCREEN: TRAININGSPLAN-DETAIL ══ -->
-  <div id="screen-plan-detail" class="screen">
-    <div class="ph plan-detail-ph">
-      <button class="sheet-back-btn" onclick="closePlanDetail()" aria-label="Zurück zur Liste">
-        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <div class="ph-left">
-        <h1 id="plan-detail-title">Trainingsplan</h1>
-        <div class="ph-sub" id="plan-detail-subline"></div>
-      </div>
-    </div>
-
-    <div class="mehr-section">
-      <div class="mehr-section-title">Trainingsplan-Daten</div>
-      <div class="mehr-card">
-        <div class="program-form-row">
-          <label>Name des Trainingsplans</label>
-          <input type="text" id="prog-name" placeholder="z. B. Mein Aufbau-Block" onchange="saveProgramForm()">
-        </div>
-        <div class="program-form-row">
-          <label>Gesamtdauer (Wochen)</label>
-          <input type="number" id="prog-weeks" min="1" max="104" onchange="onWeeksChange()">
-        </div>
-        <div class="program-form-row program-form-row-2col">
-          <div>
-            <label>Startdatum</label>
-            <input type="date" id="prog-start" onchange="onStartDateChange()">
-          </div>
-          <div>
-            <label>Enddatum</label>
-            <input type="date" id="prog-end" onchange="onEndDateChange()">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="mehr-section">
-      <div class="mehr-section-title">Wochenplan (Mo – So)</div>
-      <div class="mehr-card" id="mehr-weekplan"></div>
-    </div>
-
-    <div class="mehr-section">
-      <div class="mehr-section-title">Trainingstage</div>
-      <div class="mehr-card" id="mehr-plan-list"></div>
-      <button class="btn btn-outline btn-full" style="margin-top:10px" onclick="addNewPlanDay()">+ Trainingstag hinzufügen</button>
-    </div>
-
-    <div class="mehr-section">
-      <div class="mehr-section-title">Aktionen</div>
-      <div class="mehr-card">
-        <div class="mehr-row" id="plan-archive-row" onclick="togglePlanArchive()" style="cursor:pointer">
-          <div class="mehr-row-icon" style="background:var(--accent-bg)">📦</div>
-          <div class="mehr-row-info">
-            <div class="mehr-row-label" id="plan-archive-label">Plan archivieren</div>
-            <div class="mehr-row-sub">Versteckt den Plan aus der Hauptliste, bleibt aber zugänglich</div>
-          </div>
-          <div class="mehr-row-action">›</div>
-        </div>
-        <div class="divider"></div>
-        <div class="mehr-row" onclick="deleteCurrentPlan()" style="cursor:pointer">
-          <div class="mehr-row-icon" style="background:var(--red-bg)">🗑</div>
-          <div class="mehr-row-info">
-            <div class="mehr-row-label" style="color:var(--red,#d33)">Plan löschen</div>
-            <div class="mehr-row-sub">Trainingstage und Wochenplan dieses Plans gehen verloren</div>
-          </div>
-          <div class="mehr-row-action">›</div>
-        </div>
-      </div>
-    </div>
-  </div><!-- /plan-detail -->
-
   <!-- ══ SCREEN: MEHR ══ -->
   <div id="screen-mehr" class="screen">
     <div class="ph"><div class="ph-left"><h1>Mehr</h1></div></div>
@@ -346,6 +280,79 @@
     </div>
 
   </div><!-- /mehr -->
+
+  </div><!-- /tab-container -->
+
+  <!-- ══ SCREEN: TRAININGSPLAN-DETAIL (Overlay ueber dem Tab-Container) ══ -->
+  <div id="screen-plan-detail" class="screen plan-detail-overlay">
+    <div class="ph plan-detail-ph">
+      <button class="sheet-back-btn" onclick="closePlanDetail()" aria-label="Zurück zur Liste">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="ph-left">
+        <h1 id="plan-detail-title">Trainingsplan</h1>
+        <div class="ph-sub" id="plan-detail-subline"></div>
+      </div>
+    </div>
+
+    <div class="mehr-section">
+      <div class="mehr-section-title">Trainingsplan-Daten</div>
+      <div class="mehr-card">
+        <div class="program-form-row">
+          <label>Name des Trainingsplans</label>
+          <input type="text" id="prog-name" placeholder="z. B. Mein Aufbau-Block" onchange="saveProgramForm()">
+        </div>
+        <div class="program-form-row">
+          <label>Gesamtdauer (Wochen)</label>
+          <input type="number" id="prog-weeks" min="1" max="104" onchange="onWeeksChange()">
+        </div>
+        <div class="program-form-row program-form-row-2col">
+          <div>
+            <label>Startdatum</label>
+            <input type="date" id="prog-start" onchange="onStartDateChange()">
+          </div>
+          <div>
+            <label>Enddatum</label>
+            <input type="date" id="prog-end" onchange="onEndDateChange()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mehr-section">
+      <div class="mehr-section-title">Wochenplan (Mo – So)</div>
+      <div class="mehr-card" id="mehr-weekplan"></div>
+    </div>
+
+    <div class="mehr-section">
+      <div class="mehr-section-title">Trainingstage</div>
+      <div class="mehr-card" id="mehr-plan-list"></div>
+      <button class="btn btn-outline btn-full" style="margin-top:10px" onclick="addNewPlanDay()">+ Trainingstag hinzufügen</button>
+    </div>
+
+    <div class="mehr-section">
+      <div class="mehr-section-title">Aktionen</div>
+      <div class="mehr-card">
+        <div class="mehr-row" id="plan-archive-row" onclick="togglePlanArchive()" style="cursor:pointer">
+          <div class="mehr-row-icon" style="background:var(--accent-bg)">📦</div>
+          <div class="mehr-row-info">
+            <div class="mehr-row-label" id="plan-archive-label">Plan archivieren</div>
+            <div class="mehr-row-sub">Versteckt den Plan aus der Hauptliste, bleibt aber zugänglich</div>
+          </div>
+          <div class="mehr-row-action">›</div>
+        </div>
+        <div class="divider"></div>
+        <div class="mehr-row" onclick="deleteCurrentPlan()" style="cursor:pointer">
+          <div class="mehr-row-icon" style="background:var(--red-bg)">🗑</div>
+          <div class="mehr-row-info">
+            <div class="mehr-row-label" style="color:var(--red,#d33)">Plan löschen</div>
+            <div class="mehr-row-sub">Trainingstage und Wochenplan dieses Plans gehen verloren</div>
+          </div>
+          <div class="mehr-row-action">›</div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /plan-detail-overlay -->
 
 </div><!-- /app -->
 

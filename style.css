@@ -115,26 +115,81 @@ body.theme-plans .hist-action-dd {
 }
 
 /* ─── Scroll area ─── */
+/* #app ist ein reiner Layout-Wrapper ohne Scroll. Innen liegen:
+   - #tab-container: horizontaler Snap-Scroller mit den 5 Haupt-Tabs nebeneinander
+   - #screen-plan-detail: Vollbild-Overlay, positioniert ausserhalb des Snap-Containers */
 #app {
-  flex: 1; overflow-y: auto; overflow-x: hidden;
+  flex: 1; position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Horizontaler Snap-Scroller. Browser snappt nativ zum naechsten Tab beim Wischen. */
+#tab-container {
+  width: 100%; height: 100%;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+#tab-container::-webkit-scrollbar { display: none; }
+
+/* Jeder Tab ist eine eigene 100vw-breite Spalte mit eigenem vertikalem Scroll.
+   Das vertikale Scrollen jedes Tabs bleibt unabhaengig von den Nachbar-Tabs erhalten. */
+.screen {
+  flex: 0 0 100vw;
+  width: 100vw;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  /* Damit der Inhalt nicht unter der Bottom-Nav verschwindet */
+  padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
+  /* Overscroll-Bounce am vertikalen Rand bleibt iOS-typisch erhalten */
+  overscroll-behavior-y: auto;
+  /* Horizontale Overscroll-Bewegung soll am Snap-Container ankommen, nicht hier */
+  overscroll-behavior-x: contain;
+}
+/* Active-Klasse hat keine Animation mehr — der Browser animiert per Snap-Scroll selbst. */
+.screen.active { /* nur als Marker fuer JS-Logik vorhanden */ }
+
+/* Plan-Detail-Overlay: liegt UEBER dem Tab-Container, blockiert horizontales Swipen.
+   Standardmaessig versteckt; .active blendet ein mit Slide-In von rechts. */
+.plan-detail-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: var(--gradient);
+  background-attachment: local;
+  z-index: 40;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
+  /* Versteckt-Zustand: rechts ausserhalb */
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1), visibility 0s linear 0.28s;
 }
-.screen { display: none; }
-.screen.active {
-  display: block;
-  animation: screen-enter-right 0.22s cubic-bezier(0.2, 0.7, 0.2, 1);
+.plan-detail-overlay.active {
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1), visibility 0s linear 0s;
 }
-/* Richtungs-abhängige Tab-Wechsel-Animation (subtle Slide + Fade) */
-.screen.active.enter-from-left { animation-name: screen-enter-left; }
-@keyframes screen-enter-right {
-  from { opacity: 0.4; transform: translateX(28px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes screen-enter-left {
-  from { opacity: 0.4; transform: translateX(-28px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
+
+/* Per-Screen-Hintergruende — damit der korrekte Theme-Verlauf bereits waehrend
+   des horizontalen Swipes sichtbar ist, nicht erst nach Snap-Abschluss. */
+#screen-overview  { background: linear-gradient(135deg, #0C4A6E, #0891B2); }
+#screen-workouts  { background: linear-gradient(135deg, #064E3B, #10B981); }
+#screen-exercises { background: linear-gradient(135deg, #172554, #1E40AF); }
+#screen-plans     { background: linear-gradient(135deg, #78350F, #F59E0B); }
+#screen-mehr      { background: var(--bg); }
+/* Plan-Detail teilt Theme mit Plans (Amber). */
+#screen-plan-detail { background: linear-gradient(135deg, #78350F, #F59E0B); }
 
 /* ─── Bottom Nav ─── */
 #bottom-nav {
