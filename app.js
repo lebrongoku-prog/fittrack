@@ -3936,4 +3936,102 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollHideNav();
   // Tab-Wechsel per nativem horizontalem Snap-Scroll am Tab-Container
   initTabScrollSync();
+  // Edge-Swipe-Back im Plan-Detail (vom linken Bildschirmrand mit Finger nach rechts ziehen)
+  initPlanDetailEdgeSwipe();
 });
+
+// Edge-Swipe-Back fuer Plan-Detail-Overlay.
+// Touchstart in den ersten EDGE_PX vom linken Bildschirmrand startet das Tracking.
+// Anschliessend folgt das Overlay finger-controlled der horizontalen Fingerbewegung.
+// Bei Touchend wird entschieden: ueber Threshold (40% Bildschirmbreite) oder schnelle Velocity
+// => Overlay schliessen via closePlanDetail(); sonst Snap-Back nach links.
+function initPlanDetailEdgeSwipe() {
+  const overlay = document.getElementById('screen-plan-detail');
+  if (!overlay) return;
+  const EDGE_PX = 24;
+  const DIR_LOCK_THRESHOLD = 8;     // Pixels Bewegung bis Richtung gelockt wird
+  const CLOSE_RATIO = 0.4;          // 40% Bildschirmbreite => schliessen
+  const CLOSE_VELOCITY = 0.6;       // px/ms Flick-Schwelle => schliessen
+  const ANIM_MS = 290;
+
+  let startX = 0, startY = 0, startTime = 0;
+  let tracking = false;
+  let viewportW = 0;
+  let lockedDir = null;             // null | 'h' | 'v'
+
+  overlay.addEventListener('touchstart', (e) => {
+    if (!overlay.classList.contains('active')) return;
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    if (t.clientX > EDGE_PX) return;                  // nur linker Rand
+    startX = t.clientX;
+    startY = t.clientY;
+    startTime = Date.now();
+    viewportW = window.innerWidth;
+    tracking = true;
+    lockedDir = null;
+    overlay.style.transition = 'none';                // Drag soll instant folgen
+  }, { passive: true });
+
+  overlay.addEventListener('touchmove', (e) => {
+    if (!tracking || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+
+    if (!lockedDir) {
+      if (Math.abs(dx) < DIR_LOCK_THRESHOLD && Math.abs(dy) < DIR_LOCK_THRESHOLD) return;
+      lockedDir = (Math.abs(dx) > Math.abs(dy)) ? 'h' : 'v';
+      if (lockedDir === 'v') {
+        // Vertikales Scrollen erlaubt — Tracking abbrechen
+        tracking = false;
+        overlay.style.transform = '';
+        overlay.style.transition = '';
+        return;
+      }
+    }
+
+    // Horizontaler Drag: Browser-Scroll unterbinden + Overlay finger-gesteuert verschieben
+    if (e.cancelable) e.preventDefault();
+    const x = Math.max(0, dx);
+    overlay.style.transform = `translateX(${x}px)`;
+  }, { passive: false });
+
+  overlay.addEventListener('touchend', (e) => {
+    if (!tracking) return;
+    tracking = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX;
+    const dt = Date.now() - startTime;
+    const velocity = dx / Math.max(1, dt);
+    const shouldClose = dx > viewportW * CLOSE_RATIO || velocity > CLOSE_VELOCITY;
+
+    overlay.style.transition = 'transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1)';
+
+    if (shouldClose) {
+      overlay.style.transform = 'translateX(100%)';
+      setTimeout(() => {
+        overlay.style.transition = '';
+        overlay.style.transform = '';
+        closePlanDetail();
+      }, ANIM_MS);
+    } else {
+      overlay.style.transform = 'translateX(0)';
+      setTimeout(() => {
+        overlay.style.transition = '';
+        overlay.style.transform = '';
+      }, ANIM_MS);
+    }
+  }, { passive: true });
+
+  overlay.addEventListener('touchcancel', () => {
+    if (!tracking) return;
+    tracking = false;
+    overlay.style.transition = 'transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1)';
+    overlay.style.transform = 'translateX(0)';
+    setTimeout(() => {
+      overlay.style.transition = '';
+      overlay.style.transform = '';
+    }, ANIM_MS);
+  }, { passive: true });
+}
