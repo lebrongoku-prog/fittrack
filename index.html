@@ -30,7 +30,7 @@
   <div id="screen-overview" class="screen active">
     <div class="ph">
       <div class="ph-left">
-        <h1>Krafttracker</h1>
+        <h1>FitTrack</h1>
         <div class="ph-sub" id="ov-week-info">Woche 1 • <span class="ph-sub-accent">0 von 3</span> Workouts absolviert</div>
       </div>
     </div>
@@ -68,14 +68,18 @@
     <!-- Volumenentwicklung (vom Verlauf-Tab verschoben) -->
     <div class="chart-card-v2 lg-span-2">
       <div class="chart-card-v2-head">
-        <span class="chart-card-v2-title">Volumenentwicklung</span>
-        <div style="display:flex;gap:8px;align-items:center">
+        <span class="chart-card-v2-title" id="vol-card-title">Volumenentwicklung</span>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+          <div class="stats-mode-toggle">
+            <div class="stats-mode-pill mode-strength active" id="vol-pill-strength" onclick="setStatsVolMode('strength')">Kraft</div>
+            <div class="stats-mode-pill mode-cardio" id="vol-pill-cardio" onclick="setStatsVolMode('cardio')">Cardio</div>
+          </div>
           <div class="hist-action-dd" onclick="openHistRangeDropdown()" id="hist-range-btn">
             <svg viewBox="0 0 24 24" style="stroke:var(--accent);fill:none;stroke-width:1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             <span id="hist-range-label">30 Tage</span>
             <svg viewBox="0 0 24 24" style="stroke:var(--accent);fill:none;stroke-width:1.8;width:12px;height:12px"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
-          <div class="chart-card-v2-toggle" onclick="toggleVolumeUnit()">
+          <div class="chart-card-v2-toggle" id="vol-unit-toggle" onclick="toggleVolumeUnit()">
             <span id="vol-unit-label">Kg</span>
             <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--text2);fill:none;stroke-width:1.8"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
@@ -86,9 +90,15 @@
       </div>
     </div>
 
-    <!-- Volumen pro Muskelgruppe -->
+    <!-- Volumen pro Muskelgruppe / Cardio-Verteilung pro Uebung -->
     <div class="chart-card-v2 lg-col1">
-      <div class="chart-card-v2-head"><span class="chart-card-v2-title">Volumen pro Muskelgruppe</span></div>
+      <div class="chart-card-v2-head">
+        <span class="chart-card-v2-title" id="muscle-card-title">Volumen pro Muskelgruppe</span>
+        <div class="stats-mode-toggle">
+          <div class="stats-mode-pill mode-strength active" id="muscle-pill-strength" onclick="setStatsMuscleMode('strength')">Kraft</div>
+          <div class="stats-mode-pill mode-cardio" id="muscle-pill-cardio" onclick="setStatsMuscleMode('cardio')">Cardio</div>
+        </div>
+      </div>
       <div class="muscle-bars-v2" id="muscle-bars">
         <p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>
       </div>
@@ -96,7 +106,13 @@
 
     <!-- PRs & Bestleistungen -->
     <div class="chart-card-v2 lg-col2">
-      <div class="chart-card-v2-head"><span class="chart-card-v2-title">PRs & Bestleistungen</span></div>
+      <div class="chart-card-v2-head">
+        <span class="chart-card-v2-title" id="pr-card-title">PRs & Bestleistungen</span>
+        <div class="stats-mode-toggle">
+          <div class="stats-mode-pill mode-strength active" id="pr-pill-strength" onclick="setStatsPrMode('strength')">Kraft</div>
+          <div class="stats-mode-pill mode-cardio" id="pr-pill-cardio" onclick="setStatsPrMode('cardio')">Cardio</div>
+        </div>
+      </div>
       <div class="pr-list-v2" id="hist-pr-list">
         <p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine PRs</p>
       </div>
@@ -143,7 +159,12 @@
         <h1>Übungen</h1>
         <div class="ph-sub" id="ex-subline">Übungskatalog sortiert nach Muskelgruppen</div>
       </div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <!-- Kraft / Cardio Modus-Toggle -->
+        <div class="ex-mode-toggle" id="ex-mode-toggle">
+          <div class="ex-mode-pill mode-strength active" onclick="setExMode('strength')">Kraft</div>
+          <div class="ex-mode-pill mode-cardio" onclick="setExMode('cardio')">Cardio</div>
+        </div>
         <div class="ex-sort-btn" id="ex-sort-btn" data-mode="muscle" onclick="toggleExSortMode()" title="Sortierung wechseln">
           <svg class="ex-sort-ic-muscle" viewBox="0 0 24 24">
             <rect x="3" y="4" width="18" height="3.2" rx="1.5"/>
@@ -389,6 +410,10 @@
     <div class="sheet-handle"></div>
     <div class="sheet-title">Übung hinzufügen</div>
     <div class="sheet-body">
+      <div class="ex-mode-toggle" style="margin-bottom:10px;align-self:flex-start">
+        <div class="ex-mode-pill mode-strength active" id="add-ex-pill-strength" onclick="setAddExMode('strength')">Kraft</div>
+        <div class="ex-mode-pill mode-cardio" id="add-ex-pill-cardio" onclick="setAddExMode('cardio')">Cardio</div>
+      </div>
       <input class="sheet-search" type="search" placeholder="🔍 Übung suchen…" id="add-ex-search" oninput="filterAddEx()" autocomplete="off">
       <div class="sheet-list" id="add-ex-list"></div>
     </div>
@@ -448,7 +473,7 @@
         <label class="form-label">Name</label>
         <input class="form-input" id="new-ex-name" type="text" placeholder="z. B. Arnold Press">
       </div>
-      <div class="form-field">
+      <div class="form-field form-field-muscle">
         <label class="form-label">Muskelgruppe</label>
         <select class="form-select" id="new-ex-muscle">
           <option value="chest">Brust</option>
@@ -549,6 +574,27 @@
         <button class="btn btn-primary btn-full" onclick="finishWorkout()">💾 Workout speichern</button>
         <button class="btn btn-ghost btn-full" onclick="closeModal('modal-finish')">Weiter trainieren</button>
         <button class="btn btn-danger btn-full" onclick="discardWorkout()">🗑 Training abbrechen und löschen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick-Log: reine Cardio-Tage (kein Active-Mode, kein Timer) -->
+<div id="modal-cardio-qlog" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title with-back">
+      <button class="sheet-back-btn" onclick="cancelCardioQuickLog()" aria-label="Schliessen">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span id="cardio-qlog-title">Cardio-Session</span>
+    </div>
+    <div class="sheet-body">
+      <p style="font-size:13px;color:var(--text2);margin:0 0 12px;line-height:1.45">Trag deine Werte ein und speichere die Session. Pace wird automatisch berechnet.</p>
+      <div id="cardio-qlog-list"></div>
+      <div class="qlog-footer">
+        <button class="btn btn-primary btn-full" onclick="finishCardioQuickLog()">💾 Session speichern</button>
+        <button class="btn btn-ghost btn-full" onclick="cancelCardioQuickLog()" style="margin-top:8px">Abbrechen</button>
       </div>
     </div>
   </div>

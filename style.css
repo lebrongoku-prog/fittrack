@@ -19,6 +19,9 @@
   --purple-bg: #f3ecff;
   --red:       #e53e3e;
   --red-bg:    #ffeaea;
+  /* Cardio (Laufen) — Teal */
+  --cardio:    #14B8A6;
+  --cardio-bg: #CCFBF1;
 
   /* Default accent (used by Mehr-Tab and anywhere no theme is active) */
   --accent:               #0066ff;
@@ -244,10 +247,11 @@ body.theme-plans .hist-action-dd {
 
 /* ─── Day type badges ─── */
 .type-tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-.type-push  { background: var(--orange-bg); color: var(--orange); }
-.type-pull  { background: var(--green-bg);  color: var(--green); }
-.type-legs  { background: var(--purple-bg); color: var(--purple); }
-.type-free  { background: var(--accent-bg); color: var(--accent); }
+.type-push   { background: var(--orange-bg); color: var(--orange); }
+.type-pull   { background: var(--green-bg);  color: var(--green); }
+.type-legs   { background: var(--purple-bg); color: var(--purple); }
+.type-free   { background: var(--accent-bg); color: var(--accent); }
+.type-cardio { background: var(--cardio-bg); color: var(--cardio); }
 
 /* ─── Divider ─── */
 .divider { height: 1px; background: var(--border); }
@@ -1667,4 +1671,168 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .drive-conflict-meta { font-size: 12px; color: var(--text2); line-height: 1.5; }
 @media (max-width: 480px) {
   .drive-conflict-compare { grid-template-columns: 1fr; }
+}
+
+/* ══════════════════════════════════════
+   CARDIO — Toggle + Aktivkarte + Quick-Log
+   ══════════════════════════════════════ */
+
+/* Pill-Toggle im Uebungen-Tab (Kraft / Cardio).
+   Liegt in der Page-Header-Buttonzeile, daneben Sort-Button + Plus. */
+.ex-mode-toggle {
+  display: inline-flex; align-items: center; gap: 2px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 999px; padding: 2px; box-shadow: var(--shadow);
+  -webkit-tap-highlight-color: transparent;
+}
+.ex-mode-pill {
+  padding: 6px 12px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.2px;
+  color: var(--text3); cursor: pointer; user-select: none;
+  transition: color .15s, background .15s;
+}
+.ex-mode-pill.active.mode-strength { background: var(--accent); color: #fff; }
+.ex-mode-pill.active.mode-cardio   { background: var(--cardio); color: #fff; }
+
+/* In themed Header-Hintergruenden (Marineblau-Gradient) — Pill optisch heller halten */
+body.theme-exercises .ex-mode-toggle {
+  background: rgba(255,255,255,0.95);
+  border-color: transparent;
+}
+
+/* Active-Workout: Cardio-Uebungskarte (Form-Layout statt Sets-Tabelle).
+   Spiegelt das Layout der .aex-v2 fuer Konsistenz, aber statt sets-area ein Form-Block. */
+.aex-cardio-form { padding: 10px 14px 12px; }
+.aex-cardio-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
+}
+.aex-cardio-field { display: flex; flex-direction: column; gap: 4px; }
+.aex-cardio-field-label {
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.aex-cardio-duration {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 0 6px;
+}
+.aex-cardio-duration:focus-within { border-color: var(--cardio); background: var(--cardio-bg); }
+.aex-cardio-duration input {
+  width: 48px; height: 40px; background: transparent; border: none; outline: none;
+  font-size: 16px; font-weight: 600; text-align: center;
+  color: var(--text); -webkit-appearance: none;
+}
+.aex-cardio-duration .colon {
+  font-size: 18px; font-weight: 700; color: var(--text3); padding: 0 2px;
+}
+.aex-cardio-distance input,
+.aex-cardio-notes textarea {
+  width: 100%; background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 12px;
+  font-size: 16px; font-weight: 600; color: var(--text);
+  -webkit-appearance: none; outline: none;
+  font-family: inherit;
+}
+.aex-cardio-distance input:focus,
+.aex-cardio-notes textarea:focus { border-color: var(--cardio); background: var(--cardio-bg); }
+.aex-cardio-notes textarea {
+  min-height: 64px; resize: vertical; font-weight: 500; font-size: 14px;
+}
+.aex-cardio-pace {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--cardio-bg); color: var(--cardio);
+  padding: 4px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.2px;
+  margin-top: 4px;
+}
+.aex-cardio-pace.empty { background: var(--card2); color: var(--text3); }
+
+/* Done-Zustand der Cardio-Aktivkarte: gruener Akzent wie bei Kraft */
+.aex-v2.done.aex-cardio { border-left-color: var(--green); background: var(--green-bg); }
+.aex-v2.done.aex-cardio .aex-cardio-pace { background: #fff; color: var(--green); }
+.aex-v2.aex-cardio { border-left-color: var(--cardio); }
+.aex-v2.aex-cardio .aex-v2-num    { background: var(--cardio); }
+.aex-v2.aex-cardio .aex-v2-name   { color: var(--cardio); }
+.aex-v2.aex-cardio .aex-v2-target { color: var(--cardio); }
+
+/* Quick-Log-Screen: rendert im Workouts-Tab fuer reine Cardio-Tage.
+   Header + ein oder mehrere Cardio-Form-Cards + Speichern-Button. */
+.cardio-qlog-card {
+  margin: 0 14px 12px; background: var(--card);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  border-left: 4px solid var(--cardio);
+  overflow: hidden;
+}
+.cardio-qlog-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 14px 10px;
+}
+.cardio-qlog-icon {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--cardio-bg); color: var(--cardio);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; flex-shrink: 0;
+}
+.cardio-qlog-name {
+  font-size: 16px; font-weight: 700; color: var(--cardio); flex: 1;
+}
+.cardio-qlog-body { padding: 0 14px 14px; }
+
+/* Save-Bar am Footer (Sticky beim Quick-Log) */
+.qlog-footer {
+  padding: 12px 14px calc(var(--nav-h) + var(--safe-b) + 22px);
+}
+.qlog-footer .btn-primary { background: var(--cardio); }
+.qlog-footer .btn-primary:active { background: var(--cardio); opacity: 0.78; }
+
+/* Uebungs-Tab Cardio-Eintrag: Akzentfarbe + Pace/Distanz statt PR/1RM */
+.ex-card.ex-card-cardio { border-left: 3px solid var(--cardio); }
+.ex-card.ex-card-cardio .ex-name { color: var(--cardio); }
+.cardio-last-info { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.cardio-pr-row {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--cardio);
+  font-weight: 700;
+}
+
+/* Verlauf-Kompakt: Cardio-Session in "Letzte Sessions"-Liste */
+.recent-cardio-icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--cardio-bg); color: var(--cardio);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-weight: 700;
+}
+.recent-cardio-meta { color: var(--cardio); font-weight: 600; }
+
+/* Wochenplan-Strip Cardio-Tag */
+.next7-day.day-cardio .day-name-line { color: var(--cardio); }
+.next7-day.day-cardio .day-tag { background: var(--cardio-bg); color: var(--cardio); }
+
+/* Stats-Karten-Toggle (Kraft/Cardio) — kompakter als ex-mode-toggle, sitzt im Karten-Head */
+.stats-mode-toggle {
+  display: inline-flex; align-items: center; gap: 2px;
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 2px;
+  -webkit-tap-highlight-color: transparent;
+}
+.stats-mode-pill {
+  padding: 4px 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.2px;
+  color: var(--text3); cursor: pointer; user-select: none;
+  transition: color .15s, background .15s;
+}
+.stats-mode-pill.active.mode-strength { background: var(--accent); color: #fff; }
+.stats-mode-pill.active.mode-cardio   { background: var(--cardio); color: #fff; }
+
+/* Wochenplan-Strip (Uebersicht + Workouts-Tab): reine Cardio-Tage bekommen Teal-Akzent.
+   Die Klasse `cardio` wird zusaetzlich zu `.next7-chip.training` gesetzt. */
+.next7-chip.cardio.training {
+  background: var(--cardio-bg);
+  border-color: var(--cardio-bg);
+}
+.next7-chip.cardio.training .n7-mid { color: var(--cardio); font-weight: 700; }
+.next7-chip.cardio.training .n7-top .lbl { color: var(--cardio); }
+.next7-chip.cardio.today.training {
+  border: 2px solid var(--cardio);
+  background: var(--cardio-bg);
 }

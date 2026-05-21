@@ -197,6 +197,27 @@ const DB = {
       list = list.map(ex => ex.notes === undefined ? { ...ex, notes: latestNote[ex.id] || '' } : ex);
       migrated = true;
     }
+    // Migrate type-Feld: Bestands-Uebungen ohne type bekommen 'strength' (Cardio kommt erst neu dazu)
+    if (list.some(ex => ex.type === undefined)) {
+      list = list.map(ex => ex.type === undefined ? { ...ex, type: 'strength' } : ex);
+      migrated = true;
+    }
+    // Cardio-Seeds beim ersten Aufruf einmalig anlegen (4 Standard-Lauf-Eintraege).
+    // ft_cardio_seeded = '1' verhindert Re-Seed nach Loeschen.
+    if (!localStorage.getItem('ft_cardio_seeded')) {
+      const hasCardio = list.some(ex => ex.type === 'cardio');
+      if (!hasCardio) {
+        const seeds = [
+          { id: 'cd-easy-run',     name: 'Easy Run',   type: 'cardio', notes: '' },
+          { id: 'cd-tempo-run',    name: 'Tempo Run',  type: 'cardio', notes: '' },
+          { id: 'cd-long-run',     name: 'Long Run',   type: 'cardio', notes: '' },
+          { id: 'cd-intervals',    name: 'Intervalle', type: 'cardio', notes: '' },
+        ];
+        list = [...list, ...seeds];
+        migrated = true;
+      }
+      localStorage.setItem('ft_cardio_seeded', '1');
+    }
     if (migrated) localStorage.setItem('ft_exercises', JSON.stringify(list));
     return list;
   },
@@ -275,6 +296,54 @@ function getEx(id) { return DB.getExercises().find(e => e.id === id); }
 function muscleName(m) { return (MUSCLE_META[m] && MUSCLE_META[m].name) || m; }
 function muscleColor(m) { return (MUSCLE_META[m] && MUSCLE_META[m].color) || '#0066ff'; }
 function muscleBg(m) { return (MUSCLE_META[m] && MUSCLE_META[m].bg) || '#e8f0ff'; }
+
+// ─── Cardio-Helpers ───
+// Type-Check fuer Uebung. Default 'strength' (Bestands-Uebungen ohne type).
+function exType(exOrId) {
+  const ex = (typeof exOrId === 'string') ? getEx(exOrId) : exOrId;
+  return (ex && ex.type === 'cardio') ? 'cardio' : 'strength';
+}
+function isCardioEx(exOrId) { return exType(exOrId) === 'cardio'; }
+// Workout-Exercise-Instance kann ihren Type lokal halten (workout-exercises[].type) ODER
+// implizit ueber exId via Stamm-Uebung. Diese Funktion nimmt beides:
+function woExType(we) {
+  if (we && we.type) return we.type;
+  return exType(we && (we.exId || we.id));
+}
+function isWoExCardio(we) { return woExType(we) === 'cardio'; }
+// Plan-Day: enthaelt mindestens eine Cardio-Uebung?
+function planDayHasCardio(day) {
+  if (!day || !day.exercises) return false;
+  return day.exercises.some(e => isCardioEx(e.id || e));
+}
+// Plan-Day: ist eine reine Cardio-Session (keine Kraft-Uebungen)?
+function planDayIsPureCardio(day) {
+  if (!day || !day.exercises || day.exercises.length === 0) return false;
+  return day.exercises.every(e => isCardioEx(e.id || e));
+}
+// Pace berechnen (Sekunden pro Kilometer). Liefert {min,sek} oder null.
+function calcPace(durationSec, distanceKm) {
+  if (!durationSec || !distanceKm || distanceKm <= 0) return null;
+  const secPerKm = durationSec / distanceKm;
+  const min = Math.floor(secPerKm / 60);
+  const sek = Math.round(secPerKm % 60);
+  return { min, sek, secPerKm };
+}
+function formatPace(durationSec, distanceKm) {
+  const p = calcPace(durationSec, distanceKm);
+  if (!p) return null;
+  return `${p.min}:${String(p.sek).padStart(2,'0')}/km`;
+}
+function formatDuration(durationSec) {
+  if (!durationSec || durationSec < 0) return '0:00';
+  const min = Math.floor(durationSec / 60);
+  const sek = Math.round(durationSec % 60);
+  return `${min}:${String(sek).padStart(2,'0')}`;
+}
+function formatDistance(km) {
+  if (!km && km !== 0) return '–';
+  return km.toFixed(km < 10 ? 2 : 1).replace('.', ',') + ' km';
+}
 
 // Compact muscle icons (SVG path content – inserted inside a 24x24 viewBox)
 function muscleIconSvg(muscleKey, size = 16) {
@@ -399,15 +468,17 @@ function getNextPlanDay() {
 function getLastWorkout() { const ws = DB.getWorkouts(); return ws.length ? ws[0] : null; }
 
 function calcVolume(workout) {
-  return workout.exercises.reduce((acc, ex) =>
-    acc + ex.sets.reduce((a, s) => a + (parseFloat(s.weight)||0) * (parseInt(s.reps)||0), 0), 0
-  );
+  return workout.exercises.reduce((acc, ex) => {
+    if (isWoExCardio(ex) || !Array.isArray(ex.sets)) return acc;
+    return acc + ex.sets.reduce((a, s) => a + (parseFloat(s.weight)||0) * (parseInt(s.reps)||0), 0);
+  }, 0);
 }
 
 function calcMuscleVolume(workouts) {
   const vol = {};
   workouts.forEach(w => {
     w.exercises.forEach(ex => {
+      if (isWoExCardio(ex) || !Array.isArray(ex.sets)) return;
       const exData = getEx(ex.exId || ex.id);
       const muscle = exData ? exData.muscle : 'other';
       const exVol = ex.sets.reduce((a,s) => a + (parseFloat(s.weight)||0)*(parseInt(s.reps)||0), 0);
@@ -420,18 +491,55 @@ function calcMuscleVolume(workouts) {
 function detectPRs(workout, allPrevWorkouts) {
   const prs = [];
   workout.exercises.forEach(ex => {
-    const maxW = Math.max(...ex.sets.map(s => parseFloat(s.weight)||0));
+    if (isWoExCardio(ex)) {
+      const cd = ex.cardio || {};
+      const dist = parseFloat(cd.distance);
+      const dur = parseFloat(cd.duration);
+      if (!(dist > 0) && !(dur > 0)) return;
+      // Vergleichswerte: bisher laengste Distanz + schnellste Pace (Pace nur ab >=1km Distanz)
+      let prevLongest = 0;
+      let prevFastest = null; // sec/km
+      allPrevWorkouts.forEach(w => {
+        (w.exercises || []).forEach(we => {
+          if ((we.exId||we.id) !== (ex.exId||ex.id)) return;
+          if (!isWoExCardio(we)) return;
+          const pcd = we.cardio || {};
+          const pdist = parseFloat(pcd.distance);
+          const pdur = parseFloat(pcd.duration);
+          if (pdist > prevLongest) prevLongest = pdist;
+          if (pdist >= 1 && pdur > 0) {
+            const p = calcPace(pdur, pdist);
+            if (p && (prevFastest == null || p.secPerKm < prevFastest)) prevFastest = p.secPerKm;
+          }
+        });
+      });
+      const newPace = (dist >= 1 && dur > 0) ? calcPace(dur, dist) : null;
+      const isDistPR = dist > 0 && dist > prevLongest;
+      const isPacePR = !!(newPace && (prevFastest == null || newPace.secPerKm < prevFastest));
+      if (isDistPR || isPacePR) {
+        prs.push({
+          exId: ex.exId||ex.id, name: ex.name, kind: 'cardio',
+          distance: dist || 0,
+          duration: dur || 0,
+          secPerKm: newPace ? newPace.secPerKm : null,
+          prevLongest, prevFastest,
+          isDistPR, isPacePR,
+        });
+      }
+      return;
+    }
+    const maxW = Math.max(...(ex.sets || []).map(s => parseFloat(s.weight)||0));
     if (!maxW) return;
     let prevMax = 0;
     allPrevWorkouts.forEach(w => {
-      const match = w.exercises.find(e => (e.exId||e.id) === (ex.exId||ex.id));
-      if (match) {
+      const match = (w.exercises || []).find(e => (e.exId||e.id) === (ex.exId||ex.id));
+      if (match && Array.isArray(match.sets)) {
         const m = Math.max(...match.sets.map(s => parseFloat(s.weight)||0));
         if (m > prevMax) prevMax = m;
       }
     });
     if (maxW > prevMax) {
-      prs.push({ exId: ex.exId||ex.id, name: ex.name, weight: maxW, prev: prevMax });
+      prs.push({ exId: ex.exId||ex.id, name: ex.name, kind: 'strength', weight: maxW, prev: prevMax });
     }
   });
   return prs;
@@ -441,7 +549,7 @@ function getLastExData(exId) {
   const ws = DB.getWorkouts();
   for (const w of ws) {
     const ex = w.exercises.find(e => (e.exId||e.id) === exId);
-    if (ex && ex.sets.length) {
+    if (ex && !isWoExCardio(ex) && Array.isArray(ex.sets) && ex.sets.length) {
       const maxW = Math.max(...ex.sets.map(s => parseFloat(s.weight)||0));
       const repsStr = ex.sets.map(s => s.reps||'?').join('/');
       return { maxWeight: maxW, sets: ex.sets, repsStr, date: w.startTs };
@@ -643,13 +751,37 @@ function renderRecentSessionsOnOverview() {
   container.innerHTML = ws.map((w, i) => {
     const day = plan.find(d => d.id === w.planDayId);
     const dayName = day ? day.name : (w.planDayName || 'Freestyle');
+    const allCardio = (w.exercises || []).length > 0 && (w.exercises || []).every(e => isWoExCardio(e));
+    const someCardio = !allCardio && (w.exercises || []).some(e => isWoExCardio(e));
+    // Cardio-Session: 🏃-Icon und Distanz/Pace statt Sets-Hantel
+    if (allCardio) {
+      const totalDist = (w.exercises || []).reduce((acc, we) => acc + (parseFloat(we.cardio && we.cardio.distance) || 0), 0);
+      const totalDur = (w.exercises || []).reduce((acc, we) => acc + (parseInt(we.cardio && we.cardio.duration) || 0), 0);
+      const distStr = totalDist > 0 ? formatDistance(totalDist) : '';
+      const paceStr = (totalDist >= 1 && totalDur > 0)
+        ? ` · ${formatPace(totalDur, totalDist)}/km`
+        : '';
+      const metaCardio = distStr
+        ? `<span class="recent-cardio-meta">${distStr}${paceStr}</span>`
+        : (totalDur > 0 ? `<span class="recent-cardio-meta">${formatDuration(totalDur)}</span>` : '');
+      return `<div class="sess-v2-row" onclick="showHistDetail(${i})">
+        <div class="sess-v2-icon recent-cardio-icon">🏃</div>
+        <div class="sess-v2-info">
+          <div class="sess-v2-name">${pd(dayName)}</div>
+          <div class="sess-v2-meta">${fmtDateShort(w.startTs)} • ${metaCardio || fmtDur(w.duration)}</div>
+        </div>
+        <div class="sess-v2-arrow">›</div>
+      </div>`;
+    }
+    // Mixed-Day mit Cardio-Anteil: kleines Cardio-Chip in der Meta
+    const cardioBadge = someCardio ? ' · 🏃' : '';
     return `<div class="sess-v2-row" onclick="showHistDetail(${i})">
       <div class="sess-v2-icon">
         <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
       </div>
       <div class="sess-v2-info">
         <div class="sess-v2-name">${pd(dayName)}</div>
-        <div class="sess-v2-meta">${fmtDateShort(w.startTs)} • ${fmtDur(w.duration)}</div>
+        <div class="sess-v2-meta">${fmtDateShort(w.startTs)} • ${fmtDur(w.duration)}${cardioBadge}</div>
       </div>
       <div class="sess-v2-arrow">›</div>
     </div>`;
@@ -671,8 +803,11 @@ function renderNext7Strip(days) {
     if (d.isToday) classes.push('today');
     if (d.isRest) classes.push('rest'); else classes.push('training');
     if (d.dayDone && d.planDay) classes.push('done');
+    // Reine Cardio-Tage: Teal-Akzent statt Tab-Akzent
+    if (d.planDay && planDayIsPureCardio(d.planDay)) classes.push('cardio');
     const topLabel = d.isToday ? 'Heute' : (d.isTomorrow ? 'Morgen' : '');
-    const mid = d.planDay ? pd(d.planDay.name) : 'Ruhe';
+    const icon = (d.planDay && planDayIsPureCardio(d.planDay)) ? '🏃 ' : '';
+    const mid = d.planDay ? `${icon}${pd(d.planDay.name)}` : 'Ruhe';
     const onclick = d.planDay && d.isToday && !d.dayDone
       ? `onclick="startWorkout('${d.planDay.id}')"` : '';
     return `<div class="${classes.join(' ')}" ${onclick}>
@@ -792,6 +927,8 @@ function syncActiveWorkoutWithPlanDay(planDayId) {
   for (const pe of planDay.exercises) {
     const ae = activeMap[pe.exId];
     if (!ae) continue;
+    // Cardio-Eintraege haben keine Sets/targetReps — Sync ist hier ein no-op
+    if (isWoExCardio(ae)) continue;
     ae.targetReps = pe.targetReps;
     if (pe.targetSets > ae.targetSets) {
       const diff = pe.targetSets - ae.targetSets;
@@ -811,12 +948,20 @@ function syncActiveWorkoutWithPlanDay(planDayId) {
     if (activeIds.has(pe.exId)) continue;
     const ex = getEx(pe.exId);
     if (!ex) continue;
-    wo.exercises.push({
-      exId: pe.exId, id: pe.exId, name: ex.name,
-      targetSets: pe.targetSets, targetReps: pe.targetReps,
-      sets: buildSetsForExercise(pe.exId, pe.targetSets, pe.targetReps, pe.targetWeight),
-      notes: '', done: false,
-    });
+    if (exType(ex) === 'cardio') {
+      wo.exercises.push({
+        exId: pe.exId, id: pe.exId, name: ex.name, type: 'cardio',
+        cardio: { duration: '', distance: '', notes: '' },
+        notes: '', done: false,
+      });
+    } else {
+      wo.exercises.push({
+        exId: pe.exId, id: pe.exId, name: ex.name,
+        targetSets: pe.targetSets, targetReps: pe.targetReps,
+        sets: buildSetsForExercise(pe.exId, pe.targetSets, pe.targetReps, pe.targetWeight),
+        notes: '', done: false,
+      });
+    }
   }
 
   DB.saveActive(wo);
@@ -830,9 +975,14 @@ function confirmActiveWorkoutDataLoss(planDayId, exIdsToRemove, onConfirm) {
   const wo = DB.getActive();
   if (!wo || wo.planDayId !== planDayId) { onConfirm(); return; }
   const ids = new Set(exIdsToRemove);
-  const affected = wo.exercises.filter(ae =>
-    ids.has(ae.exId) && ae.sets.some(s => s.weight || s.reps)
-  );
+  const affected = wo.exercises.filter(ae => {
+    if (!ids.has(ae.exId)) return false;
+    if (isWoExCardio(ae)) {
+      const cd = ae.cardio || {};
+      return !!(cd.duration || cd.distance || (cd.notes && cd.notes.length));
+    }
+    return (ae.sets || []).some(s => s.weight || s.reps);
+  });
   if (!affected.length) { onConfirm(); return; }
   const names = affected.map(ae => `„${ae.name}"`).join(', ');
   confirmAction(
@@ -844,6 +994,14 @@ function confirmActiveWorkoutDataLoss(planDayId, exIdsToRemove, onConfirm) {
 }
 
 function startWorkout(dayId) {
+  // Pure-Cardio-Tage laufen ueber Quick-Log und brauchen den Active-Workout-Slot nicht
+  // — der laufende Active-Workout darf in diesem Fall ungestoert weiterlaufen.
+  const ap = getActivePlan();
+  const dayObj = ap ? (ap.trainingDays || []).find(d => d.id === dayId) : null;
+  if (dayObj && planDayIsPureCardio(dayObj)) {
+    openCardioQuickLog(dayId);
+    return;
+  }
   if (DB.getActive()) {
     confirmAction('Workout läuft bereits',
       'Es läuft noch ein Workout. Neu starten? Die aktuelle Session wird verworfen.',
@@ -861,9 +1019,29 @@ function _doStartWorkout(dayId) {
   if (!active) { showToast('Kein aktiver Trainingsplan'); return; }
   const plan = active.trainingDays;
   const day = plan.find(d => d.id === dayId);
+
+  // Pure-Cardio-Tage gehen am Active-Mode vorbei in den Quick-Log-Flow.
+  // (Mixed-Days + reine Kraft-Tage laufen weiter unten als regulaeres Active-Workout.)
+  if (day && planDayIsPureCardio(day)) {
+    openCardioQuickLog(dayId);
+    return;
+  }
+
   const exercises = (day ? day.exercises : []).map(pe => {
     const ex = getEx(pe.exId);
     if (!ex) return null;
+    if (exType(ex) === 'cardio') {
+      // Cardio-Workout-Eintrag: cardio-Objekt statt sets
+      return {
+        exId: pe.exId,
+        id: pe.exId,
+        name: ex.name,
+        type: 'cardio',
+        cardio: { duration: '', distance: '', notes: '' },
+        notes: '',
+        done: false,
+      };
+    }
     return {
       exId: pe.exId,
       id: pe.exId,
@@ -909,30 +1087,43 @@ function heroDumbbellSvg() {
 
 function buildSessionCard(active, planDay, selDay, isPreview, opts) {
   opts = opts || {};
+  // Sets nur fuer Kraft-Eintraege zaehlen — Cardio hat keine Sets
   const totalSets = active
-    ? active.exercises.reduce((a,e)=>a+e.sets.length, 0)
-    : (planDay ? planDay.exercises.reduce((a,e)=>a+e.targetSets, 0) : 0);
+    ? active.exercises.reduce((a,e) => a + (Array.isArray(e.sets) ? e.sets.length : 0), 0)
+    : (planDay
+        ? planDay.exercises.reduce((a,e) => a + (exType(e.exId) === 'cardio' ? 0 : (e.targetSets || 0)), 0)
+        : 0);
   const exCount = active ? active.exercises.length : (planDay ? planDay.exercises.length : 0);
   const doneEx = active ? active.exercises.filter(e=>e.done).length : 0;
   const processedEx = active ? active.exercises.filter(e=>e.done || e.skipped).length : 0;
   const title = `${dayFullName(selDay.dayKey)}${planDay ? ' — ' + pd(planDay.name) : ''}`;
   const label = opts.label || (isPreview ? 'VORSCHAU' : 'AKTIVE SESSION');
-  const meta = `${exCount} Übungen • ${totalSets} Sätze`;
+  // Reine Cardio-Tage zaehlen Sets nicht — labeln stattdessen die Einheit als Cardio
+  const isPureCardio = !!(planDay && planDayIsPureCardio(planDay));
+  const meta = isPureCardio
+    ? `${exCount} Cardio-Einheit${exCount === 1 ? '' : 'en'}`
+    : `${exCount} Übungen • ${totalSets} Sätze`;
   const pct = !isPreview && active && active.exercises.length
     ? (processedEx / active.exercises.length * 100) : 0;
   const timerBlock = (!isPreview && active)
     ? `<div class="hero-v2-timer">${fmtTimer(Math.floor(getElapsedMs(active)/1000))}</div>`
     : '';
 
-  const metaPreview = `<div class="hero-v2-meta">
-    <span style="display:inline-flex;gap:5px;align-items:center">
-      <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
-      ${exCount} Übungen</span>
-    <span class="dot"></span>
-    <span style="display:inline-flex;gap:5px;align-items:center">
-      <svg viewBox="0 0 24 24"><polyline points="12 2 22 8 12 14 2 8 12 2"/><polyline points="2 12 12 18 22 12"/><polyline points="2 16 12 22 22 16"/></svg>
-      ${totalSets} Sätze</span>
-  </div>`;
+  const metaPreview = isPureCardio
+    ? `<div class="hero-v2-meta">
+        <span style="display:inline-flex;gap:5px;align-items:center">
+          <span style="font-size:14px">🏃</span>
+          ${exCount} Cardio-Einheit${exCount === 1 ? '' : 'en'}</span>
+      </div>`
+    : `<div class="hero-v2-meta">
+        <span style="display:inline-flex;gap:5px;align-items:center">
+          <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
+          ${exCount} Übungen</span>
+        <span class="dot"></span>
+        <span style="display:inline-flex;gap:5px;align-items:center">
+          <svg viewBox="0 0 24 24"><polyline points="12 2 22 8 12 14 2 8 12 2"/><polyline points="2 12 12 18 22 12"/><polyline points="2 16 12 22 22 16"/></svg>
+          ${totalSets} Sätze</span>
+      </div>`;
 
   // Active-mode meta is more compact: progress label + thin bar replace the meta row
   const metaActive = `<div class="hero-v2-meta">
@@ -992,16 +1183,22 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
           Nächste Übung
         </button>`;
   const rowClass = allDone ? 'hero-v2-button-row two-buttons' : 'hero-v2-button-row';
+  // Pause-Button hat nur Sinn, wenn ueberhaupt eine Kraft-Uebung im Workout steckt
+  // (Pace wird bei Cardio nicht durch Pause beeinflusst, Timer waere irrelevant).
+  const hasStrengthEx = !!(active && active.exercises.some(e => !isWoExCardio(e)));
+  const pauseBtn = hasStrengthEx
+    ? `<button class="hero-v2-btn-pause" onclick="togglePauseWorkout()" aria-label="${pauseLabel}">
+          ${pauseIcon}
+          ${pauseLabel}
+        </button>`
+    : '';
 
   return `<div class="hero-v2 col-layout active-mode">
     ${topRow}
     <div class="hero-v2-bottom">
       <div class="${rowClass}">
         ${nextBtn}
-        <button class="hero-v2-btn-pause" onclick="togglePauseWorkout()" aria-label="${pauseLabel}">
-          ${pauseIcon}
-          ${pauseLabel}
-        </button>
+        ${pauseBtn}
         <button class="hero-v2-btn-danger" onclick="confirmFinish()">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>
           Beenden
@@ -1071,8 +1268,10 @@ function renderWorkoutWeekStrip() {
     if (i === selectedWorkoutDayIdx) classes.push('selected');
     if (d.isRest) classes.push('rest'); else classes.push('training');
     if (d.dayDone && d.planDay) classes.push('done');
+    if (d.planDay && planDayIsPureCardio(d.planDay)) classes.push('cardio');
     const topLabel = d.isToday ? 'Heute' : (d.isTomorrow ? 'Morgen' : '');
-    const mid = d.planDay ? pd(d.planDay.name) : 'Ruhe';
+    const icon = (d.planDay && planDayIsPureCardio(d.planDay)) ? '🏃 ' : '';
+    const mid = d.planDay ? `${icon}${pd(d.planDay.name)}` : 'Ruhe';
     return `<div class="${classes.join(' ')}" onclick="selectWorkoutDay(${i})">
       <div class="n7-top">${topLabel ? `<span class="lbl">${topLabel}</span>`:''}${d.label}</div>
       <div class="n7-mid">${mid}</div>
@@ -1141,6 +1340,8 @@ function renderPreviewWorkout(planDay) {
   document.getElementById('active-ex-list').innerHTML = planDay.exercises.map((pe, ei) => {
     const ex = getEx(pe.exId);
     if (!ex) return '';
+    // Cardio-Preview: zeigt die letzte Cardio-Session als Vorschau
+    if (exType(ex) === 'cardio') return buildPreviewCardioCardHTML(ex, ei, planDay.id);
     const col = colorForExercise({ exId: pe.exId });
     const last = getLastExData(pe.exId);
     const targetW = last ? `${last.maxWeight} kg` : '–';
@@ -1182,6 +1383,41 @@ function renderPreviewWorkout(planDay) {
   }).join('');
 }
 
+// Preview-Variante einer Cardio-Card im Workouts-Tab. Read-only, zeigt die letzten Werte
+// als Vorschau und ist nicht editierbar (Inputs greifen erst beim Start des Workouts).
+function buildPreviewCardioCardHTML(ex, ei, planDayId) {
+  const last = getLastCardio(ex.id);
+  const lastStr = last
+    ? `Zuletzt: ${formatDistance(last.distance)} in ${formatDuration(last.duration)}`
+    : 'Noch keine Daten';
+  const pr = getCardioPR(ex.id);
+  const prStr = (pr && pr.longestDist)
+    ? `Best: ${formatDistance(pr.longestDist)}` +
+      (pr.fastestPace ? ` · ${formatPace(pr.fastestPace, 1)}/km` : '')
+    : '';
+  return `<div class="aex-v2 aex-cardio" id="aex-${ei}"
+               ondragstart="aexDragStart(event,${ei},'preview','${planDayId}')"
+               ondragend="aexDragEnd(event)"
+               ondragover="aexDragOver(event,${ei})"
+               ondragleave="aexDragLeave(event)"
+               ondrop="aexDrop(event,${ei})">
+    <div class="aex-v2-header">
+      <span class="aex-drag-handle"
+            onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
+            onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">≡</span>
+      <div class="aex-v2-num">${ei+1}</div>
+      <div class="aex-v2-info">
+        <div class="aex-v2-name">${ex.name}</div>
+        <div class="aex-v2-last">${lastStr}</div>
+      </div>
+    </div>
+    <div class="aex-cardio-form">
+      <div class="aex-cardio-pace ${pr ? '' : 'empty'}">${prStr || 'Pace-Daten kommen mit dem ersten Lauf'}</div>
+      ${ex.notes ? `<div class="aex-v2-notes" style="margin-top:10px"><textarea class="aex-v2-notes-area" data-ex-id="${ex.id}" placeholder="Notizen" onchange="saveExerciseNote('${ex.id}', this.value)">${ex.notes}</textarea></div>` : ''}
+    </div>
+  </div>`;
+}
+
 function renderActiveWorkout() {
   const wo = DB.getActive();
   if (!wo) return;
@@ -1191,6 +1427,8 @@ function renderActiveWorkout() {
 
   // Exercise cards
   document.getElementById('active-ex-list').innerHTML = wo.exercises.map((ex, ei) => {
+    // Cardio-Karte rendert vollkommen anders (Form statt Sets-Tabelle)
+    if (isWoExCardio(ex)) return buildActiveCardioCardHTML(ex, ei);
     const col = colorForExercise(ex);
     const last = getLastExData(ex.exId || ex.id);
     const lastStr = last ? `Zuletzt: ${last.sets.length}×${last.sets[0]?.reps||'?'} @ ${last.maxWeight} kg` : '';
@@ -1263,6 +1501,370 @@ function renderActiveWorkout() {
 
 function updateBottomBar() { /* bottom bar removed in v2 */ }
 
+// ─── Active-Workout: Cardio-Card ───────────────────────────────────
+// Cardio-Variante der Active-Exercise-Card. Verzichtet auf die Sets-Tabelle und
+// rendert stattdessen ein Form-Layout (Dauer / Distanz / Pace + Notiz).
+function buildActiveCardioCardHTML(ex, ei) {
+  const cd = ex.cardio || {};
+  const durSecAll = parseInt(cd.duration, 10) || 0;
+  const durMin = Math.floor(durSecAll / 60);
+  const durSec = durSecAll % 60;
+  const distVal = (cd.distance !== '' && cd.distance != null) ? cd.distance : '';
+  const notesVal = cd.notes || '';
+
+  const durNum = parseFloat(cd.duration);
+  const distNum = parseFloat(cd.distance);
+  const hasPace = durNum > 0 && distNum > 0;
+  const paceText = hasPace ? `${formatPace(durNum, distNum)} min/km` : 'Pace —';
+  const paceCls = hasPace ? '' : 'empty';
+
+  const last = getLastCardio(ex.exId || ex.id);
+  const lastStr = last
+    ? `Zuletzt: ${formatDistance(last.distance)} in ${formatDuration(last.duration)}`
+    : '';
+
+  const stateCls = ex.done ? 'done' : (ex.skipped ? 'skipped' : '');
+  const dis = ex.done ? 'disabled' : '';
+  const checkSvg = ex.done
+    ? '<svg width="12" height="12" viewBox="0 0 24 24" stroke="white" fill="none" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
+    : '';
+
+  // Notizen-Quelle: globale Uebungsnotiz (single source of truth, wird beim Speichern gespiegelt)
+  const globalNotes = (getEx(ex.exId || ex.id)?.notes) || '';
+  const notesShown = notesVal || globalNotes;
+
+  return `<div class="aex-v2 aex-cardio ${stateCls}" id="aex-${ei}"
+               ondragstart="aexDragStart(event,${ei},'active')"
+               ondragend="aexDragEnd(event)"
+               ondragover="aexDragOver(event,${ei})"
+               ondragleave="aexDragLeave(event)"
+               ondrop="aexDrop(event,${ei})">
+    <div class="aex-v2-header">
+      <span class="aex-drag-handle"
+            onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
+            onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">≡</span>
+      <div class="aex-v2-num">${ei+1}</div>
+      <div class="aex-v2-info">
+        <div class="aex-v2-name">${ex.name}</div>
+        ${lastStr ? `<div class="aex-v2-last">${lastStr}</div>` : ''}
+      </div>
+      <label class="aex-v2-done ${ex.done?'checked':''}">
+        <input type="checkbox" ${ex.done?'checked':''} onchange="toggleExDone(${ei},this.checked)">
+        <div class="aex-v2-done-box">${checkSvg}</div>
+        <span>Erledigt</span>
+      </label>
+    </div>
+    <div class="aex-cardio-form">
+      <div class="aex-cardio-row">
+        <div class="aex-cardio-field">
+          <span class="aex-cardio-field-label">Dauer</span>
+          <div class="aex-cardio-duration">
+            <input type="number" inputmode="numeric" min="0" placeholder="min"
+                   value="${durMin || ''}"
+                   onchange="updateCardioDuration(${ei}, this.value, null)" ${dis}>
+            <span class="colon">:</span>
+            <input type="number" inputmode="numeric" min="0" max="59" placeholder="sek"
+                   value="${durSec ? String(durSec).padStart(2,'0') : ''}"
+                   onchange="updateCardioDuration(${ei}, null, this.value)" ${dis}>
+          </div>
+        </div>
+        <div class="aex-cardio-field">
+          <span class="aex-cardio-field-label">Distanz (km)</span>
+          <div class="aex-cardio-distance">
+            <input type="number" inputmode="decimal" step="0.01" min="0" placeholder="–"
+                   value="${distVal}"
+                   onchange="updateCardioField(${ei}, 'distance', this.value)" ${dis}>
+          </div>
+        </div>
+      </div>
+      <div class="aex-cardio-pace ${paceCls}">${paceText}</div>
+      <div class="aex-cardio-notes" style="margin-top:10px">
+        <textarea placeholder="Notiz (Strecke, Pace-Strategie, Empfindung …)"
+                  onchange="updateCardioNotes(${ei}, this.value)" ${dis}>${notesShown}</textarea>
+      </div>
+    </div>
+    ${ex.done ? '' : (ex.skipped
+      ? `<div class="aex-v2-actions">
+           <button class="btn btn-ghost btn-sm" onclick="unskipExercise(${ei})">↻ Wieder aktiv setzen</button>
+         </div>`
+      : `<div class="aex-v2-actions">
+           <button class="btn btn-ghost btn-sm aex-skip-btn" onclick="skipExercise(${ei})">» Überspringen</button>
+         </div>`)}
+  </div>`;
+}
+
+// Schreibt einen einzelnen Cardio-Eingabewert. Re-rendert ausschliesslich die Pace-Pille,
+// damit der Input-Fokus auf dem aktuellen Feld nicht verloren geht.
+function updateCardioField(ei, field, value) {
+  const wo = DB.getActive();
+  if (!wo) return;
+  const ex = wo.exercises[ei];
+  if (!ex) return;
+  if (!ex.cardio) ex.cardio = { duration: '', distance: '', notes: '' };
+  if (field === 'distance') {
+    const v = (value === '' || value == null) ? '' : String(parseFloat(value) || '');
+    ex.cardio.distance = v;
+  }
+  DB.saveActive(wo);
+  refreshCardioPace(ei);
+}
+
+// Dauer-Updates erfolgen feld-getrennt (min, sec). Wir lesen das jeweils andere Feld
+// direkt aus dem DOM, damit der Speicherwert immer in Sekunden konsistent bleibt.
+function updateCardioDuration(ei, minStr, secStr) {
+  const wo = DB.getActive();
+  if (!wo) return;
+  const ex = wo.exercises[ei];
+  if (!ex) return;
+  if (!ex.cardio) ex.cardio = { duration: '', distance: '', notes: '' };
+  const inputs = document.querySelectorAll(`#aex-${ei} .aex-cardio-duration input`);
+  const minEl = inputs[0], secEl = inputs[1];
+  let min = (minStr !== null && minStr !== undefined)
+    ? (parseInt(minStr) || 0)
+    : (minEl ? (parseInt(minEl.value) || 0) : 0);
+  let sec = (secStr !== null && secStr !== undefined)
+    ? (parseInt(secStr) || 0)
+    : (secEl ? (parseInt(secEl.value) || 0) : 0);
+  if (min < 0) min = 0;
+  if (sec < 0) sec = 0;
+  if (sec > 59) sec = 59;
+  const totalSec = min*60 + sec;
+  ex.cardio.duration = totalSec ? String(totalSec) : '';
+  DB.saveActive(wo);
+  refreshCardioPace(ei);
+}
+
+function updateCardioNotes(ei, value) {
+  const wo = DB.getActive();
+  if (!wo) return;
+  const ex = wo.exercises[ei];
+  if (!ex) return;
+  if (!ex.cardio) ex.cardio = { duration: '', distance: '', notes: '' };
+  ex.cardio.notes = value;
+  ex.notes = value; // Workout-Instance spiegelt die Notiz mit, konsistent zu Kraft-Notizen
+  // mirror auch auf die globale Uebungsnotiz (single source of truth)
+  const exs = DB.getExercises();
+  const id = ex.exId || ex.id;
+  const gex = exs.find(e => e.id === id);
+  if (gex) { gex.notes = value; DB.saveExercises(exs); }
+  DB.saveActive(wo);
+}
+
+// ─── Quick-Log: reine Cardio-Tage ──────────────────────────────────
+// Reine Cardio-Tage (planDayIsPureCardio === true) springen am Active-Mode
+// vorbei in dieses Modal. Hier werden Dauer/Distanz/Notiz pro Uebung erfasst
+// und beim Speichern direkt als Workout-Eintrag in ft_workouts geschrieben.
+let cardioQuickLogState = null; // { dayId, dayName, entries: [{exId, name, duration, distance, notes}] }
+
+function openCardioQuickLog(dayId) {
+  const plan = DB.getPlan();
+  const day = plan.find(d => d.id === dayId);
+  if (!day) return;
+  const entries = day.exercises.map(pe => {
+    const ex = getEx(pe.exId);
+    return ex ? { exId: pe.exId, name: ex.name, duration: '', distance: '', notes: '' } : null;
+  }).filter(Boolean);
+  if (!entries.length) { showToast('Keine Cardio-Einheiten in diesem Tag'); return; }
+  cardioQuickLogState = { dayId, dayName: day.name, entries };
+  const titleEl = document.getElementById('cardio-qlog-title');
+  if (titleEl) titleEl.textContent = pd(day.name);
+  renderCardioQuickLog();
+  openModal('modal-cardio-qlog');
+}
+
+function renderCardioQuickLog() {
+  const list = document.getElementById('cardio-qlog-list');
+  if (!list || !cardioQuickLogState) return;
+  list.innerHTML = cardioQuickLogState.entries.map((entry, idx) => {
+    const last = getLastCardio(entry.exId);
+    const lastStr = last
+      ? `Zuletzt: ${formatDistance(last.distance)} in ${formatDuration(last.duration)}`
+      : '';
+    const durSecAll = parseInt(entry.duration, 10) || 0;
+    const durMin = Math.floor(durSecAll / 60);
+    const durSec = durSecAll % 60;
+    const durNum = parseFloat(entry.duration);
+    const distNum = parseFloat(entry.distance);
+    const hasPace = durNum > 0 && distNum > 0;
+    const paceText = hasPace ? `${formatPace(durNum, distNum)} min/km` : 'Pace —';
+    const paceCls = hasPace ? '' : 'empty';
+    return `<div class="cardio-qlog-card" id="qlog-card-${idx}">
+      <div class="cardio-qlog-head">
+        <div class="cardio-qlog-icon">🏃</div>
+        <div style="flex:1;min-width:0">
+          <div class="cardio-qlog-name">${entry.name}</div>
+          ${lastStr ? `<div style="font-size:12px;color:var(--text3);margin-top:2px">${lastStr}</div>` : ''}
+        </div>
+      </div>
+      <div class="cardio-qlog-body">
+        <div class="aex-cardio-row">
+          <div class="aex-cardio-field">
+            <span class="aex-cardio-field-label">Dauer</span>
+            <div class="aex-cardio-duration">
+              <input type="number" inputmode="numeric" min="0" placeholder="min"
+                     value="${durMin || ''}"
+                     onchange="updateQlogDuration(${idx}, this.value, null)">
+              <span class="colon">:</span>
+              <input type="number" inputmode="numeric" min="0" max="59" placeholder="sek"
+                     value="${durSec ? String(durSec).padStart(2,'0') : ''}"
+                     onchange="updateQlogDuration(${idx}, null, this.value)">
+            </div>
+          </div>
+          <div class="aex-cardio-field">
+            <span class="aex-cardio-field-label">Distanz (km)</span>
+            <div class="aex-cardio-distance">
+              <input type="number" inputmode="decimal" step="0.01" min="0" placeholder="–"
+                     value="${entry.distance}"
+                     onchange="updateQlogField(${idx}, 'distance', this.value)">
+            </div>
+          </div>
+        </div>
+        <div class="aex-cardio-pace ${paceCls}">${paceText}</div>
+        <div class="aex-cardio-notes" style="margin-top:10px">
+          <textarea placeholder="Notiz (Strecke, Pace-Strategie, Empfindung …)"
+                    onchange="updateQlogNotes(${idx}, this.value)">${entry.notes || ''}</textarea>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateQlogField(idx, field, value) {
+  if (!cardioQuickLogState) return;
+  const e = cardioQuickLogState.entries[idx];
+  if (!e) return;
+  if (field === 'distance') {
+    e.distance = (value === '' || value == null) ? '' : String(parseFloat(value) || '');
+  }
+  refreshQlogPace(idx);
+}
+
+function updateQlogDuration(idx, minStr, secStr) {
+  if (!cardioQuickLogState) return;
+  const e = cardioQuickLogState.entries[idx];
+  if (!e) return;
+  const card = document.getElementById(`qlog-card-${idx}`);
+  const inputs = card ? card.querySelectorAll('.aex-cardio-duration input') : null;
+  const minEl = inputs ? inputs[0] : null;
+  const secEl = inputs ? inputs[1] : null;
+  let min = (minStr !== null && minStr !== undefined)
+    ? (parseInt(minStr) || 0)
+    : (minEl ? (parseInt(minEl.value) || 0) : 0);
+  let sec = (secStr !== null && secStr !== undefined)
+    ? (parseInt(secStr) || 0)
+    : (secEl ? (parseInt(secEl.value) || 0) : 0);
+  if (min < 0) min = 0;
+  if (sec < 0) sec = 0;
+  if (sec > 59) sec = 59;
+  const totalSec = min*60 + sec;
+  e.duration = totalSec ? String(totalSec) : '';
+  refreshQlogPace(idx);
+}
+
+function updateQlogNotes(idx, value) {
+  if (!cardioQuickLogState) return;
+  const e = cardioQuickLogState.entries[idx];
+  if (!e) return;
+  e.notes = value;
+}
+
+function refreshQlogPace(idx) {
+  if (!cardioQuickLogState) return;
+  const e = cardioQuickLogState.entries[idx];
+  if (!e) return;
+  const card = document.getElementById(`qlog-card-${idx}`);
+  const el = card ? card.querySelector('.aex-cardio-pace') : null;
+  if (!el) return;
+  const dur = parseFloat(e.duration);
+  const dist = parseFloat(e.distance);
+  if (dur > 0 && dist > 0) {
+    el.classList.remove('empty');
+    el.textContent = `${formatPace(dur, dist)} min/km`;
+  } else {
+    el.classList.add('empty');
+    el.textContent = 'Pace —';
+  }
+}
+
+function cancelCardioQuickLog() {
+  // Wenn Werte eingetragen wurden, vor dem Abbruch nochmal nachfragen.
+  const hasData = cardioQuickLogState && cardioQuickLogState.entries.some(e =>
+    e.duration || e.distance || (e.notes && e.notes.length)
+  );
+  const close = () => {
+    cardioQuickLogState = null;
+    closeModal('modal-cardio-qlog');
+  };
+  if (!hasData) { close(); return; }
+  closeModal('modal-cardio-qlog');
+  setTimeout(() => {
+    confirmAction(
+      'Cardio-Session verwerfen?',
+      'Eingetragene Werte gehen verloren. Trotzdem abbrechen?',
+      close,
+      { danger: true, confirmLabel: 'Verwerfen', onCancel: () => openModal('modal-cardio-qlog') }
+    );
+  }, 80);
+}
+
+function finishCardioQuickLog() {
+  if (!cardioQuickLogState) return;
+  const filled = cardioQuickLogState.entries.filter(e => e.duration || e.distance);
+  if (!filled.length) {
+    showToast('Bitte mindestens eine Dauer oder Distanz eintragen');
+    return;
+  }
+  // Workout-Eintrag bauen (Schema-kompatibel zu Active-Workouts)
+  const startTs = Date.now();
+  const workoutExs = filled.map(e => ({
+    exId: e.exId, id: e.exId, name: e.name, type: 'cardio',
+    cardio: { duration: e.duration || '', distance: e.distance || '', notes: e.notes || '' },
+    notes: e.notes || '',
+    done: true,
+  }));
+  const prevWorkouts = DB.getWorkouts();
+  const fake = { exercises: workoutExs };
+  const prs = detectPRs(fake, prevWorkouts);
+  const totalDur = workoutExs.reduce((acc, we) => acc + (parseInt(we.cardio.duration, 10) || 0), 0);
+  const wo = {
+    id: 'wo_' + startTs,
+    planDayId: cardioQuickLogState.dayId,
+    planDayName: cardioQuickLogState.dayName,
+    startTs,
+    endTs: Date.now(),
+    duration: totalDur,
+    exercises: workoutExs,
+    prs,
+    isCardioQuickLog: true,
+  };
+  DB.addWorkout(wo);
+  cardioQuickLogState = null;
+  closeModal('modal-cardio-qlog');
+  if (prs.length) showToast(`${prs.length} neuer PR! 🏆`);
+  else showToast('Cardio-Session gespeichert! 🏃');
+  if (currentScreen === 'overview') renderOverview();
+  else if (currentScreen === 'workouts') renderWorkoutsScreen();
+  if (driveIsEnabled()) driveTriggerSync('Cardio-Session beendet');
+}
+
+function refreshCardioPace(ei) {
+  const wo = DB.getActive();
+  if (!wo) return;
+  const ex = wo.exercises[ei];
+  if (!ex) return;
+  const el = document.querySelector(`#aex-${ei} .aex-cardio-pace`);
+  if (!el) return;
+  const dur = parseFloat(ex.cardio && ex.cardio.duration);
+  const dist = parseFloat(ex.cardio && ex.cardio.distance);
+  if (dur > 0 && dist > 0) {
+    el.classList.remove('empty');
+    el.textContent = `${formatPace(dur, dist)} min/km`;
+  } else {
+    el.classList.add('empty');
+    el.textContent = 'Pace —';
+  }
+}
+
 function updateSet(ei, si, field, value) {
   const wo = DB.getActive();
   if (!wo) return;
@@ -1306,8 +1908,10 @@ function toggleExDone(ei, checked) {
   if (!wo) return;
   wo.exercises[ei].done = checked;
   if (checked) wo.exercises[ei].skipped = false; // mutually exclusive
-  // Mark all sets as done/undone
-  wo.exercises[ei].sets.forEach(s => s.done = checked);
+  // Mark all sets as done/undone (nur fuer Kraft — Cardio hat keine Sets)
+  if (Array.isArray(wo.exercises[ei].sets)) {
+    wo.exercises[ei].sets.forEach(s => s.done = checked);
+  }
   DB.saveActive(wo);
   renderWorkoutsScreen();
 
@@ -1503,7 +2107,25 @@ function togglePauseWorkout() {
   else if (currentScreen === 'workouts') renderWorkoutsScreen();
 }
 
+// Add-Ex-Modal kann Kraft oder Cardio listen. Default vom letzten Aufruf des Uebungen-Tabs uebernehmen,
+// wenn der User dort gerade in einem Modus arbeitet.
+let addExMode = 'strength'; // 'strength' | 'cardio'
+function setAddExMode(mode) {
+  if (mode !== 'strength' && mode !== 'cardio') return;
+  if (addExMode === mode) return;
+  addExMode = mode;
+  document.querySelectorAll('#modal-add-ex .ex-mode-pill').forEach(p => p.classList.remove('active'));
+  const activePill = document.getElementById(`add-ex-pill-${mode}`);
+  if (activePill) activePill.classList.add('active');
+  renderAddExList(document.getElementById('add-ex-search').value || '');
+}
+
 function openAddExModal() {
+  // Initialer Modus: wenn der User gerade im Cardio-Modus im Uebungen-Tab ist, dort starten.
+  addExMode = (exMode === 'cardio') ? 'cardio' : 'strength';
+  document.querySelectorAll('#modal-add-ex .ex-mode-pill').forEach(p => p.classList.remove('active'));
+  const activePill = document.getElementById(`add-ex-pill-${addExMode}`);
+  if (activePill) activePill.classList.add('active');
   document.getElementById('add-ex-search').value = '';
   renderAddExList('');
   openModal('modal-add-ex');
@@ -1522,10 +2144,34 @@ function toggleAddExGroup(muscleKey) {
 function renderAddExList(q) {
   const exs = DB.getExercises();
   const query = (q || '').trim().toLowerCase();
-  // Filter
+  // Erst nach Modus filtern (Kraft-Modus zeigt nur strength, Cardio-Modus nur cardio)
+  const byType = exs.filter(e => exType(e) === addExMode);
+  // Dann optional nach Suchtext filtern
   const filtered = query
-    ? exs.filter(e => e.name.toLowerCase().includes(query))
-    : exs;
+    ? byType.filter(e => e.name.toLowerCase().includes(query))
+    : byType;
+
+  // Cardio-Modus: flache alphabetische Liste, keine Muskelgruppen
+  if (addExMode === 'cardio') {
+    if (!filtered.length) {
+      document.getElementById('add-ex-list').innerHTML =
+        '<p style="color:var(--text3);text-align:center;padding:20px">Keine Cardio-Einheit gefunden</p>';
+      return;
+    }
+    const sorted = filtered.slice().sort((a,b) => a.name.localeCompare(b.name, 'de'));
+    const c = 'var(--cardio)';
+    const items = sorted.map(e => `
+      <div class="sheet-item muscle-coded" style="--c:${c}" onclick="addExToWorkout('${e.id}')">
+        <div>
+          <div class="sheet-item-name">${e.name}</div>
+          <div class="sheet-item-sub">Cardio</div>
+        </div>
+        <span style="color:var(--cardio);font-size:20px">+</span>
+      </div>`).join('');
+    document.getElementById('add-ex-list').innerHTML = items;
+    return;
+  }
+
   // Gruppieren nach Muskelgruppe (in MUSCLE_ORDER-Reihenfolge), innerhalb alphabetisch
   const byMuscle = {};
   MUSCLE_ORDER.forEach(m => byMuscle[m] = []);
@@ -1570,12 +2216,21 @@ function renderAddExList(q) {
 function addExToWorkout(exId) {
   const ex = getEx(exId); if (!ex) return;
   const wo = DB.getActive();
+  const isCardio = exType(ex) === 'cardio';
   // 1) Übung dem aktiven Workout hinzufügen
-  wo.exercises.push({
-    exId, id:exId, name:ex.name, targetSets:3, targetReps:8,
-    sets: buildSetsForExercise(exId, 3, 8),
-    notes:'', done:false
-  });
+  if (isCardio) {
+    wo.exercises.push({
+      exId, id:exId, name:ex.name, type: 'cardio',
+      cardio: { duration: '', distance: '', notes: '' },
+      notes:'', done:false
+    });
+  } else {
+    wo.exercises.push({
+      exId, id:exId, name:ex.name, targetSets:3, targetReps:8,
+      sets: buildSetsForExercise(exId, 3, 8),
+      notes:'', done:false
+    });
+  }
   DB.saveActive(wo);
   // 2) Übung auch in den Plan-Trainingstag eintragen (sofern verlinkt, nicht doppelt)
   // → künftige Workouts dieses Tags enthalten die Übung automatisch
@@ -1583,7 +2238,8 @@ function addExToWorkout(exId) {
     const plan = DB.getPlan();
     const day = plan.find(d => d.id === wo.planDayId);
     if (day && !day.exercises.some(pe => pe.exId === exId)) {
-      day.exercises.push({ exId, targetSets: 3, targetReps: 8 });
+      // Cardio-Eintraege im Plan-Day brauchen keine targetSets/targetReps
+      day.exercises.push(isCardio ? { exId } : { exId, targetSets: 3, targetReps: 8 });
       DB.savePlan(plan);
     }
   }
@@ -1599,11 +2255,17 @@ function finishWorkout() {
   if (!wo) return;
   stopTimer();
   const duration = Math.floor(getElapsedMs(wo) / 1000);
-  // Clean sets (remove empty ones)
-  const cleanEx = wo.exercises.map(ex => ({
-    ...ex,
-    sets: ex.sets.filter(s => s.weight || s.reps)
-  })).filter(ex => ex.sets.length > 0);
+  // Clean: bei Kraft leere Saetze entfernen, bei Cardio Eintrag nur behalten wenn Dauer ODER Distanz gesetzt
+  const cleanEx = wo.exercises.map(ex => {
+    if (isWoExCardio(ex)) return ex;
+    return { ...ex, sets: (ex.sets || []).filter(s => s.weight || s.reps) };
+  }).filter(ex => {
+    if (isWoExCardio(ex)) {
+      const cd = ex.cardio || {};
+      return !!(cd.duration || cd.distance);
+    }
+    return (ex.sets || []).length > 0;
+  });
 
   const prevWorkouts = DB.getWorkouts();
   const prs = detectPRs({ ...wo, exercises: cleanEx }, prevWorkouts);
@@ -1655,6 +2317,52 @@ let histRangeDays = 30;
 const HIST_RANGES = [7, 30, 90, 365];
 let volumeUnit = 'kg';   // 'kg' | 'sets'
 
+// Per-Karte-Toggle Kraft/Cardio. Persistiert in localStorage, damit sich der Modus
+// ueber App-Restart hinweg merkt.
+let statsVolMode    = (localStorage.getItem('ft_stats_vol_mode')    === 'cardio') ? 'cardio' : 'strength';
+let statsMuscleMode = (localStorage.getItem('ft_stats_muscle_mode') === 'cardio') ? 'cardio' : 'strength';
+let statsPrMode     = (localStorage.getItem('ft_stats_pr_mode')     === 'cardio') ? 'cardio' : 'strength';
+
+function _applyStatsToggleUI(group, mode) {
+  document.querySelectorAll(`#${group}-pill-strength, #${group}-pill-cardio`).forEach(p => p.classList.remove('active'));
+  const pill = document.getElementById(`${group}-pill-${mode}`);
+  if (pill) pill.classList.add('active');
+}
+
+function setStatsVolMode(mode) {
+  if (mode !== 'strength' && mode !== 'cardio') return;
+  if (statsVolMode === mode) return;
+  statsVolMode = mode;
+  localStorage.setItem('ft_stats_vol_mode', mode);
+  _applyStatsToggleUI('vol', mode);
+  // Kg/Saetze-Toggle nur im Kraft-Modus sinnvoll
+  const unitToggle = document.getElementById('vol-unit-toggle');
+  if (unitToggle) unitToggle.style.display = (mode === 'cardio') ? 'none' : '';
+  const titleEl = document.getElementById('vol-card-title');
+  if (titleEl) titleEl.textContent = mode === 'cardio' ? 'Distanzentwicklung' : 'Volumenentwicklung';
+  renderHomeStats();
+}
+function setStatsMuscleMode(mode) {
+  if (mode !== 'strength' && mode !== 'cardio') return;
+  if (statsMuscleMode === mode) return;
+  statsMuscleMode = mode;
+  localStorage.setItem('ft_stats_muscle_mode', mode);
+  _applyStatsToggleUI('muscle', mode);
+  const titleEl = document.getElementById('muscle-card-title');
+  if (titleEl) titleEl.textContent = mode === 'cardio' ? 'Distanz pro Cardio-Einheit' : 'Volumen pro Muskelgruppe';
+  renderHomeStats();
+}
+function setStatsPrMode(mode) {
+  if (mode !== 'strength' && mode !== 'cardio') return;
+  if (statsPrMode === mode) return;
+  statsPrMode = mode;
+  localStorage.setItem('ft_stats_pr_mode', mode);
+  _applyStatsToggleUI('pr', mode);
+  const titleEl = document.getElementById('pr-card-title');
+  if (titleEl) titleEl.textContent = mode === 'cardio' ? 'Cardio-Bestleistungen' : 'PRs & Bestleistungen';
+  renderHomeStats();
+}
+
 function openHistRangeDropdown() {
   // aktive Auswahl visuell markieren
   document.querySelectorAll('.hist-range-option').forEach(opt => {
@@ -1687,26 +2395,187 @@ function filterWorkoutsByRange(ws, days) {
 function renderHomeStats() {
   const allWs = DB.getWorkouts();
   const ws = filterWorkoutsByRange(allWs, histRangeDays);
-  // Volume chart by week
-  renderVolumeChart(ws);
-  // Muscle bars
+  // Karten-Toggle-UI initial spiegeln (defensiv)
+  _applyStatsToggleUI('vol',    statsVolMode);
+  _applyStatsToggleUI('muscle', statsMuscleMode);
+  _applyStatsToggleUI('pr',     statsPrMode);
+  const unitToggle = document.getElementById('vol-unit-toggle');
+  if (unitToggle) unitToggle.style.display = (statsVolMode === 'cardio') ? 'none' : '';
+
+  // ── Karte 1: Volumen-/Distanzentwicklung ──
+  if (statsVolMode === 'cardio') renderCardioDistanceChart(ws);
+  else renderVolumeChart(ws);
+
+  // ── Karte 2: Muskelgruppen / Cardio-Verteilung ──
   const volEl = document.getElementById('muscle-bars');
   if (volEl) {
-    if (ws.length) {
+    if (statsMuscleMode === 'cardio') {
+      renderCardioPerExerciseBars(ws, volEl);
+    } else if (ws.length) {
       const vol = calcMuscleVolume(ws);
       renderMuscleBars(vol, volEl);
     } else {
       volEl.innerHTML = '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>';
     }
   }
-  // PR list
-  const prs = getAllPRs();
+
+  // ── Karte 3: PR-Liste ──
   const prEl = document.getElementById('hist-pr-list');
   if (prEl) {
-    prEl.innerHTML = prs.length
-      ? prs.slice(0,10).map((pr, idx) => prHTML(pr, idx+1)).join('')
-      : '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine PRs</p>';
+    if (statsPrMode === 'cardio') {
+      const cprs = getAllCardioPRs();
+      prEl.innerHTML = cprs.length
+        ? cprs.slice(0,10).map((pr, idx) => cardioPrHTML(pr, idx+1)).join('')
+        : '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Cardio-PRs</p>';
+    } else {
+      const prs = getAllPRs();
+      prEl.innerHTML = prs.length
+        ? prs.slice(0,10).map((pr, idx) => prHTML(pr, idx+1)).join('')
+        : '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine PRs</p>';
+    }
   }
+}
+
+// ── Karte 1 (Cardio): Distanz pro Woche als Bar-Chart, ISO-KW ──
+function renderCardioDistanceChart(ws) {
+  if (volumeChart) { volumeChart.destroy(); volumeChart = null; }
+  const canvas = document.getElementById('volume-chart');
+  if (!canvas) return;
+  // Aggregiere Distanz pro ISO-Kalenderwoche
+  const weekMap = {};
+  let any = false;
+  ws.forEach(w => {
+    (w.exercises || []).forEach(we => {
+      if (!isWoExCardio(we)) return;
+      const dist = parseFloat(we.cardio && we.cardio.distance);
+      if (!(dist > 0)) return;
+      const d = new Date(w.startTs);
+      const key = `W${getISOWeek(d)}`;
+      weekMap[key] = (weekMap[key] || 0) + dist;
+      any = true;
+    });
+  });
+  const ctx = canvas.getContext('2d');
+  if (!any) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+  const sortedKeys = Object.keys(weekMap).slice(-8);
+  const lastIdx = sortedKeys.length - 1;
+  const cardioCol = (getComputedStyle(document.documentElement).getPropertyValue('--cardio').trim()) || '#14B8A6';
+  const cardioRGB = (() => {
+    const h = cardioCol.replace('#','');
+    if (h.length !== 6) return '20,184,166';
+    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)].join(',');
+  })();
+  volumeChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sortedKeys,
+      datasets: [{
+        data: sortedKeys.map(k => Math.round((weekMap[k] || 0) * 10) / 10),
+        backgroundColor: `rgba(${cardioRGB},0.85)`,
+        borderColor: cardioCol,
+        borderWidth: 1.5,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 500 },
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true, callbacks: { label: c => `${c.raw} km` } }
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false }, ticks: { callback: v => `${v}` , font:{size:11} } },
+        x: { grid: { display: false }, ticks: { font:{size:11} } }
+      }
+    },
+    plugins: [{
+      id:'lastBarLabel',
+      afterDatasetsDraw(chart) {
+        const ds = chart.data.datasets[0];
+        if (!ds || !ds.data.length) return;
+        const meta = chart.getDatasetMeta(0);
+        const last = meta.data[lastIdx];
+        if (!last) return;
+        const txt = `${ds.data[lastIdx]} km`;
+        const c = chart.ctx;
+        c.save();
+        c.font = '600 12px -apple-system, sans-serif';
+        const w = c.measureText(txt).width + 14;
+        const h = 22;
+        const x = last.x - w/2;
+        const y = last.y - h - 6;
+        c.fillStyle = cardioCol;
+        c.beginPath(); c.roundRect(x, y, w, h, 6); c.fill();
+        c.fillStyle = '#fff';
+        c.textBaseline = 'middle';
+        c.textAlign = 'center';
+        c.fillText(txt, last.x, y + h/2);
+        c.restore();
+      }
+    }]
+  });
+}
+
+// ── Karte 2 (Cardio): Distanz pro Cardio-Uebung im Range, als horizontale Balken ──
+function renderCardioPerExerciseBars(ws, container) {
+  const totals = {}; // exId → { name, dist }
+  ws.forEach(w => {
+    (w.exercises || []).forEach(we => {
+      if (!isWoExCardio(we)) return;
+      const id = we.exId || we.id;
+      const dist = parseFloat(we.cardio && we.cardio.distance);
+      if (!(dist > 0)) return;
+      if (!totals[id]) totals[id] = { name: we.name || (getEx(id) && getEx(id).name) || id, dist: 0 };
+      totals[id].dist += dist;
+    });
+  });
+  const arr = Object.values(totals).sort((a,b) => b.dist - a.dist);
+  if (!arr.length) {
+    container.innerHTML = '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Cardio-Daten</p>';
+    return;
+  }
+  const maxDist = Math.max(1, ...arr.map(a => a.dist));
+  container.innerHTML = arr.map(it => {
+    const pct = Math.round(it.dist / maxDist * 100);
+    return `<div class="muscle-bar-v2-row" style="--mc:var(--cardio);--mc-bg:var(--cardio-bg)">
+      <div class="muscle-icon-wrap" style="background:var(--cardio-bg);color:var(--cardio);display:flex;align-items:center;justify-content:center;font-weight:700">🏃</div>
+      <span class="muscle-bar-v2-name">${it.name}</span>
+      <div class="muscle-bar-v2-bar"><div class="muscle-bar-v2-fill" style="width:${pct}%"></div></div>
+      <span class="muscle-bar-v2-val">${formatDistance(it.dist)}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Karte 3 (Cardio): PR-Liste fuer alle Cardio-Uebungen ──
+function getAllCardioPRs() {
+  const exs = DB.getExercises().filter(e => exType(e) === 'cardio');
+  const out = [];
+  exs.forEach(ex => {
+    const pr = getCardioPR(ex.id);
+    if (!pr || (pr.longestDist == null && pr.fastestPace == null)) return;
+    out.push({ exId: ex.id, name: ex.name, longestDist: pr.longestDist || 0, fastestPace: pr.fastestPace || null });
+  });
+  out.sort((a,b) => (b.longestDist || 0) - (a.longestDist || 0));
+  return out;
+}
+
+function cardioPrHTML(pr, number) {
+  const distStr = pr.longestDist ? formatDistance(pr.longestDist) : '–';
+  const paceStr = pr.fastestPace ? `${formatPace(pr.fastestPace, 1)}/km` : '';
+  return `<div class="pr-v2-row" style="--mc:var(--cardio);--mc-bg:var(--cardio-bg)" onclick="showHistDetailForEx('${pr.exId}')">
+    <div class="pr-v2-icon" style="background:var(--cardio-bg);color:var(--cardio);display:flex;align-items:center;justify-content:center;font-weight:700">🏃</div>
+    <div class="pr-v2-num">${number}</div>
+    <div>
+      <div class="pr-v2-name">${pr.name}</div>
+      <div class="pr-v2-sub">${paceStr || 'Beste Distanz'}</div>
+    </div>
+    <div class="pr-v2-val" style="color:var(--cardio)">${distStr}</div>
+    <span class="pr-v2-arrow">›</span>
+  </div>`;
 }
 
 function renderVolumeChart(ws) {
@@ -1723,7 +2592,9 @@ function renderVolumeChart(ws) {
     const d = new Date(w.startTs);
     const wNum = getISOWeek(d);
     const key = `W${wNum}`;
-    const val = volumeUnit === 'kg' ? calcVolume(w) : w.exercises.reduce((a,e)=>a+e.sets.length, 0);
+    const val = volumeUnit === 'kg'
+      ? calcVolume(w)
+      : w.exercises.reduce((a,e) => a + (Array.isArray(e.sets) ? e.sets.length : 0), 0);
     weekMap[key] = (weekMap[key] || 0) + val;
   });
   const sortedKeys = Object.keys(weekMap).slice(-8);
@@ -1830,10 +2701,11 @@ function renderMuscleBars(vol, container) {
 
 function getAllPRs() {
   const ws = DB.getWorkouts();
-  // For each exercise, collect all max-weights per workout
+  // For each exercise, collect all max-weights per workout (Kraft only — Cardio hat eigene PRs)
   const histMap = {};
   ws.forEach(w => {
     w.exercises.forEach(ex => {
+      if (isWoExCardio(ex) || !Array.isArray(ex.sets)) return;
       const id = ex.exId || ex.id;
       const maxW = Math.max(...ex.sets.map(s => parseFloat(s.weight)||0));
       if (!maxW) return;
@@ -1882,12 +2754,42 @@ function showHistDetail(i) {
   const day = plan.find(d => d.id === w.planDayId);
   document.getElementById('hist-detail-title').textContent =
     `${day ? day.name : (w.planDayName||'Freestyle')} — ${fmtDate(w.startTs)}`;
+
+  // PR-Marker pro Uebung (Kraft: gewichtsbasiert; Cardio: distance/pace).
+  const prByExId = {};
+  (w.prs || []).forEach(p => { prByExId[p.exId] = p; });
+
+  const blocks = (w.exercises || []).map(ex => {
+    const id = ex.exId || ex.id;
+    const pr = prByExId[id];
+    if (isWoExCardio(ex)) {
+      const cd = ex.cardio || {};
+      const durSec = parseInt(cd.duration, 10) || 0;
+      const dist = parseFloat(cd.distance) || 0;
+      const hasPace = durSec > 0 && dist > 0;
+      const paceStr = hasPace ? `${formatPace(durSec, dist)} min/km` : '—';
+      const prChip = pr
+        ? `<span class="hist-pr-chip" title="${pr.isDistPR ? 'Distanz-PR ' : ''}${pr.isPacePR ? 'Pace-PR' : ''}" style="background:var(--cardio-bg);color:var(--cardio);padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;margin-left:8px">🏆 PR</span>`
+        : '';
+      return `<div class="hist-ex-block" style="border-left:3px solid var(--cardio);padding-left:10px">
+        <div class="hist-ex-title">🏃 ${ex.name}${prChip}</div>
+        <div class="hist-set-row"><span>Dauer:</span><span>${durSec > 0 ? formatDuration(durSec) : '–'}</span></div>
+        <div class="hist-set-row"><span>Distanz:</span><span>${dist > 0 ? formatDistance(dist) : '–'}</span></div>
+        <div class="hist-set-row"><span>Pace:</span><span>${paceStr}</span></div>
+        ${(cd.notes || ex.notes) ? `<div style="font-size:12px;color:var(--text3);margin-top:4px">📝 ${cd.notes || ex.notes}</div>` : ''}
+      </div>`;
+    }
+    const sets = Array.isArray(ex.sets) ? ex.sets : [];
+    const setsStr = sets.map((s,si) => `<div class="hist-set-row"><span>Satz ${si+1}:</span><span>${s.weight||'–'} kg × ${s.reps||'–'} Wdh.</span></div>`).join('');
+    const prChip = pr
+      ? `<span class="hist-pr-chip" style="background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;margin-left:8px">🏆 PR ${pr.weight} kg</span>`
+      : '';
+    return `<div class="hist-ex-block"><div class="hist-ex-title">${ex.name}${prChip}</div>${setsStr}${ex.notes?`<div style="font-size:12px;color:var(--text3);margin-top:4px">📝 ${ex.notes}</div>`:''}</div>`;
+  }).join('');
+
   document.getElementById('hist-detail-body').innerHTML =
-    `<p style="color:var(--text3);font-size:13px;margin-bottom:14px">Dauer: ${fmtDur(w.duration)} • ${w.exercises.length} Übungen</p>` +
-    w.exercises.map(ex => {
-      const setsStr = ex.sets.map((s,i) => `<div class="hist-set-row"><span>Satz ${i+1}:</span><span>${s.weight||'–'} kg × ${s.reps||'–'} Wdh.</span></div>`).join('');
-      return `<div class="hist-ex-block"><div class="hist-ex-title">${ex.name}</div>${setsStr}${ex.notes?`<div style="font-size:12px;color:var(--text3);margin-top:4px">📝 ${ex.notes}</div>`:''}</div>`;
-    }).join('') +
+    `<p style="color:var(--text3);font-size:13px;margin-bottom:14px">Dauer: ${fmtDur(w.duration)} • ${w.exercises.length} Übung${w.exercises.length===1?'':'en'}</p>` +
+    blocks +
     `<button class="btn btn-danger btn-full" style="margin-top:18px" onclick="deleteSession(${i})">🗑 Session löschen</button>`;
   openModal('modal-hist-detail');
 }
@@ -2436,13 +3338,68 @@ function confirmCopyPlanDays() {
 // SCREEN: ÜBUNGEN (Catalog)
 // ═══════════════════════════════════════════════
 let openExerciseId = null;   // currently expanded exercise in catalog
-let exSortMode = 'muscle';   // 'muscle' | 'plan'
+let exSortMode = 'muscle';   // 'muscle' | 'plan' — im Cardio-Modus = 'alpha' | 'plan'
+let exMode = (localStorage.getItem('ft_ex_mode') === 'cardio') ? 'cardio' : 'strength'; // 'strength' | 'cardio'
 const collapsedExGroups = new Set(); // Set of group keys (muscle-key oder planDay-id) die eingeklappt sind
+
+function setExMode(mode) {
+  if (mode !== 'strength' && mode !== 'cardio') return;
+  if (exMode === mode) return;
+  exMode = mode;
+  localStorage.setItem('ft_ex_mode', mode);
+  openExerciseId = null;
+  // Toggle-Pill-Highlight aktualisieren
+  document.querySelectorAll('.ex-mode-pill').forEach(p => p.classList.remove('active'));
+  const activePill = document.querySelector(`.ex-mode-pill.mode-${mode}`);
+  if (activePill) activePill.classList.add('active');
+  renderExercises();
+}
 
 function toggleExGroup(key) {
   if (collapsedExGroups.has(key)) collapsedExGroups.delete(key);
   else collapsedExGroups.add(key);
   renderExercises();
+}
+
+// Cardio-Stats-Helpers: ueber alle Workouts iterieren, Cardio-Eintraege fuer diese Uebung sammeln.
+function getCardioHistoryForEx(exId) {
+  const ws = DB.getWorkouts();
+  const out = [];
+  ws.forEach(w => {
+    (w.exercises || []).forEach(we => {
+      const id = we.exId || we.id;
+      if (id !== exId) return;
+      if (!isWoExCardio(we)) return;
+      const cd = we.cardio || {};
+      if (!cd.duration || !cd.distance) return; // unvollstaendige Eintraege ignorieren
+      const pace = calcPace(cd.duration, cd.distance);
+      out.push({
+        date: w.endTs || w.startTs,
+        duration: cd.duration,
+        distance: cd.distance,
+        notes: cd.notes || '',
+        secPerKm: pace ? pace.secPerKm : null,
+      });
+    });
+  });
+  return out.sort((a,b) => (b.date||0) - (a.date||0));
+}
+// Cardio-PRs pro Uebung: laengste Distanz + schnellste Pace (Pace nur ab >=1km Distanz).
+function getCardioPR(exId) {
+  const hist = getCardioHistoryForEx(exId);
+  if (!hist.length) return null;
+  let longestDist = null, fastestPace = null;
+  hist.forEach(h => {
+    if (longestDist == null || h.distance > longestDist) longestDist = h.distance;
+    if (h.distance >= 1 && h.secPerKm && (fastestPace == null || h.secPerKm < fastestPace)) {
+      fastestPace = h.secPerKm;
+    }
+  });
+  return { longestDist, fastestPace };
+}
+function getLastCardio(exId) {
+  const hist = getCardioHistoryForEx(exId);
+  return hist[0] || null;
 }
 
 // "Im aktuellen Plan"-Logik: sucht IMMER im aktiven Plan (per Datum), nie im Edit-Kontext.
@@ -2462,6 +3419,7 @@ function toggleExSortMode() {
 }
 
 function buildExItemHTML(ex, context) {
+  if (exType(ex) === 'cardio') return buildExItemCardioHTML(ex, context);
   const meta = MUSCLE_META[ex.muscle] || MUSCLE_META.chest;
   // In by-plan view, an exercise may appear in multiple days — use a composite key
   // (dayId + exId) so only the tapped instance expands.
@@ -2531,20 +3489,117 @@ function buildExItemHTML(ex, context) {
   </div>`;
 }
 
+function buildExItemCardioHTML(ex, context) {
+  const uniqueKey = (context && context.dayId) ? `${context.dayId}__${ex.id}` : ex.id;
+  const isOpen = uniqueKey === openExerciseId;
+  const usingDays = getPlanDaysUsingExercise(ex.id);
+  const planTag = usingDays.length
+    ? '<span class="ex-item-plan-tag">Im aktuellen Plan</span>' : '';
+  const usingBlock = usingDays.length
+    ? `<div class="ex-item-using">
+         <div class="ex-item-using-label">Verwendet in:</div>
+         <div class="ex-item-using-list">
+           ${usingDays.map(d => `<span class="ex-item-day-chip">${pd(d.name)}</span>`).join('')}
+         </div>
+       </div>`
+    : `<div class="ex-item-using">
+         <div class="ex-item-using-empty">Wird aktuell in keinem Trainingstag verwendet.</div>
+       </div>`;
+  const pr = getCardioPR(ex.id);
+  const last = getLastCardio(ex.id);
+  const longestVal = pr && pr.longestDist != null
+    ? `<div class="ex-stat-val">${formatDistance(pr.longestDist)}</div>`
+    : `<div class="ex-stat-val muted">Noch keine</div>`;
+  const paceVal = pr && pr.fastestPace != null
+    ? `<div class="ex-stat-val">${formatPace(pr.fastestPace, 1)}</div>`
+    : `<div class="ex-stat-val muted">Noch keine</div>`;
+  let lastVal;
+  if (last) {
+    const dateStr = new Date(last.date).toLocaleDateString('de-DE',
+      { day:'numeric', month:'long', year:'2-digit' });
+    lastVal = `<div class="ex-stat-val">${formatDistance(last.distance)} in ${formatDuration(last.duration)}<span class="date">· ${dateStr}</span></div>`;
+  } else {
+    lastVal = `<div class="ex-stat-val muted">Noch keine</div>`;
+  }
+  const statsBlock = `<div class="ex-item-stats">
+    <div class="ex-stat ex-stat-pr">
+      <div class="ex-stat-key">Längste Distanz</div>
+      ${longestVal}
+    </div>
+    <div class="ex-stat ex-stat-pr">
+      <div class="ex-stat-key">Schnellste Pace</div>
+      ${paceVal}
+    </div>
+    <div class="ex-stat ex-stat-last">
+      <div class="ex-stat-key">Letzte Ausführung</div>
+      ${lastVal}
+    </div>
+  </div>`;
+  // --mc fuer den linken Stripe + Name-Farbe ist die Cardio-Akzentfarbe
+  return `<div class="ex-item ${isOpen?'open':''}" id="ex-item-${uniqueKey}" style="--mc:var(--cardio)">
+    <div class="ex-item-head" onclick="toggleExItem('${uniqueKey}')">
+      <div class="ex-item-stripe"></div>
+      <div class="ex-item-name">${ex.name}</div>
+      ${planTag}
+      <span class="ex-item-chev">▾</span>
+    </div>
+    <div class="ex-item-body">
+      ${statsBlock}
+      <div class="ex-item-body-label">Notizen</div>
+      <textarea class="ex-notes-area" placeholder="z. B. Strecke, Wetter, Schuhe…"
+                onchange="saveExerciseNote('${ex.id}', this.value)">${ex.notes||''}</textarea>
+      ${usingBlock}
+      <div class="ex-item-actions">
+        <button class="primary" onclick="openAddExerciseToPlanDay('${ex.id}')">+ Zu Trainingstag</button>
+        <button onclick="editExerciseFromCatalog('${ex.id}')">✎ Bearbeiten</button>
+        <button class="danger" onclick="deleteExerciseFromCatalog('${ex.id}')" title="Löschen">✕ Löschen</button>
+      </div>
+    </div>
+  </div>`;
+}
+
 function renderExercises() {
   const btn = document.getElementById('ex-sort-btn');
   if (btn) btn.dataset.mode = exSortMode;
+  // Toggle-Pill state spiegeln (defensiv, falls vor initialem Render gerufen)
+  document.querySelectorAll('.ex-mode-pill').forEach(p => p.classList.remove('active'));
+  const activePill = document.querySelector(`.ex-mode-pill.mode-${exMode}`);
+  if (activePill) activePill.classList.add('active');
+
   const subEl = document.getElementById('ex-subline');
   if (subEl) {
-    subEl.textContent = exSortMode === 'plan'
-      ? 'Übungskatalog sortiert nach Trainingstagen'
-      : 'Übungskatalog sortiert nach Muskelgruppen';
+    if (exMode === 'cardio') {
+      subEl.textContent = exSortMode === 'plan'
+        ? 'Cardio-Einheiten sortiert nach Trainingstagen'
+        : 'Cardio-Einheiten alphabetisch';
+    } else {
+      subEl.textContent = exSortMode === 'plan'
+        ? 'Übungskatalog sortiert nach Trainingstagen'
+        : 'Übungskatalog sortiert nach Muskelgruppen';
+    }
   }
   if (exSortMode === 'plan') {
     renderExercisesByPlan();
+  } else if (exMode === 'cardio') {
+    renderExercisesCardioFlat();
   } else {
     renderExercisesByMuscle();
   }
+}
+
+// Cardio-Modus, Sort='muscle': flache alphabetische Liste, keine Muskelgruppen.
+function renderExercisesCardioFlat() {
+  const exs = DB.getExercises().filter(e => exType(e) === 'cardio');
+  exs.sort((a,b) => a.name.localeCompare(b.name, 'de'));
+  if (!exs.length) {
+    document.getElementById('exercises-groups').innerHTML =
+      '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Noch keine Cardio-Einheiten vorhanden. Füge eine neue hinzu.</p>';
+    return;
+  }
+  const itemsHTML = exs.map(ex => buildExItemHTML(ex)).join('');
+  // Eine virtuelle Gruppe ohne Gruppen-Header, damit das CSS-Layout (ex-list) gleich bleibt
+  document.getElementById('exercises-groups').innerHTML =
+    `<div class="ex-group" style="--mc:var(--cardio)"><div class="ex-list">${itemsHTML}</div></div>`;
 }
 
 function renderExercisesByPlan() {
@@ -2553,8 +3608,11 @@ function renderExercisesByPlan() {
   DB.getExercises().forEach(e => exMap[e.id] = e);
 
   const groupsHTML = plan.map(day => {
-    // Plan-Reihenfolge beibehalten; Übungen die im Plan stehen aber nicht mehr existieren überspringen
-    const items = day.exercises.map(pe => exMap[pe.exId]).filter(Boolean);
+    // Plan-Reihenfolge beibehalten; Übungen die im Plan stehen aber nicht mehr existieren überspringen.
+    // Nach exMode filtern (Kraft-Modus zeigt nur strength-Eintraege, Cardio-Modus nur cardio).
+    const items = day.exercises.map(pe => exMap[pe.exId])
+      .filter(Boolean)
+      .filter(ex => exType(ex) === exMode);
     if (!items.length) return '';
     const itemsHTML = items.map(ex => buildExItemHTML(ex, { dayId: day.id })).join('');
     const isCollapsed = collapsedExGroups.has('plan:' + day.id);
@@ -2574,7 +3632,9 @@ function renderExercisesByPlan() {
 }
 
 function renderExercisesByMuscle() {
-  const exs = DB.getExercises();
+  // Im Cardio-Modus wuerde diese Funktion gar nicht erst aufgerufen werden
+  // (renderExercises() routet zu renderExercisesCardioFlat). Defensiv filtern wir aber trotzdem.
+  const exs = DB.getExercises().filter(e => exType(e) === 'strength');
   const byMuscle = {};
   MUSCLE_ORDER.forEach(m => byMuscle[m] = []);
   exs.forEach(e => { if (byMuscle[e.muscle]) byMuscle[e.muscle].push(e); });
@@ -2624,9 +3684,14 @@ function editExerciseFromCatalog(id) {
   editingExerciseId = id;
   const ex = DB.getExercises().find(e => e.id === id);
   if (!ex) return;
+  newExType = exType(ex);
   document.getElementById('new-ex-name').value = ex.name;
-  document.getElementById('new-ex-muscle').value = ex.muscle;
-  document.querySelector('#modal-new-ex .sheet-title').textContent = 'Übung bearbeiten';
+  if (newExType === 'strength') {
+    document.getElementById('new-ex-muscle').value = ex.muscle || 'chest';
+  }
+  document.querySelector('#modal-new-ex .sheet-title').textContent =
+    newExType === 'cardio' ? 'Cardio-Einheit bearbeiten' : 'Übung bearbeiten';
+  _applyNewExModalTypeUI();
   openModal('modal-new-ex');
 }
 
@@ -2713,7 +3778,10 @@ function addExerciseToPlanDay(dayIdx) {
   if (!exerciseToAddId) return;
   const plan = DB.getPlan();
   if (!plan[dayIdx]) return;
-  plan[dayIdx].exercises.push({ exId: exerciseToAddId, targetSets: 3, targetReps: 8 });
+  const isCardio = exType(exerciseToAddId) === 'cardio';
+  plan[dayIdx].exercises.push(isCardio
+    ? { exId: exerciseToAddId }
+    : { exId: exerciseToAddId, targetSets: 3, targetReps: 8 });
   DB.savePlan(plan);
   syncActiveWorkoutWithPlanDay(plan[dayIdx].id);
   const ex = DB.getExercises().find(e => e.id === exerciseToAddId);
@@ -2734,7 +3802,8 @@ function createNewPlanDayAndAddEx() {
       (name) => {
         const plan = DB.getPlan();
         const id = 'day_' + Date.now();
-        plan.push({ id, name, color: null, exercises: [{ exId, targetSets: 3, targetReps: 8 }] });
+        const isCardio = exType(exId) === 'cardio';
+        plan.push({ id, name, color: null, exercises: [isCardio ? { exId } : { exId, targetSets: 3, targetReps: 8 }] });
         DB.savePlan(plan);
         const ex = DB.getExercises().find(e => e.id === exId);
         showToast(`„${ex?.name||'Übung'}" zu ${pd(name)} hinzugefügt`);
@@ -2916,7 +3985,8 @@ function confirmPlanAddSelection() {
   if (!plan[editingDayIdx]) return;
   let added = 0;
   planAddSelection.forEach(exId => {
-    plan[editingDayIdx].exercises.push({ exId, targetSets: 3, targetReps: 8 });
+    const isCardio = exType(exId) === 'cardio';
+    plan[editingDayIdx].exercises.push(isCardio ? { exId } : { exId, targetSets: 3, targetReps: 8 });
     added++;
   });
   DB.savePlan(plan);
@@ -2990,32 +4060,49 @@ function addToPlanDay(exId) {
 
 let editingExerciseId = null;
 let newExContext = 'plan'; // 'plan' | 'exercises' | 'edit-from-catalog'
+let newExType = 'strength'; // 'strength' | 'cardio' — Type des Neuen Eintrags
+
+// Im Modal Muskel-Dropdown ein-/ausblenden je nach Type
+function _applyNewExModalTypeUI() {
+  const muscleField = document.querySelector('#modal-new-ex .form-field-muscle');
+  if (muscleField) muscleField.style.display = (newExType === 'cardio') ? 'none' : '';
+}
 
 function openNewExModal(context) {
   newExContext = context || 'plan';
   editingExerciseId = null;
+  // Type bestimmen: im Uebungen-Tab folgt der Type dem aktuellen Toggle.
+  // In Plan-Add-Kontexten (Trainingstag-Bearbeitung) defaultet auf Kraft, weil Cardio dort selten neu angelegt wird.
+  newExType = (newExContext === 'exercises' && exMode === 'cardio') ? 'cardio' : 'strength';
   document.getElementById('new-ex-name').value = '';
   document.getElementById('new-ex-muscle').value = 'chest';
-  document.querySelector('#modal-new-ex .sheet-title').textContent = 'Neue Übung erstellen';
+  const titleEl = document.querySelector('#modal-new-ex .sheet-title');
+  if (titleEl) titleEl.textContent = newExType === 'cardio'
+    ? 'Neue Cardio-Einheit erstellen' : 'Neue Übung erstellen';
+  _applyNewExModalTypeUI();
   openModal('modal-new-ex');
 }
 
 function saveNewEx() {
   const name = document.getElementById('new-ex-name').value.trim();
   if (!name) { showToast('Bitte Namen eingeben'); return; }
-  const muscle = document.getElementById('new-ex-muscle').value;
   const exs = DB.getExercises();
-  const cat = muscle === 'legs' ? 'legs'
-            : (muscle === 'back' || muscle === 'biceps') ? 'pull'
-            : 'push';
 
   // Edit-mode (from exercises catalog)
   if (editingExerciseId) {
     const ex = exs.find(e => e.id === editingExerciseId);
     if (ex) {
       ex.name = name;
-      ex.muscle = muscle;
-      ex.category = cat;
+      if (exType(ex) === 'cardio') {
+        // Type bleibt cardio, kein Muskel/Kategorie
+      } else {
+        const muscle = document.getElementById('new-ex-muscle').value;
+        const cat = muscle === 'legs' ? 'legs'
+                  : (muscle === 'back' || muscle === 'biceps') ? 'pull'
+                  : 'push';
+        ex.muscle = muscle;
+        ex.category = cat;
+      }
       DB.saveExercises(exs);
     }
     editingExerciseId = null;
@@ -3026,8 +4113,16 @@ function saveNewEx() {
   }
 
   // Create new
-  const id = 'custom_' + Date.now();
-  exs.push({ id, name, muscle, category: cat, isCustom: true, notes: '' });
+  const id = (newExType === 'cardio' ? 'cd_' : 'custom_') + Date.now();
+  if (newExType === 'cardio') {
+    exs.push({ id, name, type: 'cardio', isCustom: true, notes: '' });
+  } else {
+    const muscle = document.getElementById('new-ex-muscle').value;
+    const cat = muscle === 'legs' ? 'legs'
+              : (muscle === 'back' || muscle === 'biceps') ? 'pull'
+              : 'push';
+    exs.push({ id, name, muscle, category: cat, type: 'strength', isCustom: true, notes: '' });
+  }
   DB.saveExercises(exs);
   closeModal('modal-new-ex');
 
@@ -3476,7 +4571,8 @@ async function driveUploadFile(id, payload) {
 // ─── Daten-Bundle (lokal → Cloud) ────────────────────
 function collectLocalData() {
   return {
-    version: 2, // v2 = Multi-Plan-Struktur (plans-Array statt einzeln plan/program/weekplan)
+    // v3 = Multi-Plan + Cardio (exercises haben type, workouts haben optional cardio-Block)
+    version: 3,
     exportedAt: new Date().toISOString(),
     lastLocalChange: driveGetLastLocalChange(),
     exercises: DB.getExercises(),
@@ -3491,6 +4587,17 @@ function driveApplyCloudData(data) {
   if (!data || typeof data !== 'object') throw new Error('Cloud-Daten leer');
   if (!Array.isArray(data.exercises)) throw new Error('Cloud-Daten: exercises fehlt/ungültig');
   if (!Array.isArray(data.workouts)) throw new Error('Cloud-Daten: workouts fehlt/ungültig');
+
+  // Schema-Migration v1→v2→v3 (idempotent, laeuft bei jedem Load).
+  // v2→v3: exercises bekommen type:'strength' wenn fehlt. Workouts bleiben kompatibel
+  // (Cardio-Eintraege haben type:'cardio'+cardio-Block, neue Felder lassen alte Clients
+  // einfach ignorieren).
+  const cloudVersion = parseInt(data.version, 10) || 1;
+  if (cloudVersion < 3) {
+    data.exercises = data.exercises.map(ex =>
+      (ex && ex.type === undefined) ? { ...ex, type: 'strength' } : ex
+    );
+  }
 
   let plansArray;
   if (Array.isArray(data.plans)) {
