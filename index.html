@@ -453,6 +453,10 @@
       <span>Übungen zum Plan hinzufügen</span>
     </div>
     <div class="sheet-body">
+      <div class="ex-mode-toggle" style="margin-bottom:10px;align-self:flex-start">
+        <div class="ex-mode-pill mode-strength active" id="plan-add-pill-strength" onclick="setPlanAddMode('strength')">Kraft</div>
+        <div class="ex-mode-pill mode-cardio" id="plan-add-pill-cardio" onclick="setPlanAddMode('cardio')">Cardio</div>
+      </div>
       <input class="sheet-search" type="search" placeholder="🔍 Übung suchen…" id="plan-add-search" oninput="filterPlanAdd()" autocomplete="off">
       <div class="sheet-list" id="plan-add-list"></div>
       <div class="plan-add-footer">

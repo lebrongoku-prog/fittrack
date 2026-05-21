@@ -1316,18 +1316,23 @@ function renderWorkoutsScreen() {
   }
 
   // Tabs + cards
+  const addWrap = document.getElementById('wo-add-ex-wrap');
   if (activeOnSelected) {
     renderActiveWorkout();
-    document.getElementById('wo-add-ex-wrap').style.display = '';
+    // Active-Mode: Button schreibt in Workout + Plan-Tag (wie bisher)
+    addWrap.style.display = '';
+    addWrap.innerHTML = `<button class="btn btn-ghost btn-full" onclick="openAddExModal('active')">+ Übung hinzufügen</button>`;
     if (!timerInterval) startTimer();
   } else if (planDay) {
     renderPreviewWorkout(planDay);
-    document.getElementById('wo-add-ex-wrap').style.display = 'none';
+    // Preview-Mode: Button schreibt nur in den Plan-Tag (kein aktives Workout vorhanden)
+    addWrap.style.display = '';
+    addWrap.innerHTML = `<button class="btn btn-ghost btn-full" onclick="openAddExModal('preview')">+ Übung zum Trainingstag hinzufügen</button>`;
     stopTimer();
   } else {
     document.getElementById('ex-tab-bar').innerHTML = '';
     document.getElementById('active-ex-list').innerHTML = '';
-    document.getElementById('wo-add-ex-wrap').style.display = 'none';
+    addWrap.style.display = 'none';
     stopTimer();
   }
 }
@@ -2110,6 +2115,11 @@ function togglePauseWorkout() {
 // Add-Ex-Modal kann Kraft oder Cardio listen. Default vom letzten Aufruf des Uebungen-Tabs uebernehmen,
 // wenn der User dort gerade in einem Modus arbeitet.
 let addExMode = 'strength'; // 'strength' | 'cardio'
+// Context bestimmt, wo die Uebung beim Klick landet.
+// 'active'  → in den aktiven Workout-Eintrag + verlinkten Plan-Tag (wie bisher)
+// 'preview' → nur in den Plan-Tag des im Workouts-Tab gerade selektierten Tages (kein Workout aktiv)
+let addExContext = 'active'; // 'active' | 'preview'
+
 function setAddExMode(mode) {
   if (mode !== 'strength' && mode !== 'cardio') return;
   if (addExMode === mode) return;
@@ -2120,7 +2130,9 @@ function setAddExMode(mode) {
   renderAddExList(document.getElementById('add-ex-search').value || '');
 }
 
-function openAddExModal() {
+function openAddExModal(context) {
+  // Kontext speichern — Default 'active' fuer Rueckwaerts-Kompatibilitaet
+  addExContext = (context === 'preview') ? 'preview' : 'active';
   // Initialer Modus: wenn der User gerade im Cardio-Modus im Uebungen-Tab ist, dort starten.
   addExMode = (exMode === 'cardio') ? 'cardio' : 'strength';
   document.querySelectorAll('#modal-add-ex .ex-mode-pill').forEach(p => p.classList.remove('active'));
@@ -2215,8 +2227,49 @@ function renderAddExList(q) {
 }
 function addExToWorkout(exId) {
   const ex = getEx(exId); if (!ex) return;
-  const wo = DB.getActive();
   const isCardio = exType(ex) === 'cardio';
+
+  // Preview-Kontext: Workouts-Tab zeigt einen Plan-Tag in der Vorschau (kein laufendes Workout).
+  // Uebung NUR in den Plan-Tag eintragen, kein DB.saveActive.
+  if (addExContext === 'preview') {
+    const wp = DB.getWeekPlan();
+    const selDay = wp[selectedWorkoutDayIdx];
+    const planDayId = selDay && selDay.planDayId;
+    if (!planDayId) {
+      closeModal('modal-add-ex');
+      showToast('Kein Trainingstag ausgewählt');
+      return;
+    }
+    const plan = DB.getPlan();
+    const day = plan.find(d => d.id === planDayId);
+    if (!day) {
+      closeModal('modal-add-ex');
+      showToast('Trainingstag nicht gefunden');
+      return;
+    }
+    if (day.exercises.some(pe => pe.exId === exId)) {
+      closeModal('modal-add-ex');
+      showToast(`${ex.name} ist bereits im Trainingstag`);
+      return;
+    }
+    day.exercises.push(isCardio ? { exId } : { exId, targetSets: 3, targetReps: 8 });
+    DB.savePlan(plan);
+    // Falls trotz Preview-Kontext zufaellig ein passendes Active-Workout laeuft, mitziehen
+    syncActiveWorkoutWithPlanDay(planDayId);
+    closeModal('modal-add-ex');
+    renderWorkoutsScreen();
+    showToast(`${ex.name} zum Trainingstag hinzugefügt`);
+    return;
+  }
+
+  // Active-Kontext (Default): Uebung dem laufenden Workout + dem verlinkten Plan-Tag hinzufuegen.
+  const wo = DB.getActive();
+  if (!wo) {
+    // Defensive: openAddExModal('active') ohne laufendes Workout — abbrechen
+    closeModal('modal-add-ex');
+    showToast('Kein laufendes Workout');
+    return;
+  }
   // 1) Übung dem aktiven Workout hinzufügen
   if (isCardio) {
     wo.exercises.push({
@@ -3948,8 +4001,26 @@ function savePlanDay() {
 }
 
 let planAddSelection = new Set();
+// Plan-Add-Sheet kann Kraft oder Cardio listen — analog zum Add-to-Workout-Modal.
+// Beim Oeffnen vom Uebungen-Tab-Modus (exMode) initialisiert, danach lokal toggle-bar.
+let planAddMode = 'strength'; // 'strength' | 'cardio'
+
+function setPlanAddMode(mode) {
+  if (mode !== 'strength' && mode !== 'cardio') return;
+  if (planAddMode === mode) return;
+  planAddMode = mode;
+  document.querySelectorAll('#modal-add-to-plan .ex-mode-pill').forEach(p => p.classList.remove('active'));
+  const activePill = document.getElementById(`plan-add-pill-${mode}`);
+  if (activePill) activePill.classList.add('active');
+  renderPlanAddList(document.getElementById('plan-add-search').value || '');
+}
 
 function openAddToPlanModal() {
+  // Initialer Modus: wenn der User im Uebungen-Tab gerade Cardio anschaut, dort starten
+  planAddMode = (exMode === 'cardio') ? 'cardio' : 'strength';
+  document.querySelectorAll('#modal-add-to-plan .ex-mode-pill').forEach(p => p.classList.remove('active'));
+  const activePill = document.getElementById(`plan-add-pill-${planAddMode}`);
+  if (activePill) activePill.classList.add('active');
   document.getElementById('plan-add-search').value = '';
   planAddSelection.clear();
   renderPlanAddList('');
@@ -4003,9 +4074,47 @@ function renderPlanAddList(q) {
   const existing = new Set((plan[editingDayIdx]?.exercises || []).map(e => e.exId));
   const query = (q || '').toLowerCase();
 
+  // Cardio-Modus: flache alphabetische Liste, keine Muskelgruppen
+  if (planAddMode === 'cardio') {
+    const cardios = exs
+      .filter(e => exType(e) === 'cardio')
+      .filter(e => !query || e.name.toLowerCase().includes(query))
+      .sort((a,b) => a.name.localeCompare(b.name, 'de'));
+    if (!cardios.length) {
+      document.getElementById('plan-add-list').innerHTML =
+        '<p style="color:var(--text3);text-align:center;padding:20px">Keine Cardio-Einheit gefunden</p>';
+      return;
+    }
+    const c = 'var(--cardio)';
+    const itemsHTML = cardios.map(ex => {
+      const usingDays = getPlanDaysUsingExercise(ex.id);
+      const planTag = usingDays.length
+        ? '<span class="ex-item-plan-tag">Im aktuellen Plan</span>'
+        : '';
+      const inCurrent = existing.has(ex.id);
+      const selected = planAddSelection.has(ex.id);
+      const cls = `ex-item${inCurrent ? ' in-current-day' : ''}`;
+      const checkCls = inCurrent ? 'in-day' : (selected ? 'checked' : '');
+      const onclickAttr = inCurrent ? '' : `onclick="togglePlanAddSelection('${ex.id}')"`;
+      return `<div class="${cls}" style="--mc:${c}" ${onclickAttr}>
+        <div class="ex-item-head">
+          <div class="ex-item-stripe"></div>
+          <div class="ex-item-name">${ex.name}</div>
+          ${planTag}
+          <span class="plan-add-check ${checkCls}">✓</span>
+        </div>
+      </div>`;
+    }).join('');
+    document.getElementById('plan-add-list').innerHTML =
+      `<div class="ex-group" style="--mc:${c}"><div class="ex-list">${itemsHTML}</div></div>`;
+    return;
+  }
+
+  // Kraft-Modus: gruppiert nach Muskelgruppe (wie bisher)
   const byMuscle = {};
   MUSCLE_ORDER.forEach(m => byMuscle[m] = []);
   exs.forEach(e => {
+    if (exType(e) !== 'strength') return;
     if (query && !e.name.toLowerCase().includes(query)) return;
     if (byMuscle[e.muscle]) byMuscle[e.muscle].push(e);
   });
