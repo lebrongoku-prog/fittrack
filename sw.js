@@ -1,10 +1,15 @@
 // FitTrack Service Worker — Offline-Support
-const CACHE = 'fittrack-v8';
+const CACHE = 'fittrack-v11';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
+  './manifest.json',
+  './icon.svg',
+  './icon-192.png',
+  './icon-512.png',
+  './apple-touch-icon.png',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js'
 ];
 
