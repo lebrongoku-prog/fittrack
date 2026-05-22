@@ -4493,6 +4493,141 @@ function applyPlanImport() {
   showToast(parts.join(' • ') + ' ✓');
 }
 
+// ─── Uebungs-Import (nur in die Library, ohne Plan-Wrap) ──────────────
+// Format: { format: 'fittrack-exercises-import', version: 1, exercises: [...] }
+// Ein Eintrag: { type?: 'cardio'|'strength', name, muscle?, notes? }
+// Type fehlt → inferTypeFromName(name). By-name-Match ist type-aware:
+// Kraft- und Cardio-Variante gleichen Namens werden NICHT zusammengefuehrt.
+
+let pendingExercisesImport = null;
+
+function importExercises(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    event.target.value = '';
+    let data;
+    try { data = JSON.parse(e.target.result); }
+    catch { showToast('Datei ist kein gültiges JSON'); return; }
+    if (data.format !== 'fittrack-exercises-import') {
+      showToast('Falsches Format — erwartet "fittrack-exercises-import"');
+      return;
+    }
+    if (!Array.isArray(data.exercises) || data.exercises.length === 0) {
+      showToast('Import enthält keine Übungen');
+      return;
+    }
+    for (const ex of data.exercises) {
+      if (!ex.name || typeof ex.name !== 'string' || !ex.name.trim()) {
+        showToast('Übung ohne Name gefunden — Import abgebrochen');
+        return;
+      }
+    }
+
+    // Preview-Statistik fuer das Confirm-Modal: wie viele neu, wie viele schon da
+    const existing = DB.getExercises();
+    let willCreate = 0, willReuse = 0, cardioNew = 0, strengthNew = 0;
+    for (const ie of data.exercises) {
+      const wantType = (ie.type === 'cardio' || ie.type === 'strength')
+        ? ie.type
+        : inferTypeFromName(ie.name);
+      const norm = ie.name.trim().toLowerCase();
+      const match = existing.find(e =>
+        e.name.trim().toLowerCase() === norm && exType(e) === wantType
+      );
+      if (match) willReuse++;
+      else {
+        willCreate++;
+        if (wantType === 'cardio') cardioNew++; else strengthNew++;
+      }
+    }
+
+    pendingExercisesImport = data;
+    const total = data.exercises.length;
+    const breakdown = [];
+    if (cardioNew) breakdown.push(`${cardioNew} Cardio`);
+    if (strengthNew) breakdown.push(`${strengthNew} Kraft`);
+    const newDetail = breakdown.length ? ` (${breakdown.join(', ')})` : '';
+    const lines = [
+      `Insgesamt <strong>${total}</strong> Übung${total === 1 ? '' : 'en'} im Import.`,
+      willCreate ? `<strong>${willCreate}</strong> werden neu angelegt${newDetail}.` : null,
+      willReuse ? `<strong>${willReuse}</strong> existieren bereits in deiner Library und werden übersprungen.` : null,
+    ].filter(Boolean);
+    document.getElementById('exercises-import-summary').innerHTML = lines.join('<br>');
+    openModal('modal-exercises-import');
+  };
+  reader.readAsText(file);
+}
+
+function cancelExercisesImport() {
+  closeModal('modal-exercises-import');
+  pendingExercisesImport = null;
+}
+
+function confirmExercisesImport() {
+  closeModal('modal-exercises-import');
+  applyExercisesImport();
+}
+
+function applyExercisesImport() {
+  const data = pendingExercisesImport;
+  pendingExercisesImport = null;
+  if (!data) return;
+
+  const exs = DB.getExercises();
+  let newExCount = 0;
+  let reusedExCount = 0;
+  let _idCounter = 0;
+  const genId = (prefix) => `${prefix}_${Date.now()}_${_idCounter++}`;
+
+  for (const ie of data.exercises) {
+    const declaredType = (ie.type === 'cardio' || ie.type === 'strength') ? ie.type : null;
+    const wantType = declaredType || inferTypeFromName(ie.name);
+    const norm = ie.name.trim().toLowerCase();
+    const existing = exs.find(e =>
+      e.name.trim().toLowerCase() === norm && exType(e) === wantType
+    );
+    if (existing) {
+      reusedExCount++;
+      continue;
+    }
+    if (wantType === 'cardio') {
+      exs.push({
+        id: genId('cd'),
+        name: ie.name.trim(),
+        type: 'cardio',
+        isCustom: true,
+        notes: (typeof ie.notes === 'string' ? ie.notes : ''),
+      });
+    } else {
+      const muscle = VALID_MUSCLES.includes(ie.muscle) ? ie.muscle : inferMuscleFromName(ie.name);
+      const category = muscle === 'legs' ? 'legs'
+                     : (muscle === 'back' || muscle === 'biceps') ? 'pull'
+                     : 'push';
+      exs.push({
+        id: genId('custom'),
+        name: ie.name.trim(),
+        muscle, category,
+        type: 'strength',
+        isCustom: true,
+        notes: (typeof ie.notes === 'string' ? ie.notes : ''),
+      });
+    }
+    newExCount++;
+  }
+  DB.saveExercises(exs);
+
+  // UI-Refresh: wenn der User aktuell im Uebungen-Tab ist, dort neu rendern
+  if (currentScreen === 'exercises') renderExercises();
+
+  const parts = [
+    newExCount ? `${newExCount} neue Übung${newExCount === 1 ? '' : 'en'}` : null,
+    reusedExCount ? `${reusedExCount} bereits vorhanden` : null,
+  ].filter(Boolean);
+  showToast((parts.length ? parts.join(' • ') : 'Nichts zu importieren') + ' ✓');
+}
+
 // ═══════════════════════════════════════════════
 // MODAL HELPERS
 // ═══════════════════════════════════════════════

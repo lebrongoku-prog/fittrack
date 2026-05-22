@@ -301,6 +301,16 @@
           <div class="mehr-row-action">›</div>
         </div>
         <input type="file" id="plan-import-input" accept=".json" style="display:none" onchange="importTrainingPlan(event)">
+        <div class="divider"></div>
+        <div class="mehr-row" onclick="document.getElementById('exercises-import-input').click()" style="cursor:pointer">
+          <div class="mehr-row-icon" style="background:#e0f7f3">🏋️</div>
+          <div class="mehr-row-info">
+            <div class="mehr-row-label">Übungen importieren</div>
+            <div class="mehr-row-sub">Kraft- oder Cardio-Übungen-JSON in die Library laden</div>
+          </div>
+          <div class="mehr-row-action">›</div>
+        </div>
+        <input type="file" id="exercises-import-input" accept=".json" style="display:none" onchange="importExercises(event)">
       </div>
     </div>
 
@@ -663,6 +673,21 @@
       <div style="display:flex;flex-direction:column;gap:10px">
         <button class="btn btn-primary btn-full" onclick="confirmPlanImport()">Importieren</button>
         <button class="btn btn-ghost btn-full" onclick="cancelPlanImport()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Uebungs-Import Bestätigung -->
+<div id="modal-exercises-import" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Übungen importieren?</div>
+    <div class="sheet-body">
+      <p id="exercises-import-summary" style="font-size:14px;color:var(--text2);margin-bottom:18px;line-height:1.5"></p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-primary btn-full" onclick="confirmExercisesImport()">Importieren</button>
+        <button class="btn btn-ghost btn-full" onclick="cancelExercisesImport()">Abbrechen</button>
       </div>
     </div>
   </div>
