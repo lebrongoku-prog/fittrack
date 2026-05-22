@@ -103,6 +103,21 @@ function inferMuscleFromName(name) {
   return 'triceps';
 }
 
+// Cardio-Heuristik fuer den Plan-Import: wenn das JSON kein explizites type-Feld setzt,
+// versuchen wir den Typ aus dem Uebungsnamen abzuleiten. Faengt typische Cardio-Begriffe
+// auf Deutsch + Englisch ab (Laufen, Run, Bike, Rudern, Schwimmen, etc.).
+// `\b...\w*\b` matched Wortanfang + optionale Endungen (Intervalle, Laufen, …).
+function inferTypeFromName(name) {
+  const n = (name||'').toLowerCase();
+  if (/\b(lauf|laufen|run|jog|sprint|cardio|tempo|interval)\w*\b/i.test(n)) return 'cardio';
+  if (/\b(bike|fahrrad|radfahren|spinning)\w*\b/i.test(n)) return 'cardio';
+  if (/\b(schwimm|swim)\w*\b/i.test(n)) return 'cardio';
+  if (/\b(ruder|rower|rowing)\w*\b/i.test(n)) return 'cardio';
+  if (/\b(crosstrainer|ellipt)\w*\b/i.test(n)) return 'cardio';
+  if (/\b(seilspring|jump\s*rope)\w*\b/i.test(n)) return 'cardio';
+  return 'strength';
+}
+
 // Color for a workout exercise card – based on its muscle group
 function colorForExercise(workoutEx) {
   const ex = getEx(workoutEx.exId || workoutEx.id);
@@ -4373,9 +4388,14 @@ function applyPlanImport() {
   let newExCount = 0;
   let reusedExCount = 0;
 
-  const findExByName = (name) => {
+  // By-name-Match ist type-aware: bei Cardio nur unter Cardio-Eintraegen suchen
+  // (sonst koennte eine Cardio-Uebung versehentlich auf eine gleichnamige Kraft-Uebung gemappt werden).
+  const findExByName = (name, type) => {
     const norm = name.trim().toLowerCase();
-    return exs.find(e => e.name.trim().toLowerCase() === norm);
+    return exs.find(e =>
+      e.name.trim().toLowerCase() === norm &&
+      (!type || exType(e) === type)
+    );
   };
 
   let _idCounter = 0;
@@ -4383,10 +4403,27 @@ function applyPlanImport() {
 
   const importedDays = data.trainingDays.map(day => {
     const exercises = (day.exercises || []).map(ie => {
-      let ex = findExByName(ie.name);
+      // Type bestimmen: explizit aus JSON, sonst per Namens-Heuristik
+      const declaredType = (ie.type === 'cardio' || ie.type === 'strength') ? ie.type : null;
+      const wantType = declaredType || inferTypeFromName(ie.name);
+      const isCardio = wantType === 'cardio';
+
+      let ex = findExByName(ie.name, wantType);
       if (ex) {
         reusedExCount++;
+      } else if (isCardio) {
+        // Neue Cardio-Uebung anlegen (kein muscle, kein category, type:'cardio')
+        ex = {
+          id: genId('cd'),
+          name: ie.name.trim(),
+          type: 'cardio',
+          isCustom: true,
+          notes: (typeof ie.notes === 'string' ? ie.notes : ''),
+        };
+        exs.push(ex);
+        newExCount++;
       } else {
+        // Neue Kraft-Uebung wie bisher
         const muscle = VALID_MUSCLES.includes(ie.muscle) ? ie.muscle : inferMuscleFromName(ie.name);
         const category = muscle === 'legs' ? 'legs'
                        : (muscle === 'back' || muscle === 'biceps') ? 'pull'
@@ -4395,11 +4432,17 @@ function applyPlanImport() {
           id: genId('custom'),
           name: ie.name.trim(),
           muscle, category,
+          type: 'strength',
           isCustom: true,
           notes: (typeof ie.notes === 'string' ? ie.notes : ''),
         };
         exs.push(ex);
         newExCount++;
+      }
+
+      // Plan-Day-Eintrag: Cardio ohne targetSets/Reps/Weight
+      if (isCardio) {
+        return { exId: ex.id };
       }
       const planEx = {
         exId: ex.id,
