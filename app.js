@@ -4464,6 +4464,24 @@ function applyPlanImport() {
   const startDate = tp?.startDate ? (_dateToMs(tp.startDate) || Date.now()) : Date.now();
   const endDate = startDate + weeksTotal * 7 * 24 * 3600 * 1000;
 
+  // weekPlan: Default, oder ueberschrieben durch JSON-Block (by-name-Mapping auf trainingDays)
+  let weekPlan = JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
+  const wpFromJson = tp?.weekPlan || data.weekPlan;
+  if (Array.isArray(wpFromJson)) {
+    // trainingDay-Name → erzeugte ID
+    const dayIdByName = {};
+    importedDays.forEach(d => { dayIdByName[d.name.trim().toLowerCase()] = d.id; });
+    weekPlan = weekPlan.map(slot => {
+      const match = wpFromJson.find(w => w && w.dayKey === slot.dayKey);
+      if (!match) return slot;
+      // null/leer/false → expliziter Ruhetag
+      const name = (typeof match.trainingDay === 'string') ? match.trainingDay.trim() : '';
+      if (!name) return { ...slot, planDayId: null };
+      const id = dayIdByName[name.toLowerCase()];
+      return { ...slot, planDayId: id || null };
+    });
+  }
+
   // Neuen Plan erstellen
   const plans = DB.getPlans();
   const newPlan = {
@@ -4471,7 +4489,7 @@ function applyPlanImport() {
     name: planName,
     weeksTotal, startDate, endDate,
     trainingDays: importedDays,
-    weekPlan: JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN)),
+    weekPlan,
     archived: false,
     createdAt: Date.now(),
   };
