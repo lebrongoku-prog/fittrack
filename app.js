@@ -2536,12 +2536,19 @@ function renderCardioDistanceChart(ws) {
     options: {
       responsive: true, maintainAspectRatio: false,
       animation: { duration: 500 },
+      // Top-Padding fuer das Last-Bar-Label-Plugin
+      layout: { padding: { top: 28 } },
       plugins: {
         legend: { display: false },
         tooltip: { enabled: true, callbacks: { label: c => `${c.raw} km` } }
       },
       scales: {
-        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false }, ticks: { callback: v => `${v}` , font:{size:11} } },
+        y: {
+          beginAtZero: true,
+          grace: '10%',
+          grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
+          ticks: { callback: v => `${v}` , font:{size:11} }
+        },
         x: { grid: { display: false }, ticks: { font:{size:11} } }
       }
     },
@@ -2687,6 +2694,9 @@ function renderVolumeChart(ws) {
     options: {
       responsive: true, maintainAspectRatio: false,
       animation: { duration: 600 },
+      // Top-Padding gibt dem Custom-Label-Plugin (lastPointLabel) Platz, damit das Badge
+      // ueber dem letzten Punkt nicht am oberen Chart-Rand abgeschnitten wird.
+      layout: { padding: { top: 28 } },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -2695,7 +2705,13 @@ function renderVolumeChart(ws) {
         }
       },
       scales: {
-        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false }, ticks: { callback: v => isKg ? (fmtNum(v)+'k') : v, font:{size:11} } },
+        y: {
+          beginAtZero: true,
+          // Reserve ~10% ueber dem Max-Wert, damit der letzte Punkt nicht direkt am Top liegt
+          grace: '10%',
+          grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
+          ticks: { callback: v => isKg ? (fmtNum(v)+'k') : v, font:{size:11} }
+        },
         x: { grid: { display: false }, ticks: { font:{size:11} } }
       }
     },
@@ -2742,8 +2758,7 @@ function renderMuscleBars(vol, container) {
     const v = vol[m] || 0;
     if (!v) return '';
     const pct = Math.round(v / maxVol * 100);
-    return `<div class="muscle-bar-v2-row" style="--mc:${muscleColor(m)};--mc-bg:${muscleBg(m)}">
-      <div class="muscle-icon-wrap">${muscleIconSvg(m, 16)}</div>
+    return `<div class="muscle-bar-v2-row no-icon" style="--mc:${muscleColor(m)};--mc-bg:${muscleBg(m)}">
       <span class="muscle-bar-v2-name">${muscleName(m)}</span>
       <div class="muscle-bar-v2-bar"><div class="muscle-bar-v2-fill" style="width:${pct}%"></div></div>
       <span class="muscle-bar-v2-val">${fmtNum(v)} kg</span>
@@ -2780,8 +2795,7 @@ function prHTML(pr, number) {
   const setsStr = pr.sets ? `${pr.sets.length}×${pr.sets[0]?.reps||'?'}` : '';
   const num = number || 1;
   const valColor = muscleColor(muscleKey);
-  return `<div class="pr-v2-row" style="--mc:${valColor};--mc-bg:${muscleBg(muscleKey)}" onclick="showHistDetailForEx('${pr.exId}')">
-    <div class="pr-v2-icon">${muscleIconSvg(muscleKey, 18)}</div>
+  return `<div class="pr-v2-row no-icon" style="--mc:${valColor};--mc-bg:${muscleBg(muscleKey)}" onclick="showHistDetailForEx('${pr.exId}')">
     <div class="pr-v2-num">${num}</div>
     <div>
       <div class="pr-v2-name">${pr.name}</div>
