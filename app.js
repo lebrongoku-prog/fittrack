@@ -632,6 +632,20 @@ function _scrollTabContainerTo(name) {
 }
 
 // Setzt body-Theme-Klasse + Bottom-Nav-Highlight + ruft den Renderer fuer den Tab auf.
+// Synchronisiert <meta name="theme-color"> mit der aktuellen Tab-Akzentfarbe.
+// Wirkt sich in Safari (Browser-Modus) auf die Browser-Chrome-Farbe aus und
+// gibt iOS einen Hinweis fuer den Status-Bar-Bereich im PWA-Modus.
+function updateThemeColorMeta() {
+  const metaEl = document.querySelector('meta[name="theme-color"]');
+  if (!metaEl) return;
+  const cs = getComputedStyle(document.body);
+  // Auf themed Tabs: --accent-dark (deckt die Gradient-Oberkante besser),
+  // auf mehr-tab: --accent (deckt den Pseudo-Element-Strip).
+  const dark = cs.getPropertyValue('--accent-dark').trim();
+  const accent = cs.getPropertyValue('--accent').trim();
+  metaEl.setAttribute('content', dark || accent || '#0a2a6b');
+}
+
 function _applyTabState(name) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   const navEl = document.getElementById('nav-'+name);
@@ -640,6 +654,7 @@ function _applyTabState(name) {
   // Body-Theme: plan-detail teilt sich Theme + Akzentfarbe mit der Plans-Liste (Amber).
   const themeName = (name === 'plan-detail') ? 'plans' : name;
   document.body.className = 'theme-' + themeName;
+  updateThemeColorMeta();
 
   // Beim Wechsel zur Plans-Liste den Edit-Kontext zuruecksetzen.
   if (name === 'plans') editingPlanId = null;
@@ -5275,6 +5290,7 @@ function initTabScrollSync() {
         if (navEl) navEl.classList.add('active');
         const themeName = (name === 'plan-detail') ? 'plans' : name;
         document.body.className = 'theme-' + themeName;
+        updateThemeColorMeta();
         lastReported = name;
       }
 

@@ -84,6 +84,21 @@ body.theme-exercises {
 html, body { height: 100%; width: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
 body { display: flex; flex-direction: column; padding-top: var(--safe-t); transition: background 0.25s ease; }
 
+/* iOS Status-Bar-Strip (apple-mobile-web-app-status-bar-style:black-translucent):
+   Bei themed Tabs reicht der body-Gradient bis zum Bildschirmrand — Status-Bar ist farbig.
+   Beim Mehr-Tab ist der body-Background hell (var(--bg)); damit der weisse Status-Bar-Text
+   (Uhrzeit, Batterie) lesbar bleibt, legt das Pseudo-Element einen farbigen Strip ueber
+   die Status-Bar-Hoehe (var(--safe-t)). */
+body.theme-mehr::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--safe-t);
+  background: var(--accent);
+  z-index: 200;
+  pointer-events: none;
+}
+
 /* Themed tabs use the accent gradient as the page background */
 body.theme-overview,
 body.theme-workouts,
