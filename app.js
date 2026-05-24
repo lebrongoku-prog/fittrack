@@ -1381,13 +1381,15 @@ function renderPreviewWorkout(planDay) {
     const last = getLastExData(pe.exId);
     const targetW = last ? `${last.maxWeight} kg` : '–';
     const lastStr = last ? `Zuletzt: ${last.sets.length}×${last.sets[0]?.reps||'?'} @ ${last.maxWeight} kg` : '';
-    return `<div class="aex-v2" id="aex-${ei}" style="--c:${col.c};--c-bg:${col.bg}"
+    const exIdKey = pe.exId;
+    const collapsedCls = isAexExpanded(exIdKey) ? '' : 'collapsed';
+    return `<div class="aex-v2 ${collapsedCls}" id="aex-${ei}" style="--c:${col.c};--c-bg:${col.bg}"
                  ondragstart="aexDragStart(event,${ei},'preview','${planDay.id}')"
                  ondragend="aexDragEnd(event)"
                  ondragover="aexDragOver(event,${ei})"
                  ondragleave="aexDragLeave(event)"
                  ondrop="aexDrop(event,${ei})">
-      <div class="aex-v2-header">
+      <div class="aex-v2-header" onclick="toggleAexCollapse('${exIdKey}', event)">
         <span class="aex-drag-handle"
               onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
               onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">≡</span>
@@ -1396,6 +1398,7 @@ function renderPreviewWorkout(planDay) {
           <div class="aex-v2-name">${ex.name}</div>
           ${lastStr ? `<div class="aex-v2-last">${lastStr}</div>` : ''}
         </div>
+        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
       </div>
       <div class="aex-v2-body">
         <div class="aex-v2-table">
@@ -1430,13 +1433,15 @@ function buildPreviewCardioCardHTML(ex, ei, planDayId) {
     ? `Best: ${formatDistance(pr.longestDist)}` +
       (pr.fastestPace ? ` · ${formatPace(pr.fastestPace, 1)}/km` : '')
     : '';
-  return `<div class="aex-v2 aex-cardio" id="aex-${ei}"
+  const exIdKey = ex.id;
+  const collapsedCls = isAexExpanded(exIdKey) ? '' : 'collapsed';
+  return `<div class="aex-v2 aex-cardio ${collapsedCls}" id="aex-${ei}"
                ondragstart="aexDragStart(event,${ei},'preview','${planDayId}')"
                ondragend="aexDragEnd(event)"
                ondragover="aexDragOver(event,${ei})"
                ondragleave="aexDragLeave(event)"
                ondrop="aexDrop(event,${ei})">
-    <div class="aex-v2-header">
+    <div class="aex-v2-header" onclick="toggleAexCollapse('${exIdKey}', event)">
       <span class="aex-drag-handle"
             onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
             onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">≡</span>
@@ -1445,6 +1450,7 @@ function buildPreviewCardioCardHTML(ex, ei, planDayId) {
         <div class="aex-v2-name">${ex.name}</div>
         <div class="aex-v2-last">${lastStr}</div>
       </div>
+      <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
     </div>
     <div class="aex-cardio-form">
       <div class="aex-cardio-pace ${pr ? '' : 'empty'}">${prStr || 'Pace-Daten kommen mit dem ersten Lauf'}</div>
@@ -1483,13 +1489,15 @@ function renderActiveWorkout() {
     ).join('');
 
     const stateCls = ex.done ? 'done' : (ex.skipped ? 'skipped' : '');
-    return `<div class="aex-v2 ${stateCls}" id="aex-${ei}" style="--c:${col.c};--c-bg:${col.bg}"
+    const exIdKey = ex.exId || ex.id;
+    const collapsedCls = isAexExpanded(exIdKey) ? '' : 'collapsed';
+    return `<div class="aex-v2 ${stateCls} ${collapsedCls}" id="aex-${ei}" style="--c:${col.c};--c-bg:${col.bg}"
                  ondragstart="aexDragStart(event,${ei},'active')"
                  ondragend="aexDragEnd(event)"
                  ondragover="aexDragOver(event,${ei})"
                  ondragleave="aexDragLeave(event)"
                  ondrop="aexDrop(event,${ei})">
-      <div class="aex-v2-header">
+      <div class="aex-v2-header" onclick="toggleAexCollapse('${exIdKey}', event)">
         <span class="aex-drag-handle"
               onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
               onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">≡</span>
@@ -1503,6 +1511,7 @@ function renderActiveWorkout() {
           <div class="aex-v2-done-box">${ex.done?'<svg width="12" height="12" viewBox="0 0 24 24" stroke="white" fill="none" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':''}</div>
           <span>Erledigt</span>
         </label>
+        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
       </div>
       <div class="aex-v2-body">
         <div class="aex-v2-table">
@@ -1536,6 +1545,24 @@ function renderActiveWorkout() {
 
 function updateBottomBar() { /* bottom bar removed in v2 */ }
 
+// ─── Ein/Aus-Klapp-State der Workout-Tab-Cards ─────────────────────
+// Default: alle Cards eingeklappt. Klick auf den Card-Header togglet
+// fuer die jeweilige Uebung (per exId). State ist in-memory pro Session.
+const expandedAexIds = new Set();
+function isAexExpanded(exId) { return expandedAexIds.has(exId); }
+function toggleAexCollapse(exId, ev) {
+  if (ev) {
+    // Klicks auf Drag-Handle / Erledigt-Checkbox sollen NICHT togglen
+    const t = ev.target;
+    if (t.closest && (t.closest('.aex-drag-handle') || t.closest('.aex-v2-done'))) return;
+  }
+  if (expandedAexIds.has(exId)) expandedAexIds.delete(exId);
+  else expandedAexIds.add(exId);
+  if (currentScreen === 'workouts') renderWorkoutsScreen();
+}
+// SVG-Chevron-Snippet fuer die Card-Header (gemeinsame Konstante)
+const AEX_CHEV_SVG = '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>';
+
 // ─── Active-Workout: Cardio-Card ───────────────────────────────────
 // Cardio-Variante der Active-Exercise-Card. Verzichtet auf die Sets-Tabelle und
 // rendert stattdessen ein Form-Layout (Dauer / Distanz / Pace + Notiz).
@@ -1568,13 +1595,15 @@ function buildActiveCardioCardHTML(ex, ei) {
   const globalNotes = (getEx(ex.exId || ex.id)?.notes) || '';
   const notesShown = notesVal || globalNotes;
 
-  return `<div class="aex-v2 aex-cardio ${stateCls}" id="aex-${ei}"
+  const exIdKey = ex.exId || ex.id;
+  const collapsedCls = isAexExpanded(exIdKey) ? '' : 'collapsed';
+  return `<div class="aex-v2 aex-cardio ${stateCls} ${collapsedCls}" id="aex-${ei}"
                ondragstart="aexDragStart(event,${ei},'active')"
                ondragend="aexDragEnd(event)"
                ondragover="aexDragOver(event,${ei})"
                ondragleave="aexDragLeave(event)"
                ondrop="aexDrop(event,${ei})">
-    <div class="aex-v2-header">
+    <div class="aex-v2-header" onclick="toggleAexCollapse('${exIdKey}', event)">
       <span class="aex-drag-handle"
             onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
             onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">≡</span>
@@ -1588,6 +1617,7 @@ function buildActiveCardioCardHTML(ex, ei) {
         <div class="aex-v2-done-box">${checkSvg}</div>
         <span>Erledigt</span>
       </label>
+      <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
     </div>
     <div class="aex-cardio-form">
       <div class="aex-cardio-row">

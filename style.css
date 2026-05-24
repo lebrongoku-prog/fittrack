@@ -1055,6 +1055,23 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .aex-v2.done .aex-v2-inp     { background: #fff; }
 .aex-v2.done .aex-v2-inp.done-inp { background: var(--green); color: #fff; border-color: var(--green); }
 .aex-v2-header { display: flex; align-items: flex-start; gap: 10px; padding: 14px 14px 10px; }
+.aex-v2-header { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+/* Chevron-Indikator im Card-Header (zeigt ein/aus-Klapp-Status) */
+.aex-v2-chev {
+  width: 24px; height: 24px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text3);
+  transition: transform 0.18s ease;
+}
+.aex-v2-chev svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+.aex-v2.collapsed .aex-v2-chev { transform: rotate(-90deg); }
+
+/* Kollabierte Card: Body + Actions + Cardio-Form sind ausgeblendet, Header bleibt sichtbar */
+.aex-v2.collapsed .aex-v2-body,
+.aex-v2.collapsed .aex-v2-actions,
+.aex-v2.collapsed .aex-cardio-form { display: none; }
+.aex-v2.collapsed .aex-v2-header { padding-bottom: 14px; }
 .aex-v2-num {
   width: 32px; height: 32px; border-radius: 50%;
   background: var(--c, var(--accent)); color: #fff;
