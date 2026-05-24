@@ -1054,7 +1054,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .aex-v2.done .aex-v2-notes-area::placeholder { color: var(--green); opacity: 0.55; }
 .aex-v2.done .aex-v2-inp     { background: #fff; }
 .aex-v2.done .aex-v2-inp.done-inp { background: var(--green); color: #fff; border-color: var(--green); }
-.aex-v2-header { display: flex; align-items: flex-start; gap: 10px; padding: 14px 14px 10px; }
+.aex-v2-header { display: flex; align-items: center; gap: 10px; padding: 14px 14px 10px; }
 .aex-v2-header { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 
 /* Chevron-Indikator im Card-Header (zeigt ein/aus-Klapp-Status) */
