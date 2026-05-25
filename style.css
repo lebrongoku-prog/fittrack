@@ -155,10 +155,12 @@ body.theme-plans .hist-action-dd {
   scroll-snap-stop: always;
   /* Damit der Inhalt nicht unter der Bottom-Nav verschwindet */
   padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
-  /* Landscape auf iPhones mit Notch: padding-left/right halten Content von der
-     Notch-Seite weg. In Portrait sind safe-l/safe-r = 0px, also no-op. */
-  padding-left: var(--safe-l);
-  padding-right: var(--safe-r);
+  /* Landscape auf iPhones mit Notch: padding-left/right symmetrisch.
+     iOS liefert env(safe-area-inset-*) nur auf der Notch-Seite einen Wert >0
+     — wir nutzen max() von beiden, damit das Polster auf BEIDEN Seiten gleich
+     aussieht (kein asymmetrisches Layout). In Portrait sind beide 0, no-op. */
+  padding-left: max(var(--safe-l), var(--safe-r));
+  padding-right: max(var(--safe-l), var(--safe-r));
   /* Overscroll-Bounce am vertikalen Rand bleibt iOS-typisch erhalten */
   overscroll-behavior-y: auto;
   /* Horizontale Overscroll-Bewegung soll am Snap-Container ankommen, nicht hier */
@@ -209,12 +211,15 @@ body.theme-plans .hist-action-dd {
   border-top: 1px solid var(--border);
   display: flex; align-items: flex-start; padding-top: 8px;
   padding-bottom: var(--safe-b);
-  /* Landscape: Buttons von der Notch-Seite wegruecken */
-  padding-left: var(--safe-l);
-  padding-right: var(--safe-r);
+  /* Landscape: symmetrisches Notch-Polster auf beiden Seiten */
+  padding-left: max(var(--safe-l), var(--safe-r));
+  padding-right: max(var(--safe-l), var(--safe-r));
   z-index: 100;
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
+  /* box-shadow verlaengert den Nav-Background visuell um 4px nach unten —
+     deckt einen evtl. Subpixel-Spalt zwischen Nav-Bottom und Viewport-Rand ab. */
+  box-shadow: 0 4px 0 rgba(255,255,255,0.94);
 }
 /* Verstecken beim Runterscrollen — nach unten aus dem Viewport schieben */
 #bottom-nav.nav-hidden { transform: translateY(110%); }
