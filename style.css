@@ -80,13 +80,18 @@ body.theme-exercises {
   --section-tint:       rgba(30, 64, 175, 0.18);
   --card-accent-border: rgba(30, 64, 175, 0.35);
 }
-/* D1-Architektur: body bleibt durchgehend solid (var(--bg)), die Tab-Identitaet
-   (Gradient pro Tab) lebt ausschliesslich auf den `.screen`-Containern. Der safe-t-
-   Padding-Bereich wandert vom body in `.screen`, damit der Tab-Gradient bis ganz
-   hoch in die Status-Bar-Zone reicht. Body-Gradient + background-attachment:fixed
-   sind entfernt — das war auf iOS-PWA der Ausloeser fuer den Bottom-Sockel-Bug. */
+/* body.theme-mehr keeps the default (blue) */
 html, body { height: 100%; width: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
-body { display: flex; flex-direction: column; transition: background 0.25s ease; }
+body { display: flex; flex-direction: column; padding-top: var(--safe-t); transition: background 0.25s ease; }
+
+/* Themed tabs use the accent gradient as the page background */
+body.theme-overview,
+body.theme-workouts,
+body.theme-plans,
+body.theme-exercises {
+  background: var(--gradient);
+  background-attachment: fixed;
+}
 /* Header texts adapt to the dark themed backgrounds */
 body.theme-overview .ph h1,
 body.theme-workouts .ph h1,
@@ -146,10 +151,6 @@ body.theme-plans .hist-action-dd {
   -webkit-overflow-scrolling: touch;
   scroll-snap-align: start;
   scroll-snap-stop: always;
-  /* padding-top reserviert die Status-Bar-Zone INNERHALB des Scroll-Containers.
-     Beim Scrollen rollt der Bereich nach oben raus und Content zieht hinter die
-     transparente Status-Bar — der Vollbild-Effekt. */
-  padding-top: var(--safe-t);
   /* Damit der Inhalt nicht unter der Bottom-Nav verschwindet */
   padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
   /* Overscroll-Bounce am vertikalen Rand bleibt iOS-typisch erhalten */
@@ -189,34 +190,20 @@ body.theme-plans .hist-action-dd {
 #screen-workouts  { background: linear-gradient(135deg, #064E3B, #10B981); }
 #screen-exercises { background: linear-gradient(135deg, #172554, #1E40AF); }
 #screen-plans     { background: linear-gradient(135deg, #78350F, #F59E0B); }
-/* Mehr-Tab: solid hell, aber im Status-Bar-Bereich farbig getoent (var(--accent)),
-   damit der weisse Status-Bar-Text auch hier lesbar ist. */
-#screen-mehr {
-  background: linear-gradient(
-    to bottom,
-    var(--accent) 0,
-    var(--accent) var(--safe-t),
-    var(--bg) var(--safe-t),
-    var(--bg) 100%
-  );
-}
+#screen-mehr      { background: var(--bg); }
 /* Plan-Detail teilt Theme mit Plans (Amber). */
 #screen-plan-detail { background: linear-gradient(135deg, #78350F, #F59E0B); }
 
 /* ─── Bottom Nav ─── */
-/* Background mit 20% Tab-Akzentfarbe gemischt: damit nimmt der ganze Nav-Bereich
-   inkl. Safe-Area-Padding-Bottom die Tab-Tönung an — kein weisser Sockel-Balken mehr
-   neben den dunklen Tab-Gradients. `--accent` wechselt per body-Theme-Klasse, also
-   schwingt die Nav-Tönung automatisch mit dem aktiven Tab mit. */
 #bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0;
   height: calc(var(--nav-h) + var(--safe-b));
-  background: color-mix(in srgb, var(--accent) 20%, rgba(255,255,255,0.94) 80%);
+  background: rgba(255,255,255,0.94);
   -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
   border-top: 1px solid var(--border);
   display: flex; align-items: flex-start; padding-top: 8px;
   padding-bottom: var(--safe-b); z-index: 100;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background 0.25s ease;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
 }
 /* Verstecken beim Runterscrollen — nach unten aus dem Viewport schieben */
