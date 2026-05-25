@@ -39,6 +39,8 @@
   --nav-h:     60px;
   --safe-b:    env(safe-area-inset-bottom, 0px);
   --safe-t:    env(safe-area-inset-top, 0px);
+  --safe-l:    env(safe-area-inset-left, 0px);
+  --safe-r:    env(safe-area-inset-right, 0px);
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   -webkit-text-size-adjust: 100%;
 }
@@ -153,6 +155,10 @@ body.theme-plans .hist-action-dd {
   scroll-snap-stop: always;
   /* Damit der Inhalt nicht unter der Bottom-Nav verschwindet */
   padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
+  /* Landscape auf iPhones mit Notch: padding-left/right halten Content von der
+     Notch-Seite weg. In Portrait sind safe-l/safe-r = 0px, also no-op. */
+  padding-left: var(--safe-l);
+  padding-right: var(--safe-r);
   /* Overscroll-Bounce am vertikalen Rand bleibt iOS-typisch erhalten */
   overscroll-behavior-y: auto;
   /* Horizontale Overscroll-Bewegung soll am Snap-Container ankommen, nicht hier */
@@ -202,7 +208,11 @@ body.theme-plans .hist-action-dd {
   -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
   border-top: 1px solid var(--border);
   display: flex; align-items: flex-start; padding-top: 8px;
-  padding-bottom: var(--safe-b); z-index: 100;
+  padding-bottom: var(--safe-b);
+  /* Landscape: Buttons von der Notch-Seite wegruecken */
+  padding-left: var(--safe-l);
+  padding-right: var(--safe-r);
+  z-index: 100;
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
 }
