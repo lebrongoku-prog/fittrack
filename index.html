@@ -4,9 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <!-- black-translucent: iOS macht die Status-Bar transparent, der .screen-Gradient
+       scheint durch. Funktioniert sauber weil der body keinen background-attachment:fixed
+       Gradient mehr hat — der war vorher der Ausloeser fuer den Bottom-Sockel-Bug. -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FitTrack">
-  <meta name="theme-color" content="#f5f5f7">
+  <meta name="theme-color" content="#0a2a6b">
   <title>FitTrack</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
