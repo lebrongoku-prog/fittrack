@@ -204,17 +204,33 @@ body.theme-plans .hist-action-dd {
 #screen-plan-detail { background: linear-gradient(135deg, #78350F, #F59E0B); }
 
 /* ─── Bottom Nav ─── */
+/* Nav ist insgesamt nav-h + safe-b hoch (Klickbereich + Home-Indicator-Zone).
+   Damit der untere Safe-Area-Padding-Bereich nicht als weisser Sockel-Balken sichtbar
+   wird, traegt der weiss-blurry Background NUR die obere Icon-Region (Pseudo-Element
+   ::before). Der untere Bereich bleibt transparent — der `.screen`-Tab-Gradient
+   scheint durch (D1-Architektur: `.screen` ist height:100% und liegt unter der Nav). */
 #bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0;
   height: calc(var(--nav-h) + var(--safe-b));
-  background: rgba(255,255,255,0.94);
-  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border);
+  background: transparent;
   display: flex; align-items: flex-start; padding-top: 8px;
   padding-bottom: var(--safe-b); z-index: 100;
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
 }
+#bottom-nav::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: var(--nav-h);
+  background: rgba(255,255,255,0.94);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  pointer-events: none;
+}
+/* Buttons explizit ueber das Pseudo-Element legen, damit Icons/Labels sichtbar bleiben */
+.nav-btn { position: relative; z-index: 1; }
 /* Verstecken beim Runterscrollen — nach unten aus dem Viewport schieben */
 #bottom-nav.nav-hidden { transform: translateY(110%); }
 .nav-btn {
