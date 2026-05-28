@@ -644,17 +644,35 @@ const THEME_GRADIENTS = {
   mehr:      '',   // leerer String = transparent → solid body-bg scheint durch
 };
 let _bgActiveLayer = 'a';   // welcher Layer aktuell sichtbar ist ('a' oder 'b')
-function setThemeBackground(themeName) {
+// animate=true (Default): Crossfade ueber die CSS-Transition (450ms).
+// animate=false: Layer + body wechseln den Theme-Background instant, ohne Animation.
+//   Wird beim Tableisten-Klick benutzt — dort soll der Wechsel sofort sein.
+function setThemeBackground(themeName, animate) {
+  if (animate === undefined) animate = true;
   const newBg = THEME_GRADIENTS[themeName] !== undefined ? THEME_GRADIENTS[themeName] : '';
   const incomingId  = _bgActiveLayer === 'a' ? 'bg-fade-b' : 'bg-fade-a';
   const outgoingId  = _bgActiveLayer === 'a' ? 'bg-fade-a' : 'bg-fade-b';
   const incoming = document.getElementById(incomingId);
   const outgoing = document.getElementById(outgoingId);
   if (!incoming || !outgoing) return;
-  // Neuen Gradient auf den eingehenden Layer setzen, dann Opacity crossfaden
-  incoming.style.backgroundImage = newBg;
-  incoming.style.opacity = newBg ? '1' : '0';
-  outgoing.style.opacity = '0';
+  if (!animate) {
+    // Transitions kurzzeitig abschalten, instant umstellen, dann wieder einschalten.
+    // Force-Reflow zwischen den Aenderungen, damit Browser nicht doch interpoliert.
+    incoming.classList.add('no-anim');
+    outgoing.classList.add('no-anim');
+    document.body.classList.add('no-anim');
+    incoming.style.backgroundImage = newBg;
+    incoming.style.opacity = newBg ? '1' : '0';
+    outgoing.style.opacity = '0';
+    void incoming.offsetWidth;  // force reflow
+    incoming.classList.remove('no-anim');
+    outgoing.classList.remove('no-anim');
+    document.body.classList.remove('no-anim');
+  } else {
+    incoming.style.backgroundImage = newBg;
+    incoming.style.opacity = newBg ? '1' : '0';
+    outgoing.style.opacity = '0';
+  }
   _bgActiveLayer = _bgActiveLayer === 'a' ? 'b' : 'a';
 }
 
@@ -680,7 +698,10 @@ function _applyTabState(name) {
   // Body-Theme: plan-detail teilt sich Theme + Akzentfarbe mit der Plans-Liste (Amber).
   const themeName = (name === 'plan-detail') ? 'plans' : name;
   document.body.className = 'theme-' + themeName;
-  setThemeBackground(themeName);
+  // _applyTabState wird bei Tableisten-Klick + initialem App-Start aufgerufen —
+  // dort ist KEIN Crossfade gewuenscht (sofortiger Wechsel). Beim Swipe-Snap
+  // ruft der scroll-Handler in initTabScrollSync setThemeBackground mit Animation.
+  setThemeBackground(themeName, /*animate*/ false);
   updateThemeColorMeta();
 
   // Beim Wechsel zur Plans-Liste den Edit-Kontext zuruecksetzen.
@@ -5399,7 +5420,9 @@ function initTabScrollSync() {
         if (navEl) navEl.classList.add('active');
         const themeName = (name === 'plan-detail') ? 'plans' : name;
         document.body.className = 'theme-' + themeName;
-        setThemeBackground(themeName);
+        // Beim Swipe-Snap MIT Animation crossfaden — das ist der einzige Pfad,
+        // bei dem die Crossfade-Animation gewuenscht ist (User wechselt per Swipe).
+        setThemeBackground(themeName, /*animate*/ true);
         updateThemeColorMeta();
         lastReported = name;
       }

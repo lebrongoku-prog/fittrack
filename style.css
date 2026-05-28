@@ -134,18 +134,23 @@ body {
   background: transparent;
   display: flex; flex-direction: column;
   padding-top: var(--safe-t);
-  /* Body-Background ist `var(--bg)` solid (von html, body). Der themed Gradient
+  /* Body-Background ist transparent (von html, body). Der themed Gradient
      liegt jetzt auf den .bg-fade-layer Pseudo-Layern, die per JS-Opacity-Crossfade
      animiert werden (siehe setThemeBackground()). Hier transitionen nur noch
-     die UI-Akzent-Vars via @property — fuer Nav-Icons, Wochenplan-Streifen etc. */
+     die UI-Akzent-Vars via @property — fuer Nav-Icons, Wochenplan-Streifen etc.
+     Duration matched die Background-Crossfade-Duration (450ms). */
   transition:
-    --accent             0.85s cubic-bezier(0.4, 0, 0.6, 1),
-    --accent-dark        0.85s cubic-bezier(0.4, 0, 0.6, 1),
-    --accent-bg          0.85s cubic-bezier(0.4, 0, 0.6, 1),
-    --accent-soft        0.85s cubic-bezier(0.4, 0, 0.6, 1),
-    --gradient-from      0.85s cubic-bezier(0.4, 0, 0.6, 1),
-    --section-tint       0.85s cubic-bezier(0.4, 0, 0.6, 1),
-    --card-accent-border 0.85s cubic-bezier(0.4, 0, 0.6, 1);
+    --accent             0.45s cubic-bezier(0.4, 0, 0.6, 1),
+    --accent-dark        0.45s cubic-bezier(0.4, 0, 0.6, 1),
+    --accent-bg          0.45s cubic-bezier(0.4, 0, 0.6, 1),
+    --accent-soft        0.45s cubic-bezier(0.4, 0, 0.6, 1),
+    --gradient-from      0.45s cubic-bezier(0.4, 0, 0.6, 1),
+    --section-tint       0.45s cubic-bezier(0.4, 0, 0.6, 1),
+    --card-accent-border 0.45s cubic-bezier(0.4, 0, 0.6, 1);
+}
+/* Variante ohne Animation auf body — fuer Tableisten-Klicks. */
+body.no-anim {
+  transition: none;
 }
 
 /* Two-Layer Background-Crossfade: body hat KEIN background-image mehr.
@@ -159,8 +164,11 @@ body {
   z-index: -1;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.85s cubic-bezier(0.4, 0, 0.6, 1);
+  transition: opacity 0.45s cubic-bezier(0.4, 0, 0.6, 1);
 }
+/* Variante ohne Animation — wird via JS angehaengt, wenn der Tab via Tableisten-Klick
+   gewechselt wurde (nicht via Swipe). */
+.bg-fade-layer.no-anim { transition: none; }
 /* Header texts adapt to the dark themed backgrounds */
 body.theme-overview .ph h1,
 body.theme-workouts .ph h1,
