@@ -643,37 +643,54 @@ const THEME_GRADIENTS = {
   exercises: 'linear-gradient(135deg, #172554, #1E40AF)',
   mehr:      '',   // leerer String = transparent → solid body-bg scheint durch
 };
-let _bgActiveLayer = 'a';   // welcher Layer aktuell sichtbar ist ('a' oder 'b')
-// animate=true (Default): Crossfade ueber die CSS-Transition (450ms).
-// animate=false: Layer + body wechseln den Theme-Background instant, ohne Animation.
-//   Wird beim Tableisten-Klick benutzt — dort soll der Wechsel sofort sein.
-function setThemeBackground(themeName, animate) {
-  if (animate === undefined) animate = true;
-  const newBg = THEME_GRADIENTS[themeName] !== undefined ? THEME_GRADIENTS[themeName] : '';
-  const incomingId  = _bgActiveLayer === 'a' ? 'bg-fade-b' : 'bg-fade-a';
-  const outgoingId  = _bgActiveLayer === 'a' ? 'bg-fade-a' : 'bg-fade-b';
-  const incoming = document.getElementById(incomingId);
-  const outgoing = document.getElementById(outgoingId);
-  if (!incoming || !outgoing) return;
-  if (!animate) {
-    // Transitions kurzzeitig abschalten, instant umstellen, dann wieder einschalten.
-    // Force-Reflow zwischen den Aenderungen, damit Browser nicht doch interpoliert.
-    incoming.classList.add('no-anim');
-    outgoing.classList.add('no-anim');
-    document.body.classList.add('no-anim');
-    incoming.style.backgroundImage = newBg;
-    incoming.style.opacity = newBg ? '1' : '0';
-    outgoing.style.opacity = '0';
-    void incoming.offsetWidth;  // force reflow
-    incoming.classList.remove('no-anim');
-    outgoing.classList.remove('no-anim');
-    document.body.classList.remove('no-anim');
-  } else {
-    incoming.style.backgroundImage = newBg;
-    incoming.style.opacity = newBg ? '1' : '0';
-    outgoing.style.opacity = '0';
+// Swipe-gebundener Background-Uebergang.
+// Layer A traegt den FROM-Theme-Gradient, Layer B den TO-Theme-Gradient.
+// Die Opacities interpolieren kontinuierlich mit der Scroll-Position des Tab-Containers
+// (`progress` = scrollLeft / clientWidth, also der Tab-Index als Float).
+// Beim Tableisten-Klick wird `setThemeBackground(name, false)` statt der Swipe-Logik
+// aufgerufen — instant Wechsel ohne Crossfade.
+function updateBackgroundForSwipe(progress) {
+  const fromIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, Math.floor(progress)));
+  const toIdx   = Math.max(0, Math.min(TAB_ORDER.length - 1, Math.ceil(progress)));
+  const t = progress - fromIdx;
+  const fromName = TAB_ORDER[fromIdx];
+  const toName   = TAB_ORDER[toIdx];
+  const fromBg = THEME_GRADIENTS[fromName] || '';
+  const toBg   = THEME_GRADIENTS[toName]   || '';
+  const layerA = document.getElementById('bg-fade-a');
+  const layerB = document.getElementById('bg-fade-b');
+  if (!layerA || !layerB) return;
+  // Pro Frame: keine CSS-Animation, Layer folgen 1:1 dem Finger
+  layerA.classList.add('no-anim');
+  layerB.classList.add('no-anim');
+  if (layerA.dataset.theme !== fromName) {
+    layerA.style.backgroundImage = fromBg;
+    layerA.dataset.theme = fromName;
   }
-  _bgActiveLayer = _bgActiveLayer === 'a' ? 'b' : 'a';
+  if (layerB.dataset.theme !== toName) {
+    layerB.style.backgroundImage = toBg;
+    layerB.dataset.theme = toName;
+  }
+  layerA.style.opacity = String(1 - t);
+  layerB.style.opacity = String(t);
+}
+
+// Instant Set fuer Tableisten-Klick und App-Start.
+// Setzt Layer A auf das neue Theme mit opacity 1, Layer B opacity 0 — ohne Animation.
+function setThemeBackground(themeName, animate) {
+  const newBg = THEME_GRADIENTS[themeName] !== undefined ? THEME_GRADIENTS[themeName] : '';
+  const layerA = document.getElementById('bg-fade-a');
+  const layerB = document.getElementById('bg-fade-b');
+  if (!layerA || !layerB) return;
+  layerA.classList.add('no-anim');
+  layerB.classList.add('no-anim');
+  layerA.style.backgroundImage = newBg;
+  layerA.dataset.theme = themeName;
+  layerA.style.opacity = newBg ? '1' : '0';
+  layerB.style.backgroundImage = '';
+  layerB.style.opacity = '0';
+  layerB.dataset.theme = '';
+  void layerA.offsetWidth;  // force reflow, damit der instant Wechsel sicher greift
 }
 
 // Synchronisiert <meta name="theme-color"> mit der aktuellen Tab-Akzentfarbe.
@@ -5408,8 +5425,12 @@ function initTabScrollSync() {
       ticking = false;
       const w = container.clientWidth;
       if (w <= 0) return;
+      // Swipe-gebundener Background-Uebergang: pro Frame Layer-Opacities mit
+      // aktueller Scroll-Position interpolieren — Background folgt dem Finger 1:1.
+      const progress = container.scrollLeft / w;
+      updateBackgroundForSwipe(progress);
       // Aktuell sichtbaren Tab anhand der naechstgelegenen Snap-Position bestimmen
-      const idx = Math.round(container.scrollLeft / w);
+      const idx = Math.round(progress);
       const clamped = Math.max(0, Math.min(TAB_ORDER.length - 1, idx));
       const name = TAB_ORDER[clamped];
 
@@ -5420,9 +5441,8 @@ function initTabScrollSync() {
         if (navEl) navEl.classList.add('active');
         const themeName = (name === 'plan-detail') ? 'plans' : name;
         document.body.className = 'theme-' + themeName;
-        // Beim Swipe-Snap MIT Animation crossfaden — das ist der einzige Pfad,
-        // bei dem die Crossfade-Animation gewuenscht ist (User wechselt per Swipe).
-        setThemeBackground(themeName, /*animate*/ true);
+        // Background-Update passiert kontinuierlich via updateBackgroundForSwipe
+        // (siehe unten) — hier nur theme-color meta sync.
         updateThemeColorMeta();
         lastReported = name;
       }
