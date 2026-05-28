@@ -643,6 +643,20 @@ const THEME_GRADIENTS = {
   exercises: 'linear-gradient(135deg, #172554, #1E40AF)',
   mehr:      'linear-gradient(135deg, #DBEAFE, #DBEAFE)',   // solid hellblau, kein sichtbarer Verlauf
 };
+// Solide Wurzel-Hintergrundfarbe pro Theme = unterer (heller) Gradient-Stop.
+// WICHTIG: iOS faerbt den unteren Safe-Area-/Overscroll-Bereich (hinter dem Home-
+// Indicator) mit der background-COLOR des <html>-Elements — NICHT mit dem
+// background-image (Gradient). Das Setzen des Gradients allein reicht daher nicht;
+// der helle Default (var(--bg)) blieb dort als Sockel-Balken sichtbar. Diese Farben
+// matchen den unteren Rand des jeweiligen Gradients. mehr-Tab fehlt absichtlich
+// (faellt via '' auf die CSS-Regel html { background: var(--bg) } zurueck — passt
+// zum hellen #screen-mehr Hintergrund).
+const THEME_CANVAS_COLOR = {
+  overview:  '#0891B2',
+  workouts:  '#10B981',
+  plans:     '#F59E0B',
+  exercises: '#1E40AF',
+};
 // Swipe-gebundener Background-Uebergang.
 // Layer A traegt den FROM-Theme-Gradient, Layer B den TO-Theme-Gradient.
 // Die Opacities interpolieren kontinuierlich mit der Scroll-Position des Tab-Containers
@@ -687,6 +701,9 @@ function setThemeBackground(themeName, animate) {
   // Balken. Da derselbe Gradient ueber dieselbe Viewport-Box laeuft, ist die
   // Abdeckung nahtlos. Kein Transition -> kein iOS-Gradient-Animations-Bug.
   document.documentElement.style.backgroundImage = newBg || '';
+  // ENTSCHEIDEND fuer den unteren Sockel-Balken: iOS nutzt fuer den Safe-Area-/
+  // Overscroll-Bereich die background-COLOR (nicht das Bild). Siehe THEME_CANVAS_COLOR.
+  document.documentElement.style.backgroundColor = THEME_CANVAS_COLOR[themeName] || '';
   const layerA = document.getElementById('bg-fade-a');
   const layerB = document.getElementById('bg-fade-b');
   if (!layerA || !layerB) return;
@@ -5453,6 +5470,7 @@ function initTabScrollSync() {
         // ausfuehrliche Begruendung in setThemeBackground) — verhindert den hellen
         // Sockel-Balken im unteren Safe-Area-Bereich auch waehrend des Wischens.
         document.documentElement.style.backgroundImage = THEME_GRADIENTS[themeName] || '';
+        document.documentElement.style.backgroundColor = THEME_CANVAS_COLOR[themeName] || '';
         // Background-Update passiert kontinuierlich via updateBackgroundForSwipe
         // (siehe unten) — hier nur theme-color meta sync.
         updateThemeColorMeta();
