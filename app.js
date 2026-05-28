@@ -1044,6 +1044,8 @@ function startWorkout(dayId) {
 }
 
 function _doStartWorkout(dayId) {
+  // Workout-Start: Card-Collapse-State zuruecksetzen, damit keine Reste vom letzten Workout uebrig sind
+  if (typeof expandedAexIds !== 'undefined') expandedAexIds.clear();
   // Workout-Start läuft immer auf den aktiven Plan (nicht den Edit-Kontext)
   const active = getActivePlan();
   if (!active) { showToast('Kein aktiver Trainingsplan'); return; }
@@ -1393,12 +1395,12 @@ function renderPreviewWorkout(planDay) {
         <span class="aex-drag-handle"
               onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
               onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">≡</span>
+        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
         <div class="aex-v2-num">${ei+1}</div>
         <div class="aex-v2-info">
           <div class="aex-v2-name">${ex.name}</div>
           ${lastStr ? `<div class="aex-v2-last">${lastStr}</div>` : ''}
         </div>
-        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
       </div>
       <div class="aex-v2-body">
         <div class="aex-v2-table">
@@ -1406,10 +1408,10 @@ function renderPreviewWorkout(planDay) {
             <span class="ax-lbl">Satz</span>${Array.from({length:pe.targetSets},(_,si)=>`<span class="num-cell">${si+1}</span>`).join('')}
           </div>
           <div class="aex-v2-row" style="grid-template-columns:50px ${Array(pe.targetSets).fill('1fr').join(' ')}">
-            <span class="ax-lbl">kg</span>${Array(pe.targetSets).fill(`<div class="aex-v2-inp" style="background:var(--bg);color:var(--text3);display:flex;align-items:center;justify-content:center">${last?last.maxWeight:'–'}</div>`).join('')}
+            <span class="ax-lbl">Wdh.</span>${Array(pe.targetSets).fill(`<div class="aex-v2-inp" style="background:var(--bg);color:var(--text3);display:flex;align-items:center;justify-content:center">${pe.targetReps}</div>`).join('')}
           </div>
           <div class="aex-v2-row" style="grid-template-columns:50px ${Array(pe.targetSets).fill('1fr').join(' ')}">
-            <span class="ax-lbl">Wdh.</span>${Array(pe.targetSets).fill(`<div class="aex-v2-inp" style="background:var(--bg);color:var(--text3);display:flex;align-items:center;justify-content:center">${pe.targetReps}</div>`).join('')}
+            <span class="ax-lbl">kg</span>${Array(pe.targetSets).fill(`<div class="aex-v2-inp" style="background:var(--bg);color:var(--text3);display:flex;align-items:center;justify-content:center">${last?last.maxWeight:'–'}</div>`).join('')}
           </div>
         </div>
         <div class="aex-v2-notes">
@@ -1445,12 +1447,12 @@ function buildPreviewCardioCardHTML(ex, ei, planDayId) {
       <span class="aex-drag-handle"
             onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
             onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">≡</span>
+      <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
       <div class="aex-v2-num">${ei+1}</div>
       <div class="aex-v2-info">
         <div class="aex-v2-name">${ex.name}</div>
         <div class="aex-v2-last">${lastStr}</div>
       </div>
-      <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
     </div>
     <div class="aex-cardio-form">
       <div class="aex-cardio-pace ${pr ? '' : 'empty'}">${prStr || 'Pace-Daten kommen mit dem ersten Lauf'}</div>
@@ -1501,6 +1503,7 @@ function renderActiveWorkout() {
         <span class="aex-drag-handle"
               onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
               onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">≡</span>
+        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
         <div class="aex-v2-num">${ei+1}</div>
         <div class="aex-v2-info">
           <div class="aex-v2-name">${ex.name}</div>
@@ -1511,7 +1514,6 @@ function renderActiveWorkout() {
           <div class="aex-v2-done-box">${ex.done?'<svg width="12" height="12" viewBox="0 0 24 24" stroke="white" fill="none" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':''}</div>
           <span>Erledigt</span>
         </label>
-        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
       </div>
       <div class="aex-v2-body">
         <div class="aex-v2-table">
@@ -1519,10 +1521,10 @@ function renderActiveWorkout() {
             <span class="ax-lbl">Satz</span>${headerCells}
           </div>
           <div class="aex-v2-row" style="grid-template-columns:${gridCols}">
-            <span class="ax-lbl">kg</span>${kgInputs}
+            <span class="ax-lbl">Wdh.</span>${repInputs}
           </div>
           <div class="aex-v2-row" style="grid-template-columns:${gridCols}">
-            <span class="ax-lbl">Wdh.</span>${repInputs}
+            <span class="ax-lbl">kg</span>${kgInputs}
           </div>
         </div>
         <div class="aex-v2-notes">
@@ -1607,6 +1609,7 @@ function buildActiveCardioCardHTML(ex, ei) {
       <span class="aex-drag-handle"
             onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
             onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">≡</span>
+      <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
       <div class="aex-v2-num">${ei+1}</div>
       <div class="aex-v2-info">
         <div class="aex-v2-name">${ex.name}</div>
@@ -1617,7 +1620,6 @@ function buildActiveCardioCardHTML(ex, ei) {
         <div class="aex-v2-done-box">${checkSvg}</div>
         <span>Erledigt</span>
       </label>
-      <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
     </div>
     <div class="aex-cardio-form">
       <div class="aex-cardio-row">
@@ -1977,15 +1979,22 @@ function toggleExDone(ei, checked) {
   if (Array.isArray(wo.exercises[ei].sets)) {
     wo.exercises[ei].sets.forEach(s => s.done = checked);
   }
+  // Card-Collapse-Flow: erledigte Card einklappen (User-Wunsch),
+  // bei checked=false (Erledigt-Haekchen rausnehmen) keine Aenderung am Set.
+  if (checked) {
+    const exId = wo.exercises[ei].exId || wo.exercises[ei].id;
+    expandedAexIds.delete(exId);
+  }
   DB.saveActive(wo);
   renderWorkoutsScreen();
 
-  // Auto-scroll
+  // Auto-scroll + Auto-expand der naechsten Card
   setTimeout(() => {
     if (checked) {
       const nextIdx = wo.exercises.findIndex(e => !e.done && !e.skipped);
       if (nextIdx >= 0) {
-        scrollToEx(nextIdx);
+        // scrollToNextExercise erweitert auf Expand+Scroll
+        scrollToNextExercise();
       } else {
         // Active-Workout lebt im Workouts-Tab — diesen Tab nach oben scrollen
         const wo = document.getElementById('screen-workouts');
@@ -2000,13 +2009,16 @@ function skipExercise(ei) {
   if (!wo) return;
   wo.exercises[ei].skipped = true;
   wo.exercises[ei].done = false;     // mutually exclusive
+  // Card-Collapse: uebersprungene Card analog zu Erledigt zuklappen
+  const exId = wo.exercises[ei].exId || wo.exercises[ei].id;
+  expandedAexIds.delete(exId);
   DB.saveActive(wo);
   renderWorkoutsScreen();
-  // Auto-scroll zum nächsten unbearbeiteten Eintrag
+  // Auto-scroll + Auto-expand der naechsten Card
   setTimeout(() => {
     const nextIdx = wo.exercises.findIndex(e => !e.done && !e.skipped);
     if (nextIdx >= 0) {
-      scrollToEx(nextIdx);
+      scrollToNextExercise();
     } else {
       const wo2 = document.getElementById('screen-workouts');
       if (wo2) wo2.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2119,7 +2131,19 @@ function scrollToNextExercise() {
   const wo = DB.getActive();
   if (!wo) return;
   const nextIdx = wo.exercises.findIndex(e => !e.done && !e.skipped);
-  if (nextIdx >= 0) scrollToEx(nextIdx);
+  if (nextIdx < 0) return;
+  // Naechste Card aufklappen (falls sie eingeklappt war) + re-render, dann hinscrollen.
+  const nextEx = wo.exercises[nextIdx];
+  const nextExId = nextEx.exId || nextEx.id;
+  const wasExpanded = isAexExpanded(nextExId);
+  expandedAexIds.add(nextExId);
+  if (!wasExpanded) {
+    renderWorkoutsScreen();
+    // Re-Render leert den scroll-Container; im naechsten Frame zur frisch gerenderten Card scrollen
+    requestAnimationFrame(() => scrollToEx(nextIdx));
+  } else {
+    scrollToEx(nextIdx);
+  }
 }
 
 let timerTs = null;
@@ -2367,6 +2391,8 @@ function finishWorkout() {
   const wo = DB.getActive();
   if (!wo) return;
   stopTimer();
+  // Card-Collapse-State leeren — beim naechsten Workout starten alle Cards eingeklappt
+  expandedAexIds.clear();
   const duration = Math.floor(getElapsedMs(wo) / 1000);
   // Clean: bei Kraft leere Saetze entfernen, bei Cardio Eintrag nur behalten wenn Dauer ODER Distanz gesetzt
   const cleanEx = wo.exercises.map(ex => {
@@ -2412,6 +2438,7 @@ function discardWorkout() {
       () => {
         stopTimer();
         DB.clearActive();
+        expandedAexIds.clear();   // Card-Collapse-State leeren — naechstes Workout startet sauber
         showToast('Workout verworfen');
         if (currentScreen === 'overview') renderOverview();
         else if (currentScreen === 'workouts') renderWorkoutsScreen();
@@ -3197,10 +3224,19 @@ function deleteCurrentPlan() {
   );
 }
 
+// Hilfs-Helper: nach jeder Plan-Edit-Aktion den Plan-Detail-Screen neu rendern,
+// damit Header / Status-Chip / Wochenplan-Strip / Trainingstage-Liste konsistent
+// zu den frisch gespeicherten Daten stehen. Wirkt nur, wenn der User aktuell auf
+// dem Plan-Detail-Screen ist — sonst no-op (nichts unnoetiges re-rendern).
+function _renderAfterPlanEdit() {
+  if (currentScreen === 'plan-detail') renderPlanDetail();
+}
+
 function saveProgramForm() {
   const p = DB.getProgram();
   p.name = document.getElementById('prog-name').value.trim() || 'Mein Trainingsplan';
   DB.saveProgram(p);
+  _renderAfterPlanEdit();
 }
 
 // User changed Gesamtdauer → recompute Enddatum
@@ -3213,6 +3249,7 @@ function onWeeksChange() {
   DB.saveProgram(p);
   document.getElementById('prog-end').value = _msToDate(p.endDate);
   showToast('Trainingsplan aktualisiert');
+  _renderAfterPlanEdit();
 }
 
 // User changed Startdatum → keep weeks fixed, recompute Enddatum
@@ -3225,6 +3262,7 @@ function onStartDateChange() {
   DB.saveProgram(p);
   document.getElementById('prog-end').value = _msToDate(p.endDate);
   showToast('Trainingsplan aktualisiert');
+  _renderAfterPlanEdit();
 }
 
 // User changed Enddatum → recompute Gesamtdauer
@@ -3239,6 +3277,7 @@ function onEndDateChange() {
   DB.saveProgram(p);
   document.getElementById('prog-weeks').value = p.weeksTotal;
   showToast('Trainingsplan aktualisiert');
+  _renderAfterPlanEdit();
 }
 
 function saveWeekPlanDay(i, value) {
@@ -3246,7 +3285,7 @@ function saveWeekPlanDay(i, value) {
   if (!wp[i]) return;
   wp[i].planDayId = value || null;
   DB.saveWeekPlan(wp);
-  renderMehr();
+  _renderAfterPlanEdit();
 }
 
 function openPlanDayModal(idx) {
@@ -4049,6 +4088,7 @@ function updatePlanTarget(exIdx, field, value) {
   plan[editingDayIdx].exercises[exIdx][field] = parseInt(value) || 1;
   DB.savePlan(plan);
   syncActiveWorkoutWithPlanDay(plan[editingDayIdx].id);
+  _renderAfterPlanEdit();
 }
 
 function removePlanEx(exIdx) {
@@ -4062,6 +4102,7 @@ function removePlanEx(exIdx) {
     DB.savePlan(p);
     syncActiveWorkoutWithPlanDay(p[editingDayIdx].id);
     renderPlanDayExList(p[editingDayIdx]);
+    _renderAfterPlanEdit();
   });
 }
 
@@ -4070,7 +4111,7 @@ function savePlanDay() {
   plan[editingDayIdx].name = document.getElementById('plan-day-name-input').value.trim() || plan[editingDayIdx].name;
   DB.savePlan(plan);
   closeModal('modal-plan-day');
-  renderMehr();
+  _renderAfterPlanEdit();
   showToast('Plan gespeichert');
 }
 
@@ -4139,6 +4180,7 @@ function confirmPlanAddSelection() {
   planAddSelection.clear();
   closeModal('modal-add-to-plan');
   renderPlanDayExList(plan[editingDayIdx]);
+  _renderAfterPlanEdit();
   showToast(`${added} Übung${added>1?'en':''} hinzugefügt`);
 }
 

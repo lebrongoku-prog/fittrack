@@ -1,5 +1,46 @@
 /* ─── Reset & Variables ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Animierbare Custom-Properties: durch die @property-Registrierung als <color>
+   werden die Akzent-Variablen beim Theme-Wechsel SMOOTH interpoliert (Safari 16.4+).
+   `--gradient-from` ist der dunkle Stop des Body-Gradients pro Tab — interpoliert
+   ebenfalls smooth, damit der Gradient nicht abrupt umschaltet. */
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0066ff;
+}
+@property --accent-dark {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0048d0;
+}
+@property --accent-bg {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(0, 102, 255, 0.12);
+}
+@property --accent-soft {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #DBE9FF;
+}
+@property --gradient-from {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0a2a6b;
+}
+@property --section-tint {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(0, 102, 255, 0.18);
+}
+@property --card-accent-border {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(0, 102, 255, 0.35);
+}
+
 :root {
   /* UI base (shared across all tabs) */
   --bg:        #F1F5F9;
@@ -28,7 +69,8 @@
   --accent-bg:            rgba(0, 102, 255, 0.12);
   --accent-soft:          #DBE9FF;     /* solid, light tint of the accent */
   --accent-dark:          #0048d0;
-  --gradient:             linear-gradient(135deg, #0a2a6b, #0066ff);
+  --gradient-from:        #0a2a6b;
+  --gradient:             linear-gradient(135deg, var(--gradient-from), var(--accent));
   --section-tint:         rgba(0, 102, 255, 0.18);
   --card-accent-border:   rgba(0, 102, 255, 0.35);
 
@@ -51,7 +93,7 @@ body.theme-overview {
   --accent-bg:          rgba(8, 145, 178, 0.12);
   --accent-soft:        #CFFAFE;       /* cyan-100 */
   --accent-dark:        #0C4A6E;
-  --gradient:           linear-gradient(135deg, #0C4A6E, #0891B2);
+  --gradient-from:      #0C4A6E;
   --section-tint:       rgba(6, 182, 212, 0.18);
   --card-accent-border: rgba(6, 182, 212, 0.35);
 }
@@ -60,7 +102,7 @@ body.theme-workouts {
   --accent-bg:          rgba(16, 185, 129, 0.12);
   --accent-soft:        #D1FAE5;       /* emerald-100 */
   --accent-dark:        #059669;
-  --gradient:           linear-gradient(135deg, #064E3B, #10B981);
+  --gradient-from:      #064E3B;
   --section-tint:       rgba(16, 185, 129, 0.20);
   --card-accent-border: rgba(5, 150, 105, 0.35);
 }
@@ -69,7 +111,7 @@ body.theme-plans {
   --accent-bg:          rgba(245, 158, 11, 0.12);
   --accent-soft:        #FEF3C7;       /* amber-100 */
   --accent-dark:        #78350F;
-  --gradient:           linear-gradient(135deg, #78350F, #F59E0B);
+  --gradient-from:      #78350F;
   --section-tint:       rgba(245, 158, 11, 0.20);
   --card-accent-border: rgba(245, 158, 11, 0.35);
 }
@@ -78,13 +120,28 @@ body.theme-exercises {
   --accent-bg:          rgba(30, 64, 175, 0.12);
   --accent-soft:        #DBEAFE;       /* blue-100 */
   --accent-dark:        #1E3A8A;       /* blue-900 */
-  --gradient:           linear-gradient(135deg, #172554, #1E40AF);
+  --gradient-from:      #172554;
   --section-tint:       rgba(30, 64, 175, 0.18);
   --card-accent-border: rgba(30, 64, 175, 0.35);
 }
 /* body.theme-mehr keeps the default (blue) */
 html, body { height: 100%; width: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
-body { display: flex; flex-direction: column; padding-top: var(--safe-t); transition: background 0.25s ease; }
+body {
+  display: flex; flex-direction: column;
+  padding-top: var(--safe-t);
+  /* Animierter Tab-Theme-Wechsel: alle Akzent-Vars + Gradient-Stop interpolieren
+     smooth zwischen den Tabs. Funktioniert dank @property-Registrierung als <color>.
+     Auf Safari < 16.4 fallen die Transitions auf den abrupten Wechsel zurueck. */
+  transition:
+    background           0.35s ease,
+    --accent             0.35s ease,
+    --accent-dark        0.35s ease,
+    --accent-bg          0.35s ease,
+    --accent-soft        0.35s ease,
+    --gradient-from      0.35s ease,
+    --section-tint       0.35s ease,
+    --card-accent-border 0.35s ease;
+}
 
 /* Themed tabs use the accent gradient as the page background */
 body.theme-overview,
