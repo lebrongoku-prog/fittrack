@@ -131,16 +131,18 @@ body {
   padding-top: var(--safe-t);
   /* Animierter Tab-Theme-Wechsel: alle Akzent-Vars + Gradient-Stop interpolieren
      smooth zwischen den Tabs. Funktioniert dank @property-Registrierung als <color>.
-     Auf Safari < 16.4 fallen die Transitions auf den abrupten Wechsel zurueck. */
+     Auf Safari < 16.4 fallen die Transitions auf den abrupten Wechsel zurueck.
+     Duration + easing sind iOS-typisch sanft: 550ms mit ease-in-out Bezier-Kurve. */
   transition:
-    background           0.35s ease,
-    --accent             0.35s ease,
-    --accent-dark        0.35s ease,
-    --accent-bg          0.35s ease,
-    --accent-soft        0.35s ease,
-    --gradient-from      0.35s ease,
-    --section-tint       0.35s ease,
-    --card-accent-border 0.35s ease;
+    background-image     0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color     0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    --accent             0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    --accent-dark        0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    --accent-bg          0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    --accent-soft        0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    --gradient-from      0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    --section-tint       0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    --card-accent-border 0.55s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Themed tabs: linear-gradient direkt mit var()-Referenzen statt via --gradient-Indirection.
