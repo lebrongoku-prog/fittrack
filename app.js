@@ -679,6 +679,14 @@ function updateBackgroundForSwipe(progress) {
 // Setzt Layer A auf das neue Theme mit opacity 1, Layer B opacity 0 — ohne Animation.
 function setThemeBackground(themeName, animate) {
   const newBg = THEME_GRADIENTS[themeName] !== undefined ? THEME_GRADIENTS[themeName] : '';
+  // Wurzel-Hintergrund (html) traegt denselben Theme-Gradient. Der Root-Background
+  // wird auf die gesamte Viewport-Canvas propagiert — inkl. dem unteren Safe-Area-
+  // Bereich hinter dem Home-Indicator. Im black-translucent-Modus deckt die fixe
+  // `.bg-fade-layer` diesen Bereich (v.a. nach Geraete-Rotation) nicht immer ab;
+  // ohne diese Zeile zeigt sich dort der helle Default-Bg (var(--bg)) als Sockel-
+  // Balken. Da derselbe Gradient ueber dieselbe Viewport-Box laeuft, ist die
+  // Abdeckung nahtlos. Kein Transition -> kein iOS-Gradient-Animations-Bug.
+  document.documentElement.style.backgroundImage = newBg || '';
   const layerA = document.getElementById('bg-fade-a');
   const layerB = document.getElementById('bg-fade-b');
   if (!layerA || !layerB) return;
@@ -5441,6 +5449,10 @@ function initTabScrollSync() {
         if (navEl) navEl.classList.add('active');
         const themeName = (name === 'plan-detail') ? 'plans' : name;
         document.body.className = 'theme-' + themeName;
+        // Wurzel-Canvas-Hintergrund synchron zum Body-Theme mitziehen (siehe
+        // ausfuehrliche Begruendung in setThemeBackground) — verhindert den hellen
+        // Sockel-Balken im unteren Safe-Area-Bereich auch waehrend des Wischens.
+        document.documentElement.style.backgroundImage = THEME_GRADIENTS[themeName] || '';
         // Background-Update passiert kontinuierlich via updateBackgroundForSwipe
         // (siehe unten) — hier nur theme-color meta sync.
         updateThemeColorMeta();
