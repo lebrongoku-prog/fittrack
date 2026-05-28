@@ -147,19 +147,17 @@ body {
     --card-accent-border 0.85s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-/* Themed tabs: linear-gradient direkt mit var()-Referenzen statt via --gradient-Indirection.
-   Die Indirection (--gradient: linear-gradient(..., var(--gradient-from), var(--accent))
-   in :root) wurde beim ersten Render zu einem statischen String evaluiert und nicht
-   neu berechnet, wenn die referenzierten Vars sich aenderten. iOS-PWA cachet das
-   Resultat. Mit direkter Definition wird der Gradient bei jedem Var-Update korrekt
-   neu gerendert. Wir nutzen `background-image` (nicht das shorthand `background`),
-   damit die `background-color: var(--bg)` aus html,body als Fallback erhalten bleibt. */
-body.theme-overview,
-body.theme-workouts,
-body.theme-plans,
-body.theme-exercises {
-  background-image: linear-gradient(135deg, var(--gradient-from), var(--accent));
-}
+/* Themed tabs: JEDES Theme hat einen statischen background-image-String mit Hex-Codes.
+   Grund: iOS-Safari behandelt `background-image: linear-gradient(..., var(--x), var(--y))`
+   als unveraenderten Property-Wert, wenn die var()-Inhalte sich aendern aber der String
+   identisch bleibt. Die `transition: background-image` greift dann nicht — Wechsel
+   zwischen themed Tabs (Uebersicht ↔ Workouts ↔ Plans ↔ Uebungen) springen abrupt.
+   Mit unterschiedlichen Strings pro Theme erkennt der Browser den Wechsel als echten
+   Property-Change und macht einen Crossfade ueber die Transition-Duration. */
+body.theme-overview  { background-image: linear-gradient(135deg, #0C4A6E, #0891B2); }
+body.theme-workouts  { background-image: linear-gradient(135deg, #064E3B, #10B981); }
+body.theme-plans     { background-image: linear-gradient(135deg, #78350F, #F59E0B); }
+body.theme-exercises { background-image: linear-gradient(135deg, #172554, #1E40AF); }
 /* Header texts adapt to the dark themed backgrounds */
 body.theme-overview .ph h1,
 body.theme-workouts .ph h1,
