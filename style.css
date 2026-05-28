@@ -143,13 +143,16 @@ body {
     --card-accent-border 0.35s ease;
 }
 
-/* Themed tabs use the accent gradient as the page background */
+/* Themed tabs use the accent gradient as the page background.
+   `background-attachment: fixed` wurde entfernt: in Kombination mit den ueber
+   @property animierbaren CSS-Vars (--gradient-from, --accent) wurde der Gradient
+   auf iOS-PWA beim ersten Render eingefroren und reagierte nicht mehr auf
+   Theme-Wechsel. Ohne `fixed` wird der Gradient bei jedem Var-Update neu gerendert. */
 body.theme-overview,
 body.theme-workouts,
 body.theme-plans,
 body.theme-exercises {
   background: var(--gradient);
-  background-attachment: fixed;
 }
 /* Header texts adapt to the dark themed backgrounds */
 body.theme-overview .ph h1,
