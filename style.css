@@ -251,10 +251,13 @@ body.theme-plans .hist-action-dd {
 
 /* Per-Screen-Hintergruende — damit der korrekte Theme-Verlauf bereits waehrend
    des horizontalen Swipes sichtbar ist, nicht erst nach Snap-Abschluss. */
-#screen-overview  { background: linear-gradient(135deg, #0C4A6E, #0891B2); }
-#screen-workouts  { background: linear-gradient(135deg, #064E3B, #10B981); }
-#screen-exercises { background: linear-gradient(135deg, #172554, #1E40AF); }
-#screen-plans     { background: linear-gradient(135deg, #78350F, #F59E0B); }
+/* Themed Tabs: KEIN eigener `.screen`-Background mehr — der body-Gradient (animiert
+   via @property) scheint durch. Beim Swipe sieht der User dadurch eine einzige,
+   smooth interpolierende Background-Schicht statt zwei harter Gradient-Blaetter. */
+#screen-overview,
+#screen-workouts,
+#screen-exercises,
+#screen-plans     { background: transparent; }
 #screen-mehr      { background: var(--bg); }
 /* Plan-Detail teilt Theme mit Plans (Amber). */
 #screen-plan-detail { background: linear-gradient(135deg, #78350F, #F59E0B); }
@@ -994,6 +997,67 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .next7-chip.training .n7-top .lbl { color: var(--accent-dark); }
 .next7-chip.today    .n7-top .lbl { color: var(--accent); }
 .n7-mid { font-size: 13px; font-weight: 600; line-height: 1.2; color: var(--text); }
+
+/* ─── Wochenplan: kompakte Variante C (Buchstabe + Akzent-Streifen) ─── */
+.wp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.wp-col {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 8px 0 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, opacity 0.15s;
+}
+.wp-col.today    { background: var(--accent-bg); }
+.wp-col.selected { background: var(--accent-bg); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.wp-col.done     { opacity: 0.4; }
+/* Heute bleibt voll sichtbar (Hintergrund + Klick-Indikator),
+   nur Buchstabe + Streifen werden auf 0.4 abgesenkt */
+.wp-col.done.today { opacity: 1; }
+.wp-col.done.today .wp-letter,
+.wp-col.done.today .wp-bar    { opacity: 0.4; }
+
+.wp-letter {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  letter-spacing: 0.2px;
+}
+.wp-col.today    .wp-letter { color: var(--accent-dark); font-weight: 700; }
+.wp-col.training .wp-letter { color: var(--text); }
+.wp-col.training.today .wp-letter { color: var(--accent-dark); }
+
+.wp-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--text3);
+  opacity: 0.25;
+  width: 30%;
+}
+.wp-col.training .wp-bar {
+  background: var(--accent);
+  opacity: 1;
+  width: 70%;
+}
+.wp-col.training.cardio .wp-bar { background: var(--cardio); }
+
+/* Info-Zeile darunter */
+.wp-info {
+  font-size: 12px;
+  color: var(--text2);
+  padding: 10px 8px 2px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+.wp-info strong { color: var(--text); font-weight: 600; }
+.wp-info .wp-info-done { color: var(--green); margin-left: 3px; font-weight: 700; }
 .next7-chip.training .n7-mid { color: var(--accent-dark); }
 
 /* ─ Stacked grid for Volumen + PR cards (one per row, full width) ─ */

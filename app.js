@@ -828,23 +828,55 @@ function dayLabel(label) {
 
 function renderNext7Strip(days) {
   const root = document.getElementById('ov-next7-strip');
-  root.innerHTML = days.map((d, i) => {
-    const classes = ['next7-chip'];
-    if (d.isToday) classes.push('today');
-    if (d.isRest) classes.push('rest'); else classes.push('training');
-    if (d.dayDone && d.planDay) classes.push('done');
-    // Reine Cardio-Tage: Teal-Akzent statt Tab-Akzent
-    if (d.planDay && planDayIsPureCardio(d.planDay)) classes.push('cardio');
-    const topLabel = d.isToday ? 'Heute' : (d.isTomorrow ? 'Morgen' : '');
-    const icon = (d.planDay && planDayIsPureCardio(d.planDay)) ? '🏃 ' : '';
-    const mid = d.planDay ? `${icon}${pd(d.planDay.name)}` : 'Ruhe';
-    const onclick = d.planDay && d.isToday && !d.dayDone
-      ? `onclick="startWorkout('${d.planDay.id}')"` : '';
-    return `<div class="${classes.join(' ')}" ${onclick}>
-      <div class="n7-top">${topLabel ? `<span class="lbl">${topLabel}</span>`:''}${d.label}</div>
-      <div class="n7-mid">${mid}</div>
-    </div>`;
-  }).join('');
+  if (!root) return;
+  root.innerHTML = days.map((d, i) => buildWpCol(d, i, /*isWorkoutsTab*/ false)).join('');
+  // Info-Zeile: zeigt immer "heute" (uebersicht-Tab hat keinen Tag-Selektor)
+  const info = document.getElementById('ov-wp-info');
+  if (info) {
+    const todayIdx = days.findIndex(d => d.isToday);
+    info.innerHTML = buildWpInfo(days, todayIdx, /*useHeuteLabel*/ true);
+  }
+}
+
+// Eine einzelne Spalte (= ein Tag) im Wochenplan-Strip.
+function buildWpCol(d, i, isWorkoutsTab) {
+  const classes = ['wp-col'];
+  if (d.isToday) classes.push('today');
+  if (d.isRest) classes.push('rest'); else classes.push('training');
+  if (d.dayDone && d.planDay) classes.push('done');
+  if (d.planDay && planDayIsPureCardio(d.planDay)) classes.push('cardio');
+  if (isWorkoutsTab && i === selectedWorkoutDayIdx) classes.push('selected');
+  const onclick = isWorkoutsTab
+    ? `onclick="selectWorkoutDay(${i})"`
+    : (d.planDay && d.isToday && !d.dayDone ? `onclick="startWorkout('${d.planDay.id}')"` : '');
+  return `<div class="${classes.join(' ')}" ${onclick}>
+    <span class="wp-letter">${d.label}</span>
+    <span class="wp-bar"></span>
+  </div>`;
+}
+
+// Info-Zeile unter dem Wochenplan. Format:
+//   Trainingstag: "Heute · Push · 5 Übungen" (mit "✓" wenn dayDone)
+//   Ruhetag:      "Heute · Ruhetag · nächstes Training: Mittwoch"
+// useHeuteLabel: bei true wird "Heute" / "Morgen" / "Gestern" geschrieben statt Wochentag-Name.
+function buildWpInfo(days, focusIdx, useHeuteLabel) {
+  if (focusIdx < 0 || focusIdx >= days.length) return '';
+  const d = days[focusIdx];
+  let label;
+  if (useHeuteLabel && d.isToday) label = 'Heute';
+  else if (useHeuteLabel && d.isTomorrow) label = 'Morgen';
+  else label = dayFullName(d.dayKey);
+  if (!d.planDay) {
+    // Ruhetag → naechsten Trainingstag finden (zuerst rest der Woche, sonst von Anfang)
+    const next = days.slice(focusIdx + 1).find(x => x.planDay)
+              || days.slice(0, focusIdx).find(x => x.planDay);
+    const trail = next ? ` · nächstes Training: ${dayFullName(next.dayKey)}` : '';
+    return `<strong>${label}</strong> · Ruhetag${trail}`;
+  }
+  const exCount = (d.planDay.exercises || []).length;
+  const exLabel = exCount === 1 ? 'Übung' : 'Übungen';
+  const doneMark = d.dayDone ? ' <span class="wp-info-done">✓</span>' : '';
+  return `<strong>${label}</strong> · ${pd(d.planDay.name)} · ${exCount} ${exLabel}${doneMark}`;
 }
 
 function heroAction() {
@@ -1293,22 +1325,13 @@ function selectWorkoutDay(idx) {
 function renderWorkoutWeekStrip() {
   ensureSelectedDayIdx();
   const days = getCurrentWeekDays();
-  document.getElementById('wo-week-strip').innerHTML = days.map((d, i) => {
-    const classes = ['next7-chip'];
-    if (d.isToday) classes.push('today');
-    // Selected: any day the user picked (incl. today)
-    if (i === selectedWorkoutDayIdx) classes.push('selected');
-    if (d.isRest) classes.push('rest'); else classes.push('training');
-    if (d.dayDone && d.planDay) classes.push('done');
-    if (d.planDay && planDayIsPureCardio(d.planDay)) classes.push('cardio');
-    const topLabel = d.isToday ? 'Heute' : (d.isTomorrow ? 'Morgen' : '');
-    const icon = (d.planDay && planDayIsPureCardio(d.planDay)) ? '🏃 ' : '';
-    const mid = d.planDay ? `${icon}${pd(d.planDay.name)}` : 'Ruhe';
-    return `<div class="${classes.join(' ')}" onclick="selectWorkoutDay(${i})">
-      <div class="n7-top">${topLabel ? `<span class="lbl">${topLabel}</span>`:''}${d.label}</div>
-      <div class="n7-mid">${mid}</div>
-    </div>`;
-  }).join('');
+  const root = document.getElementById('wo-week-strip');
+  if (root) root.innerHTML = days.map((d, i) => buildWpCol(d, i, /*isWorkoutsTab*/ true)).join('');
+  // Info-Zeile bezieht sich auf den SELEKTIERTEN Tag (nicht heute)
+  const info = document.getElementById('wo-wp-info');
+  if (info) {
+    info.innerHTML = buildWpInfo(days, selectedWorkoutDayIdx, /*useHeuteLabel*/ false);
+  }
 }
 
 function renderWorkoutsScreen() {
@@ -1988,20 +2011,10 @@ function toggleExDone(ei, checked) {
   DB.saveActive(wo);
   renderWorkoutsScreen();
 
-  // Auto-scroll + Auto-expand der naechsten Card
-  setTimeout(() => {
-    if (checked) {
-      const nextIdx = wo.exercises.findIndex(e => !e.done && !e.skipped);
-      if (nextIdx >= 0) {
-        // scrollToNextExercise erweitert auf Expand+Scroll
-        scrollToNextExercise();
-      } else {
-        // Active-Workout lebt im Workouts-Tab — diesen Tab nach oben scrollen
-        const wo = document.getElementById('screen-workouts');
-        if (wo) wo.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    }
-  }, 50);
+  // Auto-Expand der naechsten unerledigten Card — KEIN Scroll mehr (User-Wunsch).
+  if (checked) {
+    setTimeout(() => { expandNextExercise(); }, 50);
+  }
 }
 
 function skipExercise(ei) {
@@ -2014,16 +2027,8 @@ function skipExercise(ei) {
   expandedAexIds.delete(exId);
   DB.saveActive(wo);
   renderWorkoutsScreen();
-  // Auto-scroll + Auto-expand der naechsten Card
-  setTimeout(() => {
-    const nextIdx = wo.exercises.findIndex(e => !e.done && !e.skipped);
-    if (nextIdx >= 0) {
-      scrollToNextExercise();
-    } else {
-      const wo2 = document.getElementById('screen-workouts');
-      if (wo2) wo2.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, 50);
+  // Auto-Expand der naechsten unerledigten Card — KEIN Scroll (analog zu Erledigt).
+  setTimeout(() => { expandNextExercise(); }, 50);
 }
 
 function unskipExercise(ei) {
@@ -2127,23 +2132,28 @@ function scrollToEx(i) {
   document.querySelectorAll('.ex-tab-v2').forEach((t,idx) => t.classList.toggle('active', idx===i));
 }
 
-function scrollToNextExercise() {
+// Klappt die naechste unerledigte/nicht-uebersprungene Card auf (falls noch zu).
+// Re-rendert nur wenn sich der Collapse-State tatsaechlich aendert. Kein Scroll.
+function expandNextExercise() {
   const wo = DB.getActive();
-  if (!wo) return;
+  if (!wo) return -1;
   const nextIdx = wo.exercises.findIndex(e => !e.done && !e.skipped);
-  if (nextIdx < 0) return;
-  // Naechste Card aufklappen (falls sie eingeklappt war) + re-render, dann hinscrollen.
+  if (nextIdx < 0) return -1;
   const nextEx = wo.exercises[nextIdx];
   const nextExId = nextEx.exId || nextEx.id;
-  const wasExpanded = isAexExpanded(nextExId);
-  expandedAexIds.add(nextExId);
-  if (!wasExpanded) {
+  if (!isAexExpanded(nextExId)) {
+    expandedAexIds.add(nextExId);
     renderWorkoutsScreen();
-    // Re-Render leert den scroll-Container; im naechsten Frame zur frisch gerenderten Card scrollen
-    requestAnimationFrame(() => scrollToEx(nextIdx));
-  } else {
-    scrollToEx(nextIdx);
   }
+  return nextIdx;
+}
+
+// "Naechste Uebung"-Button im Hero: expand + scroll. Wird genutzt vom continueOnClick.
+function scrollToNextExercise() {
+  const nextIdx = expandNextExercise();
+  if (nextIdx < 0) return;
+  // Im naechsten Frame zur (ggf. frisch expandierten) Card scrollen
+  requestAnimationFrame(() => scrollToEx(nextIdx));
 }
 
 let timerTs = null;
