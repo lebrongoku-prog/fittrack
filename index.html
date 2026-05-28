@@ -23,6 +23,12 @@
 </head>
 <body>
 
+<!-- Two-Layer Background-Crossfade: zwei fixed Layer hinter allem, deren
+     Opacity per JS getauscht wird beim Tab-Wechsel. Garantiert smoothe
+     Crossfade-Animation auch zwischen verschiedenen linear-gradients. -->
+<div class="bg-fade-layer" id="bg-fade-a"></div>
+<div class="bg-fade-layer" id="bg-fade-b"></div>
+
 <div id="app">
 
   <!-- Horizontaler Snap-Container, der die 5 Haupt-Tabs nebeneinander haelt.

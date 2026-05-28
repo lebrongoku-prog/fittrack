@@ -129,15 +129,11 @@ html, body { height: 100%; width: 100%; background: var(--bg); color: var(--text
 body {
   display: flex; flex-direction: column;
   padding-top: var(--safe-t);
-  /* Animierter Tab-Theme-Wechsel: alle Akzent-Vars + Gradient-Stop interpolieren
-     smooth zwischen den Tabs. Funktioniert dank @property-Registrierung als <color>.
-     Auf Safari < 16.4 fallen die Transitions auf den abrupten Wechsel zurueck.
-     Duration 850ms mit sanfter Out-Bezier-Kurve — laesst den Background-Wechsel
-     hinter dem Snap-Scroll nachlaufen und sich weich aufloesen, statt parallel
-     mit dem Snap "fertig" zu sein. */
+  /* Body-Background ist `var(--bg)` solid (von html, body). Der themed Gradient
+     liegt jetzt auf den .bg-fade-layer Pseudo-Layern, die per JS-Opacity-Crossfade
+     animiert werden (siehe setThemeBackground()). Hier transitionen nur noch
+     die UI-Akzent-Vars via @property — fuer Nav-Icons, Wochenplan-Streifen etc. */
   transition:
-    background-image     0.85s cubic-bezier(0.4, 0, 0.6, 1),
-    background-color     0.85s cubic-bezier(0.4, 0, 0.6, 1),
     --accent             0.85s cubic-bezier(0.4, 0, 0.6, 1),
     --accent-dark        0.85s cubic-bezier(0.4, 0, 0.6, 1),
     --accent-bg          0.85s cubic-bezier(0.4, 0, 0.6, 1),
@@ -147,17 +143,19 @@ body {
     --card-accent-border 0.85s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-/* Themed tabs: JEDES Theme hat einen statischen background-image-String mit Hex-Codes.
-   Grund: iOS-Safari behandelt `background-image: linear-gradient(..., var(--x), var(--y))`
-   als unveraenderten Property-Wert, wenn die var()-Inhalte sich aendern aber der String
-   identisch bleibt. Die `transition: background-image` greift dann nicht — Wechsel
-   zwischen themed Tabs (Uebersicht ↔ Workouts ↔ Plans ↔ Uebungen) springen abrupt.
-   Mit unterschiedlichen Strings pro Theme erkennt der Browser den Wechsel als echten
-   Property-Change und macht einen Crossfade ueber die Transition-Duration. */
-body.theme-overview  { background-image: linear-gradient(135deg, #0C4A6E, #0891B2); }
-body.theme-workouts  { background-image: linear-gradient(135deg, #064E3B, #10B981); }
-body.theme-plans     { background-image: linear-gradient(135deg, #78350F, #F59E0B); }
-body.theme-exercises { background-image: linear-gradient(135deg, #172554, #1E40AF); }
+/* Two-Layer Background-Crossfade: body hat KEIN background-image mehr.
+   Stattdessen liegen `#bg-fade-a` und `#bg-fade-b` als fixed Layer hinter dem App-
+   Container. JS setzt beim Tab-Wechsel auf einem Layer den neuen Gradient und
+   animiert die Opacity von 0 auf 1, gleichzeitig faded der andere Layer auf 0.
+   Robust gegen iOS-Safari linear-gradient-Transition-Bugs. */
+.bg-fade-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.85s cubic-bezier(0.4, 0, 0.6, 1);
+}
 /* Header texts adapt to the dark themed backgrounds */
 body.theme-overview .ph h1,
 body.theme-workouts .ph h1,

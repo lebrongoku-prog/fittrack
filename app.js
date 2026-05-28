@@ -632,6 +632,32 @@ function _scrollTabContainerTo(name) {
 }
 
 // Setzt body-Theme-Klasse + Bottom-Nav-Highlight + ruft den Renderer fuer den Tab auf.
+// Two-Layer Background-Crossfade fuer den Tab-Theme-Wechsel.
+// CSS-`transition: background-image` greift in iOS-Safari nicht zuverlaessig
+// zwischen zwei linear-gradient-Strings. Stattdessen liegen zwei fixed Layer
+// hinter dem App-Container und werden per Opacity-Animation getauscht.
+const THEME_GRADIENTS = {
+  overview:  'linear-gradient(135deg, #0C4A6E, #0891B2)',
+  workouts:  'linear-gradient(135deg, #064E3B, #10B981)',
+  plans:     'linear-gradient(135deg, #78350F, #F59E0B)',
+  exercises: 'linear-gradient(135deg, #172554, #1E40AF)',
+  mehr:      '',   // leerer String = transparent → solid body-bg scheint durch
+};
+let _bgActiveLayer = 'a';   // welcher Layer aktuell sichtbar ist ('a' oder 'b')
+function setThemeBackground(themeName) {
+  const newBg = THEME_GRADIENTS[themeName] !== undefined ? THEME_GRADIENTS[themeName] : '';
+  const incomingId  = _bgActiveLayer === 'a' ? 'bg-fade-b' : 'bg-fade-a';
+  const outgoingId  = _bgActiveLayer === 'a' ? 'bg-fade-a' : 'bg-fade-b';
+  const incoming = document.getElementById(incomingId);
+  const outgoing = document.getElementById(outgoingId);
+  if (!incoming || !outgoing) return;
+  // Neuen Gradient auf den eingehenden Layer setzen, dann Opacity crossfaden
+  incoming.style.backgroundImage = newBg;
+  incoming.style.opacity = newBg ? '1' : '0';
+  outgoing.style.opacity = '0';
+  _bgActiveLayer = _bgActiveLayer === 'a' ? 'b' : 'a';
+}
+
 // Synchronisiert <meta name="theme-color"> mit der aktuellen Tab-Akzentfarbe.
 // Wirkt sich in Safari (Browser-Modus) auf die Browser-Chrome-Farbe aus und
 // gibt iOS einen Hinweis fuer den Status-Bar-Bereich im PWA-Modus.
@@ -654,6 +680,7 @@ function _applyTabState(name) {
   // Body-Theme: plan-detail teilt sich Theme + Akzentfarbe mit der Plans-Liste (Amber).
   const themeName = (name === 'plan-detail') ? 'plans' : name;
   document.body.className = 'theme-' + themeName;
+  setThemeBackground(themeName);
   updateThemeColorMeta();
 
   // Beim Wechsel zur Plans-Liste den Edit-Kontext zuruecksetzen.
@@ -5372,6 +5399,7 @@ function initTabScrollSync() {
         if (navEl) navEl.classList.add('active');
         const themeName = (name === 'plan-detail') ? 'plans' : name;
         document.body.className = 'theme-' + themeName;
+        setThemeBackground(themeName);
         updateThemeColorMeta();
         lastReported = name;
       }
