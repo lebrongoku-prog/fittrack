@@ -125,8 +125,13 @@ body.theme-exercises {
   --card-accent-border: rgba(30, 64, 175, 0.35);
 }
 /* body.theme-mehr keeps the default (blue) */
-html, body { height: 100%; width: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
+/* Nur html bekommt den var(--bg)-Background — body bleibt transparent, damit die
+   `.bg-fade-layer` mit z-index:-1 dahinter durchscheinen koennen. Wenn die Layer
+   transparent (Mehr-Tab) oder opacity 0 sind, scheint var(--bg) vom html durch. */
+html { background: var(--bg); }
+html, body { height: 100%; width: 100%; color: var(--text); overflow: hidden; }
 body {
+  background: transparent;
   display: flex; flex-direction: column;
   padding-top: var(--safe-t);
   /* Body-Background ist `var(--bg)` solid (von html, body). Der themed Gradient
