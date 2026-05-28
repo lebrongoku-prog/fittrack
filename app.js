@@ -641,7 +641,7 @@ const THEME_GRADIENTS = {
   workouts:  'linear-gradient(135deg, #064E3B, #10B981)',
   plans:     'linear-gradient(135deg, #78350F, #F59E0B)',
   exercises: 'linear-gradient(135deg, #172554, #1E40AF)',
-  mehr:      '',   // leerer String = transparent → solid body-bg scheint durch
+  mehr:      'linear-gradient(135deg, #DBEAFE, #DBEAFE)',   // solid hellblau, kein sichtbarer Verlauf
 };
 // Swipe-gebundener Background-Uebergang.
 // Layer A traegt den FROM-Theme-Gradient, Layer B den TO-Theme-Gradient.
@@ -5447,15 +5447,17 @@ function initTabScrollSync() {
         lastReported = name;
       }
 
-      // Settle-Detection: kein Scroll-Event mehr fuer 90 ms → Renderer + currentScreen-Sync
+      // Settle-Detection: kein Scroll-Event mehr fuer 90 ms → Finger-Release vermutet.
+      // Ohne CSS-scroll-snap muessen wir hier selbst zur naechsten Tab-Position
+      // smooth scrollen (>50%-Schwelle via Math.round(progress)).
       if (settleTimer) clearTimeout(settleTimer);
       settleTimer = setTimeout(() => {
-        // Snap-Position exakt? Sonst nochmal nachschnappen (defensive: manche Geraete snappen unsauber)
         const exact = clamped * w;
         if (Math.abs(container.scrollLeft - exact) > 1) {
           _suppressScrollSync = true;
-          container.scrollTo({ left: exact, behavior: 'auto' });
-          requestAnimationFrame(() => { _suppressScrollSync = false; });
+          container.scrollTo({ left: exact, behavior: 'smooth' });
+          // Nach dem smooth-Scroll Sync-Flag wieder freigeben.
+          setTimeout(() => { _suppressScrollSync = false; }, 350);
         }
         if (currentScreen !== name) {
           currentScreen = name;
