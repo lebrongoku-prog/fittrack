@@ -43,7 +43,7 @@
     <div id="ov-hero-wrap"></div>
 
     <!-- Program / Training week card -->
-    <div class="program-card" id="ov-program-card" onclick="showScreen('mehr')">
+    <div class="program-card" id="ov-program-card" onclick="showScreen('plans')">
       <div class="program-card-label" id="ov-program-label">TRAININGSWOCHE</div>
       <div class="program-card-row">
         <div class="program-card-val"><span id="ov-program-num">1</span><span class="of">/ <span id="ov-program-total">12</span></span></div>
@@ -56,7 +56,7 @@
     <div class="plan-section-card">
       <div class="plan-section-head">
         <h3>Wochenplan</h3>
-        <a onclick="showScreen('mehr')">Plan bearbeiten</a>
+        <a onclick="showScreen('plans')">Plan bearbeiten</a>
       </div>
       <div class="wp-grid" id="ov-next7-strip"></div>
       <div class="wp-info" id="ov-wp-info"></div>
@@ -137,8 +137,12 @@
       </div>
     </div>
 
-    <!-- Wochenplan-Strip (always visible at top) -->
-    <div style="padding:0 14px 12px">
+    <!-- Wochenplan-Strip in weisser Kachel (Layout analog Uebersicht-Tab) -->
+    <div class="plan-section-card">
+      <div class="plan-section-head">
+        <h3>Wochenplan</h3>
+        <a onclick="showScreen('plans')">Plan bearbeiten</a>
+      </div>
       <div class="wp-grid" id="wo-week-strip"></div>
       <div class="wp-info" id="wo-wp-info"></div>
     </div>

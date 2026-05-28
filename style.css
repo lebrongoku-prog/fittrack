@@ -132,17 +132,19 @@ body {
   /* Animierter Tab-Theme-Wechsel: alle Akzent-Vars + Gradient-Stop interpolieren
      smooth zwischen den Tabs. Funktioniert dank @property-Registrierung als <color>.
      Auf Safari < 16.4 fallen die Transitions auf den abrupten Wechsel zurueck.
-     Duration + easing sind iOS-typisch sanft: 550ms mit ease-in-out Bezier-Kurve. */
+     Duration 850ms mit sanfter Out-Bezier-Kurve — laesst den Background-Wechsel
+     hinter dem Snap-Scroll nachlaufen und sich weich aufloesen, statt parallel
+     mit dem Snap "fertig" zu sein. */
   transition:
-    background-image     0.55s cubic-bezier(0.4, 0, 0.2, 1),
-    background-color     0.55s cubic-bezier(0.4, 0, 0.2, 1),
-    --accent             0.55s cubic-bezier(0.4, 0, 0.2, 1),
-    --accent-dark        0.55s cubic-bezier(0.4, 0, 0.2, 1),
-    --accent-bg          0.55s cubic-bezier(0.4, 0, 0.2, 1),
-    --accent-soft        0.55s cubic-bezier(0.4, 0, 0.2, 1),
-    --gradient-from      0.55s cubic-bezier(0.4, 0, 0.2, 1),
-    --section-tint       0.55s cubic-bezier(0.4, 0, 0.2, 1),
-    --card-accent-border 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    background-image     0.85s cubic-bezier(0.4, 0, 0.6, 1),
+    background-color     0.85s cubic-bezier(0.4, 0, 0.6, 1),
+    --accent             0.85s cubic-bezier(0.4, 0, 0.6, 1),
+    --accent-dark        0.85s cubic-bezier(0.4, 0, 0.6, 1),
+    --accent-bg          0.85s cubic-bezier(0.4, 0, 0.6, 1),
+    --accent-soft        0.85s cubic-bezier(0.4, 0, 0.6, 1),
+    --gradient-from      0.85s cubic-bezier(0.4, 0, 0.6, 1),
+    --section-tint       0.85s cubic-bezier(0.4, 0, 0.6, 1),
+    --card-accent-border 0.85s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 /* Themed tabs: linear-gradient direkt mit var()-Referenzen statt via --gradient-Indirection.
