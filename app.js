@@ -733,9 +733,11 @@ function _applyTabState(name) {
 
   ensureTimerActive();
 
-  // Bottom-Nav beim Tab-Wechsel immer sichtbar.
+  // Bottom-Nav (und aktive-Workout-Leiste) beim Tab-Wechsel immer sichtbar.
   const nav = document.getElementById('bottom-nav');
   if (nav) nav.classList.remove('nav-hidden');
+  const woBar = document.getElementById('workout-active-bar');
+  if (woBar) woBar.classList.remove('nav-hidden');
 }
 
 function showScreen(name) {
@@ -1011,6 +1013,7 @@ function heroActionContinue() {
 
 // Keep the active-session timer running across tabs (but not while paused).
 function ensureTimerActive() {
+  syncWorkoutActiveUI();
   const wo = DB.getActive();
   const shouldRun = !!wo && !wo.paused;
   if (shouldRun && !timerInterval) startTimer();
@@ -1507,13 +1510,13 @@ function renderPreviewWorkout(planDay) {
       </div>
       <div class="aex-v2-body">
         <div class="aex-v2-table">
-          <div class="aex-v2-row head" style="grid-template-columns:50px ${Array(pe.targetSets).fill('minmax(0,42px)').join(' ')}">
+          <div class="aex-v2-row head" style="grid-template-columns:50px ${Array(pe.targetSets).fill('1fr').join(' ')}">
             <span class="ax-lbl">Satz</span>${Array.from({length:pe.targetSets},(_,si)=>`<span class="num-cell">${si+1}</span>`).join('')}
           </div>
-          <div class="aex-v2-row" style="grid-template-columns:50px ${Array(pe.targetSets).fill('minmax(0,42px)').join(' ')}">
+          <div class="aex-v2-row" style="grid-template-columns:50px ${Array(pe.targetSets).fill('1fr').join(' ')}">
             <span class="ax-lbl">Wdh.</span>${Array(pe.targetSets).fill(`<div class="aex-v2-inp" style="background:var(--bg);color:var(--text3);display:flex;align-items:center;justify-content:center">${pe.targetReps}</div>`).join('')}
           </div>
-          <div class="aex-v2-row" style="grid-template-columns:50px ${Array(pe.targetSets).fill('minmax(0,42px)').join(' ')}">
+          <div class="aex-v2-row" style="grid-template-columns:50px ${Array(pe.targetSets).fill('1fr').join(' ')}">
             <span class="ax-lbl">kg</span>${Array(pe.targetSets).fill(`<div class="aex-v2-inp" style="background:var(--bg);color:var(--text3);display:flex;align-items:center;justify-content:center">${last?last.maxWeight:'–'}</div>`).join('')}
           </div>
         </div>
@@ -1580,7 +1583,7 @@ function renderActiveWorkout() {
     const lastStr = last ? `Zuletzt: ${last.sets.length}×${last.sets[0]?.reps||'?'} @ ${last.maxWeight} kg` : '';
     const targetW = last ? `${last.maxWeight} kg` : '–';
     const nSets = ex.sets.length;
-    const gridCols = `50px ${Array(nSets).fill('minmax(0,42px)').join(' ')}`;
+    const gridCols = `50px ${Array(nSets).fill('1fr').join(' ')}`;
     const headerCells = ex.sets.map((_,si)=>`<span class="num-cell">${si+1}</span>`).join('');
     const kgInputs = ex.sets.map((s,si) =>
       `<input class="aex-v2-inp ${s.done?'done-inp':''}" type="number" inputmode="decimal"
@@ -2257,11 +2260,33 @@ function getElapsedMs(wo) {
 }
 
 function updateTimerDisplay() {
+  syncWorkoutActiveUI();
   const wo = DB.getActive();
   if (!wo) { stopTimer(); return; }
   const elapsed = Math.floor(getElapsedMs(wo) / 1000);
   const t = '• ' + fmtTimer(elapsed);
   document.querySelectorAll('.hero-v2-timer').forEach(el => el.textContent = t);
+}
+
+// App-weite "Workout läuft"-Signale (Mini-Leiste, Nav-Label-Timer, Akzent-Glow) mit dem
+// Aktiv-Status synchron halten. Status-Klasse auf <html>, da body.className bei jedem
+// Tab-Wechsel neu gesetzt wird (eine body-Klasse ginge verloren).
+function _woTimerText() {
+  const wo = DB.getActive();
+  return wo ? fmtTimer(Math.floor(getElapsedMs(wo) / 1000)) : '';
+}
+function syncWorkoutActiveUI() {
+  const active = !!DB.getActive();
+  document.documentElement.classList.toggle('workout-active', active);
+  const navLabel = document.querySelector('#nav-workouts span');
+  const barTimer = document.getElementById('wab-timer');
+  if (active) {
+    const t = _woTimerText();
+    if (navLabel) navLabel.textContent = t;
+    if (barTimer) barTimer.textContent = t;
+  } else if (navLabel) {
+    navLabel.textContent = 'Workouts';
+  }
 }
 
 // Pause / resume the active workout (real freeze).
@@ -2503,6 +2528,7 @@ function finishWorkout() {
   DB.addWorkout(finalWo);
   DB.clearActive();
   stopTimer();
+  syncWorkoutActiveUI();
 
   closeModal('modal-finish');
 
@@ -2528,6 +2554,7 @@ function discardWorkout() {
       () => {
         stopTimer();
         DB.clearActive();
+        syncWorkoutActiveUI();
         expandedAexIds.clear();   // Card-Collapse-State leeren — naechstes Workout startet sauber
         showToast('Workout verworfen');
         if (currentScreen === 'overview') renderOverview();
@@ -5503,6 +5530,9 @@ let _navLastScrollY = 0;
 function initScrollHideNav() {
   const nav = document.getElementById('bottom-nav');
   if (!nav) return;
+  const bar = document.getElementById('workout-active-bar');
+  // Mini-Leiste mit der Nav zusammen aus-/einblenden.
+  const setNavHidden = (h) => { nav.classList.toggle('nav-hidden', h); if (bar) bar.classList.toggle('nav-hidden', h); };
   const _navTickingByTab = new Map();
 
   function attachToScreen(screenEl, tabName) {
@@ -5516,10 +5546,9 @@ function initScrollHideNav() {
         const cur = screenEl.scrollTop;
         const delta = cur - _navLastScrollY;
         if (cur < 60) {
-          nav.classList.remove('nav-hidden');
+          setNavHidden(false);
         } else if (Math.abs(delta) > 5) {
-          if (delta > 0) nav.classList.add('nav-hidden');
-          else           nav.classList.remove('nav-hidden');
+          setNavHidden(delta > 0);
         }
         _navLastScrollY = cur;
         _navTickingByTab.set(tabName, false);

@@ -34,6 +34,9 @@
      Mehr-Tab sichtbar (black-translucent erzwingt weisse Symbole — sonst unlesbar auf hell). -->
 <div id="statusbar-scrim"></div>
 
+<!-- Aktives-Workout-Glow: pulsierende Akzentlinie unter der Status-Bar (nur bei laufendem Workout). -->
+<div id="workout-glow"></div>
+
 <div id="app">
 
   <!-- Horizontaler Snap-Container, der die 5 Haupt-Tabs nebeneinander haelt.
@@ -410,6 +413,14 @@
 
 
 <!-- ══ BOTTOM NAV ══ -->
+<!-- Aktives-Workout-Mini-Leiste über der Bottom-Nav (app-weit, ausser auf dem Workouts-Tab). -->
+<div id="workout-active-bar" onclick="showScreen('workouts')">
+  <span class="wab-dot"></span>
+  <span class="wab-text">Workout läuft</span>
+  <span id="wab-timer" class="wab-timer">0:00</span>
+  <span class="wab-chev">›</span>
+</div>
+
 <nav id="bottom-nav">
   <div class="nav-btn active" id="nav-overview" onclick="onNavTap('overview')">
     <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>

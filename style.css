@@ -189,6 +189,49 @@ body.no-anim {
   transition: opacity 0.3s ease;
 }
 body.theme-mehr #statusbar-scrim { opacity: 1; }
+
+/* ─── Aktives-Workout-Signale (app-weit) ───
+   Status-Klasse `workout-active` liegt bewusst auf <html> (documentElement), weil
+   body.className bei jedem Tab-Wechsel komplett neu gesetzt wird (eine body-Klasse
+   ginge dabei verloren). Gesetzt/entfernt via syncWorkoutActiveUI() in app.js. */
+
+/* (a) Pulsierende Akzentlinie direkt UNTER der Status-Bar (nicht ganz oben, damit
+       die von black-translucent erzwungenen weissen Symbole lesbar bleiben). */
+#workout-glow {
+  position: fixed; top: var(--safe-t); left: 0; right: 0; height: 3px;
+  z-index: 95; pointer-events: none; display: none;
+  background: var(--accent);
+  box-shadow: 0 0 14px 2px var(--accent), 0 0 5px 0 var(--accent);
+}
+html.workout-active #workout-glow { display: block; animation: wo-breathe 2.2s ease-in-out infinite; }
+
+/* (b) Mini-Leiste ueber der Bottom-Nav. */
+#workout-active-bar {
+  position: fixed; left: 0; right: 0;
+  bottom: calc(var(--nav-h) + var(--safe-b));
+  height: 44px; z-index: 99;
+  display: none; align-items: center; gap: 10px; padding: 0 18px;
+  background: var(--accent); color: #fff;
+  font-size: 14px; font-weight: 600;
+  box-shadow: 0 -3px 14px rgba(0,0,0,0.18);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+html.workout-active #workout-active-bar { display: flex; }
+/* Auf dem Workouts-Tab ist der aktive Block ohnehin sichtbar → Leiste dort ausblenden. */
+html.workout-active body.theme-workouts #workout-active-bar { display: none; }
+/* Mit der Bottom-Nav-Auto-Hide mit ausblenden (Klasse via initScrollHideNav gespiegelt). */
+#workout-active-bar.nav-hidden { opacity: 0; transform: translateY(10px); pointer-events: none; }
+.wab-dot { width: 9px; height: 9px; border-radius: 50%; background: #fff; flex-shrink: 0; animation: wo-pulse 1.4s ease-in-out infinite; }
+.wab-timer { margin-left: 4px; font-variant-numeric: tabular-nums; opacity: 0.95; }
+.wab-chev { margin-left: auto; font-size: 22px; line-height: 1; opacity: 0.9; }
+
+/* Inhalt nicht hinter der Mini-Leiste verbergen (auf Workouts ist sie aus → normal). */
+html.workout-active .screen { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 56px); }
+html.workout-active body.theme-workouts #screen-workouts { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px); }
+
+@keyframes wo-pulse  { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.55); opacity: 0.45; } }
+@keyframes wo-breathe { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
 /* Header texts adapt to the dark themed backgrounds */
 body.theme-overview .ph h1,
 body.theme-workouts .ph h1,
@@ -1192,8 +1235,11 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .pause-btn-v2 svg { width: 18px; height: 18px; fill: var(--accent); }
 
 /* Exercise tab cards (replaces ex-tab pills) */
-.ex-tab-v2-bar { display: flex; gap: 10px; padding: 0 12px 14px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.ex-tab-v2-bar { display: flex; gap: 10px; padding: 0 12px 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .ex-tab-v2-bar::-webkit-scrollbar { display: none; }
+/* Vorschau-Modus: die Tableiste ist leer (innerHTML='') → kollabieren, damit der
+   Abstand Hero→erste Übung dem gleichmäßigen 12px-Kachelabstand entspricht. */
+.ex-tab-v2-bar:empty { display: none; }
 .ex-tab-v2 {
   flex-shrink: 0; width: 110px; padding: 10px 10px 12px; border-radius: 14px;
   background: var(--c-bg, var(--card)); border: 1.5px solid var(--border);
