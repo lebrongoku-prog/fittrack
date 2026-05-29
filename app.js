@@ -295,6 +295,11 @@ const DB = {
     this.savePlans(plans);
   },
 
+  // Trainingstage-Bibliothek: planunabhaengiger Speicher fuer eigenstaendige Trainingstage.
+  // Ein Lib-Tag: { id, name, color?, exercises:[{exId,targetSets,targetReps} | {exId} cardio], notes, archived, createdAt }
+  getTrainingDays() { const s = localStorage.getItem('ft_trainingdays'); return s ? JSON.parse(s) : []; },
+  saveTrainingDays(v) { localStorage.setItem('ft_trainingdays', JSON.stringify(v)); markLocalChange(); },
+
   getWorkouts() { const s = localStorage.getItem('ft_workouts'); return s ? JSON.parse(s) : []; },
   saveWorkouts(v) { localStorage.setItem('ft_workouts', JSON.stringify(v)); markLocalChange(); },
   addWorkout(w) { const ws = this.getWorkouts(); ws.unshift(w); this.saveWorkouts(ws); },
@@ -695,8 +700,8 @@ function _applyTabState(name) {
   const navEl = document.getElementById('nav-'+name);
   if (navEl) navEl.classList.add('active');
 
-  // Body-Theme: plan-detail teilt sich Theme + Akzentfarbe mit der Plans-Liste (Amber).
-  const themeName = (name === 'plan-detail') ? 'plans' : name;
+  // Body-Theme: plan-detail UND day-detail teilen sich Theme + Akzentfarbe mit der Plans-Liste (Amber).
+  const themeName = (name === 'plan-detail' || name === 'day-detail') ? 'plans' : name;
   document.body.className = 'theme-' + themeName;
   // _applyTabState wird bei Tableisten-Klick + initialem App-Start aufgerufen —
   // dort ist KEIN Crossfade gewuenscht (sofortiger Wechsel). Beim Swipe-Snap
@@ -710,8 +715,9 @@ function _applyTabState(name) {
   if (name === 'overview') renderOverview();
   else if (name === 'workouts') renderWorkoutsScreen();
   else if (name === 'exercises') renderExercises();
-  else if (name === 'plans') renderPlans();
+  else if (name === 'plans') renderPlansScreen();
   else if (name === 'plan-detail') renderPlanDetail();
+  else if (name === 'day-detail') renderLibDayDetail();
   else if (name === 'mehr') renderMehr();
 
   ensureTimerActive();
@@ -724,25 +730,35 @@ function _applyTabState(name) {
 }
 
 function showScreen(name) {
-  // Plan-Detail ist ein Vollbild-Overlay UEBER dem Tab-Container.
+  // Plan-Detail UND Trainingstag-Detail sind Vollbild-Overlays UEBER dem Tab-Container.
   const planDetailEl = document.getElementById('screen-plan-detail');
+  const dayDetailEl = document.getElementById('screen-day-detail');
   const tabContainer = document.getElementById('tab-container');
 
   if (name === 'plan-detail') {
     currentScreen = 'plan-detail';
+    if (dayDetailEl) dayDetailEl.classList.remove('active');
     if (planDetailEl) {
       planDetailEl.classList.add('active');
-      // Beim Oeffnen ganz oben starten — sonst zeigt Overlay alte Scroll-Position vom letzten Mal
-      planDetailEl.scrollTop = 0;
+      planDetailEl.scrollTop = 0;   // oben starten, nicht alte Scroll-Position zeigen
     }
     _applyTabState('plan-detail');
     return;
   }
-
-  // Wechsel von plan-detail zurueck zu einem normalen Tab → Overlay schliessen
-  if (planDetailEl && planDetailEl.classList.contains('active')) {
-    planDetailEl.classList.remove('active');
+  if (name === 'day-detail') {
+    currentScreen = 'day-detail';
+    if (planDetailEl) planDetailEl.classList.remove('active');
+    if (dayDetailEl) {
+      dayDetailEl.classList.add('active');
+      dayDetailEl.scrollTop = 0;
+    }
+    _applyTabState('day-detail');
+    return;
   }
+
+  // Wechsel von einem Overlay zurueck zu einem normalen Tab → beide Overlays schliessen
+  if (planDetailEl && planDetailEl.classList.contains('active')) planDetailEl.classList.remove('active');
+  if (dayDetailEl && dayDetailEl.classList.contains('active')) dayDetailEl.classList.remove('active');
 
   // Wenn der Ziel-Tab nicht in der TAB_ORDER ist, ignorieren
   if (!TAB_ORDER.includes(name)) return;
@@ -1458,16 +1474,17 @@ function renderWorkoutsScreen() {
   }
 }
 
-function renderPreviewWorkout(planDay) {
+function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-ex-list') {
   // (Mini-Kacheln im Workouts-Tab wurden entfernt)
-  document.getElementById('ex-tab-bar').innerHTML = '';
+  if (mode !== 'libday') document.getElementById('ex-tab-bar').innerHTML = '';
 
-  // Cards (read-only target view)
-  document.getElementById('active-ex-list').innerHTML = planDay.exercises.map((pe, ei) => {
+  // Cards (read-only target view). mode='libday' rendert dieselben Cards für einen
+  // Bibliotheks-Trainingstag in den Container `containerId` (Drag&Drop/Add routen zum Lib-Tag).
+  document.getElementById(containerId).innerHTML = planDay.exercises.map((pe, ei) => {
     const ex = getEx(pe.exId);
     if (!ex) return '';
     // Cardio-Preview: zeigt die letzte Cardio-Session als Vorschau
-    if (exType(ex) === 'cardio') return buildPreviewCardioCardHTML(ex, ei, planDay.id);
+    if (exType(ex) === 'cardio') return buildPreviewCardioCardHTML(ex, ei, planDay.id, mode);
     const col = colorForExercise({ exId: pe.exId });
     const last = getLastExData(pe.exId);
     const targetW = last ? `${last.maxWeight} kg` : '–';
@@ -1475,7 +1492,7 @@ function renderPreviewWorkout(planDay) {
     const exIdKey = pe.exId;
     const collapsedCls = isAexExpanded(exIdKey) ? '' : 'collapsed';
     return `<div class="aex-v2 ${collapsedCls}" id="aex-${ei}" style="--c:${col.c};--c-bg:${col.bg}"
-                 ondragstart="aexDragStart(event,${ei},'preview','${planDay.id}')"
+                 ondragstart="aexDragStart(event,${ei},'${mode}','${planDay.id}')"
                  ondragend="aexDragEnd(event)"
                  ondragover="aexDragOver(event,${ei})"
                  ondragleave="aexDragLeave(event)"
@@ -1508,13 +1525,14 @@ function renderPreviewWorkout(planDay) {
                     onchange="saveExerciseNote('${ex.id}', this.value)">${ex.notes || ''}</textarea>
         </div>
       </div>
+      ${mode === 'libday' ? `<div class="aex-libday-actions"><button class="aex-libday-remove" onclick="removeLibDayExercise(${ei})">Übung entfernen</button></div>` : ''}
     </div>`;
   }).join('');
 }
 
 // Preview-Variante einer Cardio-Card im Workouts-Tab. Read-only, zeigt die letzten Werte
 // als Vorschau und ist nicht editierbar (Inputs greifen erst beim Start des Workouts).
-function buildPreviewCardioCardHTML(ex, ei, planDayId) {
+function buildPreviewCardioCardHTML(ex, ei, planDayId, mode = 'preview') {
   const last = getLastCardio(ex.id);
   const lastStr = last
     ? `Zuletzt: ${formatDistance(last.distance)} in ${formatDuration(last.duration)}`
@@ -1527,7 +1545,7 @@ function buildPreviewCardioCardHTML(ex, ei, planDayId) {
   const exIdKey = ex.id;
   const collapsedCls = isAexExpanded(exIdKey) ? '' : 'collapsed';
   return `<div class="aex-v2 aex-cardio ${collapsedCls}" id="aex-${ei}"
-               ondragstart="aexDragStart(event,${ei},'preview','${planDayId}')"
+               ondragstart="aexDragStart(event,${ei},'${mode}','${planDayId}')"
                ondragend="aexDragEnd(event)"
                ondragover="aexDragOver(event,${ei})"
                ondragleave="aexDragLeave(event)"
@@ -1547,6 +1565,7 @@ function buildPreviewCardioCardHTML(ex, ei, planDayId) {
       <div class="aex-cardio-pace ${pr ? '' : 'empty'}">${prStr || 'Pace-Daten kommen mit dem ersten Lauf'}</div>
       ${ex.notes ? `<div class="aex-v2-notes" style="margin-top:10px"><textarea class="aex-v2-notes-area" data-ex-id="${ex.id}" placeholder="Notizen" onchange="saveExerciseNote('${ex.id}', this.value)">${ex.notes}</textarea></div>` : ''}
     </div>
+    ${mode === 'libday' ? `<div class="aex-libday-actions"><button class="aex-libday-remove" onclick="removeLibDayExercise(${ei})">Übung entfernen</button></div>` : ''}
   </div>`;
 }
 
@@ -1650,6 +1669,7 @@ function toggleAexCollapse(exId, ev) {
   if (expandedAexIds.has(exId)) expandedAexIds.delete(exId);
   else expandedAexIds.add(exId);
   if (currentScreen === 'workouts') renderWorkoutsScreen();
+  else if (currentScreen === 'day-detail') renderLibDayDetail();
 }
 // SVG-Chevron-Snippet fuer die Card-Header (gemeinsame Konstante)
 const AEX_CHEV_SVG = '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>';
@@ -2159,9 +2179,20 @@ function aexDrop(e, targetIdx) {
       day.exercises.splice(insertIdx, 0, moved);
       DB.savePlan(plan);
     }
+  } else if (aexDragState.mode === 'libday' && aexDragState.dayId) {
+    const days = DB.getTrainingDays();
+    const day = days.find(d => d.id === aexDragState.dayId);
+    if (day) {
+      const [moved] = day.exercises.splice(fromIdx, 1);
+      if (insertIdx > day.exercises.length) insertIdx = day.exercises.length;
+      day.exercises.splice(insertIdx, 0, moved);
+      DB.saveTrainingDays(days);
+    }
   }
+  const wasLibday = aexDragState.mode === 'libday';
   aexDragState = null;
-  renderWorkoutsScreen();
+  if (wasLibday) renderLibDayDetail();
+  else renderWorkoutsScreen();
 }
 function aexDragEnd(e) {
   e.currentTarget.classList.remove('dragging','drop-target-above','drop-target-below');
@@ -2307,7 +2338,7 @@ function setAddExMode(mode) {
 
 function openAddExModal(context) {
   // Kontext speichern — Default 'active' fuer Rueckwaerts-Kompatibilitaet
-  addExContext = (context === 'preview') ? 'preview' : 'active';
+  addExContext = (context === 'preview' || context === 'libday') ? context : 'active';
   // Initialer Modus: wenn der User gerade im Cardio-Modus im Uebungen-Tab ist, dort starten.
   addExMode = (exMode === 'cardio') ? 'cardio' : 'strength';
   document.querySelectorAll('#modal-add-ex .ex-mode-pill').forEach(p => p.classList.remove('active'));
@@ -2406,6 +2437,23 @@ function addExToWorkout(exId) {
 
   // Preview-Kontext: Workouts-Tab zeigt einen Plan-Tag in der Vorschau (kein laufendes Workout).
   // Uebung NUR in den Plan-Tag eintragen, kein DB.saveActive.
+  if (addExContext === 'libday') {
+    // Trainingstag-Bibliothek: Uebung dem aktuell bearbeiteten Lib-Tag hinzufuegen.
+    const days = DB.getTrainingDays();
+    const day = days.find(d => d.id === editingLibDayId);
+    if (!day) { closeModal('modal-add-ex'); showToast('Trainingstag nicht gefunden'); return; }
+    if ((day.exercises || []).some(pe => pe.exId === exId)) {
+      closeModal('modal-add-ex'); showToast(`${ex.name} ist bereits im Trainingstag`); return;
+    }
+    day.exercises = day.exercises || [];
+    day.exercises.push(isCardio ? { exId } : { exId, targetSets: 3, targetReps: 8 });
+    DB.saveTrainingDays(days);
+    closeModal('modal-add-ex');
+    renderLibDayDetail();
+    showToast(`${ex.name} zum Trainingstag hinzugefügt`);
+    return;
+  }
+
   if (addExContext === 'preview') {
     const wp = DB.getWeekPlan();
     const selDay = wp[selectedWorkoutDayIdx];
@@ -3184,6 +3232,8 @@ function renderPlanDetail() {
 
   // Program form
   document.getElementById('prog-name').value = plan.name || '';
+  const progNotesEl = document.getElementById('prog-notes');
+  if (progNotesEl) progNotesEl.value = plan.notes || '';
   document.getElementById('prog-weeks').value = plan.weeksTotal || 12;
   document.getElementById('prog-start').value = _msToDate(plan.startDate);
   document.getElementById('prog-end').value   = _msToDate(plan.endDate);
@@ -3267,6 +3317,7 @@ function createNewPlan() {
     const newPlan = {
       id: 'plan_' + Date.now() + '_' + Math.floor(Math.random()*10000),
       name, weeksTotal, startDate, endDate,
+      notes: '',
       trainingDays: [],
       weekPlan: JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN)),
       archived: false,
@@ -3330,6 +3381,239 @@ function saveProgramForm() {
   p.name = document.getElementById('prog-name').value.trim() || 'Mein Trainingsplan';
   DB.saveProgram(p);
   _renderAfterPlanEdit();
+}
+
+// Notizen eines Trainingsplans speichern (plan.notes). Kein Re-Render noetig (Textarea behaelt Wert).
+function savePlanNotes() {
+  const el = document.getElementById('prog-notes');
+  if (!el) return;
+  const plans = DB.getPlans();
+  const p = plans.find(pl => pl.id === editingPlanId);
+  if (!p) return;
+  p.notes = el.value;
+  DB.savePlans(plans);
+}
+
+// ═══════════════════════════════════════════════
+// TRAININGSTAGE-BIBLIOTHEK (planunabhaengige Tage)
+// ═══════════════════════════════════════════════
+let plansViewMode = 'plans';   // 'plans' | 'days' — aktive Unteransicht im Trainingsplan-Tab
+let editingLibDayId = null;     // aktuell im Tag-Detail bearbeiteter Bibliotheks-Tag
+let libDaysArchiveExpanded = false;
+
+const WEEKDAYS = [
+  { key:'mon', label:'Montag' }, { key:'tue', label:'Dienstag' }, { key:'wed', label:'Mittwoch' },
+  { key:'thu', label:'Donnerstag' }, { key:'fri', label:'Freitag' }, { key:'sat', label:'Samstag' }, { key:'sun', label:'Sonntag' },
+];
+
+function setPlansView(mode) {
+  if (mode !== 'plans' && mode !== 'days') return;
+  plansViewMode = mode;
+  renderPlansScreen();
+}
+function onPlansAdd() {
+  if (plansViewMode === 'days') createNewLibDay();
+  else createNewPlan();
+}
+// Rendert die im Plans-Tab aktive Unteransicht (Pläne ODER Trainingstage-Bibliothek).
+function renderPlansScreen() {
+  const segP = document.getElementById('seg-plans');
+  const segD = document.getElementById('seg-days');
+  if (segP) segP.classList.toggle('active', plansViewMode === 'plans');
+  if (segD) segD.classList.toggle('active', plansViewMode === 'days');
+  const plansList = document.getElementById('plans-list');
+  const daysList = document.getElementById('libdays-list');
+  const h1 = document.getElementById('plans-h1');
+  if (plansViewMode === 'days') {
+    if (plansList) plansList.style.display = 'none';
+    if (daysList) daysList.style.display = '';
+    if (h1) h1.textContent = 'Trainingstage';
+    renderLibDays();
+  } else {
+    if (plansList) plansList.style.display = '';
+    if (daysList) daysList.style.display = 'none';
+    if (h1) h1.textContent = 'Trainingsplan';
+    renderPlans();
+  }
+}
+
+function toggleLibDaysArchive() { libDaysArchiveExpanded = !libDaysArchiveExpanded; renderLibDays(); }
+
+function renderLibDays() {
+  const days = DB.getTrainingDays();
+  const active = days.filter(d => !d.archived).sort((a,b) => (a.createdAt||0) - (b.createdAt||0));
+  const archived = days.filter(d => d.archived).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+  const subEl = document.getElementById('plans-subline');
+  if (subEl) subEl.textContent = days.length
+    ? `${active.length} Trainingstag${active.length===1?'':'e'}${archived.length ? ` • ${archived.length} archiviert` : ''}`
+    : 'Noch keine Trainingstage erstellt';
+  const renderRow = (d) => {
+    const setCount = (d.exercises||[]).reduce((a,e) => a + (e.targetSets||0), 0);
+    return `<div class="plan-list-row" onclick="openLibDayDetail('${d.id}')">
+      <div class="plan-list-info">
+        <div class="plan-list-name">${escapeHtml(d.name)}</div>
+        <div class="plan-list-meta">${(d.exercises||[]).length} Übungen • ${setCount} Sätze</div>
+      </div>
+      <div class="plan-list-action">›</div>
+    </div>`;
+  };
+  let html = '';
+  if (!active.length && !archived.length) {
+    html = `<div class="plan-day-empty" style="margin:24px 14px">Noch keine Trainingstage — tippe auf das + oben rechts, um deinen ersten Trainingstag anzulegen.</div>`;
+  } else {
+    html += active.map(renderRow).join('');
+    if (archived.length) {
+      const expanded = libDaysArchiveExpanded;
+      html += `<div class="plans-list-archive-header${expanded ? ' expanded' : ''}" onclick="toggleLibDaysArchive()">
+        <span class="plan-day-collapse-arrow">${expanded ? '▾' : '▸'}</span>
+        <span class="plan-day-collapse-label">Archivierte Trainingstage</span>
+        <span class="plan-day-collapse-count">${archived.length}</span>
+      </div>`;
+      if (expanded) html += archived.map(renderRow).join('');
+    }
+  }
+  document.getElementById('libdays-list').innerHTML = html;
+}
+
+function createNewLibDay() {
+  promptForName('Name des neuen Trainingstags', 'Neuer Trainingstag', (name) => {
+    const days = DB.getTrainingDays();
+    const newDay = {
+      id: 'libday_' + Date.now() + '_' + Math.floor(Math.random()*10000),
+      name, exercises: [], notes: '', archived: false, createdAt: Date.now(),
+    };
+    days.push(newDay);
+    DB.saveTrainingDays(days);
+    showToast(`Trainingstag "${name}" erstellt`);
+    openLibDayDetail(newDay.id);
+  });
+}
+
+function openLibDayDetail(id) { editingLibDayId = id; showScreen('day-detail'); }
+function closeLibDayDetail() { editingLibDayId = null; showScreen('plans'); }
+function _getEditingLibDay() { return DB.getTrainingDays().find(d => d.id === editingLibDayId) || null; }
+
+function renderLibDayDetail() {
+  const day = _getEditingLibDay();
+  if (!day) { showScreen('plans'); return; }
+  document.getElementById('day-detail-title').textContent = day.name;
+  const setCount = (day.exercises||[]).reduce((a,e) => a + (e.targetSets||0), 0);
+  document.getElementById('day-detail-subline').textContent =
+    `${(day.exercises||[]).length} Übungen • ${setCount} Sätze${day.archived ? ' • archiviert' : ''}`;
+  const nameEl = document.getElementById('day-name'); if (nameEl) nameEl.value = day.name || '';
+  const notesEl = document.getElementById('day-notes'); if (notesEl) notesEl.value = day.notes || '';
+
+  // Zu-Plan-hinzufuegen-Karte: Plan- + Wochentag-Auswahl
+  const plans = DB.getPlans().filter(p => !p.archived).sort((a,b) => a.startDate - b.startDate);
+  const planOpts = `<option value="">Plan wählen…</option>` +
+    plans.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('') +
+    `<option value="__new__">+ Neuer Plan…</option>`;
+  const wdOpts = `<option value="">Wochentag…</option>` +
+    WEEKDAYS.map(w => `<option value="${w.key}">${w.label}</option>`).join('');
+  document.getElementById('day-addto-card').innerHTML = `
+    <div class="day-addto-sub">Fügt eine Kopie dieses Trainingstags zu einem Plan hinzu und weist sie einem Wochentag zu.</div>
+    <div class="program-form-row"><label>Trainingsplan</label><select id="day-addto-plan" class="weekplan-select">${planOpts}</select></div>
+    <div class="program-form-row"><label>Wochentag</label><select id="day-addto-weekday" class="weekplan-select">${wdOpts}</select></div>
+    <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="confirmAddLibDayToPlan()">Zum Plan hinzufügen</button>`;
+
+  // Übungen im Workout-Tab-Stil: dieselben aex-v2-Preview-Cards via renderPreviewWorkout(mode='libday').
+  const addWrap = document.getElementById('day-add-ex-wrap');
+  if (addWrap) addWrap.style.display = '';
+  if ((day.exercises || []).length) {
+    renderPreviewWorkout(day, 'libday', 'day-ex-list');
+  } else {
+    document.getElementById('day-ex-list').innerHTML =
+      `<div class="plan-day-empty">Noch keine Übungen — tippe unten auf „+ Übung zum Trainingstag hinzufügen".</div>`;
+  }
+
+  document.getElementById('day-archive-label').textContent = day.archived ? 'Aus Archiv holen' : 'Trainingstag archivieren';
+}
+
+function saveLibDayName() {
+  const el = document.getElementById('day-name'); if (!el) return;
+  const days = DB.getTrainingDays();
+  const d = days.find(x => x.id === editingLibDayId); if (!d) return;
+  d.name = el.value.trim() || 'Trainingstag';
+  DB.saveTrainingDays(days);
+  document.getElementById('day-detail-title').textContent = d.name;
+}
+function saveLibDayNotes() {
+  const el = document.getElementById('day-notes'); if (!el) return;
+  const days = DB.getTrainingDays();
+  const d = days.find(x => x.id === editingLibDayId); if (!d) return;
+  d.notes = el.value;
+  DB.saveTrainingDays(days);
+}
+function toggleLibDayArchive() {
+  const days = DB.getTrainingDays();
+  const d = days.find(x => x.id === editingLibDayId); if (!d) return;
+  d.archived = !d.archived;
+  DB.saveTrainingDays(days);
+  showToast(d.archived ? 'Trainingstag archiviert' : 'Trainingstag aus Archiv geholt');
+  renderLibDayDetail();
+}
+function deleteCurrentLibDay() {
+  const d = _getEditingLibDay(); if (!d) return;
+  confirmAction('Trainingstag löschen?',
+    `"${d.name}" wird aus der Bibliothek gelöscht. Bereits in Pläne kopierte Tage bleiben dort erhalten.`,
+    () => {
+      const days = DB.getTrainingDays().filter(x => x.id !== editingLibDayId);
+      DB.saveTrainingDays(days);
+      editingLibDayId = null;
+      showScreen('plans');
+      showToast('Trainingstag gelöscht');
+    },
+    { danger: true, confirmLabel: 'Löschen' });
+}
+
+// Kopiert den Bibliotheks-Tag (frische id) in plan.trainingDays + weist ihn dem Wochentag im weekPlan zu.
+function _addLibDayCopyToPlan(plan, libDay, weekdayKey) {
+  const newId = 'pd_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+  const exercises = JSON.parse(JSON.stringify(libDay.exercises || []));
+  plan.trainingDays = plan.trainingDays || [];
+  plan.trainingDays.push({ id: newId, name: libDay.name, color: libDay.color, exercises });
+  const wp = plan.weekPlan || JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
+  const row = wp.find(w => w.dayKey === weekdayKey);
+  if (row) row.planDayId = newId;
+  plan.weekPlan = wp;
+}
+function confirmAddLibDayToPlan() {
+  const planSel = document.getElementById('day-addto-plan');
+  const wdSel = document.getElementById('day-addto-weekday');
+  if (!planSel || !wdSel) return;
+  const planVal = planSel.value, wd = wdSel.value;
+  if (!planVal) { showToast('Bitte einen Plan wählen'); return; }
+  if (!wd) { showToast('Bitte einen Wochentag wählen'); return; }
+  const libDay = _getEditingLibDay(); if (!libDay) return;
+  const finish = (planId) => {
+    const plans = DB.getPlans();
+    const plan = plans.find(p => p.id === planId);
+    if (!plan) return;
+    _addLibDayCopyToPlan(plan, libDay, wd);
+    DB.savePlans(plans);
+    const wdLabel = (WEEKDAYS.find(w => w.key === wd) || {}).label || '';
+    showToast(`"${libDay.name}" zu "${plan.name}" (${wdLabel}) hinzugefügt`);
+    renderLibDayDetail();
+  };
+  if (planVal === '__new__') {
+    promptForName('Name des neuen Trainingsplans', 'Neuer Trainingsplan', (name) => {
+      const plans = DB.getPlans();
+      const startDate = Date.now(), weeksTotal = 12, endDate = startDate + weeksTotal*7*24*3600*1000;
+      const np = { id:'plan_'+Date.now()+'_'+Math.floor(Math.random()*10000), name, weeksTotal, startDate, endDate, notes:'', trainingDays:[], weekPlan:JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN)), archived:false, createdAt:Date.now() };
+      plans.push(np); DB.savePlans(plans);
+      finish(np.id);
+    });
+  } else finish(planVal);
+}
+
+// Entfernt eine Übung aus dem aktuell bearbeiteten Bibliotheks-Trainingstag.
+function removeLibDayExercise(ei) {
+  const days = DB.getTrainingDays();
+  const day = days.find(d => d.id === editingLibDayId);
+  if (!day || !day.exercises || !day.exercises[ei]) return;
+  day.exercises.splice(ei, 1);
+  DB.saveTrainingDays(days);
+  renderLibDayDetail();
 }
 
 // User changed Gesamtdauer → recompute Enddatum
@@ -5547,7 +5831,7 @@ function prerenderAllTabs() {
   try { renderOverview(); }       catch (e) { console.warn('prerender overview', e); }
   try { renderWorkoutsScreen(); } catch (e) { console.warn('prerender workouts', e); }
   try { renderExercises(); }      catch (e) { console.warn('prerender exercises', e); }
-  try { renderPlans(); }          catch (e) { console.warn('prerender plans', e); }
+  try { renderPlansScreen(); }    catch (e) { console.warn('prerender plans', e); }
   try { renderMehr(); }           catch (e) { console.warn('prerender mehr', e); }
 }
 

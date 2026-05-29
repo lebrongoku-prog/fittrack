@@ -225,6 +225,16 @@ html.workout-active body.theme-workouts #workout-active-bar { display: none; }
 .wab-timer { margin-left: 4px; font-variant-numeric: tabular-nums; opacity: 0.95; }
 .wab-chev { font-size: 22px; line-height: 1; opacity: 0.9; }
 
+/* Entfernen-Button in den Trainingstag-Bibliothek-Cards (renderPreviewWorkout mode='libday') */
+.aex-libday-actions { padding: 0 12px 12px; }
+.aex-libday-remove {
+  width: 100%; padding: 8px; background: transparent; border: 1px dashed var(--border);
+  border-radius: 8px; color: var(--text3); font-size: 13px; font-weight: 600;
+  font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.aex-libday-remove:active { background: var(--card2); }
+.aex-v2.collapsed .aex-libday-actions { display: none; }
+
 /* Inhalt nicht hinter der Mini-Leiste verbergen (auf Workouts ist sie aus → normal). */
 html.workout-active .screen { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 56px); }
 html.workout-active body.theme-workouts #screen-workouts { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px); }
@@ -351,6 +361,7 @@ body.theme-plans .hist-action-dd {
 #screen-mehr      { background: var(--bg); }
 /* Plan-Detail teilt Theme mit Plans (Amber). */
 #screen-plan-detail { background: linear-gradient(135deg, #78350F, #F59E0B); }
+#screen-day-detail  { background: linear-gradient(135deg, #78350F, #F59E0B); }
 
 /* ─── Bottom Nav ─── */
 #bottom-nav {
@@ -1509,6 +1520,21 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .program-form-row label { font-size: 12px; color: var(--text3); font-weight: 600; }
 .program-form-row input { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 15px; }
 .program-form-row input:focus { outline: none; border-color: var(--accent); }
+.program-form-row textarea, .program-form-textarea {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; font-size: 15px; font-family: inherit; color: var(--text);
+  resize: vertical; min-height: 60px; line-height: 1.4; width: 100%;
+}
+.program-form-row textarea:focus, .program-form-textarea:focus { outline: none; border-color: var(--accent); }
+.day-addto-sub { font-size: 12px; color: var(--text3); padding: 10px 16px 4px; line-height: 1.4; }
+
+/* Segment-Toggle (Trainingsplan ↔ Trainingstage) im Plans-Tab */
+.seg-toggle { display: flex; gap: 4px; margin: 0 14px 12px; background: rgba(255,255,255,0.22);
+  border-radius: 12px; padding: 4px; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.seg-btn { flex: 1; border: none; background: transparent; color: #fff; font-size: 13px; font-weight: 600;
+  padding: 9px 6px; border-radius: 9px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  font-family: inherit; transition: background 0.15s, color 0.15s; }
+.seg-btn.active { background: #fff; color: var(--accent-dark); box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
 .program-form-row-2col { display: flex; gap: 10px; }
 .program-form-row-2col > div { flex: 1; display: flex; flex-direction: column; gap: 6px; }
 .plan-day-actions { display: flex; gap: 6px; margin-left: auto; }

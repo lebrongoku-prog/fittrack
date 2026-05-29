@@ -214,14 +214,19 @@
   <div id="screen-plans" class="screen">
     <div class="ph">
       <div class="ph-left">
-        <h1>Trainingsplan</h1>
+        <h1 id="plans-h1">Trainingsplan</h1>
         <div class="ph-sub" id="plans-subline">Übersicht aller Pläne</div>
       </div>
-      <div class="ex-add-btn" onclick="createNewPlan()" title="Neuen Trainingsplan erstellen">
+      <div class="ex-add-btn" id="plans-add-btn" onclick="onPlansAdd()" title="Neu erstellen">
         <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </div>
     </div>
+    <div class="seg-toggle" id="plans-seg">
+      <button class="seg-btn active" id="seg-plans" onclick="setPlansView('plans')">Trainingsplan</button>
+      <button class="seg-btn" id="seg-days" onclick="setPlansView('days')">Trainingstage</button>
+    </div>
     <div id="plans-list"></div>
+    <div id="libdays-list" style="display:none"></div>
   </div>
 
   <!-- ══ SCREEN: MEHR ══ -->
@@ -358,6 +363,10 @@
           <input type="text" id="prog-name" placeholder="z. B. Mein Aufbau-Block" onchange="saveProgramForm()">
         </div>
         <div class="program-form-row">
+          <label>Notizen</label>
+          <textarea id="prog-notes" class="program-form-textarea" rows="3" placeholder="Notizen zum Trainingsplan…" onchange="savePlanNotes()"></textarea>
+        </div>
+        <div class="program-form-row">
           <label>Gesamtdauer (Wochen)</label>
           <input type="number" id="prog-weeks" min="1" max="104" onchange="onWeeksChange()">
         </div>
@@ -408,6 +417,69 @@
       </div>
     </div>
   </div><!-- /plan-detail-overlay -->
+
+  <!-- ══ SCREEN: TRAININGSTAG-DETAIL (Bibliothek, Overlay) ══ -->
+  <div id="screen-day-detail" class="screen plan-detail-overlay">
+    <div class="ph plan-detail-ph">
+      <button class="sheet-back-btn" onclick="closeLibDayDetail()" aria-label="Zurück zur Liste">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="ph-left">
+        <h1 id="day-detail-title">Trainingstag</h1>
+        <div class="ph-sub" id="day-detail-subline"></div>
+      </div>
+    </div>
+
+    <div class="mehr-section">
+      <div class="mehr-section-title">Zu Trainingsplan hinzufügen</div>
+      <div class="mehr-card" id="day-addto-card"></div>
+    </div>
+
+    <div class="mehr-section">
+      <div class="mehr-section-title">Trainingstag-Daten</div>
+      <div class="mehr-card">
+        <div class="program-form-row">
+          <label>Name des Trainingstags</label>
+          <input type="text" id="day-name" placeholder="z. B. Push" onchange="saveLibDayName()">
+        </div>
+        <div class="program-form-row">
+          <label>Notizen</label>
+          <textarea id="day-notes" class="program-form-textarea" rows="3" placeholder="Notizen zum Trainingstag…" onchange="saveLibDayNotes()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="mehr-section">
+      <div class="mehr-section-title">Übungen</div>
+      <div class="mehr-card" id="day-ex-list"></div>
+      <div id="day-add-ex-wrap" style="padding:0 48px 8px;display:none">
+        <button class="btn btn-ghost btn-full" onclick="openAddExModal('libday')">+ Übung zum Trainingstag hinzufügen</button>
+      </div>
+    </div>
+
+    <div class="mehr-section">
+      <div class="mehr-section-title">Aktionen</div>
+      <div class="mehr-card">
+        <div class="mehr-row" onclick="toggleLibDayArchive()" style="cursor:pointer">
+          <div class="mehr-row-icon" style="background:var(--accent-bg)">📦</div>
+          <div class="mehr-row-info">
+            <div class="mehr-row-label" id="day-archive-label">Trainingstag archivieren</div>
+            <div class="mehr-row-sub">Versteckt den Tag aus der Hauptliste, bleibt aber zugänglich</div>
+          </div>
+          <div class="mehr-row-action">›</div>
+        </div>
+        <div class="divider"></div>
+        <div class="mehr-row" onclick="deleteCurrentLibDay()" style="cursor:pointer">
+          <div class="mehr-row-icon" style="background:var(--red-bg)">🗑</div>
+          <div class="mehr-row-info">
+            <div class="mehr-row-label" style="color:var(--red,#d33)">Trainingstag löschen</div>
+            <div class="mehr-row-sub">Entfernt den Bibliotheks-Tag. Bereits in Pläne kopierte Tage bleiben dort.</div>
+          </div>
+          <div class="mehr-row-action">›</div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /day-detail-overlay -->
 
 </div><!-- /app -->
 
