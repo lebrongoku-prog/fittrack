@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FitTrack">
   <meta name="theme-color" content="#f5f5f7">
   <title>FitTrack</title>
@@ -28,6 +29,10 @@
      Crossfade-Animation auch zwischen verschiedenen linear-gradients. -->
 <div class="bg-fade-layer" id="bg-fade-a"></div>
 <div class="bg-fade-layer" id="bg-fade-b"></div>
+
+<!-- Status-Bar-Scrim: dunkler Verlauf hinter der iOS-Status-Bar, nur auf dem hellen
+     Mehr-Tab sichtbar (black-translucent erzwingt weisse Symbole — sonst unlesbar auf hell). -->
+<div id="statusbar-scrim"></div>
 
 <div id="app">
 
