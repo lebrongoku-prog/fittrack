@@ -431,11 +431,6 @@
     </div>
 
     <div class="mehr-section">
-      <div class="mehr-section-title">Zu Trainingsplan hinzufügen</div>
-      <div class="mehr-card" id="day-addto-card"></div>
-    </div>
-
-    <div class="mehr-section">
       <div class="mehr-section-title">Trainingstag-Daten</div>
       <div class="mehr-card">
         <div class="program-form-row">
@@ -450,33 +445,18 @@
     </div>
 
     <div class="mehr-section">
-      <div class="mehr-section-title">Übungen</div>
-      <div class="mehr-card" id="day-ex-list"></div>
-      <div id="day-add-ex-wrap" style="padding:0 48px 8px;display:none">
-        <button class="btn btn-ghost btn-full" onclick="openAddExModal('libday')">+ Übung zum Trainingstag hinzufügen</button>
+      <div class="ex-item-actions" style="margin:0 14px">
+        <button class="primary" onclick="openDayToPlanModal()">+ Zu Trainingsplan</button>
+        <button id="day-archive-btn" onclick="toggleLibDayArchive()">📦 Archivieren</button>
+        <button class="danger" onclick="deleteCurrentLibDay()">✕ Löschen</button>
       </div>
     </div>
 
-    <div class="mehr-section">
-      <div class="mehr-section-title">Aktionen</div>
-      <div class="mehr-card">
-        <div class="mehr-row" onclick="toggleLibDayArchive()" style="cursor:pointer">
-          <div class="mehr-row-icon" style="background:var(--accent-bg)">📦</div>
-          <div class="mehr-row-info">
-            <div class="mehr-row-label" id="day-archive-label">Trainingstag archivieren</div>
-            <div class="mehr-row-sub">Versteckt den Tag aus der Hauptliste, bleibt aber zugänglich</div>
-          </div>
-          <div class="mehr-row-action">›</div>
-        </div>
-        <div class="divider"></div>
-        <div class="mehr-row" onclick="deleteCurrentLibDay()" style="cursor:pointer">
-          <div class="mehr-row-icon" style="background:var(--red-bg)">🗑</div>
-          <div class="mehr-row-info">
-            <div class="mehr-row-label" style="color:var(--red,#d33)">Trainingstag löschen</div>
-            <div class="mehr-row-sub">Entfernt den Bibliotheks-Tag. Bereits in Pläne kopierte Tage bleiben dort.</div>
-          </div>
-          <div class="mehr-row-action">›</div>
-        </div>
+    <div class="mehr-section" style="margin-left:0;margin-right:0">
+      <div class="mehr-section-title" style="margin-left:14px">Übungen</div>
+      <div id="day-ex-list"></div>
+      <div id="day-add-ex-wrap" style="padding:0 48px 8px;display:none">
+        <button class="btn btn-ghost btn-full" onclick="openAddExModal('libday')">+ Übung zum Trainingstag hinzufügen</button>
       </div>
     </div>
   </div><!-- /day-detail-overlay -->
@@ -661,6 +641,22 @@
       <div id="ex-to-day-list"></div>
       <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
         <button class="btn btn-outline btn-full" onclick="createNewPlanDayAndAddEx()">+ Trainingstag hinzufügen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Trainingstag → mehrere Trainingspläne (aus dem Trainingstag-Detail) -->
+<div id="modal-day-to-plan" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="modal-day-to-plan-title">Zu welchen Trainingsplänen hinzufügen?</div>
+    <div class="sheet-body">
+      <div class="day-addto-sub" style="padding:0 2px 8px">Fügt eine Kopie dieses Trainingstags zum Plan hinzu. Den Wochentag weist du danach im Plan-Detail zu.</div>
+      <div id="day-to-plan-list"></div>
+      <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+        <button class="btn btn-outline btn-full" onclick="createNewPlanForDay()">+ Neuen Trainingsplan anlegen</button>
+        <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="closeModal('modal-day-to-plan')">Fertig</button>
       </div>
     </div>
   </div>

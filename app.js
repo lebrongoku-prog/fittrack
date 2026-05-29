@@ -3457,9 +3457,23 @@ function renderLibDays() {
       <div class="plan-list-action">›</div>
     </div>`;
   };
+  // Import-Hinweis: wie viele Plan-Tage (nach Name) sind noch NICHT in der Bibliothek?
+  const libNames = new Set(days.map(d => (d.name||'').trim().toLowerCase()));
+  const planDayNames = new Set();
+  DB.getPlans().forEach(p => (p.trainingDays||[]).forEach(td => { const k=(td.name||'').trim().toLowerCase(); if (k) planDayNames.add(k); }));
+  let importable = 0; planDayNames.forEach(n => { if (!libNames.has(n)) importable++; });
+  const importBtn = importable > 0
+    ? `<div class="plan-list-row" onclick="importPlanDaysToLibrary()" style="cursor:pointer">
+         <div class="plan-list-info">
+           <div class="plan-list-name">⬇️ Bestehende Plan-Tage importieren</div>
+           <div class="plan-list-meta">${importable} Tag${importable===1?'':'e'} aus deinen Plänen in die Bibliothek kopieren</div>
+         </div>
+         <div class="plan-list-action">›</div>
+       </div>` : '';
+
   let html = '';
   if (!active.length && !archived.length) {
-    html = `<div class="plan-day-empty" style="margin:24px 14px">Noch keine Trainingstage — tippe auf das + oben rechts, um deinen ersten Trainingstag anzulegen.</div>`;
+    html = `<div class="plan-day-empty" style="margin:24px 14px">Noch keine Trainingstage — tippe auf das + oben rechts oder importiere bestehende Plan-Tage.</div>`;
   } else {
     html += active.map(renderRow).join('');
     if (archived.length) {
@@ -3472,7 +3486,7 @@ function renderLibDays() {
       if (expanded) html += archived.map(renderRow).join('');
     }
   }
-  document.getElementById('libdays-list').innerHTML = html;
+  document.getElementById('libdays-list').innerHTML = importBtn + html;
 }
 
 function createNewLibDay() {
@@ -3503,30 +3517,20 @@ function renderLibDayDetail() {
   const nameEl = document.getElementById('day-name'); if (nameEl) nameEl.value = day.name || '';
   const notesEl = document.getElementById('day-notes'); if (notesEl) notesEl.value = day.notes || '';
 
-  // Zu-Plan-hinzufuegen-Karte: Plan- + Wochentag-Auswahl
-  const plans = DB.getPlans().filter(p => !p.archived).sort((a,b) => a.startDate - b.startDate);
-  const planOpts = `<option value="">Plan wählen…</option>` +
-    plans.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('') +
-    `<option value="__new__">+ Neuer Plan…</option>`;
-  const wdOpts = `<option value="">Wochentag…</option>` +
-    WEEKDAYS.map(w => `<option value="${w.key}">${w.label}</option>`).join('');
-  document.getElementById('day-addto-card').innerHTML = `
-    <div class="day-addto-sub">Fügt eine Kopie dieses Trainingstags zu einem Plan hinzu und weist sie einem Wochentag zu.</div>
-    <div class="program-form-row"><label>Trainingsplan</label><select id="day-addto-plan" class="weekplan-select">${planOpts}</select></div>
-    <div class="program-form-row"><label>Wochentag</label><select id="day-addto-weekday" class="weekplan-select">${wdOpts}</select></div>
-    <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="confirmAddLibDayToPlan()">Zum Plan hinzufügen</button>`;
+  // Aktions-Button-Reihe: Archivieren-Label je nach Status
+  const archBtn = document.getElementById('day-archive-btn');
+  if (archBtn) archBtn.textContent = day.archived ? '📦 Aus Archiv holen' : '📦 Archivieren';
 
   // Übungen im Workout-Tab-Stil: dieselben aex-v2-Preview-Cards via renderPreviewWorkout(mode='libday').
+  // KEIN weißer mehr-card-Hintergrund — die Cards sitzen direkt auf dem Tab-Gradient (wie im Workouts-Tab).
   const addWrap = document.getElementById('day-add-ex-wrap');
   if (addWrap) addWrap.style.display = '';
   if ((day.exercises || []).length) {
     renderPreviewWorkout(day, 'libday', 'day-ex-list');
   } else {
     document.getElementById('day-ex-list').innerHTML =
-      `<div class="plan-day-empty">Noch keine Übungen — tippe unten auf „+ Übung zum Trainingstag hinzufügen".</div>`;
+      `<div class="plan-day-empty" style="color:rgba(255,255,255,0.85);background:transparent;margin:0 14px">Noch keine Übungen — tippe unten auf „+ Übung zum Trainingstag hinzufügen".</div>`;
   }
-
-  document.getElementById('day-archive-label').textContent = day.archived ? 'Aus Archiv holen' : 'Trainingstag archivieren';
 }
 
 function saveLibDayName() {
@@ -3566,44 +3570,97 @@ function deleteCurrentLibDay() {
     { danger: true, confirmLabel: 'Löschen' });
 }
 
-// Kopiert den Bibliotheks-Tag (frische id) in plan.trainingDays + weist ihn dem Wochentag im weekPlan zu.
-function _addLibDayCopyToPlan(plan, libDay, weekdayKey) {
+// Kopiert den Bibliotheks-Tag (frische id) in plan.trainingDays — OHNE Wochentag-Zuweisung
+// (Wochentag wird optional später im Plan-Detail zugewiesen, Leonard-Wunsch).
+function _addLibDayCopyToPlan(plan, libDay) {
   const newId = 'pd_' + Date.now() + '_' + Math.floor(Math.random()*10000);
   const exercises = JSON.parse(JSON.stringify(libDay.exercises || []));
   plan.trainingDays = plan.trainingDays || [];
   plan.trainingDays.push({ id: newId, name: libDay.name, color: libDay.color, exercises });
-  const wp = plan.weekPlan || JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
-  const row = wp.find(w => w.dayKey === weekdayKey);
-  if (row) row.planDayId = newId;
-  plan.weekPlan = wp;
 }
-function confirmAddLibDayToPlan() {
-  const planSel = document.getElementById('day-addto-plan');
-  const wdSel = document.getElementById('day-addto-weekday');
-  if (!planSel || !wdSel) return;
-  const planVal = planSel.value, wd = wdSel.value;
-  if (!planVal) { showToast('Bitte einen Plan wählen'); return; }
-  if (!wd) { showToast('Bitte einen Wochentag wählen'); return; }
+
+// Multi-Plan-Modal (analog zum „Zu Trainingstag"-Modal im Übungen-Tab). Mehrfach hinzufügbar;
+// Kopie-Semantik → keine Toggle/Entfernen-Logik (jeder Klick fügt eine weitere Kopie hinzu).
+let dayToPlanAdded = new Set(); // in dieser Modal-Session bereits hinzugefügte Plan-IDs
+function openDayToPlanModal() {
+  const day = _getEditingLibDay();
+  if (!day) return;
+  dayToPlanAdded = new Set();
+  document.getElementById('modal-day-to-plan-title').textContent = `„${day.name}" zu welchen Trainingsplänen?`;
+  renderDayToPlanList();
+  openModal('modal-day-to-plan');
+}
+function renderDayToPlanList() {
+  const plans = DB.getPlans().filter(p => !p.archived).sort((a,b) => a.startDate - b.startDate);
+  const html = plans.map(p => {
+    const added = dayToPlanAdded.has(p.id);
+    const cls = `day-pick-row${added ? ' in-day' : ' not-in-day'}`;
+    const onclickAttr = added ? '' : `onclick="addLibDayToPlanFromModal('${p.id}')"`;
+    const actions = added ? `<span class="day-pick-icon done">✓</span>` : `<span class="day-pick-icon">+</span>`;
+    const sub = `${(p.trainingDays||[]).length} Trainingstage${added ? ' · Hinzugefügt' : ''}`;
+    return `<div class="${cls}" ${onclickAttr}>
+      <div class="day-pick-info">
+        <div class="day-pick-name">${escapeHtml(p.name)}</div>
+        <div class="day-pick-sub">${sub}</div>
+      </div>
+      <div class="day-pick-actions">${actions}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('day-to-plan-list').innerHTML = html ||
+    '<p style="color:var(--text3);text-align:center;padding:20px">Noch keine Trainingspläne. Lege unten einen an.</p>';
+}
+function addLibDayToPlanFromModal(planId) {
   const libDay = _getEditingLibDay(); if (!libDay) return;
-  const finish = (planId) => {
+  const plans = DB.getPlans();
+  const plan = plans.find(p => p.id === planId);
+  if (!plan) return;
+  _addLibDayCopyToPlan(plan, libDay);
+  DB.savePlans(plans);
+  dayToPlanAdded.add(planId);
+  showToast(`„${libDay.name}" zu „${plan.name}" hinzugefügt`);
+  renderDayToPlanList();
+}
+function createNewPlanForDay() {
+  const libDay = _getEditingLibDay(); if (!libDay) return;
+  promptForName('Name des neuen Trainingsplans', 'Neuer Trainingsplan', (name) => {
     const plans = DB.getPlans();
-    const plan = plans.find(p => p.id === planId);
-    if (!plan) return;
-    _addLibDayCopyToPlan(plan, libDay, wd);
+    const startDate = Date.now(), weeksTotal = 12, endDate = startDate + weeksTotal*7*24*3600*1000;
+    const np = { id:'plan_'+Date.now()+'_'+Math.floor(Math.random()*10000), name, weeksTotal, startDate, endDate, notes:'', trainingDays:[], weekPlan:JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN)), archived:false, createdAt:Date.now() };
+    _addLibDayCopyToPlan(np, libDay);
+    plans.push(np);
     DB.savePlans(plans);
-    const wdLabel = (WEEKDAYS.find(w => w.key === wd) || {}).label || '';
-    showToast(`"${libDay.name}" zu "${plan.name}" (${wdLabel}) hinzugefügt`);
-    renderLibDayDetail();
-  };
-  if (planVal === '__new__') {
-    promptForName('Name des neuen Trainingsplans', 'Neuer Trainingsplan', (name) => {
-      const plans = DB.getPlans();
-      const startDate = Date.now(), weeksTotal = 12, endDate = startDate + weeksTotal*7*24*3600*1000;
-      const np = { id:'plan_'+Date.now()+'_'+Math.floor(Math.random()*10000), name, weeksTotal, startDate, endDate, notes:'', trainingDays:[], weekPlan:JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN)), archived:false, createdAt:Date.now() };
-      plans.push(np); DB.savePlans(plans);
-      finish(np.id);
+    dayToPlanAdded.add(np.id);
+    showToast(`„${libDay.name}" zu neuem Plan „${name}" hinzugefügt`);
+    renderDayToPlanList();
+  });
+}
+
+// Einmal-Import: bestehende Plan-Tage als eigenständige Bibliotheks-Tage kopieren (nach Name dedupliziert).
+function importPlanDaysToLibrary() {
+  const days = DB.getTrainingDays();
+  const existingNames = new Set(days.map(d => (d.name||'').trim().toLowerCase()));
+  let added = 0;
+  DB.getPlans().forEach(p => {
+    (p.trainingDays || []).forEach(td => {
+      const key = (td.name||'').trim().toLowerCase();
+      if (!key || existingNames.has(key)) return;
+      existingNames.add(key);
+      days.push({
+        id: 'libday_' + Date.now() + '_' + Math.floor(Math.random()*100000) + '_' + added,
+        name: td.name, color: td.color,
+        exercises: JSON.parse(JSON.stringify(td.exercises || [])),
+        notes: '', archived: false, createdAt: Date.now(),
+      });
+      added++;
     });
-  } else finish(planVal);
+  });
+  if (added) {
+    DB.saveTrainingDays(days);
+    showToast(`${added} Trainingstag${added===1?'':'e'} importiert`);
+  } else {
+    showToast('Keine neuen Trainingstage zum Importieren');
+  }
+  renderLibDays();
 }
 
 // Entfernt eine Übung aus dem aktuell bearbeiteten Bibliotheks-Trainingstag.
@@ -5355,12 +5412,13 @@ async function driveUploadFile(id, payload) {
 function collectLocalData() {
   return {
     // v3 = Multi-Plan + Cardio (exercises haben type, workouts haben optional cardio-Block)
-    version: 3,
+    version: 4,
     exportedAt: new Date().toISOString(),
     lastLocalChange: driveGetLastLocalChange(),
     exercises: DB.getExercises(),
     plans: DB.getPlans(),
     workouts: DB.getWorkouts(),
+    trainingDays: DB.getTrainingDays(),   // v4: planunabhängige Trainingstage-Bibliothek
   };
 }
 
@@ -5409,6 +5467,9 @@ function driveApplyCloudData(data) {
   localStorage.setItem('ft_exercises', JSON.stringify(data.exercises));
   localStorage.setItem('ft_plans', JSON.stringify(plansArray));
   localStorage.setItem('ft_workouts', JSON.stringify(data.workouts));
+  // v4: Trainingstage-Bibliothek nur überschreiben, wenn in der Cloud vorhanden
+  // (ältere Backups ohne dieses Feld lassen die lokale Bibliothek unangetastet).
+  if (Array.isArray(data.trainingDays)) localStorage.setItem('ft_trainingdays', JSON.stringify(data.trainingDays));
   // Legacy-Keys bei v1-Migration sauber halten (sonst würde migrateToMultiPlan beim nächsten App-Start nochmal greifen)
   if (Array.isArray(data.plan)) {
     localStorage.removeItem('ft_program');
