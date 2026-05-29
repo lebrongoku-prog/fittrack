@@ -308,7 +308,14 @@ body.theme-plans .hist-action-dd {
 
 /* ─── Bottom Nav ─── */
 #bottom-nav {
-  position: fixed; bottom: 0; left: 0; right: 0;
+  /* bottom auf -(safe-area-inset-bottom): In der iOS-PWA mit black-translucent +
+     viewport-fit=cover landet `bottom: 0` eines fixed-Elements auf der Safe-Area-
+     Kante (oberhalb des Home-Indicators), NICHT am physischen Bildschirmrand —
+     dadurch schwebte die Nav ueber dem Home-Indicator und darunter blieb ein
+     Streifen sichtbar. -safe-b schiebt die Nav bis an den physischen Rand; das
+     vorhandene padding-bottom: var(--safe-b) haelt die Icons weiterhin ueber dem
+     Home-Indicator. Bei safe-b = 0 (Browser/kein Notch) identisch zu bottom: 0. */
+  position: fixed; bottom: calc(-1 * var(--safe-b)); left: 0; right: 0;
   height: calc(var(--nav-h) + var(--safe-b));
   background: rgba(255,255,255,0.94);
   -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
@@ -500,7 +507,9 @@ body.theme-plans .hist-action-dd {
 
 /* Workout bottom bar */
 .wo-bottom-bar {
-  position: fixed; bottom: 0; left: 0; right: 0;
+  /* Gleiche Verankerung wie #bottom-nav: bis an den physischen Rand, padding-bottom
+     haelt den Inhalt ueber dem Home-Indicator (siehe Begruendung bei #bottom-nav). */
+  position: fixed; bottom: calc(-1 * var(--safe-b)); left: 0; right: 0;
   padding: 10px 14px calc(var(--safe-b) + 10px);
   background: rgba(255,255,255,0.96); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
   border-top: 1px solid var(--border); z-index: 10;
