@@ -360,23 +360,6 @@ function formatDistance(km) {
   return km.toFixed(km < 10 ? 2 : 1).replace('.', ',') + ' km';
 }
 
-// Compact muscle icons (SVG path content – inserted inside a 24x24 viewBox)
-function muscleIconSvg(muscleKey, size = 16) {
-  const m = MUSCLE_META[muscleKey];
-  const color = m ? m.color : '#0066ff';
-  const paths = {
-    chest:        '<path d="M6 6h4l1 2h2l1-2h4v5a4 4 0 0 1-3 4l-1 2h-4l-1-2a4 4 0 0 1-3-4z"/>',
-    back:         '<path d="M8 4h8l2 4-1 4v4l-2 2-1-3h-4l-1 3-2-2v-4l-1-4z"/>',
-    shoulders:    '<path d="M4 11c2-4 5-5 8-5s6 1 8 5"/><circle cx="6" cy="13" r="2"/><circle cx="18" cy="13" r="2"/><path d="M9 14h6"/>',
-    biceps:       '<path d="M5 14l3-2 1-3 3-3 4 1-1 3 2 1-2 3-1 4-3-1-3 1z"/><circle cx="14" cy="9" r="1"/>',
-    triceps:      '<path d="M4 8l3 3 2 1 2 4 2 4h3l1-2 2-1-1-3-3-3-2-1-3-3-2-2z"/>',
-    legs:         '<path d="M9 3h6l-1 9-1 4-1 5h-2l-1-9-1-4z"/><path d="M9 12h6"/>',
-    core:         '<path d="M7 5h10v4H7zM7 11h10v4H7zM7 17h10v3H7z"/>',
-  };
-  const path = paths[muscleKey] || paths.chest;
-  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" style="stroke:${color};fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round">${path}</svg>`;
-}
-
 function typeCls(t) { return 'type-' + (t || 'free'); }
 function fmtTimer(s) { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60; return h>0?`${h}:${pad(m)}:${pad(ss)}`:`${pad(m)}:${pad(ss)}`; }
 function fmtDur(s) { if(!s)return'0 min'; const h=Math.floor(s/3600),m=Math.floor((s%3600)/60); return h>0?`${h}h ${m}min`:`${m} min`; }
@@ -647,7 +630,7 @@ const THEME_GRADIENTS = {
 // Layer A traegt den FROM-Theme-Gradient, Layer B den TO-Theme-Gradient.
 // Die Opacities interpolieren kontinuierlich mit der Scroll-Position des Tab-Containers
 // (`progress` = scrollLeft / clientWidth, also der Tab-Index als Float).
-// Beim Tableisten-Klick wird `setThemeBackground(name, false)` statt der Swipe-Logik
+// Beim Tableisten-Klick wird `setThemeBackground(name)` statt der Swipe-Logik
 // aufgerufen — instant Wechsel ohne Crossfade.
 function updateBackgroundForSwipe(progress) {
   const fromIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, Math.floor(progress)));
@@ -677,7 +660,7 @@ function updateBackgroundForSwipe(progress) {
 
 // Instant Set fuer Tableisten-Klick und App-Start.
 // Setzt Layer A auf das neue Theme mit opacity 1, Layer B opacity 0 — ohne Animation.
-function setThemeBackground(themeName, animate) {
+function setThemeBackground(themeName) {
   const newBg = THEME_GRADIENTS[themeName] !== undefined ? THEME_GRADIENTS[themeName] : '';
   const layerA = document.getElementById('bg-fade-a');
   const layerB = document.getElementById('bg-fade-b');
@@ -718,7 +701,7 @@ function _applyTabState(name) {
   // _applyTabState wird bei Tableisten-Klick + initialem App-Start aufgerufen —
   // dort ist KEIN Crossfade gewuenscht (sofortiger Wechsel). Beim Swipe-Snap
   // ruft der scroll-Handler in initTabScrollSync setThemeBackground mit Animation.
-  setThemeBackground(themeName, /*animate*/ false);
+  setThemeBackground(themeName);
   updateThemeColorMeta();
 
   // Beim Wechsel zur Plans-Liste den Edit-Kontext zuruecksetzen.
@@ -5501,7 +5484,7 @@ function initTabScrollSync() {
           // Zurueck-Snap zum selben Tab: Background final setzen, falls die Layer
           // mitten in der Interpolation stehen blieben.
           const themeName = (name === 'plan-detail') ? 'plans' : name;
-          setThemeBackground(themeName, false);
+          setThemeBackground(themeName);
         }
       }, 90);
     });
