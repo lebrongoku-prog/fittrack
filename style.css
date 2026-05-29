@@ -133,10 +133,7 @@ html, body { height: 100%; width: 100%; color: var(--text); overflow: hidden; }
 body {
   background: transparent;
   display: flex; flex-direction: column;
-  /* Kein padding-top mehr am body: Das Safe-Area-Top-Polster liegt jetzt auf dem
-     scrollenden Inhalt jedes Tabs (.screen) + Plan-Detail-Overlay. So scrollt der
-     Inhalt im black-translucent-Modus hinter die transparente Status-Bar (Scroll-
-     unter-Effekt), ruht aber im Ausgangszustand sauber darunter. */
+  padding-top: var(--safe-t);
   /* Body-Background ist transparent (von html, body). Der themed Gradient
      liegt jetzt auf den .bg-fade-layer Pseudo-Layern, die per JS-Opacity-Crossfade
      animiert werden (siehe setThemeBackground()). Hier transitionen nur noch
@@ -172,23 +169,6 @@ body.no-anim {
 /* Variante ohne Animation — wird via JS angehaengt, wenn der Tab via Tableisten-Klick
    gewechselt wurde (nicht via Swipe). */
 .bg-fade-layer.no-anim { transition: none; }
-
-/* Status-Bar-Schleier: nur im hellen Mehr-Tab sichtbar. Im black-translucent-
-   Modus erzwingt iOS weisse Status-Bar-Symbole; auf dem hellen Mehr-Hintergrund
-   waeren die schlecht lesbar. Ein dezenter dunkler Verlauf in Hoehe der Safe-Area
-   (Status-Bar) haelt sie lesbar. Top-only — beruehrt die Bottom-Nav NICHT.
-   In Safari/Nicht-Standalone ist --safe-t = 0px, der Schleier also unsichtbar. */
-#statusbar-scrim {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: var(--safe-t);
-  background: linear-gradient(to bottom, rgba(0,0,0,0.38), rgba(0,0,0,0));
-  z-index: 90;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.45s cubic-bezier(0.4, 0, 0.6, 1);
-}
-body.theme-mehr #statusbar-scrim { opacity: 1; }
 /* Header texts adapt to the dark themed backgrounds */
 body.theme-overview .ph h1,
 body.theme-workouts .ph h1,
@@ -249,9 +229,6 @@ body.theme-plans .hist-action-dd {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   /* scroll-snap-align/stop entfernt — Snap erfolgt JS-seitig (siehe #tab-container). */
-  /* Safe-Area-Top als Scroll-Polster: Inhalt ruht knapp unter der Status-Bar
-     und scrollt im black-translucent-Modus dahinter (Scroll-unter-Effekt). */
-  padding-top: var(--safe-t);
   /* Damit der Inhalt nicht unter der Bottom-Nav verschwindet */
   padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
   /* Landscape auf iPhones mit Notch: padding-left/right symmetrisch.
@@ -279,8 +256,6 @@ body.theme-plans .hist-action-dd {
   z-index: 40;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  /* Gleiche Scroll-unter-Logik wie .screen: Header ruht unter der Status-Bar. */
-  padding-top: var(--safe-t);
   padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
   /* Versteckt-Zustand: rechts ausserhalb */
   transform: translateX(100%);
@@ -308,14 +283,7 @@ body.theme-plans .hist-action-dd {
 
 /* ─── Bottom Nav ─── */
 #bottom-nav {
-  /* bottom auf -(safe-area-inset-bottom): In der iOS-PWA mit black-translucent +
-     viewport-fit=cover landet `bottom: 0` eines fixed-Elements auf der Safe-Area-
-     Kante (oberhalb des Home-Indicators), NICHT am physischen Bildschirmrand —
-     dadurch schwebte die Nav ueber dem Home-Indicator und darunter blieb ein
-     Streifen sichtbar. -safe-b schiebt die Nav bis an den physischen Rand; das
-     vorhandene padding-bottom: var(--safe-b) haelt die Icons weiterhin ueber dem
-     Home-Indicator. Bei safe-b = 0 (Browser/kein Notch) identisch zu bottom: 0. */
-  position: fixed; bottom: calc(-1 * var(--safe-b)); left: 0; right: 0;
+  position: fixed; bottom: 0; left: 0; right: 0;
   height: calc(var(--nav-h) + var(--safe-b));
   background: rgba(255,255,255,0.94);
   -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
@@ -507,9 +475,7 @@ body.theme-plans .hist-action-dd {
 
 /* Workout bottom bar */
 .wo-bottom-bar {
-  /* Gleiche Verankerung wie #bottom-nav: bis an den physischen Rand, padding-bottom
-     haelt den Inhalt ueber dem Home-Indicator (siehe Begruendung bei #bottom-nav). */
-  position: fixed; bottom: calc(-1 * var(--safe-b)); left: 0; right: 0;
+  position: fixed; bottom: 0; left: 0; right: 0;
   padding: 10px 14px calc(var(--safe-b) + 10px);
   background: rgba(255,255,255,0.96); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
   border-top: 1px solid var(--border); z-index: 10;
