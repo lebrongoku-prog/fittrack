@@ -1507,13 +1507,13 @@ function renderPreviewWorkout(planDay) {
       </div>
       <div class="aex-v2-body">
         <div class="aex-v2-table">
-          <div class="aex-v2-row head" style="grid-template-columns:50px ${Array(pe.targetSets).fill('1fr').join(' ')}">
+          <div class="aex-v2-row head" style="grid-template-columns:50px ${Array(pe.targetSets).fill('minmax(0,42px)').join(' ')}">
             <span class="ax-lbl">Satz</span>${Array.from({length:pe.targetSets},(_,si)=>`<span class="num-cell">${si+1}</span>`).join('')}
           </div>
-          <div class="aex-v2-row" style="grid-template-columns:50px ${Array(pe.targetSets).fill('1fr').join(' ')}">
+          <div class="aex-v2-row" style="grid-template-columns:50px ${Array(pe.targetSets).fill('minmax(0,42px)').join(' ')}">
             <span class="ax-lbl">Wdh.</span>${Array(pe.targetSets).fill(`<div class="aex-v2-inp" style="background:var(--bg);color:var(--text3);display:flex;align-items:center;justify-content:center">${pe.targetReps}</div>`).join('')}
           </div>
-          <div class="aex-v2-row" style="grid-template-columns:50px ${Array(pe.targetSets).fill('1fr').join(' ')}">
+          <div class="aex-v2-row" style="grid-template-columns:50px ${Array(pe.targetSets).fill('minmax(0,42px)').join(' ')}">
             <span class="ax-lbl">kg</span>${Array(pe.targetSets).fill(`<div class="aex-v2-inp" style="background:var(--bg);color:var(--text3);display:flex;align-items:center;justify-content:center">${last?last.maxWeight:'–'}</div>`).join('')}
           </div>
         </div>
@@ -1580,7 +1580,7 @@ function renderActiveWorkout() {
     const lastStr = last ? `Zuletzt: ${last.sets.length}×${last.sets[0]?.reps||'?'} @ ${last.maxWeight} kg` : '';
     const targetW = last ? `${last.maxWeight} kg` : '–';
     const nSets = ex.sets.length;
-    const gridCols = `50px ${Array(nSets).fill('1fr').join(' ')}`;
+    const gridCols = `50px ${Array(nSets).fill('minmax(0,42px)').join(' ')}`;
     const headerCells = ex.sets.map((_,si)=>`<span class="num-cell">${si+1}</span>`).join('');
     const kgInputs = ex.sets.map((s,si) =>
       `<input class="aex-v2-inp ${s.done?'done-inp':''}" type="number" inputmode="decimal"

@@ -259,12 +259,11 @@ body.theme-plans .hist-action-dd {
   padding-top: calc(var(--safe-t) + 8px);
   /* Damit der Inhalt nicht unter der Bottom-Nav verschwindet */
   padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
-  /* Seitliches Basispolster (8px) fuer mehr Luft zum Bildschirmrand, plus
-     Landscape-Notch-Polster symmetrisch obendrauf: iOS liefert env(safe-area-inset-*)
-     nur auf der Notch-Seite einen Wert >0 — wir nutzen max() von beiden, damit das
-     Polster auf BEIDEN Seiten gleich aussieht. In Portrait greift nur die 8px. */
-  padding-left: calc(8px + max(var(--safe-l), var(--safe-r)));
-  padding-right: calc(8px + max(var(--safe-l), var(--safe-r)));
+  /* Landscape-Notch-Polster symmetrisch (Portrait = 0): iOS liefert env(safe-area-inset-*)
+     nur auf der Notch-Seite einen Wert >0 — max() von beiden haelt das Polster auf
+     beiden Seiten gleich. (Das fruehere +8px-Basispolster wurde auf Wunsch entfernt.) */
+  padding-left: max(var(--safe-l), var(--safe-r));
+  padding-right: max(var(--safe-l), var(--safe-r));
   /* Overscroll-Bounce am vertikalen Rand bleibt iOS-typisch erhalten */
   overscroll-behavior-y: auto;
   /* Horizontale Overscroll-Bewegung soll am Snap-Container ankommen, nicht hier */
@@ -287,9 +286,6 @@ body.theme-plans .hist-action-dd {
   /* Safe-Top wie .screen (black-translucent). */
   padding-top: calc(var(--safe-t) + 8px);
   padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
-  /* Gleiches seitliches Basispolster wie .screen (8px + Notch). */
-  padding-left: calc(8px + max(var(--safe-l), var(--safe-r)));
-  padding-right: calc(8px + max(var(--safe-l), var(--safe-r)));
   /* Versteckt-Zustand: rechts ausserhalb */
   transform: translateX(100%);
   visibility: hidden;
@@ -1223,7 +1219,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 
 /* Active exercise card – v2 with colored left border + white bg */
 .aex-v2 {
-  margin: 0 12px 12px; background: var(--card); border-radius: 14px;
+  margin: 0 26px 12px; background: var(--card); border-radius: 14px;
   box-shadow: var(--shadow); overflow: hidden;
   border-left: 4px solid var(--c, var(--accent));
   scroll-margin-top: 20px;
