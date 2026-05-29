@@ -195,13 +195,13 @@ body.theme-mehr #statusbar-scrim { opacity: 1; }
    body.className bei jedem Tab-Wechsel komplett neu gesetzt wird (eine body-Klasse
    ginge dabei verloren). Gesetzt/entfernt via syncWorkoutActiveUI() in app.js. */
 
-/* (a) Pulsierende Akzentlinie am oberen Bildschirmrand (top:0, Leonard-Wunsch).
-       Dünne 3px-Linie oberhalb der Status-Bar-Symbole — beeinträchtigt deren Lesbarkeit nicht. */
+/* (a) Pulsierender Glow um den GESAMTEN Bildschirmrand (oben, seitlich, bis unter die
+       Bottom-Nav). Inset-Box-Shadow auf einem Vollbild-Overlay (z-index ueber allem,
+       pointer-events:none). border-radius folgt grob den iPhone-Ecken. */
 #workout-glow {
-  position: fixed; top: 0; left: 0; right: 0; height: 3px;
-  z-index: 95; pointer-events: none; display: none;
-  background: var(--accent);
-  box-shadow: 0 0 14px 2px var(--accent), 0 0 5px 0 var(--accent);
+  position: fixed; inset: 0; z-index: 200; pointer-events: none; display: none;
+  border-radius: 40px;
+  box-shadow: inset 0 0 22px 4px var(--accent), inset 0 0 60px 2px var(--accent);
 }
 html.workout-active #workout-glow { display: block; animation: wo-breathe 2.2s ease-in-out infinite; }
 
@@ -211,7 +211,7 @@ html.workout-active #workout-glow { display: block; animation: wo-breathe 2.2s e
   bottom: calc(var(--nav-h) + var(--safe-b));
   height: 44px; z-index: 99;
   display: none; align-items: center; justify-content: center; gap: 10px; padding: 0 18px;
-  background: var(--accent); color: #fff;
+  background: #10B981; color: #fff;   /* feste Workouts-Akzentfarbe (Emerald) */
   font-size: 14px; font-weight: 600;
   box-shadow: 0 -3px 14px rgba(0,0,0,0.18);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
@@ -221,7 +221,9 @@ html.workout-active #workout-active-bar { display: flex; }
 /* Auf dem Workouts-Tab ist der aktive Block ohnehin sichtbar → Leiste dort ausblenden. */
 html.workout-active body.theme-workouts #workout-active-bar { display: none; }
 /* Mit der Bottom-Nav-Auto-Hide mit ausblenden (Klasse via initScrollHideNav gespiegelt). */
-#workout-active-bar.nav-hidden { opacity: 0; transform: translateY(10px); pointer-events: none; }
+/* Beim Runterscrollen NICHT verschwinden, sondern an den unteren Bildschirmrand wandern
+   (die Bottom-Nav gleitet weg, die Leiste rueckt um die Nav-Hoehe nach unten nach). */
+#workout-active-bar.nav-hidden { transform: translateY(var(--nav-h)); }
 .wab-dot { width: 9px; height: 9px; border-radius: 50%; background: #fff; flex-shrink: 0; animation: wo-pulse 1.4s ease-in-out infinite; }
 .wab-timer { margin-left: 4px; font-variant-numeric: tabular-nums; opacity: 0.95; }
 .wab-chev { font-size: 22px; line-height: 1; opacity: 0.9; }

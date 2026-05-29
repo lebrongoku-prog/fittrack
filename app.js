@@ -5557,6 +5557,17 @@ function initScrollHideNav() {
   if (planDetail) attachToScreen(planDetail, 'plan-detail');
 }
 
+// Alle Tab-Inhalte einmal im Hintergrund rendern (App-Start), damit beim Wischen KEIN
+// leerer Tab kurz aufblitzt, bevor _applyTabState ihn beim Ankommen rendert. Die Tabs
+// liegen alle (off-screen) im DOM mit voller Breite → Charts etc. messen korrekt.
+function prerenderAllTabs() {
+  try { renderOverview(); }       catch (e) { console.warn('prerender overview', e); }
+  try { renderWorkoutsScreen(); } catch (e) { console.warn('prerender workouts', e); }
+  try { renderExercises(); }      catch (e) { console.warn('prerender exercises', e); }
+  try { renderPlans(); }          catch (e) { console.warn('prerender plans', e); }
+  try { renderMehr(); }           catch (e) { console.warn('prerender mehr', e); }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Daten-Migration: altes ft_program/ft_plan2/ft_weekplan in neue ft_plans-Struktur
   migrateToMultiPlan();
@@ -5569,6 +5580,8 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     showScreen('overview');
   }
+  // Alle uebrigen Tabs vorab im Hintergrund rendern → kein leeres Aufblitzen beim ersten Wischen.
+  prerenderAllTabs();
   // Drive-Sync initialisieren (versucht stillen Auto-Login, lädt Cloud-Daten falls verbunden)
   driveInit();
   // Bottom-Nav versteckt sich beim Runterscrollen, taucht beim Hochscrollen wieder auf
