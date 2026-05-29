@@ -2268,9 +2268,9 @@ function updateTimerDisplay() {
   document.querySelectorAll('.hero-v2-timer').forEach(el => el.textContent = t);
 }
 
-// App-weite "Workout läuft"-Signale (Mini-Leiste, Nav-Label-Timer, Akzent-Glow) mit dem
-// Aktiv-Status synchron halten. Status-Klasse auf <html>, da body.className bei jedem
-// Tab-Wechsel neu gesetzt wird (eine body-Klasse ginge verloren).
+// App-weite "Workout läuft"-Signale (Mini-Leiste + Akzent-Glow) mit dem Aktiv-Status
+// synchron halten. Status-Klasse auf <html>, da body.className bei jedem Tab-Wechsel neu
+// gesetzt wird (eine body-Klasse ginge verloren).
 function _woTimerText() {
   const wo = DB.getActive();
   return wo ? fmtTimer(Math.floor(getElapsedMs(wo) / 1000)) : '';
@@ -2278,15 +2278,8 @@ function _woTimerText() {
 function syncWorkoutActiveUI() {
   const active = !!DB.getActive();
   document.documentElement.classList.toggle('workout-active', active);
-  const navLabel = document.querySelector('#nav-workouts span');
   const barTimer = document.getElementById('wab-timer');
-  if (active) {
-    const t = _woTimerText();
-    if (navLabel) navLabel.textContent = t;
-    if (barTimer) barTimer.textContent = t;
-  } else if (navLabel) {
-    navLabel.textContent = 'Workouts';
-  }
+  if (active && barTimer) barTimer.textContent = _woTimerText();
 }
 
 // Pause / resume the active workout (real freeze).
