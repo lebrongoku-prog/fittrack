@@ -5431,158 +5431,58 @@ function initTabScrollSync() {
   let ticking = false;
   let lastReported = currentScreen;
   let settleTimer = null;
-  // Tab-Index zu Beginn einer Wisch-Geste. Begrenzt das Wischen auf MAX einen Tab
-  // pro Geste (Paging): waehrend des Scrollens wird scrollLeft hart auf die
-  // Nachbar-Tab-Breite geklemmt — stoppt auch einen kraeftigen iOS-Momentum-Fling
-  // an der Tab-Kante, sodass nie mehr als ein Tab uebersprungen werden kann.
-  let swipeStartIdx = null;
-  // Velocity-Tracking fuer Flick-Erkennung beim Loslassen.
-  let touchLastX = 0, touchLastT = 0, touchVelX = 0;
 
-  // Committet den Snap zum Ziel-Tab: smooth scrollen (falls noetig) + Theme/Render
-  // finalisieren. Wird sowohl beim touchend (sofort, reaktiv) als auch vom
-  // Settle-Timer (Fallback) genutzt.
-  function commitSnap(targetIdx) {
-    const w = container.clientWidth;
-    if (w <= 0) return;
-    targetIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, targetIdx));
-    const name = TAB_ORDER[targetIdx];
-    const exact = targetIdx * w;
-    if (Math.abs(container.scrollLeft - exact) > 1) {
-      _suppressScrollSync = true;
-      container.scrollTo({ left: exact, behavior: 'smooth' });
-      // scrollend-Event ist nicht ueberall zuverlaessig → Flag nach fixem Delay freigeben.
-      setTimeout(() => { _suppressScrollSync = false; }, 350);
-    }
-    if (currentScreen !== name) {
-      currentScreen = name;
-      _applyTabState(name);
-    } else {
-      // Kein Tab-Wechsel (Zurueck-Snap o. schon am Ziel): Background final auf das
-      // Tab-Theme setzen, falls der Drag die Layer mitten in der Interpolation liess.
-      const themeName = (name === 'plan-detail') ? 'plans' : name;
-      setThemeBackground(themeName, false);
-    }
-    lastReported = name;
-  }
-
-  // Beim Beruehren den aktuell ruhenden Tab als Referenz merken + Velocity zuruecksetzen.
-  // Programmatische Scrolls (Bottom-Nav-Klick) ueberspringen wir — die duerfen
-  // bewusst mehrere Tabs auf einmal springen.
-  container.addEventListener('touchstart', (e) => {
-    if (_suppressScrollSync) return;
-    const w = container.clientWidth;
-    if (w <= 0) return;
-    swipeStartIdx = Math.round(container.scrollLeft / w);
-    const t = e.touches && e.touches[0];
-    touchLastX = t ? t.clientX : 0;
-    touchLastT = performance.now();
-    touchVelX = 0;
-  }, { passive: true });
-
-  // Horizontale Finger-Geschwindigkeit verfolgen (leicht geglaettet).
-  // Negativ = Finger nach links = naechster Tab; positiv = vorheriger Tab.
-  container.addEventListener('touchmove', (e) => {
-    if (swipeStartIdx === null) return;
-    const t = e.touches && e.touches[0];
-    if (!t) return;
-    const now = performance.now();
-    const dt = now - touchLastT;
-    if (dt > 0) {
-      const v = (t.clientX - touchLastX) / dt;
-      touchVelX = touchVelX * 0.4 + v * 0.6;
-      touchLastX = t.clientX;
-      touchLastT = now;
-    }
-  }, { passive: true });
-
-  // Sofortiges Commit beim Loslassen — entscheidet per Flick-Geschwindigkeit ODER
-  // Distanz (gesenkte 30%-Schwelle), statt erst auf den 90ms-Settle-Timer zu warten.
-  container.addEventListener('touchend', () => {
-    if (swipeStartIdx === null) return;
-    const w = container.clientWidth;
-    if (w <= 0) { swipeStartIdx = null; return; }
-    const start = swipeStartIdx;
-    const delta = container.scrollLeft / w - start;        // -1..+1 (durch Live-Klemmung)
-    // Finger vor dem Loslassen stillgehalten? Dann kein Flick (alte scroll-snap-Beschwerde).
-    const stale = (performance.now() - touchLastT) > 80;
-    const vel = stale ? 0 : touchVelX;
-    const FLICK = 0.3;   // px/ms — ab hier zaehlt es als Flick
-    const DIST  = 0.3;   // 30% Tab-Breite als Distanz-Schwelle (vorher 50%)
-    let target = start;
-    if (Math.abs(vel) > FLICK)  target = start + (vel < 0 ? 1 : -1);
-    else if (delta > DIST)      target = start + 1;
-    else if (delta < -DIST)     target = start - 1;
-    target = Math.max(start - 1, Math.min(start + 1, target));
-    if (settleTimer) { clearTimeout(settleTimer); settleTimer = null; }
-    swipeStartIdx = null;
-    commitSnap(target);
-  }, { passive: true });
-
-  // Abgebrochene Geste: Referenz freigeben, Settle-Timer macht ggf. den Distanz-Snap.
-  container.addEventListener('touchcancel', () => {
-    swipeStartIdx = null;
-  }, { passive: true });
-
+  // Wisch-Synchronisation. Die Geste selbst macht jetzt der Browser NATIV (CSS
+  // scroll-snap am #tab-container + scroll-snap-stop:always an .screen = Momentum,
+  // Einrasten, max. ein Tab pro Wisch — Dashboard-Gefuehl). Hier wird NUR scrollLeft
+  // ausgelesen, um den Hintergrund-Crossfade + Theme + Nav-Highlight fingergebunden
+  // mitzufuehren und im Settle den Renderer auszuloesen.
+  // (Frueheres JS-Flick-/Paging-/Commit-System wurde 2026-05-29 bewusst entfernt.)
   container.addEventListener('scroll', () => {
-    if (_suppressScrollSync) return;
-    if (ticking) return;
+    if (_suppressScrollSync) return;   // programmatischer Scroll (showScreen) → ignorieren
+    if (ticking) return;               // pro Frame nur einmal verarbeiten
     ticking = true;
     requestAnimationFrame(() => {
       ticking = false;
-      // Race-Schutz: wurde zwischen Scroll-Event und diesem Frame ein Commit
-      // ausgeloest (touchend → smooth scrollTo setzt _suppressScrollSync), darf der
-      // bereits eingeplante Frame KEINEN neuen Settle-Timer setzen — sonst snappt
-      // er das Flick-Ziel wieder zurueck.
-      if (_suppressScrollSync) return;
+      if (_suppressScrollSync) return; // Race-Schutz: Commit kam zwischen Event und Frame
       const w = container.clientWidth;
       if (w <= 0) return;
-      // Harte Paging-Begrenzung: nie weiter als einen Tab von der Geste-Startposition
-      // entfernt scrollen. scrollLeft auf die Nachbar-Tab-Grenze zu setzen stoppt
-      // auch einen kraeftigen Momentum-Fling sofort an der Tab-Kante.
-      if (swipeStartIdx !== null) {
-        const lo = Math.max(0, swipeStartIdx - 1) * w;
-        const hi = Math.min(TAB_ORDER.length - 1, swipeStartIdx + 1) * w;
-        if (container.scrollLeft < lo)      container.scrollLeft = lo;
-        else if (container.scrollLeft > hi) container.scrollLeft = hi;
-      }
-      // Swipe-gebundener Background-Uebergang: pro Frame Layer-Opacities mit
-      // aktueller Scroll-Position interpolieren — Background folgt dem Finger 1:1.
+      // a) Hintergrund-Crossfade fingergebunden pro Frame mitfuehren.
       const progress = container.scrollLeft / w;
       updateBackgroundForSwipe(progress);
-      // Aktuell sichtbaren Tab anhand der naechstgelegenen Snap-Position bestimmen
-      const idx = Math.round(progress);
-      let clamped = Math.max(0, Math.min(TAB_ORDER.length - 1, idx));
-      // Snap-Ziel zusaetzlich auf Start +/- 1 begrenzen (Absicherung zur Live-Klemmung).
-      if (swipeStartIdx !== null) {
-        clamped = Math.max(swipeStartIdx - 1, Math.min(swipeStartIdx + 1, clamped));
-        clamped = Math.max(0, Math.min(TAB_ORDER.length - 1, clamped));
-      }
-      const name = TAB_ORDER[clamped];
-
-      // Sofortiger Theme-/Nav-Wechsel waehrend des Snappings — Renderer kommt erst beim Settle.
+      // b) Aktiven Tab an der 50%-Schwelle bestimmen (das Einrasten macht CSS-Snap).
+      const idx = Math.max(0, Math.min(TAB_ORDER.length - 1, Math.round(progress)));
+      const name = TAB_ORDER[idx];
+      // Theme + Nav-Highlight schon WAEHREND des Snaps wechseln (responsiv);
+      // der "schwere" Renderer kommt erst im Settle.
       if (name !== lastReported) {
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         const navEl = document.getElementById('nav-'+name);
         if (navEl) navEl.classList.add('active');
         const themeName = (name === 'plan-detail') ? 'plans' : name;
         document.body.className = 'theme-' + themeName;
-        // Background-Update passiert kontinuierlich via updateBackgroundForSwipe
-        // (siehe unten) — hier nur theme-color meta sync.
         updateThemeColorMeta();
         lastReported = name;
       }
-
-      // Settle-Detection: kein Scroll-Event mehr fuer 90 ms → Finger-Release vermutet.
-      // Ohne CSS-scroll-snap muessen wir hier selbst zur naechsten Tab-Position
-      // smooth scrollen (>50%-Schwelle via Math.round(progress)).
-      // Fallback-Snap, falls KEIN touchend kommt (z.B. Trackpad-/Maus-Scroll am Desktop):
-      // nach 90 ms Scroll-Ruhe per Distanz committen. Bei Touch hat touchend i.d.R.
-      // schon committed und diesen Timer geloescht.
+      // c) Settle: ~90 ms nach dem letzten Scroll-Tick. CSS-Snap hat dann i.d.R. schon
+      //    exakt eingerastet — wir korrigieren nur Restdrift (instant) und rufen den Renderer.
       if (settleTimer) clearTimeout(settleTimer);
       settleTimer = setTimeout(() => {
-        commitSnap(clamped);
-        swipeStartIdx = null;
+        const exact = idx * w;
+        if (Math.abs(container.scrollLeft - exact) > 1) {
+          _suppressScrollSync = true;
+          container.scrollTo({ left: exact, behavior: 'auto' });
+          requestAnimationFrame(() => { _suppressScrollSync = false; });
+        }
+        if (currentScreen !== name) {
+          currentScreen = name;
+          _applyTabState(name);
+        } else {
+          // Zurueck-Snap zum selben Tab: Background final setzen, falls die Layer
+          // mitten in der Interpolation stehen blieben.
+          const themeName = (name === 'plan-detail') ? 'plans' : name;
+          setThemeBackground(themeName, false);
+        }
       }, 90);
     });
   }, { passive: true });
