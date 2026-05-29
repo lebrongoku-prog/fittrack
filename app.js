@@ -769,6 +769,21 @@ function showScreen(name) {
   _applyTabState(name);
 }
 
+// Tableisten-Klick. Tippt man den bereits sichtbaren Tab erneut an, scrollt dessen
+// Inhalt smooth nach oben. Sonst normaler Tab-Wechsel via showScreen.
+// (Eigener Handler, damit NUR die Bottom-Nav dieses Verhalten hat — andere
+//  showScreen-Aufrufer wie "Plan bearbeiten"-Links bleiben unveraendert.)
+function onNavTap(name) {
+  const planDetailEl = document.getElementById('screen-plan-detail');
+  const planDetailOpen = planDetailEl && planDetailEl.classList.contains('active');
+  if (!planDetailOpen && name === currentScreen) {
+    const screenEl = document.getElementById('screen-' + name);
+    if (screenEl) screenEl.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  showScreen(name);
+}
+
 // ═══════════════════════════════════════════════
 // SCREEN: ÜBERSICHT
 // ═══════════════════════════════════════════════
