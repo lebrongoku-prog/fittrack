@@ -5416,6 +5416,20 @@ function initTabScrollSync() {
   let ticking = false;
   let lastReported = currentScreen;
   let settleTimer = null;
+  // Tab-Index zu Beginn einer Wisch-Geste. Begrenzt das Wischen auf MAX einen Tab
+  // pro Geste (Paging): waehrend des Scrollens wird scrollLeft hart auf die
+  // Nachbar-Tab-Breite geklemmt — stoppt auch einen kraeftigen iOS-Momentum-Fling
+  // an der Tab-Kante, sodass nie mehr als ein Tab uebersprungen werden kann.
+  let swipeStartIdx = null;
+
+  // Beim Beruehren den aktuell ruhenden Tab als Referenz merken.
+  // Programmatische Scrolls (Bottom-Nav-Klick) ueberspringen wir — die duerfen
+  // bewusst mehrere Tabs auf einmal springen.
+  container.addEventListener('touchstart', () => {
+    if (_suppressScrollSync) return;
+    const w = container.clientWidth;
+    if (w > 0) swipeStartIdx = Math.round(container.scrollLeft / w);
+  }, { passive: true });
 
   container.addEventListener('scroll', () => {
     if (_suppressScrollSync) return;
@@ -5425,13 +5439,27 @@ function initTabScrollSync() {
       ticking = false;
       const w = container.clientWidth;
       if (w <= 0) return;
+      // Harte Paging-Begrenzung: nie weiter als einen Tab von der Geste-Startposition
+      // entfernt scrollen. scrollLeft auf die Nachbar-Tab-Grenze zu setzen stoppt
+      // auch einen kraeftigen Momentum-Fling sofort an der Tab-Kante.
+      if (swipeStartIdx !== null) {
+        const lo = Math.max(0, swipeStartIdx - 1) * w;
+        const hi = Math.min(TAB_ORDER.length - 1, swipeStartIdx + 1) * w;
+        if (container.scrollLeft < lo)      container.scrollLeft = lo;
+        else if (container.scrollLeft > hi) container.scrollLeft = hi;
+      }
       // Swipe-gebundener Background-Uebergang: pro Frame Layer-Opacities mit
       // aktueller Scroll-Position interpolieren — Background folgt dem Finger 1:1.
       const progress = container.scrollLeft / w;
       updateBackgroundForSwipe(progress);
       // Aktuell sichtbaren Tab anhand der naechstgelegenen Snap-Position bestimmen
       const idx = Math.round(progress);
-      const clamped = Math.max(0, Math.min(TAB_ORDER.length - 1, idx));
+      let clamped = Math.max(0, Math.min(TAB_ORDER.length - 1, idx));
+      // Snap-Ziel zusaetzlich auf Start +/- 1 begrenzen (Absicherung zur Live-Klemmung).
+      if (swipeStartIdx !== null) {
+        clamped = Math.max(swipeStartIdx - 1, Math.min(swipeStartIdx + 1, clamped));
+        clamped = Math.max(0, Math.min(TAB_ORDER.length - 1, clamped));
+      }
       const name = TAB_ORDER[clamped];
 
       // Sofortiger Theme-/Nav-Wechsel waehrend des Snappings — Renderer kommt erst beim Settle.
@@ -5463,6 +5491,8 @@ function initTabScrollSync() {
           currentScreen = name;
           _applyTabState(name);
         }
+        // Geste abgeschlossen — Referenz fuer die naechste Wisch-Geste freigeben.
+        swipeStartIdx = null;
       }, 90);
     });
   }, { passive: true });

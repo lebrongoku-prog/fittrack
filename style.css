@@ -231,12 +231,12 @@ body.theme-plans .hist-action-dd {
   /* scroll-snap-align/stop entfernt — Snap erfolgt JS-seitig (siehe #tab-container). */
   /* Damit der Inhalt nicht unter der Bottom-Nav verschwindet */
   padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
-  /* Landscape auf iPhones mit Notch: padding-left/right symmetrisch.
-     iOS liefert env(safe-area-inset-*) nur auf der Notch-Seite einen Wert >0
-     — wir nutzen max() von beiden, damit das Polster auf BEIDEN Seiten gleich
-     aussieht (kein asymmetrisches Layout). In Portrait sind beide 0, no-op. */
-  padding-left: max(var(--safe-l), var(--safe-r));
-  padding-right: max(var(--safe-l), var(--safe-r));
+  /* Seitliches Basispolster (8px) fuer mehr Luft zum Bildschirmrand, plus
+     Landscape-Notch-Polster symmetrisch obendrauf: iOS liefert env(safe-area-inset-*)
+     nur auf der Notch-Seite einen Wert >0 — wir nutzen max() von beiden, damit das
+     Polster auf BEIDEN Seiten gleich aussieht. In Portrait greift nur die 8px. */
+  padding-left: calc(8px + max(var(--safe-l), var(--safe-r)));
+  padding-right: calc(8px + max(var(--safe-l), var(--safe-r)));
   /* Overscroll-Bounce am vertikalen Rand bleibt iOS-typisch erhalten */
   overscroll-behavior-y: auto;
   /* Horizontale Overscroll-Bewegung soll am Snap-Container ankommen, nicht hier */
@@ -257,6 +257,9 @@ body.theme-plans .hist-action-dd {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
+  /* Gleiches seitliches Basispolster wie .screen (8px + Notch). */
+  padding-left: calc(8px + max(var(--safe-l), var(--safe-r)));
+  padding-right: calc(8px + max(var(--safe-l), var(--safe-r)));
   /* Versteckt-Zustand: rechts ausserhalb */
   transform: translateX(100%);
   visibility: hidden;
