@@ -3507,12 +3507,12 @@ function openLibDayDetail(id) { editingLibDayId = id; showScreen('day-detail'); 
 function closeLibDayDetail() { editingLibDayId = null; showScreen('plans'); }
 function _getEditingLibDay() { return DB.getTrainingDays().find(d => d.id === editingLibDayId) || null; }
 
-// In welchen Trainingsplänen liegt ein Tag mit diesem Namen? Match per NAME, da Plan-Kopien
-// eine andere id als der Bibliotheks-Tag haben (Kopie-Semantik). Liefert alle Pläne (inkl. archiviert).
-function getPlansContainingDayName(name) {
-  const n = (name || '').trim().toLowerCase();
-  if (!n) return [];
-  return DB.getPlans().filter(p => (p.trainingDays || []).some(d => (d.name || '').trim().toLowerCase() === n));
+// In welchen Trainingsplänen liegt eine Kopie DIESES Bibliotheks-Tags? EXAKT verknüpft über die
+// beim Hinzufügen gesetzte Rück-Referenz `sourceLibDayId` (Leonard-Wunsch: exakt statt Name).
+// Hinweis: erfasst NUR ab jetzt via Bibliothek hinzugefügte Tage — Altbestand/Import haben keine Referenz.
+function getPlansContainingLibDay(libDayId) {
+  if (!libDayId) return [];
+  return DB.getPlans().filter(p => (p.trainingDays || []).some(d => d.sourceLibDayId === libDayId));
 }
 
 function renderLibDayDetail() {
@@ -3525,10 +3525,11 @@ function renderLibDayDetail() {
   const nameEl = document.getElementById('day-name'); if (nameEl) nameEl.value = day.name || '';
   const notesEl = document.getElementById('day-notes'); if (notesEl) notesEl.value = day.notes || '';
 
-  // In welchen Trainingsplänen ist dieser Tag (analog „Verwendet in" bei Übungen, Match per Name).
+  // In welchen Trainingsplänen ist dieser Tag (analog „Verwendet in" bei Übungen). EXAKT verknüpft
+  // über sourceLibDayId — nur ab jetzt via Bibliothek hinzugefügte Tage; Altbestand/Import zeigen nichts.
   const usedInEl = document.getElementById('day-used-in');
   if (usedInEl) {
-    const inPlans = getPlansContainingDayName(day.name);
+    const inPlans = getPlansContainingLibDay(day.id);
     usedInEl.innerHTML = inPlans.length
       ? `<label>In Trainingsplänen</label><div class="ex-item-using-list">${inPlans.map(p => `<span class="ex-item-day-chip">${escapeHtml(p.name)}${p.archived ? ' (archiviert)' : ''}</span>`).join('')}</div>`
       : `<label>In Trainingsplänen</label><div class="ex-item-using-empty">Noch in keinem Trainingsplan eingefügt.</div>`;
@@ -3593,7 +3594,8 @@ function _addLibDayCopyToPlan(plan, libDay) {
   const newId = 'pd_' + Date.now() + '_' + Math.floor(Math.random()*10000);
   const exercises = JSON.parse(JSON.stringify(libDay.exercises || []));
   plan.trainingDays = plan.trainingDays || [];
-  plan.trainingDays.push({ id: newId, name: libDay.name, color: libDay.color, exercises });
+  // sourceLibDayId = Rück-Referenz auf den Bibliotheks-Tag (für exakte „In Plänen"-Anzeige).
+  plan.trainingDays.push({ id: newId, name: libDay.name, color: libDay.color, exercises, sourceLibDayId: libDay.id });
 }
 
 // Multi-Plan-Modal (analog zum „Zu Trainingstag"-Modal im Übungen-Tab). Mehrfach hinzufügbar;
