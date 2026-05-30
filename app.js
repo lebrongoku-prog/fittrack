@@ -3507,6 +3507,14 @@ function openLibDayDetail(id) { editingLibDayId = id; showScreen('day-detail'); 
 function closeLibDayDetail() { editingLibDayId = null; showScreen('plans'); }
 function _getEditingLibDay() { return DB.getTrainingDays().find(d => d.id === editingLibDayId) || null; }
 
+// In welchen Trainingsplänen liegt ein Tag mit diesem Namen? Match per NAME, da Plan-Kopien
+// eine andere id als der Bibliotheks-Tag haben (Kopie-Semantik). Liefert alle Pläne (inkl. archiviert).
+function getPlansContainingDayName(name) {
+  const n = (name || '').trim().toLowerCase();
+  if (!n) return [];
+  return DB.getPlans().filter(p => (p.trainingDays || []).some(d => (d.name || '').trim().toLowerCase() === n));
+}
+
 function renderLibDayDetail() {
   const day = _getEditingLibDay();
   if (!day) { showScreen('plans'); return; }
@@ -3516,6 +3524,15 @@ function renderLibDayDetail() {
     `${(day.exercises||[]).length} Übungen • ${setCount} Sätze${day.archived ? ' • archiviert' : ''}`;
   const nameEl = document.getElementById('day-name'); if (nameEl) nameEl.value = day.name || '';
   const notesEl = document.getElementById('day-notes'); if (notesEl) notesEl.value = day.notes || '';
+
+  // In welchen Trainingsplänen ist dieser Tag (analog „Verwendet in" bei Übungen, Match per Name).
+  const usedInEl = document.getElementById('day-used-in');
+  if (usedInEl) {
+    const inPlans = getPlansContainingDayName(day.name);
+    usedInEl.innerHTML = inPlans.length
+      ? `<label>In Trainingsplänen</label><div class="ex-item-using-list">${inPlans.map(p => `<span class="ex-item-day-chip">${escapeHtml(p.name)}${p.archived ? ' (archiviert)' : ''}</span>`).join('')}</div>`
+      : `<label>In Trainingsplänen</label><div class="ex-item-using-empty">Noch in keinem Trainingsplan eingefügt.</div>`;
+  }
 
   // Aktions-Button-Reihe: Archivieren-Label je nach Status
   const archBtn = document.getElementById('day-archive-btn');
@@ -3941,6 +3958,8 @@ let openExerciseId = null;   // currently expanded exercise in catalog
 let exSortMode = 'muscle';   // 'muscle' | 'plan' — im Cardio-Modus = 'alpha' | 'plan'
 let exMode = (localStorage.getItem('ft_ex_mode') === 'cardio') ? 'cardio' : 'strength'; // 'strength' | 'cardio'
 const collapsedExGroups = new Set(); // Set of group keys (muscle-key oder planDay-id) die eingeklappt sind
+// Default: Muskelgruppen EINGEKLAPPT (Leonard-Wunsch). Plan-Gruppierung bleibt aufgeklappt.
+MUSCLE_ORDER.forEach(m => collapsedExGroups.add('muscle:' + m));
 
 function setExMode(mode) {
   if (mode !== 'strength' && mode !== 'cardio') return;
@@ -5917,7 +5936,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Tab-Wechsel per nativem horizontalem Snap-Scroll am Tab-Container
   initTabScrollSync();
   // Edge-Swipe-Back im Plan-Detail (vom linken Bildschirmrand mit Finger nach rechts ziehen)
-  initPlanDetailEdgeSwipe();
+  initOverlayEdgeSwipe('screen-plan-detail', closePlanDetail);
+  initOverlayEdgeSwipe('screen-day-detail', closeLibDayDetail);
 });
 
 // Edge-Swipe-Back fuer Plan-Detail-Overlay.
@@ -5925,8 +5945,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // Anschliessend folgt das Overlay finger-controlled der horizontalen Fingerbewegung.
 // Bei Touchend wird entschieden: ueber Threshold (40% Bildschirmbreite) oder schnelle Velocity
 // => Overlay schliessen via closePlanDetail(); sonst Snap-Back nach links.
-function initPlanDetailEdgeSwipe() {
-  const overlay = document.getElementById('screen-plan-detail');
+function initOverlayEdgeSwipe(overlayId, closeFn) {
+  const overlay = document.getElementById(overlayId);
   if (!overlay) return;
   const EDGE_PX = 24;
   const DIR_LOCK_THRESHOLD = 8;     // Pixels Bewegung bis Richtung gelockt wird
@@ -5993,7 +6013,7 @@ function initPlanDetailEdgeSwipe() {
       setTimeout(() => {
         overlay.style.transition = '';
         overlay.style.transform = '';
-        closePlanDetail();
+        closeFn();
       }, ANIM_MS);
     } else {
       overlay.style.transform = 'translateX(0)';

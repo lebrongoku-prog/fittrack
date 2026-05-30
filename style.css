@@ -137,19 +137,9 @@ body {
      ist dort teils unzuverlaessig). Safe-Top-Padding wandert auf .screen (s.u.), damit
      der Inhalt unter die transparente Status-Bar scrollt (black-translucent). */
   min-height: 100vh;
-  /* Body-Background ist transparent (von html, body). Der themed Gradient
-     liegt jetzt auf den .bg-fade-layer Pseudo-Layern, die per JS-Opacity-Crossfade
-     animiert werden (siehe setThemeBackground()). Hier transitionen nur noch
-     die UI-Akzent-Vars via @property — fuer Nav-Icons, Wochenplan-Streifen etc.
-     Duration matched die Background-Crossfade-Duration (450ms). */
-  transition:
-    --accent             0.45s cubic-bezier(0.4, 0, 0.6, 1),
-    --accent-dark        0.45s cubic-bezier(0.4, 0, 0.6, 1),
-    --accent-bg          0.45s cubic-bezier(0.4, 0, 0.6, 1),
-    --accent-soft        0.45s cubic-bezier(0.4, 0, 0.6, 1),
-    --gradient-from      0.45s cubic-bezier(0.4, 0, 0.6, 1),
-    --section-tint       0.45s cubic-bezier(0.4, 0, 0.6, 1),
-    --card-accent-border 0.45s cubic-bezier(0.4, 0, 0.6, 1);
+  /* KEINE Akzent-Transition mehr (Leonard-Wunsch): beim Tabwechsel schalten Icons + Akzentfarben
+     SOFORT um — nur der Tab-Hintergrund (fingergebundener .bg-fade-layer-Crossfade) animiert.
+     Früher transitionierten hier die @property-Akzent-Vars über 450ms. */
 }
 
 /* Two-Layer Background-Crossfade: body hat KEIN background-image mehr.
@@ -388,8 +378,8 @@ body.theme-plans .hist-action-dd {
   flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
   cursor: pointer; padding: 4px 0; -webkit-tap-highlight-color: transparent; user-select: none;
 }
-.nav-btn svg { width: 24px; height: 24px; stroke: var(--text3); stroke-width: 1.8; fill: none; transition: stroke 0.15s; }
-.nav-btn span { font-size: 10px; font-weight: 500; color: var(--text3); letter-spacing: 0.1px; transition: color 0.15s; }
+.nav-btn svg { width: 24px; height: 24px; stroke: var(--text3); stroke-width: 1.8; fill: none; }
+.nav-btn span { font-size: 10px; font-weight: 500; color: var(--text3); letter-spacing: 0.1px; }
 .nav-btn.active svg { stroke: var(--accent); }
 .nav-btn.active span { color: var(--accent); font-weight: 600; }
 
