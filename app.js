@@ -424,7 +424,9 @@ function dayOfWeek(ts) { const d=new Date(ts); return d.toLocaleDateString('de-D
 
 function getWeekInfo() {
   const ws = DB.getWorkouts();
-  const plan = DB.getPlan();
+  // Aktiver Plan (per Datum), kein Edit-Kontext/DEFAULT-Fallback. Ohne aktiven Plan: total 0.
+  const active = getActivePlan();
+  const plan = active ? active.trainingDays : [];
   if (ws.length === 0) return { weekNum:1, doneThisWeek:0, total:plan.length };
   const first = [...ws].sort((a,b) => a.startTs - b.startTs)[0];
   const diffWeeks = Math.floor((Date.now() - first.startTs) / (7*24*3600*1000));
@@ -756,8 +758,11 @@ function _applyTabState(name) {
   setThemeBackground(themeName);
   updateThemeColorMeta();
 
-  // Beim Wechsel zur Plans-Liste den Edit-Kontext zuruecksetzen.
-  if (name === 'plans') editingPlanId = null;
+  // Edit-Kontext (editingPlanId) ist NUR auf dem Plan-Detail-Screen gültig. Beim Wechsel zu
+  // JEDEM anderen Screen zurücksetzen — sonst lesen edit-bewusste Funktionen (DB.getPlan/
+  // getWeekPlan, Übungen-nach-Plan) weiter den editierten Plan statt des aktiven (z.B. nach
+  // „Plan bearbeiten → Bottom-Nav Workouts" würde sonst der editierte Zukunftsplan erscheinen).
+  if (name !== 'plan-detail') editingPlanId = null;
 
   if (name === 'overview') renderOverview();
   else if (name === 'workouts') renderWorkoutsScreen();
@@ -837,7 +842,10 @@ function onNavTap(name) {
 // ═══════════════════════════════════════════════
 
 function renderOverview() {
-  const plan = DB.getPlan();
+  // Aktiver Plan (per Datum) — kein Edit-Kontext/DEFAULT-Fallback. Ohne aktiven Plan: leer,
+  // damit der "X von Y"-Zähler unten nicht auf DEFAULT_PLAN.length zurückfällt.
+  const active = getActivePlan();
+  const plan = active ? active.trainingDays : [];
   const week7 = getCurrentWeekDays();
   const todayEntry = week7.find(d => d.isToday) || week7[0];
   const wStatus = getWeekStatus();
@@ -905,9 +913,12 @@ function renderRecentSessionsOnOverview() {
     container.innerHTML = '<p style="font-size:13px;color:var(--text3);padding:8px 0;text-align:center;margin:0">Noch keine Workouts</p>';
     return;
   }
-  const plan = DB.getPlan();
+  // Tagname vergangener Sessions aus dem GLOBALEN Tag-Store auflösen (nicht aus dem aktiven
+  // Plan / DEFAULT-Fallback) — robust, da der Tag in irgendeinem Plan oder nur in der Bibliothek
+  // liegen kann. Fällt sonst auf den gespeicherten Snapshot-Namen zurück.
+  const allDays = DB.getTrainingDays();
   container.innerHTML = ws.map((w, i) => {
-    const day = plan.find(d => d.id === w.planDayId);
+    const day = allDays.find(d => d.id === w.planDayId);
     const dayName = day ? day.name : (w.planDayName || 'Freestyle');
     const allCardio = (w.exercises || []).length > 0 && (w.exercises || []).every(e => isWoExCardio(e));
     const someCardio = !allCardio && (w.exercises || []).some(e => isWoExCardio(e));
@@ -1465,10 +1476,13 @@ function renderWorkoutWeekStrip() {
 
 function renderWorkoutsScreen() {
   ensureSelectedDayIdx();
-  const wp = DB.getWeekPlan();
-  const plan = DB.getPlan();
-  const selDay = wp[selectedWorkoutDayIdx];
-  const planDay = selDay && selDay.planDayId ? plan.find(d => d.id === selDay.planDayId) : null;
+  // WICHTIG: Der Workouts-Tab zeigt IMMER den AKTIVEN Plan (per Datum) — niemals den Edit-Kontext
+  // (editingPlanId) und niemals den DEFAULT_PLAN/DEFAULT_WEEKPLAN-Fallback von DB.getPlan/getWeekPlan.
+  // getCurrentWeekDays() ist getActivePlan-basiert (identische Quelle wie der Wochenplan-Strip), damit
+  // Hero/Vorschau und Strip nie widersprechen. Ohne aktiven Plan ist jeder Tag ein Ruhetag.
+  const weekDays = getCurrentWeekDays();
+  const selDay = weekDays[selectedWorkoutDayIdx];
+  const planDay = selDay ? (selDay.planDay || null) : null;
   const active = DB.getActive();
   const activeOnSelected = active && planDay && active.planDayId === planDay.id;
 
@@ -2528,28 +2542,30 @@ function addExToWorkout(exId) {
   }
 
   if (addExContext === 'preview') {
-    const wp = DB.getWeekPlan();
-    const selDay = wp[selectedWorkoutDayIdx];
+    // Aktiver Plan (per Datum), nicht Edit-Kontext/DEFAULT-Fallback — siehe renderWorkoutsScreen.
+    const weekDays = getCurrentWeekDays();
+    const selDay = weekDays[selectedWorkoutDayIdx];
     const planDayId = selDay && selDay.planDayId;
     if (!planDayId) {
       closeModal('modal-add-ex');
       showToast('Kein Trainingstag ausgewählt');
       return;
     }
-    const plan = DB.getPlan();
-    const day = plan.find(d => d.id === planDayId);
+    // Referenz-Modell: planDayId ist eine globale Bibliothek-Tag-ID → direkt dort editieren
+    const days = DB.getTrainingDays();
+    const day = days.find(d => d.id === planDayId);
     if (!day) {
       closeModal('modal-add-ex');
       showToast('Trainingstag nicht gefunden');
       return;
     }
-    if (day.exercises.some(pe => pe.exId === exId)) {
+    if ((day.exercises || []).some(pe => pe.exId === exId)) {
       closeModal('modal-add-ex');
       showToast(`${ex.name} ist bereits im Trainingstag`);
       return;
     }
     day.exercises.push(isCardio ? { exId } : { exId, targetSets: 3, targetReps: 8 });
-    DB.savePlan(plan);
+    DB.saveTrainingDays(days);
     // Falls trotz Preview-Kontext zufaellig ein passendes Active-Workout laeuft, mitziehen
     syncActiveWorkoutWithPlanDay(planDayId);
     closeModal('modal-add-ex');
@@ -3913,19 +3929,6 @@ function addLibDayToPlanFromModal(planId) {
   showToast(`„${libDay.name}" zu „${plan.name}" hinzugefügt`);
   renderDayToPlanList();
 }
-function createNewPlanForDay() {
-  const libDay = _getEditingLibDay(); if (!libDay) return;
-  promptForName('Name des neuen Trainingsplans', 'Neuer Trainingsplan', (name) => {
-    const plans = DB.getPlans();
-    const startDate = Date.now(), weeksTotal = 12, endDate = startDate + weeksTotal*7*24*3600*1000;
-    const np = { id:'plan_'+Date.now()+'_'+Math.floor(Math.random()*10000), name, weeksTotal, startDate, endDate, notes:'', dayIds:[], weekPlan:JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN)), archived:false, createdAt:Date.now() };
-    _addLibDayToPlanRef(np, libDay);
-    plans.push(np);
-    DB.savePlans(plans);
-    showToast(`„${libDay.name}" zu neuem Plan „${name}" hinzugefügt`);
-    renderDayToPlanList();
-  });
-}
 
 // Entfernt eine Übung aus dem aktuell bearbeiteten Bibliotheks-Trainingstag.
 function removeLibDayExercise(ei) {
@@ -4511,7 +4514,11 @@ function renderExercisesCardioFlat() {
 }
 
 function renderExercisesByPlan() {
-  const plan = DB.getPlan();
+  // Immer der AKTIVE Plan (per Datum) — kein Edit-Kontext (editingPlanId) und kein
+  // DEFAULT_PLAN-Fallback. Konsistent mit "Im Plan"/"Verwendet in" (getActivePlan).
+  // Ohne aktiven Plan: leer (statt der fest einprogrammierten Default-Tage).
+  const active = getActivePlan();
+  const plan = active ? active.trainingDays : [];
   const exMap = {};
   DB.getExercises().forEach(e => exMap[e.id] = e);
 
@@ -4753,31 +4760,32 @@ function deletePlanDay(idx) {
 }
 
 function renderPlanDayExList(day) {
+  // Layout wie das „Übungen zum Plan hinzufügen"-Modal: Muskelfarben-Streifen + Name,
+  // ohne Sätze×Wdh.-Felder (Ziele werden im Trainingstag-Detail/Vorschau editiert).
+  // Reihenfolge = Tag-Reihenfolge; Drag-Sortierung + ✕-Entfernen bleiben erhalten.
   const html = day.exercises.map((pe, i) => {
     const ex = getEx(pe.exId);
     if (!ex) return '';
-    return `<div class="plan-ex-row" data-idx="${i}"
+    const col = exType(ex) === 'cardio' ? 'var(--cardio)' : muscleColor(ex.muscle);
+    return `<div class="ex-item plan-ex-item" style="--mc:${col}" data-idx="${i}"
                  ondragstart="planExDragStart(event,${i})"
                  ondragend="planExDragEnd(event)"
                  ondragover="planExDragOver(event,${i})"
                  ondragleave="planExDragLeave(event)"
                  ondrop="planExDrop(event,${i})">
-      <span class="plan-ex-handle" draggable="true"
-            onpointerdown="event.currentTarget.parentElement.draggable=true"
-            onpointerup="event.currentTarget.parentElement.draggable=false">≡</span>
-      <span class="plan-ex-name">${ex.name}</span>
-      <div class="target-row">
-        <input class="target-input" type="number" inputmode="numeric" value="${pe.targetSets}"
-               min="1" max="10" onchange="updatePlanTarget(${i},'targetSets',this.value)">
-        <span class="target-x">×</span>
-        <input class="target-input" type="number" inputmode="numeric" value="${pe.targetReps}"
-               min="1" max="50" onchange="updatePlanTarget(${i},'targetReps',this.value)">
+      <div class="ex-item-head">
+        <span class="plan-ex-handle" draggable="true"
+              onpointerdown="event.currentTarget.closest('.ex-item').draggable=true"
+              onpointerup="event.currentTarget.closest('.ex-item').draggable=false">≡</span>
+        <div class="ex-item-stripe"></div>
+        <div class="ex-item-name">${ex.name}</div>
+        <button class="plan-ex-del" onclick="removePlanEx(${i})">✕</button>
       </div>
-      <button class="plan-ex-del" onclick="removePlanEx(${i})">✕</button>
     </div>`;
   }).join('');
-  document.getElementById('plan-day-ex-list').innerHTML = html ||
-    '<p style="color:var(--text3);font-size:14px;padding:8px 0">Noch keine Übungen</p>';
+  document.getElementById('plan-day-ex-list').innerHTML = html
+    ? `<div class="ex-list">${html}</div>`
+    : '<p style="color:var(--text3);font-size:14px;padding:8px 0">Noch keine Übungen</p>';
 }
 
 // Drag-and-Drop für Plan-Day-Exercise-Reihenfolge
@@ -4824,7 +4832,7 @@ function planExDrop(e, targetIdx) {
 }
 function planExDragEnd(e) {
   e.currentTarget.classList.remove('dragging','drop-target-above','drop-target-below');
-  document.querySelectorAll('.plan-ex-row').forEach(r =>
+  document.querySelectorAll('.plan-ex-item').forEach(r =>
     r.classList.remove('drop-target-above','drop-target-below')
   );
   planExDraggedIdx = null;
@@ -5500,6 +5508,66 @@ function openModal(id) {
   });
 }
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// Swipe-down-to-dismiss für ALLE Bottom-Sheet-Modals (.overlay > .sheet).
+// Zieht das Sheet fingergebunden nach unten; ab Schwelle schließt es, sonst schnappt es zurück.
+// Greift nur, wenn der Inhalt oben ist (kein nach-oben-scrollbarer Bereich offen) → stört das Scrollen nicht.
+function _sheetScrolledDown(fromEl, sheet) {
+  let el = fromEl;
+  while (el && el !== sheet.parentElement) {
+    if (el.scrollHeight > el.clientHeight + 1 && el.scrollTop > 0) return true;
+    if (el === sheet) break;
+    el = el.parentElement;
+  }
+  return false;
+}
+function initSheetSwipeDismiss() {
+  document.querySelectorAll('.overlay > .sheet').forEach(sheet => {
+    const overlay = sheet.closest('.overlay');
+    let startY = 0, dy = 0, dragging = false, decided = false;
+    sheet.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      startY = e.touches[0].clientY;
+      dy = 0; dragging = false; decided = false;
+      sheet.style.transition = 'none';
+    }, { passive: true });
+    sheet.addEventListener('touchmove', (e) => {
+      if (e.touches.length !== 1) return;
+      const delta = e.touches[0].clientY - startY;
+      if (!decided) {
+        if (Math.abs(delta) < 6) return;
+        decided = true;
+        // Nur nach unten + nur wenn nichts nach oben scrollbar offen ist
+        dragging = delta > 0 && !_sheetScrolledDown(e.target, sheet);
+      }
+      if (!dragging) return;
+      dy = Math.max(0, delta);
+      e.preventDefault();
+      sheet.style.transform = `translateY(${dy}px)`;
+      if (overlay) overlay.style.background = `rgba(0,0,0,${Math.max(0, 0.4 - dy / 700)})`;
+    }, { passive: false });
+    const end = () => {
+      if (!dragging) { sheet.style.transform = ''; sheet.style.transition = ''; return; }
+      dragging = false;
+      sheet.style.transition = 'transform .22s ease';
+      if (dy > 110) {
+        sheet.style.transform = 'translateY(100%)';
+        const id = overlay && overlay.id;
+        setTimeout(() => {
+          if (id) closeModal(id);
+          sheet.style.transition = ''; sheet.style.transform = '';
+          if (overlay) overlay.style.background = '';
+        }, 200);
+      } else {
+        sheet.style.transform = 'translateY(0)';
+        if (overlay) overlay.style.background = '';
+        setTimeout(() => { sheet.style.transition = ''; sheet.style.transform = ''; }, 220);
+      }
+    };
+    sheet.addEventListener('touchend', end);
+    sheet.addEventListener('touchcancel', end);
+  });
+}
 
 // ═══════════════════════════════════════════════
 // TOAST
@@ -6313,6 +6381,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollHideNav();
   // Tab-Wechsel per nativem horizontalem Snap-Scroll am Tab-Container
   initTabScrollSync();
+  // Bottom-Sheet-Modals nach unten wegswipen
+  initSheetSwipeDismiss();
   // Edge-Swipe-Back im Plan-Detail (vom linken Bildschirmrand mit Finger nach rechts ziehen)
   initOverlayEdgeSwipe('screen-plan-detail', closePlanDetail);
   initOverlayEdgeSwipe('screen-day-detail', closeLibDayDetail);
