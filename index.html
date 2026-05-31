@@ -460,7 +460,7 @@
       <div class="mehr-section-title" style="margin-left:14px">Übungen</div>
       <div id="day-ex-list"></div>
       <div id="day-add-ex-wrap" style="padding:0 48px 8px;display:none">
-        <button class="btn btn-ghost btn-full" onclick="openAddExModal('libday')">+ Übung zum Trainingstag hinzufügen</button>
+        <button class="btn btn-ghost btn-full" onclick="openAddToPlanModal('libday')">+ Übung zum Trainingstag hinzufügen</button>
       </div>
     </div>
   </div><!-- /day-detail-overlay -->
@@ -548,7 +548,7 @@
       <button class="sheet-back-btn" onclick="exitPlanAddModal()" aria-label="Zurück zum Trainingsplan">
         <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <span>Übungen zum Plan hinzufügen</span>
+      <span>Übungen hinzufügen</span>
     </div>
     <div class="sheet-body">
       <div class="ex-mode-toggle" style="margin-bottom:10px;align-self:flex-start">
@@ -656,9 +656,9 @@
     <div class="sheet-handle"></div>
     <div class="sheet-title" id="modal-day-to-plan-title">Zu welchen Trainingsplänen hinzufügen?</div>
     <div class="sheet-body">
-      <div class="day-addto-sub" style="padding:0 2px 8px">Fügt diesen Trainingstag zum Plan hinzu. Den Wochentag weist du danach im Plan-Detail zu.</div>
+      <div class="day-addto-sub" style="padding:0 2px 8px">Pläne an-/abwählen, dann speichern. Den Wochentag weist du danach im Plan-Detail zu.</div>
       <div id="day-to-plan-list"></div>
-      <button class="btn btn-primary btn-full" style="margin-top:12px" onclick="closeModal('modal-day-to-plan')">Fertig</button>
+      <button class="btn btn-primary btn-full" style="margin-top:12px" onclick="saveDayToPlan()">Speichern</button>
     </div>
   </div>
 </div>

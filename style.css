@@ -1179,6 +1179,25 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   -webkit-appearance: none; -moz-appearance: textfield;
 }
 .aex-v2-target-inp:focus { outline: none; border-color: var(--accent); background: #fff; }
+/* Editierbare Ziel-Tabelle in der Vorschau-Karte (Sätze-Stepper + Wdh.-Input + kg-Referenz) */
+.aex-target-table { display: flex; flex-direction: column; gap: 8px; }
+.aex-target-row { display: grid; grid-template-columns: 54px 1fr; align-items: center; }
+.aex-target-row .ax-lbl { font-size: 12px; color: var(--text3); font-weight: 600; }
+.aex-set-stepper { display: flex; align-items: center; gap: 12px; }
+.aex-step-btn {
+  width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text); font-size: 18px; font-weight: 700; line-height: 1;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.aex-step-btn:active { transform: scale(.94); }
+.aex-step-val { font-size: 16px; font-weight: 700; min-width: 18px; text-align: center; }
+.aex-target-cell {
+  width: 70px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 7px; font-size: 15px; font-weight: 600; text-align: center; color: var(--text);
+  -webkit-appearance: none; -moz-appearance: textfield;
+}
+.aex-target-cell:focus { outline: none; border-color: var(--accent); background: #fff; }
+.aex-target-ref { font-size: 14px; color: var(--text3); }
 .aex-v2-target-x { font-size: 13px; color: var(--text3); font-weight: 600; }
 .aex-v2-target-unit { font-size: 12px; color: var(--text3); font-weight: 600; }
 .aex-v2-row { display: grid; grid-template-columns: 50px 1fr 1fr 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
