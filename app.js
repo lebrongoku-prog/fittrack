@@ -157,7 +157,34 @@ function _findActivePlanIn(plans) {
   const now = Date.now();
   return plans.find(p => !p.archived && p.startDate <= now && now <= p.endDate) || null;
 }
-function getActivePlan() { return _findActivePlanIn(DB.getPlans()); }
+// Aktiver Plan inkl. aufgelöster Tage. trainingDays wird live aus dem globalen
+// Tag-Store (ft_trainingdays) über plan.dayIds resolved — Referenz-Modell.
+// Rückgabe ist eine flache Kopie (read-only Nutzung; Schreiben läuft über editingPlanId/DB.savePlan).
+function getActivePlan() {
+  const p = _findActivePlanIn(DB.getPlans());
+  if (!p) return null;
+  return Object.assign({}, p, { trainingDays: resolvePlanDays(p) });
+}
+
+// ── Tag-Modell v2: Tage sind geteilte Einheiten (wie Übungen). Ein Plan REFERENZIERT
+// Tage über plan.dayIds; der Tag selbst liegt im globalen Store ft_trainingdays.
+// Archivierte Pläne sind EINGEFROREN: ihre Tage liegen als Snapshot in plan.archivedDays
+// und sind von späteren Bibliotheks-Änderungen unberührt.
+// resolvePlanDays liefert für jeden Plan das passende Tag-Array (read).
+function resolvePlanDays(plan) {
+  if (!plan) return [];
+  if (plan.archived && Array.isArray(plan.archivedDays)) return plan.archivedDays;
+  if (Array.isArray(plan.dayIds)) {
+    const lib = DB.getTrainingDays();
+    const byId = {};
+    lib.forEach(d => { byId[d.id] = d; });
+    return plan.dayIds.map(id => byId[id]).filter(Boolean);
+  }
+  // Back-Compat: alte Plan-Form mit eingebetteten trainingDays (vor Tag-Modell-v2 /
+  // frisch aus der Cloud gezogen, bevor migrateDayModelV2 lief).
+  if (Array.isArray(plan.trainingDays)) return plan.trainingDays;
+  return [];
+}
 
 function migrateToMultiPlan() {
   if (localStorage.getItem('ft_plans')) return; // schon migriert
@@ -253,15 +280,35 @@ const DB = {
   // Damit funktionieren alle existierenden Mutator-Funktionen ohne Signatur-Änderung.
   getPlan() {
     const p = _resolveEditPlan();
-    return p ? p.trainingDays : JSON.parse(JSON.stringify(DEFAULT_PLAN));
+    return p ? resolvePlanDays(p) : JSON.parse(JSON.stringify(DEFAULT_PLAN));
   },
+  // savePlan bekommt das (resolvte) Tag-Array des aktuell bearbeiteten Plans und schreibt es zurück.
+  // Referenz-Modell: jeder Tag wird in den globalen Store ft_trainingdays geschrieben (upsert) —
+  // dadurch wirkt eine Änderung an einem Tag in ALLEN Plänen, die ihn referenzieren. Der Plan
+  // selbst hält nur die Reihenfolge/Zuordnung als dayIds. Archivierte Pläne sind eingefroren →
+  // Bearbeitung bleibt plan-lokal in archivedDays (propagiert NICHT in die Bibliothek).
   savePlan(trainingDays) {
     const targetId = editingPlanId || (getActivePlan()?.id);
     if (!targetId) return;
     const plans = this.getPlans();
     const p = plans.find(pl => pl.id === targetId);
     if (!p) return;
-    p.trainingDays = trainingDays;
+    if (p.archived) {
+      p.archivedDays = trainingDays;
+      delete p.trainingDays;
+      this.savePlans(plans);
+      return;
+    }
+    const lib = this.getTrainingDays();
+    const idx = {};
+    lib.forEach((d, i) => { idx[d.id] = i; });
+    trainingDays.forEach(day => {
+      if (idx[day.id] !== undefined) lib[idx[day.id]] = day;
+      else { idx[day.id] = lib.length; lib.push(day); }
+    });
+    this.saveTrainingDays(lib);
+    p.dayIds = trainingDays.map(d => d.id);
+    delete p.trainingDays;
     this.savePlans(plans);
   },
   getProgram() {
@@ -1510,6 +1557,15 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
       </div>
       <div class="aex-v2-body">
         <div class="aex-v2-table">
+          <div class="aex-v2-target-edit">
+            <span class="aex-v2-target-lbl">Ziel</span>
+            <input class="aex-v2-target-inp" type="number" inputmode="numeric" min="1" max="12" value="${pe.targetSets}"
+                   onchange="updatePreviewTarget('${planDay.id}',${ei},'targetSets',this.value,'${mode}')" aria-label="Ziel-Sätze">
+            <span class="aex-v2-target-x">×</span>
+            <input class="aex-v2-target-inp" type="number" inputmode="numeric" min="1" max="99" value="${pe.targetReps}"
+                   onchange="updatePreviewTarget('${planDay.id}',${ei},'targetReps',this.value,'${mode}')" aria-label="Ziel-Wiederholungen">
+            <span class="aex-v2-target-unit">Wdh.</span>
+          </div>
           <div class="aex-v2-row head" style="grid-template-columns:50px ${Array(pe.targetSets).fill('1fr').join(' ')}">
             <span class="ax-lbl">Satz</span>${Array.from({length:pe.targetSets},(_,si)=>`<span class="num-cell">${si+1}</span>`).join('')}
           </div>
@@ -1528,6 +1584,23 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
       ${mode === 'libday' ? `<div class="aex-libday-actions"><button class="aex-libday-remove" onclick="removeLibDayExercise(${ei})">Übung entfernen</button></div>` : ''}
     </div>`;
   }).join('');
+}
+
+// Inline-Editing der Ziel-Sätze/Wdh. direkt in den Vorschau-Karten (Workouts-Vorschau +
+// Trainingstag-Detail). Beide Modi editieren denselben globalen Bibliothek-Tag, da planDay.id
+// im Referenz-Modell eine globale Tag-ID ist. (kg bleibt als Verlaufs-Referenz read-only.)
+function updatePreviewTarget(dayId, ei, field, value, mode) {
+  const max = field === 'targetSets' ? 12 : 99;
+  const v = Math.max(1, Math.min(max, parseInt(value) || 1));
+  const days = DB.getTrainingDays();
+  const day = days.find(d => d.id === dayId);
+  if (!day || !Array.isArray(day.exercises) || !day.exercises[ei]) return;
+  day.exercises[ei][field] = v;
+  DB.saveTrainingDays(days);
+  // Läuft gerade ein Workout auf genau diesem Tag → mitziehen (Sätze auffüllen, nie kürzen).
+  syncActiveWorkoutWithPlanDay(dayId);
+  if (mode === 'libday') renderLibDayDetail();
+  else if (currentScreen === 'workouts') renderWorkoutsScreen();
 }
 
 // Preview-Variante einer Cardio-Card im Workouts-Tab. Read-only, zeigt die letzten Werte
@@ -3148,6 +3221,9 @@ function autoArchiveOldPlans() {
   let dirty = false;
   for (const p of plans) {
     if (!p.archived && p.endDate && p.endDate < cutoff) {
+      // Tag-Modell v2: beim (Auto-)Archivieren die Tage EINFRIEREN (Snapshot), damit der
+      // Rückblick nicht von späteren Bibliotheks-Änderungen verändert wird.
+      p.archivedDays = JSON.parse(JSON.stringify(resolvePlanDays(p)));
       p.archived = true;
       dirty = true;
     }
@@ -3240,15 +3316,17 @@ function renderPlanDetail() {
 
   // Weekplan dropdowns
   const wp = plan.weekPlan || JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
-  const trainingDays = plan.trainingDays || [];
+  const trainingDays = resolvePlanDays(plan);
   const today = new Date(); const todayIdx = (today.getDay()+6)%7;
   document.getElementById('mehr-weekplan').innerHTML = wp.map((d, i) => {
-    const selected = d.planDayId || '';
-    const options = `<option value="" ${selected===''?'selected':''}>Ruhetag</option>` +
-      trainingDays.map(td => `<option value="${td.id}" ${selected===td.id?'selected':''}>${td.name}</option>`).join('');
-    return `<div class="weekplan-row">
+    // Tippen zum Zuweisen: ganze Zeile öffnet den Wochentag-Picker (statt Dropdown).
+    const assigned = d.planDayId ? trainingDays.find(td => td.id === d.planDayId) : null;
+    const valCls = assigned ? 'weekplan-pick-value' : 'weekplan-pick-value rest';
+    const valTxt = assigned ? escapeHtml(assigned.name) : 'Ruhetag';
+    return `<div class="weekplan-row weekplan-row-tap" onclick="openWeekdayPicker(${i})">
       <span class="weekplan-day-name ${i===todayIdx?'today':''}">${d.label}</span>
-      <select class="weekplan-select" onchange="saveWeekPlanDay(${i},this.value)">${options}</select>
+      <span class="${valCls}">${valTxt}</span>
+      <span class="weekplan-pick-chev">›</span>
     </div>`;
   }).join('');
 
@@ -3318,7 +3396,7 @@ function createNewPlan() {
       id: 'plan_' + Date.now() + '_' + Math.floor(Math.random()*10000),
       name, weeksTotal, startDate, endDate,
       notes: '',
-      trainingDays: [],
+      dayIds: [],
       weekPlan: JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN)),
       archived: false,
       createdAt: Date.now(),
@@ -3344,7 +3422,35 @@ function togglePlanArchive() {
   const plans = DB.getPlans();
   const plan = plans.find(p => p.id === editingPlanId);
   if (!plan) return;
-  plan.archived = !plan.archived;
+  if (!plan.archived) {
+    // → Archivieren: Tage EINFRIEREN (Snapshot). Ab jetzt unberührt von Bibliotheks-Änderungen,
+    //   damit der Plan ein korrekter Rückblick bleibt.
+    plan.archivedDays = JSON.parse(JSON.stringify(resolvePlanDays(plan)));
+    plan.archived = true;
+  } else {
+    // → Aus Archiv holen: Snapshot „losgelöst" behalten — die eingefrorenen Tage werden als
+    //   frische, plan-eigene Bibliothek-Tage übernommen, damit der Plan exakt seinen
+    //   eingefrorenen Stand weiterführt (kein automatisches Re-Sharing alter geteilter Tage).
+    const snap = Array.isArray(plan.archivedDays) ? plan.archivedDays : resolvePlanDays(plan);
+    const lib = DB.getTrainingDays();
+    const idMap = {};
+    const fresh = snap.map((d, i) => {
+      const newId = 'libday_' + Date.now() + '_' + Math.floor(Math.random()*100000) + '_' + i;
+      idMap[d.id] = newId;
+      return {
+        id: newId, name: d.name, color: d.color || null,
+        exercises: JSON.parse(JSON.stringify(d.exercises || [])),
+        notes: d.notes || '', archived: false, createdAt: Date.now(),
+      };
+    });
+    if (fresh.length) { lib.push(...fresh); DB.saveTrainingDays(lib); }
+    plan.dayIds = fresh.map(d => d.id);
+    (plan.weekPlan || []).forEach(w => {
+      w.planDayId = (w.planDayId && idMap[w.planDayId]) ? idMap[w.planDayId] : null;
+    });
+    delete plan.archivedDays;
+    plan.archived = false;
+  }
   DB.savePlans(plans);
   showToast(plan.archived ? 'Plan archiviert' : 'Plan aus Archiv geholt');
   renderPlanDetail();
@@ -3413,7 +3519,180 @@ function setPlansView(mode) {
 }
 function onPlansAdd() {
   if (plansViewMode === 'days') createNewLibDay();
-  else createNewPlan();
+  else openPlanSourceModal();
+}
+
+// ─── Schnellstart: Plan-Quelle wählen (Leer / Vorlage / Bestehenden kopieren) ───
+function openPlanSourceModal() { openModal('modal-plan-create-source'); }
+function createEmptyPlanFromChooser() { closeModal('modal-plan-create-source'); createNewPlan(); }
+
+// Fertige Plan-Vorlagen. Jede Vorlage: Trainingstage (mit Übungen + Ziel-Sätze/Wdh.) +
+// Wochenzuordnung (week[i] = Index in days, 0=Mo … 6=So; null = Ruhetag).
+const PLAN_TEMPLATES = {
+  ppl: {
+    name: 'Push / Pull / Legs', desc: '3er-Split: Drücken · Ziehen · Beine (Mo/Mi/Fr)', weeks: 12,
+    days: [
+      { name: 'Push', exercises: [
+        { exId:'bench_press', targetSets:3, targetReps:8 },
+        { exId:'incline_bench', targetSets:3, targetReps:10 },
+        { exId:'shoulder_press', targetSets:3, targetReps:10 },
+        { exId:'lateral_raise', targetSets:3, targetReps:12 },
+        { exId:'tricep_pushdown', targetSets:3, targetReps:12 },
+      ]},
+      { name: 'Pull', exercises: [
+        { exId:'deadlift', targetSets:3, targetReps:6 },
+        { exId:'lat_pulldown', targetSets:3, targetReps:10 },
+        { exId:'cable_row', targetSets:3, targetReps:10 },
+        { exId:'face_pull', targetSets:3, targetReps:15 },
+        { exId:'bicep_curl', targetSets:3, targetReps:12 },
+      ]},
+      { name: 'Legs', exercises: [
+        { exId:'squat', targetSets:3, targetReps:8 },
+        { exId:'leg_press', targetSets:3, targetReps:10 },
+        { exId:'rdl', targetSets:3, targetReps:10 },
+        { exId:'leg_curl', targetSets:3, targetReps:12 },
+        { exId:'calf_raise', targetSets:4, targetReps:15 },
+      ]},
+    ],
+    week: [0, null, 1, null, 2, null, null],
+  },
+  upperlower: {
+    name: 'Oberkörper / Unterkörper', desc: 'Upper/Lower-Split, 4 Tage (Mo/Di/Do/Fr)', weeks: 12,
+    days: [
+      { name: 'Oberkörper', exercises: [
+        { exId:'bench_press', targetSets:3, targetReps:8 },
+        { exId:'barbell_row', targetSets:3, targetReps:8 },
+        { exId:'shoulder_press', targetSets:3, targetReps:10 },
+        { exId:'lat_pulldown', targetSets:3, targetReps:10 },
+        { exId:'tricep_pushdown', targetSets:3, targetReps:12 },
+        { exId:'bicep_curl', targetSets:3, targetReps:12 },
+      ]},
+      { name: 'Unterkörper', exercises: [
+        { exId:'squat', targetSets:3, targetReps:8 },
+        { exId:'rdl', targetSets:3, targetReps:10 },
+        { exId:'leg_press', targetSets:3, targetReps:10 },
+        { exId:'leg_curl', targetSets:3, targetReps:12 },
+        { exId:'calf_raise', targetSets:4, targetReps:15 },
+      ]},
+    ],
+    week: [0, 1, null, 0, 1, null, null],
+  },
+  fullbody: {
+    name: 'Ganzkörper', desc: 'Full-Body, 3 Tage/Woche (Mo/Mi/Fr)', weeks: 12,
+    days: [
+      { name: 'Ganzkörper', exercises: [
+        { exId:'squat', targetSets:3, targetReps:8 },
+        { exId:'bench_press', targetSets:3, targetReps:8 },
+        { exId:'barbell_row', targetSets:3, targetReps:8 },
+        { exId:'shoulder_press', targetSets:3, targetReps:10 },
+        { exId:'leg_curl', targetSets:3, targetReps:12 },
+        { exId:'bicep_curl', targetSets:2, targetReps:12 },
+      ]},
+    ],
+    week: [0, null, 0, null, 0, null, null],
+  },
+};
+const PLAN_TEMPLATE_ORDER = ['ppl', 'upperlower', 'fullbody'];
+
+function openPlanTemplateModal() {
+  closeModal('modal-plan-create-source');
+  const html = PLAN_TEMPLATE_ORDER.map(key => {
+    const t = PLAN_TEMPLATES[key];
+    const dayNames = t.days.map(d => d.name).join(' · ');
+    const trainDays = t.week.filter(x => x !== null && x !== undefined).length;
+    return `<div class="plan-list-row" onclick="applyPlanTemplate('${key}')" style="cursor:pointer">
+      <div class="plan-list-info">
+        <div class="plan-list-name">${escapeHtml(t.name)}</div>
+        <div class="plan-list-meta">${escapeHtml(t.desc)}</div>
+        <div class="plan-list-meta" style="margin-top:2px;opacity:0.85">${escapeHtml(dayNames)} • ${trainDays} Trainingstage/Woche</div>
+      </div>
+      <div class="plan-list-action">›</div>
+    </div>`;
+  }).join('');
+  document.getElementById('plan-template-list').innerHTML = html;
+  openModal('modal-plan-template');
+}
+
+function applyPlanTemplate(key) {
+  const t = PLAN_TEMPLATES[key];
+  if (!t) return;
+  closeModal('modal-plan-template');
+  // 1) Trainingstage als eigenständige Bibliothek-Tage anlegen (Referenz-Modell)
+  const lib = DB.getTrainingDays();
+  const dayIds = [];
+  t.days.forEach((d, i) => {
+    const id = 'libday_' + Date.now() + '_' + Math.floor(Math.random()*100000) + '_' + i;
+    lib.push({ id, name: d.name, color: null, exercises: d.exercises.map(e => ({ ...e })), notes: '', archived: false, createdAt: Date.now() });
+    dayIds.push(id);
+  });
+  DB.saveTrainingDays(lib);
+  // 2) Wochenplan aus der Vorlage bauen
+  const weekPlan = JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
+  weekPlan.forEach((slot, wi) => {
+    const di = t.week[wi];
+    slot.planDayId = (di === null || di === undefined) ? null : (dayIds[di] || null);
+  });
+  // 3) Plan anlegen + öffnen
+  const plans = DB.getPlans();
+  const startDate = Date.now();
+  const weeksTotal = t.weeks || 12;
+  const endDate = startDate + weeksTotal * 7 * 24 * 3600 * 1000;
+  const np = { id: 'plan_' + Date.now() + '_' + Math.floor(Math.random()*10000), name: t.name, weeksTotal, startDate, endDate, notes: '', dayIds, weekPlan, archived: false, createdAt: Date.now() };
+  plans.push(np);
+  DB.savePlans(plans);
+  showToast(`Vorlage „${t.name}" erstellt`);
+  openPlanDetail(np.id);
+}
+
+// ─── Bestehenden Plan als Vorlage kopieren (UNABHÄNGIGE Kopie) ───
+function openPlanCopyModal() {
+  closeModal('modal-plan-create-source');
+  renderPlanCopyList();
+  openModal('modal-plan-copy');
+}
+function renderPlanCopyList() {
+  const plans = DB.getPlans().slice().sort((a,b) => (a.archived?1:0)-(b.archived?1:0) || (b.startDate||0)-(a.startDate||0));
+  const html = plans.map(p => {
+    const n = resolvePlanDays(p).length;
+    const tag = p.archived ? ' · archiviert' : '';
+    return `<div class="plan-list-row" onclick="copyExistingPlan('${p.id}')" style="cursor:pointer">
+      <div class="plan-list-info">
+        <div class="plan-list-name">${escapeHtml(p.name)}</div>
+        <div class="plan-list-meta">${n} Trainingstag${n===1?'':'e'}${tag}</div>
+      </div>
+      <div class="plan-list-action">›</div>
+    </div>`;
+  }).join('');
+  document.getElementById('plan-copy-list').innerHTML = html ||
+    '<p style="color:var(--text3);text-align:center;padding:20px">Noch keine Pläne zum Kopieren vorhanden.</p>';
+}
+function copyExistingPlan(planId) {
+  const src = DB.getPlans().find(p => p.id === planId);
+  if (!src) return;
+  closeModal('modal-plan-copy');
+  // Unabhängige Kopie: frische Bibliothek-Tage (neue IDs), damit Bearbeiten das Original nicht ändert.
+  const srcDays = resolvePlanDays(src); // archiviert → Snapshot, aktiv → resolvte Tage
+  const lib = DB.getTrainingDays();
+  const idMap = {};
+  const newDayIds = [];
+  srcDays.forEach((d, i) => {
+    const id = 'libday_' + Date.now() + '_' + Math.floor(Math.random()*100000) + '_' + i;
+    idMap[d.id] = id;
+    lib.push({ id, name: d.name, color: d.color || null, exercises: JSON.parse(JSON.stringify(d.exercises || [])), notes: d.notes || '', archived: false, createdAt: Date.now() });
+    newDayIds.push(id);
+  });
+  DB.saveTrainingDays(lib);
+  const weekPlan = JSON.parse(JSON.stringify(src.weekPlan || DEFAULT_WEEKPLAN));
+  weekPlan.forEach(slot => { slot.planDayId = (slot.planDayId && idMap[slot.planDayId]) ? idMap[slot.planDayId] : null; });
+  const plans = DB.getPlans();
+  const startDate = Date.now();
+  const weeksTotal = src.weeksTotal || 12;
+  const endDate = startDate + weeksTotal * 7 * 24 * 3600 * 1000;
+  const np = { id: 'plan_' + Date.now() + '_' + Math.floor(Math.random()*10000), name: src.name + ' (Kopie)', weeksTotal, startDate, endDate, notes: src.notes || '', dayIds: newDayIds, weekPlan, archived: false, createdAt: Date.now() };
+  plans.push(np);
+  DB.savePlans(plans);
+  showToast(`„${src.name}" als neuer Plan kopiert`);
+  openPlanDetail(np.id);
 }
 // Rendert die im Plans-Tab aktive Unteransicht (Pläne ODER Trainingstage-Bibliothek).
 function renderPlansScreen() {
@@ -3457,20 +3736,8 @@ function renderLibDays() {
       <div class="plan-list-action">›</div>
     </div>`;
   };
-  // Import-Hinweis: wie viele Plan-Tage (nach Name) sind noch NICHT in der Bibliothek?
-  const libNames = new Set(days.map(d => (d.name||'').trim().toLowerCase()));
-  const planDayNames = new Set();
-  DB.getPlans().forEach(p => (p.trainingDays||[]).forEach(td => { const k=(td.name||'').trim().toLowerCase(); if (k) planDayNames.add(k); }));
-  let importable = 0; planDayNames.forEach(n => { if (!libNames.has(n)) importable++; });
-  const importBtn = importable > 0
-    ? `<div class="plan-list-row" onclick="importPlanDaysToLibrary()" style="cursor:pointer">
-         <div class="plan-list-info">
-           <div class="plan-list-name">⬇️ Bestehende Plan-Tage importieren</div>
-           <div class="plan-list-meta">${importable} Tag${importable===1?'':'e'} aus deinen Plänen in die Bibliothek kopieren</div>
-         </div>
-         <div class="plan-list-action">›</div>
-       </div>` : '';
-
+  // (Kein Import-Button mehr nötig: im Referenz-Modell SIND alle Plan-Tage Bibliothek-Tage.
+  //  Bestehende Pläne werden einmalig per migrateDayModelV2 verknüpft.)
   let html = '';
   if (!active.length && !archived.length) {
     html = `<div class="plan-day-empty" style="margin:24px 14px">Noch keine Trainingstage — tippe auf das + oben rechts oder importiere bestehende Plan-Tage.</div>`;
@@ -3486,7 +3753,7 @@ function renderLibDays() {
       if (expanded) html += archived.map(renderRow).join('');
     }
   }
-  document.getElementById('libdays-list').innerHTML = importBtn + html;
+  document.getElementById('libdays-list').innerHTML = html;
 }
 
 function createNewLibDay() {
@@ -3507,12 +3774,17 @@ function openLibDayDetail(id) { editingLibDayId = id; showScreen('day-detail'); 
 function closeLibDayDetail() { editingLibDayId = null; showScreen('plans'); }
 function _getEditingLibDay() { return DB.getTrainingDays().find(d => d.id === editingLibDayId) || null; }
 
-// In welchen Trainingsplänen liegt eine Kopie DIESES Bibliotheks-Tags? EXAKT verknüpft über die
-// beim Hinzufügen gesetzte Rück-Referenz `sourceLibDayId` (Leonard-Wunsch: exakt statt Name).
-// Hinweis: erfasst NUR ab jetzt via Bibliothek hinzugefügte Tage — Altbestand/Import haben keine Referenz.
+// In welchen Trainingsplänen ist DIESER Tag? Im Referenz-Modell ist das ein trivialer,
+// vollständiger Lookup über plan.dayIds (aktive Pläne) bzw. archivedDays (eingefrorene Pläne).
 function getPlansContainingLibDay(libDayId) {
   if (!libDayId) return [];
-  return DB.getPlans().filter(p => (p.trainingDays || []).some(d => d.sourceLibDayId === libDayId));
+  return DB.getPlans().filter(p => {
+    if (p.archived && Array.isArray(p.archivedDays)) return p.archivedDays.some(d => d.id === libDayId);
+    if (Array.isArray(p.dayIds)) return p.dayIds.includes(libDayId);
+    // Back-Compat (alte Plan-Form, noch nicht migriert)
+    if (Array.isArray(p.trainingDays)) return p.trainingDays.some(d => d.id === libDayId || d.sourceLibDayId === libDayId);
+    return false;
+  });
 }
 
 function renderLibDayDetail() {
@@ -3588,35 +3860,38 @@ function deleteCurrentLibDay() {
     { danger: true, confirmLabel: 'Löschen' });
 }
 
-// Kopiert den Bibliotheks-Tag (frische id) in plan.trainingDays — OHNE Wochentag-Zuweisung
-// (Wochentag wird optional später im Plan-Detail zugewiesen, Leonard-Wunsch).
-function _addLibDayCopyToPlan(plan, libDay) {
-  const newId = 'pd_' + Date.now() + '_' + Math.floor(Math.random()*10000);
-  const exercises = JSON.parse(JSON.stringify(libDay.exercises || []));
-  plan.trainingDays = plan.trainingDays || [];
-  // sourceLibDayId = Rück-Referenz auf den Bibliotheks-Tag (für exakte „In Plänen"-Anzeige).
-  plan.trainingDays.push({ id: newId, name: libDay.name, color: libDay.color, exercises, sourceLibDayId: libDay.id });
+// Referenz-Modell: Plan REFERENZIERT den Bibliothek-Tag über plan.dayIds (keine Kopie).
+// Eine Änderung am Tag wirkt damit in allen referenzierenden Plänen. Idempotent.
+// OHNE Wochentag-Zuweisung (Wochentag wird optional später im Plan-Detail zugewiesen).
+function _addLibDayToPlanRef(plan, libDay) {
+  plan.dayIds = plan.dayIds || [];
+  if (!plan.dayIds.includes(libDay.id)) plan.dayIds.push(libDay.id);
 }
 
-// Multi-Plan-Modal (analog zum „Zu Trainingstag"-Modal im Übungen-Tab). Mehrfach hinzufügbar;
-// Kopie-Semantik → keine Toggle/Entfernen-Logik (jeder Klick fügt eine weitere Kopie hinzu).
-let dayToPlanAdded = new Set(); // in dieser Modal-Session bereits hinzugefügte Plan-IDs
+// Multi-Plan-Modal (analog zum „Zu Trainingstag"-Modal im Übungen-Tab). Referenz-Modell →
+// ein Plan referenziert einen Tag oder nicht (binär). Bereits enthaltene Pläne zeigen ✓.
 function openDayToPlanModal() {
   const day = _getEditingLibDay();
   if (!day) return;
-  dayToPlanAdded = new Set();
   document.getElementById('modal-day-to-plan-title').textContent = `„${day.name}" zu welchen Trainingsplänen?`;
   renderDayToPlanList();
   openModal('modal-day-to-plan');
 }
+// Enthält dieser Plan den Tag bereits? (dayIds / Back-Compat trainingDays)
+function _planHasLibDay(p, dayId) {
+  if (Array.isArray(p.dayIds)) return p.dayIds.includes(dayId);
+  if (Array.isArray(p.trainingDays)) return p.trainingDays.some(d => d.id === dayId || d.sourceLibDayId === dayId);
+  return false;
+}
 function renderDayToPlanList() {
+  const day = _getEditingLibDay();
   const plans = DB.getPlans().filter(p => !p.archived).sort((a,b) => a.startDate - b.startDate);
   const html = plans.map(p => {
-    const added = dayToPlanAdded.has(p.id);
-    const cls = `day-pick-row${added ? ' in-day' : ' not-in-day'}`;
-    const onclickAttr = added ? '' : `onclick="addLibDayToPlanFromModal('${p.id}')"`;
-    const actions = added ? `<span class="day-pick-icon done">✓</span>` : `<span class="day-pick-icon">+</span>`;
-    const sub = `${(p.trainingDays||[]).length} Trainingstage${added ? ' · Hinzugefügt' : ''}`;
+    const inPlan = day ? _planHasLibDay(p, day.id) : false;
+    const cls = `day-pick-row${inPlan ? ' in-day' : ' not-in-day'}`;
+    const onclickAttr = inPlan ? '' : `onclick="addLibDayToPlanFromModal('${p.id}')"`;
+    const actions = inPlan ? `<span class="day-pick-icon done">✓</span>` : `<span class="day-pick-icon">+</span>`;
+    const sub = `${resolvePlanDays(p).length} Trainingstage${inPlan ? ' · Enthalten' : ''}`;
     return `<div class="${cls}" ${onclickAttr}>
       <div class="day-pick-info">
         <div class="day-pick-name">${escapeHtml(p.name)}</div>
@@ -3633,9 +3908,8 @@ function addLibDayToPlanFromModal(planId) {
   const plans = DB.getPlans();
   const plan = plans.find(p => p.id === planId);
   if (!plan) return;
-  _addLibDayCopyToPlan(plan, libDay);
+  _addLibDayToPlanRef(plan, libDay);
   DB.savePlans(plans);
-  dayToPlanAdded.add(planId);
   showToast(`„${libDay.name}" zu „${plan.name}" hinzugefügt`);
   renderDayToPlanList();
 }
@@ -3644,42 +3918,13 @@ function createNewPlanForDay() {
   promptForName('Name des neuen Trainingsplans', 'Neuer Trainingsplan', (name) => {
     const plans = DB.getPlans();
     const startDate = Date.now(), weeksTotal = 12, endDate = startDate + weeksTotal*7*24*3600*1000;
-    const np = { id:'plan_'+Date.now()+'_'+Math.floor(Math.random()*10000), name, weeksTotal, startDate, endDate, notes:'', trainingDays:[], weekPlan:JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN)), archived:false, createdAt:Date.now() };
-    _addLibDayCopyToPlan(np, libDay);
+    const np = { id:'plan_'+Date.now()+'_'+Math.floor(Math.random()*10000), name, weeksTotal, startDate, endDate, notes:'', dayIds:[], weekPlan:JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN)), archived:false, createdAt:Date.now() };
+    _addLibDayToPlanRef(np, libDay);
     plans.push(np);
     DB.savePlans(plans);
-    dayToPlanAdded.add(np.id);
     showToast(`„${libDay.name}" zu neuem Plan „${name}" hinzugefügt`);
     renderDayToPlanList();
   });
-}
-
-// Einmal-Import: bestehende Plan-Tage als eigenständige Bibliotheks-Tage kopieren (nach Name dedupliziert).
-function importPlanDaysToLibrary() {
-  const days = DB.getTrainingDays();
-  const existingNames = new Set(days.map(d => (d.name||'').trim().toLowerCase()));
-  let added = 0;
-  DB.getPlans().forEach(p => {
-    (p.trainingDays || []).forEach(td => {
-      const key = (td.name||'').trim().toLowerCase();
-      if (!key || existingNames.has(key)) return;
-      existingNames.add(key);
-      days.push({
-        id: 'libday_' + Date.now() + '_' + Math.floor(Math.random()*100000) + '_' + added,
-        name: td.name, color: td.color,
-        exercises: JSON.parse(JSON.stringify(td.exercises || [])),
-        notes: '', archived: false, createdAt: Date.now(),
-      });
-      added++;
-    });
-  });
-  if (added) {
-    DB.saveTrainingDays(days);
-    showToast(`${added} Trainingstag${added===1?'':'e'} importiert`);
-  } else {
-    showToast('Keine neuen Trainingstage zum Importieren');
-  }
-  renderLibDays();
 }
 
 // Entfernt eine Übung aus dem aktuell bearbeiteten Bibliotheks-Trainingstag.
@@ -3739,6 +3984,43 @@ function saveWeekPlanDay(i, value) {
   wp[i].planDayId = value || null;
   DB.saveWeekPlan(wp);
   _renderAfterPlanEdit();
+}
+
+// Visueller Wochenplaner: Wochentag antippen → Picker (Trainingstage des Plans + Ruhetag).
+let _weekdayPickIdx = null;
+function openWeekdayPicker(i) {
+  _weekdayPickIdx = i;
+  const plan = _resolveEditPlan();
+  const days = plan ? resolvePlanDays(plan) : [];
+  const wp = (plan && plan.weekPlan) || [];
+  const cur = wp[i] ? wp[i].planDayId : null;
+  const label = wp[i] ? wp[i].label : '';
+  const titleEl = document.getElementById('weekday-pick-title');
+  if (titleEl) titleEl.textContent = `${label}: Trainingstag wählen`;
+  const restRow = `<div class="day-pick-row ${!cur ? 'in-day' : 'not-in-day'}" onclick="pickWeekday('')">
+      <div class="day-pick-info"><div class="day-pick-name">Ruhetag</div></div>
+      <div class="day-pick-actions">${!cur ? '<span class="day-pick-icon done">✓</span>' : '<span class="day-pick-icon">+</span>'}</div>
+    </div>`;
+  const dayRows = days.map(d => {
+    const sel = cur === d.id;
+    const setCount = (d.exercises || []).reduce((a,e) => a + (e.targetSets || 0), 0);
+    return `<div class="day-pick-row ${sel ? 'in-day' : 'not-in-day'}" onclick="pickWeekday('${d.id}')">
+      <div class="day-pick-info">
+        <div class="day-pick-name">${escapeHtml(d.name)}</div>
+        <div class="day-pick-sub">${(d.exercises || []).length} Übungen · ${setCount} Sätze</div>
+      </div>
+      <div class="day-pick-actions">${sel ? '<span class="day-pick-icon done">✓</span>' : '<span class="day-pick-icon">+</span>'}</div>
+    </div>`;
+  }).join('');
+  const empty = days.length ? '' : '<p style="color:var(--text3);text-align:center;padding:16px 8px;font-size:13px">Noch keine Trainingstage in diesem Plan. Lege unten welche an.</p>';
+  document.getElementById('weekday-pick-list').innerHTML = restRow + dayRows + empty;
+  openModal('modal-weekday-pick');
+}
+function pickWeekday(dayId) {
+  if (_weekdayPickIdx === null) return;
+  saveWeekPlanDay(_weekdayPickIdx, dayId || '');
+  closeModal('modal-weekday-pick');
+  _weekdayPickIdx = null;
 }
 
 function openPlanDayModal(idx) {
@@ -3813,19 +4095,17 @@ function cancelNameInput() {
   if (cb) cb();
 }
 
-// "+ Trainingstag hinzufügen": zeigt ein Source-Modal (Neu oder Kopie aus anderem Plan).
-// Wenn keine anderen Trainingstage in irgendeinem Plan existieren, springt direkt in den
-// Neu-Erstellen-Flow (Kopie wäre sinnlos).
+// "+ Trainingstag hinzufügen": zeigt ein Source-Modal (Neu erstellen ODER aus der Bibliothek
+// per Referenz hinzufügen). Gibt es keine noch nicht referenzierten Bibliothek-Tage, springt
+// es direkt in den Neu-Erstellen-Flow.
 function addNewPlanDay() {
-  const allPlans = DB.getPlans();
-  const editingId = editingPlanId;
-  const hasCopyableSources = allPlans.some(pl => (pl.trainingDays || []).length > 0);
-  if (!hasCopyableSources) {
-    // Direkt in den Neu-Flow
+  const plan = _resolveEditPlan();
+  const inPlan = new Set(plan ? resolvePlanDays(plan).map(d => d.id) : []);
+  const hasLibrarySources = DB.getTrainingDays().some(d => !d.archived && !inPlan.has(d.id));
+  if (!hasLibrarySources) {
     addNewPlanDayFromScratch();
     return;
   }
-  // Copy-Button im Source-Modal ggf. dimmen, wenn nur der aktuell editierte Plan Tage hat
   const btn = document.getElementById('copy-plan-day-btn');
   if (btn) btn.disabled = false;
   openModal('modal-plan-day-source');
@@ -3844,9 +4124,10 @@ function addNewPlanDayFromScratch() {
   });
 }
 
-// Multi-Select Copy-Picker: Liste aller kopierbarer Trainingstage über alle Pläne
-// (inkl. archivierter). Erlaubt Mehrfach-Auswahl + inline-Aufklappen für Übungs-Vorschau (read-only).
-let _copyPlanDaySources = []; // Cached: [{planId, planName, day}, ...]
+// Multi-Select Bibliothek-Picker: alle Bibliothek-Tage, die im aktuellen Plan noch nicht
+// referenziert sind. Auswahl fügt sie dem Plan per REFERENZ hinzu (Referenz-Modell).
+// Inline-Aufklappen zeigt die Übungs-Vorschau (read-only).
+let _copyPlanDaySources = []; // Cached: [{day}, ...]
 let _copyPlanDaySelected = new Set();
 let _copyPlanDayExpanded = new Set();
 
@@ -3855,12 +4136,12 @@ function openCopyPlanDayPicker() {
   _copyPlanDaySources = [];
   _copyPlanDaySelected.clear();
   _copyPlanDayExpanded.clear();
-  const allPlans = DB.getPlans();
-  for (const pl of allPlans) {
-    for (const td of (pl.trainingDays || [])) {
-      _copyPlanDaySources.push({ planId: pl.id, planName: pl.name, day: td });
-    }
-  }
+  const plan = _resolveEditPlan();
+  const inPlan = new Set(plan ? resolvePlanDays(plan).map(d => d.id) : []);
+  DB.getTrainingDays()
+    .filter(d => !d.archived && !inPlan.has(d.id))
+    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+    .forEach(d => { _copyPlanDaySources.push({ day: d }); });
   renderCopyPlanDayList();
   openModal('modal-copy-plan-day');
 }
@@ -3871,9 +4152,9 @@ function renderCopyPlanDayList() {
   exs.forEach(e => { exMap[e.id] = e; });
   const list = document.getElementById('copy-plan-day-list');
   if (!_copyPlanDaySources.length) {
-    list.innerHTML = '<p style="color:var(--text3);text-align:center;padding:20px">Keine Trainingstage zum Kopieren verfügbar</p>';
+    list.innerHTML = '<p style="color:var(--text3);text-align:center;padding:20px">Keine weiteren Bibliothek-Tage verfügbar</p>';
     document.getElementById('copy-plan-day-confirm').disabled = true;
-    document.getElementById('copy-plan-day-confirm').textContent = 'Kopieren';
+    document.getElementById('copy-plan-day-confirm').textContent = 'Hinzufügen';
     return;
   }
   list.innerHTML = _copyPlanDaySources.map((it, idx) => {
@@ -3900,7 +4181,7 @@ function renderCopyPlanDayList() {
       <div class="copy-day-head" onclick="toggleCopyPlanDaySelection(${idx})">
         <div class="copy-day-info">
           <div class="copy-day-name">${escapeHtml(it.day.name)}</div>
-          <div class="copy-day-sub">aus ${escapeHtml(it.planName)} • ${dayCount} Übungen • ${setCount} Sätze</div>
+          <div class="copy-day-sub">${dayCount} Übungen • ${setCount} Sätze</div>
         </div>
         <button class="copy-day-expand" onclick="event.stopPropagation();toggleCopyPlanDayExpand(${idx})" aria-label="Übungen anzeigen">
           ${expanded ? '▾' : '▸'}
@@ -3914,7 +4195,7 @@ function renderCopyPlanDayList() {
   const btn = document.getElementById('copy-plan-day-confirm');
   const n = _copyPlanDaySelected.size;
   btn.disabled = n === 0;
-  btn.textContent = n === 0 ? 'Kopieren' : (n === 1 ? '1 Trainingstag kopieren' : `${n} Trainingstage kopieren`);
+  btn.textContent = n === 0 ? 'Hinzufügen' : (n === 1 ? '1 Trainingstag hinzufügen' : `${n} Trainingstage hinzufügen`);
 }
 
 function toggleCopyPlanDaySelection(idx) {
@@ -3932,23 +4213,18 @@ function confirmCopyPlanDays() {
   if (_copyPlanDaySelected.size === 0) return;
   // Zielreihenfolge: in Reihenfolge der Sources (nicht in Auswahl-Klickreihenfolge)
   const selectedIdxs = [..._copyPlanDaySelected].sort((a,b) => a - b);
-  const plan = DB.getPlan();
-  let counter = 0;
+  const plan = DB.getPlan(); // resolvtes Tag-Array des Editing-Plans
   for (const idx of selectedIdxs) {
     const src = _copyPlanDaySources[idx];
     if (!src) continue;
-    plan.push({
-      id: 'day_' + Date.now() + '_' + (counter++) + '_' + Math.floor(Math.random()*10000),
-      name: src.day.name,
-      color: src.day.color || null,
-      exercises: src.day.exercises.map(e => ({ ...e })),
-    });
+    // Referenz hinzufügen: den Bibliothek-Tag selbst anhängen (savePlan upsertet idempotent + setzt dayIds)
+    if (!plan.some(d => d.id === src.day.id)) plan.push(src.day);
   }
   DB.savePlan(plan);
   closeModal('modal-copy-plan-day');
   if (currentScreen === 'plan-detail') renderPlanDetail();
   const n = selectedIdxs.length;
-  showToast(n === 1 ? 'Trainingstag kopiert ✓' : `${n} Trainingstage kopiert ✓`);
+  showToast(n === 1 ? 'Trainingstag hinzugefügt ✓' : `${n} Trainingstage hinzugefügt ✓`);
   _copyPlanDaySelected.clear();
   _copyPlanDayExpanded.clear();
 }
@@ -3959,6 +4235,16 @@ function confirmCopyPlanDays() {
 let openExerciseId = null;   // currently expanded exercise in catalog
 let exSortMode = 'muscle';   // 'muscle' | 'plan' — im Cardio-Modus = 'alpha' | 'plan'
 let exMode = (localStorage.getItem('ft_ex_mode') === 'cardio') ? 'cardio' : 'strength'; // 'strength' | 'cardio'
+let exCatalogSearch = ''; // Suchtext im Übungen-Tab (filtert nach Name, klappt Treffer-Gruppen auf)
+function filterExerciseCatalog() {
+  const el = document.getElementById('ex-catalog-search');
+  exCatalogSearch = (el ? el.value : '').trim().toLowerCase();
+  renderExercises();
+}
+function _exMatchesSearch(ex) {
+  if (!exCatalogSearch) return true;
+  return (ex.name || '').toLowerCase().includes(exCatalogSearch);
+}
 const collapsedExGroups = new Set(); // Set of group keys (muscle-key oder planDay-id) die eingeklappt sind
 // Default: Muskelgruppen EINGEKLAPPT (Leonard-Wunsch). Plan-Gruppierung bleibt aufgeklappt.
 MUSCLE_ORDER.forEach(m => collapsedExGroups.add('muscle:' + m));
@@ -4210,11 +4496,12 @@ function renderExercises() {
 
 // Cardio-Modus, Sort='muscle': flache alphabetische Liste, keine Muskelgruppen.
 function renderExercisesCardioFlat() {
-  const exs = DB.getExercises().filter(e => exType(e) === 'cardio');
+  const exs = DB.getExercises().filter(e => exType(e) === 'cardio').filter(_exMatchesSearch);
   exs.sort((a,b) => a.name.localeCompare(b.name, 'de'));
   if (!exs.length) {
-    document.getElementById('exercises-groups').innerHTML =
-      '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Noch keine Cardio-Einheiten vorhanden. Füge eine neue hinzu.</p>';
+    document.getElementById('exercises-groups').innerHTML = exCatalogSearch
+      ? '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Keine Treffer.</p>'
+      : '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Noch keine Cardio-Einheiten vorhanden. Füge eine neue hinzu.</p>';
     return;
   }
   const itemsHTML = exs.map(ex => buildExItemHTML(ex)).join('');
@@ -4233,10 +4520,11 @@ function renderExercisesByPlan() {
     // Nach exMode filtern (Kraft-Modus zeigt nur strength-Eintraege, Cardio-Modus nur cardio).
     const items = day.exercises.map(pe => exMap[pe.exId])
       .filter(Boolean)
-      .filter(ex => exType(ex) === exMode);
+      .filter(ex => exType(ex) === exMode)
+      .filter(_exMatchesSearch);
     if (!items.length) return '';
     const itemsHTML = items.map(ex => buildExItemHTML(ex, { dayId: day.id })).join('');
-    const isCollapsed = collapsedExGroups.has('plan:' + day.id);
+    const isCollapsed = !exCatalogSearch && collapsedExGroups.has('plan:' + day.id);
     return `<div class="ex-group${isCollapsed ? ' collapsed' : ''}">
       <div class="ex-group-title" onclick="toggleExGroup('plan:${day.id}')">
         <span class="dot" style="background:rgba(255,255,255,0.7)"></span>
@@ -4248,14 +4536,15 @@ function renderExercisesByPlan() {
     </div>`;
   }).filter(Boolean).join('');
 
-  document.getElementById('exercises-groups').innerHTML = groupsHTML ||
-    '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Noch keine Trainingstage mit Übungen vorhanden.</p>';
+  document.getElementById('exercises-groups').innerHTML = groupsHTML || (exCatalogSearch
+    ? '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Keine Treffer.</p>'
+    : '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Noch keine Trainingstage mit Übungen vorhanden.</p>');
 }
 
 function renderExercisesByMuscle() {
   // Im Cardio-Modus wuerde diese Funktion gar nicht erst aufgerufen werden
   // (renderExercises() routet zu renderExercisesCardioFlat). Defensiv filtern wir aber trotzdem.
-  const exs = DB.getExercises().filter(e => exType(e) === 'strength');
+  const exs = DB.getExercises().filter(e => exType(e) === 'strength').filter(_exMatchesSearch);
   const byMuscle = {};
   MUSCLE_ORDER.forEach(m => byMuscle[m] = []);
   exs.forEach(e => { if (byMuscle[e.muscle]) byMuscle[e.muscle].push(e); });
@@ -4265,7 +4554,7 @@ function renderExercisesByMuscle() {
     const items = byMuscle[m].sort((a,b) => a.name.localeCompare(b.name, 'de'));
     if (!items.length) return '';
     const itemsHTML = items.map(ex => buildExItemHTML(ex)).join('');
-    const isCollapsed = collapsedExGroups.has('muscle:' + m);
+    const isCollapsed = !exCatalogSearch && collapsedExGroups.has('muscle:' + m);
     return `<div class="ex-group${isCollapsed ? ' collapsed' : ''}" style="--mc:${meta.color}">
       <div class="ex-group-title" onclick="toggleExGroup('muscle:${m}')">
         <span class="dot"></span>
@@ -4277,8 +4566,9 @@ function renderExercisesByMuscle() {
     </div>`;
   }).filter(Boolean).join('');
 
-  document.getElementById('exercises-groups').innerHTML = groupsHTML ||
-    '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Keine Übungen vorhanden. Füge eine neue Übung hinzu.</p>';
+  document.getElementById('exercises-groups').innerHTML = groupsHTML || (exCatalogSearch
+    ? '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Keine Treffer.</p>'
+    : '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Keine Übungen vorhanden. Füge eine neue Übung hinzu.</p>');
 }
 
 function toggleExItem(id) {
@@ -4440,8 +4730,10 @@ function deletePlanDay(idx) {
   const plan = DB.getPlan();
   const day = plan[idx];
   if (!day) return;
-  confirmAction('Trainingstag löschen?',
-    `„${day.name}" wirklich löschen? Er wird auch aus dem Wochenplan entfernt.`,
+  // Referenz-Modell: „Entfernen" löst nur die Referenz aus diesem Plan — der Trainingstag
+  // selbst bleibt in der Bibliothek erhalten (und in anderen Plänen, die ihn referenzieren).
+  confirmAction('Trainingstag aus Plan entfernen?',
+    `„${day.name}" wird aus diesem Trainingsplan und seinem Wochenplan entfernt. Der Trainingstag bleibt in der Bibliothek erhalten.`,
     () => {
       const p = DB.getPlan();
       const removedId = day.id;
@@ -4454,9 +4746,9 @@ function deletePlanDay(idx) {
       // Aktuellen Screen neu rendern — Trainingstage-Liste wohnt jetzt im Plan-Detail-Screen
       if (currentScreen === 'plan-detail') renderPlanDetail();
       else if (currentScreen === 'mehr') renderMehr();
-      showToast('Trainingstag gelöscht');
+      showToast('Aus Plan entfernt');
     },
-    { danger: true, confirmLabel: 'Löschen' }
+    { danger: true, confirmLabel: 'Entfernen' }
   );
 }
 
@@ -5024,13 +5316,22 @@ function applyPlanImport() {
     });
   }
 
+  // Referenz-Modell: importierte Tage werden zu geteilten Bibliothek-Tagen; der Plan
+  // referenziert sie über dayIds. (weekPlan zeigt bereits auf dieselben importedDays-IDs.)
+  const lib = DB.getTrainingDays();
+  importedDays.forEach(d => {
+    lib.push({ id: d.id, name: d.name, color: d.color || null,
+               exercises: d.exercises, notes: '', archived: false, createdAt: Date.now() });
+  });
+  DB.saveTrainingDays(lib);
+
   // Neuen Plan erstellen
   const plans = DB.getPlans();
   const newPlan = {
     id: 'plan_' + Date.now() + '_' + Math.floor(Math.random()*10000),
     name: planName,
     weeksTotal, startDate, endDate,
-    trainingDays: importedDays,
+    dayIds: importedDays.map(d => d.id),
     weekPlan,
     archived: false,
     createdAt: Date.now(),
@@ -5499,6 +5800,9 @@ function driveApplyCloudData(data) {
   }
   // Lokale Änderungs-Marke zurücksetzen
   localStorage.setItem('ft_drive_last_local_change', '0');
+  // Tag-Modell v2: frisch gezogene Cloud-Pläne ggf. noch in alter (eingebetteter) Form →
+  // erzwungen ins Referenz-Modell überführen (idempotent).
+  migrateDayModelV2(true);
 }
 
 // ─── Haupt-Sync-Funktion ─────────────────────────────
@@ -5779,7 +6083,7 @@ function cleanupOrphanWeekplan() {
   const plans = DB.getPlans();
   let dirty = false;
   for (const plan of plans) {
-    const dayIds = new Set((plan.trainingDays || []).map(d => d.id));
+    const dayIds = new Set(resolvePlanDays(plan).map(d => d.id));
     for (const d of (plan.weekPlan || [])) {
       if (d.planDayId && !dayIds.has(d.planDayId)) {
         d.planDayId = null;
@@ -5789,6 +6093,76 @@ function cleanupOrphanWeekplan() {
   }
   if (dirty) DB.savePlans(plans);
   return dirty;
+}
+
+// ── Tag-Modell v2-Migration ──────────────────────────────────────────────
+// Einmalig (gegatet über ft_daymodel_v2_done): wandelt die alte Plan-Form (eingebettete
+// plan.trainingDays = Kopien) in das Referenz-Modell um:
+//  • aktive Pläne: eingebettete Tage in den globalen Store ft_trainingdays heben (oder per
+//    sourceLibDayId/id auf bereits vorhandene Bibliothek-Tage referenzieren → kein Duplikat),
+//    plan.dayIds setzen, weekPlan-Referenzen remappen.
+//  • archivierte Pläne: Tage als eingefrorener Snapshot (plan.archivedDays) belassen — sie
+//    landen NICHT in der lebendigen Bibliothek (Rückblick bleibt korrekt).
+// Idempotent + force-bar (für Cloud-Pull alter Daten).
+function migrateDayModelV2(force) {
+  if (!force && localStorage.getItem('ft_daymodel_v2_done')) return;
+  const plans = DB.getPlans();
+  if (!plans.length) { localStorage.setItem('ft_daymodel_v2_done', '1'); return; }
+  const lib = DB.getTrainingDays();
+  const libById = {};
+  lib.forEach(d => { libById[d.id] = d; });
+  let libChanged = false, plansChanged = false;
+
+  plans.forEach(plan => {
+    if (!Array.isArray(plan.trainingDays)) return; // schon migriert
+    const embedded = plan.trainingDays;
+
+    if (plan.archived) {
+      plan.archivedDays = embedded.map(d => JSON.parse(JSON.stringify(d)));
+      plan.dayIds = [];
+      delete plan.trainingDays;
+      plansChanged = true;
+      return;
+    }
+
+    const dayIds = [];
+    const seen = new Set();
+    const idMap = {}; // alte eingebettete id → referenzierte globale id
+    embedded.forEach(d => {
+      let targetId;
+      if (d.sourceLibDayId && libById[d.sourceLibDayId]) {
+        targetId = d.sourceLibDayId;
+      } else if (libById[d.id]) {
+        targetId = d.id;
+      } else {
+        const promoted = {
+          id: d.id,
+          name: d.name,
+          color: d.color || null,
+          exercises: JSON.parse(JSON.stringify(d.exercises || [])),
+          notes: d.notes || '',
+          archived: false,
+          createdAt: d.createdAt || Date.now(),
+        };
+        lib.push(promoted);
+        libById[promoted.id] = promoted;
+        libChanged = true;
+        targetId = promoted.id;
+      }
+      idMap[d.id] = targetId;
+      if (!seen.has(targetId)) { seen.add(targetId); dayIds.push(targetId); }
+    });
+    plan.dayIds = dayIds;
+    (plan.weekPlan || []).forEach(w => {
+      if (w.planDayId && idMap[w.planDayId]) w.planDayId = idMap[w.planDayId];
+    });
+    delete plan.trainingDays;
+    plansChanged = true;
+  });
+
+  if (libChanged) DB.saveTrainingDays(lib);
+  if (plansChanged) DB.savePlans(plans);
+  localStorage.setItem('ft_daymodel_v2_done', '1');
 }
 
 // Horizontal-Snap-Scroll-Sync: Wenn der Nutzer per Wisch-Geste auf einen anderen Tab
@@ -5920,6 +6294,8 @@ function prerenderAllTabs() {
 document.addEventListener('DOMContentLoaded', () => {
   // Daten-Migration: altes ft_program/ft_plan2/ft_weekplan in neue ft_plans-Struktur
   migrateToMultiPlan();
+  // Tag-Modell v2: eingebettete Plan-Tage in geteilte Bibliothek-Referenzen überführen (einmalig)
+  migrateDayModelV2();
   // Daten-Hygiene: verwaiste Wochenplan-Referenzen entfernen (legacy fallback, falls noch
   // jemand auf den ft_weekplan-Key zugreift — mit Multi-Plan sind die weekPlans pro Plan)
   cleanupOrphanWeekplan();

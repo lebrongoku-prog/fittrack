@@ -207,6 +207,9 @@
         </div>
       </div>
     </div>
+    <div class="ex-search-wrap">
+      <input class="ex-search-bar" type="search" id="ex-catalog-search" placeholder="🔍 Übung suchen…" oninput="filterExerciseCatalog()" autocomplete="off">
+    </div>
     <div id="exercises-groups"></div>
   </div>
 
@@ -724,7 +727,71 @@
   </div>
 </div>
 
-<!-- Auswahl: neuen Trainingstag erstellen oder aus anderem Plan kopieren -->
+<!-- Schnellstart: Plan-Quelle wählen (Leer / Vorlage / Bestehenden kopieren) -->
+<div id="modal-plan-create-source" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Neuen Trainingsplan</div>
+    <div class="sheet-body">
+      <p style="font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.5">Wie möchtest du starten?</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-primary btn-full" onclick="openPlanTemplateModal()">⚡ Aus Vorlage</button>
+        <button class="btn btn-outline btn-full" onclick="openPlanCopyModal()">📋 Bestehenden Plan kopieren</button>
+        <button class="btn btn-outline btn-full" onclick="createEmptyPlanFromChooser()">Leerer Plan</button>
+        <button class="btn btn-ghost btn-full" onclick="closeModal('modal-plan-create-source')">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Vorlagen-Picker -->
+<div id="modal-plan-template" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title with-back">
+      <button class="sheet-back-btn" onclick="closeModal('modal-plan-template');openModal('modal-plan-create-source');" aria-label="Zurück">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span>Vorlage wählen</span>
+    </div>
+    <div class="sheet-body">
+      <div class="sheet-list" id="plan-template-list"></div>
+      <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="closeModal('modal-plan-template')">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bestehenden Plan kopieren -->
+<div id="modal-plan-copy" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title with-back">
+      <button class="sheet-back-btn" onclick="closeModal('modal-plan-copy');openModal('modal-plan-create-source');" aria-label="Zurück">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span>Plan zum Kopieren wählen</span>
+    </div>
+    <div class="sheet-body">
+      <p style="font-size:13px;color:var(--text3);margin-bottom:12px;line-height:1.4">Erstellt eine unabhängige Kopie (eigene Trainingstage) — das Original bleibt unberührt.</p>
+      <div class="sheet-list" id="plan-copy-list"></div>
+      <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="closeModal('modal-plan-copy')">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Wochentag-Picker (visueller Wochenplaner: Tippen zum Zuweisen) -->
+<div id="modal-weekday-pick" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="weekday-pick-title">Trainingstag wählen</div>
+    <div class="sheet-body">
+      <div class="sheet-list" id="weekday-pick-list"></div>
+      <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="closeModal('modal-weekday-pick')">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Auswahl: neuen Trainingstag erstellen oder aus der Bibliothek per Referenz hinzufügen -->
 <div id="modal-plan-day-source" class="overlay hidden">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -733,14 +800,14 @@
       <p style="font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.5">Wie möchtest du den Trainingstag anlegen?</p>
       <div style="display:flex;flex-direction:column;gap:10px">
         <button class="btn btn-primary btn-full" onclick="addNewPlanDayFromScratch()">Neuen Trainingstag erstellen</button>
-        <button class="btn btn-outline btn-full" onclick="openCopyPlanDayPicker()" id="copy-plan-day-btn">Aus anderem Plan kopieren</button>
+        <button class="btn btn-outline btn-full" onclick="openCopyPlanDayPicker()" id="copy-plan-day-btn">Aus Bibliothek hinzufügen</button>
         <button class="btn btn-ghost btn-full" onclick="closeModal('modal-plan-day-source')">Abbrechen</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Picker: Trainingstag(e) aus anderem Plan zum Kopieren wählen — Multi-Select -->
+<!-- Picker: Trainingstag(e) aus der Bibliothek per Referenz hinzufügen — Multi-Select -->
 <div id="modal-copy-plan-day" class="overlay hidden">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -748,12 +815,12 @@
       <button class="sheet-back-btn" onclick="closeModal('modal-copy-plan-day');openModal('modal-plan-day-source');" aria-label="Zurück">
         <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <span>Trainingstage zum Kopieren wählen</span>
+      <span>Aus Bibliothek hinzufügen</span>
     </div>
     <div class="sheet-body">
       <div class="sheet-list" id="copy-plan-day-list"></div>
       <div class="plan-add-footer">
-        <button class="btn btn-primary btn-full" id="copy-plan-day-confirm" onclick="confirmCopyPlanDays()" disabled>Kopieren</button>
+        <button class="btn btn-primary btn-full" id="copy-plan-day-confirm" onclick="confirmCopyPlanDays()" disabled>Hinzufügen</button>
         <button class="btn btn-ghost btn-full" onclick="closeModal('modal-copy-plan-day')">Abbrechen</button>
       </div>
     </div>

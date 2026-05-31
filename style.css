@@ -770,8 +770,11 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .hero-v2-btn { align-self: flex-start; padding: 13px 22px; border-radius: 12px; background: var(--gradient); color: #fff; border: none; font-size: 15px; font-weight: 700; display: inline-flex; gap: 8px; align-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
 .hero-v2-btn svg { fill: #fff !important; }
 .hero-v2-btn:active { transform: scale(.97); }
-/* Wide button variant (used in Workouts hero) */
-.hero-v2-btn.stretch { align-self: stretch; justify-content: center; padding: 14px 22px; }
+/* Wide button variant (used in Workouts hero): volle Breite bis zur rechten Kante
+   (deckungsgleich mit der Beenden-Button-Reihe im Aktiv-Modus, da beide width:100%
+   des hero-v2-bottom sind). display:flex + width:100%, weil hero-v2-bottom KEIN
+   Flex-Container ist (align-self:stretch allein würde nicht greifen). Text mittig. */
+.hero-v2-btn.stretch { display: flex; width: 100%; justify-content: center; padding: 14px 22px; }
 
 /* Column layout: Vorschau and Aktiv share matching natural heights
    (top row dominated by dumbbell, bottom row buttons with same vertical padding). */
@@ -1156,6 +1159,17 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 
 .aex-v2-body { display: flex; gap: 12px; padding: 0 12px 12px; }
 .aex-v2-table { flex: 1; }
+/* Inline-Ziel-Editor (Sätze × Wdh.) oben in der Vorschau-Karte */
+.aex-v2-target-edit { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.aex-v2-target-lbl { font-size: 12px; color: var(--text3); font-weight: 700; margin-right: 2px; }
+.aex-v2-target-inp {
+  width: 44px; text-align: center; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 4px; font-size: 15px; font-weight: 700; color: var(--text);
+  -webkit-appearance: none; -moz-appearance: textfield;
+}
+.aex-v2-target-inp:focus { outline: none; border-color: var(--accent); background: #fff; }
+.aex-v2-target-x { font-size: 13px; color: var(--text3); font-weight: 600; }
+.aex-v2-target-unit { font-size: 12px; color: var(--text3); font-weight: 600; }
 .aex-v2-row { display: grid; grid-template-columns: 50px 1fr 1fr 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
 .aex-v2-row.head { margin-bottom: 6px; }
 .aex-v2-row.head .lbl { font-size: 12px; color: var(--text3); font-weight: 600; }
@@ -1505,6 +1519,21 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   flex: 1; background: var(--bg); border: 1px solid var(--border);
   border-radius: 8px; padding: 8px 10px; font-size: 14px; -webkit-appearance: none;
 }
+/* Übungen-Tab: Suchfeld */
+.ex-search-wrap { padding: 0 var(--screen-pad, 14px) 10px; }
+.ex-search-bar {
+  width: 100%; background: rgba(255,255,255,0.92); border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 10px; padding: 10px 12px; font-size: 15px; font-family: inherit; color: var(--text);
+  -webkit-appearance: none; box-shadow: 0 1px 4px rgba(15,23,42,0.06);
+}
+.ex-search-bar:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+/* Visueller Wochenplaner: tappbare Zeile statt Dropdown */
+.weekplan-row-tap { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.weekplan-row-tap:active { background: var(--card2); }
+.weekplan-pick-value { flex: 1; font-size: 14px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.weekplan-pick-value.rest { font-weight: 500; color: var(--text3); }
+.weekplan-pick-chev { font-size: 20px; color: var(--text3); line-height: 1; flex-shrink: 0; }
 .program-form-row { padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
 .program-form-row + .program-form-row { border-top: 1px solid var(--border); }
 .program-form-row label { font-size: 12px; color: var(--text3); font-weight: 600; }
