@@ -721,10 +721,21 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 }
 
 /* ─── Trainingstag-Name (durchgängige Hervorhebung) ─── */
+/* Trainingstag-Name als weiche Pille (FESTE Farbe = Pink/Magenta — bewusst eine Farbe, die
+   KEIN Tab-Akzent (Cyan/Emerald/Marineblau/Amber/Blau) und KEINE Muskelgruppe (Blau/Indigo/
+   Rot/Orange/Cyan/Braun/Violett) belegt, damit Trainingstage eindeutig erkennbar bleiben).
+   Ersetzt die frühere Großbuchstaben-Darstellung. Wird NUR in Standalone-Kontexten
+   (Listen-Zeilen, Gruppen-Header) verwendet — inline in Sätzen/Toasts steht der Name plain. */
 .pd-name {
-  text-transform: uppercase;
-  font-weight: 800;
-  letter-spacing: 0.6px;
+  display: inline-block;
+  background: #FCE7F3;
+  color: #9D174D;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  padding: 1px 9px;
+  border-radius: 999px;
+  line-height: 1.45;
+  vertical-align: baseline;
 }
 
 /* ─── Util ─── */

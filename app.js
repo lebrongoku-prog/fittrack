@@ -1004,7 +1004,7 @@ function buildWpInfo(days, focusIdx, useHeuteLabel) {
   const exCount = (d.planDay.exercises || []).length;
   const exLabel = exCount === 1 ? 'Übung' : 'Übungen';
   const doneMark = d.dayDone ? ' <span class="wp-info-done">✓</span>' : '';
-  return `<strong>${label}</strong> · ${pd(d.planDay.name)} · ${exCount} ${exLabel}${doneMark}`;
+  return `<strong>${label}</strong> · ${escapeHtml(d.planDay.name)} · ${exCount} ${exLabel}${doneMark}`;
 }
 
 function heroAction() {
@@ -1289,7 +1289,7 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
   const exCount = active ? active.exercises.length : (planDay ? planDay.exercises.length : 0);
   const doneEx = active ? active.exercises.filter(e=>e.done).length : 0;
   const processedEx = active ? active.exercises.filter(e=>e.done || e.skipped).length : 0;
-  const title = `${dayFullName(selDay.dayKey)}${planDay ? ' — ' + pd(planDay.name) : ''}`;
+  const title = `${dayFullName(selDay.dayKey)}${planDay ? ' — ' + escapeHtml(planDay.name) : ''}`;
   const label = opts.label || (isPreview ? 'VORSCHAU' : 'AKTIVE SESSION');
   // Reine Cardio-Tage zaehlen Sets nicht — labeln stattdessen die Einheit als Cardio
   const isPureCardio = !!(planDay && planDayIsPureCardio(planDay));
@@ -1916,7 +1916,7 @@ function openCardioQuickLog(dayId) {
   if (!entries.length) { showToast('Keine Cardio-Einheiten in diesem Tag'); return; }
   cardioQuickLogState = { dayId, dayName: day.name, entries };
   const titleEl = document.getElementById('cardio-qlog-title');
-  if (titleEl) titleEl.textContent = pd(day.name);
+  if (titleEl) titleEl.textContent = day.name;
   renderCardioQuickLog();
   openModal('modal-cardio-qlog');
 }
@@ -3730,7 +3730,7 @@ function renderLibDays() {
     const setCount = (d.exercises||[]).reduce((a,e) => a + (e.targetSets||0), 0);
     return `<div class="plan-list-row" onclick="openLibDayDetail('${d.id}')">
       <div class="plan-list-info">
-        <div class="plan-list-name">${escapeHtml(d.name)}</div>
+        <div class="plan-list-name"><span class="pd-name">${escapeHtml(d.name)}</span></div>
         <div class="plan-list-meta">${(d.exercises||[]).length} Übungen • ${setCount} Sätze</div>
       </div>
       <div class="plan-list-action">›</div>
@@ -4027,7 +4027,7 @@ function openPlanDayModal(idx) {
   editingDayIdx = idx;
   const plan = DB.getPlan();
   const day = plan[idx];
-  document.getElementById('plan-day-modal-title').innerHTML = `${pd(day.name)} bearbeiten`;
+  document.getElementById('plan-day-modal-title').innerHTML = `${escapeHtml(day.name)} bearbeiten`;
   document.getElementById('plan-day-name-input').value = day.name;
   renderPlanDayExList(day);
   openModal('modal-plan-day');
@@ -4119,7 +4119,7 @@ function addNewPlanDayFromScratch() {
     plan.push({ id, name, color: null, exercises: [] });
     DB.savePlan(plan);
     if (currentScreen === 'plan-detail') renderPlanDetail();
-    showToast(`${pd(name)} hinzugefügt`);
+    showToast(`${escapeHtml(name)} hinzugefügt`);
     openPlanDayModal(plan.length - 1);
   });
 }
@@ -4340,7 +4340,7 @@ function buildExItemHTML(ex, context) {
     ? `<div class="ex-item-using">
          <div class="ex-item-using-label">Verwendet in:</div>
          <div class="ex-item-using-list">
-           ${usingDays.map(d => `<span class="ex-item-day-chip">${pd(d.name)}</span>`).join('')}
+           ${usingDays.map(d => `<span class="ex-item-day-chip">${escapeHtml(d.name)}</span>`).join('')}
          </div>
        </div>`
     : `<div class="ex-item-using">
@@ -4406,7 +4406,7 @@ function buildExItemCardioHTML(ex, context) {
     ? `<div class="ex-item-using">
          <div class="ex-item-using-label">Verwendet in:</div>
          <div class="ex-item-using-list">
-           ${usingDays.map(d => `<span class="ex-item-day-chip">${pd(d.name)}</span>`).join('')}
+           ${usingDays.map(d => `<span class="ex-item-day-chip">${escapeHtml(d.name)}</span>`).join('')}
          </div>
        </div>`
     : `<div class="ex-item-using">
@@ -4679,7 +4679,7 @@ function removeExerciseFromPlanDay(dayIdx) {
     DB.savePlan(p);
     syncActiveWorkoutWithPlanDay(p[dayIdx].id);
     const ex = DB.getExercises().find(e => e.id === exId);
-    showToast(`„${ex?.name||'Übung'}" aus ${pd(p[dayIdx].name)} entfernt`);
+    showToast(`„${ex?.name||'Übung'}" aus ${escapeHtml(p[dayIdx].name)} entfernt`);
     renderExToDayList();       // Modal-Liste neu zeichnen
     renderExercises();         // Übungen-Tab im Hintergrund aktualisieren
   });
@@ -4699,7 +4699,7 @@ function addExerciseToPlanDay(dayIdx) {
   const dayName = plan[dayIdx].name;
   closeModal('modal-ex-to-day');
   exerciseToAddId = null;
-  showToast(`„${ex?.name||'Übung'}" zu ${pd(dayName)} hinzugefügt`);
+  showToast(`„${ex?.name||'Übung'}" zu ${escapeHtml(dayName)} hinzugefügt`);
   renderExercises(); // refresh "Im Plan"-Tag & "Verwendet in"-Liste
 }
 
@@ -4717,7 +4717,7 @@ function createNewPlanDayAndAddEx() {
         plan.push({ id, name, color: null, exercises: [isCardio ? { exId } : { exId, targetSets: 3, targetReps: 8 }] });
         DB.savePlan(plan);
         const ex = DB.getExercises().find(e => e.id === exId);
-        showToast(`„${ex?.name||'Übung'}" zu ${pd(name)} hinzugefügt`);
+        showToast(`„${ex?.name||'Übung'}" zu ${escapeHtml(name)} hinzugefügt`);
         exerciseToAddId = null;
         renderExercises();
       },
