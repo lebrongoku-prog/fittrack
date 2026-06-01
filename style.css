@@ -1407,6 +1407,10 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .ex-sort-btn .ex-sort-ic-muscle { fill: var(--accent-dark); stroke: none; }
 .ex-sort-btn[data-mode="muscle"] .ex-sort-ic-plan { display: none; }
 .ex-sort-btn[data-mode="plan"]   .ex-sort-ic-muscle { display: none; }
+/* Alle-ein/ausklappen-Button: Icon nach Zustand (collapsed → „ausklappen", expanded → „einklappen") */
+#ex-collapse-all-btn .ex-coll-ic-collapse { display: none; }
+#ex-collapse-all-btn[data-state="expanded"] .ex-coll-ic-expand { display: none; }
+#ex-collapse-all-btn[data-state="expanded"] .ex-coll-ic-collapse { display: block; }
 
 .ex-group { margin: 0 12px 14px; }
 .ex-group-title {
@@ -2023,6 +2027,10 @@ body.theme-exercises .ex-mode-toggle {
 }
 .stats-mode-pill.active.mode-strength { background: var(--accent); color: #fff; }
 .stats-mode-pill.active.mode-cardio   { background: var(--cardio); color: #fff; }
+
+/* Cardio app-weit ausgeblendet (CARDIO_ENABLED=false): alle Kraft/Cardio-Umschalter weg. */
+html.no-cardio .ex-mode-toggle,
+html.no-cardio .stats-mode-toggle { display: none; }
 
 /* Wochenplan-Strip (Uebersicht + Workouts-Tab): reine Cardio-Tage bekommen Teal-Akzent.
    Die Klasse `cardio` wird zusaetzlich zu `.next7-chip.training` gesetzt. */

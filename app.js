@@ -1,4 +1,11 @@
 // ═══════════════════════════════════════════════
+// FEATURE FLAGS
+// ═══════════════════════════════════════════════
+// Cardio app-weit AUSGEBLENDET (Leonard-Wunsch). Code + gespeicherte Daten bleiben vollständig
+// erhalten — nur die UI ist ausgeblendet. Auf `true` setzen, um Cardio wieder zu aktivieren.
+const CARDIO_ENABLED = false;
+
+// ═══════════════════════════════════════════════
 // DATA LAYER
 // ═══════════════════════════════════════════════
 
@@ -918,7 +925,10 @@ function renderOverview() {
 function renderRecentSessionsOnOverview() {
   const container = document.getElementById('ov-recent-sessions-list');
   if (!container) return;
-  const ws = DB.getWorkouts().slice(0, 3);
+  // Cardio ausgeblendet → reine Cardio-Sessions nicht in „Letzte Sessions" zeigen.
+  const ws = DB.getWorkouts()
+    .filter(w => CARDIO_ENABLED || !((w.exercises||[]).length && (w.exercises||[]).every(e => isWoExCardio(e))))
+    .slice(0, 3);
   if (!ws.length) {
     container.innerHTML = '<p style="font-size:13px;color:var(--text3);padding:8px 0;text-align:center;margin:0">Noch keine Workouts</p>';
     return;
@@ -931,7 +941,7 @@ function renderRecentSessionsOnOverview() {
     const day = allDays.find(d => d.id === w.planDayId);
     const dayName = day ? day.name : (w.planDayName || 'Freestyle');
     const allCardio = (w.exercises || []).length > 0 && (w.exercises || []).every(e => isWoExCardio(e));
-    const someCardio = !allCardio && (w.exercises || []).some(e => isWoExCardio(e));
+    const someCardio = CARDIO_ENABLED && !allCardio && (w.exercises || []).some(e => isWoExCardio(e));
     // Cardio-Session: 🏃-Icon und Distanz/Pace statt Sets-Hantel
     if (allCardio) {
       const totalDist = (w.exercises || []).reduce((acc, we) => acc + (parseFloat(we.cardio && we.cardio.distance) || 0), 0);
@@ -975,29 +985,35 @@ function dayLabel(label) {
   return labels[todayIdx] || label;
 }
 
+// Ausgewählter Tag im Übersicht-Wochenplan-Strip (null = heute). Persistiert wie im Workouts-Tab.
+let selectedOverviewDayIdx = null;
+function selectOverviewDay(idx) {
+  selectedOverviewDayIdx = idx;
+  renderNext7Strip(getCurrentWeekDays());
+}
 function renderNext7Strip(days) {
   const root = document.getElementById('ov-next7-strip');
   if (!root) return;
-  root.innerHTML = days.map((d, i) => buildWpCol(d, i, /*isWorkoutsTab*/ false)).join('');
-  // Info-Zeile: zeigt immer "heute" (uebersicht-Tab hat keinen Tag-Selektor)
+  const todayIdx = days.findIndex(d => d.isToday);
+  const selIdx = (selectedOverviewDayIdx !== null && selectedOverviewDayIdx >= 0 && selectedOverviewDayIdx < days.length)
+    ? selectedOverviewDayIdx : todayIdx;
+  root.innerHTML = days.map((d, i) => buildWpCol(d, i, /*isWorkoutsTab*/ false, i === selIdx)).join('');
+  // Info-Zeile zeigt den AUSGEWÄHLTEN Tag (Tippen aktualisiert sie); „Heute"/„Morgen" für heute/morgen.
   const info = document.getElementById('ov-wp-info');
-  if (info) {
-    const todayIdx = days.findIndex(d => d.isToday);
-    info.innerHTML = buildWpInfo(days, todayIdx, /*useHeuteLabel*/ true);
-  }
+  if (info) info.innerHTML = buildWpInfo(days, selIdx, /*useHeuteLabel*/ true);
 }
 
 // Eine einzelne Spalte (= ein Tag) im Wochenplan-Strip.
-function buildWpCol(d, i, isWorkoutsTab) {
+function buildWpCol(d, i, isWorkoutsTab, isOverviewSelected) {
   const classes = ['wp-col'];
   if (d.isToday) classes.push('today');
   if (d.isRest) classes.push('rest'); else classes.push('training');
   if (d.dayDone && d.planDay) classes.push('done');
-  if (d.planDay && planDayIsPureCardio(d.planDay)) classes.push('cardio');
+  if (CARDIO_ENABLED && d.planDay && planDayIsPureCardio(d.planDay)) classes.push('cardio');
   if (isWorkoutsTab && i === selectedWorkoutDayIdx) classes.push('selected');
-  const onclick = isWorkoutsTab
-    ? `onclick="selectWorkoutDay(${i})"`
-    : (d.planDay && d.isToday && !d.dayDone ? `onclick="startWorkout('${d.planDay.id}')"` : '');
+  if (!isWorkoutsTab && isOverviewSelected) classes.push('selected');
+  // Übersicht: Tippen wählt den Tag aus → Info-Zeile darunter aktualisiert sich (analog Workouts-Strip).
+  const onclick = isWorkoutsTab ? `onclick="selectWorkoutDay(${i})"` : `onclick="selectOverviewDay(${i})"`;
   return `<div class="${classes.join(' ')}" ${onclick}>
     <span class="wp-letter">${d.label}</span>
     <span class="wp-bar"></span>
@@ -1210,7 +1226,7 @@ function startWorkout(dayId) {
   // — der laufende Active-Workout darf in diesem Fall ungestoert weiterlaufen.
   const ap = getActivePlan();
   const dayObj = ap ? (ap.trainingDays || []).find(d => d.id === dayId) : null;
-  if (dayObj && planDayIsPureCardio(dayObj)) {
+  if (CARDIO_ENABLED && dayObj && planDayIsPureCardio(dayObj)) {
     openCardioQuickLog(dayId);
     return;
   }
@@ -1236,12 +1252,13 @@ function _doStartWorkout(dayId) {
 
   // Pure-Cardio-Tage gehen am Active-Mode vorbei in den Quick-Log-Flow.
   // (Mixed-Days + reine Kraft-Tage laufen weiter unten als regulaeres Active-Workout.)
-  if (day && planDayIsPureCardio(day)) {
+  if (CARDIO_ENABLED && day && planDayIsPureCardio(day)) {
     openCardioQuickLog(dayId);
     return;
   }
 
-  const exercises = (day ? day.exercises : []).map(pe => {
+  // Cardio ausgeblendet → Cardio-Übungen aus dem zu startenden Workout filtern.
+  const exercises = (day ? day.exercises : []).filter(pe => CARDIO_ENABLED || exType(pe.exId) !== 'cardio').map(pe => {
     const ex = getEx(pe.exId);
     if (!ex) return null;
     if (exType(ex) === 'cardio') {
@@ -1313,7 +1330,7 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
   const title = `${dayFullName(selDay.dayKey)}${planDay ? ' — ' + escapeHtml(planDay.name) : ''}`;
   const label = opts.label || (isPreview ? 'VORSCHAU' : 'AKTIVE SESSION');
   // Reine Cardio-Tage zaehlen Sets nicht — labeln stattdessen die Einheit als Cardio
-  const isPureCardio = !!(planDay && planDayIsPureCardio(planDay));
+  const isPureCardio = CARDIO_ENABLED && !!(planDay && planDayIsPureCardio(planDay));
   const meta = isPureCardio
     ? `${exCount} Cardio-Einheit${exCount === 1 ? '' : 'en'}`
     : `${exCount} Übungen • ${totalSets} Sätze`;
@@ -1554,6 +1571,7 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
   document.getElementById(containerId).innerHTML = planDay.exercises.map((pe, ei) => {
     const ex = getEx(pe.exId);
     if (!ex) return '';
+    if (!CARDIO_ENABLED && exType(ex) === 'cardio') return '';   // Cardio ausgeblendet
     // Cardio-Preview: zeigt die letzte Cardio-Session als Vorschau
     if (exType(ex) === 'cardio') return buildPreviewCardioCardHTML(ex, ei, planDay.id, mode);
     const col = colorForExercise({ exId: pe.exId });
@@ -1689,6 +1707,7 @@ function renderActiveWorkout() {
 
   // Exercise cards
   document.getElementById('active-ex-list').innerHTML = wo.exercises.map((ex, ei) => {
+    if (!CARDIO_ENABLED && isWoExCardio(ex)) return '';   // Cardio ausgeblendet
     // Cardio-Karte rendert vollkommen anders (Form statt Sets-Tabelle)
     if (isWoExCardio(ex)) return buildActiveCardioCardHTML(ex, ei);
     const col = colorForExercise(ex);
@@ -2438,7 +2457,7 @@ let addExMode = 'strength'; // 'strength' | 'cardio'
 let addExContext = 'active'; // 'active' | 'preview'
 
 function setAddExMode(mode) {
-  if (mode !== 'strength' && mode !== 'cardio') return;
+  if (mode !== 'strength' && (mode !== 'cardio' || !CARDIO_ENABLED)) return;
   if (addExMode === mode) return;
   addExMode = mode;
   document.querySelectorAll('#modal-add-ex .ex-mode-pill').forEach(p => p.classList.remove('active'));
@@ -2713,9 +2732,9 @@ let volumeUnit = 'kg';   // 'kg' | 'sets'
 
 // Per-Karte-Toggle Kraft/Cardio. Persistiert in localStorage, damit sich der Modus
 // ueber App-Restart hinweg merkt.
-let statsVolMode    = (localStorage.getItem('ft_stats_vol_mode')    === 'cardio') ? 'cardio' : 'strength';
-let statsMuscleMode = (localStorage.getItem('ft_stats_muscle_mode') === 'cardio') ? 'cardio' : 'strength';
-let statsPrMode     = (localStorage.getItem('ft_stats_pr_mode')     === 'cardio') ? 'cardio' : 'strength';
+let statsVolMode    = (CARDIO_ENABLED && localStorage.getItem('ft_stats_vol_mode')    === 'cardio') ? 'cardio' : 'strength';
+let statsMuscleMode = (CARDIO_ENABLED && localStorage.getItem('ft_stats_muscle_mode') === 'cardio') ? 'cardio' : 'strength';
+let statsPrMode     = (CARDIO_ENABLED && localStorage.getItem('ft_stats_pr_mode')     === 'cardio') ? 'cardio' : 'strength';
 
 function _applyStatsToggleUI(group, mode) {
   document.querySelectorAll(`#${group}-pill-strength, #${group}-pill-cardio`).forEach(p => p.classList.remove('active'));
@@ -2724,7 +2743,7 @@ function _applyStatsToggleUI(group, mode) {
 }
 
 function setStatsVolMode(mode) {
-  if (mode !== 'strength' && mode !== 'cardio') return;
+  if (mode !== 'strength' && (mode !== 'cardio' || !CARDIO_ENABLED)) return;
   if (statsVolMode === mode) return;
   statsVolMode = mode;
   localStorage.setItem('ft_stats_vol_mode', mode);
@@ -2737,7 +2756,7 @@ function setStatsVolMode(mode) {
   renderHomeStats();
 }
 function setStatsMuscleMode(mode) {
-  if (mode !== 'strength' && mode !== 'cardio') return;
+  if (mode !== 'strength' && (mode !== 'cardio' || !CARDIO_ENABLED)) return;
   if (statsMuscleMode === mode) return;
   statsMuscleMode = mode;
   localStorage.setItem('ft_stats_muscle_mode', mode);
@@ -2747,7 +2766,7 @@ function setStatsMuscleMode(mode) {
   renderHomeStats();
 }
 function setStatsPrMode(mode) {
-  if (mode !== 'strength' && mode !== 'cardio') return;
+  if (mode !== 'strength' && (mode !== 'cardio' || !CARDIO_ENABLED)) return;
   if (statsPrMode === mode) return;
   statsPrMode = mode;
   localStorage.setItem('ft_stats_pr_mode', mode);
@@ -4304,7 +4323,7 @@ function confirmCopyPlanDays() {
 // ═══════════════════════════════════════════════
 let openExerciseId = null;   // currently expanded exercise in catalog
 let exSortMode = 'muscle';   // 'muscle' | 'plan' — im Cardio-Modus = 'alpha' | 'plan'
-let exMode = (localStorage.getItem('ft_ex_mode') === 'cardio') ? 'cardio' : 'strength'; // 'strength' | 'cardio'
+let exMode = (CARDIO_ENABLED && localStorage.getItem('ft_ex_mode') === 'cardio') ? 'cardio' : 'strength'; // 'strength' | 'cardio'
 let exCatalogSearch = ''; // Suchtext im Übungen-Tab (filtert nach Name, klappt Treffer-Gruppen auf)
 function filterExerciseCatalog() {
   const el = document.getElementById('ex-catalog-search');
@@ -4320,7 +4339,7 @@ const collapsedExGroups = new Set(); // Set of group keys (muscle-key oder planD
 MUSCLE_ORDER.forEach(m => collapsedExGroups.add('muscle:' + m));
 
 function setExMode(mode) {
-  if (mode !== 'strength' && mode !== 'cardio') return;
+  if (mode !== 'strength' && (mode !== 'cardio' || !CARDIO_ENABLED)) return;
   if (exMode === mode) return;
   exMode = mode;
   localStorage.setItem('ft_ex_mode', mode);
@@ -4335,6 +4354,27 @@ function setExMode(mode) {
 function toggleExGroup(key) {
   if (collapsedExGroups.has(key)) collapsedExGroups.delete(key);
   else collapsedExGroups.add(key);
+  renderExercises();
+}
+
+// Gruppen-Keys der aktuell sichtbaren Übungen-Ansicht (Muskelgruppen bzw. Plan-Tage).
+// Cardio-Flachliste hat keine Gruppen → leeres Array.
+function _currentExGroupKeys() {
+  if (exSortMode === 'plan') {
+    const active = getActivePlan();
+    return (active ? active.trainingDays : []).map(d => 'plan:' + d.id);
+  }
+  if (exMode === 'strength') return MUSCLE_ORDER.map(m => 'muscle:' + m);
+  return [];
+}
+
+// Alle Gruppen auf einen Schlag ein-/ausklappen (Toggle): sind alle eingeklappt → ausklappen, sonst alle einklappen.
+function toggleAllExGroups() {
+  const keys = _currentExGroupKeys();
+  if (!keys.length) return;
+  const allCollapsed = keys.every(k => collapsedExGroups.has(k));
+  if (allCollapsed) keys.forEach(k => collapsedExGroups.delete(k));
+  else keys.forEach(k => collapsedExGroups.add(k));
   renderExercises();
 }
 
@@ -4538,6 +4578,13 @@ function buildExItemCardioHTML(ex, context) {
 function renderExercises() {
   const btn = document.getElementById('ex-sort-btn');
   if (btn) btn.dataset.mode = exSortMode;
+  // Alle-ein/ausklappen-Button: nur bei gruppierter Ansicht zeigen, Icon nach Zustand
+  const collBtn = document.getElementById('ex-collapse-all-btn');
+  if (collBtn) {
+    const keys = _currentExGroupKeys();
+    collBtn.style.display = keys.length ? '' : 'none';
+    collBtn.dataset.state = (keys.length && keys.every(k => collapsedExGroups.has(k))) ? 'collapsed' : 'expanded';
+  }
   // Toggle-Pill state spiegeln (defensiv, falls vor initialem Render gerufen)
   document.querySelectorAll('.ex-mode-pill').forEach(p => p.classList.remove('active'));
   const activePill = document.querySelector(`.ex-mode-pill.mode-${exMode}`);
@@ -4833,6 +4880,7 @@ function renderPlanDayExList(day) {
   const html = day.exercises.map((pe, i) => {
     const ex = getEx(pe.exId);
     if (!ex) return '';
+    if (!CARDIO_ENABLED && exType(ex) === 'cardio') return '';   // Cardio ausgeblendet
     const col = exType(ex) === 'cardio' ? 'var(--cardio)' : muscleColor(ex.muscle);
     return `<div class="ex-item plan-ex-item" style="--mc:${col}" data-idx="${i}"
                  ondragstart="planExDragStart(event,${i})"
@@ -4943,7 +4991,7 @@ let planAddSelection = new Set();
 let planAddMode = 'strength'; // 'strength' | 'cardio'
 
 function setPlanAddMode(mode) {
-  if (mode !== 'strength' && mode !== 'cardio') return;
+  if (mode !== 'strength' && (mode !== 'cardio' || !CARDIO_ENABLED)) return;
   if (planAddMode === mode) return;
   planAddMode = mode;
   document.querySelectorAll('#modal-add-to-plan .ex-mode-pill').forEach(p => p.classList.remove('active'));
@@ -6468,6 +6516,8 @@ function prerenderAllTabs() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Cardio app-weit ausgeblendet → Klasse auf <html> (überlebt Tab-Wechsel, anders als body.className)
+  if (!CARDIO_ENABLED) document.documentElement.classList.add('no-cardio');
   // Daten-Migration: altes ft_program/ft_plan2/ft_weekplan in neue ft_plans-Struktur
   migrateToMultiPlan();
   // Tag-Modell v2: eingebettete Plan-Tage in geteilte Bibliothek-Referenzen überführen (einmalig)
