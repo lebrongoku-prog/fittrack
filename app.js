@@ -791,11 +791,9 @@ function _applyTabState(name) {
 
   ensureTimerActive();
 
-  // Bottom-Nav (und aktive-Workout-Leiste) beim Tab-Wechsel immer sichtbar.
-  const nav = document.getElementById('bottom-nav');
-  if (nav) nav.classList.remove('nav-hidden');
-  const woBar = document.getElementById('workout-active-bar');
-  if (woBar) woBar.classList.remove('nav-hidden');
+  // Bottom-Nav-Zustand wird beim Tab-Wechsel BEWUSST NICHT zurückgesetzt (Leonard-Wunsch):
+  // ist die Leiste ausgeblendet, bleibt sie es auch beim Tabwechsel. Wieder einblenden nur
+  // über Hintergrund-Tipp (Toggle) oder Hochscrollen (beides in initScrollHideNav).
 }
 
 function showScreen(name) {
