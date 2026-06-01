@@ -448,6 +448,16 @@ function getProgramWeek() {
   return { num: Math.min(Math.max(week,1), active.weeksTotal), total: active.weeksTotal, name: active.name };
 }
 
+// Programm-Woche für EINEN bestimmten Plan (für die Plan-Karten-Vorschau im Trainingsplan-Tab).
+function _planProgramWeek(p) {
+  const start = p.startDate || Date.now();
+  const monStart = new Date(start); monStart.setHours(0,0,0,0);
+  monStart.setDate(monStart.getDate() - ((monStart.getDay()+6)%7));
+  const week = Math.floor((Date.now() - monStart.getTime()) / (7*24*3600*1000)) + 1;
+  const total = p.weeksTotal || 12;
+  return { num: Math.min(Math.max(week,1), total), total };
+}
+
 // Get current ISO calendar week
 function isoWeekNum(d=new Date()) {
   const date = new Date(d);
@@ -3294,16 +3304,42 @@ function renderPlans() {
     else subEl.textContent = `${active.length} aktiv${archived.length ? ` • ${archived.length} archiviert` : ''}`;
   }
 
+  const todayIdx = (new Date().getDay()+6) % 7;
   const renderRow = (p) => {
     const status = planStatus(p);
     const isCurrent = status === 'active';
-    return `<div class="plan-list-row plan-status-${status}${isCurrent ? ' active' : ''}" onclick="openPlanDetail('${p.id}')">
-      <div class="plan-list-info">
-        <div class="plan-list-name">${escapeHtml(p.name)}</div>
-        <div class="plan-list-meta">${fmtDateRange(p.startDate, p.endDate)} • ${p.weeksTotal} Wochen</div>
+    // Wochenplan-Strip: pro Wochentag der zugewiesene Trainingstag als Pille (zentriert).
+    const days = resolvePlanDays(p);
+    const byId = {}; days.forEach(d => { byId[d.id] = d; });
+    const wp = (p.weekPlan && p.weekPlan.length) ? p.weekPlan : DEFAULT_WEEKPLAN;
+    const strip = wp.map((w, i) => {
+      const d = w.planDayId ? byId[w.planDayId] : null;
+      const today = isCurrent && i === todayIdx;
+      return `<div class="ppv-col${today ? ' today' : ''}">
+        <div class="ppv-wd">${w.label}</div>
+        ${d ? `<span class="pd-name ppv-pill">${escapeHtml(d.name)}</span>` : '<span class="ppv-rest">–</span>'}
+      </div>`;
+    }).join('');
+    // Fortschritt + Adhärenz nur für den aktiven Plan (laufende Woche existiert nur dort).
+    let progress = '';
+    if (isCurrent) {
+      const pw = _planProgramWeek(p);
+      const ws = getWeekStatus();
+      const pct = Math.round(pw.num / (pw.total || 1) * 100);
+      progress = `<div class="ppv-progress">
+        <span class="ppv-wk">Woche ${pw.num} / ${pw.total}</span>
+        <div class="ppv-bar"><div class="ppv-bar-fill" style="width:${Math.min(100,pct)}%"></div></div>
+        <span class="ppv-adh">${ws.done}/${ws.planned} diese Woche</span>
+      </div>`;
+    }
+    return `<div class="plan-card-v2 plan-status-${status}${isCurrent ? ' active' : ''}" onclick="openPlanDetail('${p.id}')">
+      <div class="ppv-head">
+        <div class="ppv-name">${escapeHtml(p.name)}</div>
+        <span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>
       </div>
-      <span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>
-      <div class="plan-list-action">›</div>
+      <div class="ppv-meta">${fmtDateRange(p.startDate, p.endDate)} · ${p.weeksTotal} Wochen</div>
+      ${progress}
+      <div class="ppv-strip">${strip}</div>
     </div>`;
   };
 
@@ -6383,6 +6419,14 @@ function initScrollHideNav() {
 
   function attachToScreen(screenEl, tabName) {
     if (!screenEl) return;
+    // Tipp auf den LEEREN Tab-Hintergrund (nicht auf Karten/Buttons) toggelt die Bottom-Nav
+    // ein/aus — same Mechanik wie das Runterscrollen (Leonard-Wunsch). e.target===screenEl
+    // trifft nur den Hintergrund (Kinder/Karten bubblen, sind aber !== screenEl).
+    screenEl.addEventListener('click', (e) => {
+      if (currentScreen !== tabName) return;
+      if (e.target !== screenEl) return;
+      setNavHidden(!nav.classList.contains('nav-hidden'));
+    });
     screenEl.addEventListener('scroll', () => {
       // Nur reagieren, wenn dieser Tab gerade der sichtbare ist
       if (currentScreen !== tabName) return;
@@ -6405,9 +6449,11 @@ function initScrollHideNav() {
   TAB_ORDER.forEach(tabName => {
     attachToScreen(document.getElementById('screen-'+tabName), tabName);
   });
-  // Plan-Detail-Overlay hat eigenes Scrollen — auch dort Nav-Hide aktiv halten.
+  // Plan-Detail- + Trainingstag-Detail-Overlay haben eigenes Scrollen — Nav-Hide auch dort.
   const planDetail = document.getElementById('screen-plan-detail');
   if (planDetail) attachToScreen(planDetail, 'plan-detail');
+  const dayDetail = document.getElementById('screen-day-detail');
+  if (dayDetail) attachToScreen(dayDetail, 'day-detail');
 }
 
 // Alle Tab-Inhalte einmal im Hintergrund rendern (App-Start), damit beim Wischen KEIN

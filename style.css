@@ -529,6 +529,30 @@ body.theme-plans .hist-action-dd {
 .plan-status-chip-past     { background: var(--card2); color: var(--text3); }
 .plan-status-chip-archived { background: var(--card2); color: var(--text3); }
 
+/* ── Plan-Dashboard-Karte (Trainingsplan-Tab Vorschau) ── */
+.plan-card-v2 {
+  margin: 0 12px 12px; background: var(--card); border-radius: 16px; box-shadow: var(--shadow);
+  padding: 14px 16px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  border-left: 4px solid var(--border);
+}
+.plan-card-v2.active { border-left-color: var(--accent); }
+.plan-card-v2:active { transform: scale(0.995); }
+.ppv-head { display: flex; align-items: flex-start; gap: 8px; }
+.ppv-name { flex: 1; min-width: 0; font-size: 17px; font-weight: 700; color: var(--text); }
+.plan-status-past .ppv-name, .plan-status-archived .ppv-name { color: var(--text2); }
+.ppv-meta { font-size: 12px; color: var(--text3); margin-top: 4px; }
+.ppv-progress { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.ppv-wk { font-size: 13px; font-weight: 600; color: var(--text2); white-space: nowrap; }
+.ppv-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.ppv-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+.ppv-adh { font-size: 13px; font-weight: 600; color: var(--accent-dark); white-space: nowrap; }
+.ppv-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 14px; }
+.ppv-col { text-align: center; min-width: 0; }
+.ppv-wd { font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+.ppv-col.today .ppv-wd { color: var(--accent); font-weight: 700; }
+.ppv-pill { display: block; max-width: 100%; margin: 0 auto; font-size: 11px; padding: 2px 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ppv-rest { color: var(--text3); font-size: 13px; line-height: 1.6; }
+
 .plan-status-past .plan-list-name,
 .plan-status-archived .plan-list-name { color: var(--text2); }
 .plan-status-past .plan-list-meta,
