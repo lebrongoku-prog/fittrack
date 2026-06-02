@@ -453,7 +453,7 @@ body.theme-plans .hist-action-dd {
    (kein Border, damit das Layout nicht verschoben wird).
    Fix-Farbe: Emerald aus dem Workouts-Tab-Theme (#10B981/#D1FAE5/#059669) — signalisiert
    "Training" über die ganze App-Logik hinweg, statt nur der Mehr-Tab-Default-Farbe. */
-.plan-day-row.active { box-shadow: inset 3px 0 0 0 #10B981; }
+.plan-day-row.active { }
 .pdr-days { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
 .pdr-day-chip {
   display: inline-flex; align-items: center; justify-content: center;
@@ -511,7 +511,7 @@ body.theme-plans .hist-action-dd {
   display: flex; align-items: center; gap: 10px;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.plan-list-row.active { box-shadow: inset 4px 0 0 0 var(--accent), var(--shadow); }
+.plan-list-row.active { box-shadow: var(--shadow); }
 .plan-list-info { flex: 1; min-width: 0; }
 .plan-list-name { font-size: 16px; font-weight: 700; color: var(--text); }
 .plan-list-meta { font-size: 12px; color: var(--text3); margin-top: 3px; line-height: 1.4; }
@@ -533,9 +533,7 @@ body.theme-plans .hist-action-dd {
 .plan-card-v2 {
   margin: 0 12px 12px; background: var(--card); border-radius: 16px; box-shadow: var(--shadow);
   padding: 14px 16px; cursor: pointer; -webkit-tap-highlight-color: transparent;
-  border-left: 4px solid var(--border);
 }
-.plan-card-v2.active { border-left-color: var(--accent); }
 .plan-card-v2:active { transform: scale(0.995); }
 .ppv-head { display: flex; align-items: flex-start; gap: 8px; }
 .ppv-name { flex: 1; min-width: 0; font-size: 17px; font-weight: 700; color: var(--text); }
@@ -547,8 +545,8 @@ body.theme-plans .hist-action-dd {
 .ppv-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
 .ppv-adh { font-size: 13px; font-weight: 600; color: var(--accent-dark); white-space: nowrap; }
 .ppv-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 14px; }
-.ppv-col { text-align: center; min-width: 0; }
-.ppv-wd { font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+.ppv-col { text-align: center; min-width: 0; padding: 3px 0; }
+.ppv-wd { font-size: 11px; color: var(--text3); margin-bottom: 11px; }
 .ppv-col.today .ppv-wd { color: var(--accent); font-weight: 700; }
 .ppv-pill { display: block; max-width: 100%; margin: 0 auto; font-size: 11px; padding: 2px 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ppv-rest { color: var(--text3); font-size: 13px; line-height: 1.6; }
@@ -974,8 +972,8 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   gap: 4px;
 }
 .wp-col {
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 8px 0 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 11px;
+  padding: 10px 0 12px;
   border-radius: 8px;
   min-width: 0;            /* Spalten exakt gleich breit (1fr); lange Pillen kürzen statt aufweiten */
   cursor: pointer;
@@ -983,7 +981,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   transition: background 0.15s, opacity 0.15s;
 }
 .wp-col.today    { background: var(--accent-bg); }
-.wp-col.selected { background: var(--accent-bg); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.wp-col.selected { background: var(--accent-bg); }
 .wp-col.done     { opacity: 0.4; }
 /* Heute bleibt voll sichtbar (Hintergrund + Klick-Indikator),
    nur Buchstabe + Streifen werden auf 0.4 abgesenkt */
@@ -1149,7 +1147,6 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .aex-v2 {
   margin: 0 26px 12px; background: var(--card); border-radius: 14px;
   box-shadow: var(--shadow); overflow: hidden;
-  border-left: 4px solid var(--c, var(--accent));
   scroll-margin-top: 20px;
   transition: background 0.2s ease;
 }
@@ -1603,7 +1600,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 
 /* Visueller Wochenplaner (Plan-Detail): Mo–So-Pillen-Strip mit overlaid native <select> pro Tag */
 .wpe-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; padding: 8px 10px 12px; }
-.wpe-col { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0; border-radius: 8px; min-width: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.wpe-col { position: relative; display: flex; flex-direction: column; align-items: center; gap: 11px; padding: 9px 0; border-radius: 8px; min-width: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .wpe-col.today { background: var(--accent-bg); }
 .wpe-col:active { background: var(--card2); }
 .wpe-wd { font-size: 11px; font-weight: 600; color: var(--text3); }
