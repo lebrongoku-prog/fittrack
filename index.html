@@ -56,25 +56,8 @@
     <!-- Hero v2 (rendered dynamically via buildSessionCard) -->
     <div id="ov-hero-wrap"></div>
 
-    <!-- Program / Training week card -->
-    <div class="program-card" id="ov-program-card" onclick="showScreen('plans')">
-      <div class="program-card-label" id="ov-program-label">TRAININGSWOCHE</div>
-      <div class="program-card-row">
-        <div class="program-card-val"><span id="ov-program-num">1</span><span class="of">/ <span id="ov-program-total">12</span></span></div>
-        <div class="program-card-segbar" id="ov-program-segbar"></div>
-        <div class="program-card-side" id="ov-program-side">KW –</div>
-      </div>
-    </div>
-
-    <!-- Wochenplan section with 7-day strip -->
-    <div class="plan-section-card">
-      <div class="plan-section-head">
-        <h3>Wochenplan</h3>
-        <a onclick="showScreen('plans')">Plan bearbeiten</a>
-      </div>
-      <div class="wp-grid" id="ov-next7-strip"></div>
-      <div class="wp-info" id="ov-wp-info"></div>
-    </div>
+    <!-- Aktiver Trainingsplan als Dashboard-Karte (ersetzt „Trainingswoche" + separaten Wochenplan-Strip) -->
+    <div id="ov-plan-card"></div>
 
     <!-- Letzte Sessions (kompakter Rückblick) -->
     <div class="plan-section-card" id="ov-recent-sessions-card">

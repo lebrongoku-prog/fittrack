@@ -895,22 +895,16 @@ function renderOverview() {
   }
   ensureTimerActive();
 
-  // ─ Program card ─
-  document.getElementById('ov-program-num').textContent = prog.num;
-  document.getElementById('ov-program-total').textContent = prog.total;
-  const segbar = document.getElementById('ov-program-segbar');
-  // Show up to 12 segments, mark first `prog.num` as done. If total > 12, show 12 representative segments.
-  const segCount = Math.min(12, prog.total);
-  const doneFrac = prog.num / prog.total;
-  const segDone = Math.round(doneFrac * segCount);
-  segbar.innerHTML = Array.from({length: segCount}, (_,i) =>
-    `<div class="program-card-seg ${i < segDone ? 'done':''}"></div>`).join('');
-  document.getElementById('ov-program-side').innerHTML =
-    `KW ${isoWeekNum()}<br>${prog.name||'Trainingsplan'}`;
-  document.getElementById('ov-program-label').textContent = 'TRAININGSWOCHE';
-
-  // ─ 7-day strip ─
-  renderNext7Strip(week7);
+  // ─ Aktiver Plan als Dashboard-Karte (ersetzt „Trainingswoche"-Karte + separaten Wochenplan-Strip) ─
+  const planCardEl = document.getElementById('ov-plan-card');
+  if (planCardEl) {
+    planCardEl.innerHTML = active
+      ? buildPlanCard(active)
+      : `<div class="plan-card-v2" onclick="showScreen('plans')" style="cursor:pointer">
+           <div class="ppv-name" style="color:var(--text2)">Kein aktiver Trainingsplan</div>
+           <div class="ppv-meta">Tippe, um einen Plan anzulegen oder zu aktivieren.</div>
+         </div>`;
+  }
 
   // ─ Letzte Sessions (kompakt, 3 jüngste) ─
   renderRecentSessionsOnOverview();
@@ -3346,6 +3340,45 @@ function fmtDateRange(start, end) {
   return `${fmt(start)} – ${fmt(end)}`;
 }
 
+// Dashboard-Karte eines Plans (Trainingsplan-Liste UND Übersicht-Tab). Reine Vorschau —
+// Tippen öffnet den Plan-Detail. Fortschritt/Adhärenz nur beim aktiven Plan (laufende Woche).
+function buildPlanCard(p) {
+  const todayIdx = (new Date().getDay()+6) % 7;
+  const status = planStatus(p);
+  const isCurrent = status === 'active';
+  const days = resolvePlanDays(p);
+  const byId = {}; days.forEach(d => { byId[d.id] = d; });
+  const wp = (p.weekPlan && p.weekPlan.length) ? p.weekPlan : DEFAULT_WEEKPLAN;
+  const strip = wp.map((w, i) => {
+    const d = w.planDayId ? byId[w.planDayId] : null;
+    const today = isCurrent && i === todayIdx;
+    return `<div class="ppv-col${today ? ' today' : ''}">
+      <div class="ppv-wd">${w.label}</div>
+      ${d ? `<span class="pd-name ppv-pill">${escapeHtml(d.name)}</span>` : '<span class="ppv-rest">–</span>'}
+    </div>`;
+  }).join('');
+  let progress = '';
+  if (isCurrent) {
+    const pw = _planProgramWeek(p);
+    const ws = getWeekStatus();
+    const pct = Math.round(pw.num / (pw.total || 1) * 100);
+    progress = `<div class="ppv-progress">
+      <span class="ppv-wk">Woche ${pw.num} / ${pw.total}</span>
+      <div class="ppv-bar"><div class="ppv-bar-fill" style="width:${Math.min(100,pct)}%"></div></div>
+      <span class="ppv-adh">${ws.done}/${ws.planned} diese Woche</span>
+    </div>`;
+  }
+  return `<div class="plan-card-v2 plan-status-${status}${isCurrent ? ' active' : ''}" onclick="openPlanDetail('${p.id}')">
+    <div class="ppv-head">
+      <div class="ppv-name">${escapeHtml(p.name)}</div>
+      <span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>
+    </div>
+    <div class="ppv-meta">${fmtDateRange(p.startDate, p.endDate)} · ${p.weeksTotal} Wochen</div>
+    ${progress}
+    <div class="ppv-strip">${strip}</div>
+  </div>`;
+}
+
 let plansArchiveExpanded = false; // Toggle für die kollabierbare "Archivierte Pläne"-Sektion
 function togglePlansArchive() {
   plansArchiveExpanded = !plansArchiveExpanded;
@@ -3364,44 +3397,7 @@ function renderPlans() {
     else subEl.textContent = `${active.length} aktiv${archived.length ? ` • ${archived.length} archiviert` : ''}`;
   }
 
-  const todayIdx = (new Date().getDay()+6) % 7;
-  const renderRow = (p) => {
-    const status = planStatus(p);
-    const isCurrent = status === 'active';
-    // Wochenplan-Strip: pro Wochentag der zugewiesene Trainingstag als Pille (zentriert).
-    const days = resolvePlanDays(p);
-    const byId = {}; days.forEach(d => { byId[d.id] = d; });
-    const wp = (p.weekPlan && p.weekPlan.length) ? p.weekPlan : DEFAULT_WEEKPLAN;
-    const strip = wp.map((w, i) => {
-      const d = w.planDayId ? byId[w.planDayId] : null;
-      const today = isCurrent && i === todayIdx;
-      return `<div class="ppv-col${today ? ' today' : ''}">
-        <div class="ppv-wd">${w.label}</div>
-        ${d ? `<span class="pd-name ppv-pill">${escapeHtml(d.name)}</span>` : '<span class="ppv-rest">–</span>'}
-      </div>`;
-    }).join('');
-    // Fortschritt + Adhärenz nur für den aktiven Plan (laufende Woche existiert nur dort).
-    let progress = '';
-    if (isCurrent) {
-      const pw = _planProgramWeek(p);
-      const ws = getWeekStatus();
-      const pct = Math.round(pw.num / (pw.total || 1) * 100);
-      progress = `<div class="ppv-progress">
-        <span class="ppv-wk">Woche ${pw.num} / ${pw.total}</span>
-        <div class="ppv-bar"><div class="ppv-bar-fill" style="width:${Math.min(100,pct)}%"></div></div>
-        <span class="ppv-adh">${ws.done}/${ws.planned} diese Woche</span>
-      </div>`;
-    }
-    return `<div class="plan-card-v2 plan-status-${status}${isCurrent ? ' active' : ''}" onclick="openPlanDetail('${p.id}')">
-      <div class="ppv-head">
-        <div class="ppv-name">${escapeHtml(p.name)}</div>
-        <span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>
-      </div>
-      <div class="ppv-meta">${fmtDateRange(p.startDate, p.endDate)} · ${p.weeksTotal} Wochen</div>
-      ${progress}
-      <div class="ppv-strip">${strip}</div>
-    </div>`;
-  };
+  const renderRow = buildPlanCard;
 
   let html = '';
   if (!active.length && !archived.length) {

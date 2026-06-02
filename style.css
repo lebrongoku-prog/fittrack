@@ -977,6 +977,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   padding: 8px 0 10px;
   border-radius: 8px;
+  min-width: 0;            /* Spalten exakt gleich breit (1fr); lange Pillen kürzen statt aufweiten */
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s, opacity 0.15s;
@@ -1602,7 +1603,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 
 /* Visueller Wochenplaner (Plan-Detail): Mo–So-Pillen-Strip mit overlaid native <select> pro Tag */
 .wpe-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; padding: 8px 10px 12px; }
-.wpe-col { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0; border-radius: 8px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.wpe-col { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0; border-radius: 8px; min-width: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .wpe-col.today { background: var(--accent-bg); }
 .wpe-col:active { background: var(--card2); }
 .wpe-wd { font-size: 11px; font-weight: 600; color: var(--text3); }
