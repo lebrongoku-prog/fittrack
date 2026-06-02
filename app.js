@@ -1012,9 +1012,13 @@ function buildWpCol(d, i, isWorkoutsTab, isOverviewSelected) {
   if (!isWorkoutsTab && isOverviewSelected) classes.push('selected');
   // Übersicht: Tippen wählt den Tag aus → Info-Zeile darunter aktualisiert sich (analog Workouts-Strip).
   const onclick = isWorkoutsTab ? `onclick="selectWorkoutDay(${i})"` : `onclick="selectOverviewDay(${i})"`;
+  // Unter dem Wochentag der zugewiesene Trainingstag als Pille (wie die Plan-Karte), Ruhetag = „–".
+  const slot = d.planDay
+    ? `<span class="pd-name wp-col-pill">${escapeHtml(d.planDay.name)}</span>`
+    : `<span class="wp-col-rest">–</span>`;
   return `<div class="${classes.join(' ')}" ${onclick}>
     <span class="wp-letter">${d.label}</span>
-    <span class="wp-bar"></span>
+    ${slot}
   </div>`;
 }
 
@@ -1106,18 +1110,44 @@ function ensureTimerActive() {
 // ═══════════════════════════════════════════════
 
 // Build sets for a fresh workout exercise: copy from last workout per-set, fall back to targetReps
-function buildSetsForExercise(exId, targetSets, targetReps, targetWeight) {
+// ─── Pro-Satz-Ziele (Plan) ──────────────────────────────────────────────
+// Ein Plan-/Bibliotheks-Tag-Übungseintrag speichert seine Ziele pro Satz in pe.sets =
+// [{reps, weight}, …] (weight als String, '' = leer). Für Abwärtskompatibilität bleiben die
+// Skalare targetSets/targetReps/targetWeight in Sync (= sets.length / sets[0]). peSets()
+// leitet bei alten Einträgen ohne pe.sets lazy aus den Skalaren ab (ohne zu persistieren).
+function peSets(pe) {
+  if (Array.isArray(pe.sets) && pe.sets.length) return pe.sets;
+  const n = Math.max(1, pe.targetSets || 1);
+  const reps = String(pe.targetReps != null ? pe.targetReps : 8);
+  const w = (pe.targetWeight != null && pe.targetWeight !== '') ? String(pe.targetWeight) : '';
+  return Array.from({ length: n }, () => ({ reps, weight: w }));
+}
+function _materializePeSets(pe) {
+  if (!Array.isArray(pe.sets) || !pe.sets.length) pe.sets = peSets(pe).map(s => ({ ...s }));
+  return pe.sets;
+}
+function _syncPeScalars(pe) {
+  if (!Array.isArray(pe.sets) || !pe.sets.length) return;
+  pe.targetSets = pe.sets.length;
+  pe.targetReps = parseInt(pe.sets[0].reps) || 1;
+  const w0 = pe.sets[0].weight;
+  if (w0 !== '' && w0 != null && !isNaN(parseFloat(w0))) pe.targetWeight = parseFloat(w0);
+}
+
+// Baut die Workout-Sätze für eine Übung. Priorität pro Satz: letztes Workout → Plan-Ziel (pro Satz)
+// → letztes Max → leer. `planSets` = peSets(pe) (Pro-Satz-Plan-Ziele).
+function buildSetsForExercise(exId, planSets) {
   const last = getLastExData(exId);
-  return Array.from({length: targetSets}, (_, idx) => {
+  const sets = (Array.isArray(planSets) && planSets.length) ? planSets : [{ reps: '8', weight: '' }];
+  return sets.map((pt, idx) => {
     const lastSet = last && last.sets && last.sets[idx];
-    // Gewichts-Fallback-Kette: letzter Satz → letztes Workout max → Plan-Zielgewicht → leer
     let weight = '';
     if (lastSet && lastSet.weight) weight = String(lastSet.weight);
+    else if (pt.weight) weight = String(pt.weight);
     else if (last) weight = String(last.maxWeight);
-    else if (targetWeight) weight = String(targetWeight);
     return {
       weight,
-      reps:   lastSet && lastSet.reps   ? String(lastSet.reps)   : String(targetReps),
+      reps: (lastSet && lastSet.reps) ? String(lastSet.reps) : String(pt.reps),
       done: false,
     };
   });
@@ -1184,7 +1214,7 @@ function syncActiveWorkoutWithPlanDay(planDayId) {
       wo.exercises.push({
         exId: pe.exId, id: pe.exId, name: ex.name,
         targetSets: pe.targetSets, targetReps: pe.targetReps,
-        sets: buildSetsForExercise(pe.exId, pe.targetSets, pe.targetReps, pe.targetWeight),
+        sets: buildSetsForExercise(pe.exId, peSets(pe)),
         notes: '', done: false,
       });
     }
@@ -1277,7 +1307,7 @@ function _doStartWorkout(dayId) {
       name: ex.name,
       targetSets: pe.targetSets,
       targetReps: pe.targetReps,
-      sets: buildSetsForExercise(pe.exId, pe.targetSets, pe.targetReps, pe.targetWeight),
+      sets: buildSetsForExercise(pe.exId, peSets(pe)),
       notes: '',
       done: false
     };
@@ -1578,6 +1608,12 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
     const lastStr = last ? `Zuletzt: ${last.sets.length}×${last.sets[0]?.reps||'?'} @ ${last.maxWeight} kg` : '';
     const exIdKey = pe.exId;
     const collapsedCls = isAexExpanded(exIdKey) ? '' : 'collapsed';
+    // Pro-Satz-Ziel-Tabelle (editierbar, wie die Aktiv-Card): Wdh + kg pro Satz.
+    const ptSets = peSets(pe);
+    const ptGrid = `50px ${Array(ptSets.length).fill('1fr').join(' ')}`;
+    const ptHead = ptSets.map((_, si) => `<span class="num-cell">${si+1}</span>`).join('');
+    const ptReps = ptSets.map((s, si) => `<input class="aex-v2-inp" type="number" inputmode="numeric" style="--c:${col.c}" placeholder="–" value="${s.reps}" onchange="updatePreviewSetTarget('${planDay.id}',${ei},${si},'reps',this.value,'${mode}')">`).join('');
+    const ptKg = ptSets.map((s, si) => `<input class="aex-v2-inp" type="number" inputmode="decimal" style="--c:${col.c}" placeholder="–" value="${s.weight}" onchange="updatePreviewSetTarget('${planDay.id}',${ei},${si},'weight',this.value,'${mode}')">`).join('');
     return `<div class="aex-v2 ${collapsedCls}" id="aex-${ei}" style="--c:${col.c};--c-bg:${col.bg}"
                  ondragstart="aexDragStart(event,${ei},'${mode}','${planDay.id}')"
                  ondragend="aexDragEnd(event)"
@@ -1596,23 +1632,15 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
         </div>
       </div>
       <div class="aex-v2-body">
-        <div class="aex-v2-table aex-target-table">
-          <div class="aex-target-row">
-            <span class="ax-lbl">Sätze</span>
-            <div class="aex-set-stepper">
-              <button type="button" class="aex-step-btn" onclick="stepPreviewSets('${planDay.id}',${ei},-1,'${mode}')" aria-label="Satz weniger">−</button>
-              <span class="aex-step-val">${pe.targetSets}</span>
-              <button type="button" class="aex-step-btn" onclick="stepPreviewSets('${planDay.id}',${ei},1,'${mode}')" aria-label="Satz mehr">+</button>
-            </div>
+        <div class="aex-v2-table">
+          <div class="aex-v2-row head" style="grid-template-columns:${ptGrid}">
+            <span class="ax-lbl">Satz</span>${ptHead}
           </div>
-          <div class="aex-target-row">
-            <span class="ax-lbl">Wdh.</span>
-            <input class="aex-target-cell" type="number" inputmode="numeric" min="1" max="99" value="${pe.targetReps}"
-                   onchange="updatePreviewTarget('${planDay.id}',${ei},'targetReps',this.value,'${mode}')" aria-label="Ziel-Wiederholungen">
+          <div class="aex-v2-row" style="grid-template-columns:${ptGrid}">
+            <span class="ax-lbl">Wdh.</span>${ptReps}
           </div>
-          <div class="aex-target-row">
-            <span class="ax-lbl">kg</span>
-            <span class="aex-target-ref">${last ? last.maxWeight + ' kg · zuletzt' : '–'}</span>
+          <div class="aex-v2-row" style="grid-template-columns:${ptGrid}">
+            <span class="ax-lbl">kg</span>${ptKg}
           </div>
         </div>
         <div class="aex-v2-notes">
@@ -1620,41 +1648,56 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
                     onchange="saveExerciseNote('${ex.id}', this.value)">${ex.notes || ''}</textarea>
         </div>
       </div>
-      ${mode === 'libday' ? `<div class="aex-libday-actions"><button class="aex-libday-remove" onclick="removeLibDayExercise(${ei})">Übung entfernen</button></div>` : ''}
+      <div class="aex-v2-actions">
+        <button class="btn btn-ghost btn-sm" onclick="addPreviewSet('${planDay.id}',${ei},'${mode}')">+ Satz</button>
+        ${ptSets.length > 1 ? `<button class="btn btn-ghost btn-sm" onclick="removePreviewSet('${planDay.id}',${ei},'${mode}')">− Satz</button>` : ''}
+        ${mode === 'libday' ? `<button class="btn btn-ghost btn-sm aex-skip-btn" onclick="removeLibDayExercise(${ei})">Übung entfernen</button>` : ''}
+      </div>
     </div>`;
   }).join('');
 }
 
-// Inline-Editing der Ziel-Sätze/Wdh. direkt in den Vorschau-Karten (Workouts-Vorschau +
-// Trainingstag-Detail). Beide Modi editieren denselben globalen Bibliothek-Tag, da planDay.id
-// im Referenz-Modell eine globale Tag-ID ist. (kg bleibt als Verlaufs-Referenz read-only.)
-function updatePreviewTarget(dayId, ei, field, value, mode) {
-  const max = field === 'targetSets' ? 12 : 99;
-  const v = Math.max(1, Math.min(max, parseInt(value) || 1));
+// Pro-Satz-Ziel editieren (Wdh/kg) in den Vorschau-Karten (Workouts-Vorschau + Trainingstag-Detail).
+// Vorbefüllen: der geänderte Wert wird auf alle NACHFOLGENDEN Sätze übernommen (bleiben einzeln
+// editierbar). Beide Modi editieren denselben globalen Bibliothek-Tag (planDay.id = globale Tag-ID).
+function _withPreviewDayEx(dayId, ei, fn, mode) {
   const days = DB.getTrainingDays();
   const day = days.find(d => d.id === dayId);
   if (!day || !Array.isArray(day.exercises) || !day.exercises[ei]) return;
-  day.exercises[ei][field] = v;
+  fn(day.exercises[ei]);
   DB.saveTrainingDays(days);
-  // Läuft gerade ein Workout auf genau diesem Tag → mitziehen (Sätze auffüllen, nie kürzen).
   syncActiveWorkoutWithPlanDay(dayId);
   if (mode === 'libday') renderLibDayDetail();
   else if (currentScreen === 'workouts') renderWorkoutsScreen();
 }
-
-// Satz-Anzahl per Stepper in der Vorschau-Tabelle ändern (1–12).
-function stepPreviewSets(dayId, ei, delta, mode) {
-  const days = DB.getTrainingDays();
-  const day = days.find(d => d.id === dayId);
-  if (!day || !Array.isArray(day.exercises) || !day.exercises[ei]) return;
-  const cur = day.exercises[ei].targetSets || 1;
-  const v = Math.max(1, Math.min(12, cur + delta));
-  if (v === cur) return;
-  day.exercises[ei].targetSets = v;
-  DB.saveTrainingDays(days);
-  syncActiveWorkoutWithPlanDay(dayId);
-  if (mode === 'libday') renderLibDayDetail();
-  else if (currentScreen === 'workouts') renderWorkoutsScreen();
+function updatePreviewSetTarget(dayId, ei, si, field, value, mode) {
+  const v = (field === 'reps')
+    ? String(value).replace(/[^\d]/g, '')
+    : String(value).replace(',', '.').replace(/[^\d.]/g, '');
+  _withPreviewDayEx(dayId, ei, (pe) => {
+    const sets = _materializePeSets(pe);
+    if (!sets[si]) return;
+    sets[si][field] = v;
+    for (let k = si + 1; k < sets.length; k++) sets[k][field] = v; // Vorbefüllen nachfolgender Sätze
+    _syncPeScalars(pe);
+  }, mode);
+}
+function addPreviewSet(dayId, ei, mode) {
+  _withPreviewDayEx(dayId, ei, (pe) => {
+    const sets = _materializePeSets(pe);
+    if (sets.length >= 12) return;
+    const last = sets[sets.length - 1] || { reps: '8', weight: '' };
+    sets.push({ reps: last.reps, weight: last.weight });
+    _syncPeScalars(pe);
+  }, mode);
+}
+function removePreviewSet(dayId, ei, mode) {
+  _withPreviewDayEx(dayId, ei, (pe) => {
+    const sets = _materializePeSets(pe);
+    if (sets.length <= 1) return;
+    sets.pop();
+    _syncPeScalars(pe);
+  }, mode);
 }
 
 // Preview-Variante einer Cardio-Card im Workouts-Tab. Read-only, zeigt die letzten Werte
@@ -2633,7 +2676,7 @@ function addExToWorkout(exId) {
   } else {
     wo.exercises.push({
       exId, id:exId, name:ex.name, targetSets:3, targetReps:8,
-      sets: buildSetsForExercise(exId, 3, 8),
+      sets: buildSetsForExercise(exId, [{reps:'8',weight:''},{reps:'8',weight:''},{reps:'8',weight:''}]),
       notes:'', done:false
     });
   }
@@ -3401,17 +3444,18 @@ function renderPlanDetail() {
   const wp = plan.weekPlan || JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
   const trainingDays = resolvePlanDays(plan);
   const today = new Date(); const todayIdx = (today.getDay()+6)%7;
-  document.getElementById('mehr-weekplan').innerHTML = wp.map((d, i) => {
-    // Tippen zum Zuweisen: ganze Zeile öffnet den Wochentag-Picker (statt Dropdown).
+  // Wochenplan als Mo–So-Pillen-Strip (wie Plan-Karte). Tippen auf eine Spalte öffnet ein native
+  // Dropdown (overlaid <select>) zum Zuweisen eines Trainingstags bzw. Ruhetag.
+  document.getElementById('mehr-weekplan').innerHTML = `<div class="wpe-grid">` + wp.map((d, i) => {
     const assigned = d.planDayId ? trainingDays.find(td => td.id === d.planDayId) : null;
-    const valCls = assigned ? 'weekplan-pick-value' : 'weekplan-pick-value rest';
-    const valTxt = assigned ? escapeHtml(assigned.name) : 'Ruhetag';
-    return `<div class="weekplan-row weekplan-row-tap" onclick="openWeekdayPicker(${i})">
-      <span class="weekplan-day-name ${i===todayIdx?'today':''}">${d.label}</span>
-      <span class="${valCls}">${valTxt}</span>
-      <span class="weekplan-pick-chev">›</span>
+    const options = `<option value="" ${!d.planDayId ? 'selected' : ''}>Ruhetag</option>` +
+      trainingDays.map(td => `<option value="${td.id}" ${d.planDayId === td.id ? 'selected' : ''}>${escapeHtml(td.name)}</option>`).join('');
+    return `<div class="wpe-col${i === todayIdx ? ' today' : ''}">
+      <div class="wpe-wd">${d.label}</div>
+      ${assigned ? `<span class="pd-name wpe-pill">${escapeHtml(assigned.name)}</span>` : `<span class="wpe-rest">–</span>`}
+      <select class="wpe-select" onchange="saveWeekPlanDay(${i}, this.value)" aria-label="Trainingstag für ${d.label}">${options}</select>
     </div>`;
-  }).join('');
+  }).join('') + `</div>`;
 
   // Trainingstage-Liste mit aktiv/inaktiv-Split (analog zu altem renderMehr)
   const dayLabelsFor = {};

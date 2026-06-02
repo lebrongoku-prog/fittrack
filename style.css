@@ -999,6 +999,9 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .wp-col.today    .wp-letter { color: var(--accent-dark); font-weight: 700; }
 .wp-col.training .wp-letter { color: var(--text); }
 .wp-col.training.today .wp-letter { color: var(--accent-dark); }
+/* Trainingstag-Pille unter dem Wochentag (Strip in Übersicht + Workouts) */
+.wp-col-pill { max-width: 100%; font-size: 10px; padding: 1px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wp-col-rest { font-size: 12px; color: var(--text3); opacity: 0.5; line-height: 1.3; }
 
 .wp-bar {
   height: 4px;
@@ -1596,6 +1599,17 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   -webkit-appearance: none; box-shadow: 0 1px 4px rgba(15,23,42,0.06);
 }
 .ex-search-bar:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+/* Visueller Wochenplaner (Plan-Detail): Mo–So-Pillen-Strip mit overlaid native <select> pro Tag */
+.wpe-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; padding: 8px 10px 12px; }
+.wpe-col { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0; border-radius: 8px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.wpe-col.today { background: var(--accent-bg); }
+.wpe-col:active { background: var(--card2); }
+.wpe-wd { font-size: 11px; font-weight: 600; color: var(--text3); }
+.wpe-col.today .wpe-wd { color: var(--accent-dark); font-weight: 700; }
+.wpe-pill { max-width: 100%; font-size: 10px; padding: 1px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wpe-rest { font-size: 12px; color: var(--text3); opacity: 0.5; }
+.wpe-select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer; font-size: 16px; }
 
 /* Visueller Wochenplaner: tappbare Zeile statt Dropdown */
 .weekplan-row-tap { cursor: pointer; -webkit-tap-highlight-color: transparent; }
