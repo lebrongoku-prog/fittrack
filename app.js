@@ -224,6 +224,34 @@ function migrateToMultiPlan() {
   // ft_program/ft_plan2/ft_weekplan bleiben als Notfall-Backup erhalten
 }
 
+// ═══════════════════════════════════════════════
+// ENTWURF-MODUS (Draft) — Trainingstag-Detail & Plan-Detail
+// Solange aktiv, schreiben DB.saveTrainingDays/savePlans NICHT nach localStorage,
+// sondern in einen RAM-Puffer; Reads liefern den Puffer (falls belegt), sonst
+// localStorage. Dadurch funktionieren ALLE bestehenden Sofort-Speichern-Mutatoren
+// unverändert, persistieren (inkl. Drive-Sync via markLocalChange) aber erst bei
+// commitDraft(). → Hinzufügen/Löschen von Trainingstagen/Übungen wird erst nach
+// „Speichern" übernommen; Verlassen ohne Speichern verwirft (mit Rückfrage).
+// ═══════════════════════════════════════════════
+let _draftActive = false;
+let _draftBuf = {};
+let _draftDirty = false;
+let _draftKeys = new Set();   // NUR diese Storage-Keys werden gepuffert; andere schreiben sofort durch
+                              // (z. B. „Zu Trainingsplan"-Modal im Tag-Detail → ft_plans bleibt sofort)
+function _draftStages(key) { return _draftActive && _draftKeys.has(key); }
+function _draftHas(key) { return _draftActive && Object.prototype.hasOwnProperty.call(_draftBuf, key); }
+function draftDirty() { return _draftActive && _draftDirty; }
+function beginDraft(keys) { _draftActive = true; _draftBuf = {}; _draftDirty = false; _draftKeys = new Set(keys || []); }
+function discardDraft() { _draftActive = false; _draftBuf = {}; _draftDirty = false; _draftKeys = new Set(); }
+function commitDraft() {
+  if (!_draftActive) return;
+  const buf = _draftBuf;
+  _draftActive = false; _draftBuf = {}; _draftDirty = false;   // erst Draft schließen …
+  // … dann ECHT persistieren (geht jetzt nach localStorage + triggert Drive-Sync).
+  if (Object.prototype.hasOwnProperty.call(buf, 'ft_trainingdays')) DB.saveTrainingDays(buf.ft_trainingdays);
+  if (Object.prototype.hasOwnProperty.call(buf, 'ft_plans')) DB.savePlans(buf.ft_plans);
+}
+
 const DB = {
   getExercises() {
     const s = localStorage.getItem('ft_exercises');
@@ -274,10 +302,12 @@ const DB = {
 
   // Multi-Plan: Raw-Zugriff
   getPlans() {
+    if (_draftHas('ft_plans')) return JSON.parse(JSON.stringify(_draftBuf.ft_plans));
     const s = localStorage.getItem('ft_plans');
     return s ? JSON.parse(s) : [];
   },
   savePlans(plans) {
+    if (_draftStages('ft_plans')) { _draftBuf.ft_plans = JSON.parse(JSON.stringify(plans)); _draftDirty = true; return; }
     localStorage.setItem('ft_plans', JSON.stringify(plans));
     markLocalChange();
   },
@@ -351,8 +381,14 @@ const DB = {
 
   // Trainingstage-Bibliothek: planunabhaengiger Speicher fuer eigenstaendige Trainingstage.
   // Ein Lib-Tag: { id, name, color?, exercises:[{exId,targetSets,targetReps} | {exId} cardio], notes, archived, createdAt }
-  getTrainingDays() { const s = localStorage.getItem('ft_trainingdays'); return s ? JSON.parse(s) : []; },
-  saveTrainingDays(v) { localStorage.setItem('ft_trainingdays', JSON.stringify(v)); markLocalChange(); },
+  getTrainingDays() {
+    if (_draftHas('ft_trainingdays')) return JSON.parse(JSON.stringify(_draftBuf.ft_trainingdays));
+    const s = localStorage.getItem('ft_trainingdays'); return s ? JSON.parse(s) : [];
+  },
+  saveTrainingDays(v) {
+    if (_draftStages('ft_trainingdays')) { _draftBuf.ft_trainingdays = JSON.parse(JSON.stringify(v)); _draftDirty = true; return; }
+    localStorage.setItem('ft_trainingdays', JSON.stringify(v)); markLocalChange();
+  },
 
   getWorkouts() { const s = localStorage.getItem('ft_workouts'); return s ? JSON.parse(s) : []; },
   saveWorkouts(v) { localStorage.setItem('ft_workouts', JSON.stringify(v)); markLocalChange(); },
@@ -797,6 +833,10 @@ function _applyTabState(name) {
 }
 
 function showScreen(name) {
+  // Safety-Net Entwurf-Modus: jeder Wechsel WEG von den Detail-Overlays gibt einen evtl.
+  // noch offenen Puffer frei (die nutzerinitiierten Verlassen-Pfade fragen vorher nach;
+  // dies fängt nur unerwartete programmatische Navigationen ab).
+  if (name !== 'plan-detail' && name !== 'day-detail' && _draftActive) discardDraft();
   // Plan-Detail UND Trainingstag-Detail sind Vollbild-Overlays UEBER dem Tab-Container.
   const planDetailEl = document.getElementById('screen-plan-detail');
   const dayDetailEl = document.getElementById('screen-day-detail');
@@ -842,6 +882,11 @@ function showScreen(name) {
 // (Eigener Handler, damit NUR die Bottom-Nav dieses Verhalten hat — andere
 //  showScreen-Aufrufer wie "Plan bearbeiten"-Links bleiben unveraendert.)
 function onNavTap(name) {
+  // Entwurf-Modus: Plan-/Tag-Detail über die Bottom-Nav verlassen → ggf. „Verwerfen?" nachfragen.
+  if (currentScreen === 'plan-detail' || currentScreen === 'day-detail') {
+    _confirmLeaveDraft(() => { editingPlanId = null; editingLibDayId = null; showScreen(name); });
+    return;
+  }
   const planDetailEl = document.getElementById('screen-plan-detail');
   const planDetailOpen = planDetailEl && planDetailEl.classList.contains('active');
   if (!planDetailOpen && name === currentScreen) {
@@ -850,6 +895,15 @@ function onNavTap(name) {
     return;
   }
   showScreen(name);
+}
+
+// Save-Leiste (Header-Button) in Plan-/Tag-Detail nur zeigen, wenn ungespeicherte Änderungen vorliegen.
+function _syncDraftSaveBar() {
+  const dirty = draftDirty();
+  ['plan-detail-save-btn', 'day-detail-save-btn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = dirty ? '' : 'none';
+  });
 }
 
 // ═══════════════════════════════════════════════
@@ -1161,6 +1215,7 @@ function buildSetsForExercise(exId, planSets) {
 // • targetReps → wird übernommen (cosmetic, beeinflusst nur künftige Sätze)
 // • Reihenfolge im Plan ändert sich → aktive Reihenfolge bleibt unberührt
 function syncActiveWorkoutWithPlanDay(planDayId) {
+  if (_draftActive) return;   // Entwurf-Modus: nicht-persistierte Ziel-Edits NICHT ins laufende Workout schieben
   const wo = DB.getActive();
   if (!wo || wo.planDayId !== planDayId) return;
   const plan = DB.getPlan();
@@ -3506,6 +3561,8 @@ function renderPlanDetail() {
 
   // Archiv-Label aktualisieren
   document.getElementById('plan-archive-label').textContent = plan.archived ? 'Aus Archiv holen' : 'Plan archivieren';
+
+  _syncDraftSaveBar();
 }
 
 // ─── Plan CRUD ───────────────────────────────────────
@@ -3533,12 +3590,21 @@ function createNewPlan() {
 
 function openPlanDetail(planId) {
   editingPlanId = planId;
+  beginDraft(['ft_plans', 'ft_trainingdays']);
   showScreen('plan-detail');
 }
 
 function closePlanDetail() {
-  editingPlanId = null;
-  showScreen('plans');
+  _confirmLeaveDraft(() => { editingPlanId = null; showScreen('plans'); });
+}
+
+// „Speichern" im Plan-Detail: Puffer echt persistieren, danach frischen Entwurf öffnen.
+function savePlanDetail() {
+  if (!draftDirty()) return;
+  commitDraft();
+  beginDraft(['ft_plans', 'ft_trainingdays']);
+  renderPlanDetail();
+  showToast('Gespeichert');
 }
 
 function togglePlanArchive() {
@@ -3575,8 +3641,7 @@ function togglePlanArchive() {
     plan.archived = false;
   }
   DB.savePlans(plans);
-  showToast(plan.archived ? 'Plan archiviert' : 'Plan aus Archiv geholt');
-  renderPlanDetail();
+  renderPlanDetail();   // gestaged — wird mit „Speichern" übernommen (Save-Leiste erscheint)
 }
 
 function deleteCurrentPlan() {
@@ -3587,6 +3652,7 @@ function deleteCurrentPlan() {
     'Trainingsplan löschen?',
     `"${plan.name}" und alle zugehörigen Trainingstage werden unwiderruflich gelöscht. Bereits absolvierte Workouts bleiben im Verlauf erhalten.`,
     () => {
+      discardDraft();   // Plan wird gelöscht → ausstehende Entwurf-Edits verwerfen, echt persistieren
       const ps = DB.getPlans().filter(p => p.id !== editingPlanId);
       DB.savePlans(ps);
       editingPlanId = null;
@@ -3893,9 +3959,31 @@ function createNewLibDay() {
   });
 }
 
-function openLibDayDetail(id) { editingLibDayId = id; showScreen('day-detail'); }
-function closeLibDayDetail() { editingLibDayId = null; showScreen('plans'); }
+function openLibDayDetail(id) { editingLibDayId = id; beginDraft(['ft_trainingdays']); showScreen('day-detail'); }
+function closeLibDayDetail() {
+  _confirmLeaveDraft(() => { editingLibDayId = null; showScreen('plans'); });
+}
 function _getEditingLibDay() { return DB.getTrainingDays().find(d => d.id === editingLibDayId) || null; }
+
+// Entwurf-Modus: gemeinsamer „Verlassen?"-Pfad für Plan-/Tag-Detail.
+// Ohne ungespeicherte Änderungen sofort verlassen (Puffer leeren); sonst nachfragen.
+function _confirmLeaveDraft(onLeave) {
+  if (!draftDirty()) { discardDraft(); onLeave(); return; }
+  confirmAction('Ungespeicherte Änderungen?',
+    'Deine Änderungen wurden noch nicht gespeichert. Beim Verlassen gehen sie verloren.',
+    () => { discardDraft(); onLeave(); },
+    { danger: true, confirmLabel: 'Verwerfen' });
+}
+
+// „Speichern" im Trainingstag-Detail: Puffer echt persistieren, danach frischen Entwurf
+// öffnen (Screen bleibt im Bearbeiten-Modus), Save-Leiste/Render aktualisieren.
+function saveLibDayDetail() {
+  if (!draftDirty()) return;
+  commitDraft();
+  beginDraft(['ft_trainingdays']);
+  renderLibDayDetail();
+  showToast('Gespeichert');
+}
 
 // In welchen Trainingsplänen ist DIESER Tag? Im Referenz-Modell ist das ein trivialer,
 // vollständiger Lookup über plan.dayIds (aktive Pläne) bzw. archivedDays (eingefrorene Pläne).
@@ -3944,6 +4032,7 @@ function renderLibDayDetail() {
     document.getElementById('day-ex-list').innerHTML =
       `<div class="plan-day-empty" style="color:rgba(255,255,255,0.85);background:transparent;margin:0 14px">Noch keine Übungen — tippe unten auf „+ Übung zum Trainingstag hinzufügen".</div>`;
   }
+  _syncDraftSaveBar();
 }
 
 function saveLibDayName() {
@@ -3953,6 +4042,7 @@ function saveLibDayName() {
   d.name = el.value.trim() || 'Trainingstag';
   DB.saveTrainingDays(days);
   document.getElementById('day-detail-title').textContent = d.name;
+  _syncDraftSaveBar();
 }
 function saveLibDayNotes() {
   const el = document.getElementById('day-notes'); if (!el) return;
@@ -3960,20 +4050,21 @@ function saveLibDayNotes() {
   const d = days.find(x => x.id === editingLibDayId); if (!d) return;
   d.notes = el.value;
   DB.saveTrainingDays(days);
+  _syncDraftSaveBar();
 }
 function toggleLibDayArchive() {
   const days = DB.getTrainingDays();
   const d = days.find(x => x.id === editingLibDayId); if (!d) return;
   d.archived = !d.archived;
   DB.saveTrainingDays(days);
-  showToast(d.archived ? 'Trainingstag archiviert' : 'Trainingstag aus Archiv geholt');
-  renderLibDayDetail();
+  renderLibDayDetail();   // gestaged — wird mit „Speichern" übernommen (Save-Leiste erscheint)
 }
 function deleteCurrentLibDay() {
   const d = _getEditingLibDay(); if (!d) return;
   confirmAction('Trainingstag löschen?',
     `"${d.name}" wird aus der Bibliothek gelöscht. Bereits in Pläne kopierte Tage bleiben dort erhalten.`,
     () => {
+      discardDraft();   // Tag wird gelöscht → ausstehende Entwurf-Edits verwerfen, echt persistieren
       const days = DB.getTrainingDays().filter(x => x.id !== editingLibDayId);
       DB.saveTrainingDays(days);
       editingLibDayId = null;

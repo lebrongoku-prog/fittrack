@@ -594,6 +594,21 @@ body.theme-plans .hist-action-dd {
 .plan-detail-ph .ph-left { flex: 1; min-width: 0; }
 body.theme-plans .plan-detail-ph .sheet-back-btn { background: rgba(255,255,255,0.95); }
 body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark); }
+
+/* Entwurf-Modus: „Speichern"-Button im Detail-Header (nur sichtbar bei ungespeicherten Änderungen) */
+.detail-save-btn {
+  flex-shrink: 0;
+  align-self: center;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  box-shadow: var(--shadow);
+}
+.detail-save-btn:active { transform: scale(0.96); }
 /* "+ Trainingstag hinzufügen"-Button im Plan-Detail-Screen: weißer Hintergrund
    damit er auf dem Amber-Gradient nicht untergeht */
 #screen-plan-detail .btn-outline {
