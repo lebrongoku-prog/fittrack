@@ -899,7 +899,7 @@ function renderOverview() {
   const planCardEl = document.getElementById('ov-plan-card');
   if (planCardEl) {
     planCardEl.innerHTML = active
-      ? buildPlanCard(active, "showScreen('plans')")
+      ? buildPlanCard(active, "showScreen('plans')", /*hideToday*/ true)
       : `<div class="plan-card-v2" onclick="showScreen('plans')" style="cursor:pointer">
            <div class="ppv-name" style="color:var(--text2)">Kein aktiver Trainingsplan</div>
            <div class="ppv-meta">Tippe, um einen Plan anzulegen oder zu aktivieren.</div>
@@ -1028,11 +1028,8 @@ function buildWpInfo(days, focusIdx, useHeuteLabel) {
   else if (useHeuteLabel && d.isTomorrow) label = 'Morgen';
   else label = dayFullName(d.dayKey);
   if (!d.planDay) {
-    // Ruhetag → naechsten Trainingstag finden (zuerst rest der Woche, sonst von Anfang)
-    const next = days.slice(focusIdx + 1).find(x => x.planDay)
-              || days.slice(0, focusIdx).find(x => x.planDay);
-    const trail = next ? ` · nächstes Training: ${dayFullName(next.dayKey)}` : '';
-    return `<strong>${label}</strong> · Ruhetag${trail}`;
+    // Ruhetag → KEIN „nächstes Training: …"-Hinweis mehr (Leonard-Wunsch)
+    return `<strong>${label}</strong> · Ruhetag`;
   }
   const exCount = (d.planDay.exercises || []).length;
   const exLabel = exCount === 1 ? 'Übung' : 'Übungen';
@@ -3342,7 +3339,7 @@ function fmtDateRange(start, end) {
 
 // Dashboard-Karte eines Plans (Trainingsplan-Liste UND Übersicht-Tab). Reine Vorschau —
 // Tippen öffnet den Plan-Detail. Fortschritt/Adhärenz nur beim aktiven Plan (laufende Woche).
-function buildPlanCard(p, onTap) {
+function buildPlanCard(p, onTap, hideToday) {
   const todayIdx = (new Date().getDay()+6) % 7;
   const status = planStatus(p);
   const isCurrent = status === 'active';
@@ -3351,7 +3348,7 @@ function buildPlanCard(p, onTap) {
   const wp = (p.weekPlan && p.weekPlan.length) ? p.weekPlan : DEFAULT_WEEKPLAN;
   const strip = wp.map((w, i) => {
     const d = w.planDayId ? byId[w.planDayId] : null;
-    const today = isCurrent && i === todayIdx;
+    const today = isCurrent && i === todayIdx && !hideToday;
     return `<div class="ppv-col${today ? ' today' : ''}">
       <div class="ppv-wd">${w.label}</div>
       ${d ? `<span class="pd-name ppv-pill">${escapeHtml(d.name)}</span>` : '<span class="ppv-rest">–</span>'}
@@ -3861,7 +3858,15 @@ function toggleLibDaysArchive() { libDaysArchiveExpanded = !libDaysArchiveExpand
 
 function renderLibDays() {
   const days = DB.getTrainingDays();
-  const active = days.filter(d => !d.archived).sort((a,b) => (a.createdAt||0) - (b.createdAt||0));
+  // Tage des aktuell aktiven Plans bekommen das grüne „Im aktuellen Plan"-Tag (wie im Übungen-Tab)
+  // und werden in der Liste zuoberst einsortiert.
+  const ap = getActivePlan();
+  const activeDayIds = new Set(ap ? (ap.trainingDays || []).map(d => d.id) : []);
+  const active = days.filter(d => !d.archived).sort((a,b) => {
+    const ai = activeDayIds.has(a.id) ? 0 : 1, bi = activeDayIds.has(b.id) ? 0 : 1;
+    if (ai !== bi) return ai - bi;                 // im aktuellen Plan zuerst
+    return (a.createdAt||0) - (b.createdAt||0);
+  });
   const archived = days.filter(d => d.archived).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
   const subEl = document.getElementById('plans-subline');
   if (subEl) subEl.textContent = days.length
@@ -3869,9 +3874,11 @@ function renderLibDays() {
     : 'Noch keine Trainingstage erstellt';
   const renderRow = (d) => {
     const setCount = (d.exercises||[]).reduce((a,e) => a + (e.targetSets||0), 0);
+    const planTag = activeDayIds.has(d.id)
+      ? '<span class="ex-item-plan-tag" style="margin-left:6px;vertical-align:middle">Im aktuellen Plan</span>' : '';
     return `<div class="plan-list-row" onclick="openLibDayDetail('${d.id}')">
       <div class="plan-list-info">
-        <div class="plan-list-name"><span class="pd-name">${escapeHtml(d.name)}</span></div>
+        <div class="plan-list-name"><span class="pd-name">${escapeHtml(d.name)}</span>${planTag}</div>
         <div class="plan-list-meta">${(d.exercises||[]).length} Übungen • ${setCount} Sätze</div>
       </div>
       <div class="plan-list-action">›</div>
@@ -6661,7 +6668,16 @@ function initScrollHideNav() {
     // trifft nur den Hintergrund (Kinder/Karten bubblen, sind aber !== screenEl).
     screenEl.addEventListener('click', (e) => {
       if (currentScreen !== tabName) return;
-      if (e.target !== screenEl) return;
+      // Tipp auf eine NICHT-interaktive Stelle (Hintergrund ODER „tote" Karte ohne Aktion) toggelt die
+      // Bottom-Nav. Interaktive Elemente (Buttons/Links/Inputs/onclick/role=button/drag) lösen ihre
+      // eigene Aktion aus → NICHT toggeln. composedPath() = der Event-Pfad zum Klick-Zeitpunkt (robust,
+      // auch wenn ein Handler die DOM danach neu rendert).
+      const path = e.composedPath ? e.composedPath() : [e.target];
+      for (const el of path) {
+        if (el === screenEl) break;
+        if (el.nodeType === 1 && el.matches &&
+            el.matches('a, button, input, select, textarea, label, [onclick], [role="button"], [draggable="true"]')) return;
+      }
       setNavHidden(!nav.classList.contains('nav-hidden'));
     });
     screenEl.addEventListener('scroll', () => {

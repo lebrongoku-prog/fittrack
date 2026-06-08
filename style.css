@@ -1665,8 +1665,8 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .plan-ex-row { cursor: default; }
 /* Plan-Day-Edit-Modal: Drag-Feedback an den .ex-item-Zeilen (neues Muskelfarben-Layout) */
 .plan-ex-item.dragging { opacity: 0.4; }
-.plan-ex-item.drop-target-above { box-shadow: inset 0 2px 0 0 var(--accent); }
-.plan-ex-item.drop-target-below { box-shadow: inset 0 -2px 0 0 var(--accent); }
+.plan-ex-item.drop-target-above { position: relative; margin-top: 20px; }
+.plan-ex-item.drop-target-below { position: relative; margin-bottom: 20px; }
 .plan-ex-item .ex-item-head { cursor: default; }
 .plan-ex-handle {
   display: inline-flex; align-items: center; justify-content: center;
@@ -1677,8 +1677,8 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 }
 .plan-ex-handle:active { cursor: grabbing; }
 .plan-ex-row.dragging { opacity: 0.4; }
-.plan-ex-row.drop-target-above { box-shadow: inset 0 2px 0 0 var(--accent); }
-.plan-ex-row.drop-target-below { box-shadow: inset 0 -2px 0 0 var(--accent); }
+.plan-ex-row.drop-target-above { position: relative; margin-top: 20px; }
+.plan-ex-row.drop-target-below { position: relative; margin-bottom: 20px; }
 
 /* Drag-Handle + Drop-Indicators für Workout-Detail-Cards (Active + Vorschau) */
 .aex-drag-handle {
@@ -1691,8 +1691,16 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 }
 .aex-drag-handle:active { cursor: grabbing; }
 .aex-v2.dragging { opacity: 0.4; }
-.aex-v2.drop-target-above { box-shadow: 0 -3px 0 0 var(--accent), var(--shadow); }
-.aex-v2.drop-target-below { box-shadow: 0 3px 0 0 var(--accent), var(--shadow); }
+.aex-v2.drop-target-above { position: relative; margin-top: 20px; }
+.aex-v2.drop-target-below { position: relative; margin-bottom: 20px; }
+/* Einfüge-Lücke (iOS-Stil): die Karten rücken auseinander, eine kräftige Akzent-Linie mittig in der
+   Lücke signalisiert die Einfügestelle (markanter als die frühere dünne Kantenlinie). */
+.plan-ex-item.drop-target-above::before, .plan-ex-row.drop-target-above::before, .aex-v2.drop-target-above::before,
+.plan-ex-item.drop-target-below::after, .plan-ex-row.drop-target-below::after, .aex-v2.drop-target-below::after {
+  content: ''; position: absolute; left: 8px; right: 8px; height: 4px; border-radius: 3px; background: var(--accent);
+}
+.plan-ex-item.drop-target-above::before, .plan-ex-row.drop-target-above::before, .aex-v2.drop-target-above::before { top: -12px; }
+.plan-ex-item.drop-target-below::after, .plan-ex-row.drop-target-below::after, .aex-v2.drop-target-below::after { bottom: -12px; }
 
 /* Verlauf-Zeitraum-Dropdown-Optionen */
 .hist-range-option {
