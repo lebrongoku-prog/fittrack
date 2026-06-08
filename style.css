@@ -609,6 +609,10 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .del-confirm-btn { width: 100%; margin-top: 12px; background: var(--red); color: #fff; border: none; border-radius: 12px; padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .del-confirm-btn:active { transform: scale(0.98); }
 .del-edit-hint { text-align: center; font-size: 13px; color: var(--text3); padding: 12px 8px 4px; }
+/* Plan-Detail: Trainingstage im Bearbeiten-Modus = SELBE Pillen-Darstellung + Kästchen (kein Layout-Wechsel) */
+.plan-day-row.del-select { cursor: pointer; }
+.plan-day-row.del-select.sel { background: var(--red-bg); }
+.plan-day-row.del-select.sel .del-check { background: var(--red); border-color: var(--red); }
 /* "+ Trainingstag hinzufügen"-Button im Plan-Detail-Screen: weißer Hintergrund
    damit er auf dem Amber-Gradient nicht untergeht */
 #screen-plan-detail .btn-outline {

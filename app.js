@@ -899,7 +899,7 @@ function renderOverview() {
   const planCardEl = document.getElementById('ov-plan-card');
   if (planCardEl) {
     planCardEl.innerHTML = active
-      ? buildPlanCard(active)
+      ? buildPlanCard(active, "showScreen('plans')")
       : `<div class="plan-card-v2" onclick="showScreen('plans')" style="cursor:pointer">
            <div class="ppv-name" style="color:var(--text2)">Kein aktiver Trainingsplan</div>
            <div class="ppv-meta">Tippe, um einen Plan anzulegen oder zu aktivieren.</div>
@@ -3342,7 +3342,7 @@ function fmtDateRange(start, end) {
 
 // Dashboard-Karte eines Plans (Trainingsplan-Liste UND Übersicht-Tab). Reine Vorschau —
 // Tippen öffnet den Plan-Detail. Fortschritt/Adhärenz nur beim aktiven Plan (laufende Woche).
-function buildPlanCard(p) {
+function buildPlanCard(p, onTap) {
   const todayIdx = (new Date().getDay()+6) % 7;
   const status = planStatus(p);
   const isCurrent = status === 'active';
@@ -3368,7 +3368,7 @@ function buildPlanCard(p) {
       <span class="ppv-adh">${ws.done}/${ws.planned} diese Woche</span>
     </div>`;
   }
-  return `<div class="plan-card-v2 plan-status-${status}${isCurrent ? ' active' : ''}" onclick="openPlanDetail('${p.id}')">
+  return `<div class="plan-card-v2 plan-status-${status}${isCurrent ? ' active' : ''}" onclick="${onTap || `openPlanDetail('${p.id}')`}">
     <div class="ppv-head">
       <div class="ppv-name">${escapeHtml(p.name)}</div>
       <span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>
@@ -3459,11 +3459,7 @@ function renderPlanDetail() {
   const addDayBtn = document.getElementById('plan-add-day-btn');
   if (addDayBtn) addDayBtn.style.display = delEditActive('plan-days') ? 'none' : '';
 
-  if (delEditActive('plan-days')) {
-    document.getElementById('mehr-plan-list').innerHTML =
-      buildDelEditList(trainingDays.map(d => ({ id: d.id, name: d.name, color: 'var(--accent)' })));
-  } else {
-  // Trainingstage-Liste mit aktiv/inaktiv-Split (analog zu altem renderMehr)
+  // Wochentag-Zuordnung je Tag (für Chips + Sortierung)
   const dayLabelsFor = {};
   const earliestDayIdx = {};
   wp.forEach((w, idx) => {
@@ -3472,47 +3468,57 @@ function renderPlanDetail() {
       dayLabelsFor[w.planDayId].push(w.label);
     }
   });
-  const renderDayRow = (d, i, isActive) => {
-    const setCount = d.exercises.reduce((a,e) => a+e.targetSets, 0);
+  const dayChips = (d) => {
     const usedOn = dayLabelsFor[d.id] || [];
-    const chips = usedOn.length
+    return usedOn.length
       ? `<div class="pdr-days">${usedOn.map(lbl => `<span class="pdr-day-chip">${lbl}</span>`).join('')}</div>` : '';
-    return `<div class="plan-day-row${isActive ? ' active' : ''}">
-      <div class="pdr-info" onclick="openPlanDayModal(${i})" style="cursor:pointer">
-        <div class="pdr-name">${pd(d.name)}</div>
-        <div class="pdr-sub">${d.exercises.length} Übungen • ${setCount} Sätze</div>
-      </div>
-      ${chips}
-      <div class="plan-day-actions">
-        <button onclick="event.stopPropagation();openPlanDayModal(${i})" title="Bearbeiten">✎</button>
-        <button class="del" onclick="event.stopPropagation();deletePlanDay(${i})" title="Löschen">✕</button>
-      </div>
-    </div>`;
   };
-  const activeBucket = [], inactiveRows = [];
-  trainingDays.forEach((d, i) => {
-    if (dayLabelsFor[d.id]) activeBucket.push({ sortIdx: earliestDayIdx[d.id], html: renderDayRow(d, i, true) });
-    else inactiveRows.push(renderDayRow(d, i, false));
-  });
-  activeBucket.sort((a, b) => a.sortIdx - b.sortIdx);
-  const activeRows = activeBucket.map(r => r.html);
-  let listHtml;
-  if (activeRows.length === 0) {
-    listHtml = inactiveRows.length
-      ? inactiveRows.join('')
-      : '<div class="plan-day-empty">Noch keine Trainingstage erstellt</div>';
-  } else if (inactiveRows.length === 0) {
-    listHtml = activeRows.join('');
+  // Reihenfolge: zugewiesene Tage zuerst (nach frühestem Wochentag), dann unzugewiesene — ALLE sichtbar
+  // (kein einklappbarer „Andere Trainingstage"-Abschnitt mehr; Hinzufügen nur via „+ Trainingstag hinzufügen").
+  const orderedDays = trainingDays
+    .map((d, i) => ({ d, i, sort: dayLabelsFor[d.id] != null && earliestDayIdx[d.id] != null ? earliestDayIdx[d.id] : 99 }))
+    .sort((a, b) => a.sort - b.sort);
+
+  if (delEditActive('plan-days')) {
+    // Bearbeiten-Modus: GLEICHE Darstellung (pinke Pille) + Auswahl-Kästchen, keine Aktions-Buttons
+    // (Leonard-Wunsch: kein Layout-Wechsel, kein oranger Streifen).
+    const rows = orderedDays.map(({ d }) => {
+      const checked = _delSel.has(String(d.id));
+      const setCount = d.exercises.reduce((a,e) => a+e.targetSets, 0);
+      return `<div class="plan-day-row del-select${checked ? ' sel' : ''}" onclick="toggleDelSel('${d.id}')">
+        <span class="del-check">${checked ? '✓' : ''}</span>
+        <div class="pdr-info">
+          <div class="pdr-name">${pd(d.name)}</div>
+          <div class="pdr-sub">${d.exercises.length} Übungen • ${setCount} Sätze</div>
+        </div>
+        ${dayChips(d)}
+      </div>`;
+    }).join('');
+    const n = _delSel.size;
+    const bar = n > 0
+      ? `<button class="del-confirm-btn" onclick="confirmDelEdit()">✕ Löschen (${n})</button>`
+      : `<div class="del-edit-hint">Tippe die Trainingstage an, die du aus dem Plan entfernen möchtest.</div>`;
+    document.getElementById('mehr-plan-list').innerHTML =
+      (rows || '<div class="plan-day-empty">Noch keine Trainingstage erstellt</div>') + bar;
   } else {
-    const expanded = mehrInactivePlanExpanded;
-    listHtml = activeRows.join('') +
-      `<div class="plan-day-collapse-header${expanded ? ' expanded' : ''}" onclick="toggleMehrInactivePlans()">
-         <span class="plan-day-collapse-arrow">${expanded ? '▾' : '▸'}</span>
-         <span class="plan-day-collapse-label">Andere Trainingstage</span>
-         <span class="plan-day-collapse-count">${inactiveRows.length}</span>
-       </div>` + (expanded ? inactiveRows.join('') : '');
-  }
-  document.getElementById('mehr-plan-list').innerHTML = listHtml;
+    const renderDayRow = ({ d, i }) => {
+      const isActive = !!dayLabelsFor[d.id];
+      const setCount = d.exercises.reduce((a,e) => a+e.targetSets, 0);
+      return `<div class="plan-day-row${isActive ? ' active' : ''}">
+        <div class="pdr-info" onclick="openPlanDayModal(${i})" style="cursor:pointer">
+          <div class="pdr-name">${pd(d.name)}</div>
+          <div class="pdr-sub">${d.exercises.length} Übungen • ${setCount} Sätze</div>
+        </div>
+        ${dayChips(d)}
+        <div class="plan-day-actions">
+          <button onclick="event.stopPropagation();openPlanDayModal(${i})" title="Bearbeiten">✎</button>
+          <button class="del" onclick="event.stopPropagation();deletePlanDay(${i})" title="Löschen">✕</button>
+        </div>
+      </div>`;
+    };
+    document.getElementById('mehr-plan-list').innerHTML = orderedDays.length
+      ? orderedDays.map(renderDayRow).join('')
+      : '<div class="plan-day-empty">Noch keine Trainingstage erstellt</div>';
   }
 
   // Archiv-Label aktualisieren
