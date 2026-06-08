@@ -343,7 +343,6 @@
         <h1 id="plan-detail-title">Trainingsplan</h1>
         <div class="ph-sub" id="plan-detail-subline"></div>
       </div>
-      <button id="plan-detail-save-btn" class="detail-save-btn" onclick="savePlanDetail()" style="display:none">Speichern</button>
     </div>
 
     <div class="mehr-section">
@@ -380,9 +379,9 @@
     </div>
 
     <div class="mehr-section">
-      <div class="mehr-section-title">Trainingstage</div>
+      <div class="mehr-section-title del-sec-head"><span>Trainingstage</span><span id="plan-days-edit-slot"></span></div>
       <div class="mehr-card" id="mehr-plan-list"></div>
-      <button class="btn btn-outline btn-full" style="margin-top:10px" onclick="addNewPlanDay()">+ Trainingstag hinzufügen</button>
+      <button id="plan-add-day-btn" class="btn btn-outline btn-full" style="margin-top:10px" onclick="addNewPlanDay()">+ Trainingstag hinzufügen</button>
     </div>
 
     <div class="mehr-section">
@@ -419,7 +418,6 @@
         <h1 id="day-detail-title">Trainingstag</h1>
         <div class="ph-sub" id="day-detail-subline"></div>
       </div>
-      <button id="day-detail-save-btn" class="detail-save-btn" onclick="saveLibDayDetail()" style="display:none">Speichern</button>
     </div>
 
     <div class="mehr-section">
@@ -446,7 +444,7 @@
     </div>
 
     <div class="mehr-section" style="margin-left:0;margin-right:0">
-      <div class="mehr-section-title" style="margin-left:14px">Übungen</div>
+      <div class="mehr-section-title del-sec-head" style="margin-left:14px;margin-right:14px"><span>Übungen</span><span id="day-ex-edit-slot"></span></div>
       <div id="day-ex-list"></div>
       <div id="day-add-ex-wrap" style="padding:0 48px 8px;display:none">
         <button class="btn btn-ghost btn-full" onclick="openAddToPlanModal('libday')">+ Übung zum Trainingstag hinzufügen</button>
@@ -518,9 +516,12 @@
         <input class="form-input" id="plan-day-name-input" type="text" placeholder="z. B. Push — Brust & Schultern">
       </div>
       <div style="margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px">
           <span style="font-size:14px;font-weight:600">Übungen</span>
-          <button class="btn btn-outline btn-sm" onclick="openAddToPlanModal()">+ Hinzufügen</button>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span id="planday-ex-edit-slot"></span>
+            <button id="planday-add-ex-btn" class="btn btn-outline btn-sm" onclick="openAddToPlanModal()">+ Hinzufügen</button>
+          </div>
         </div>
         <div id="plan-day-ex-list"></div>
       </div>

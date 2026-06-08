@@ -224,34 +224,6 @@ function migrateToMultiPlan() {
   // ft_program/ft_plan2/ft_weekplan bleiben als Notfall-Backup erhalten
 }
 
-// ═══════════════════════════════════════════════
-// ENTWURF-MODUS (Draft) — Trainingstag-Detail & Plan-Detail
-// Solange aktiv, schreiben DB.saveTrainingDays/savePlans NICHT nach localStorage,
-// sondern in einen RAM-Puffer; Reads liefern den Puffer (falls belegt), sonst
-// localStorage. Dadurch funktionieren ALLE bestehenden Sofort-Speichern-Mutatoren
-// unverändert, persistieren (inkl. Drive-Sync via markLocalChange) aber erst bei
-// commitDraft(). → Hinzufügen/Löschen von Trainingstagen/Übungen wird erst nach
-// „Speichern" übernommen; Verlassen ohne Speichern verwirft (mit Rückfrage).
-// ═══════════════════════════════════════════════
-let _draftActive = false;
-let _draftBuf = {};
-let _draftDirty = false;
-let _draftKeys = new Set();   // NUR diese Storage-Keys werden gepuffert; andere schreiben sofort durch
-                              // (z. B. „Zu Trainingsplan"-Modal im Tag-Detail → ft_plans bleibt sofort)
-function _draftStages(key) { return _draftActive && _draftKeys.has(key); }
-function _draftHas(key) { return _draftActive && Object.prototype.hasOwnProperty.call(_draftBuf, key); }
-function draftDirty() { return _draftActive && _draftDirty; }
-function beginDraft(keys) { _draftActive = true; _draftBuf = {}; _draftDirty = false; _draftKeys = new Set(keys || []); }
-function discardDraft() { _draftActive = false; _draftBuf = {}; _draftDirty = false; _draftKeys = new Set(); }
-function commitDraft() {
-  if (!_draftActive) return;
-  const buf = _draftBuf;
-  _draftActive = false; _draftBuf = {}; _draftDirty = false;   // erst Draft schließen …
-  // … dann ECHT persistieren (geht jetzt nach localStorage + triggert Drive-Sync).
-  if (Object.prototype.hasOwnProperty.call(buf, 'ft_trainingdays')) DB.saveTrainingDays(buf.ft_trainingdays);
-  if (Object.prototype.hasOwnProperty.call(buf, 'ft_plans')) DB.savePlans(buf.ft_plans);
-}
-
 const DB = {
   getExercises() {
     const s = localStorage.getItem('ft_exercises');
@@ -302,12 +274,10 @@ const DB = {
 
   // Multi-Plan: Raw-Zugriff
   getPlans() {
-    if (_draftHas('ft_plans')) return JSON.parse(JSON.stringify(_draftBuf.ft_plans));
     const s = localStorage.getItem('ft_plans');
     return s ? JSON.parse(s) : [];
   },
   savePlans(plans) {
-    if (_draftStages('ft_plans')) { _draftBuf.ft_plans = JSON.parse(JSON.stringify(plans)); _draftDirty = true; return; }
     localStorage.setItem('ft_plans', JSON.stringify(plans));
     markLocalChange();
   },
@@ -381,14 +351,8 @@ const DB = {
 
   // Trainingstage-Bibliothek: planunabhaengiger Speicher fuer eigenstaendige Trainingstage.
   // Ein Lib-Tag: { id, name, color?, exercises:[{exId,targetSets,targetReps} | {exId} cardio], notes, archived, createdAt }
-  getTrainingDays() {
-    if (_draftHas('ft_trainingdays')) return JSON.parse(JSON.stringify(_draftBuf.ft_trainingdays));
-    const s = localStorage.getItem('ft_trainingdays'); return s ? JSON.parse(s) : [];
-  },
-  saveTrainingDays(v) {
-    if (_draftStages('ft_trainingdays')) { _draftBuf.ft_trainingdays = JSON.parse(JSON.stringify(v)); _draftDirty = true; return; }
-    localStorage.setItem('ft_trainingdays', JSON.stringify(v)); markLocalChange();
-  },
+  getTrainingDays() { const s = localStorage.getItem('ft_trainingdays'); return s ? JSON.parse(s) : []; },
+  saveTrainingDays(v) { localStorage.setItem('ft_trainingdays', JSON.stringify(v)); markLocalChange(); },
 
   getWorkouts() { const s = localStorage.getItem('ft_workouts'); return s ? JSON.parse(s) : []; },
   saveWorkouts(v) { localStorage.setItem('ft_workouts', JSON.stringify(v)); markLocalChange(); },
@@ -833,10 +797,6 @@ function _applyTabState(name) {
 }
 
 function showScreen(name) {
-  // Safety-Net Entwurf-Modus: jeder Wechsel WEG von den Detail-Overlays gibt einen evtl.
-  // noch offenen Puffer frei (die nutzerinitiierten Verlassen-Pfade fragen vorher nach;
-  // dies fängt nur unerwartete programmatische Navigationen ab).
-  if (name !== 'plan-detail' && name !== 'day-detail' && _draftActive) discardDraft();
   // Plan-Detail UND Trainingstag-Detail sind Vollbild-Overlays UEBER dem Tab-Container.
   const planDetailEl = document.getElementById('screen-plan-detail');
   const dayDetailEl = document.getElementById('screen-day-detail');
@@ -882,11 +842,6 @@ function showScreen(name) {
 // (Eigener Handler, damit NUR die Bottom-Nav dieses Verhalten hat — andere
 //  showScreen-Aufrufer wie "Plan bearbeiten"-Links bleiben unveraendert.)
 function onNavTap(name) {
-  // Entwurf-Modus: Plan-/Tag-Detail über die Bottom-Nav verlassen → ggf. „Verwerfen?" nachfragen.
-  if (currentScreen === 'plan-detail' || currentScreen === 'day-detail') {
-    _confirmLeaveDraft(() => { editingPlanId = null; editingLibDayId = null; showScreen(name); });
-    return;
-  }
   const planDetailEl = document.getElementById('screen-plan-detail');
   const planDetailOpen = planDetailEl && planDetailEl.classList.contains('active');
   if (!planDetailOpen && name === currentScreen) {
@@ -895,15 +850,6 @@ function onNavTap(name) {
     return;
   }
   showScreen(name);
-}
-
-// Save-Leiste (Header-Button) in Plan-/Tag-Detail nur zeigen, wenn ungespeicherte Änderungen vorliegen.
-function _syncDraftSaveBar() {
-  const dirty = draftDirty();
-  ['plan-detail-save-btn', 'day-detail-save-btn'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = dirty ? '' : 'none';
-  });
 }
 
 // ═══════════════════════════════════════════════
@@ -1215,7 +1161,6 @@ function buildSetsForExercise(exId, planSets) {
 // • targetReps → wird übernommen (cosmetic, beeinflusst nur künftige Sätze)
 // • Reihenfolge im Plan ändert sich → aktive Reihenfolge bleibt unberührt
 function syncActiveWorkoutWithPlanDay(planDayId) {
-  if (_draftActive) return;   // Entwurf-Modus: nicht-persistierte Ziel-Edits NICHT ins laufende Workout schieben
   const wo = DB.getActive();
   if (!wo || wo.planDayId !== planDayId) return;
   const plan = DB.getPlan();
@@ -3508,6 +3453,16 @@ function renderPlanDetail() {
     </div>`;
   }).join('') + `</div>`;
 
+  // Bearbeiten-Button (Lösch-Auswahl) im Trainingstage-Header; „+ Trainingstag" im Edit-Modus ausblenden
+  const daysEditSlot = document.getElementById('plan-days-edit-slot');
+  if (daysEditSlot) daysEditSlot.innerHTML = trainingDays.length ? delEditBtn('plan-days') : '';
+  const addDayBtn = document.getElementById('plan-add-day-btn');
+  if (addDayBtn) addDayBtn.style.display = delEditActive('plan-days') ? 'none' : '';
+
+  if (delEditActive('plan-days')) {
+    document.getElementById('mehr-plan-list').innerHTML =
+      buildDelEditList(trainingDays.map(d => ({ id: d.id, name: d.name, color: 'var(--accent)' })));
+  } else {
   // Trainingstage-Liste mit aktiv/inaktiv-Split (analog zu altem renderMehr)
   const dayLabelsFor = {};
   const earliestDayIdx = {};
@@ -3558,11 +3513,10 @@ function renderPlanDetail() {
        </div>` + (expanded ? inactiveRows.join('') : '');
   }
   document.getElementById('mehr-plan-list').innerHTML = listHtml;
+  }
 
   // Archiv-Label aktualisieren
   document.getElementById('plan-archive-label').textContent = plan.archived ? 'Aus Archiv holen' : 'Plan archivieren';
-
-  _syncDraftSaveBar();
 }
 
 // ─── Plan CRUD ───────────────────────────────────────
@@ -3590,21 +3544,13 @@ function createNewPlan() {
 
 function openPlanDetail(planId) {
   editingPlanId = planId;
-  beginDraft(['ft_plans', 'ft_trainingdays']);
+  resetDelEdit();
   showScreen('plan-detail');
 }
 
 function closePlanDetail() {
-  _confirmLeaveDraft(() => { editingPlanId = null; showScreen('plans'); });
-}
-
-// „Speichern" im Plan-Detail: Puffer echt persistieren, danach frischen Entwurf öffnen.
-function savePlanDetail() {
-  if (!draftDirty()) return;
-  commitDraft();
-  beginDraft(['ft_plans', 'ft_trainingdays']);
-  renderPlanDetail();
-  showToast('Gespeichert');
+  editingPlanId = null;
+  showScreen('plans');
 }
 
 function togglePlanArchive() {
@@ -3641,7 +3587,8 @@ function togglePlanArchive() {
     plan.archived = false;
   }
   DB.savePlans(plans);
-  renderPlanDetail();   // gestaged — wird mit „Speichern" übernommen (Save-Leiste erscheint)
+  showToast(plan.archived ? 'Plan archiviert' : 'Plan aus Archiv geholt');
+  renderPlanDetail();
 }
 
 function deleteCurrentPlan() {
@@ -3652,7 +3599,6 @@ function deleteCurrentPlan() {
     'Trainingsplan löschen?',
     `"${plan.name}" und alle zugehörigen Trainingstage werden unwiderruflich gelöscht. Bereits absolvierte Workouts bleiben im Verlauf erhalten.`,
     () => {
-      discardDraft();   // Plan wird gelöscht → ausstehende Entwurf-Edits verwerfen, echt persistieren
       const ps = DB.getPlans().filter(p => p.id !== editingPlanId);
       DB.savePlans(ps);
       editingPlanId = null;
@@ -3959,31 +3905,9 @@ function createNewLibDay() {
   });
 }
 
-function openLibDayDetail(id) { editingLibDayId = id; beginDraft(['ft_trainingdays']); showScreen('day-detail'); }
-function closeLibDayDetail() {
-  _confirmLeaveDraft(() => { editingLibDayId = null; showScreen('plans'); });
-}
+function openLibDayDetail(id) { editingLibDayId = id; resetDelEdit(); showScreen('day-detail'); }
+function closeLibDayDetail() { editingLibDayId = null; showScreen('plans'); }
 function _getEditingLibDay() { return DB.getTrainingDays().find(d => d.id === editingLibDayId) || null; }
-
-// Entwurf-Modus: gemeinsamer „Verlassen?"-Pfad für Plan-/Tag-Detail.
-// Ohne ungespeicherte Änderungen sofort verlassen (Puffer leeren); sonst nachfragen.
-function _confirmLeaveDraft(onLeave) {
-  if (!draftDirty()) { discardDraft(); onLeave(); return; }
-  confirmAction('Ungespeicherte Änderungen?',
-    'Deine Änderungen wurden noch nicht gespeichert. Beim Verlassen gehen sie verloren.',
-    () => { discardDraft(); onLeave(); },
-    { danger: true, confirmLabel: 'Verwerfen' });
-}
-
-// „Speichern" im Trainingstag-Detail: Puffer echt persistieren, danach frischen Entwurf
-// öffnen (Screen bleibt im Bearbeiten-Modus), Save-Leiste/Render aktualisieren.
-function saveLibDayDetail() {
-  if (!draftDirty()) return;
-  commitDraft();
-  beginDraft(['ft_trainingdays']);
-  renderLibDayDetail();
-  showToast('Gespeichert');
-}
 
 // In welchen Trainingsplänen ist DIESER Tag? Im Referenz-Modell ist das ein trivialer,
 // vollständiger Lookup über plan.dayIds (aktive Pläne) bzw. archivedDays (eingefrorene Pläne).
@@ -4025,14 +3949,29 @@ function renderLibDayDetail() {
   // Übungen im Workout-Tab-Stil: dieselben aex-v2-Preview-Cards via renderPreviewWorkout(mode='libday').
   // KEIN weißer mehr-card-Hintergrund — die Cards sitzen direkt auf dem Tab-Gradient (wie im Workouts-Tab).
   const addWrap = document.getElementById('day-add-ex-wrap');
-  if (addWrap) addWrap.style.display = '';
-  if ((day.exercises || []).length) {
-    renderPreviewWorkout(day, 'libday', 'day-ex-list');
+  const exEditSlot = document.getElementById('day-ex-edit-slot');
+  const visExs = (day.exercises || []);
+  // Sichtbare Übungen (Cardio ausgeblendet) — nur dann „Bearbeiten" anbieten
+  const hasVis = visExs.some(pe => { const ex = getEx(pe.exId); return ex && (CARDIO_ENABLED || exType(ex) !== 'cardio'); });
+  if (exEditSlot) exEditSlot.innerHTML = hasVis ? delEditBtn('libday-ex') : '';
+
+  if (delEditActive('libday-ex')) {
+    if (addWrap) addWrap.style.display = 'none';
+    const items = visExs.map((pe, i) => {
+      const ex = getEx(pe.exId); if (!ex) return null;
+      if (!CARDIO_ENABLED && exType(ex) === 'cardio') return null;
+      return { id: i, name: ex.name, color: (exType(ex) === 'cardio') ? 'var(--cardio)' : muscleColor(ex.muscle) };
+    }).filter(Boolean);
+    document.getElementById('day-ex-list').innerHTML = `<div style="padding:0 14px">${buildDelEditList(items)}</div>`;
   } else {
-    document.getElementById('day-ex-list').innerHTML =
-      `<div class="plan-day-empty" style="color:rgba(255,255,255,0.85);background:transparent;margin:0 14px">Noch keine Übungen — tippe unten auf „+ Übung zum Trainingstag hinzufügen".</div>`;
+    if (addWrap) addWrap.style.display = '';
+    if (visExs.length) {
+      renderPreviewWorkout(day, 'libday', 'day-ex-list');
+    } else {
+      document.getElementById('day-ex-list').innerHTML =
+        `<div class="plan-day-empty" style="color:rgba(255,255,255,0.85);background:transparent;margin:0 14px">Noch keine Übungen — tippe unten auf „+ Übung zum Trainingstag hinzufügen".</div>`;
+    }
   }
-  _syncDraftSaveBar();
 }
 
 function saveLibDayName() {
@@ -4042,7 +3981,6 @@ function saveLibDayName() {
   d.name = el.value.trim() || 'Trainingstag';
   DB.saveTrainingDays(days);
   document.getElementById('day-detail-title').textContent = d.name;
-  _syncDraftSaveBar();
 }
 function saveLibDayNotes() {
   const el = document.getElementById('day-notes'); if (!el) return;
@@ -4050,21 +3988,20 @@ function saveLibDayNotes() {
   const d = days.find(x => x.id === editingLibDayId); if (!d) return;
   d.notes = el.value;
   DB.saveTrainingDays(days);
-  _syncDraftSaveBar();
 }
 function toggleLibDayArchive() {
   const days = DB.getTrainingDays();
   const d = days.find(x => x.id === editingLibDayId); if (!d) return;
   d.archived = !d.archived;
   DB.saveTrainingDays(days);
-  renderLibDayDetail();   // gestaged — wird mit „Speichern" übernommen (Save-Leiste erscheint)
+  showToast(d.archived ? 'Trainingstag archiviert' : 'Trainingstag aus Archiv geholt');
+  renderLibDayDetail();
 }
 function deleteCurrentLibDay() {
   const d = _getEditingLibDay(); if (!d) return;
   confirmAction('Trainingstag löschen?',
     `"${d.name}" wird aus der Bibliothek gelöscht. Bereits in Pläne kopierte Tage bleiben dort erhalten.`,
     () => {
-      discardDraft();   // Tag wird gelöscht → ausstehende Entwurf-Edits verwerfen, echt persistieren
       const days = DB.getTrainingDays().filter(x => x.id !== editingLibDayId);
       DB.saveTrainingDays(days);
       editingLibDayId = null;
@@ -4145,14 +4082,112 @@ function saveDayToPlan() {
   showToast('Gespeichert');
 }
 
-// Entfernt eine Übung aus dem aktuell bearbeiteten Bibliotheks-Trainingstag.
+// Entfernt EINE Übung aus dem aktuell bearbeiteten Bibliotheks-Trainingstag — mit Sicherheits-Dialog.
 function removeLibDayExercise(ei) {
   const days = DB.getTrainingDays();
   const day = days.find(d => d.id === editingLibDayId);
   if (!day || !day.exercises || !day.exercises[ei]) return;
-  day.exercises.splice(ei, 1);
-  DB.saveTrainingDays(days);
-  renderLibDayDetail();
+  const exName = (getEx(day.exercises[ei].exId) || {}).name || 'Übung';
+  confirmAction('Übung entfernen?', `„${exName}" wird aus dem Trainingstag entfernt.`,
+    () => {
+      const d2 = DB.getTrainingDays();
+      const dd = d2.find(d => d.id === editingLibDayId);
+      if (!dd || !dd.exercises || !dd.exercises[ei]) return;
+      dd.exercises.splice(ei, 1);
+      DB.saveTrainingDays(d2);
+      renderLibDayDetail();
+    },
+    { danger: true, confirmLabel: 'Entfernen' });
+}
+
+// ═══════════════════════════════════════════════
+// BEARBEITEN-MODUS / LÖSCH-AUSWAHL (Auswählen-dann-Löschen)
+// Pro Liste ein „Bearbeiten"-Button → Einträge werden ankreuzbar → „Löschen (N)"
+// → kurzer Sicherheits-Dialog. KEIN globaler Entwurf; nur der Lösch-Vorgang wird gesammelt.
+// Kontexte: 'libday-ex' (Trainingstag-Detail-Übungen), 'plan-days' (Plan-Detail-Tage),
+// 'planday-ex' (Übungen im modal-plan-day). IDs: Übungen=Array-Index, Tage=day.id.
+// ═══════════════════════════════════════════════
+let _delCtx = null;
+let _delSel = new Set();
+function delEditActive(ctx) { return _delCtx === ctx; }
+function _rerenderDelCtx(ctx) {
+  if (ctx === 'libday-ex') renderLibDayDetail();
+  else if (ctx === 'plan-days') renderPlanDetail();
+  else if (ctx === 'planday-ex') { const plan = DB.getPlan(); if (plan[editingDayIdx]) renderPlanDayExList(plan[editingDayIdx]); }
+}
+function enterDelEdit(ctx) { _delCtx = ctx; _delSel = new Set(); _rerenderDelCtx(ctx); }
+function exitDelEdit() { const c = _delCtx; _delCtx = null; _delSel = new Set(); if (c) _rerenderDelCtx(c); }
+function resetDelEdit() { _delCtx = null; _delSel = new Set(); }
+function toggleDelSel(id) {
+  id = String(id);
+  if (_delSel.has(id)) _delSel.delete(id); else _delSel.add(id);
+  if (_delCtx) _rerenderDelCtx(_delCtx);
+}
+// „Bearbeiten"/„Fertig"-Umschalter für eine Liste
+function delEditBtn(ctx) {
+  const active = delEditActive(ctx);
+  return `<button class="del-edit-toggle${active ? ' active' : ''}" onclick="${active ? 'exitDelEdit()' : `enterDelEdit('${ctx}')`}">${active ? 'Fertig' : 'Bearbeiten'}</button>`;
+}
+// Baut die ankreuzbare Liste + „Löschen (N)"-Leiste. items: [{id, name, color}]
+function buildDelEditList(items) {
+  const rows = (items || []).map(it => {
+    const checked = _delSel.has(String(it.id));
+    return `<div class="del-row${checked ? ' sel' : ''}" onclick="toggleDelSel('${it.id}')">
+      <span class="del-check">${checked ? '✓' : ''}</span>
+      <span class="del-row-stripe" style="background:${it.color}"></span>
+      <span class="del-row-name">${escapeHtml(it.name)}</span>
+    </div>`;
+  }).join('');
+  const n = _delSel.size;
+  const bar = n > 0
+    ? `<button class="del-confirm-btn" onclick="confirmDelEdit()">✕ Löschen (${n})</button>`
+    : `<div class="del-edit-hint">Tippe die Einträge an, die du löschen möchtest.</div>`;
+  return `<div class="del-edit-list">${rows || '<div class="del-edit-hint">Keine Einträge.</div>'}</div>${bar}`;
+}
+// „Löschen (N)" → Sicherheits-Dialog → löscht die markierten Einträge je Kontext
+function confirmDelEdit() {
+  const n = _delSel.size;
+  if (!n) return;
+  const ctx = _delCtx;
+  const noun = (ctx === 'plan-days') ? `Trainingstag${n > 1 ? 'e' : ''}` : `Übung${n > 1 ? 'en' : ''}`;
+  const msg = (ctx === 'plan-days')
+    ? 'Die markierten Trainingstage werden aus diesem Plan entfernt (bleiben in der Bibliothek).'
+    : 'Die markierten Übungen werden entfernt.';
+  confirmAction(`${n} ${noun} wirklich löschen?`, msg,
+    () => _applyDelEdit(ctx),
+    { danger: true, confirmLabel: 'Löschen' });
+}
+function _applyDelEdit(ctx) {
+  const sel = _delSel;
+  if (ctx === 'libday-ex') {
+    const days = DB.getTrainingDays();
+    const day = days.find(d => d.id === editingLibDayId);
+    if (day && Array.isArray(day.exercises)) {
+      day.exercises = day.exercises.filter((_, i) => !sel.has(String(i)));
+      DB.saveTrainingDays(days);
+    }
+  } else if (ctx === 'plan-days') {
+    const plan = DB.getPlan();
+    const removeIds = new Set(plan.filter(d => sel.has(String(d.id))).map(d => d.id));
+    const p = plan.filter(d => !removeIds.has(d.id));
+    DB.savePlan(p);
+    const wp = DB.getWeekPlan();
+    let ch = false;
+    wp.forEach(d => { if (removeIds.has(d.planDayId)) { d.planDayId = null; ch = true; } });
+    if (ch) DB.saveWeekPlan(wp);
+  } else if (ctx === 'planday-ex') {
+    const plan = DB.getPlan();
+    const day = plan[editingDayIdx];
+    if (day && Array.isArray(day.exercises)) {
+      day.exercises = day.exercises.filter((_, i) => !sel.has(String(i)));
+      DB.savePlan(plan);
+      syncActiveWorkoutWithPlanDay(day.id);
+    }
+  }
+  _delCtx = null; _delSel = new Set();
+  _rerenderDelCtx(ctx);
+  if (ctx === 'planday-ex') _renderAfterPlanEdit();
+  showToast('Gelöscht');
 }
 
 // User changed Gesamtdauer → recompute Enddatum
@@ -4243,6 +4278,7 @@ function pickWeekday(dayId) {
 
 function openPlanDayModal(idx) {
   editingDayIdx = idx;
+  resetDelEdit();
   const plan = DB.getPlan();
   const day = plan[idx];
   document.getElementById('plan-day-modal-title').innerHTML = `${escapeHtml(day.name)} bearbeiten`;
@@ -5003,6 +5039,22 @@ function deletePlanDay(idx) {
 }
 
 function renderPlanDayExList(day) {
+  // Bearbeiten-Button (Lösch-Auswahl) im Modal-Übungen-Header; „+ Hinzufügen" im Edit-Modus ausblenden
+  const editSlot = document.getElementById('planday-ex-edit-slot');
+  const addBtn = document.getElementById('planday-add-ex-btn');
+  const hasVis = day.exercises.some(pe => { const ex = getEx(pe.exId); return ex && (CARDIO_ENABLED || exType(ex) !== 'cardio'); });
+  if (editSlot) editSlot.innerHTML = hasVis ? delEditBtn('planday-ex') : '';
+  if (addBtn) addBtn.style.display = delEditActive('planday-ex') ? 'none' : '';
+
+  if (delEditActive('planday-ex')) {
+    const items = day.exercises.map((pe, i) => {
+      const ex = getEx(pe.exId); if (!ex) return null;
+      if (!CARDIO_ENABLED && exType(ex) === 'cardio') return null;
+      return { id: i, name: ex.name, color: (exType(ex) === 'cardio') ? 'var(--cardio)' : muscleColor(ex.muscle) };
+    }).filter(Boolean);
+    document.getElementById('plan-day-ex-list').innerHTML = buildDelEditList(items);
+    return;
+  }
   // Layout wie das „Übungen zum Plan hinzufügen"-Modal: Muskelfarben-Streifen + Name,
   // ohne Sätze×Wdh.-Felder (Ziele werden im Trainingstag-Detail/Vorschau editiert).
   // Reihenfolge = Tag-Reihenfolge; Drag-Sortierung + ✕-Entfernen bleiben erhalten.
@@ -5093,16 +5145,18 @@ function updatePlanTarget(exIdx, field, value) {
 function removePlanEx(exIdx) {
   const plan = DB.getPlan();
   if (!plan[editingDayIdx] || !plan[editingDayIdx].exercises[exIdx]) return;
-  const dayId = plan[editingDayIdx].id;
-  const exId = plan[editingDayIdx].exercises[exIdx].exId;
-  confirmActiveWorkoutDataLoss(dayId, [exId], () => {
-    const p = DB.getPlan();
-    p[editingDayIdx].exercises.splice(exIdx, 1);
-    DB.savePlan(p);
-    syncActiveWorkoutWithPlanDay(p[editingDayIdx].id);
-    renderPlanDayExList(p[editingDayIdx]);
-    _renderAfterPlanEdit();
-  });
+  const exName = (getEx(plan[editingDayIdx].exercises[exIdx].exId) || {}).name || 'Übung';
+  confirmAction('Übung entfernen?', `„${exName}" wird aus diesem Trainingstag entfernt.`,
+    () => {
+      const p = DB.getPlan();
+      if (!p[editingDayIdx] || !p[editingDayIdx].exercises[exIdx]) return;
+      p[editingDayIdx].exercises.splice(exIdx, 1);
+      DB.savePlan(p);
+      syncActiveWorkoutWithPlanDay(p[editingDayIdx].id);
+      renderPlanDayExList(p[editingDayIdx]);
+      _renderAfterPlanEdit();
+    },
+    { danger: true, confirmLabel: 'Entfernen' });
 }
 
 function savePlanDay() {
