@@ -1214,7 +1214,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .aex-v2-last { font-size: 12px; color: var(--text3); margin-top: 1px; }
 
 .aex-v2-body { display: flex; gap: 12px; padding: 0 12px 12px; }
-.aex-v2-table { flex: 0 0 auto; }
+.aex-v2-table { flex: 1; }
 /* Inline-Ziel-Editor (Sätze × Wdh.) oben in der Vorschau-Karte */
 .aex-v2-target-edit { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
 .aex-v2-target-lbl { font-size: 12px; color: var(--text3); font-weight: 700; margin-right: 2px; }
@@ -1261,13 +1261,13 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .aex-v2-inp.done-inp { background: var(--green-bg); border-color: var(--green); color: var(--green); }
 .aex-v2-row .num-cell { font-size: 13px; font-weight: 600; text-align: center; color: var(--text3); }
 /* Pro-Satz-Tabelle als ZEILEN (eine Zeile pro Satz): Satznr | Wdh. | kg */
-.aex-v2-srow { display: grid; grid-template-columns: 46px 24px 24px; gap: 6px; align-items: center; margin-bottom: 8px; }
+.aex-v2-srow { display: grid; grid-template-columns: 46px 1fr 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
 .aex-v2-srow.head { margin-bottom: 6px; line-height: 16px; }
 .aex-v2-srow.head span { font-size: 12px; color: var(--text3); font-weight: 600; text-align: center; }
 .aex-v2-snum { font-size: 13px; font-weight: 700; text-align: center; color: var(--text3); }
 
 .aex-v2-notes {
-  flex: 1; min-width: 0;
+  width: 152px; flex-shrink: 0;
   margin-top: 22px;                /* Oberkante bündig mit den Wert-Feldern (unter der Kopfzeile) */
   background: var(--card2); border: 1px solid transparent; border-radius: 10px;
   padding: 10px 12px;
