@@ -1260,6 +1260,12 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .aex-v2-inp:focus { outline: none; border-color: var(--c, var(--accent)); background: #fff; }
 .aex-v2-inp.done-inp { background: var(--green-bg); border-color: var(--green); color: var(--green); }
 .aex-v2-row .num-cell { font-size: 13px; font-weight: 600; text-align: center; color: var(--text3); }
+/* Pro-Satz-Tabelle als ZEILEN (eine Zeile pro Satz): Satznr | Wdh. | kg */
+.aex-v2-srow { display: grid; grid-template-columns: 46px 1fr 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
+.aex-v2-srow.head { margin-bottom: 6px; }
+.aex-v2-srow.head span { font-size: 12px; color: var(--text3); font-weight: 600; text-align: center; }
+.aex-v2-srow.head span:first-child { text-align: left; }
+.aex-v2-snum { font-size: 13px; font-weight: 700; text-align: center; color: var(--text3); }
 
 .aex-v2-notes {
   width: 132px; flex-shrink: 0;

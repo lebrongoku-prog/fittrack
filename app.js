@@ -1599,12 +1599,14 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
     const lastStr = last ? `Zuletzt: ${last.sets.length}×${last.sets[0]?.reps||'?'} @ ${last.maxWeight} kg` : '';
     const exIdKey = pe.exId;
     const collapsedCls = isAexExpanded(exIdKey) ? '' : 'collapsed';
-    // Pro-Satz-Ziel-Tabelle (editierbar, wie die Aktiv-Card): Wdh + kg pro Satz.
-    const ptSets = peSets(pe);
-    const ptGrid = `50px ${Array(ptSets.length).fill('1fr').join(' ')}`;
-    const ptHead = ptSets.map((_, si) => `<span class="num-cell">${si+1}</span>`).join('');
-    const ptReps = ptSets.map((s, si) => `<input class="aex-v2-inp" type="number" inputmode="numeric" style="--c:${col.c}" placeholder="–" value="${s.reps}" onchange="updatePreviewSetTarget('${planDay.id}',${ei},${si},'reps',this.value,'${mode}')">`).join('');
-    const ptKg = ptSets.map((s, si) => `<input class="aex-v2-inp" type="number" inputmode="decimal" style="--c:${col.c}" placeholder="–" value="${s.weight}" onchange="updatePreviewSetTarget('${planDay.id}',${ei},${si},'weight',this.value,'${mode}')">`).join('');
+    // Pro-Satz-Tabelle als ZEILEN (je Satz eine Zeile: Wdh | kg). Werte: „letzte Einheit gewinnt"
+    // (displaySetsForPe); Übernahme auf nachfolgende Sätze ist feld-spezifisch (Wdh→Wdh, kg→kg).
+    const ptSets = displaySetsForPe(pe, last);
+    const ptRows = ptSets.map((s, si) => `<div class="aex-v2-srow">
+            <span class="aex-v2-snum">${si+1}</span>
+            <input class="aex-v2-inp" type="number" inputmode="numeric" style="--c:${col.c}" placeholder="–" value="${s.reps}" onchange="updatePreviewSetTarget('${planDay.id}',${ei},${si},'reps',this.value,'${mode}')">
+            <input class="aex-v2-inp" type="number" inputmode="decimal" style="--c:${col.c}" placeholder="–" value="${s.weight}" onchange="updatePreviewSetTarget('${planDay.id}',${ei},${si},'weight',this.value,'${mode}')">
+          </div>`).join('');
     return `<div class="aex-v2 ${collapsedCls}" id="aex-${ei}" style="--c:${col.c};--c-bg:${col.bg}"
                  ondragstart="aexDragStart(event,${ei},'${mode}','${planDay.id}')"
                  ondragend="aexDragEnd(event)"
@@ -1624,15 +1626,8 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
       </div>
       <div class="aex-v2-body">
         <div class="aex-v2-table">
-          <div class="aex-v2-row head" style="grid-template-columns:${ptGrid}">
-            <span class="ax-lbl">Satz</span>${ptHead}
-          </div>
-          <div class="aex-v2-row" style="grid-template-columns:${ptGrid}">
-            <span class="ax-lbl">Wdh.</span>${ptReps}
-          </div>
-          <div class="aex-v2-row" style="grid-template-columns:${ptGrid}">
-            <span class="ax-lbl">kg</span>${ptKg}
-          </div>
+          <div class="aex-v2-srow head"><span>Satz</span><span>Wdh.</span><span>kg</span></div>
+          ${ptRows}
         </div>
         <div class="aex-v2-notes">
           <textarea class="aex-v2-notes-area" data-ex-id="${ex.id}" placeholder="Notizen"
@@ -1651,6 +1646,22 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
 // Pro-Satz-Ziel editieren (Wdh/kg) in den Vorschau-Karten (Workouts-Vorschau + Trainingstag-Detail).
 // Vorbefüllen: der geänderte Wert wird auf alle NACHFOLGENDEN Sätze übernommen (bleiben einzeln
 // editierbar). Beide Modi editieren denselben globalen Bibliothek-Tag (planDay.id = globale Tag-ID).
+// Anzeige-Werte der Pro-Satz-Tabelle in Vorschau/Bibliothek: „letzte Einheit gewinnt", solange die
+// letzte ABGESCHLOSSENE Einheit neuer ist als die letzte manuelle Bearbeitung (pe.setsUpdatedAt) —
+// sonst die gespeicherten Tag-Werte. Satz-Anzahl = die des Tags; je Satz aus der letzten Einheit
+// vorbefüllt (sonst gespeicherter Wert). last = getLastExData(pe.exId).
+function displaySetsForPe(pe, last) {
+  const base = peSets(pe);
+  const useLast = last && Array.isArray(last.sets) && (last.date || 0) > (pe.setsUpdatedAt || 0);
+  if (!useLast) return base.map(s => ({ reps: s.reps, weight: s.weight }));
+  return base.map((s, i) => {
+    const ls = last.sets[i];
+    return {
+      reps:   (ls && ls.reps   != null && String(ls.reps)   !== '') ? String(ls.reps)   : s.reps,
+      weight: (ls && ls.weight != null && String(ls.weight) !== '') ? String(ls.weight) : s.weight,
+    };
+  });
+}
 function _withPreviewDayEx(dayId, ei, fn, mode) {
   const days = DB.getTrainingDays();
   const day = days.find(d => d.id === dayId);
@@ -1666,27 +1677,32 @@ function updatePreviewSetTarget(dayId, ei, si, field, value, mode) {
     ? String(value).replace(/[^\d]/g, '')
     : String(value).replace(',', '.').replace(/[^\d.]/g, '');
   _withPreviewDayEx(dayId, ei, (pe) => {
-    const sets = _materializePeSets(pe);
-    if (!sets[si]) return;
-    sets[si][field] = v;
-    for (let k = si + 1; k < sets.length; k++) sets[k][field] = v; // Vorbefüllen nachfolgender Sätze
+    // aktuelle Anzeige (letzte Einheit bzw. gespeichert) als Basis fixieren, dann Änderung anwenden →
+    // ab jetzt „gewinnen" die eigenen Werte (setsUpdatedAt = jetzt), bis es eine neuere Einheit gibt.
+    pe.sets = displaySetsForPe(pe, getLastExData(pe.exId)).map(s => ({ reps: s.reps, weight: s.weight }));
+    if (!pe.sets[si]) return;
+    pe.sets[si][field] = v;
+    for (let k = si + 1; k < pe.sets.length; k++) pe.sets[k][field] = v; // NUR dasselbe Feld (Wdh→Wdh, kg→kg)
+    pe.setsUpdatedAt = Date.now();
     _syncPeScalars(pe);
   }, mode);
 }
 function addPreviewSet(dayId, ei, mode) {
   _withPreviewDayEx(dayId, ei, (pe) => {
-    const sets = _materializePeSets(pe);
-    if (sets.length >= 12) return;
-    const last = sets[sets.length - 1] || { reps: '8', weight: '' };
-    sets.push({ reps: last.reps, weight: last.weight });
+    pe.sets = displaySetsForPe(pe, getLastExData(pe.exId)).map(s => ({ reps: s.reps, weight: s.weight }));
+    if (pe.sets.length >= 12) return;
+    const lastS = pe.sets[pe.sets.length - 1] || { reps: '8', weight: '' };
+    pe.sets.push({ reps: lastS.reps, weight: lastS.weight });
+    pe.setsUpdatedAt = Date.now();
     _syncPeScalars(pe);
   }, mode);
 }
 function removePreviewSet(dayId, ei, mode) {
   _withPreviewDayEx(dayId, ei, (pe) => {
-    const sets = _materializePeSets(pe);
-    if (sets.length <= 1) return;
-    sets.pop();
+    pe.sets = displaySetsForPe(pe, getLastExData(pe.exId)).map(s => ({ reps: s.reps, weight: s.weight }));
+    if (pe.sets.length <= 1) return;
+    pe.sets.pop();
+    pe.setsUpdatedAt = Date.now();
     _syncPeScalars(pe);
   }, mode);
 }
@@ -1746,19 +1762,12 @@ function renderActiveWorkout() {
     const last = getLastExData(ex.exId || ex.id);
     const lastStr = last ? `Zuletzt: ${last.sets.length}×${last.sets[0]?.reps||'?'} @ ${last.maxWeight} kg` : '';
     const targetW = last ? `${last.maxWeight} kg` : '–';
-    const nSets = ex.sets.length;
-    const gridCols = `50px ${Array(nSets).fill('1fr').join(' ')}`;
-    const headerCells = ex.sets.map((_,si)=>`<span class="num-cell">${si+1}</span>`).join('');
-    const kgInputs = ex.sets.map((s,si) =>
-      `<input class="aex-v2-inp ${s.done?'done-inp':''}" type="number" inputmode="decimal"
-              style="--c:${col.c}" placeholder="–" value="${s.weight}"
-              onchange="updateSet(${ei},${si},'weight',this.value)" ${s.done?'disabled':''}>`
-    ).join('');
-    const repInputs = ex.sets.map((s,si) =>
-      `<input class="aex-v2-inp ${s.done?'done-inp':''}" type="number" inputmode="numeric"
-              style="--c:${col.c}" placeholder="–" value="${s.reps}"
-              onchange="updateSet(${ei},${si},'reps',this.value)" ${s.done?'disabled':''}>`
-    ).join('');
+    // Pro-Satz-Tabelle als ZEILEN: je Satz eine Zeile (Wdh | kg); erledigte Sätze sind gesperrt/markiert.
+    const setRows = ex.sets.map((s, si) => `<div class="aex-v2-srow">
+            <span class="aex-v2-snum">${si+1}</span>
+            <input class="aex-v2-inp ${s.done?'done-inp':''}" type="number" inputmode="numeric" style="--c:${col.c}" placeholder="–" value="${s.reps}" onchange="updateSet(${ei},${si},'reps',this.value)" ${s.done?'disabled':''}>
+            <input class="aex-v2-inp ${s.done?'done-inp':''}" type="number" inputmode="decimal" style="--c:${col.c}" placeholder="–" value="${s.weight}" onchange="updateSet(${ei},${si},'weight',this.value)" ${s.done?'disabled':''}>
+          </div>`).join('');
 
     const stateCls = ex.done ? 'done' : (ex.skipped ? 'skipped' : '');
     const exIdKey = ex.exId || ex.id;
@@ -1787,15 +1796,8 @@ function renderActiveWorkout() {
       </div>
       <div class="aex-v2-body">
         <div class="aex-v2-table">
-          <div class="aex-v2-row head" style="grid-template-columns:${gridCols}">
-            <span class="ax-lbl">Satz</span>${headerCells}
-          </div>
-          <div class="aex-v2-row" style="grid-template-columns:${gridCols}">
-            <span class="ax-lbl">Wdh.</span>${repInputs}
-          </div>
-          <div class="aex-v2-row" style="grid-template-columns:${gridCols}">
-            <span class="ax-lbl">kg</span>${kgInputs}
-          </div>
+          <div class="aex-v2-srow head"><span>Satz</span><span>Wdh.</span><span>kg</span></div>
+          ${setRows}
         </div>
         <div class="aex-v2-notes">
           <textarea class="aex-v2-notes-area" data-ex-id="${ex.exId || ex.id}" placeholder="Notizen"
@@ -2213,17 +2215,15 @@ function updateSet(ei, si, field, value) {
     if (!ex.sets[k].done) ex.sets[k][field] = value;
   }
   DB.saveActive(wo);
-  // Refresh just the affected inputs without full re-render to avoid losing focus
+  // Nachfolgende (nicht erledigte) Felder ohne Full-Re-Render aktualisieren (Fokus bleibt erhalten).
+  // Neues Zeilen-Layout: je Satz zwei Inputs in DOM-Reihenfolge [Wdh, kg] → idx/2 = Satz, idx%2: 0=Wdh, 1=kg.
   document.querySelectorAll(`.aex-v2[id="aex-${ei}"] .aex-v2-inp`).forEach((inp, idx) => {
-    // Each row has nSets inputs; we have 2 rows (kg + Wdh.)
-    // Order in DOM: row1=kg (all sets), row2=Wdh (all sets)
-    const nSets = ex.sets.length;
-    const rowIsKg = idx < nSets;
-    const setIdx  = idx % nSets;
-    if (setIdx <= si) return;          // don't touch earlier sets
-    if (ex.sets[setIdx].done) return;  // don't touch done sets
-    if (rowIsKg && field === 'weight') inp.value = value;
-    if (!rowIsKg && field === 'reps')  inp.value = value;
+    const setIdx = Math.floor(idx / 2);
+    const isReps = (idx % 2 === 0);
+    if (setIdx <= si) return;                               // frühere/aktuellen Satz nicht anfassen
+    if (!ex.sets[setIdx] || ex.sets[setIdx].done) return;   // erledigte Sätze nicht anfassen
+    if (isReps && field === 'reps')    inp.value = value;
+    if (!isReps && field === 'weight') inp.value = value;
   });
 }
 
