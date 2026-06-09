@@ -1267,7 +1267,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .aex-v2-snum { font-size: 13px; font-weight: 700; text-align: center; color: var(--text3); }
 
 .aex-v2-notes {
-  width: 152px; flex-shrink: 0;
+  width: 172px; flex-shrink: 0;
   margin-top: 22px;                /* Oberkante bündig mit den Wert-Feldern (unter der Kopfzeile) */
   background: var(--card2); border: 1px solid transparent; border-radius: 10px;
   padding: 10px 12px;
