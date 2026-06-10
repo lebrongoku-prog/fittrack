@@ -899,7 +899,7 @@ function renderOverview() {
   const planCardEl = document.getElementById('ov-plan-card');
   if (planCardEl) {
     planCardEl.innerHTML = active
-      ? buildPlanCard(active, "showScreen('plans')", /*hideToday*/ true)
+      ? buildPlanCard(active, "showScreen('plans')", /*hideToday*/ false)
       : `<div class="plan-card-v2" onclick="showScreen('plans')" style="cursor:pointer">
            <div class="ppv-name" style="color:var(--text2)">Kein aktiver Trainingsplan</div>
            <div class="ppv-meta">Tippe, um einen Plan anzulegen oder zu aktivieren.</div>
@@ -1010,9 +1010,12 @@ function buildWpCol(d, i, isWorkoutsTab, isOverviewSelected) {
   const slot = d.planDay
     ? `<span class="pd-name wp-col-pill">${escapeHtml(d.planDay.name)}</span>`
     : `<span class="wp-col-rest">–</span>`;
+  // Erledigtes Training dieser Woche → grünes ✓ unter der Pille
+  const doneCheck = (d.dayDone && d.planDay) ? '<span class="wp-col-done-check">✓</span>' : '';
   return `<div class="${classes.join(' ')}" ${onclick}>
     <span class="wp-letter">${d.label}</span>
     ${slot}
+    ${doneCheck}
   </div>`;
 }
 
@@ -3343,15 +3346,18 @@ function buildPlanCard(p, onTap, hideToday) {
   const todayIdx = (new Date().getDay()+6) % 7;
   const status = planStatus(p);
   const isCurrent = status === 'active';
+  const weekDone = isCurrent ? getCurrentWeekDays() : null;   // erledigte Trainings dieser Woche (nur aktiver Plan)
   const days = resolvePlanDays(p);
   const byId = {}; days.forEach(d => { byId[d.id] = d; });
   const wp = (p.weekPlan && p.weekPlan.length) ? p.weekPlan : DEFAULT_WEEKPLAN;
   const strip = wp.map((w, i) => {
     const d = w.planDayId ? byId[w.planDayId] : null;
     const today = isCurrent && i === todayIdx && !hideToday;
+    const done = d && weekDone && weekDone[i] && weekDone[i].dayDone;
     return `<div class="ppv-col${today ? ' today' : ''}">
       <div class="ppv-wd">${w.label}</div>
       ${d ? `<span class="pd-name ppv-pill">${escapeHtml(d.name)}</span>` : '<span class="ppv-rest">–</span>'}
+      ${done ? '<span class="ppv-done-check">✓</span>' : ''}
     </div>`;
   }).join('');
   let progress = '';

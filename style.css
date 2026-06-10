@@ -1002,12 +1002,13 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 }
 .wp-col.today    { background: var(--accent-bg); }
 .wp-col.selected { background: var(--accent-bg); }
-.wp-col.done     { opacity: 0.4; }
-/* Heute bleibt voll sichtbar (Hintergrund + Klick-Indikator),
-   nur Buchstabe + Streifen werden auf 0.4 abgesenkt */
-.wp-col.done.today { opacity: 1; }
-.wp-col.done.today .wp-letter,
-.wp-col.done.today .wp-bar    { opacity: 0.4; }
+/* Erledigtes Training dieser Woche: grünes ✓ unter der Pille (ersetzt das frühere Ausgrauen) */
+.wp-col-done-check, .ppv-done-check {
+  display: block; text-align: center; line-height: 1;
+  color: var(--green); font-size: 11px; font-weight: 800;
+}
+.wp-col-done-check { margin-top: -6px; }
+.ppv-done-check { margin-top: 3px; }
 
 .wp-letter {
   font-size: 11px;
