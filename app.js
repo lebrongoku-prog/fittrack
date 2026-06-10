@@ -899,7 +899,7 @@ function renderOverview() {
   const planCardEl = document.getElementById('ov-plan-card');
   if (planCardEl) {
     planCardEl.innerHTML = active
-      ? buildPlanCard(active, "showScreen('plans')", /*hideToday*/ false)
+      ? buildPlanCard(active, "showScreen('plans')", /*hideToday*/ false, /*hideStatus*/ true)
       : `<div class="plan-card-v2" onclick="showScreen('plans')" style="cursor:pointer">
            <div class="ppv-name" style="color:var(--text2)">Kein aktiver Trainingsplan</div>
            <div class="ppv-meta">Tippe, um einen Plan anzulegen oder zu aktivieren.</div>
@@ -957,9 +957,6 @@ function renderRecentSessionsOnOverview() {
     // Mixed-Day mit Cardio-Anteil: kleines Cardio-Chip in der Meta
     const cardioBadge = someCardio ? ' · 🏃' : '';
     return `<div class="sess-v2-row" onclick="showHistDetail(${i})">
-      <div class="sess-v2-icon">
-        <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
-      </div>
       <div class="sess-v2-info">
         <div class="sess-v2-name">${pd(dayName)}</div>
         <div class="sess-v2-meta">${fmtDateShort(w.startTs)} • ${fmtDur(w.duration)}${cardioBadge}</div>
@@ -3042,17 +3039,20 @@ function renderVolumeChart(ws) {
     return;
   }
   // Group by week
-  const weekMap = {};
+  const weekMap = {};   // key = `${Jahr}-${KW}` (jahresscharf), value = { label, val, ts(früheste) }
   ws.forEach(w => {
     const d = new Date(w.startTs);
     const wNum = getISOWeek(d);
-    const key = `W${wNum}`;
+    const key = `${d.getFullYear()}-${wNum}`;
     const val = volumeUnit === 'kg'
       ? calcVolume(w)
       : w.exercises.reduce((a,e) => a + (Array.isArray(e.sets) ? e.sets.length : 0), 0);
-    weekMap[key] = (weekMap[key] || 0) + val;
+    if (!weekMap[key]) weekMap[key] = { label: `W${wNum}`, val: 0, ts: w.startTs };
+    weekMap[key].val += val;
+    if (w.startTs < weekMap[key].ts) weekMap[key].ts = w.startTs;
   });
-  const sortedKeys = Object.keys(weekMap).slice(-8);
+  // Chronologisch AUFSTEIGEND (älteste links, neueste rechts), letzte 8 Wochen
+  const sortedKeys = Object.keys(weekMap).sort((a,b) => weekMap[a].ts - weekMap[b].ts).slice(-8);
   const lastIdx = sortedKeys.length - 1;
   const ctx = canvas.getContext('2d');
   const isKg = volumeUnit === 'kg';
@@ -3067,9 +3067,9 @@ function renderVolumeChart(ws) {
   volumeChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: sortedKeys,
+      labels: sortedKeys.map(k => weekMap[k].label),
       datasets: [{
-        data: sortedKeys.map(k => Math.round(weekMap[k])),
+        data: sortedKeys.map(k => Math.round(weekMap[k].val)),
         borderColor: accent,
         backgroundColor: (ctx2) => {
           const c = ctx2.chart.ctx;
@@ -3105,7 +3105,7 @@ function renderVolumeChart(ws) {
           // Reserve ~10% ueber dem Max-Wert, damit der letzte Punkt nicht direkt am Top liegt
           grace: '10%',
           grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
-          ticks: { callback: v => isKg ? (fmtNum(v)+'k') : v, font:{size:11} }
+          ticks: { callback: v => isKg ? fmtNum(v) : v, font:{size:11} }
         },
         x: { grid: { display: false }, ticks: { font:{size:11} } }
       }
@@ -3119,7 +3119,7 @@ function renderVolumeChart(ws) {
         const last = meta.data[lastIdx];
         if (!last) return;
         const val = ds.data[lastIdx];
-        const txt = isKg ? (fmtNum(val)+'k kg') : (val+' Sätze');
+        const txt = isKg ? (fmtNum(val)+' kg') : (val+' Sätze');
         const c = chart.ctx;
         c.save();
         c.font = '600 12px -apple-system, sans-serif';
@@ -3342,7 +3342,7 @@ function fmtDateRange(start, end) {
 
 // Dashboard-Karte eines Plans (Trainingsplan-Liste UND Übersicht-Tab). Reine Vorschau —
 // Tippen öffnet den Plan-Detail. Fortschritt/Adhärenz nur beim aktiven Plan (laufende Woche).
-function buildPlanCard(p, onTap, hideToday) {
+function buildPlanCard(p, onTap, hideToday, hideStatus) {
   const todayIdx = (new Date().getDay()+6) % 7;
   const status = planStatus(p);
   const isCurrent = status === 'active';
@@ -3374,7 +3374,7 @@ function buildPlanCard(p, onTap, hideToday) {
   return `<div class="plan-card-v2 plan-status-${status}${isCurrent ? ' active' : ''}" onclick="${onTap || `openPlanDetail('${p.id}')`}">
     <div class="ppv-head">
       <div class="ppv-name">${escapeHtml(p.name)}</div>
-      <span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>
+      ${hideStatus ? '' : `<span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>`}
     </div>
     <div class="ppv-meta">${fmtDateRange(p.startDate, p.endDate)} · ${p.weeksTotal} Wochen</div>
     ${progress}
