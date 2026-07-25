@@ -521,6 +521,37 @@ function getWeekStatus() {
   return { done, planned };
 }
 
+// Wie viele Wochen in Folge wurde das Wochenpensum erreicht? Die laufende Woche zählt nur
+// mit, wenn sie schon voll ist — sonst würde die Serie mitten in der Woche „abreißen".
+// Gezählt wird ab der letzten abgeschlossenen Woche rückwärts.
+function getWeekStreak() {
+  const active = getActivePlan();
+  if (!active) return 0;
+  const planned = (active.weekPlan || []).filter(d => d.planDayId).length;
+  if (!planned) return 0;
+  const ws = DB.getWorkouts();
+  if (!ws.length) return 0;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const mon = new Date(today); mon.setDate(mon.getDate() - ((today.getDay()+6) % 7));
+
+  const countIn = (start) => {
+    const end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
+    return ws.filter(w => w.startTs >= start.getTime() && w.startTs <= end.getTime()).length;
+  };
+
+  let streak = 0;
+  // Laufende Woche nur zählen, wenn das Pensum bereits erreicht ist
+  if (countIn(mon) >= planned) streak++;
+  for (let i = 1; i <= 52; i++) {
+    const start = new Date(mon); start.setDate(mon.getDate() - 7 * i);
+    if (start.getTime() < (active.startDate || 0)) break;
+    if (countIn(start) >= planned) streak++;
+    else break;
+  }
+  return streak;
+}
+
 function getNextPlanDay() {
   const active = getActivePlan();
   if (!active) return null;
@@ -924,7 +955,8 @@ function renderOverview() {
          </div>`;
   }
 
-  // ─ Sicherungs-Status ─
+  // ─ Hinweis auf das Plan-Ende + Sicherungs-Status ─
+  renderPlanEndNotice(active);
   renderBackupLine();
 
   // ─ Letzte Einheiten (kompakt, 3 jüngste) ─
@@ -933,6 +965,36 @@ function renderOverview() {
   // ─ Stats-Karten (Volumenentwicklung, Muskelgruppen-Volumen, PRs) ─
   // Diese 3 Karten wurden vom alten Verlauf-Tab in die Übersicht verschoben.
   renderHomeStats();
+}
+
+// Läuft der aktive Plan bald aus, rechtzeitig darauf hinweisen. Ohne diesen Hinweis fällt die
+// Übersicht am Tag nach dem Enddatum ohne Vorwarnung auf „Kein aktiver Trainingsplan" zurück.
+function renderPlanEndNotice(activePlan) {
+  const el = document.getElementById('ov-plan-end-notice');
+  if (!el) return;
+  if (!activePlan || !activePlan.endDate) { el.innerHTML = ''; el.className = ''; return; }
+  const daysLeft = Math.ceil((activePlan.endDate - Date.now()) / 86400000);
+  if (daysLeft < 0 || daysLeft > 7) { el.innerHTML = ''; el.className = ''; return; }
+  const when = daysLeft === 0 ? 'heute' : (daysLeft === 1 ? 'morgen' : `in ${daysLeft} Tagen`);
+  el.className = 'plan-end-notice';
+  el.innerHTML = `
+    <div class="pen-text"><strong>Dein Plan endet ${when}.</strong> Verlängere ihn oder lege einen neuen an.</div>
+    <div class="pen-actions">
+      <button class="btn btn-ghost btn-sm" onclick="extendActivePlan(4)">4 Wochen dran</button>
+      <button class="btn btn-ghost btn-sm" onclick="showScreen('plans')">Pläne öffnen</button>
+    </div>`;
+}
+
+// Aktiven Plan um n Wochen verlängern (Enddatum + Gesamtdauer).
+function extendActivePlan(weeks) {
+  const plans = DB.getPlans();
+  const p = _findActivePlanIn(plans);
+  if (!p) { showToast('Kein aktiver Plan'); return; }
+  p.endDate = (p.endDate || Date.now()) + weeks * 7 * 24 * 3600 * 1000;
+  p.weeksTotal = (p.weeksTotal || 0) + weeks;
+  DB.savePlans(plans);
+  renderOverview();
+  showToast(`Plan um ${weeks} Wochen verlängert`);
 }
 
 // Zeile „zuletzt gesichert" auf der Übersicht. Ohne eingerichtete Sicherung liegen alle
@@ -1416,7 +1478,9 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
   const exCount = active ? active.exercises.length : (planDay ? planDay.exercises.length : 0);
   const doneEx = active ? active.exercises.filter(e=>e.done).length : 0;
   const processedEx = active ? active.exercises.filter(e=>e.done || e.skipped).length : 0;
-  const title = `${dayFullName(selDay.dayKey)}${planDay ? ' — ' + escapeHtml(planDay.name) : ''}`;
+  // Ohne Trainingstag (freies Training) den Namen der Einheit anhängen statt nur den Wochentag.
+  const titleSuffix = planDay ? escapeHtml(planDay.name) : (active && active.planDayName ? escapeHtml(active.planDayName) : '');
+  const title = `${dayFullName(selDay.dayKey)}${titleSuffix ? ' — ' + titleSuffix : ''}`;
   const label = opts.label || (isPreview ? 'VORSCHAU' : 'LAUFENDE EINHEIT');
   // Reine Cardio-Tage zaehlen Sets nicht — labeln stattdessen die Einheit als Cardio
   const isPureCardio = CARDIO_ENABLED && !!(planDay && planDayIsPureCardio(planDay));
@@ -1533,11 +1597,19 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
   </div>`;
 }
 
+// Einstieg ins freie Training — sichtbar an Ruhetagen und wenn gar kein Plan aktiv ist.
+// Ohne ihn führt jeder Weg ins Training über einen Trainingstag im Wochenplan.
+function freeWorkoutBtn() {
+  if (DB.getActive()) return '';
+  return `<button class="btn btn-ghost btn-full free-wo-btn" onclick="startFreeWorkout()">+ Freies Training starten</button>`;
+}
+
 function buildRestHero(isToday) {
   return `<div class="hero-v2 rest-mode">
     <div class="hero-v2-text" style="flex:1">
       <div class="hero-v2-label">RUHETAG</div>
       <div class="hero-v2-title">${isToday ? 'Heute ist Ruhetag' : 'Kein Training geplant'}</div>
+      ${freeWorkoutBtn()}
     </div>
     <div class="hero-v2-art">
       ${heroDumbbellSvg()}
@@ -1546,18 +1618,35 @@ function buildRestHero(isToday) {
 }
 
 function buildRestCard(selDay) {
+  const isToday = !!(selDay && selDay.isToday);
   return `<div class="session-card-v2" style="background:linear-gradient(135deg,#f5f7fa 0%,#fafbfc 100%)">
     <div class="scv2-pill" style="border-color:var(--text3);color:var(--text2)">RUHETAG</div>
     <div class="scv2-row">
       <div style="flex:1">
         <div class="scv2-title">${dayFullName(selDay.dayKey)}</div>
-        <div class="scv2-meta"><span>Heute ist kein Training geplant.</span></div>
+        <div class="scv2-meta"><span>An diesem Tag ist kein Training geplant.</span></div>
       </div>
       <div class="scv2-icon-circle" style="border-color:var(--border)">
         <svg viewBox="0 0 24 24" style="stroke:var(--text3);fill:none;stroke-width:1.8;width:30px;height:30px"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
       </div>
     </div>
+    ${isToday ? freeWorkoutBtn() : ''}
   </div>`;
+}
+
+// Freies Training: Einheit ohne Trainingstag, Übungen werden unterwegs hinzugefügt.
+function startFreeWorkout() {
+  if (DB.getActive()) { showToast('Es läuft bereits eine Einheit'); return; }
+  const wo = {
+    id: 'wo_' + Date.now(), planDayId: null, planDayName: 'Freies Training',
+    startTs: Date.now(), dayIdx: (new Date().getDay()+6) % 7, exercises: [],
+  };
+  DB.saveActive(wo);
+  expandedAexIds.clear();
+  _aexUserClosedAll = false;
+  selectedWorkoutDayIdx = wo.dayIdx;
+  showScreen('workouts');
+  showToast('Freies Training gestartet — füge Übungen hinzu');
 }
 
 function dayFullName(key) {
@@ -1623,15 +1712,16 @@ function renderWorkoutsScreen() {
   const active = DB.getActive();
   // Die laufende Einheit gehört zu GENAU EINEM Wochentag. Ohne den Vergleich mit woDayIdx
   // würde sie an jedem Tag auftauchen, an dem derselbe Trainingstag im Plan steht.
-  const activeOnSelected = !!(active && planDay && active.planDayId === planDay.id
-    && woDayIdx(active) === selectedWorkoutDayIdx);
+  // Freies Training (planDayId = null) hängt allein am Wochentag.
+  const activeOnSelected = !!(active && woDayIdx(active) === selectedWorkoutDayIdx
+    && (active.planDayId ? (planDay && active.planDayId === planDay.id) : true));
 
   // Header subtitle
   const dotEl = document.getElementById('wo-sub-dot');
   const subEl = document.getElementById('wo-sub-text');
   if (activeOnSelected) {
     dotEl.style.display = 'inline-block';
-    subEl.textContent = 'Aktive Session';
+    subEl.textContent = 'Laufende Einheit';
   } else if (planDay) {
     dotEl.style.display = 'none';
     subEl.textContent = 'Vorschau';
@@ -1875,6 +1965,11 @@ function renderActiveWorkout() {
     if (diffToLast > 0) cmpParts.push(`<span class="aex-cmp-up">+${diffToLast} kg zur letzten Einheit</span>`);
     else if (diffToLast < 0) cmpParts.push(`<span class="aex-cmp-down">${diffToLast} kg zur letzten Einheit</span>`);
     const cmpStr = cmpParts.length ? `<div class="aex-v2-cmp">${cmpParts.join('')}</div>` : '';
+    // Notiz zur Übung (Sitzposition, Griffbreite, Beschwerden) schon in der zugeklappten Karte
+    // zeigen — genau dann sucht man sie. Im aufgeklappten Zustand steht das Feld ohnehin darunter.
+    const exNote = (getEx(ex.exId || ex.id)?.notes || '').trim();
+    const noteStr = exNote
+      ? `<div class="aex-v2-note-peek">${escapeHtml(exNote)}</div>` : '';
     // Pro-Satz-Tabelle als ZEILEN: je Satz eine Zeile (Wdh | kg | Haken); erledigte Sätze sind
     // gesperrt/markiert. Der Haken ist im Training die wichtigste Interaktion — er beantwortet
     // „welcher Satz kommt jetzt?" und startet die Satzpause.
@@ -1907,6 +2002,7 @@ function renderActiveWorkout() {
           <div class="aex-v2-name">${ex.name}</div>
           ${lastStr ? `<div class="aex-v2-last">${lastStr}</div>` : ''}
           ${cmpStr}
+          ${noteStr}
         </div>
         <label class="aex-v2-done ${ex.done?'checked':''}" title="Ganze Übung als erledigt markieren">
           <input type="checkbox" aria-label="Ganze Übung als erledigt markieren" ${ex.done?'checked':''} onchange="toggleExDone(${ei},this.checked)">
@@ -3694,11 +3790,13 @@ function buildPlanCard(p, onTap, hideToday, hideStatus) {
     const pw = _planProgramWeek(p);
     const ws = getWeekStatus();
     const pct = Math.round(pw.num / (pw.total || 1) * 100);
+    const streak = getWeekStreak();
     progress = `<div class="ppv-progress">
       <span class="ppv-wk">Woche ${pw.num} / ${pw.total}</span>
       <div class="ppv-bar"><div class="ppv-bar-fill" style="width:${Math.min(100,pct)}%"></div></div>
       <span class="ppv-adh">${ws.done}/${ws.planned} diese Woche</span>
-    </div>`;
+    </div>
+    ${streak >= 2 ? `<div class="ppv-streak">${streak} Wochen in Folge vollständig</div>` : ''}`;
   }
   return `<div class="plan-card-v2 plan-status-${status}${isCurrent ? ' active' : ''}" onclick="${onTap || `openPlanDetail('${p.id}')`}">
     <div class="ppv-head">
@@ -4997,7 +5095,7 @@ function buildExItemHTML(ex, context) {
   }
   const statsBlock = `<div class="ex-item-stats">
     <div class="ex-stat ex-stat-pr">
-      <div class="ex-stat-key">PR</div>
+      <div class="ex-stat-key">Bestleistung</div>
       ${prVal}
     </div>
     <div class="ex-stat ex-stat-last">
@@ -5005,6 +5103,15 @@ function buildExItemHTML(ex, context) {
       ${lastVal}
     </div>
   </div>`;
+
+  // Entwicklung der Übung: höchstes Gewicht je Einheit. Erst ab zwei Einheiten sinnvoll —
+  // ein einzelner Punkt ist keine Entwicklung. Das Diagramm zeichnet _renderOpenExerciseChart().
+  const histCount = isOpen ? getExerciseHistory(ex.id).length : 0;
+  const chartBlock = !isOpen ? '' : (histCount >= 2
+    ? `<div class="ex-item-body-label">Entwicklung</div>
+       <div class="ex-chart-wrap"><canvas id="ex-chart-${uniqueKey}"></canvas></div>`
+    : `<div class="ex-item-body-label">Entwicklung</div>
+       <div class="ex-chart-empty">Ab der zweiten Einheit mit dieser Übung erscheint hier die Gewichtsentwicklung.</div>`);
 
   return `<div class="ex-item ${isOpen?'open':''}" id="ex-item-${uniqueKey}" style="--mc:${meta.color}">
     <div class="ex-item-head" onclick="toggleExItem('${uniqueKey}')">
@@ -5016,6 +5123,7 @@ function buildExItemHTML(ex, context) {
     </div>
     <div class="ex-item-body">
       ${statsBlock}
+      ${chartBlock}
       <div class="ex-item-body-label">Notizen</div>
       <textarea class="ex-notes-area" placeholder="z. B. Form-Tipps, Hinweise, Bemerkungen…"
                 onchange="saveExerciseNote('${ex.id}', this.value)">${ex.notes||''}</textarea>
@@ -5132,6 +5240,76 @@ function renderExercises() {
   } else {
     renderExercisesByMuscle();
   }
+  // Diagramm der aufgeklappten Übung zeichnen (das Markup steht erst nach dem Render im DOM)
+  _renderOpenExerciseChart();
+}
+
+// Gewichtsentwicklung einer Übung: pro Einheit das höchste Gewicht, chronologisch.
+function getExerciseHistory(exId) {
+  const ws = DB.getWorkouts().slice().sort((a, b) => a.startTs - b.startTs);
+  const out = [];
+  ws.forEach(w => {
+    const we = (w.exercises || []).find(e => (e.exId || e.id) === exId);
+    if (!we || isWoExCardio(we) || !Array.isArray(we.sets) || !we.sets.length) return;
+    const maxW = Math.max(...we.sets.map(s => parseFloat(s.weight) || 0));
+    if (maxW > 0) out.push({ ts: w.startTs, maxW });
+  });
+  return out;
+}
+
+// Farbe mit Transparenz versehen — akzeptiert „#rrggbb" und „rgb(r, g, b)".
+function _withAlpha(color, alpha) {
+  const c = (color || '').trim();
+  const hex = c.match(/^#([0-9a-f]{6})$/i);
+  if (hex) {
+    const n = parseInt(hex[1], 16);
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+  }
+  const rgb = c.match(/^rgba?\(([^)]+)\)$/i);
+  if (rgb) {
+    const parts = rgb[1].split(',').map(s => s.trim());
+    return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${alpha})`;
+  }
+  return `rgba(0, 0, 0, ${alpha})`;
+}
+
+let _exChart = null;
+function _renderOpenExerciseChart() {
+  if (_exChart) { _exChart.destroy(); _exChart = null; }
+  if (!openExerciseId || typeof Chart === 'undefined') return;
+  const canvas = document.getElementById('ex-chart-' + openExerciseId);
+  if (!canvas) return;
+  const exId = openExerciseId.includes('__') ? openExerciseId.split('__')[1] : openExerciseId;
+  const hist = getExerciseHistory(exId);
+  if (hist.length < 2) return;
+  const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#1E40AF';
+  // getComputedStyle liefert je nach Browser „#1E40AF" ODER „rgb(30, 64, 175)" — ein
+  // angehängtes Alpha-Suffix wäre im zweiten Fall ungültig und die Fläche würde schwarz.
+  const accentFill = _withAlpha(accent, 0.14);
+  _exChart = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: hist.map(h => fmtDateShort(h.ts)),
+      datasets: [{
+        data: hist.map(h => h.maxW),
+        borderColor: accent,
+        backgroundColor: accentFill,
+        fill: true, tension: 0.3,
+        pointRadius: 3, pointBackgroundColor: accent, borderWidth: 2,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (c) => `${c.parsed.y} kg` } },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 0, autoSkipPadding: 12 } },
+        y: { grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { font: { size: 10 }, callback: (v) => v + ' kg' } },
+      },
+    },
+  });
 }
 
 // Cardio-Modus, Sort='muscle': flache alphabetische Liste, keine Muskelgruppen.

@@ -848,6 +848,26 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 }
 .toast-undo:active { transform: scale(.95); }
 
+/* Gewichtsentwicklung im Übungs-Detail */
+.ex-chart-wrap { height: 150px; margin: 2px 0 12px; }
+.ex-chart-empty { font-size: 12px; color: var(--text3); line-height: 1.4; margin-bottom: 12px; }
+
+/* Hinweis auf das nahende Plan-Ende */
+.plan-end-notice {
+  margin: 0 14px 14px; padding: 12px 14px;
+  background: var(--card); border-radius: 12px; box-shadow: var(--shadow);
+  border-left: 3px solid var(--accent); border-top-left-radius: 0; border-bottom-left-radius: 0;
+}
+.plan-end-notice .pen-text { font-size: 13px; color: var(--text2); line-height: 1.45; }
+.plan-end-notice .pen-text strong { color: var(--text); }
+.plan-end-notice .pen-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+/* Wochenserie in der Plan-Karte */
+.ppv-streak { margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--green); }
+
+/* Einstieg ins freie Training */
+.free-wo-btn { margin-top: 12px; }
+
 /* Sicherungs-Hinweis auf der Übersicht */
 .backup-line {
   display: flex; align-items: center; gap: 8px;
@@ -1357,6 +1377,13 @@ html.wo-running #wo-week-card { display: none; }
 .aex-cmp-pr   { color: var(--text3); }
 .aex-cmp-up   { color: var(--green); }
 .aex-cmp-down { color: var(--text3); }
+/* Notiz-Vorschau — nur solange die Karte zu ist, sonst steht sie doppelt im Notizfeld. */
+.aex-v2-note-peek {
+  margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--text2);
+  border-left: 2px solid var(--border); padding-left: 7px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.aex-v2:not(.collapsed) .aex-v2-note-peek { display: none; }
 .aex-v2-target { font-size: 12px; color: var(--c, var(--accent)); margin-top: 3px; font-weight: 500; }
 .aex-v2-target b { font-weight: 700; }
 .aex-v2-last { font-size: 12px; color: var(--text3); margin-top: 1px; }
