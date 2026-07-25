@@ -848,6 +848,25 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 }
 .toast-undo:active { transform: scale(.95); }
 
+/* ─── Papierkorb (Einstellungen) ─── */
+.trash-empty { padding: 14px 16px; font-size: 13px; color: var(--text3); line-height: 1.45; }
+.trash-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px; border-bottom: 1px solid var(--border);
+}
+.trash-row:last-child { border-bottom: none; }
+.trash-info { flex: 1; min-width: 0; }
+.trash-name { font-size: 14px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.trash-meta { font-size: 12px; color: var(--text3); margin-top: 2px; line-height: 1.35; }
+.trash-btn {
+  flex-shrink: 0; border: none; border-radius: 9px;
+  background: var(--card2); color: var(--accent-dark);
+  padding: 8px 11px; font-size: 13px; font-weight: 700;
+  font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.trash-btn:active { transform: scale(.95); }
+.trash-btn-del { background: transparent; color: var(--text3); padding: 8px 6px; font-size: 15px; }
+
 /* Gewichtsentwicklung im Übungs-Detail */
 .ex-chart-wrap { height: 150px; margin: 2px 0 12px; }
 .ex-chart-empty { font-size: 12px; color: var(--text3); line-height: 1.4; margin-bottom: 12px; }

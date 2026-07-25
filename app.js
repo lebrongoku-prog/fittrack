@@ -360,6 +360,11 @@ const DB = {
   getActive() { const s = localStorage.getItem('ft_active'); return s ? JSON.parse(s) : null; },
   saveActive(v) { localStorage.setItem('ft_active', JSON.stringify(v)); },
   clearActive() { localStorage.removeItem('ft_active'); },
+
+  // Papierkorb: gelöschte Einheiten, Pläne, Trainingstage und Übungen liegen hier
+  // TRASH_KEEP_DAYS lang, bevor sie endgültig verschwinden.
+  getTrash() { const s = localStorage.getItem('ft_trash'); return s ? JSON.parse(s) : []; },
+  saveTrash(v) { localStorage.setItem('ft_trash', JSON.stringify(v)); markLocalChange(); },
 };
 
 // ═══════════════════════════════════════════════
@@ -3673,12 +3678,14 @@ function deleteSession(i) {
         const ws2 = DB.getWorkouts();
         const [removed] = ws2.splice(i, 1);
         DB.saveWorkouts(ws2); // löst markLocalChange → Drive-Sync aus
+        trashPut('workout', `${dayName} · ${dateStr}`, removed);
         // Aktuellen Screen neu rendern, damit Stats/Charts/Listen aktualisiert werden
         if (currentScreen === 'overview') renderOverview();
         showUndoToast('Einheit gelöscht', () => {
           const ws3 = DB.getWorkouts();
           ws3.splice(i, 0, removed);
           DB.saveWorkouts(ws3);
+          DB.saveTrash(DB.getTrash().filter(t => !(t.type === 'workout' && t.payload.id === removed.id)));
           if (currentScreen === 'overview') renderOverview();
           showToast('Wiederhergestellt');
         });
@@ -3703,9 +3710,10 @@ function toggleMehrInactivePlans() {
 }
 
 function renderMehr() {
-  // Mehr-Tab enthält jetzt nur noch Cloud-Sync + Daten&Sicherheit.
+  // Einstellungen-Overlay: Cloud-Sync, Papierkorb, Daten & Sicherheit.
   // Trainingsplan-Daten/Wochenplan/Trainingstage sind in den Plan-Detail-Screen umgezogen.
   if (typeof renderDriveStatus === 'function') renderDriveStatus();
+  renderTrash();
 }
 
 // ═══════════════════════════════════════════════
@@ -4028,9 +4036,11 @@ function deleteCurrentPlan() {
     `"${plan.name}" und alle zugehörigen Trainingstage werden unwiderruflich gelöscht. Bereits absolvierte Einheiten bleiben im Verlauf erhalten.`,
     () => {
       const deletedId = editingPlanId;
+      const removed = DB.getPlans().find(p => p.id === deletedId);
       withUndo('Plan gelöscht', () => {
         const ps = DB.getPlans().filter(p => p.id !== deletedId);
         DB.savePlans(ps);
+        if (removed) trashPut('plan', removed.name || 'Plan', removed);
         editingPlanId = null;
         showScreen('plans');
       }, () => renderPlansScreen());
@@ -4446,9 +4456,11 @@ function deleteCurrentLibDay() {
     `"${d.name}" wird aus der Bibliothek gelöscht. Bereits in Pläne kopierte Tage bleiben dort erhalten.`,
     () => {
       const deletedId = editingLibDayId;
+      const removed = DB.getTrainingDays().find(x => x.id === deletedId);
       withUndo('Trainingstag gelöscht', () => {
         const days = DB.getTrainingDays().filter(x => x.id !== deletedId);
         DB.saveTrainingDays(days);
+        if (removed) trashPut('day', removed.name || 'Trainingstag', removed);
         editingLibDayId = null;
         showScreen('plans');
       }, () => renderPlansScreen());
@@ -5424,16 +5436,18 @@ function deleteExerciseFromCatalog(id) {
     ? `„${ex.name}" wird in mindestens einem Trainingstag verwendet. Trotzdem löschen? Die Übung wird automatisch aus dem Plan entfernt.`
     : `„${ex.name}" wirklich löschen?`;
   confirmAction('Übung löschen?', msg, () => {
-    if (usedInPlan) {
-      const p = DB.getPlan();
-      p.forEach(d => { d.exercises = d.exercises.filter(e => e.exId !== id); });
-      DB.savePlan(p);
-    }
-    const exs = DB.getExercises().filter(e => e.id !== id);
-    DB.saveExercises(exs);
-    if (openExerciseId === id) openExerciseId = null;
-    renderExercises();
-    showToast('Übung gelöscht');
+    withUndo('Übung gelöscht', () => {
+      if (usedInPlan) {
+        const p = DB.getPlan();
+        p.forEach(d => { d.exercises = d.exercises.filter(e => e.exId !== id); });
+        DB.savePlan(p);
+      }
+      const exs = DB.getExercises().filter(e => e.id !== id);
+      DB.saveExercises(exs);
+      trashPut('exercise', ex.name || 'Übung', ex);
+      if (openExerciseId === id) openExerciseId = null;
+      renderExercises();
+    }, () => renderExercises());
   }, { danger: true, confirmLabel: 'Löschen' });
 }
 
@@ -6456,6 +6470,108 @@ function runUndo() {
   if (typeof fn === 'function') fn();
 }
 
+// ─── Papierkorb ────────────────────────────────────────────────────
+// Zweite Sicherung neben „Rückgängig": Die Einblendung fängt den Fehlgriff ab, der
+// Papierkorb die Fehlentscheidung von vorgestern. Gelöschtes bleibt 30 Tage liegen.
+const TRASH_KEEP_DAYS = 30;
+const TRASH_LABELS = { workout: 'Einheit', plan: 'Plan', day: 'Trainingstag', exercise: 'Übung' };
+
+function trashPut(type, label, payload) {
+  const trash = DB.getTrash();
+  trash.unshift({
+    id: 'tr_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+    type, label, payload, deletedAt: Date.now(),
+  });
+  DB.saveTrash(trash);
+}
+
+// Abgelaufene Einträge entfernen (läuft beim App-Start).
+function purgeTrash() {
+  const cutoff = Date.now() - TRASH_KEEP_DAYS * 86400000;
+  const trash = DB.getTrash();
+  const kept = trash.filter(t => t.deletedAt >= cutoff);
+  if (kept.length !== trash.length) DB.saveTrash(kept);
+}
+
+function trashRestore(id) {
+  const trash = DB.getTrash();
+  const idx = trash.findIndex(t => t.id === id);
+  if (idx < 0) return;
+  const entry = trash[idx];
+  const item = entry.payload;
+
+  if (entry.type === 'workout') {
+    const ws = DB.getWorkouts();
+    if (!ws.some(w => w.id === item.id)) {
+      ws.push(item);
+      ws.sort((a, b) => b.startTs - a.startTs);
+      DB.saveWorkouts(ws);
+    }
+  } else if (entry.type === 'plan') {
+    const ps = DB.getPlans();
+    if (!ps.some(p => p.id === item.id)) { ps.push(item); DB.savePlans(ps); }
+  } else if (entry.type === 'day') {
+    const ds = DB.getTrainingDays();
+    if (!ds.some(d => d.id === item.id)) { ds.push(item); DB.saveTrainingDays(ds); }
+  } else if (entry.type === 'exercise') {
+    const es = DB.getExercises();
+    if (!es.some(e => e.id === item.id)) { es.push(item); DB.saveExercises(es); }
+  }
+
+  trash.splice(idx, 1);
+  DB.saveTrash(trash);
+  renderTrash();
+  if (currentScreen === 'overview') renderOverview();
+  showToast(`${TRASH_LABELS[entry.type] || 'Eintrag'} wiederhergestellt`);
+}
+
+function trashDeleteForever(id) {
+  const entry = DB.getTrash().find(t => t.id === id);
+  if (!entry) return;
+  confirmAction('Endgültig löschen?',
+    `„${entry.label}" wird unwiderruflich entfernt. Das lässt sich nicht mehr rückgängig machen.`,
+    () => {
+      DB.saveTrash(DB.getTrash().filter(t => t.id !== id));
+      renderTrash();
+      showToast('Endgültig gelöscht');
+    },
+    { danger: true, confirmLabel: 'Endgültig löschen' });
+}
+
+function emptyTrash() {
+  const n = DB.getTrash().length;
+  if (!n) return;
+  confirmAction('Papierkorb leeren?',
+    `${n} ${n === 1 ? 'Eintrag wird' : 'Einträge werden'} unwiderruflich entfernt.`,
+    () => { DB.saveTrash([]); renderTrash(); showToast('Papierkorb geleert'); },
+    { danger: true, confirmLabel: 'Leeren' });
+}
+
+// Liste im Einstellungen-Overlay.
+function renderTrash() {
+  const wrap = document.getElementById('trash-card');
+  const head = document.getElementById('trash-head-action');
+  if (!wrap) return;
+  const trash = DB.getTrash();
+  if (head) head.innerHTML = trash.length
+    ? `<a onclick="emptyTrash()" style="font-size:13px;color:var(--red);cursor:pointer">Leeren</a>` : '';
+  if (!trash.length) {
+    wrap.innerHTML = `<div class="trash-empty">Nichts gelöscht. Was du löschst, liegt hier ${TRASH_KEEP_DAYS} Tage lang und lässt sich zurückholen.</div>`;
+    return;
+  }
+  wrap.innerHTML = trash.map(t => {
+    const daysLeft = Math.max(0, TRASH_KEEP_DAYS - Math.floor((Date.now() - t.deletedAt) / 86400000));
+    return `<div class="trash-row">
+      <div class="trash-info">
+        <div class="trash-name">${escapeHtml(t.label)}</div>
+        <div class="trash-meta">${TRASH_LABELS[t.type] || 'Eintrag'} · gelöscht am ${fmtDateShort(t.deletedAt)} · noch ${daysLeft} ${daysLeft === 1 ? 'Tag' : 'Tage'}</div>
+      </div>
+      <button class="trash-btn" onclick="trashRestore('${t.id}')">Zurückholen</button>
+      <button class="trash-btn trash-btn-del" onclick="trashDeleteForever('${t.id}')" aria-label="Endgültig löschen">✕</button>
+    </div>`;
+  }).join('');
+}
+
 // Löschen mit Sicherheitsnetz: Zustand der Datenspeicher vor der Aktion festhalten und
 // über „Rückgängig" komplett zurückschreiben. Bewusst grob (ganze Stores statt einzelner
 // Objekte) — dafür stimmen auch Folgeänderungen wie gelöste Wochenplan-Zuweisungen wieder.
@@ -6465,6 +6581,9 @@ function _snapshotStores() {
     days: JSON.parse(JSON.stringify(DB.getTrainingDays())),
     exercises: JSON.parse(JSON.stringify(DB.getExercises())),
     workouts: JSON.parse(JSON.stringify(DB.getWorkouts())),
+    // Papierkorb mitsichern: sonst bliebe nach einem „Rückgängig" der Eintrag dort liegen
+    // und dasselbe Objekt existierte zweimal.
+    trash: JSON.parse(JSON.stringify(DB.getTrash())),
   };
 }
 function _restoreStores(snap) {
@@ -6472,6 +6591,7 @@ function _restoreStores(snap) {
   DB.saveTrainingDays(snap.days);
   DB.saveExercises(snap.exercises);
   DB.saveWorkouts(snap.workouts);
+  DB.saveTrash(snap.trash || []);
 }
 function withUndo(label, fn, afterRestore) {
   const snap = _snapshotStores();
@@ -7295,6 +7415,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Daten-Hygiene: verwaiste Wochenplan-Referenzen entfernen (legacy fallback, falls noch
   // jemand auf den ft_weekplan-Key zugreift — mit Multi-Plan sind die weekPlans pro Plan)
   cleanupOrphanWeekplan();
+  // Papierkorb ausmisten: Einträge älter als TRASH_KEEP_DAYS verschwinden endgültig
+  purgeTrash();
   const activeWo = DB.getActive();
   if (activeWo) {
     showScreen('workouts');
