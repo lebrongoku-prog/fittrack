@@ -1965,11 +1965,6 @@ function renderActiveWorkout() {
     if (diffToLast > 0) cmpParts.push(`<span class="aex-cmp-up">+${diffToLast} kg zur letzten Einheit</span>`);
     else if (diffToLast < 0) cmpParts.push(`<span class="aex-cmp-down">${diffToLast} kg zur letzten Einheit</span>`);
     const cmpStr = cmpParts.length ? `<div class="aex-v2-cmp">${cmpParts.join('')}</div>` : '';
-    // Notiz zur Übung (Sitzposition, Griffbreite, Beschwerden) schon in der zugeklappten Karte
-    // zeigen — genau dann sucht man sie. Im aufgeklappten Zustand steht das Feld ohnehin darunter.
-    const exNote = (getEx(ex.exId || ex.id)?.notes || '').trim();
-    const noteStr = exNote
-      ? `<div class="aex-v2-note-peek">${escapeHtml(exNote)}</div>` : '';
     // Pro-Satz-Tabelle als ZEILEN: je Satz eine Zeile (Wdh | kg | Haken); erledigte Sätze sind
     // gesperrt/markiert. Der Haken ist im Training die wichtigste Interaktion — er beantwortet
     // „welcher Satz kommt jetzt?" und startet die Satzpause.
@@ -2002,7 +1997,6 @@ function renderActiveWorkout() {
           <div class="aex-v2-name">${ex.name}</div>
           ${lastStr ? `<div class="aex-v2-last">${lastStr}</div>` : ''}
           ${cmpStr}
-          ${noteStr}
         </div>
         <label class="aex-v2-done ${ex.done?'checked':''}" title="Ganze Übung als erledigt markieren">
           <input type="checkbox" aria-label="Ganze Übung als erledigt markieren" ${ex.done?'checked':''} onchange="toggleExDone(${ei},this.checked)">
@@ -2518,26 +2512,13 @@ function toggleSetDone(ei, si) {
 }
 
 // ─── Satzpause ─────────────────────────────────────────────────────
-// Läuft nach jedem abgehakten Satz. Dauer pro Übung merkbar: was zuletzt per +30/−30
-// eingestellt wurde, gilt beim nächsten Mal für dieselbe Übung wieder.
+// Läuft nach jedem abgehakten Satz und startet IMMER bei 1:30. −30/+30 und „Reset"
+// wirken nur auf die gerade laufende Pause; der nächste Satz beginnt wieder bei 1:30.
 const REST_DEFAULT_SEC = 90;
 let restState = null;     // { exId, name, endTs, total, interval }
 
-function restSecForEx(exId) {
-  const ex = getEx(exId);
-  const v = ex && parseInt(ex.restSec);
-  return (v && v > 0) ? v : REST_DEFAULT_SEC;
-}
-function setRestSecForEx(exId, sec) {
-  const exs = DB.getExercises();
-  const ex = exs.find(e => e.id === exId);
-  if (!ex) return;
-  ex.restSec = sec;
-  DB.saveExercises(exs);
-}
-
 function startRestTimer(exId, name) {
-  const total = restSecForEx(exId);
+  const total = REST_DEFAULT_SEC;
   stopRestTimer(/*silent*/ true);
   restState = { exId, name: name || '', endTs: Date.now() + total * 1000, total, interval: null };
   renderRestBar();
@@ -2562,14 +2543,21 @@ function stopRestTimer(silent) {
   if (!silent) { /* Ende ohne Toast — die Vibration reicht, der Blick ist auf der Hantel */ }
 }
 
-// Pause verlängern/verkürzen. Der neue Wert wird als Vorgabe der Übung gemerkt.
+// Laufende Pause verlängern/verkürzen — gilt nur für diese eine Pause.
 function adjustRest(deltaSec) {
   if (!restState) return;
   const left = Math.max(0, Math.round((restState.endTs - Date.now()) / 1000));
   const newLeft = Math.max(5, left + deltaSec);
   restState.endTs = Date.now() + newLeft * 1000;
-  restState.total = Math.max(restState.total + deltaSec, newLeft);
-  setRestSecForEx(restState.exId, Math.max(15, restSecForEx(restState.exId) + deltaSec));
+  restState.total = Math.max(restState.total, newLeft);
+  renderRestBar();
+}
+
+// Laufende Pause auf die Vorgabe (1:30) zurücksetzen.
+function resetRest() {
+  if (!restState) return;
+  restState.endTs = Date.now() + REST_DEFAULT_SEC * 1000;
+  restState.total = REST_DEFAULT_SEC;
   renderRestBar();
 }
 
@@ -2582,10 +2570,10 @@ function renderRestBar() {
   bar.innerHTML = `
     <div class="rest-bar-fill" style="width:${pct}%"></div>
     <div class="rest-bar-inner">
-      <span class="rest-bar-lbl">Satzpause</span>
       <span class="rest-bar-time">${fmtTimer(left)}</span>
       <button class="rest-bar-btn" onclick="adjustRest(-30)" aria-label="30 Sekunden kürzer">−30</button>
       <button class="rest-bar-btn" onclick="adjustRest(30)" aria-label="30 Sekunden länger">+30</button>
+      <button class="rest-bar-btn" onclick="resetRest()" aria-label="Pause auf 1:30 zurücksetzen">Reset</button>
       <button class="rest-bar-btn rest-bar-close" onclick="stopRestTimer()" aria-label="Pause beenden">✕</button>
     </div>`;
   bar.classList.add('show');

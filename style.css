@@ -236,12 +236,12 @@ html.workout-active #rest-bar.show ~ #workout-active-bar { bottom: calc(var(--na
   position: relative; height: 48px;
   display: flex; align-items: center; gap: 8px; padding: 0 12px;
 }
-.rest-bar-lbl { font-size: 13px; font-weight: 600; opacity: .9; }
-.rest-bar-time { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; margin-right: auto; }
+.rest-bar-time { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; margin-right: auto; }
 .rest-bar-btn {
   background: rgba(255,255,255,0.18); color: #fff; border: none;
-  border-radius: 9px; padding: 7px 10px; font-size: 13px; font-weight: 700;
+  border-radius: 9px; padding: 7px 9px; font-size: 13px; font-weight: 700;
   font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
 }
 .rest-bar-btn:active { transform: scale(.94); }
 .rest-bar-close { background: transparent; font-size: 15px; padding: 7px 6px; }
@@ -1052,13 +1052,12 @@ html.wo-running #wo-week-card { display: none; }
 .hero-v2-button-row .hero-v2-btn-pause svg { fill: #fff; }
 .hero-v2-button-row .hero-v2-btn-pause:active { transform: scale(.97); }
 /* „Beenden" bekommt eine eigene Zeile: drei nebeneinander passten auf iPhone-Breite nicht
-   und liefen rechts aus dem Bild. Zurückhaltender Stil — die Aktion schließt ab, sie
-   ist nicht das Ziel des Screens. */
+   und liefen rechts aus dem Bild. Gefüllt in Rot mit weißer Schrift. */
 .hero-v2-button-row .hero-v2-btn-danger {
-  flex: 1 0 100%; min-width: 0; padding: 12px; font-size: 14px; margin-top: 2px;
-  background: transparent; color: var(--red); border: 1.5px solid var(--red); box-shadow: none;
+  flex: 1 0 100%; min-width: 0; padding: 13px; font-size: 14px; margin-top: 2px;
+  background: var(--red); color: #fff; border: none;
 }
-.hero-v2-button-row .hero-v2-btn-danger svg { fill: var(--red); }
+.hero-v2-button-row .hero-v2-btn-danger svg { fill: #fff; }
 .hero-v2-button-row.two-buttons .hero-v2-btn-danger { flex: 1 0 100%; min-width: 0; }
 .hero-v2-btn-danger {
   padding: 13px 14px; border-radius: 12px; border: none;
@@ -1377,13 +1376,9 @@ html.wo-running #wo-week-card { display: none; }
 .aex-cmp-pr   { color: var(--text3); }
 .aex-cmp-up   { color: var(--green); }
 .aex-cmp-down { color: var(--text3); }
-/* Notiz-Vorschau — nur solange die Karte zu ist, sonst steht sie doppelt im Notizfeld. */
-.aex-v2-note-peek {
-  margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--text2);
-  border-left: 2px solid var(--border); padding-left: 7px;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-.aex-v2:not(.collapsed) .aex-v2-note-peek { display: none; }
+/* Zugeklappt bleibt die Karte ruhig: die Bestleistung erscheint erst beim Aufklappen.
+   (Die Differenz zur letzten Einheit bleibt sichtbar — sie betrifft den heutigen Satz.) */
+.aex-v2.collapsed .aex-cmp-pr { display: none; }
 .aex-v2-target { font-size: 12px; color: var(--c, var(--accent)); margin-top: 3px; font-weight: 500; }
 .aex-v2-target b { font-weight: 700; }
 .aex-v2-last { font-size: 12px; color: var(--text3); margin-top: 1px; }
