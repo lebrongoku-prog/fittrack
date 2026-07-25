@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Backups / Altlasten
+app.js.bak-daymodel
+*.bak
+*.bak-*
+
+# Arbeitsmaterial, gehört nicht ins Deployment
+Trainings JSONs/
+prompt-farbuebergang-tabs.md
+
+# Editor / Tooling
+.claude/settings.local.json
+.vscode/
+.idea/
+*.swp
+node_modules/
