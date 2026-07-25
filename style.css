@@ -1532,6 +1532,10 @@ html.wo-running #wo-week-card { display: none; }
 .sum-pr-name { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--text); }
 .sum-pr-val { font-size: 14px; font-weight: 800; color: var(--green); white-space: nowrap; }
 .sum-pr-prev { font-size: 12px; font-weight: 500; color: var(--text3); }
+.sum-planupd { margin-top: 18px; padding: 11px 13px; background: var(--card2); border-radius: 12px; }
+.sum-planupd-head { font-size: 12px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--text3); margin-bottom: 5px; }
+.sum-planupd-row { font-size: 13px; color: var(--text2); line-height: 1.45; }
+.sum-planupd-row strong { color: var(--text); }
 
 /* ═══════════════════════════════════
    VERLAUF – Mockup v2

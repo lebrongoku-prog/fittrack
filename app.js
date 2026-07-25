@@ -1272,6 +1272,50 @@ function buildSetsForExercise(exId, planSets) {
   });
 }
 
+// Übernimmt die TATSÄCHLICHE Satzanzahl einer abgeschlossenen Einheit in den Trainingstag.
+// Ohne das startet die nächste Einheit wieder mit der ursprünglich geplanten Anzahl — wer
+// dauerhaft einen Satz mehr macht, müsste ihn jedes Mal neu hinzufügen.
+// Achtung: Trainingstage sind GETEILT — die Änderung wirkt in allen Plänen, die den Tag
+// referenzieren. Das ist dieselbe Regel, nach der auch im Training hinzugefügte Übungen
+// im Trainingstag landen (addExToWorkout).
+// Rückgabe: Liste der Änderungen für die Abschlussansicht.
+function syncSetCountsToPlanDay(planDayId, exercises) {
+  if (!planDayId) return [];
+  const days = DB.getTrainingDays();
+  const day = days.find(d => d.id === planDayId);
+  if (!day || !Array.isArray(day.exercises)) return [];
+
+  const changes = [];
+  exercises.forEach(we => {
+    if (isWoExCardio(we) || we.skipped || !Array.isArray(we.sets) || !we.sets.length) return;
+    const pe = day.exercises.find(p => p.exId === (we.exId || we.id));
+    if (!pe) return;
+    const base = peSets(pe).map(s => ({ ...s }));
+    const before = base.length;
+    const after = we.sets.length;
+    if (before === after) return;
+
+    if (after > before) {
+      // Zusätzliche Sätze mit den Werten übernehmen, die tatsächlich trainiert wurden
+      for (let i = before; i < after; i++) {
+        const s = we.sets[i] || {};
+        base.push({
+          reps: String(s.reps || (base[base.length - 1] || {}).reps || '8'),
+          weight: String(s.weight != null ? s.weight : ''),
+        });
+      }
+      pe.sets = base;
+    } else {
+      pe.sets = base.slice(0, after);
+    }
+    _syncPeScalars(pe);
+    changes.push({ name: we.name, before, after });
+  });
+
+  if (changes.length) DB.saveTrainingDays(days);
+  return changes;
+}
+
 // ─── Plan ↔ Active-Workout Sync ───────────────────────
 // Wenn der Plan eines Trainingstags mutiert wird (Übung hinzufügen/entfernen,
 // targetSets/targetReps ändern, etc.) UND gerade ein aktives Workout läuft, das
@@ -3056,6 +3100,8 @@ function finishWorkout() {
 
   const prevWorkouts = DB.getWorkouts();
   const prs = detectPRs({ ...wo, exercises: cleanEx }, prevWorkouts);
+  // Satzanzahl in den Trainingstag übernehmen, damit die nächste Einheit damit startet
+  const setChanges = syncSetCountsToPlanDay(wo.planDayId, cleanEx);
 
   const finalWo = { ...wo, exercises: cleanEx, duration, endTs: Date.now(), prs };
   DB.addWorkout(finalWo);
@@ -3071,7 +3117,7 @@ function finishWorkout() {
 
   // Abschluss zeigen statt nur einer kurzen Einblendung: Dauer, Volumen, Sätze, Rekorde
   // und der Vergleich zur letzten Einheit desselben Trainingstags.
-  renderWorkoutSummary(finalWo, prevWorkouts);
+  renderWorkoutSummary(finalWo, prevWorkouts, setChanges);
   // Nach zehn Einheiten einmalig an die Sicherung erinnern, falls keine eingerichtet ist.
   maybePromptBackup();
 
@@ -3083,7 +3129,8 @@ function finishWorkout() {
 
 // Abschlussansicht einer gespeicherten Einheit.
 // prevWorkouts = Verlauf OHNE diese Einheit (für den Vergleich mit der letzten gleichen).
-function renderWorkoutSummary(wo, prevWorkouts) {
+// setChanges = im Trainingstag angepasste Satzanzahlen (syncSetCountsToPlanDay).
+function renderWorkoutSummary(wo, prevWorkouts, setChanges) {
   const body = document.getElementById('summary-body');
   const titleEl = document.getElementById('summary-title');
   if (!body) return;
@@ -3121,6 +3168,15 @@ function renderWorkoutSummary(wo, prevWorkouts) {
        }).join('')}</div>`
     : '';
 
+  // Sichtbar machen, wenn sich der Trainingstag durch diese Einheit geändert hat —
+  // eine stille Planänderung wäre eine unangenehme Überraschung beim nächsten Mal.
+  const setChangeHTML = (setChanges && setChanges.length)
+    ? `<div class="sum-planupd">
+         <div class="sum-planupd-head">Trainingstag angepasst</div>
+         ${setChanges.map(c => `<div class="sum-planupd-row">${escapeHtml(c.name)}: <strong>${c.after} ${c.after === 1 ? 'Satz' : 'Sätze'}</strong> statt ${c.before} — gilt ab der nächsten Einheit</div>`).join('')}
+       </div>`
+    : '';
+
   if (titleEl) titleEl.textContent = prs.length ? 'Stark — neue Bestleistung' : 'Einheit abgeschlossen';
 
   body.innerHTML = `
@@ -3132,7 +3188,8 @@ function renderWorkoutSummary(wo, prevWorkouts) {
       <div class="sum-stat"><span class="sum-stat-val">${exCount}</span><span class="sum-stat-lbl">${exCount === 1 ? 'Übung' : 'Übungen'}</span></div>
     </div>
     ${deltaHTML}
-    ${prHTMLBlock}`;
+    ${prHTMLBlock}
+    ${setChangeHTML}`;
   openModal('modal-summary');
 }
 
