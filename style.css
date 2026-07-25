@@ -566,6 +566,7 @@ body.theme-plans .hist-action-dd {
 .plan-list-info { flex: 1; min-width: 0; }
 .plan-list-name { font-size: 16px; font-weight: 700; color: var(--text); }
 .plan-list-meta { font-size: 12px; color: var(--text3); margin-top: 3px; line-height: 1.4; }
+.plan-list-tags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
 .plan-list-action { color: var(--text3); font-size: 18px; flex-shrink: 0; }
 
 /* Status-Chips für Pläne */
@@ -1313,7 +1314,13 @@ html.wo-running #wo-week-card { display: none; }
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .aex-v2-info { flex: 1; min-width: 0; }
-.aex-v2-name { font-size: 16px; font-weight: 700; color: var(--c, var(--text)); }
+/* Name kürzen statt in das Erledigt-Kästchen laufen zu lassen */
+.aex-v2-name { font-size: 16px; font-weight: 700; color: var(--c, var(--text)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Einordnung unter dem „Zuletzt"-Wert: Bestleistung und Differenz zur letzten Einheit */
+.aex-v2-cmp { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 2px; font-size: 12px; font-weight: 600; }
+.aex-cmp-pr   { color: var(--text3); }
+.aex-cmp-up   { color: var(--green); }
+.aex-cmp-down { color: var(--text3); }
 .aex-v2-target { font-size: 12px; color: var(--c, var(--accent)); margin-top: 3px; font-weight: 500; }
 .aex-v2-target b { font-weight: 700; }
 .aex-v2-last { font-size: 12px; color: var(--text3); margin-top: 1px; }
@@ -1425,6 +1432,29 @@ html.wo-running #wo-week-card { display: none; }
 
 .aex-v2-actions { display: flex; gap: 8px; padding: 8px 14px 12px; border-top: 1px solid var(--border); align-items: center; }
 .aex-skip-btn { margin-left: auto; }
+
+/* ─── Abschluss einer Einheit ─── */
+.sum-day { margin-bottom: 14px; font-size: 15px; }
+.sum-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sum-stat {
+  background: var(--card2); border-radius: 12px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.sum-stat-val { font-size: 20px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.sum-stat-lbl { font-size: 12px; color: var(--text3); }
+.sum-delta { margin-top: 12px; font-size: 14px; font-weight: 600; }
+.sum-delta.up   { color: var(--green); }
+.sum-delta.down { color: var(--text2); }
+.sum-delta.flat { color: var(--text3); font-weight: 500; }
+.sum-pr-head { margin-top: 18px; font-size: 12px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--accent); }
+.sum-pr-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.sum-pr-row {
+  display: flex; align-items: baseline; gap: 10px;
+  background: var(--green-bg); border-radius: 10px; padding: 9px 12px;
+}
+.sum-pr-name { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--text); }
+.sum-pr-val { font-size: 14px; font-weight: 800; color: var(--green); white-space: nowrap; }
+.sum-pr-prev { font-size: 12px; font-weight: 500; color: var(--text3); }
 
 /* ═══════════════════════════════════
    VERLAUF – Mockup v2

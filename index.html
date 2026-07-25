@@ -698,6 +698,19 @@
   </div>
 </div>
 
+<!-- Abschluss einer Einheit: Zahlen des Trainings direkt nach dem Speichern, statt sie
+     nur im Verlauf abzulegen. Inhalt wird von renderWorkoutSummary() gefüllt. -->
+<div id="modal-summary" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="summary-title">Einheit abgeschlossen</div>
+    <div class="sheet-body">
+      <div id="summary-body"></div>
+      <button class="btn btn-primary btn-full" style="margin-top:16px" onclick="closeModal('modal-summary')">Fertig</button>
+    </div>
+  </div>
+</div>
+
 <!-- Quick-Log: reine Cardio-Tage (kein Active-Mode, kein Timer) -->
 <div id="modal-cardio-qlog" class="overlay hidden">
   <div class="sheet">

@@ -1300,7 +1300,13 @@ function _doStartWorkout(dayId) {
     };
   }).filter(Boolean);
 
-  const wo = { id:'wo_'+Date.now(), planDayId: dayId, planDayName: day ? day.name : 'Freestyle', startTs: Date.now(), exercises };
+  // dayIdx = Wochentag, an dem TATSÄCHLICH trainiert wird (0=Mo … 6=So). Ohne dieses Feld
+  // wurde der Wochentag über die Trainingstag-Kennung gesucht und traf bei einem Tag, der
+  // zweimal pro Woche im Plan steht (z. B. Push an Mo und Sa), immer den ersten Treffer.
+  const wo = {
+    id:'wo_'+Date.now(), planDayId: dayId, planDayName: day ? day.name : 'Freestyle',
+    startTs: Date.now(), dayIdx: (new Date().getDay()+6) % 7, exercises,
+  };
   DB.saveActive(wo);
   // Erste Übung offen starten — im Training will man sofort eintragen können,
   // nicht erst zwei Mal tippen. Alle weiteren bleiben zu.
@@ -1308,10 +1314,7 @@ function _doStartWorkout(dayId) {
   _aexUserClosedAll = false;
   const firstEx = exercises.find(e => !isWoExCardio(e));
   if (firstEx) expandedAexIds.add(firstEx.exId || firstEx.id);
-  // Set selected day to match
-  const wp = DB.getWeekPlan();
-  const idx = wp.findIndex(d => d.planDayId === dayId);
-  if (idx >= 0) selectedWorkoutDayIdx = idx;
+  selectedWorkoutDayIdx = wo.dayIdx;
   showScreen('workouts');
 }
 
@@ -1404,8 +1407,13 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
   if (isPreview) {
     const previewOnClick = opts.previewOnClick || `startWorkout('${planDay.id}')`;
     // Wenn an einem anderen Tag bereits ein Workout aktiv ist, soll der Start-Button hier verschwinden.
+    // Läuft irgendwo eine Einheit, die nicht genau diese hier ist (gleicher Trainingstag UND
+    // gleicher Wochentag), darf hier kein zweiter Start angeboten werden.
     const elsewhereActive = DB.getActive();
-    const blockedByOther = elsewhereActive && elsewhereActive.planDayId !== planDay.id;
+    const blockedByOther = !!elsewhereActive && !(
+      elsewhereActive.planDayId === planDay.id &&
+      (selDay ? woDayIdx(elsewhereActive) === selDay.idx : true)
+    );
     const bottomHTML = blockedByOther
       ? `<div class="hero-v2-running-notice">Aktuell läuft ein anderes Workout. Bitte zuerst beenden.</div>`
       : `<button class="hero-v2-btn stretch" onclick="${previewOnClick}">
@@ -1498,11 +1506,20 @@ function ensureSelectedDayIdx() {
   const today = new Date(); const todayIdx = (today.getDay()+6)%7;
   const wo = DB.getActive();
   if (wo) {
-    const wp = DB.getWeekPlan();
-    const idx = wp.findIndex(d => d.planDayId === wo.planDayId);
+    // Wochentag der laufenden Einheit: bevorzugt das beim Start gespeicherte dayIdx,
+    // sonst aus dem Startdatum abgeleitet (Einheiten von vor dieser Änderung).
+    const idx = woDayIdx(wo);
     if (idx >= 0) { selectedWorkoutDayIdx = idx; return; }
   }
   selectedWorkoutDayIdx = todayIdx;
+}
+
+// Wochentag (0=Mo … 6=So), an dem eine Einheit stattfindet bzw. stattgefunden hat.
+function woDayIdx(wo) {
+  if (!wo) return -1;
+  if (typeof wo.dayIdx === 'number' && wo.dayIdx >= 0 && wo.dayIdx <= 6) return wo.dayIdx;
+  if (wo.startTs) return (new Date(wo.startTs).getDay()+6) % 7;
+  return -1;
 }
 
 function selectWorkoutDay(idx) {
@@ -1532,7 +1549,10 @@ function renderWorkoutsScreen() {
   const selDay = weekDays[selectedWorkoutDayIdx];
   const planDay = selDay ? (selDay.planDay || null) : null;
   const active = DB.getActive();
-  const activeOnSelected = active && planDay && active.planDayId === planDay.id;
+  // Die laufende Einheit gehört zu GENAU EINEM Wochentag. Ohne den Vergleich mit woDayIdx
+  // würde sie an jedem Tag auftauchen, an dem derselbe Trainingstag im Plan steht.
+  const activeOnSelected = !!(active && planDay && active.planDayId === planDay.id
+    && woDayIdx(active) === selectedWorkoutDayIdx);
 
   // Header subtitle
   const dotEl = document.getElementById('wo-sub-dot');
@@ -1772,6 +1792,17 @@ function renderActiveWorkout() {
     const last = getLastExData(ex.exId || ex.id);
     const lastStr = last ? `Zuletzt: ${last.sets.length}×${last.sets[0]?.reps||'?'} @ ${last.maxWeight} kg` : '';
     const targetW = last ? `${last.maxWeight} kg` : '–';
+    // Einordnung der heutigen Eingaben: Bestleistung der Übung und — sobald das heutige
+    // Höchstgewicht über der letzten Einheit liegt — die Differenz dazu. Progressive
+    // Steigerung ist der Zweck des Tagebuchs; das Rechnen dafür gehört nicht in den Kopf.
+    const prW = getExercisePR(ex.exId || ex.id);
+    const todayMax = Math.max(0, ...(ex.sets || []).map(s => parseFloat(s.weight) || 0));
+    const diffToLast = (last && todayMax > 0) ? +(todayMax - last.maxWeight).toFixed(1) : 0;
+    const cmpParts = [];
+    if (prW) cmpParts.push(`<span class="aex-cmp-pr">Best ${prW} kg</span>`);
+    if (diffToLast > 0) cmpParts.push(`<span class="aex-cmp-up">+${diffToLast} kg zur letzten Einheit</span>`);
+    else if (diffToLast < 0) cmpParts.push(`<span class="aex-cmp-down">${diffToLast} kg zur letzten Einheit</span>`);
+    const cmpStr = cmpParts.length ? `<div class="aex-v2-cmp">${cmpParts.join('')}</div>` : '';
     // Pro-Satz-Tabelle als ZEILEN: je Satz eine Zeile (Wdh | kg | Haken); erledigte Sätze sind
     // gesperrt/markiert. Der Haken ist im Training die wichtigste Interaktion — er beantwortet
     // „welcher Satz kommt jetzt?" und startet die Satzpause.
@@ -1803,11 +1834,11 @@ function renderActiveWorkout() {
         <div class="aex-v2-info">
           <div class="aex-v2-name">${ex.name}</div>
           ${lastStr ? `<div class="aex-v2-last">${lastStr}</div>` : ''}
+          ${cmpStr}
         </div>
-        <label class="aex-v2-done ${ex.done?'checked':''}">
-          <input type="checkbox" ${ex.done?'checked':''} onchange="toggleExDone(${ei},this.checked)">
+        <label class="aex-v2-done ${ex.done?'checked':''}" title="Ganze Übung als erledigt markieren">
+          <input type="checkbox" aria-label="Ganze Übung als erledigt markieren" ${ex.done?'checked':''} onchange="toggleExDone(${ei},this.checked)">
           <div class="aex-v2-done-box">${ex.done?'<svg width="12" height="12" viewBox="0 0 24 24" stroke="white" fill="none" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':''}</div>
-          <span>Erledigt</span>
         </label>
       </div>
       <div class="aex-v2-body">
@@ -2873,17 +2904,73 @@ function finishWorkout() {
 
   closeModal('modal-finish');
 
-  if (prs.length) showToast(`${prs.length} neuer PR! 🏆`);
-  else showToast('Workout gespeichert! 💪');
-
   // Aktuellen Tab neu rendern — egal ob Workouts oder Übersicht, der Active-Mode endet sofort
   if (currentScreen === 'overview') renderOverview();
   else if (currentScreen === 'workouts') renderWorkoutsScreen();
+
+  // Abschluss zeigen statt nur einer kurzen Einblendung: Dauer, Volumen, Sätze, Rekorde
+  // und der Vergleich zur letzten Einheit desselben Trainingstags.
+  renderWorkoutSummary(finalWo, prevWorkouts);
 
   // Drive-Sync: einziger automatischer Auslöser ist das Workout-Ende.
   // Bei dieser Gelegenheit landen ALLE aufgelaufenen lokalen Änderungen
   // (auch reine Plan-/Übungs-/Wochenplan-Änderungen seit dem letzten Sync) in der Cloud.
   if (driveIsEnabled()) driveTriggerSync('Workout beendet');
+}
+
+// Abschlussansicht einer gespeicherten Einheit.
+// prevWorkouts = Verlauf OHNE diese Einheit (für den Vergleich mit der letzten gleichen).
+function renderWorkoutSummary(wo, prevWorkouts) {
+  const body = document.getElementById('summary-body');
+  const titleEl = document.getElementById('summary-title');
+  if (!body) return;
+
+  const vol = calcVolume(wo);
+  const setCount = (wo.exercises || []).reduce((a, e) => a + ((e.sets || []).length), 0);
+  const exCount = (wo.exercises || []).length;
+  const prs = wo.prs || [];
+
+  // Letzte Einheit desselben Trainingstags für den Volumenvergleich
+  const prevSame = (prevWorkouts || []).find(w => w.planDayId === wo.planDayId);
+  let deltaHTML = '';
+  if (prevSame) {
+    const prevVol = calcVolume(prevSame);
+    const diff = vol - prevVol;
+    if (prevVol > 0 && Math.abs(diff) >= 1) {
+      const up = diff > 0;
+      deltaHTML = `<div class="sum-delta ${up ? 'up' : 'down'}">
+        ${up ? '▲' : '▼'} ${fmtNum(Math.abs(diff))} kg Volumen gegenüber der letzten Einheit</div>`;
+    } else if (prevVol > 0) {
+      deltaHTML = `<div class="sum-delta flat">Gleiches Volumen wie bei der letzten Einheit</div>`;
+    }
+  }
+
+  const prHTMLBlock = prs.length
+    ? `<div class="sum-pr-head">${prs.length === 1 ? 'Neue Bestleistung' : 'Neue Bestleistungen'}</div>
+       <div class="sum-pr-list">${prs.map(p => {
+         if (p.kind === 'cardio') {
+           return `<div class="sum-pr-row"><span class="sum-pr-name">${escapeHtml(p.name)}</span>
+                   <span class="sum-pr-val">${p.distance ? formatDistance(p.distance) : formatDuration(p.duration)}</span></div>`;
+         }
+         const prev = p.prev > 0 ? ` <span class="sum-pr-prev">statt ${p.prev} kg</span>` : '';
+         return `<div class="sum-pr-row"><span class="sum-pr-name">${escapeHtml(p.name)}</span>
+                 <span class="sum-pr-val">${p.weight} kg${prev}</span></div>`;
+       }).join('')}</div>`
+    : '';
+
+  if (titleEl) titleEl.textContent = prs.length ? 'Stark — neue Bestleistung' : 'Einheit abgeschlossen';
+
+  body.innerHTML = `
+    <div class="sum-day">${pd(escapeHtml(wo.planDayName || 'Freies Training'))}</div>
+    <div class="sum-stats">
+      <div class="sum-stat"><span class="sum-stat-val">${fmtDur(wo.duration)}</span><span class="sum-stat-lbl">Dauer</span></div>
+      <div class="sum-stat"><span class="sum-stat-val">${fmtNum(vol)} kg</span><span class="sum-stat-lbl">Volumen</span></div>
+      <div class="sum-stat"><span class="sum-stat-val">${setCount}</span><span class="sum-stat-lbl">${setCount === 1 ? 'Satz' : 'Sätze'}</span></div>
+      <div class="sum-stat"><span class="sum-stat-val">${exCount}</span><span class="sum-stat-lbl">${exCount === 1 ? 'Übung' : 'Übungen'}</span></div>
+    </div>
+    ${deltaHTML}
+    ${prHTMLBlock}`;
+  openModal('modal-summary');
 }
 
 function discardWorkout() {
@@ -4041,12 +4128,15 @@ function renderLibDays() {
     : 'Noch keine Trainingstage erstellt';
   const renderRow = (d) => {
     const setCount = (d.exercises||[]).reduce((a,e) => a + (e.targetSets||0), 0);
+    // Chip unter den Namen statt daneben — nebeneinander riss es bei mittellangen Namen
+    // mitten im Wort auf zwei Zeilen auseinander.
     const planTag = activeDayIds.has(d.id)
-      ? '<span class="ex-item-plan-tag" style="margin-left:6px;vertical-align:middle">Im aktuellen Plan</span>' : '';
+      ? '<span class="ex-item-plan-tag">Im aktuellen Plan</span>' : '';
     return `<div class="plan-list-row" onclick="openLibDayDetail('${d.id}')">
       <div class="plan-list-info">
-        <div class="plan-list-name"><span class="pd-name">${escapeHtml(d.name)}</span>${planTag}</div>
+        <div class="plan-list-name">${pd(escapeHtml(d.name))}</div>
         <div class="plan-list-meta">${(d.exercises||[]).length} Übungen • ${setCount} Sätze</div>
+        ${planTag ? `<div class="plan-list-tags">${planTag}</div>` : ''}
       </div>
       <div class="plan-list-action">›</div>
     </div>`;
