@@ -1003,16 +1003,12 @@ function buildWpCol(d, i, isWorkoutsTab, isOverviewSelected) {
   if (!isWorkoutsTab && isOverviewSelected) classes.push('selected');
   // Übersicht: Tippen wählt den Tag aus → Info-Zeile darunter aktualisiert sich (analog Workouts-Strip).
   const onclick = isWorkoutsTab ? `onclick="selectWorkoutDay(${i})"` : `onclick="selectOverviewDay(${i})"`;
-  // Unter dem Wochentag der zugewiesene Trainingstag als Pille (wie die Plan-Karte), Ruhetag = „–".
-  const slot = d.planDay
-    ? `<span class="pd-name wp-col-pill">${escapeHtml(d.planDay.name)}</span>`
-    : `<span class="wp-col-rest">–</span>`;
-  // Erledigtes Training dieser Woche → grünes ✓ unter der Pille
-  const doneCheck = (d.dayDone && d.planDay) ? '<span class="wp-col-done-check">✓</span>' : '';
+  // Kein Trainingstag-Name mehr im Strip (Leonard-Wunsch): geplante Tage werden allein durch den
+  // eingefärbten Kreis um den Wochentag markiert — Akzentfarbe = geplant, grün = erledigt,
+  // Ring = heute. Den Namen des ausgewählten Tags zeigt die Info-Zeile (buildWpInfo) bzw. die
+  // Session-Karte darunter.
   return `<div class="${classes.join(' ')}" ${onclick}>
     <span class="wp-letter">${d.label}</span>
-    ${slot}
-    ${doneCheck}
   </div>`;
 }
 
@@ -3350,15 +3346,18 @@ function buildPlanCard(p, onTap, hideToday, hideStatus) {
   const days = resolvePlanDays(p);
   const byId = {}; days.forEach(d => { byId[d.id] = d; });
   const wp = (p.weekPlan && p.weekPlan.length) ? p.weekPlan : DEFAULT_WEEKPLAN;
+  // Nur Wochentage, keine Trainingstag-Namen (Leonard-Wunsch): geplante Tage stehen in einem
+  // eingefärbten Kreis (Akzentfarbe = geplant, grün = diese Woche erledigt, Ring = heute).
+  // Die konkreten Tagnamen zeigt die Plan-Detailansicht.
   const strip = wp.map((w, i) => {
     const d = w.planDayId ? byId[w.planDayId] : null;
     const today = isCurrent && i === todayIdx && !hideToday;
     const done = d && weekDone && weekDone[i] && weekDone[i].dayDone;
-    return `<div class="ppv-col${today ? ' today' : ''}">
-      <div class="ppv-wd">${w.label}</div>
-      ${d ? `<span class="pd-name ppv-pill">${escapeHtml(d.name)}</span>` : '<span class="ppv-rest">–</span>'}
-      ${done ? '<span class="ppv-done-check">✓</span>' : ''}
-    </div>`;
+    const cls = ['ppv-col'];
+    if (d) cls.push('training');
+    if (done) cls.push('done');
+    if (today) cls.push('today');
+    return `<div class="${cls.join(' ')}"><span class="ppv-wd">${w.label}</span></div>`;
   }).join('');
   let progress = '';
   if (isCurrent) {
@@ -3443,15 +3442,19 @@ function renderPlanDetail() {
   const wp = plan.weekPlan || JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
   const trainingDays = resolvePlanDays(plan);
   const today = new Date(); const todayIdx = (today.getDay()+6)%7;
-  // Wochenplan als Mo–So-Pillen-Strip (wie Plan-Karte). Tippen auf eine Spalte öffnet ein native
-  // Dropdown (overlaid <select>) zum Zuweisen eines Trainingstags bzw. Ruhetag.
-  document.getElementById('mehr-weekplan').innerHTML = `<div class="wpe-grid">` + wp.map((d, i) => {
+  // Wochenplan als Mo–So-LISTE (eine Zeile pro Wochentag). Anders als die kompakten Strips in
+  // Übersicht/Workouts zeigt die Detailansicht die VOLLEN Trainingstag-Namen — daher Zeilen statt
+  // 7 Spalten, sonst müssten lange Namen abgeschnitten werden. Tippen auf eine Zeile öffnet ein
+  // natives Dropdown (overlaid <select>) zum Zuweisen eines Trainingstags bzw. Ruhetag.
+  document.getElementById('mehr-weekplan').innerHTML = `<div class="wpe-list">` + wp.map((d, i) => {
     const assigned = d.planDayId ? trainingDays.find(td => td.id === d.planDayId) : null;
     const options = `<option value="" ${!d.planDayId ? 'selected' : ''}>Ruhetag</option>` +
       trainingDays.map(td => `<option value="${td.id}" ${d.planDayId === td.id ? 'selected' : ''}>${escapeHtml(td.name)}</option>`).join('');
-    return `<div class="wpe-col${i === todayIdx ? ' today' : ''}">
-      <div class="wpe-wd">${d.label}</div>
-      ${assigned ? `<span class="pd-name wpe-pill">${escapeHtml(assigned.name)}</span>` : `<span class="wpe-rest">–</span>`}
+    const cls = 'wpe-row' + (i === todayIdx ? ' today' : '') + (assigned ? ' training' : '');
+    return `<div class="${cls}">
+      <span class="wpe-day">${d.label}</span>
+      ${assigned ? `<span class="pd-name wpe-name">${escapeHtml(assigned.name)}</span>` : `<span class="wpe-rest">Ruhetag</span>`}
+      <span class="wpe-chev">›</span>
       <select class="wpe-select" onchange="saveWeekPlanDay(${i}, this.value)" aria-label="Trainingstag für ${d.label}">${options}</select>
     </div>`;
   }).join('') + `</div>`;

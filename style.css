@@ -544,13 +544,36 @@ body.theme-plans .hist-action-dd {
 .ppv-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
 .ppv-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
 .ppv-adh { font-size: 13px; font-weight: 600; color: var(--accent-dark); white-space: nowrap; }
+/* Wochenplan-Strip der Plan-Karte: nur Wochentage, Trainingstage als eingefärbter Kreis.
+   Akzentfarbe = geplant, grün = diese Woche erledigt, Ring (::after) = heute. */
 .ppv-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 14px; }
-.ppv-col { text-align: center; min-width: 0; padding: 3px 0; }
-.ppv-wd { font-size: 11px; color: var(--text3); margin-bottom: 11px; }
-.ppv-col.today { background: var(--accent-bg); border-radius: 8px; }
-.ppv-col.today .ppv-wd { color: var(--accent); font-weight: 700; }
-.ppv-pill { display: block; max-width: 100%; margin: 0 auto; font-size: 11px; padding: 2px 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ppv-rest { color: var(--text3); font-size: 13px; line-height: 1.6; }
+.ppv-col { display: flex; justify-content: center; min-width: 0; padding: 5px 0; }
+.ppv-wd {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; box-sizing: border-box;
+  border-radius: 50%;
+  font-size: 12px; font-weight: 600; color: var(--text3);
+}
+.ppv-col.training .ppv-wd { background: var(--accent); color: #fff; font-weight: 700; }
+.ppv-col.done .ppv-wd     { background: var(--green);  color: #fff; font-weight: 700; }
+/* Heute: Ring um den Kreis — funktioniert auch auf Ruhetagen (Kreis dann ohne Füllung). */
+.ppv-col.today .ppv-wd::after {
+  content: ''; position: absolute; inset: -4px;
+  border-radius: 50%; border: 2px solid var(--accent);
+}
+.ppv-col.today.done .ppv-wd::after { border-color: var(--green); }
+.ppv-col.today:not(.training) .ppv-wd { color: var(--accent-dark); font-weight: 700; }
+/* Erledigt-Haken am Kreis. Nötig, weil im Workouts-Tab die Akzentfarbe selbst grün ist —
+   ohne den Haken wären „geplant" und „erledigt" dort kaum zu unterscheiden. */
+.ppv-col.done .ppv-wd::before, .wp-col.done .wp-letter::before {
+  content: '✓';
+  position: absolute; top: -2px; right: -3px; z-index: 1;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; color: var(--green);
+  font-size: 9px; font-weight: 900; line-height: 14px; text-align: center;
+  box-shadow: 0 0 0 1.5px var(--green);
+}
 
 .plan-status-past .plan-list-name,
 .plan-status-archived .plan-list-name { color: var(--text2); }
@@ -992,36 +1015,39 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   gap: 4px;
 }
 .wp-col {
-  display: flex; flex-direction: column; align-items: center; gap: 11px;
-  padding: 10px 0 12px;
-  border-radius: 8px;
-  min-width: 0;            /* Spalten exakt gleich breit (1fr); lange Pillen kürzen statt aufweiten */
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 0;
+  border-radius: 10px;
+  min-width: 0;            /* Spalten exakt gleich breit (1fr) */
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s, opacity 0.15s;
 }
-.wp-col.today    { background: var(--accent-bg); }
+/* Ausgewählter Tag (dessen Session-Karte unten steht) = Spalten-Hintergrund.
+   „Heute" trägt dagegen den Ring um den Kreis — so bleiben beide unterscheidbar. */
 .wp-col.selected { background: var(--accent-bg); }
-/* Erledigtes Training dieser Woche: grünes ✓ unter der Pille (ersetzt das frühere Ausgrauen) */
-.wp-col-done-check, .ppv-done-check {
-  display: block; text-align: center; line-height: 1;
-  color: var(--green); font-size: 11px; font-weight: 800;
-}
-.wp-col-done-check { margin-top: -6px; }
-.ppv-done-check { margin-top: 3px; }
 
+/* Wochentag als Kreis: Akzentfarbe = Training geplant, grün = erledigt, Ring = heute.
+   Der Name des Trainingstags steht nicht mehr im Strip, sondern in der Info-Zeile darunter. */
 .wp-letter {
-  font-size: 11px;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; box-sizing: border-box;
+  border-radius: 50%;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text3);
   letter-spacing: 0.2px;
 }
-.wp-col.today    .wp-letter { color: var(--accent-dark); font-weight: 700; }
-.wp-col.training .wp-letter { color: var(--text); }
-.wp-col.training.today .wp-letter { color: var(--accent-dark); }
-/* Trainingstag-Pille unter dem Wochentag (Strip in Übersicht + Workouts) */
-.wp-col-pill { max-width: 100%; font-size: 10px; padding: 1px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wp-col-rest { font-size: 12px; color: var(--text3); opacity: 0.5; line-height: 1.3; }
+.wp-col.training .wp-letter { background: var(--accent); color: #fff; font-weight: 700; }
+.wp-col.done     .wp-letter { background: var(--green);  color: #fff; font-weight: 700; }
+.wp-col.training.cardio .wp-letter { background: var(--cardio); }
+.wp-col.today .wp-letter::after {
+  content: ''; position: absolute; inset: -4px;
+  border-radius: 50%; border: 2px solid var(--accent);
+}
+.wp-col.today.done .wp-letter::after { border-color: var(--green); }
+.wp-col.today:not(.training) .wp-letter { color: var(--accent-dark); font-weight: 700; }
 
 .wp-bar {
   height: 4px;
@@ -1038,15 +1064,15 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .wp-col.training.cardio .wp-bar { background: var(--cardio); }
 
 /* Info-Zeile darunter */
+/* Info-Zeile darunter — bricht um statt abzuschneiden: seit die Strips keine Namen mehr
+   zeigen, ist sie die einzige Stelle im Workouts-Tab mit dem vollen Trainingstag-Namen. */
 .wp-info {
   font-size: 12px;
   color: var(--text2);
   padding: 10px 8px 2px;
   text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 .wp-info strong { color: var(--text); font-weight: 600; }
 .wp-info .wp-info-done { color: var(--green); margin-left: 3px; font-weight: 700; }
@@ -1626,14 +1652,26 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .ex-search-bar:focus { outline: none; border-color: var(--accent); background: #fff; }
 
 /* Visueller Wochenplaner (Plan-Detail): Mo–So-Pillen-Strip mit overlaid native <select> pro Tag */
-.wpe-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; padding: 8px 10px 12px; }
-.wpe-col { position: relative; display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 13px 0; border-radius: 8px; min-width: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.wpe-col.today { background: var(--accent-bg); }
-.wpe-col:active { background: var(--card2); }
-.wpe-wd { font-size: 11px; font-weight: 600; color: var(--text3); }
-.wpe-col.today .wpe-wd { color: var(--accent-dark); font-weight: 700; }
-.wpe-pill { max-width: 100%; font-size: 10px; padding: 1px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wpe-rest { font-size: 12px; color: var(--text3); opacity: 0.5; }
+/* Wochenplan in der Plan-Detailansicht: eine ZEILE pro Wochentag statt 7 Spalten, damit der
+   Trainingstag-Name vollständig lesbar ist (bricht bei Bedarf um, wird nie abgeschnitten). */
+.wpe-list { display: flex; flex-direction: column; }
+.wpe-row {
+  position: relative;
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.wpe-row:last-child { border-bottom: none; }
+.wpe-row:active { background: var(--card2); }
+.wpe-row.today { background: var(--accent-bg); }
+.wpe-day { flex: 0 0 32px; font-size: 13px; font-weight: 700; color: var(--text3); }
+.wpe-row.training .wpe-day { color: var(--text); }
+.wpe-row.today .wpe-day { color: var(--accent-dark); }
+.wpe-name { flex: 1; min-width: 0; font-size: 13px; white-space: normal; overflow-wrap: anywhere; }
+.wpe-rest { flex: 1; min-width: 0; font-size: 13px; color: var(--text3); opacity: 0.6; }
+.wpe-chev { flex: 0 0 auto; font-size: 17px; line-height: 1; color: var(--text3); }
 .wpe-select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer; font-size: 16px; }
 
 /* Visueller Wochenplaner: tappbare Zeile statt Dropdown */
