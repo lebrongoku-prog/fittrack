@@ -23,10 +23,18 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 
 ---
 
+## Deploy
+
+Git-Repo: `https://github.com/lebrongoku-prog/fittrack` (Remote `origin`, Branch `main`).
+Live via GitHub Pages aus `main` / `/ (root)`: **https://lebrongoku-prog.github.io/fittrack/**
+Deploy = `git push` (Leonard führt den Push selbst aus; Auth per Personal Access Token im macOS-Keychain).
+
+---
+
 ## ⚠️ Workflow bei JEDER Änderung (wichtig!)
 
 1. **SW-Cache-Version in `sw.js` hochzählen** (`const CACHE = 'fittrack-vNN'` → NN+1). Ohne das liefert die PWA weiter die alten, gecachten Dateien aus — die Änderung erscheint gar nicht.
-2. **Alle geänderten Dateien nach GitHub deployen — v. a. `sw.js`** (löst den Cache-Refresh aus). Fehlt `sw.js`, kommt kein Update an.
+2. **Alle geänderten Dateien committen und pushen — v. a. `sw.js`** (löst den Cache-Refresh aus). Fehlt `sw.js`, kommt kein Update an.
 3. **Verifizieren vor Abschluss:**
    - `node --check app.js` (JS-Syntax)
    - CSS-Klammerbalance: `python3 -c "s=open('style.css').read(); print(s.count('{'), s.count('}'))"` (muss gleich sein)
