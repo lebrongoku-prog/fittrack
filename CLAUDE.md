@@ -12,12 +12,15 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 
 | Datei | Zweck |
 |---|---|
-| `index.html` (~820 Z.) | Markup, alle Screens + Modals |
-| `style.css` (~1850 Z.) | gesamtes Styling + Theme-Variablen |
-| `app.js` (~6300 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v90**) |
+| `index.html` (~880 Z.) | Markup, alle Screens + Modals |
+| `style.css` (~2200 Z.) | gesamtes Styling + Theme-Variablen |
+| `app.js` (~7300 Z.) | komplette Logik — **eine Datei, keine Module** |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v96**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
+
+`.claude/devserver.py` = lokaler Test-Server ohne Caching (`python3 .claude/devserver.py`, Port 8123).
+Nötig, weil der Browser sonst beim Prüfen weiter die alte `app.js` ausliefert.
 
 **Cruft (in `.gitignore` oder löschen):** `app.js.bak-daymodel`, `Trainings JSONs/`, `prompt-farbuebergang-tabs.md`.
 
@@ -36,7 +39,9 @@ Deploy = `git push` (Leonard führt den Push selbst aus; Auth per Personal Acces
 1. **SW-Cache-Version in `sw.js` hochzählen** (`const CACHE = 'fittrack-vNN'` → NN+1). Ohne das liefert die PWA weiter die alten, gecachten Dateien aus — die Änderung erscheint gar nicht.
 2. **Alle geänderten Dateien committen und pushen — v. a. `sw.js`** (löst den Cache-Refresh aus). Fehlt `sw.js`, kommt kein Update an.
 3. **Verifizieren vor Abschluss:**
-   - `node --check app.js` (JS-Syntax)
+   - **`node` ist auf dem Rechner NICHT installiert** — statt `node --check app.js` die App über
+     `.claude/devserver.py` im Browser laden und die Konsole auf Fehler prüfen (das deckt auch
+     Laufzeitfehler ab). Beim Testen vorher Service Worker + Caches löschen, sonst läuft alter Code.
    - CSS-Klammerbalance: `python3 -c "s=open('style.css').read(); print(s.count('{'), s.count('}'))"` (muss gleich sein)
    - gezielte Greps auf neu/entfernte Bezeichner
 4. **Updates greifen erst nach dem ZWEITEN App-Neustart** (1. Start installiert den neuen SW, 2. Start aktiviert ihn).
@@ -67,13 +72,26 @@ Deploy = `git push` (Leonard führt den Push selbst aus; Auth per Personal Acces
 
 ---
 
+## Sprache in der Oberfläche
+
+Drei Begriffe, konsequent durchgehalten — nicht mischen:
+**Plan** (der Zeitraum) · **Trainingstag** (die wiederverwendbare Vorlage) · **Einheit** (eine absolvierte Trainingseinheit).
+„Session" und „Workout" kommen in der UI NICHT mehr vor (Bezeichner im Code heißen weiter `workout`/`wo`).
+Nav-Labels: Übersicht · Training · Übungen · Pläne.
+
+---
+
 ## UI-Konventionen
 
-- **Tabs (5):** `overview` (Übersicht), `workouts` (Workout), `plans` (Nav-Label „Trainings"), `exercises` (Übungen), `mehr`. Zusätzlich Vollbild-Overlays: `plan-detail`, `day-detail`. Steuerung über `showScreen(name)` + `_applyTabState(name)`.
+- **Tabs (4):** `overview` (Übersicht), `workouts` (Nav-Label „Training"), `exercises` (Übungen), `plans` (Nav-Label „Pläne"). Vollbild-Overlays: `plan-detail`, `day-detail` und **`mehr`** (Einstellungen — kein Tab mehr, erreichbar über das Zahnrad `.ph-gear` in der Übersicht, zurück via `closeMehr()`). Steuerung über `showScreen(name)` + `_applyTabState(name)`.
 - **Per-Tab-Theming** via `body.theme-*` (Akzent-CSS-Variablen): Übersicht=Cyan, Workouts=Emerald/Grün, Trainings=Amber, Übungen=Marineblau, Mehr=Hellblau.
 - **Tab-Hintergrund** = Two-Layer-Crossfade (`.bg-fade-layer`, IDs `bg-fade-a`/`bg-fade-b`), swipe-gebunden; natives CSS-Scroll-Snap fürs Paging. (Umgeht iOS-Safari-Bug bei `transition: background-image` zwischen Gradienten → Hex pro Theme statt `var()`.)
 - **Trainingstag-Namen** = kräftiger Text mit 3px-Balken links (`.pd-name`, KEINE Flächenfarbe) via Helper `pd(name)`. Sonderfall `.ex-group-title .pd-name`: im Übungen-Tab stehen die Gruppentitel auf dem farbigen Tab-Hintergrund → dort hell; im Add-Übung-Modal (`.sheet-ex-group`) wieder dunkel.
-- **Übungs-Karten** `.aex-v2` (Workout-Vorschau, aktives Workout, Bibliothek-Tag-Detail) — Pro-Satz-Tabelle als ZEILEN pro Satz (`.aex-v2-srow`: Satz | Wdh. | kg). Notizfeld `.aex-v2-notes` rechts daneben.
+- **Übungs-Karten** `.aex-v2` (Vorschau, laufende Einheit, Bibliothek-Tag-Detail) — Pro-Satz-Tabelle als ZEILEN pro Satz (`.aex-v2-srow`: Satz | Wdh. | kg | **Haken**). Notizfeld `.aex-v2-notes` rechts daneben, unter 460px darunter. Zugeklappt zeigt die Karte zusätzlich Bestleistung/Differenz (`.aex-v2-cmp`) und die Übungsnotiz (`.aex-v2-note-peek`).
+- **Laufende Einheit:** `toggleSetDone(ei, si)` hakt einen einzelnen Satz ab (Feld `sets[].done`), hakt die Übung automatisch ab, wenn alle Sätze stehen, und startet die **Satzpause** (`startRestTimer`, Leiste `#rest-bar`, Vorgabe 90 s, pro Übung gemerkt in `ex.restSec`). Kopf ist im aktiven Zustand kompakt (`.hero-v2.active-mode`), der Wochenplan ist ausgeblendet (`html.wo-running`), beim Scrollen erscheint `#wo-sticky-bar`. `ensureActiveExpanded()` hält die nächste unerledigte Übung offen (`_aexUserClosedAll` respektiert bewusstes Zuklappen).
+- **Abschluss** einer Einheit: `renderWorkoutSummary()` → `#modal-summary` (Dauer, Volumen, Sätze, Übungen, Volumenvergleich, neue Bestleistungen).
+- **Löschen ist zurücknehmbar:** `withUndo(label, fn, afterRestore)` + `showUndoToast()` — sichert die Stores vorab, „Rückgängig" 6 s lang.
+- **Übersicht:** Sicherungs-Zeile (`renderBackupLine`), Hinweis vor Plan-Ende (`renderPlanEndNotice` + `extendActivePlan`), Wochenserie (`getWeekStreak` → `.ppv-streak`), Einstieg ins freie Training (`startFreeWorkout`, Einheit ohne `planDayId`).
 - **Wochenplan-Strips:** `.ppv-*` (Dashboard-Karte, `buildPlanCard(p, onTap, hideToday, hideStatus)`) + `.wp-col` (Workouts-Strip, `buildWpCol`). Zeigen NUR Wochentage, keine Tagnamen: geplant = Kreis in Akzentfarbe, erledigt = grüner Kreis + weißer Haken (`::before`), heute = Ring (`::after`). Im Workouts-Strip markiert `.selected` zusätzlich den angetippten Tag per Spalten-Hintergrund. Den vollen Tagnamen zeigen die Info-Zeile (`buildWpInfo`) bzw. die Session-Karte.
 - **Wochenplan in der Plan-Detailansicht:** `.wpe-list`/`.wpe-row` = eine Zeile pro Wochentag (nicht 7 Spalten), damit lange Tagnamen vollständig umbrechen können; unsichtbares `<select>`-Overlay pro Zeile weist den Tag zu.
 - **Löschen** = „Bearbeiten"-Modus (Kästchen auswählen → „Löschen (N)" → Sicherheits-Dialog) via `_delCtx`/`_delSel`/`buildDelEditList`; inline ✕ fragt ebenfalls nach. **Hinzufügen** = Multi-Select-Modals mit „Hinzufügen (N)".
@@ -82,10 +100,14 @@ Deploy = `git push` (Leonard führt den Push selbst aus; Auth per Personal Acces
 
 ## Google-Drive-Sync
 - Optional; `collectLocalData` / `driveApplyCloudData` (inkl. `ft_trainingdays`). Auth-Hosts sind vom SW-Cache ausgenommen.
+- `markLocalChange()` stößt die Sicherung bei JEDER Änderung an (entprellt), zusätzlich läuft sie beim App-Start (`driveInit`). Früher lief sie nur am Ende einer Einheit.
+- Status auf der Übersicht: `renderBackupLine()`; nach zehn Einheiten ohne Sicherung fragt `maybePromptBackup()` einmalig nach (`ft_backup_prompted`).
 
 ---
 
 ## Gotchas
+- **Eine Einheit gehört zu genau EINEM Wochentag:** `wo.dayIdx` (0=Mo … 6=So) wird beim Start gesetzt, `woDayIdx(wo)` liest ihn (Rückfallebene `startTs`). NIEMALS den Wochentag über `weekPlan.findIndex(planDayId)` bestimmen — bei einem Trainingstag, der zweimal pro Woche im Plan steht, trifft das immer den ersten Treffer.
+- Freies Training hat `planDayId === null`; Anzeigepfade müssen darauf vorbereitet sein (`activeOnSelected` in `renderWorkoutsScreen`).
 - `DB.getPlan()`/`getWeekPlan()` fallen ohne aktiven Plan auf hartkodierte `DEFAULT_PLAN`/`DEFAULT_WEEKPLAN` zurück → in Anzeige-Pfaden `getActivePlan()`/`getCurrentWeekDays()` nutzen (sonst Phantom-Tage).
 - Volumen-Chart gruppiert nach `${Jahr}-${KW}` und sortiert chronologisch nach Timestamp (X-Achse aufsteigend).
 - `_materializePeSets` ist inzwischen ungenutzt; diverse Cardio-Helfer bleiben im Code, aber unerreichbar (CARDIO_ENABLED=false).
