@@ -436,10 +436,24 @@ body.theme-plans .hist-action-dd {
 
 /* ─── Page Header ─── */
 .ph { padding: 16px 14px 8px; display: flex; justify-content: space-between; align-items: flex-start; }
+/* Kopfzeile mit Zurück-Pfeil: Titel schließt links an den Pfeil an, statt nach rechts zu rutschen. */
+.ph-with-back { justify-content: flex-start; gap: 10px; align-items: center; }
+.ph-with-back .ph-left { flex: 1; min-width: 0; }
 .ph-left h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
 .ph-left .ph-sub { font-size: 13px; color: var(--text3); margin-top: 2px; }
 .ph-action { width: 36px; height: 36px; border-radius: 10px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .ph-action svg { width: 18px; height: 18px; stroke: var(--text2); fill: none; stroke-width: 1.8; }
+/* Zahnrad in der Übersicht: Zugang zu den Einstellungen, seit „Mehr" kein Tab mehr ist.
+   Auf dem farbigen Tab-Hintergrund → helle Fläche, damit es sich abhebt. */
+.ph-gear {
+  width: 38px; height: 38px; flex-shrink: 0; margin-top: 2px;
+  border-radius: 12px; border: none;
+  background: rgba(255,255,255,0.18);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.ph-gear svg { width: 19px; height: 19px; stroke: #fff; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.ph-gear:active { transform: scale(.94); }
 
 /* ─── Cards ─── */
 .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin: 0 12px 12px; overflow: hidden; }
@@ -825,6 +839,28 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 /* ─── Toast ─── */
 #toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 14px); left: 50%; transform: translateX(-50%) translateY(16px); background: #111; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 500; opacity: 0; transition: all .28s; z-index: 500; white-space: nowrap; pointer-events: none; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* Variante mit Rückgängig-Knopf: muss anklickbar sein (der normale Toast ist es nicht). */
+#toast.with-undo { pointer-events: auto; display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 18px; }
+.toast-undo {
+  background: rgba(255,255,255,0.16); color: #fff; border: none;
+  border-radius: 14px; padding: 7px 13px; font-size: 13px; font-weight: 700;
+  font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.toast-undo:active { transform: scale(.95); }
+
+/* Sicherungs-Hinweis auf der Übersicht */
+.backup-line {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 14px 14px; padding: 9px 12px;
+  background: var(--card); border-radius: 12px; box-shadow: var(--shadow);
+  font-size: 12.5px; color: var(--text2);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.backup-line .backup-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+.backup-line.warn { color: var(--text); }
+.backup-line.warn .backup-dot { background: var(--red); }
+.backup-line.idle .backup-dot { background: var(--text3); }
+.backup-line .backup-action { margin-left: auto; color: var(--accent); font-weight: 600; white-space: nowrap; }
 
 /* ─── Responsive ─── */
 @media (min-width: 560px) {

@@ -663,7 +663,9 @@ function getExercisePR(exId) {
 
 let currentScreen = 'overview';
 
-const TAB_ORDER = ['overview', 'workouts', 'exercises', 'plans', 'mehr'];
+// Vier Haupt-Tabs. „Mehr" (Sicherung, Import/Export, Diagnose) ist kein Tab mehr, sondern
+// ein Overlay hinter dem Zahnrad in der Übersicht — es wird selten und nie im Training gebraucht.
+const TAB_ORDER = ['overview', 'workouts', 'exercises', 'plans'];
 
 // Wenn JS gerade einen Scroll programmatisch ausloest, soll der Scroll-Listener
 // nicht zusaetzlich currentScreen/Theme/Renderer triggern (vermeidet Doppel-Render).
@@ -797,13 +799,25 @@ function _applyTabState(name) {
 }
 
 function showScreen(name) {
-  // Plan-Detail UND Trainingstag-Detail sind Vollbild-Overlays UEBER dem Tab-Container.
+  // Plan-Detail, Trainingstag-Detail UND Einstellungen sind Vollbild-Overlays UEBER dem Tab-Container.
   const planDetailEl = document.getElementById('screen-plan-detail');
   const dayDetailEl = document.getElementById('screen-day-detail');
+  const mehrEl = document.getElementById('screen-mehr');
   const tabContainer = document.getElementById('tab-container');
+
+  if (name === 'mehr') {
+    currentScreen = 'mehr';
+    if (planDetailEl) planDetailEl.classList.remove('active');
+    if (dayDetailEl) dayDetailEl.classList.remove('active');
+    if (mehrEl) { mehrEl.classList.add('active'); mehrEl.scrollTop = 0; }
+    _applyTabState('mehr');
+    return;
+  }
+  if (mehrEl && mehrEl.classList.contains('active')) mehrEl.classList.remove('active');
 
   if (name === 'plan-detail') {
     currentScreen = 'plan-detail';
+    if (mehrEl) mehrEl.classList.remove('active');
     if (dayDetailEl) dayDetailEl.classList.remove('active');
     if (planDetailEl) {
       planDetailEl.classList.add('active');
@@ -814,6 +828,7 @@ function showScreen(name) {
   }
   if (name === 'day-detail') {
     currentScreen = 'day-detail';
+    if (mehrEl) mehrEl.classList.remove('active');
     if (planDetailEl) planDetailEl.classList.remove('active');
     if (dayDetailEl) {
       dayDetailEl.classList.add('active');
@@ -836,6 +851,9 @@ function showScreen(name) {
 
   _applyTabState(name);
 }
+
+// Einstellungen (früher der Tab „Mehr") schließen → zurück zur Übersicht.
+function closeMehr() { showScreen('overview'); }
 
 // Tableisten-Klick. Tippt man den bereits sichtbaren Tab erneut an, scrollt dessen
 // Inhalt smooth nach oben. Sonst normaler Tab-Wechsel via showScreen.
@@ -869,7 +887,7 @@ function renderOverview() {
 
   // ─ Header subline ─
   const subEl = document.getElementById('ov-week-info');
-  subEl.innerHTML = `Woche ${prog.num} • <span class="ph-sub-accent">${wStatus.done} von ${wStatus.planned||plan.length}</span> Workouts absolviert`;
+  subEl.innerHTML = `Woche ${prog.num} • <span class="ph-sub-accent">${wStatus.done} von ${wStatus.planned||plan.length}</span> Einheiten absolviert`;
 
   // ─ Hero card ─
   // Decision tree:
@@ -881,12 +899,12 @@ function renderOverview() {
   if (activeWo) {
     const heroDay = plan.find(d => d.id === activeWo.planDayId);
     wrap.innerHTML = buildSessionCard(activeWo, heroDay, todayEntry, false, {
-      label: 'AKTIVE SESSION',
+      label: 'LAUFENDE EINHEIT',
       continueOnClick: 'heroActionContinue()',
     });
   } else if (todayEntry.planDay && !todayEntry.dayDone) {
     wrap.innerHTML = buildSessionCard(null, todayEntry.planDay, todayEntry, true, {
-      label: 'NÄCHSTE SESSION',
+      label: 'NÄCHSTE EINHEIT',
       previewOnClick: `requestStartFromOverview('${todayEntry.planDay.id}')`,
     });
   } else {
@@ -906,12 +924,59 @@ function renderOverview() {
          </div>`;
   }
 
-  // ─ Letzte Sessions (kompakt, 3 jüngste) ─
+  // ─ Sicherungs-Status ─
+  renderBackupLine();
+
+  // ─ Letzte Einheiten (kompakt, 3 jüngste) ─
   renderRecentSessionsOnOverview();
 
   // ─ Stats-Karten (Volumenentwicklung, Muskelgruppen-Volumen, PRs) ─
   // Diese 3 Karten wurden vom alten Verlauf-Tab in die Übersicht verschoben.
   renderHomeStats();
+}
+
+// Zeile „zuletzt gesichert" auf der Übersicht. Ohne eingerichtete Sicherung liegen alle
+// Daten nur im Browser-Speicher dieses Geräts — das soll sichtbar sein, bevor es weh tut.
+function renderBackupLine() {
+  const el = document.getElementById('ov-backup-line');
+  if (!el) return;
+  const enabled = driveIsEnabled();
+  const last = driveGetLastPushed();
+  let cls = 'backup-line', txt, action = '';
+
+  if (enabled && last) {
+    const days = Math.floor((Date.now() - last) / 86400000);
+    txt = days <= 0 ? 'Heute gesichert' : (days === 1 ? 'Gestern gesichert' : `Zuletzt vor ${days} Tagen gesichert`);
+    txt = 'Google Drive · ' + txt;
+    if (days > 7) { cls += ' warn'; action = 'Prüfen'; }
+  } else if (enabled) {
+    cls += ' warn';
+    txt = 'Google Drive verbunden, aber noch nichts gesichert';
+    action = 'Prüfen';
+  } else {
+    // Ohne eingerichtete Sicherung nie grün melden — das läse sich wie „alles in Ordnung".
+    const n = DB.getWorkouts().length;
+    txt = 'Keine Sicherung — alles liegt nur auf diesem Gerät';
+    cls += n >= 10 ? ' warn' : ' idle';
+    action = 'Einrichten';
+  }
+  el.className = cls;
+  el.innerHTML = `<span class="backup-dot"></span><span>${txt}</span>${action ? `<span class="backup-action">${action} ›</span>` : ''}`;
+  el.onclick = () => showScreen('mehr');
+}
+
+// Einmaliger Hinweis, wenn nach zehn Einheiten immer noch keine Sicherung eingerichtet ist.
+function maybePromptBackup() {
+  if (driveIsEnabled()) return;
+  if (localStorage.getItem('ft_backup_prompted') === '1') return;
+  if (DB.getWorkouts().length < 10) return;
+  localStorage.setItem('ft_backup_prompted', '1');
+  setTimeout(() => {
+    confirmAction('Deine Einheiten sichern?',
+      'Du hast inzwischen zehn Einheiten aufgezeichnet. Sie liegen bisher nur auf diesem Gerät — beim Zurücksetzen des Browsers oder einem Gerätewechsel wären sie weg. Sicherung über Google Drive jetzt einrichten?',
+      () => showScreen('mehr'),
+      { confirmLabel: 'Einrichten' });
+  }, 900);
 }
 
 function renderRecentSessionsOnOverview() {
@@ -922,7 +987,7 @@ function renderRecentSessionsOnOverview() {
     .filter(w => CARDIO_ENABLED || !((w.exercises||[]).length && (w.exercises||[]).every(e => isWoExCardio(e))))
     .slice(0, 3);
   if (!ws.length) {
-    container.innerHTML = '<p style="font-size:13px;color:var(--text3);padding:8px 0;text-align:center;margin:0">Noch keine Workouts</p>';
+    container.innerHTML = '<p style="font-size:13px;color:var(--text3);padding:8px 0;text-align:center;margin:0">Noch keine Einheiten</p>';
     return;
   }
   // Tagname vergangener Sessions aus dem GLOBALEN Tag-Store auflösen (nicht aus dem aktiven
@@ -1230,7 +1295,7 @@ function confirmActiveWorkoutDataLoss(planDayId, exIdsToRemove, onConfirm) {
   const names = affected.map(ae => `„${ae.name}"`).join(', ');
   confirmAction(
     'Übung mit eingetragenen Daten entfernen?',
-    `${names} hat im laufenden Workout schon eingetragene Sätze. Beim Entfernen aus dem Plan wird die Übung auch aus dem aktiven Workout gestrichen — die Daten gehen verloren. Trotzdem entfernen?`,
+    `${names} hat in der laufenden Einheit schon eingetragene Sätze. Beim Entfernen aus dem Plan wird die Übung auch aus der laufenden Einheit gestrichen — die Daten gehen verloren. Trotzdem entfernen?`,
     onConfirm,
     { danger: true, confirmLabel: 'Entfernen' }
   );
@@ -1246,8 +1311,8 @@ function startWorkout(dayId) {
     return;
   }
   if (DB.getActive()) {
-    confirmAction('Workout läuft bereits',
-      'Es läuft noch ein Workout. Neu starten? Die aktuelle Session wird verworfen.',
+    confirmAction('Es läuft bereits eine Einheit',
+      'Es läuft noch eine Einheit. Neu starten? Die aktuelle wird verworfen.',
       () => { stopTimer(); DB.clearActive(); _doStartWorkout(dayId); },
       { danger: true, confirmLabel: 'Neu starten' }
     );
@@ -1352,7 +1417,7 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
   const doneEx = active ? active.exercises.filter(e=>e.done).length : 0;
   const processedEx = active ? active.exercises.filter(e=>e.done || e.skipped).length : 0;
   const title = `${dayFullName(selDay.dayKey)}${planDay ? ' — ' + escapeHtml(planDay.name) : ''}`;
-  const label = opts.label || (isPreview ? 'VORSCHAU' : 'AKTIVE SESSION');
+  const label = opts.label || (isPreview ? 'VORSCHAU' : 'LAUFENDE EINHEIT');
   // Reine Cardio-Tage zaehlen Sets nicht — labeln stattdessen die Einheit als Cardio
   const isPureCardio = CARDIO_ENABLED && !!(planDay && planDayIsPureCardio(planDay));
   const meta = isPureCardio
@@ -1415,10 +1480,10 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
       (selDay ? woDayIdx(elsewhereActive) === selDay.idx : true)
     );
     const bottomHTML = blockedByOther
-      ? `<div class="hero-v2-running-notice">Aktuell läuft ein anderes Workout. Bitte zuerst beenden.</div>`
+      ? `<div class="hero-v2-running-notice">Es läuft gerade eine andere Einheit. Bitte zuerst beenden.</div>`
       : `<button class="hero-v2-btn stretch" onclick="${previewOnClick}">
            <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
-           Workout starten
+           Einheit starten
          </button>`;
     return `<div class="hero-v2 col-layout">
       ${topRow}
@@ -1431,7 +1496,7 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
   // Active mode — same outer structure as preview; bottom is only the button row
   const continueOnClick = opts.continueOnClick || 'scrollToNextExercise()';
   const paused = !!(active && active.paused);
-  const pauseLabel = paused ? 'Workout fortsetzen' : 'Workout pausieren';
+  const pauseLabel = paused ? 'Fortsetzen' : 'Pausieren';
   const pauseIcon = paused
     ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>'
     : '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
@@ -1472,7 +1537,7 @@ function buildRestHero(isToday) {
   return `<div class="hero-v2 rest-mode">
     <div class="hero-v2-text" style="flex:1">
       <div class="hero-v2-label">RUHETAG</div>
-      <div class="hero-v2-title">${isToday ? 'Heute ist Ruhetag' : 'Kein Workout geplant'}</div>
+      <div class="hero-v2-title">${isToday ? 'Heute ist Ruhetag' : 'Kein Training geplant'}</div>
     </div>
     <div class="hero-v2-art">
       ${heroDumbbellSvg()}
@@ -1524,6 +1589,13 @@ function woDayIdx(wo) {
 
 function selectWorkoutDay(idx) {
   selectedWorkoutDayIdx = idx;
+  renderWorkoutsScreen();
+}
+
+// Aus der Plan-Karte (Übersicht) in den Trainings-Tab auf einen bestimmten Wochentag springen.
+function jumpToWorkoutDay(idx) {
+  selectedWorkoutDayIdx = idx;
+  showScreen('workouts');
   renderWorkoutsScreen();
 }
 
@@ -2837,7 +2909,7 @@ function addExToWorkout(exId) {
   if (!wo) {
     // Defensive: openAddExModal('active') ohne laufendes Workout — abbrechen
     closeModal('modal-add-ex');
-    showToast('Kein laufendes Workout');
+    showToast('Keine laufende Einheit');
     return;
   }
   // 1) Übung dem aktiven Workout hinzufügen
@@ -2911,11 +2983,13 @@ function finishWorkout() {
   // Abschluss zeigen statt nur einer kurzen Einblendung: Dauer, Volumen, Sätze, Rekorde
   // und der Vergleich zur letzten Einheit desselben Trainingstags.
   renderWorkoutSummary(finalWo, prevWorkouts);
+  // Nach zehn Einheiten einmalig an die Sicherung erinnern, falls keine eingerichtet ist.
+  maybePromptBackup();
 
   // Drive-Sync: einziger automatischer Auslöser ist das Workout-Ende.
   // Bei dieser Gelegenheit landen ALLE aufgelaufenen lokalen Änderungen
   // (auch reine Plan-/Übungs-/Wochenplan-Änderungen seit dem letzten Sync) in der Cloud.
-  if (driveIsEnabled()) driveTriggerSync('Workout beendet');
+  if (driveIsEnabled()) driveTriggerSync('Einheit beendet');
 }
 
 // Abschlussansicht einer gespeicherten Einheit.
@@ -2977,8 +3051,8 @@ function discardWorkout() {
   // Erst das aktuell offene Finish-Modal schließen, sonst überdeckt es das Confirm-Modal
   closeModal('modal-finish');
   setTimeout(() => {
-    confirmAction('Workout abbrechen?',
-      'Workout wirklich abbrechen und löschen? Alle Eingaben gehen verloren.',
+    confirmAction('Einheit verwerfen?',
+      'Die laufende Einheit wirklich verwerfen? Alle Eingaben gehen verloren.',
       () => {
         stopTimer();
         stopRestTimer(true);
@@ -2989,7 +3063,7 @@ function discardWorkout() {
         if (currentScreen === 'overview') renderOverview();
         else if (currentScreen === 'workouts') renderWorkoutsScreen();
       },
-      { danger: true, confirmLabel: 'Abbrechen & löschen' }
+      { danger: true, confirmLabel: 'Verwerfen' }
     );
   }, 80);
 }
@@ -3509,15 +3583,21 @@ function deleteSession(i) {
   closeModal('modal-hist-detail');
   setTimeout(() => {
     confirmAction(
-      'Session löschen?',
-      `${dayName} vom ${dateStr} wirklich löschen? Volumen und PRs werden neu berechnet.`,
+      'Einheit löschen?',
+      `${dayName} vom ${dateStr} wirklich löschen? Volumen und Bestleistungen werden neu berechnet.`,
       () => {
         const ws2 = DB.getWorkouts();
-        ws2.splice(i, 1);
+        const [removed] = ws2.splice(i, 1);
         DB.saveWorkouts(ws2); // löst markLocalChange → Drive-Sync aus
-        showToast('Session gelöscht');
         // Aktuellen Screen neu rendern, damit Stats/Charts/Listen aktualisiert werden
         if (currentScreen === 'overview') renderOverview();
+        showUndoToast('Einheit gelöscht', () => {
+          const ws3 = DB.getWorkouts();
+          ws3.splice(i, 0, removed);
+          DB.saveWorkouts(ws3);
+          if (currentScreen === 'overview') renderOverview();
+          showToast('Wiederhergestellt');
+        });
       },
       { danger: true, confirmLabel: 'Löschen' }
     );
@@ -3602,7 +3682,12 @@ function buildPlanCard(p, onTap, hideToday, hideStatus) {
     if (d) cls.push('training');
     if (done) cls.push('done');
     if (today) cls.push('today');
-    return `<div class="${cls.join(' ')}"><span class="ppv-wd">${w.label}</span></div>`;
+    // Beim aktiven Plan springt ein Tipp auf einen Wochentag in den Trainings-Tab auf genau
+    // diesen Tag — sonst wäre der Streifen auf der Übersicht reine Anzeige.
+    const tap = isCurrent
+      ? ` onclick="event.stopPropagation();jumpToWorkoutDay(${i})" role="button" tabindex="0" aria-label="${w.label} öffnen"`
+      : '';
+    return `<div class="${cls.join(' ')}"${tap}><span class="ppv-wd">${w.label}</span></div>`;
   }).join('');
   let progress = '';
   if (isCurrent) {
@@ -3854,13 +3939,15 @@ function deleteCurrentPlan() {
   if (!plan) return;
   confirmAction(
     'Trainingsplan löschen?',
-    `"${plan.name}" und alle zugehörigen Trainingstage werden unwiderruflich gelöscht. Bereits absolvierte Workouts bleiben im Verlauf erhalten.`,
+    `"${plan.name}" und alle zugehörigen Trainingstage werden unwiderruflich gelöscht. Bereits absolvierte Einheiten bleiben im Verlauf erhalten.`,
     () => {
-      const ps = DB.getPlans().filter(p => p.id !== editingPlanId);
-      DB.savePlans(ps);
-      editingPlanId = null;
-      showScreen('plans');
-      showToast('Trainingsplan gelöscht');
+      const deletedId = editingPlanId;
+      withUndo('Plan gelöscht', () => {
+        const ps = DB.getPlans().filter(p => p.id !== deletedId);
+        DB.savePlans(ps);
+        editingPlanId = null;
+        showScreen('plans');
+      }, () => renderPlansScreen());
     },
     { danger: true, confirmLabel: 'Löschen' }
   );
@@ -4272,11 +4359,13 @@ function deleteCurrentLibDay() {
   confirmAction('Trainingstag löschen?',
     `"${d.name}" wird aus der Bibliothek gelöscht. Bereits in Pläne kopierte Tage bleiben dort erhalten.`,
     () => {
-      const days = DB.getTrainingDays().filter(x => x.id !== editingLibDayId);
-      DB.saveTrainingDays(days);
-      editingLibDayId = null;
-      showScreen('plans');
-      showToast('Trainingstag gelöscht');
+      const deletedId = editingLibDayId;
+      withUndo('Trainingstag gelöscht', () => {
+        const days = DB.getTrainingDays().filter(x => x.id !== deletedId);
+        DB.saveTrainingDays(days);
+        editingLibDayId = null;
+        showScreen('plans');
+      }, () => renderPlansScreen());
     },
     { danger: true, confirmLabel: 'Löschen' });
 }
@@ -4424,7 +4513,7 @@ function confirmDelEdit() {
     ? 'Die markierten Trainingstage werden aus diesem Plan entfernt (bleiben in der Bibliothek).'
     : 'Die markierten Übungen werden entfernt.';
   confirmAction(`${n} ${noun} wirklich löschen?`, msg,
-    () => _applyDelEdit(ctx),
+    () => withUndo(`${n} ${noun} gelöscht`, () => _applyDelEdit(ctx), () => _rerenderDelCtx(ctx)),
     { danger: true, confirmLabel: 'Löschen' });
 }
 function _applyDelEdit(ctx) {
@@ -4457,7 +4546,6 @@ function _applyDelEdit(ctx) {
   _delCtx = null; _delSel = new Set();
   _rerenderDelCtx(ctx);
   if (ctx === 'planday-ex') _renderAfterPlanEdit();
-  showToast('Gelöscht');
 }
 
 // User changed Gesamtdauer → recompute Enddatum
@@ -5747,7 +5835,7 @@ function importData(event) {
           DB.saveWorkouts(data.workouts);
           DB.savePlan(data.plan);
           DB.saveExercises(data.exercises);
-          showToast(`${data.workouts.length} Workouts importiert ✓`);
+          showToast(`${data.workouts.length} Einheiten importiert ✓`);
           renderMehr();
         },
         { danger: true, confirmLabel: 'Importieren' }
@@ -6174,9 +6262,59 @@ function initSheetSwipeDismiss() {
 let toastTmr;
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.innerHTML = msg; t.classList.add('show');
+  t.innerHTML = msg;
+  t.classList.remove('with-undo');
+  t.classList.add('show');
+  t.onclick = null;
   clearTimeout(toastTmr);
   toastTmr = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Einblendung mit „Rückgängig" — die Sicherheitsabfrage fängt den Fehlgriff ab, nicht die
+// Fehlentscheidung. Sechs Sekunden reichen, um ein versehentliches Löschen zurückzunehmen.
+let _undoAction = null;
+function showUndoToast(msg, undoFn) {
+  const t = document.getElementById('toast');
+  _undoAction = undoFn;
+  t.innerHTML = `<span class="toast-msg">${msg}</span><button class="toast-undo" onclick="runUndo()">Rückgängig</button>`;
+  t.classList.add('show', 'with-undo');
+  clearTimeout(toastTmr);
+  toastTmr = setTimeout(() => { t.classList.remove('show', 'with-undo'); _undoAction = null; }, 6000);
+}
+function runUndo() {
+  const fn = _undoAction;
+  _undoAction = null;
+  const t = document.getElementById('toast');
+  t.classList.remove('show', 'with-undo');
+  clearTimeout(toastTmr);
+  if (typeof fn === 'function') fn();
+}
+
+// Löschen mit Sicherheitsnetz: Zustand der Datenspeicher vor der Aktion festhalten und
+// über „Rückgängig" komplett zurückschreiben. Bewusst grob (ganze Stores statt einzelner
+// Objekte) — dafür stimmen auch Folgeänderungen wie gelöste Wochenplan-Zuweisungen wieder.
+function _snapshotStores() {
+  return {
+    plans: JSON.parse(JSON.stringify(DB.getPlans())),
+    days: JSON.parse(JSON.stringify(DB.getTrainingDays())),
+    exercises: JSON.parse(JSON.stringify(DB.getExercises())),
+    workouts: JSON.parse(JSON.stringify(DB.getWorkouts())),
+  };
+}
+function _restoreStores(snap) {
+  DB.savePlans(snap.plans);
+  DB.saveTrainingDays(snap.days);
+  DB.saveExercises(snap.exercises);
+  DB.saveWorkouts(snap.workouts);
+}
+function withUndo(label, fn, afterRestore) {
+  const snap = _snapshotStores();
+  fn();
+  showUndoToast(label, () => {
+    _restoreStores(snap);
+    if (typeof afterRestore === 'function') afterRestore();
+    showToast('Wiederhergestellt');
+  });
 }
 function pd(name) { return `<span class="pd-name">${name}</span>`; }
 
@@ -6247,11 +6385,13 @@ function clearDriveLog() {
 }
 
 // ─── markLocalChange (hook aus DB.save*) ──────────────
-// Markiert nur den Änderungs-Zeitpunkt für die Konflikt-Erkennung.
-// Drive-Sync wird NICHT automatisch bei jeder Änderung getriggert — nur explizit
-// am Ende eines Workouts (`finishWorkout`) oder manuell via "Jetzt synchronisieren".
+// Markiert den Änderungs-Zeitpunkt für die Konflikt-Erkennung UND stößt die Sicherung an.
+// Früher lief die Sicherung nur am Ende einer Einheit — wer eine Weile nur Pläne pflegte,
+// sicherte nie. Der Trigger ist entprellt (DRIVE_DEBOUNCE_MS), es entsteht also ein Upload
+// pro Bearbeitungsphase, nicht pro Tastendruck.
 function markLocalChange() {
   localStorage.setItem('ft_drive_last_local_change', String(Date.now()));
+  if (driveIsEnabled()) driveTriggerSync('Änderung');
 }
 
 // ─── Debounced trigger ───────────────────────────────
@@ -6535,7 +6675,7 @@ async function driveSync(reason = 'manuell') {
       driveApplyCloudData(data);
       driveSetLastCloudEtag(cloudMeta.modifiedTime);
       driveSetLastPushed(Date.now());
-      driveLog('ok', `Aus Cloud geladen ✓ (${(data.workouts || []).length} Workouts)`);
+      driveLog('ok', `Aus Cloud geladen ✓ (${(data.workouts || []).length} Einheiten)`);
       // UI neu rendern
       try { showScreen(currentScreen || 'overview'); } catch {}
       renderDriveStatus();
@@ -6570,8 +6710,8 @@ async function driveSync(reason = 'manuell') {
 function driveShowConflictDialog() {
   if (!driveConflictData) return;
   const { local, cloud, cloudMeta } = driveConflictData;
-  const localMeta = `${(local.workouts || []).length} Workouts<br>Stand: ${new Date(driveGetLastLocalChange()).toLocaleString('de-DE')}`;
-  const cloudMetaStr = `${(cloud.workouts || []).length} Workouts<br>Stand: ${new Date(cloudMeta.modifiedTime).toLocaleString('de-DE')}`;
+  const localMeta = `${(local.workouts || []).length} Einheiten<br>Stand: ${new Date(driveGetLastLocalChange()).toLocaleString('de-DE')}`;
+  const cloudMetaStr = `${(cloud.workouts || []).length} Einheiten<br>Stand: ${new Date(cloudMeta.modifiedTime).toLocaleString('de-DE')}`;
   document.getElementById('conflict-local-meta').innerHTML = localMeta;
   document.getElementById('conflict-cloud-meta').innerHTML = cloudMetaStr;
   openModal('modal-drive-conflict');
@@ -6959,11 +7099,13 @@ function initScrollHideNav() {
   TAB_ORDER.forEach(tabName => {
     attachToScreen(document.getElementById('screen-'+tabName), tabName);
   });
-  // Plan-Detail- + Trainingstag-Detail-Overlay haben eigenes Scrollen — Nav-Hide auch dort.
+  // Overlays haben eigenes Scrollen — Nav-Hide auch dort.
   const planDetail = document.getElementById('screen-plan-detail');
   if (planDetail) attachToScreen(planDetail, 'plan-detail');
   const dayDetail = document.getElementById('screen-day-detail');
   if (dayDetail) attachToScreen(dayDetail, 'day-detail');
+  const mehrEl = document.getElementById('screen-mehr');
+  if (mehrEl) attachToScreen(mehrEl, 'mehr');
 }
 
 // Alle Tab-Inhalte einmal im Hintergrund rendern (App-Start), damit beim Wischen KEIN
@@ -7006,6 +7148,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Edge-Swipe-Back im Plan-Detail (vom linken Bildschirmrand mit Finger nach rechts ziehen)
   initOverlayEdgeSwipe('screen-plan-detail', closePlanDetail);
   initOverlayEdgeSwipe('screen-day-detail', closeLibDayDetail);
+  initOverlayEdgeSwipe('screen-mehr', closeMehr);
 });
 
 // Edge-Swipe-Back fuer Plan-Detail-Overlay.
