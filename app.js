@@ -4835,7 +4835,6 @@ function renderExercisesByPlan() {
     const isCollapsed = !exCatalogSearch && collapsedExGroups.has('plan:' + day.id);
     return `<div class="ex-group${isCollapsed ? ' collapsed' : ''}">
       <div class="ex-group-title" onclick="toggleExGroup('plan:${day.id}')">
-        <span class="dot" style="background:rgba(255,255,255,0.7)"></span>
         ${pd(day.name)}
         <span class="count">(${items.length})</span>
         <span class="ex-group-arrow">${isCollapsed ? '▸' : '▾'}</span>

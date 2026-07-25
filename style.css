@@ -791,17 +791,23 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
    Rot/Orange/Cyan/Braun/Violett) belegt, damit Trainingstage eindeutig erkennbar bleiben).
    Ersetzt die frühere Großbuchstaben-Darstellung. Wird NUR in Standalone-Kontexten
    (Listen-Zeilen, Gruppen-Header) verwendet — inline in Sätzen/Toasts steht der Name plain. */
+/* Trainingstag-Name (Helper pd()): kräftiger Text mit schmalem Balken links statt der
+   früheren pinken Pille. Keine Flächenfarbe → funktioniert in jedem Tab-Theme.
+   Kein border-radius, weil der Balken eine einseitige Kante ist. */
 .pd-name {
   display: inline-block;
-  background: #FCE7F3;
-  color: #9D174D;
+  border-left: 3px solid var(--text);
+  color: var(--text);
   font-weight: 600;
   letter-spacing: 0.1px;
-  padding: 1px 9px;
-  border-radius: 999px;
+  padding: 0 0 0 9px;
   line-height: 1.45;
   vertical-align: baseline;
 }
+/* Übungen-Tab: Gruppen-Überschriften stehen direkt auf dem farbigen Tab-Hintergrund,
+   dort muss der Name hell sein. Im Add-Übung-Modal steht dieselbe Klasse auf Weiß. */
+.ex-group-title .pd-name { color: #fff; border-left-color: rgba(255,255,255,0.8); }
+.sheet-ex-group .ex-group-title .pd-name { color: var(--text); border-left-color: var(--text); }
 
 /* ─── Util ─── */
 .hidden { display: none !important; }
