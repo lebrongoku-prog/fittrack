@@ -1302,6 +1302,12 @@ function _doStartWorkout(dayId) {
 
   const wo = { id:'wo_'+Date.now(), planDayId: dayId, planDayName: day ? day.name : 'Freestyle', startTs: Date.now(), exercises };
   DB.saveActive(wo);
+  // Erste Übung offen starten — im Training will man sofort eintragen können,
+  // nicht erst zwei Mal tippen. Alle weiteren bleiben zu.
+  expandedAexIds.clear();
+  _aexUserClosedAll = false;
+  const firstEx = exercises.find(e => !isWoExCardio(e));
+  if (firstEx) expandedAexIds.add(firstEx.exId || firstEx.id);
   // Set selected day to match
   const wp = DB.getWeekPlan();
   const idx = wp.findIndex(d => d.planDayId === dayId);
@@ -1575,6 +1581,9 @@ function renderWorkoutsScreen() {
     addWrap.style.display = 'none';
     stopTimer();
   }
+
+  syncWorkoutActiveUI();
+  checkStickyBar();
 }
 
 function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-ex-list') {
@@ -1749,6 +1758,11 @@ function renderActiveWorkout() {
   // (Mini-Kacheln im Workouts-Tab wurden entfernt)
   document.getElementById('ex-tab-bar').innerHTML = '';
 
+  // Ist keine Karte offen (frisch gestartet oder App zwischendurch neu geladen), die nächste
+  // unerledigte Übung aufklappen. Der Klappzustand lebt nur im Speicher — ohne das stünde man
+  // nach einem Neustart mitten im Training wieder vor lauter zugeklappten Karten.
+  ensureActiveExpanded(wo);
+
   // Exercise cards
   document.getElementById('active-ex-list').innerHTML = wo.exercises.map((ex, ei) => {
     if (!CARDIO_ENABLED && isWoExCardio(ex)) return '';   // Cardio ausgeblendet
@@ -1758,11 +1772,17 @@ function renderActiveWorkout() {
     const last = getLastExData(ex.exId || ex.id);
     const lastStr = last ? `Zuletzt: ${last.sets.length}×${last.sets[0]?.reps||'?'} @ ${last.maxWeight} kg` : '';
     const targetW = last ? `${last.maxWeight} kg` : '–';
-    // Pro-Satz-Tabelle als ZEILEN: je Satz eine Zeile (Wdh | kg); erledigte Sätze sind gesperrt/markiert.
-    const setRows = ex.sets.map((s, si) => `<div class="aex-v2-srow">
+    // Pro-Satz-Tabelle als ZEILEN: je Satz eine Zeile (Wdh | kg | Haken); erledigte Sätze sind
+    // gesperrt/markiert. Der Haken ist im Training die wichtigste Interaktion — er beantwortet
+    // „welcher Satz kommt jetzt?" und startet die Satzpause.
+    const setRows = ex.sets.map((s, si) => `<div class="aex-v2-srow${s.done ? ' set-done' : ''}">
             <span class="aex-v2-snum">${si+1}</span>
             <input class="aex-v2-inp ${s.done?'done-inp':''}" type="number" inputmode="numeric" style="--c:${col.c}" placeholder="–" value="${s.reps}" onchange="updateSet(${ei},${si},'reps',this.value)" ${s.done?'disabled':''}>
             <input class="aex-v2-inp ${s.done?'done-inp':''}" type="number" inputmode="decimal" style="--c:${col.c}" placeholder="–" value="${s.weight}" onchange="updateSet(${ei},${si},'weight',this.value)" ${s.done?'disabled':''}>
+            <button class="aex-v2-setcheck${s.done ? ' on' : ''}" onclick="event.stopPropagation();toggleSetDone(${ei},${si})"
+                    aria-label="Satz ${si+1} ${s.done ? 'wieder öffnen' : 'als erledigt markieren'}" aria-pressed="${s.done ? 'true' : 'false'}">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
           </div>`).join('');
 
     const stateCls = ex.done ? 'done' : (ex.skipped ? 'skipped' : '');
@@ -1792,7 +1812,7 @@ function renderActiveWorkout() {
       </div>
       <div class="aex-v2-body">
         <div class="aex-v2-table">
-          <div class="aex-v2-srow head"><span>Satz</span><span>Wdh.</span><span>kg</span></div>
+          <div class="aex-v2-srow head"><span>Satz</span><span>Wdh.</span><span>kg</span><span></span></div>
           ${setRows}
         </div>
         <div class="aex-v2-notes">
@@ -1820,6 +1840,17 @@ function updateBottomBar() { /* bottom bar removed in v2 */ }
 // fuer die jeweilige Uebung (per exId). State ist in-memory pro Session.
 const expandedAexIds = new Set();
 function isAexExpanded(exId) { return expandedAexIds.has(exId); }
+// Hat der Nutzer die letzte offene Karte selbst zugeklappt, bleibt alles zu — sonst würde
+// sich die Karte sofort wieder öffnen und ließe sich nicht schließen.
+let _aexUserClosedAll = false;
+// Sorgt dafür, dass im laufenden Training die nächste unerledigte Übung offen ist.
+function ensureActiveExpanded(wo) {
+  if (!wo || !Array.isArray(wo.exercises) || _aexUserClosedAll) return;
+  const open = wo.exercises.some(e => expandedAexIds.has(e.exId || e.id));
+  if (open) return;
+  const next = wo.exercises.find(e => !e.done && !e.skipped && !isWoExCardio(e));
+  if (next) expandedAexIds.add(next.exId || next.id);
+}
 function toggleAexCollapse(exId, ev) {
   if (ev) {
     // Klicks auf Drag-Handle / Erledigt-Checkbox sollen NICHT togglen
@@ -1828,6 +1859,8 @@ function toggleAexCollapse(exId, ev) {
   }
   if (expandedAexIds.has(exId)) expandedAexIds.delete(exId);
   else expandedAexIds.add(exId);
+  // Merken, ob der Nutzer bewusst alles zugeklappt hat (siehe ensureActiveExpanded)
+  _aexUserClosedAll = expandedAexIds.size === 0;
   if (currentScreen === 'workouts') renderWorkoutsScreen();
   else if (currentScreen === 'day-detail') renderLibDayDetail();
 }
@@ -2261,6 +2294,104 @@ function toggleExDone(ei, checked) {
   }
 }
 
+// Einzelnen Satz abhaken. Kern-Interaktion im Training: markiert den Satz als erledigt,
+// startet die Satzpause und hakt die Übung automatisch ab, sobald alle Sätze stehen.
+function toggleSetDone(ei, si) {
+  const wo = DB.getActive();
+  if (!wo) return;
+  const ex = wo.exercises[ei];
+  if (!ex || !Array.isArray(ex.sets) || !ex.sets[si]) return;
+  const nowDone = !ex.sets[si].done;
+  ex.sets[si].done = nowDone;
+
+  const allDone = ex.sets.length > 0 && ex.sets.every(s => s.done);
+  ex.done = allDone;
+  if (allDone) ex.skipped = false;
+  const exId = ex.exId || ex.id;
+  if (allDone) expandedAexIds.delete(exId);
+
+  DB.saveActive(wo);
+  renderWorkoutsScreen();
+
+  if (nowDone) startRestTimer(exId, ex.name);
+  // Übung fertig → nächste offene Card aufklappen (gleiche Mechanik wie beim Erledigt-Haken)
+  if (allDone) setTimeout(() => { expandNextExercise(); }, 50);
+}
+
+// ─── Satzpause ─────────────────────────────────────────────────────
+// Läuft nach jedem abgehakten Satz. Dauer pro Übung merkbar: was zuletzt per +30/−30
+// eingestellt wurde, gilt beim nächsten Mal für dieselbe Übung wieder.
+const REST_DEFAULT_SEC = 90;
+let restState = null;     // { exId, name, endTs, total, interval }
+
+function restSecForEx(exId) {
+  const ex = getEx(exId);
+  const v = ex && parseInt(ex.restSec);
+  return (v && v > 0) ? v : REST_DEFAULT_SEC;
+}
+function setRestSecForEx(exId, sec) {
+  const exs = DB.getExercises();
+  const ex = exs.find(e => e.id === exId);
+  if (!ex) return;
+  ex.restSec = sec;
+  DB.saveExercises(exs);
+}
+
+function startRestTimer(exId, name) {
+  const total = restSecForEx(exId);
+  stopRestTimer(/*silent*/ true);
+  restState = { exId, name: name || '', endTs: Date.now() + total * 1000, total, interval: null };
+  renderRestBar();
+  restState.interval = setInterval(tickRestTimer, 250);
+}
+
+function tickRestTimer() {
+  if (!restState) return;
+  const left = Math.round((restState.endTs - Date.now()) / 1000);
+  if (left <= 0) {
+    if (navigator.vibrate) navigator.vibrate([180, 90, 180]);
+    stopRestTimer();
+    return;
+  }
+  renderRestBar();
+}
+
+function stopRestTimer(silent) {
+  if (restState && restState.interval) clearInterval(restState.interval);
+  restState = null;
+  renderRestBar();
+  if (!silent) { /* Ende ohne Toast — die Vibration reicht, der Blick ist auf der Hantel */ }
+}
+
+// Pause verlängern/verkürzen. Der neue Wert wird als Vorgabe der Übung gemerkt.
+function adjustRest(deltaSec) {
+  if (!restState) return;
+  const left = Math.max(0, Math.round((restState.endTs - Date.now()) / 1000));
+  const newLeft = Math.max(5, left + deltaSec);
+  restState.endTs = Date.now() + newLeft * 1000;
+  restState.total = Math.max(restState.total + deltaSec, newLeft);
+  setRestSecForEx(restState.exId, Math.max(15, restSecForEx(restState.exId) + deltaSec));
+  renderRestBar();
+}
+
+function renderRestBar() {
+  const bar = document.getElementById('rest-bar');
+  if (!bar) return;
+  if (!restState) { bar.classList.remove('show'); bar.innerHTML = ''; return; }
+  const left = Math.max(0, Math.round((restState.endTs - Date.now()) / 1000));
+  const pct = restState.total > 0 ? Math.max(0, Math.min(100, left / restState.total * 100)) : 0;
+  bar.innerHTML = `
+    <div class="rest-bar-fill" style="width:${pct}%"></div>
+    <div class="rest-bar-inner">
+      <span class="rest-bar-lbl">Satzpause</span>
+      <span class="rest-bar-time">${fmtTimer(left)}</span>
+      <button class="rest-bar-btn" onclick="adjustRest(-30)" aria-label="30 Sekunden kürzer">−30</button>
+      <button class="rest-bar-btn" onclick="adjustRest(30)" aria-label="30 Sekunden länger">+30</button>
+      <button class="rest-bar-btn rest-bar-close" onclick="stopRestTimer()" aria-label="Pause beenden">✕</button>
+    </div>`;
+  bar.classList.add('show');
+}
+
 function skipExercise(ei) {
   const wo = DB.getActive();
   if (!wo) return;
@@ -2448,10 +2579,35 @@ function _woTimerText() {
   return wo ? fmtTimer(Math.floor(getElapsedMs(wo) / 1000)) : '';
 }
 function syncWorkoutActiveUI() {
-  const active = !!DB.getActive();
+  const wo = DB.getActive();
+  const active = !!wo;
   document.documentElement.classList.toggle('workout-active', active);
+  // Läuft eine Einheit, blendet der Workouts-Tab den Wochenplan aus (Platz für die Sätze).
+  document.documentElement.classList.toggle('wo-running', active && currentScreen === 'workouts');
   const barTimer = document.getElementById('wab-timer');
   if (active && barTimer) barTimer.textContent = _woTimerText();
+  const sbTimer = document.getElementById('wsb-timer');
+  if (active && sbTimer) sbTimer.textContent = _woTimerText();
+  const sbTitle = document.getElementById('wsb-title');
+  if (active && sbTitle && !sbTitle.textContent) sbTitle.textContent = wo.planDayName || 'Einheit';
+  if (!active) updateStickyBar(false);
+}
+
+// Kopfleiste der laufenden Einheit ein-/ausblenden. Sichtbar, sobald die Session-Karte
+// nach oben aus dem Blickfeld gescrollt ist.
+function updateStickyBar(show) {
+  const bar = document.getElementById('wo-sticky-bar');
+  if (bar) bar.classList.toggle('show', !!show);
+}
+function checkStickyBar() {
+  const wo = DB.getActive();
+  if (!wo || currentScreen !== 'workouts') { updateStickyBar(false); return; }
+  const card = document.getElementById('wo-session-card-wrap');
+  if (!card) { updateStickyBar(false); return; }
+  const r = card.getBoundingClientRect();
+  updateStickyBar(r.bottom < 90);
+  const sbTitle = document.getElementById('wsb-title');
+  if (sbTitle) sbTitle.textContent = wo.planDayName || 'Einheit';
 }
 
 // Pause / resume the active workout (real freeze).
@@ -2690,8 +2846,9 @@ function finishWorkout() {
   const wo = DB.getActive();
   if (!wo) return;
   stopTimer();
-  // Card-Collapse-State leeren — beim naechsten Workout starten alle Cards eingeklappt
+  // Card-Collapse-State leeren — die erste Übung der nächsten Einheit wird beim Start geöffnet
   expandedAexIds.clear();
+  stopRestTimer(true);
   const duration = Math.floor(getElapsedMs(wo) / 1000);
   // Clean: bei Kraft leere Saetze entfernen, bei Cardio Eintrag nur behalten wenn Dauer ODER Distanz gesetzt
   const cleanEx = wo.exercises.map(ex => {
@@ -2737,10 +2894,11 @@ function discardWorkout() {
       'Workout wirklich abbrechen und löschen? Alle Eingaben gehen verloren.',
       () => {
         stopTimer();
+        stopRestTimer(true);
         DB.clearActive();
         syncWorkoutActiveUI();
         expandedAexIds.clear();   // Card-Collapse-State leeren — naechstes Workout startet sauber
-        showToast('Workout verworfen');
+        showToast('Einheit verworfen');
         if (currentScreen === 'overview') renderOverview();
         else if (currentScreen === 'workouts') renderWorkoutsScreen();
       },
@@ -6703,6 +6861,7 @@ function initScrollHideNav() {
         }
         _navLastScrollY = cur;
         _navTickingByTab.set(tabName, false);
+        if (tabName === 'workouts') checkStickyBar();
       });
     }, { passive: true });
   }

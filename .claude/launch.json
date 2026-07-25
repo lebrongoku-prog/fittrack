@@ -4,7 +4,7 @@
     {
       "name": "fittrack",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8123"],
+      "runtimeArgs": [".claude/devserver.py"],
       "port": 8123
     }
   ]

@@ -134,8 +134,10 @@
       </div>
     </div>
 
-    <!-- Wochenplan-Strip in weisser Kachel (Layout analog Uebersicht-Tab) -->
-    <div class="plan-section-card">
+    <!-- Wochenplan-Strip in weisser Kachel (Layout analog Uebersicht-Tab).
+         Während einer laufenden Einheit wird die Kachel ausgeblendet (html.wo-running),
+         damit die Eingabe der Sätze ohne Scrollen beginnt. -->
+    <div class="plan-section-card" id="wo-week-card">
       <div class="plan-section-head">
         <h3>Wochenplan</h3>
         <a onclick="showScreen('plans')">Plan bearbeiten</a>
@@ -454,6 +456,18 @@
 
 </div><!-- /app -->
 
+
+<!-- Kopfleiste der laufenden Einheit: erscheint, sobald die Session-Karte aus dem Blick
+     gescrollt ist. Hält Laufzeit und Beenden erreichbar, ohne nach oben zu scrollen. -->
+<div id="wo-sticky-bar">
+  <span class="wsb-dot"></span>
+  <span id="wsb-title" class="wsb-title"></span>
+  <span id="wsb-timer" class="wsb-timer">0:00</span>
+  <button class="wsb-finish" onclick="confirmFinish()">Beenden</button>
+</div>
+
+<!-- Satzpause: Countdown über der Bottom-Nav, startet beim Abhaken eines Satzes. -->
+<div id="rest-bar"></div>
 
 <!-- ══ BOTTOM NAV ══ -->
 <!-- Aktives-Workout-Mini-Leiste über der Bottom-Nav (app-weit, ausser auf dem Workouts-Tab). -->
