@@ -1759,11 +1759,11 @@ function renderWorkoutsScreen() {
   const selDay = weekDays[selectedWorkoutDayIdx];
   const planDay = selDay ? (selDay.planDay || null) : null;
   const active = DB.getActive();
-  // Die laufende Einheit gehört zu GENAU EINEM Wochentag. Ohne den Vergleich mit woDayIdx
-  // würde sie an jedem Tag auftauchen, an dem derselbe Trainingstag im Plan steht.
-  // Freies Training (planDayId = null) hängt allein am Wochentag.
-  const activeOnSelected = !!(active && woDayIdx(active) === selectedWorkoutDayIdx
-    && (active.planDayId ? (planDay && active.planDayId === planDay.id) : true));
+  // Die laufende Einheit gehört zu GENAU EINEM Wochentag — der Vergleich mit woDayIdx genügt,
+  // damit sie nicht an jedem Tag auftaucht, an dem derselbe Trainingstag im Plan steht.
+  // Bewusst NICHT zusätzlich gegen planDay geprüft: Wer sein Training auf einen Ruhetag
+  // verschiebt (oder frei trainiert), soll die laufende Einheit trotzdem hier sehen.
+  const activeOnSelected = !!(active && woDayIdx(active) === selectedWorkoutDayIdx);
 
   // Header subtitle
   const dotEl = document.getElementById('wo-sub-dot');
@@ -1840,8 +1840,12 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
     const ptSets = displaySetsForPe(pe, last);
     const ptRows = ptSets.map((s, si) => `<div class="aex-v2-srow">
             <span class="aex-v2-snum">${si+1}</span>
-            <input class="aex-v2-inp" type="number" inputmode="numeric" style="--c:${col.c}" placeholder="–" value="${s.reps}" onchange="updatePreviewSetTarget('${planDay.id}',${ei},${si},'reps',this.value,'${mode}')">
-            <input class="aex-v2-inp" type="number" inputmode="decimal" style="--c:${col.c}" placeholder="–" value="${s.weight}" onchange="updatePreviewSetTarget('${planDay.id}',${ei},${si},'weight',this.value,'${mode}')">
+            <input class="aex-v2-inp" type="text" inputmode="none" readonly style="--c:${col.c}" placeholder="–" value="${s.reps}"
+                   data-np-ctx="preview" data-np-day="${planDay.id}" data-np-mode="${mode}" data-np-ei="${ei}" data-np-si="${si}" data-np-field="reps" data-np-label="${escapeHtml(ex.name)}"
+                   onclick="openNumpadFromInput(this)">
+            <input class="aex-v2-inp" type="text" inputmode="none" readonly style="--c:${col.c}" placeholder="–" value="${s.weight}"
+                   data-np-ctx="preview" data-np-day="${planDay.id}" data-np-mode="${mode}" data-np-ei="${ei}" data-np-si="${si}" data-np-field="weight" data-np-label="${escapeHtml(ex.name)}"
+                   onclick="openNumpadFromInput(this)">
           </div>`).join('');
     return `<div class="aex-v2 ${collapsedCls}" id="aex-${ei}" style="--c:${col.c};--c-bg:${col.bg}"
                  ondragstart="aexDragStart(event,${ei},'${mode}','${planDay.id}')"
@@ -2019,8 +2023,12 @@ function renderActiveWorkout() {
     // „welcher Satz kommt jetzt?" und startet die Satzpause.
     const setRows = ex.sets.map((s, si) => `<div class="aex-v2-srow${s.done ? ' set-done' : ''}">
             <span class="aex-v2-snum">${si+1}</span>
-            <input class="aex-v2-inp ${s.done?'done-inp':''}" type="number" inputmode="numeric" style="--c:${col.c}" placeholder="–" value="${s.reps}" onchange="updateSet(${ei},${si},'reps',this.value)" ${s.done?'disabled':''}>
-            <input class="aex-v2-inp ${s.done?'done-inp':''}" type="number" inputmode="decimal" style="--c:${col.c}" placeholder="–" value="${s.weight}" onchange="updateSet(${ei},${si},'weight',this.value)" ${s.done?'disabled':''}>
+            <input class="aex-v2-inp ${s.done?'done-inp':''}" type="text" inputmode="none" readonly style="--c:${col.c}" placeholder="–" value="${s.reps}"
+                   data-np-ctx="active" data-np-ei="${ei}" data-np-si="${si}" data-np-field="reps" data-np-label="${escapeHtml(ex.name)}"
+                   onclick="openNumpadFromInput(this)" ${s.done?'disabled':''}>
+            <input class="aex-v2-inp ${s.done?'done-inp':''}" type="text" inputmode="none" readonly style="--c:${col.c}" placeholder="–" value="${s.weight}"
+                   data-np-ctx="active" data-np-ei="${ei}" data-np-si="${si}" data-np-field="weight" data-np-label="${escapeHtml(ex.name)}"
+                   onclick="openNumpadFromInput(this)" ${s.done?'disabled':''}>
             <button class="aex-v2-setcheck${s.done ? ' on' : ''}" onclick="event.stopPropagation();toggleSetDone(${ei},${si})"
                     aria-label="Satz ${si+1} ${s.done ? 'wieder öffnen' : 'als erledigt markieren'}" aria-pressed="${s.done ? 'true' : 'false'}">
               <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
@@ -2476,6 +2484,91 @@ function refreshCardioPace(ei) {
   }
 }
 
+// ─── Zahlenblock ───────────────────────────────────────────────────
+// Eigener Eingabeblock statt der iOS-Tastatur: große Tasten, Schnellschritte und
+// keine Systemtastatur, die den halben Bildschirm verdeckt. Die Felder selbst sind
+// readonly — ein Tipp öffnet dieses Sheet, der Wert wird beim Schließen übernommen.
+let npState = null;   // { field, value, fresh, commit }
+
+function openNumpadFromInput(el) {
+  if (!el || el.disabled) return;
+  const d = el.dataset;
+  const field = d.npField;                       // 'reps' | 'weight'
+  const isWeight = field === 'weight';
+  const ctx = d.npCtx;                           // 'active' | 'preview'
+  const ei = parseInt(d.npEi), si = parseInt(d.npSi);
+
+  const commit = (val) => {
+    if (ctx === 'active') {
+      updateSet(ei, si, field, val);
+      renderWorkoutsScreen();
+    } else {
+      updatePreviewSetTarget(d.npDay, ei, si, field, val, d.npMode);
+    }
+  };
+
+  npState = { field, value: String(el.value || ''), fresh: true, commit };
+  document.getElementById('np-title').textContent = d.npLabel || '';
+  document.getElementById('np-sub').textContent =
+    `Satz ${si + 1} · ${isWeight ? 'Gewicht' : 'Wiederholungen'}`;
+  document.getElementById('np-unit').textContent = isWeight ? 'kg' : '×';
+  document.getElementById('np-key-dot').style.visibility = isWeight ? '' : 'hidden';
+
+  const steps = isWeight ? [-5, -2.5, 2.5, 5] : [-2, -1, 1, 2];
+  document.getElementById('np-quick').innerHTML = steps.map(s =>
+    `<button class="np-quick-btn" onclick="npStep(${s})">${s > 0 ? '+' : '−'}${String(Math.abs(s)).replace('.', ',')}</button>`
+  ).join('');
+
+  npRenderValue();
+  openModal('modal-numpad');
+}
+
+function npRenderValue() {
+  const el = document.getElementById('np-value');
+  if (el && npState) el.textContent = (npState.value === '' ? '–' : npState.value.replace('.', ','));
+}
+
+function npTap(key) {
+  if (!npState) return;
+  if (key === 'del') {
+    npState.value = npState.value.slice(0, -1);
+    npState.fresh = false;
+  } else if (key === '.') {
+    if (npState.fresh) { npState.value = '0'; npState.fresh = false; }
+    if (!npState.value.includes('.')) npState.value += '.';
+  } else {
+    // Erste Ziffer ersetzt den alten Wert — beim Ändern von 60 auf 65 will niemand erst löschen.
+    if (npState.fresh) { npState.value = ''; npState.fresh = false; }
+    const dot = npState.value.indexOf('.');
+    const decimals = dot >= 0 ? npState.value.length - dot - 1 : 0;
+    if (decimals >= 2) return;                                  // höchstens zwei Nachkommastellen
+    if (npState.value.replace('.', '').length < 5) npState.value += key;
+  }
+  npRenderValue();
+}
+
+function npStep(delta) {
+  if (!npState) return;
+  const cur = parseFloat(npState.value.replace(',', '.')) || 0;
+  const next = Math.max(0, Math.round((cur + delta) * 100) / 100);
+  npState.value = String(next);
+  // Der Schritt schließt die Eingabe ab: Eine danach getippte Ziffer beginnt neu,
+  // sonst entstünde aus „+2,5" und einer 6 der Unsinnswert 82,56.
+  npState.fresh = true;
+  npRenderValue();
+}
+
+function closeNumpad() {
+  const st = npState;
+  npState = null;
+  closeModal('modal-numpad');
+  if (!st) return;
+  // Trailing-Komma abschneiden ("62," → "62")
+  let v = st.value.replace(',', '.');
+  if (v.endsWith('.')) v = v.slice(0, -1);
+  st.commit(v);
+}
+
 function updateSet(ei, si, field, value) {
   const wo = DB.getActive();
   if (!wo) return;
@@ -2552,12 +2645,121 @@ function toggleSetDone(ei, si) {
   const exId = ex.exId || ex.id;
   if (allDone) expandedAexIds.delete(exId);
 
+  // Bestleistung im Moment des Abhakens feiern — nicht erst in der Abschlussansicht.
+  // Nur einmal je Übung und Einheit, sonst feiert jeder weitere Satz mit gleichem Gewicht mit.
+  if (nowDone && !ex.prCelebrated && !isWoExCardio(ex)) {
+    const w = parseFloat(String(ex.sets[si].weight).replace(',', '.'));
+    const prevBest = getExercisePR(exId) || 0;   // bestes Gewicht aus GESPEICHERTEN Einheiten
+    if (w > 0 && w > prevBest) {
+      ex.prCelebrated = true;
+      celebratePR(ex.name, w, prevBest);
+    }
+  }
+
   DB.saveActive(wo);
   renderWorkoutsScreen();
 
   if (nowDone) startRestTimer(exId, ex.name);
   // Übung fertig → nächste offene Card aufklappen (gleiche Mechanik wie beim Erledigt-Haken)
   if (allDone) setTimeout(() => { expandNextExercise(); }, 50);
+}
+
+// ─── Bestleistungs-Moment ──────────────────────────────────────────
+// Kurze Feier direkt beim Abhaken des Satzes. Der Rekord passiert im Training,
+// nicht in der Auswertung — also gehört die Rückmeldung auch dorthin.
+function celebratePR(name, weight, prev) {
+  if (navigator.vibrate) navigator.vibrate([40, 60, 120]);
+  const diff = prev > 0 ? weight - prev : 0;
+  showToast(`Bestleistung: ${fmtKg(weight)} kg${diff > 0 ? ` (+${fmtKg(diff)})` : ''} — ${name}`);
+
+  // Wer Bewegung reduziert haben möchte, bekommt nur die Meldung.
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const burst = document.createElement('div');
+  burst.className = 'pr-burst';
+  const colors = ['#F59E0B', '#10B981', '#0EA5E9', '#F43F5E', '#FACC15'];
+  let html = '';
+  for (let i = 0; i < 22; i++) {
+    const left = Math.random() * 100;
+    const delay = Math.random() * 0.35;
+    const dur = 1.1 + Math.random() * 0.7;
+    const rot = Math.floor(Math.random() * 360);
+    const c = colors[i % colors.length];
+    const size = 6 + Math.floor(Math.random() * 6);
+    html += `<i style="left:${left}%;background:${c};width:${size}px;height:${size * 1.6}px;
+             animation-delay:${delay}s;animation-duration:${dur}s;transform:rotate(${rot}deg)"></i>`;
+  }
+  burst.innerHTML = html;
+  document.body.appendChild(burst);
+  setTimeout(() => burst.remove(), 2200);
+}
+
+function fmtKg(v) {
+  const n = Math.round(v * 100) / 100;
+  return String(n).replace('.', ',');
+}
+
+// Bestleistung als Bild sichern/teilen. Auf dem iPhone öffnet das das Teilen-Menü,
+// sonst wird die Datei heruntergeladen.
+function sharePRCard(name, weight, prev, dateTs) {
+  const W = 1080, H = 1350;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const c = cv.getContext('2d');
+
+  c.fillStyle = '#0F172A'; c.fillRect(0, 0, W, H);
+  c.fillStyle = '#10B981';
+  c.fillRect(0, 0, W, 10);
+
+  c.textAlign = 'center';
+  c.fillStyle = '#5DBBA8';
+  c.font = '600 34px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  c.fillText('N E U E   B E S T L E I S T U N G', W/2, 300);
+
+  c.fillStyle = '#FFFFFF';
+  c.font = '800 190px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  c.fillText(`${fmtKg(weight)} kg`, W/2, 500);
+
+  c.fillStyle = '#CBD5E1';
+  c.font = '500 46px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  // Lange Übungsnamen umbrechen statt abschneiden
+  const words = String(name).split(' ');
+  let line = '', y = 590;
+  words.forEach(word => {
+    const test = line ? line + ' ' + word : word;
+    if (c.measureText(test).width > W - 160 && line) { c.fillText(line, W/2, y); y += 60; line = word; }
+    else line = test;
+  });
+  if (line) c.fillText(line, W/2, y);
+
+  c.strokeStyle = 'rgba(255,255,255,0.14)'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(120, y + 90); c.lineTo(W - 120, y + 90); c.stroke();
+
+  const diff = prev > 0 ? weight - prev : 0;
+  c.fillStyle = '#94A3B8';
+  c.font = '500 40px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  c.fillText(diff > 0 ? `+${fmtKg(diff)} kg zum bisherigen Rekord` : 'Erster Eintrag für diese Übung', W/2, y + 170);
+  c.fillText(new Date(dateTs || Date.now()).toLocaleDateString('de-DE', { day:'numeric', month:'long', year:'numeric' }), W/2, y + 240);
+
+  c.fillStyle = '#475569';
+  c.font = '700 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  c.fillText('FitTrack', W/2, H - 90);
+
+  cv.toBlob(async (blob) => {
+    if (!blob) { showToast('Bild konnte nicht erstellt werden'); return; }
+    const file = new File([blob], 'bestleistung.png', { type: 'image/png' });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+        return;
+      }
+    } catch (e) { /* Teilen abgebrochen → auf Download zurückfallen */ }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'bestleistung.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, 'image/png');
 }
 
 // ─── Satzpause ─────────────────────────────────────────────────────
@@ -3155,9 +3357,25 @@ function renderWorkoutSummary(wo, prevWorkouts, setChanges) {
     }
   }
 
+  // Stärkster Kraft-PR bekommt eine eigene Karte zum Sichern/Teilen.
+  const topPR = prs.filter(p => p.kind !== 'cardio')
+                   .sort((a, b) => (b.weight || 0) - (a.weight || 0))[0];
+  const prCardHTML = topPR
+    ? `<div class="pr-card">
+         <div class="pr-card-lbl">Neue Bestleistung</div>
+         <div class="pr-card-val">${fmtKg(topPR.weight)} kg</div>
+         <div class="pr-card-name">${escapeHtml(topPR.name)}</div>
+         <div class="pr-card-foot">${topPR.prev > 0 ? `+${fmtKg(topPR.weight - topPR.prev)} kg zum bisherigen Rekord` : 'Erster Eintrag für diese Übung'}</div>
+         <button class="pr-card-btn" onclick="sharePRCard('${escapeHtml(String(topPR.name)).replace(/'/g, "\\'")}',${topPR.weight},${topPR.prev || 0},${wo.startTs})">Als Bild sichern</button>
+       </div>`
+    : '';
+
+  // Der auf der Karte gezeigte Rekord taucht in der Liste nicht noch einmal auf.
+  const restPRs = prs.filter(p => p !== topPR);
   const prHTMLBlock = prs.length
-    ? `<div class="sum-pr-head">${prs.length === 1 ? 'Neue Bestleistung' : 'Neue Bestleistungen'}</div>
-       <div class="sum-pr-list">${prs.map(p => {
+    ? `${prCardHTML}
+       ${restPRs.length ? `<div class="sum-pr-head">${restPRs.length === 1 ? 'Außerdem' : 'Außerdem'}</div>` : ''}
+       <div class="sum-pr-list">${restPRs.map(p => {
          if (p.kind === 'cardio') {
            return `<div class="sum-pr-row"><span class="sum-pr-name">${escapeHtml(p.name)}</span>
                    <span class="sum-pr-val">${p.distance ? formatDistance(p.distance) : formatDuration(p.duration)}</span></div>`;
@@ -3311,6 +3529,9 @@ function renderHomeStats() {
   // ── Karte 1: Volumen-/Distanzentwicklung ──
   if (statsVolMode === 'cardio') renderCardioDistanceChart(ws);
   else renderVolumeChart(ws);
+
+  // ── Trainingskalender (immer 52 Wochen, unabhängig vom Zeitraum-Filter) ──
+  renderTrainingCalendar();
 
   // ── Karte 2: Muskelgruppen / Cardio-Verteilung ──
   const volEl = document.getElementById('muscle-bars');
@@ -3608,19 +3829,188 @@ function getISOWeek(d) {
   return 1 + Math.round(((date-week1)/86400000 - 3 + ((week1.getDay()+6)%7))/7);
 }
 
-function renderMuscleBars(vol, container) {
-  const maxVol = Math.max(1, ...Object.values(vol));
-  const html = MUSCLE_ORDER.map(m => {
+// ─── Trainingskalender ─────────────────────────────────────────────
+// Ein Kästchen pro Tag der letzten 52 Wochen, eingefärbt nach Tagesvolumen.
+// Zeigt Regelmäßigkeit und Lücken auf einen Blick — das sieht man in keinem Diagramm.
+const CAL_WEEKS = 52;
+
+function _dayKeyOf(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+
+// Volumen + Einheiten pro Kalendertag über den gesamten Verlauf.
+function buildCalendarData() {
+  const byDay = {};
+  DB.getWorkouts().forEach(w => {
+    const key = _dayKeyOf(w.startTs);
+    if (!byDay[key]) byDay[key] = { vol: 0, count: 0, names: [] };
+    byDay[key].vol += calcVolume(w);
+    byDay[key].count += 1;
+    const nm = w.planDayName || 'Freies Training';
+    if (!byDay[key].names.includes(nm)) byDay[key].names.push(nm);
+  });
+  return byDay;
+}
+
+function renderTrainingCalendar() {
+  const grid = document.getElementById('cal-grid');
+  if (!grid) return;
+  const byDay = buildCalendarData();
+
+  // Raster endet in der laufenden Woche; Start = Montag vor 51 Wochen.
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayIdx = (today.getDay()+6) % 7;
+  const lastMonday = new Date(today); lastMonday.setDate(today.getDate() - todayIdx);
+  const start = new Date(lastMonday); start.setDate(lastMonday.getDate() - (CAL_WEEKS - 1) * 7);
+
+  // Farbstufen relativ zum besten Tag des Zeitraums — absolute Schwellen wären bei
+  // wechselnden Trainingsgewichten wenig aussagekräftig.
+  let maxVol = 0;
+  for (let i = 0; i < CAL_WEEKS * 7; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const e = byDay[_dayKeyOf(d.getTime())];
+    if (e && e.vol > maxVol) maxVol = e.vol;
+  }
+  const levelOf = (vol) => {
+    if (!vol) return 0;
+    if (!maxVol) return 1;
+    const r = vol / maxVol;
+    return r >= 0.75 ? 4 : r >= 0.5 ? 3 : r >= 0.25 ? 2 : 1;
+  };
+
+  let cells = '';
+  let months = '';
+  let lastMonth = -1;
+  for (let w = 0; w < CAL_WEEKS; w++) {
+    const weekStart = new Date(start); weekStart.setDate(start.getDate() + w * 7);
+    // Monatsbeschriftung, sobald eine Woche einen neuen Monat beginnt
+    const m = weekStart.getMonth();
+    const showLabel = m !== lastMonth && weekStart.getDate() <= 7;
+    months += `<span class="cal-month">${showLabel ? weekStart.toLocaleDateString('de-DE',{month:'short'}) : ''}</span>`;
+    if (showLabel) lastMonth = m;
+
+    cells += '<div class="cal-week">';
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(weekStart); day.setDate(weekStart.getDate() + d);
+      const key = _dayKeyOf(day.getTime());
+      const entry = byDay[key];
+      const future = day.getTime() > today.getTime();
+      const isToday = day.getTime() === today.getTime();
+      const lvl = levelOf(entry ? entry.vol : 0);
+      cells += `<span class="cal-day cal-l${lvl}${future ? ' future' : ''}${isToday ? ' today' : ''}"
+                      data-key="${key}" onclick="showCalDay('${key}')"
+                      role="button" tabindex="0"
+                      aria-label="${day.toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})}${entry ? ', trainiert' : ''}"></span>`;
+    }
+    cells += '</div>';
+  }
+  grid.innerHTML = cells;
+  const monthsEl = document.getElementById('cal-months');
+  if (monthsEl) monthsEl.innerHTML = months;
+
+  // Kennzahlen: Einheiten im Zeitraum + aktuelle Wochenserie
+  const inRange = DB.getWorkouts().filter(w => w.startTs >= start.getTime()).length;
+  const streak = getWeekStreak();
+  const statsEl = document.getElementById('cal-stats');
+  if (statsEl) {
+    statsEl.textContent = inRange
+      ? `${inRange} ${inRange === 1 ? 'Einheit' : 'Einheiten'}${streak > 0 ? ` · Serie ${streak} ${streak === 1 ? 'Woche' : 'Wochen'}` : ''}`
+      : '';
+  }
+
+  // Ans rechte Ende scrollen — heute ist der interessante Rand.
+  const scroller = document.getElementById('cal-scroll');
+  if (scroller) requestAnimationFrame(() => { scroller.scrollLeft = scroller.scrollWidth; });
+}
+
+// Tippen auf ein Kästchen: Tag in der Fußzeile beschreiben.
+function showCalDay(key) {
+  const el = document.getElementById('cal-detail');
+  if (!el) return;
+  const entry = buildCalendarData()[key];
+  const [y, m, d] = key.split('-').map(Number);
+  const dateStr = new Date(y, m-1, d).toLocaleDateString('de-DE', { weekday:'long', day:'numeric', month:'long' });
+  document.querySelectorAll('.cal-day.sel').forEach(c => c.classList.remove('sel'));
+  const cell = document.querySelector(`.cal-day[data-key="${key}"]`);
+  if (cell) cell.classList.add('sel');
+  el.innerHTML = entry
+    ? `<strong>${dateStr}</strong> · ${entry.names.join(', ')} · ${fmtNum(entry.vol)} kg`
+    : `<strong>${dateStr}</strong> · kein Training`;
+}
+
+// Muskel-Landkarte: zwei Silhouetten (vorne/hinten), deren Regionen nach Volumenanteil
+// eingefärbt sind. Ersetzt die frühere Balkenliste — Ungleichgewichte sieht man als Bild
+// schneller als in einer Rangliste. Die Zahlen stehen darunter als Legende.
+// Vorne: Schultern, Brust, Bizeps, Bauch, Oberschenkel. Hinten: Rücken, Trizeps, Waden.
+function muscleMapSvg(vol, maxVol) {
+  // Anteil → Deckkraft der Muskelfarbe (0 = unbenutzt, grau)
+  const fillFor = (m) => {
     const v = vol[m] || 0;
-    if (!v) return '';
-    const pct = Math.round(v / maxVol * 100);
-    return `<div class="muscle-bar-v2-row no-icon" style="--mc:${muscleColor(m)};--mc-bg:${muscleBg(m)}">
-      <span class="muscle-bar-v2-name">${muscleName(m)}</span>
-      <div class="muscle-bar-v2-bar"><div class="muscle-bar-v2-fill" style="width:${pct}%"></div></div>
-      <span class="muscle-bar-v2-val">${fmtNum(v)} kg</span>
+    if (!v || !maxVol) return { fill: 'var(--border)', op: 1 };
+    const r = v / maxVol;
+    const op = r >= 0.75 ? 1 : r >= 0.5 ? 0.78 : r >= 0.25 ? 0.55 : 0.32;
+    return { fill: muscleColor(m), op };
+  };
+  const p = (m) => { const f = fillFor(m); return `fill="${f.fill}" fill-opacity="${f.op}"`; };
+
+  const front = `<svg viewBox="0 0 100 190" class="mmap-svg" role="img" aria-label="Vorderansicht: eingefärbte Muskelgruppen">
+    <circle cx="50" cy="15" r="10.5" fill="var(--border)"/>
+    <rect x="35" y="28" width="30" height="8" rx="4" ${p('shoulders')}/>
+    <rect x="19" y="31" width="12" height="12" rx="6" ${p('shoulders')}/>
+    <rect x="69" y="31" width="12" height="12" rx="6" ${p('shoulders')}/>
+    <rect x="34" y="38" width="32" height="25" rx="7" ${p('chest')}/>
+    <rect x="19" y="45" width="11" height="26" rx="5.5" ${p('biceps')}/>
+    <rect x="70" y="45" width="11" height="26" rx="5.5" ${p('biceps')}/>
+    <rect x="36" y="65" width="28" height="26" rx="6" ${p('core')}/>
+    <rect x="20" y="73" width="10" height="24" rx="5" fill="var(--border)"/>
+    <rect x="70" y="73" width="10" height="24" rx="5" fill="var(--border)"/>
+    <rect x="35" y="94" width="13" height="46" rx="6" ${p('legs')}/>
+    <rect x="52" y="94" width="13" height="46" rx="6" ${p('legs')}/>
+    <rect x="36" y="143" width="11" height="33" rx="5" ${p('legs')}/>
+    <rect x="53" y="143" width="11" height="33" rx="5" ${p('legs')}/>
+  </svg>`;
+
+  const back = `<svg viewBox="0 0 100 190" class="mmap-svg" role="img" aria-label="Rückansicht: eingefärbte Muskelgruppen">
+    <circle cx="50" cy="15" r="10.5" fill="var(--border)"/>
+    <rect x="35" y="28" width="30" height="8" rx="4" ${p('shoulders')}/>
+    <rect x="19" y="31" width="12" height="12" rx="6" ${p('shoulders')}/>
+    <rect x="69" y="31" width="12" height="12" rx="6" ${p('shoulders')}/>
+    <rect x="34" y="38" width="32" height="32" rx="7" ${p('back')}/>
+    <rect x="19" y="45" width="11" height="26" rx="5.5" ${p('triceps')}/>
+    <rect x="70" y="45" width="11" height="26" rx="5.5" ${p('triceps')}/>
+    <rect x="36" y="72" width="28" height="19" rx="6" ${p('back')}/>
+    <rect x="20" y="73" width="10" height="24" rx="5" fill="var(--border)"/>
+    <rect x="70" y="73" width="10" height="24" rx="5" fill="var(--border)"/>
+    <rect x="35" y="94" width="13" height="46" rx="6" ${p('legs')}/>
+    <rect x="52" y="94" width="13" height="46" rx="6" ${p('legs')}/>
+    <rect x="36" y="143" width="11" height="33" rx="5" ${p('legs')}/>
+    <rect x="53" y="143" width="11" height="33" rx="5" ${p('legs')}/>
+  </svg>`;
+
+  return `<div class="mmap-figures">
+    <div class="mmap-fig">${front}<span class="mmap-cap">Vorne</span></div>
+    <div class="mmap-fig">${back}<span class="mmap-cap">Hinten</span></div>
+  </div>`;
+}
+
+function renderMuscleBars(vol, container) {
+  const values = MUSCLE_ORDER.map(m => vol[m] || 0);
+  const maxVol = Math.max(0, ...values);
+  if (!maxVol) {
+    container.innerHTML = '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>';
+    return;
+  }
+  const legend = MUSCLE_ORDER.map(m => {
+    const v = vol[m] || 0;
+    const dim = v ? '' : ' mmap-legend-off';
+    return `<div class="mmap-legend-row${dim}">
+      <span class="mmap-dot" style="background:${v ? muscleColor(m) : 'var(--border)'}"></span>
+      <span class="mmap-legend-name">${muscleName(m)}</span>
+      <span class="mmap-legend-val">${v ? fmtNum(v) + ' kg' : '–'}</span>
     </div>`;
-  }).filter(Boolean).join('');
-  container.innerHTML = html || '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>';
+  }).join('');
+  container.innerHTML = muscleMapSvg(vol, maxVol) + `<div class="mmap-legend">${legend}</div>`;
 }
 
 function getAllPRs() {

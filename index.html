@@ -103,6 +103,31 @@
       </div>
     </div>
 
+    <!-- Trainingskalender: ein Kästchen pro Tag, eingefärbt nach Volumen -->
+    <div class="chart-card-v2 lg-span-2">
+      <div class="chart-card-v2-head">
+        <span class="chart-card-v2-title">Trainingskalender</span>
+        <span class="cal-stats" id="cal-stats"></span>
+      </div>
+      <div class="cal-scroll" id="cal-scroll">
+        <div class="cal-inner">
+          <div class="cal-months" id="cal-months"></div>
+          <div class="cal-body">
+            <div class="cal-daylabels"><span>Mo</span><span></span><span>Mi</span><span></span><span>Fr</span><span></span><span>So</span></div>
+            <div class="cal-grid" id="cal-grid"></div>
+          </div>
+        </div>
+      </div>
+      <div class="cal-foot">
+        <div class="cal-detail" id="cal-detail">Tippe ein Kästchen für den Tag</div>
+        <div class="cal-legend">
+          <span>weniger</span>
+          <i class="cal-l0"></i><i class="cal-l1"></i><i class="cal-l2"></i><i class="cal-l3"></i><i class="cal-l4"></i>
+          <span>mehr</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Volumen pro Muskelgruppe / Cardio-Verteilung pro Uebung -->
     <div class="chart-card-v2 lg-col1">
       <div class="chart-card-v2-head">
@@ -707,6 +732,37 @@
 </div>
 
 <!-- Confirm finish -->
+<!-- Zahlenblock: ersetzt die iOS-Tastatur beim Eintragen von Wiederholungen und Gewicht.
+     Große Tasten, Schnellschritte (+2,5 kg / +1 Wdh.) und kein halber Bildschirm voll Tastatur. -->
+<div id="modal-numpad" class="overlay hidden" onclick="if(event.target===this)closeNumpad()">
+  <div class="sheet np-sheet">
+    <div class="sheet-handle"></div>
+    <div class="np-head">
+      <div class="np-title" id="np-title"></div>
+      <div class="np-sub" id="np-sub"></div>
+    </div>
+    <div class="np-display"><span id="np-value">0</span><span class="np-unit" id="np-unit"></span></div>
+    <div class="np-quick" id="np-quick"></div>
+    <div class="np-grid">
+      <button class="np-key" onclick="npTap('1')">1</button>
+      <button class="np-key" onclick="npTap('2')">2</button>
+      <button class="np-key" onclick="npTap('3')">3</button>
+      <button class="np-key" onclick="npTap('4')">4</button>
+      <button class="np-key" onclick="npTap('5')">5</button>
+      <button class="np-key" onclick="npTap('6')">6</button>
+      <button class="np-key" onclick="npTap('7')">7</button>
+      <button class="np-key" onclick="npTap('8')">8</button>
+      <button class="np-key" onclick="npTap('9')">9</button>
+      <button class="np-key np-key-alt" id="np-key-dot" onclick="npTap('.')">,</button>
+      <button class="np-key" onclick="npTap('0')">0</button>
+      <button class="np-key np-key-alt" onclick="npTap('del')" aria-label="Letzte Ziffer löschen">⌫</button>
+    </div>
+    <div class="np-actions">
+      <button class="btn btn-primary btn-full" onclick="closeNumpad()">Fertig</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-finish" class="overlay hidden">
   <div class="sheet">
     <div class="sheet-handle"></div>

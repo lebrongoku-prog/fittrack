@@ -1532,6 +1532,35 @@ html.wo-running #wo-week-card { display: none; }
 .sum-pr-name { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--text); }
 .sum-pr-val { font-size: 14px; font-weight: 800; color: var(--green); white-space: nowrap; }
 .sum-pr-prev { font-size: 12px; font-weight: 500; color: var(--text3); }
+/* ─── Bestleistungs-Moment ─── */
+.pr-card {
+  margin: 18px 0 6px; padding: 20px 16px; border-radius: 16px;
+  background: #0F172A; text-align: center;
+}
+.pr-card-lbl { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #5DBBA8; }
+.pr-card-val { font-size: 38px; font-weight: 800; color: #fff; line-height: 1.1; margin-top: 10px; letter-spacing: -1px; }
+.pr-card-name { font-size: 14px; color: #CBD5E1; margin-top: 6px; line-height: 1.35; }
+.pr-card-foot { font-size: 12px; color: #94A3B8; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.12); }
+.pr-card-btn {
+  margin-top: 14px; padding: 10px 18px; border-radius: 10px; border: none;
+  background: rgba(255,255,255,0.14); color: #fff;
+  font-size: 13px; font-weight: 700; font-family: inherit;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.pr-card-btn:active { transform: scale(.96); }
+
+/* Konfetti beim Abhaken eines Rekord-Satzes */
+.pr-burst { position: fixed; inset: 0; pointer-events: none; z-index: 400; overflow: hidden; }
+.pr-burst i {
+  position: absolute; top: -24px; display: block; border-radius: 2px;
+  animation-name: pr-fall; animation-timing-function: cubic-bezier(.25,.6,.4,1); animation-fill-mode: forwards;
+}
+@keyframes pr-fall {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(540deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .pr-burst { display: none; } }
+
 .sum-planupd { margin-top: 18px; padding: 11px 13px; background: var(--card2); border-radius: 12px; }
 .sum-planupd-head { font-size: 12px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--text3); margin-bottom: 5px; }
 .sum-planupd-row { font-size: 13px; color: var(--text2); line-height: 1.45; }
@@ -1609,6 +1638,82 @@ html.wo-running #wo-week-card { display: none; }
 .muscle-bar-v2-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
 .muscle-bar-v2-fill { height: 100%; background: var(--mc, var(--accent)); border-radius: 3px; }
 .muscle-bar-v2-val { font-size: 13px; font-weight: 600; color: var(--text2); min-width: 56px; text-align: right; }
+
+/* ─── Zahlenblock ─── */
+.np-sheet { padding-bottom: calc(12px + var(--safe-b)); }
+.np-head { padding: 2px 18px 0; }
+.np-title { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.3; }
+.np-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.np-display {
+  display: flex; align-items: baseline; justify-content: center; gap: 6px;
+  padding: 14px 18px 12px;
+  font-variant-numeric: tabular-nums;
+}
+#np-value { font-size: 40px; font-weight: 800; color: var(--text); letter-spacing: -1px; }
+.np-unit { font-size: 16px; font-weight: 700; color: var(--text3); }
+.np-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; padding: 0 14px 12px; }
+.np-quick-btn {
+  padding: 11px 4px; border-radius: 11px; border: none;
+  background: var(--accent-bg); color: var(--accent-dark);
+  font-size: 14px; font-weight: 700; font-family: inherit;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.np-quick-btn:active { transform: scale(.95); }
+.np-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 14px; }
+.np-key {
+  padding: 15px 0; border-radius: 13px; border: none;
+  background: var(--card2); color: var(--text);
+  font-size: 22px; font-weight: 600; font-family: inherit;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.np-key:active { background: var(--border); transform: scale(.97); }
+.np-key-alt { font-size: 18px; color: var(--text2); }
+.np-actions { padding: 12px 14px 0; }
+
+/* ─── Muskel-Landkarte ─── */
+.mmap-figures { display: flex; justify-content: center; gap: 18px; padding: 6px 0 2px; }
+.mmap-fig { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.mmap-svg { width: 84px; height: auto; }
+.mmap-cap { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: .3px; }
+.mmap-legend {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 2px 14px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border);
+}
+.mmap-legend-row { display: flex; align-items: center; gap: 7px; padding: 3px 0; }
+.mmap-legend-row.mmap-legend-off { opacity: .45; }
+.mmap-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+.mmap-legend-name { flex: 1; min-width: 0; font-size: 13px; color: var(--text2); }
+.mmap-legend-val { font-size: 13px; font-weight: 600; color: var(--text); }
+
+/* ─── Trainingskalender ─── */
+.cal-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 4px 16px 0; }
+.cal-scroll::-webkit-scrollbar { display: none; }
+.cal-inner { display: inline-block; min-width: 100%; }
+.cal-months { display: flex; gap: 3px; margin-left: 22px; margin-bottom: 3px; }
+.cal-month { width: 11px; flex: 0 0 11px; font-size: 9px; color: var(--text3); white-space: nowrap; }
+.cal-body { display: flex; gap: 5px; }
+.cal-daylabels { display: flex; flex-direction: column; gap: 3px; flex: 0 0 17px; }
+.cal-daylabels span { height: 11px; font-size: 9px; line-height: 11px; color: var(--text3); }
+.cal-grid { display: flex; gap: 3px; }
+.cal-week { display: flex; flex-direction: column; gap: 3px; }
+.cal-day {
+  width: 11px; height: 11px; border-radius: 3px; display: block;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.cal-day.future { opacity: .35; }
+.cal-day.today { box-shadow: 0 0 0 1.5px var(--accent); }
+.cal-day.sel   { box-shadow: 0 0 0 1.5px var(--text); }
+/* Stufen: leer → viel Volumen (Teal-Rampe, unabhängig vom Tab-Akzent lesbar) */
+.cal-l0 { background: var(--border); }
+.cal-l1 { background: #CCEAE3; }
+.cal-l2 { background: #8FD3C4; }
+.cal-l3 { background: #3FA88F; }
+.cal-l4 { background: #0F766E; }
+.cal-foot { padding: 10px 16px 12px; }
+.cal-detail { font-size: 12px; color: var(--text2); line-height: 1.4; min-height: 17px; }
+.cal-detail strong { color: var(--text); font-weight: 600; }
+.cal-legend { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 11px; color: var(--text3); }
+.cal-legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
 
 /* PR list v2 (with numbered colored circles) */
 .pr-list-v2 { padding: 4px 16px 8px; }
