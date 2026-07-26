@@ -2463,3 +2463,7 @@ html.no-cardio .stats-mode-toggle { display: none; }
    <div>-Schaltflächen und öffnen den eigenen Zahlenblock.
    Ergänzt die viewport-Angabe in index.html, die nur in der installierten PWA greift. */
 input, select, textarea { font-size: 16px !important; }
+/* Ausnahme Notizfeld in den Übungskarten: 16px wirkten dort zu wuchtig (Leonard-Wunsch).
+   Vertretbar, weil die viewport-Sperre oben den Fokus-Zoom in der installierten PWA
+   abfängt — im Safari-Tab würde dieses eine Feld beim Antippen zoomen. */
+.aex-v2-notes-area { font-size: 12px !important; }
