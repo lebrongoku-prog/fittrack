@@ -1004,31 +1004,37 @@ function extendActivePlan(weeks) {
 
 // Zeile „zuletzt gesichert" auf der Übersicht. Ohne eingerichtete Sicherung liegen alle
 // Daten nur im Browser-Speicher dieses Geräts — das soll sichtbar sein, bevor es weh tut.
+// Sicherungs-Status als kompaktes Chip neben dem Titel „FitTrack" (früher eine eigene
+// Kachel weiter unten). Der Platz im Kopf ist knapp, deshalb kurze Texte — die
+// ausführliche Fassung steht in den Einstellungen, die ein Tipp darauf öffnet.
 function renderBackupLine() {
   const el = document.getElementById('ov-backup-line');
   if (!el) return;
   const enabled = driveIsEnabled();
   const last = driveGetLastPushed();
-  let cls = 'backup-line', txt, action = '';
+  let cls = 'backup-chip', txt, title;
 
   if (enabled && last) {
     const days = Math.floor((Date.now() - last) / 86400000);
-    txt = days <= 0 ? 'Heute gesichert' : (days === 1 ? 'Gestern gesichert' : `Zuletzt vor ${days} Tagen gesichert`);
-    txt = 'Google Drive · ' + txt;
-    if (days > 7) { cls += ' warn'; action = 'Prüfen'; }
+    txt = days <= 0 ? 'Heute gesichert' : (days === 1 ? 'Gestern gesichert' : `Vor ${days} Tagen`);
+    title = `Google Drive · ${days <= 0 ? 'heute' : days === 1 ? 'gestern' : 'vor ' + days + ' Tagen'} gesichert`;
+    if (days > 7) cls += ' warn';
   } else if (enabled) {
     cls += ' warn';
-    txt = 'Google Drive verbunden, aber noch nichts gesichert';
-    action = 'Prüfen';
+    txt = 'Nicht gesichert';
+    title = 'Google Drive verbunden, aber noch nichts gesichert';
   } else {
     // Ohne eingerichtete Sicherung nie grün melden — das läse sich wie „alles in Ordnung".
     const n = DB.getWorkouts().length;
-    txt = 'Keine Sicherung — alles liegt nur auf diesem Gerät';
+    txt = 'Keine Sicherung';
+    title = 'Keine Sicherung — alles liegt nur auf diesem Gerät';
     cls += n >= 10 ? ' warn' : ' idle';
-    action = 'Einrichten';
   }
   el.className = cls;
-  el.innerHTML = `<span class="backup-dot"></span><span>${txt}</span>${action ? `<span class="backup-action">${action} ›</span>` : ''}`;
+  el.title = title;
+  el.setAttribute('role', 'button');
+  el.setAttribute('aria-label', title + ' — Einstellungen öffnen');
+  el.innerHTML = `<span class="backup-dot"></span><span class="backup-txt">${txt}</span>`;
   el.onclick = () => showScreen('mehr');
 }
 

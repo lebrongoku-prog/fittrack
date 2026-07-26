@@ -888,18 +888,21 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .free-wo-btn { margin-top: 12px; }
 
 /* Sicherungs-Hinweis auf der Übersicht */
-.backup-line {
-  display: flex; align-items: center; gap: 8px;
-  margin: 0 14px 14px; padding: 9px 12px;
-  background: var(--card); border-radius: 12px; box-shadow: var(--shadow);
-  font-size: 12.5px; color: var(--text2);
+/* Sicherungs-Status im Kopf der Übersicht, links neben dem Zahnrad. Sitzt auf dem
+   farbigen Tab-Hintergrund → helle, halbtransparente Fläche wie das Zahnrad. */
+.ph-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-top: 2px; }
+.backup-chip {
+  display: flex; align-items: center; gap: 6px;
+  max-width: 168px; padding: 7px 10px;
+  border-radius: 11px; background: rgba(255,255,255,0.18);
+  font-size: 11.5px; font-weight: 600; color: #fff;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.backup-line .backup-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
-.backup-line.warn { color: var(--text); }
-.backup-line.warn .backup-dot { background: var(--red); }
-.backup-line.idle .backup-dot { background: var(--text3); }
-.backup-line .backup-action { margin-left: auto; color: var(--accent); font-weight: 600; white-space: nowrap; }
+.backup-chip:active { transform: scale(.96); }
+.backup-chip .backup-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.backup-chip .backup-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; flex-shrink: 0; }
+.backup-chip.warn .backup-dot { background: #FCA5A5; }
+.backup-chip.idle .backup-dot { background: rgba(255,255,255,0.55); }
 
 /* ─── Responsive ─── */
 @media (min-width: 560px) {
