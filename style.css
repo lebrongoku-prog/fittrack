@@ -1438,15 +1438,21 @@ html.wo-running #wo-week-card { display: none; }
 .aex-v2-row.head { margin-bottom: 6px; }
 .aex-v2-row.head .lbl { font-size: 12px; color: var(--text3); font-weight: 600; }
 .aex-v2-row .ax-lbl { font-size: 12px; color: var(--text3); font-weight: 600; }
+/* Kein <input>, sondern eine Schaltfläche, die den Zahlenblock öffnet — siehe
+   openNumpadFromInput(). Dadurch kann iOS beim Antippen nicht hineinzoomen. */
 .aex-v2-inp {
   width: 100%; height: 38px; line-height: 38px;
-  padding: 0 4px;
+  padding: 0 4px; box-sizing: border-box;
   background: var(--card2); border: 1px solid transparent;
   border-radius: 10px; font-size: 15px; font-weight: 600; text-align: center;
   color: var(--text); -webkit-appearance: none;
   vertical-align: middle;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  overflow: hidden; white-space: nowrap;
 }
-.aex-v2-inp:focus { outline: none; border-color: var(--c, var(--accent)); background: #fff; }
+.aex-v2-inp:active { border-color: var(--c, var(--accent)); background: #fff; }
+.aex-v2-inp:focus-visible { outline: 2px solid var(--c, var(--accent)); outline-offset: 1px; }
+.aex-v2-inp.is-disabled { cursor: default; }
 .aex-v2-inp.done-inp { background: var(--green-bg); border-color: var(--green); color: var(--green); }
 .aex-v2-row .num-cell { font-size: 13px; font-weight: 600; text-align: center; color: var(--text3); }
 /* Pro-Satz-Tabelle als ZEILEN (eine Zeile pro Satz): Satznr | Wdh. | kg | Haken */
@@ -2446,3 +2452,14 @@ html.no-cardio .stats-mode-toggle { display: none; }
   border: 2px solid var(--cardio);
   background: var(--cardio-bg);
 }
+
+/* ═══════════════════════════════════
+   KEIN AUTO-ZOOM AUF EINGABEFELDERN
+═══════════════════════════════════ */
+/* iOS Safari zoomt beim Fokussieren automatisch hinein, sobald das Feld kleiner als
+   16px schreibt — danach sieht man nur noch einen Ausschnitt und muss von Hand
+   herauszoomen. Zentral erzwungen, damit einzelne Karten-Styles das nicht wieder
+   unterlaufen. Die Satz-Felder (.aex-v2-inp) sind davon nicht betroffen: Sie sind
+   <div>-Schaltflächen und öffnen den eigenen Zahlenblock.
+   Ergänzt die viewport-Angabe in index.html, die nur in der installierten PWA greift. */
+input, select, textarea { font-size: 16px !important; }

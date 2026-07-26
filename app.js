@@ -1840,12 +1840,12 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
     const ptSets = displaySetsForPe(pe, last);
     const ptRows = ptSets.map((s, si) => `<div class="aex-v2-srow">
             <span class="aex-v2-snum">${si+1}</span>
-            <input class="aex-v2-inp" type="text" inputmode="none" readonly style="--c:${col.c}" placeholder="–" value="${s.reps}"
-                   data-np-ctx="preview" data-np-day="${planDay.id}" data-np-mode="${mode}" data-np-ei="${ei}" data-np-si="${si}" data-np-field="reps" data-np-label="${escapeHtml(ex.name)}"
-                   onclick="openNumpadFromInput(this)">
-            <input class="aex-v2-inp" type="text" inputmode="none" readonly style="--c:${col.c}" placeholder="–" value="${s.weight}"
-                   data-np-ctx="preview" data-np-day="${planDay.id}" data-np-mode="${mode}" data-np-ei="${ei}" data-np-si="${si}" data-np-field="weight" data-np-label="${escapeHtml(ex.name)}"
-                   onclick="openNumpadFromInput(this)">
+            <div class="aex-v2-inp" style="--c:${col.c}" role="button" tabindex="0"
+                 data-np-ctx="preview" data-np-day="${planDay.id}" data-np-mode="${mode}" data-np-ei="${ei}" data-np-si="${si}" data-np-field="reps" data-np-label="${escapeHtml(ex.name)}"
+                 aria-label="Wiederholungen Satz ${si+1}" onclick="openNumpadFromInput(this)">${s.reps === '' ? '–' : s.reps}</div>
+            <div class="aex-v2-inp" style="--c:${col.c}" role="button" tabindex="0"
+                 data-np-ctx="preview" data-np-day="${planDay.id}" data-np-mode="${mode}" data-np-ei="${ei}" data-np-si="${si}" data-np-field="weight" data-np-label="${escapeHtml(ex.name)}"
+                 aria-label="Gewicht Satz ${si+1}" onclick="openNumpadFromInput(this)">${s.weight === '' ? '–' : s.weight}</div>
           </div>`).join('');
     return `<div class="aex-v2 ${collapsedCls}" id="aex-${ei}" style="--c:${col.c};--c-bg:${col.bg}"
                  ondragstart="aexDragStart(event,${ei},'${mode}','${planDay.id}')"
@@ -2023,12 +2023,12 @@ function renderActiveWorkout() {
     // „welcher Satz kommt jetzt?" und startet die Satzpause.
     const setRows = ex.sets.map((s, si) => `<div class="aex-v2-srow${s.done ? ' set-done' : ''}">
             <span class="aex-v2-snum">${si+1}</span>
-            <input class="aex-v2-inp ${s.done?'done-inp':''}" type="text" inputmode="none" readonly style="--c:${col.c}" placeholder="–" value="${s.reps}"
-                   data-np-ctx="active" data-np-ei="${ei}" data-np-si="${si}" data-np-field="reps" data-np-label="${escapeHtml(ex.name)}"
-                   onclick="openNumpadFromInput(this)" ${s.done?'disabled':''}>
-            <input class="aex-v2-inp ${s.done?'done-inp':''}" type="text" inputmode="none" readonly style="--c:${col.c}" placeholder="–" value="${s.weight}"
-                   data-np-ctx="active" data-np-ei="${ei}" data-np-si="${si}" data-np-field="weight" data-np-label="${escapeHtml(ex.name)}"
-                   onclick="openNumpadFromInput(this)" ${s.done?'disabled':''}>
+            <div class="aex-v2-inp ${s.done?'done-inp is-disabled':''}" style="--c:${col.c}" role="button" tabindex="${s.done?-1:0}"
+                 data-np-ctx="active" data-np-ei="${ei}" data-np-si="${si}" data-np-field="reps" data-np-label="${escapeHtml(ex.name)}"
+                 aria-label="Wiederholungen Satz ${si+1}" onclick="openNumpadFromInput(this)">${s.reps === '' ? '–' : s.reps}</div>
+            <div class="aex-v2-inp ${s.done?'done-inp is-disabled':''}" style="--c:${col.c}" role="button" tabindex="${s.done?-1:0}"
+                 data-np-ctx="active" data-np-ei="${ei}" data-np-si="${si}" data-np-field="weight" data-np-label="${escapeHtml(ex.name)}"
+                 aria-label="Gewicht Satz ${si+1}" onclick="openNumpadFromInput(this)">${s.weight === '' ? '–' : s.weight}</div>
             <button class="aex-v2-setcheck${s.done ? ' on' : ''}" onclick="event.stopPropagation();toggleSetDone(${ei},${si})"
                     aria-label="Satz ${si+1} ${s.done ? 'wieder öffnen' : 'als erledigt markieren'}" aria-pressed="${s.done ? 'true' : 'false'}">
               <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
@@ -2491,7 +2491,9 @@ function refreshCardioPace(ei) {
 let npState = null;   // { field, value, fresh, commit }
 
 function openNumpadFromInput(el) {
-  if (!el || el.disabled) return;
+  // Die Felder sind bewusst <div> und kein <input>: iOS zoomt beim Fokussieren eines
+  // Eingabefelds automatisch hinein. Ohne Eingabefeld gibt es nichts zu fokussieren.
+  if (!el || el.classList.contains('is-disabled')) return;
   const d = el.dataset;
   const field = d.npField;                       // 'reps' | 'weight'
   const isWeight = field === 'weight';
@@ -2507,7 +2509,8 @@ function openNumpadFromInput(el) {
     }
   };
 
-  npState = { field, value: String(el.value || ''), fresh: true, commit };
+  const shown = (el.textContent || '').trim();
+  npState = { field, value: (shown === '–' ? '' : shown), fresh: true, commit };
   document.getElementById('np-title').textContent = d.npLabel || '';
   document.getElementById('np-sub').textContent =
     `Satz ${si + 1} · ${isWeight ? 'Gewicht' : 'Wiederholungen'}`;
@@ -2586,8 +2589,9 @@ function updateSet(ei, si, field, value) {
     const isReps = (idx % 2 === 0);
     if (setIdx <= si) return;                               // frühere/aktuellen Satz nicht anfassen
     if (!ex.sets[setIdx] || ex.sets[setIdx].done) return;   // erledigte Sätze nicht anfassen
-    if (isReps && field === 'reps')    inp.value = value;
-    if (!isReps && field === 'weight') inp.value = value;
+    const shown = (value === '' ? '–' : value);
+    if (isReps && field === 'reps')    inp.textContent = shown;
+    if (!isReps && field === 'weight') inp.textContent = shown;
   });
 }
 

@@ -2,7 +2,10 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <!-- maximum-scale/user-scalable: unterbindet das Zoomen — vor allem den automatischen
+       Zoom, den iOS beim Fokussieren eines Eingabefelds auslöst. In der installierten PWA
+       respektiert iOS diese Angaben; im Safari-Tab greift zusätzlich die 16px-Regel unten. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
