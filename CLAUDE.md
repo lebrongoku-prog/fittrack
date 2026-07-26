@@ -30,7 +30,7 @@ Nötig, weil der Browser sonst beim Prüfen weiter die alte `app.js` ausliefert.
 
 Git-Repo: `https://github.com/lebrongoku-prog/fittrack` (Remote `origin`, Branch `main`).
 Live via GitHub Pages aus `main` / `/ (root)`: **https://lebrongoku-prog.github.io/fittrack/**
-Deploy = `git push` (Leonard führt den Push selbst aus; Auth per Personal Access Token im macOS-Keychain).
+Deploy = `git push`. **Claude führt den Push selbst aus** (Leonard-Entscheidung, 26.07.2026) — das Personal Access Token liegt im macOS-Keychain, der Credential-Helper liefert es an git, ohne dass es sichtbar wird. Vorher kurz ankündigen bzw. auf Zuruf („hochladen") pushen; nie ungefragt, da der Stand damit öffentlich live geht.
 
 ---
 
