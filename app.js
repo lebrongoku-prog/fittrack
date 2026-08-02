@@ -2655,21 +2655,26 @@ function toggleSetDone(ei, si) {
   const exId = ex.exId || ex.id;
   if (allDone) expandedAexIds.delete(exId);
 
-  // Bestleistung im Moment des Abhakens feiern — nicht erst in der Abschlussansicht.
-  // Nur einmal je Übung und Einheit, sonst feiert jeder weitere Satz mit gleichem Gewicht mit.
-  if (nowDone && !ex.prCelebrated && !isWoExCardio(ex)) {
-    const w = parseFloat(String(ex.sets[si].weight).replace(',', '.'));
+  // Bestleistung feiern, sobald die ÜBUNG komplett steht — nicht nach jedem einzelnen
+  // Satz. Zwischen den Sätzen wäre die Animation eine Unterbrechung; am Ende der Übung
+  // ist sie der Abschluss. Gewertet wird der schwerste Satz der Übung.
+  if (allDone && !ex.prCelebrated && !isWoExCardio(ex)) {
+    const best = ex.sets.reduce((m, s) => Math.max(m, parseFloat(String(s.weight).replace(',', '.')) || 0), 0);
     const prevBest = getExercisePR(exId) || 0;   // bestes Gewicht aus GESPEICHERTEN Einheiten
-    if (w > 0 && w > prevBest) {
+    if (best > 0 && best > prevBest) {
       ex.prCelebrated = true;
-      celebratePR(ex.name, w, prevBest);
+      celebratePR(ex.name, best, prevBest);
     }
   }
 
   DB.saveActive(wo);
   renderWorkoutsScreen();
 
-  if (nowDone) startRestTimer(exId, ex.name);
+  // Satzpause läuft nur ZWISCHEN Sätzen einer Übung. Nach dem letzten Satz gibt es nichts
+  // mehr abzuwarten — dort folgt der Wechsel zur nächsten Übung, nicht die nächste Wdh.
+  const stillOpen = ex.sets.some(s => !s.done);
+  if (nowDone && stillOpen) startRestTimer(exId, ex.name);
+  else if (allDone) stopRestTimer(true);   // letzten Satz früher abgehakt → laufende Pause beenden
   // Übung fertig → nächste offene Card aufklappen (gleiche Mechanik wie beim Erledigt-Haken)
   if (allDone) setTimeout(() => { expandNextExercise(); }, 50);
 }
