@@ -5571,14 +5571,23 @@ function buildExItemHTML(ex, context) {
     </div>
   </div>`;
 
-  // Entwicklung der Übung: höchstes Gewicht je Einheit. Erst ab zwei Einheiten sinnvoll —
-  // ein einzelner Punkt ist keine Entwicklung. Das Diagramm zeichnet _renderOpenExerciseChart().
-  const histCount = isOpen ? getExerciseHistory(ex.id).length : 0;
-  const chartBlock = !isOpen ? '' : (histCount >= 2
-    ? `<div class="ex-item-body-label">Entwicklung</div>
-       <div class="ex-chart-wrap"><canvas id="ex-chart-${uniqueKey}"></canvas></div>`
-    : `<div class="ex-item-body-label">Entwicklung</div>
-       <div class="ex-chart-empty">Ab der zweiten Einheit mit dieser Übung erscheint hier die Gewichtsentwicklung.</div>`);
+  // Entwicklung der Übung — umschaltbar zwischen schwerstem Satz und Gesamtwiederholungen.
+  // Die Wahl bleibt je Übung gespeichert (getExChartMode). Erst ab zwei Einheiten sinnvoll:
+  // ein einzelner Punkt ist keine Entwicklung. Gezeichnet wird in _renderOpenExerciseChart().
+  const chartMode = getExChartMode(ex.id);
+  const enoughPoints = isOpen ? exHistPoints(ex.id, chartMode).length >= 2 : false;
+  const chartBlock = !isOpen ? '' : `
+    <div class="ex-item-body-label ex-chart-head">
+      <span>Entwicklung</span>
+      <div class="stats-mode-toggle ex-chart-toggle" data-ex="${ex.id}">
+        <div class="stats-mode-pill${chartMode === 'weight' ? ' active' : ''}" data-mode="weight"
+             onclick="setExChartMode('${ex.id}','weight')">Gewicht</div>
+        <div class="stats-mode-pill${chartMode === 'reps' ? ' active' : ''}" data-mode="reps"
+             onclick="setExChartMode('${ex.id}','reps')">Wdh.</div>
+      </div>
+    </div>
+    <div class="ex-chart-wrap" data-ex="${ex.id}"${enoughPoints ? '' : ' style="display:none"'}><canvas id="ex-chart-${uniqueKey}"></canvas></div>
+    <div class="ex-chart-empty" data-ex="${ex.id}"${enoughPoints ? ' style="display:none"' : ''}>${exChartEmptyText(chartMode)}</div>`;
 
   return `<div class="ex-item ${isOpen?'open':''}" id="ex-item-${uniqueKey}" style="--mc:${meta.color}">
     <div class="ex-item-head" onclick="toggleExItem('${uniqueKey}')">
@@ -5712,6 +5721,9 @@ function renderExercises() {
 }
 
 // Gewichtsentwicklung einer Übung: pro Einheit das höchste Gewicht, chronologisch.
+// Verlauf einer Übung je Einheit: schwerster Satz (maxW) und Gesamtzahl der
+// Wiederholungen (reps, Summe über alle Sätze). Welche Reihe gezeichnet wird, entscheidet
+// der Umschalter in der Übungskarte — deshalb liefert die Funktion beide Werte.
 function getExerciseHistory(exId) {
   const ws = DB.getWorkouts().slice().sort((a, b) => a.startTs - b.startTs);
   const out = [];
@@ -5719,9 +5731,50 @@ function getExerciseHistory(exId) {
     const we = (w.exercises || []).find(e => (e.exId || e.id) === exId);
     if (!we || isWoExCardio(we) || !Array.isArray(we.sets) || !we.sets.length) return;
     const maxW = Math.max(...we.sets.map(s => parseFloat(s.weight) || 0));
-    if (maxW > 0) out.push({ ts: w.startTs, maxW });
+    const reps = we.sets.reduce((a, s) => a + (parseInt(s.reps) || 0), 0);
+    if (maxW > 0 || reps > 0) out.push({ ts: w.startTs, maxW, reps, setCount: we.sets.length });
   });
   return out;
+}
+
+// Punkte für den gewählten Modus — Einheiten ohne Wert in dieser Größe fallen raus
+// (Körpergewichtsübungen haben kein Gewicht, hätten dort also eine Nulllinie).
+function exHistPoints(exId, mode) {
+  const key = mode === 'reps' ? 'reps' : 'maxW';
+  return getExerciseHistory(exId).filter(h => h[key] > 0).map(h => ({ ts: h.ts, v: h[key], setCount: h.setCount }));
+}
+
+// ─── Anzeigemodus des Verlaufsdiagramms je Übung ───────────────────
+// Bleibt pro Übung gespeichert, damit Einklappen oder ein Tabwechsel die Auswahl nicht
+// zurücksetzt. Eigener Key statt eines Felds an der Übung: reine Anzeige-Einstellung,
+// die weder in die Trainingsdaten noch in die Cloud-Sicherung gehört.
+function getExChartMode(exId) {
+  try {
+    const m = JSON.parse(localStorage.getItem('ft_ex_chart_modes') || '{}');
+    return m[exId] === 'reps' ? 'reps' : 'weight';
+  } catch { return 'weight'; }
+}
+function setExChartMode(exId, mode) {
+  let m = {};
+  try { m = JSON.parse(localStorage.getItem('ft_ex_chart_modes') || '{}'); } catch {}
+  m[exId] = (mode === 'reps' ? 'reps' : 'weight');
+  try { localStorage.setItem('ft_ex_chart_modes', JSON.stringify(m)); } catch {}
+  // Nur die betroffene Karte auffrischen — ein Neuaufbau der Liste würde die Karte
+  // zuklappen und die Scrollposition verlieren.
+  document.querySelectorAll(`.ex-chart-toggle[data-ex="${exId}"] .stats-mode-pill`).forEach(p => {
+    p.classList.toggle('active', p.dataset.mode === m[exId]);
+  });
+  const hint = document.querySelector(`.ex-chart-empty[data-ex="${exId}"]`);
+  const wrap = document.querySelector(`.ex-chart-wrap[data-ex="${exId}"]`);
+  const enough = exHistPoints(exId, m[exId]).length >= 2;
+  if (hint) { hint.style.display = enough ? 'none' : ''; hint.textContent = exChartEmptyText(m[exId]); }
+  if (wrap) wrap.style.display = enough ? '' : 'none';
+  _renderOpenExerciseChart();
+}
+function exChartEmptyText(mode) {
+  return mode === 'reps'
+    ? 'Ab der zweiten Einheit mit dieser Übung erscheint hier die Entwicklung der Wiederholungen.'
+    : 'Ab der zweiten Einheit mit dieser Übung erscheint hier die Gewichtsentwicklung.';
 }
 
 // Farbe mit Transparenz versehen — akzeptiert „#rrggbb" und „rgb(r, g, b)".
@@ -5747,8 +5800,10 @@ function _renderOpenExerciseChart() {
   const canvas = document.getElementById('ex-chart-' + openExerciseId);
   if (!canvas) return;
   const exId = openExerciseId.includes('__') ? openExerciseId.split('__')[1] : openExerciseId;
-  const hist = getExerciseHistory(exId);
+  const mode = getExChartMode(exId);
+  const hist = exHistPoints(exId, mode);
   if (hist.length < 2) return;
+  const unit = mode === 'reps' ? 'Wdh.' : 'kg';
   const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#1E40AF';
   // getComputedStyle liefert je nach Browser „#1E40AF" ODER „rgb(30, 64, 175)" — ein
   // angehängtes Alpha-Suffix wäre im zweiten Fall ungültig und die Fläche würde schwarz.
@@ -5758,7 +5813,7 @@ function _renderOpenExerciseChart() {
     data: {
       labels: hist.map(h => fmtDateShort(h.ts)),
       datasets: [{
-        data: hist.map(h => h.maxW),
+        data: hist.map(h => h.v),
         borderColor: accent,
         backgroundColor: accentFill,
         fill: true, tension: 0.3,
@@ -5769,11 +5824,20 @@ function _renderOpenExerciseChart() {
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: (c) => `${c.parsed.y} kg` } },
+        tooltip: { callbacks: {
+          // Bei Wiederholungen die Sätze mitnennen — „30 Wdh." allein sagt nicht,
+          // ob das 3×10 oder 5×6 war.
+          label: (c) => {
+            const p = hist[c.dataIndex];
+            return mode === 'reps'
+              ? `${c.parsed.y} Wdh.${p && p.setCount ? ` (${p.setCount} ${p.setCount === 1 ? 'Satz' : 'Sätze'})` : ''}`
+              : `${c.parsed.y} kg`;
+          },
+        } },
       },
       scales: {
         x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 0, autoSkipPadding: 12 } },
-        y: { grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { font: { size: 10 }, callback: (v) => v + ' kg' } },
+        y: { grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { font: { size: 10 }, precision: 0, callback: (v) => v + ' ' + unit } },
       },
     },
   });

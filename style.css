@@ -2446,6 +2446,12 @@ body.theme-exercises .ex-mode-toggle {
 html.no-cardio .ex-mode-toggle,
 html.no-cardio .stats-mode-toggle { display: none; }
 
+/* Umschalter Gewicht/Wdh. im Verlauf einer Übung. Nutzt dieselbe Pillen-Optik, hat aber
+   nichts mit Kraft/Cardio zu tun — deshalb von der Ausblendregel darüber ausgenommen. */
+html.no-cardio .ex-chart-toggle { display: inline-flex; }
+.ex-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ex-chart-toggle .stats-mode-pill.active { background: var(--accent); color: #fff; }
+
 /* Wochenplan-Strip (Uebersicht + Workouts-Tab): reine Cardio-Tage bekommen Teal-Akzent.
    Die Klasse `cardio` wird zusaetzlich zu `.next7-chip.training` gesetzt. */
 .next7-chip.cardio.training {
