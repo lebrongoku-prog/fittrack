@@ -1014,7 +1014,12 @@ function renderBackupLine() {
   const last = driveGetLastPushed();
   let cls = 'backup-chip', txt, title;
 
-  if (enabled && last) {
+  if (enabled && driveReauthNeeded()) {
+    // Abgelaufene Anmeldung schlägt jede Zeitangabe: seitdem wird nichts mehr gesichert.
+    cls += ' warn';
+    txt = 'Anmeldung nötig';
+    title = 'Google-Anmeldung abgelaufen — es wird nichts mehr gesichert. Tippen zum neu Verbinden.';
+  } else if (enabled && last) {
     const days = Math.floor((Date.now() - last) / 86400000);
     txt = days <= 0 ? 'Heute gesichert' : (days === 1 ? 'Gestern gesichert' : `Vor ${days} Tagen`);
     title = `Google Drive · ${days <= 0 ? 'heute' : days === 1 ? 'gestern' : 'vor ' + days + ' Tagen'} gesichert`;
@@ -7085,6 +7090,8 @@ let driveTokenClient = null;       // GIS Token Client (lazy init)
 let driveTokenExpiry = 0;          // ms-Timestamp when current token expires
 let driveSyncTimer = null;         // debounce timer for auto-sync
 let driveSyncInFlight = false;     // prevents parallel syncs
+let driveSyncStartedAt = 0;        // Startzeit des laufenden Syncs (Hänger-Erkennung)
+const DRIVE_SYNC_STUCK_MS = 120000;
 let driveConflictData = null;      // staging for unresolved conflict {local, cloud}
 let driveGisReady = false;         // GIS script loaded?
 
@@ -7096,11 +7103,26 @@ function driveSetToken(token, expiresInSec) {
   try {
     sessionStorage.setItem('ft_drive_token', token);
     driveTokenExpiry = Date.now() + (expiresInSec || 3600) * 1000 - 60000; // 1min Sicherheitspuffer
+    // Ablauf mitspeichern: die Variable allein ist nach einem App-Neustart 0, obwohl der
+    // Token im sessionStorage noch gültig sein kann — das erzwang jedes Mal einen Refresh.
+    sessionStorage.setItem('ft_drive_token_exp', String(driveTokenExpiry));
   } catch {}
+  driveSetReauthNeeded(false);
+}
+function driveGetTokenExpiry() {
+  if (driveTokenExpiry) return driveTokenExpiry;
+  try { return parseInt(sessionStorage.getItem('ft_drive_token_exp') || '0', 10); } catch { return 0; }
 }
 function driveClearToken() {
-  try { sessionStorage.removeItem('ft_drive_token'); } catch {}
+  try { sessionStorage.removeItem('ft_drive_token'); sessionStorage.removeItem('ft_drive_token_exp'); } catch {}
   driveTokenExpiry = 0;
+}
+// Merkt, dass die stille Verlängerung fehlgeschlagen ist. Ohne diesen Zustand drehte die
+// Anzeige weiter, ohne je zu sagen, dass eine neue Anmeldung nötig ist.
+function driveReauthNeeded() { return localStorage.getItem('ft_drive_reauth') === '1'; }
+function driveSetReauthNeeded(v) {
+  if (v) localStorage.setItem('ft_drive_reauth', '1');
+  else localStorage.removeItem('ft_drive_reauth');
 }
 function driveIsEnabled() { return localStorage.getItem('ft_drive_enabled') === '1'; }
 function driveSetEnabled(v) { localStorage.setItem('ft_drive_enabled', v ? '1' : '0'); }
@@ -7180,32 +7202,63 @@ function _initTokenClient() {
   driveTokenClient = google.accounts.oauth2.initTokenClient({
     client_id: DRIVE_CLIENT_ID,
     scope: DRIVE_SCOPE,
-    callback: () => {}, // wird pro Request überschrieben
+    callback: () => {},       // wird pro Request überschrieben
+    error_callback: () => {}, // dito — ohne diesen Kanal bleiben Popup-Fehler stumm
   });
   driveGisReady = true;
 }
 
 // ─── Token holen (interaktiv oder silent) ─────────────
+// WICHTIG: Diese Anfrage MUSS in jedem Fall enden. Google Identity Services ruft in
+// manchen Situationen (blockiertes Popup, abgelaufene Google-Sitzung, installierte PWA)
+// weder callback noch error_callback auf. Ohne Zeitgrenze blieb die Promise dann für
+// immer offen — der Sync stand auf „läuft", finally lief nie, und jeder weitere Sync
+// wurde mit „läuft bereits" abgewiesen, bis die App neu gestartet wurde.
+const DRIVE_TOKEN_TIMEOUT_MS = 45000;
+
 function driveRequestToken({ interactive = true } = {}) {
   return new Promise((resolve, reject) => {
     if (!driveTokenClient) return reject(new Error('Token-Client nicht initialisiert'));
+    let settled = false;
+    const done = (fn, arg) => { if (settled) return; settled = true; clearTimeout(timer); fn(arg); };
+    const timer = setTimeout(() => done(reject, new Error(
+      interactive
+        ? 'Zeitüberschreitung bei der Google-Anmeldung'
+        : 'Google-Anmeldung abgelaufen — bitte in den Einstellungen neu verbinden'
+    )), DRIVE_TOKEN_TIMEOUT_MS);
+
     driveTokenClient.callback = (resp) => {
-      if (resp.error) return reject(new Error(`OAuth-Fehler: ${resp.error}${resp.error_description ? ' — ' + resp.error_description : ''}`));
+      if (resp.error) return done(reject, new Error(`OAuth-Fehler: ${resp.error}${resp.error_description ? ' — ' + resp.error_description : ''}`));
       driveSetToken(resp.access_token, resp.expires_in);
-      resolve(resp.access_token);
+      done(resolve, resp.access_token);
     };
+    driveTokenClient.error_callback = (err) => {
+      const t = (err && (err.type || err.message)) || 'unbekannt';
+      done(reject, new Error(`Google-Anmeldung nicht möglich (${t})`));
+    };
+
     try {
       driveTokenClient.requestAccessToken({ prompt: interactive ? 'consent' : '' });
-    } catch (err) { reject(err); }
+    } catch (err) { done(reject, err); }
   });
 }
 
 // Sicherstellen, dass wir einen gültigen Token haben (silent refresh wenn möglich)
 async function driveGetValidToken() {
   const cached = driveGetToken();
-  if (cached && Date.now() < driveTokenExpiry) return cached;
+  if (cached && Date.now() < driveGetTokenExpiry()) return cached;
   await driveEnsureGisReady();
-  return await driveRequestToken({ interactive: !cached }); // bei erstem Token wirklich interaktiv
+  try {
+    return await driveRequestToken({ interactive: !cached }); // bei erstem Token wirklich interaktiv
+  } catch (err) {
+    // Stille Verlängerung gescheitert: Zustand merken, damit die Oberfläche zur neuen
+    // Anmeldung auffordert, statt weiter „synchronisiert…" anzuzeigen.
+    driveClearToken();
+    driveSetReauthNeeded(true);
+    renderBackupLine();
+    renderDriveStatus();
+    throw err;
+  }
 }
 
 // ─── Drive-API Wrapper ───────────────────────────────
@@ -7361,9 +7414,20 @@ function driveApplyCloudData(data) {
 
 // ─── Haupt-Sync-Funktion ─────────────────────────────
 async function driveSync(reason = 'manuell') {
-  if (driveSyncInFlight) { driveLog('info', `Sync übersprungen (läuft bereits, Grund: ${reason})`); return; }
+  // Sicherheitsnetz: Ein Sync, der länger als DRIVE_SYNC_STUCK_MS „läuft", gilt als hängen
+  // geblieben und blockiert nicht länger alle weiteren Versuche. Ohne das half nur noch
+  // ein App-Neustart.
+  if (driveSyncInFlight) {
+    const runningFor = Date.now() - driveSyncStartedAt;
+    if (runningFor < DRIVE_SYNC_STUCK_MS) {
+      driveLog('info', `Sync übersprungen (läuft bereits, Grund: ${reason})`);
+      return;
+    }
+    driveLog('warn', `Vorheriger Sync hängt seit ${Math.round(runningFor/1000)}s — wird verworfen`);
+  }
   if (!driveIsEnabled()) { driveLog('info', 'Sync übersprungen — nicht verbunden'); return; }
   driveSyncInFlight = true;
+  driveSyncStartedAt = Date.now();
   driveSetSyncIndicator(true);
   try {
     driveLog('info', `Sync gestartet (${reason})`);
@@ -7559,7 +7623,14 @@ function renderDriveStatus() {
     const sub = document.getElementById('drive-status-sub');
     if (sub) {
       const last = driveGetLastPushed();
-      sub.textContent = last ? `Letzter Sync: ${new Date(last).toLocaleString('de-DE')}` : 'Letzter Sync: noch nie';
+      if (driveReauthNeeded()) {
+        // Ohne diesen Hinweis sähe man nur einen alten Zeitstempel und wüsste nicht,
+        // dass die Sicherung seitdem nicht mehr läuft.
+        sub.innerHTML = `<span style="color:var(--red);font-weight:600">Anmeldung abgelaufen — tippe auf „Jetzt synchronisieren", um dich neu anzumelden.</span>`
+          + (last ? `<br>Letzte Sicherung: ${new Date(last).toLocaleString('de-DE')}` : '');
+      } else {
+        sub.textContent = last ? `Letzter Sync: ${new Date(last).toLocaleString('de-DE')}` : 'Letzter Sync: noch nie';
+      }
     }
     renderDriveDebug();
     renderDriveLog();
