@@ -913,7 +913,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   .stats-row, .stats-row-v2, .two-col-grid { max-width: 520px; margin: 0 auto 12px; }
   /* Ausnahme Trainingskalender: je breiter, desto mehr Wochen ohne Scrollen sichtbar.
      Im Querformat (844–932px) blieb er sonst auf 520px stehen. */
-  #ov-cal-card { max-width: none; margin-left: 14px; margin-right: 14px; }
+  #ov-cal-card, #plans-cal-card { max-width: none; margin-left: 14px; margin-right: 14px; }
   .info-row, .plan-carousel, .ex-tab-bar, .ex-tab-v2-bar { padding-left: calc((100vw - 520px)/2 + 14px); }
   .ph-left h1 { font-size: 28px; }
 }
@@ -2237,6 +2237,12 @@ html.wo-running #wo-week-card { display: none; }
   }
   #screen-overview.active > .ph,
   #screen-overview.active > #ov-hero-wrap { grid-column: 1 / -1; }
+  /* Der Plan-Ende-Hinweis ist meistens leer, belegte als Grid-Element aber trotzdem eine
+     Zelle in Spalte 2 — dadurch rutschte „Letzte Einheiten" eine Zeile nach unten und stand
+     versetzt neben der Plan-Karte. Leer = raus aus dem Grid, sonst unter die Plan-Karte. */
+  #screen-overview.active > #ov-plan-end-notice:empty { display: none; }
+  #screen-overview.active > #ov-plan-card,
+  #screen-overview.active > #ov-plan-end-notice { grid-column: 1; }
   #screen-overview.active > .program-card { grid-column: 1; }
   #screen-overview.active > .plan-section-card { grid-column: 2; }
   /* Stats-Karten in Übersicht (vom alten Verlauf-Tab) */

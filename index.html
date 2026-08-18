@@ -108,31 +108,8 @@
     </div>
 
     <!-- Trainingskalender: ein Kästchen pro Tag. Fläche = laut Plan vorgesehen,
-         Kern = tatsächlich trainiert. Keine Volumen-Abstufung. -->
-    <div class="chart-card-v2 lg-span-2" id="ov-cal-card">
-      <div class="chart-card-v2-head">
-        <span class="chart-card-v2-title">Trainingskalender</span>
-        <span class="cal-stats" id="cal-stats"></span>
-      </div>
-      <div class="cal-scroll" id="cal-scroll">
-        <div class="cal-inner">
-          <div class="cal-months" id="cal-months"></div>
-          <div class="cal-body">
-            <div class="cal-daylabels"><span>Mo</span><span></span><span>Mi</span><span></span><span>Fr</span><span></span><span>So</span></div>
-            <div class="cal-grid" id="cal-grid"></div>
-          </div>
-        </div>
-      </div>
-      <div class="cal-foot">
-        <div class="cal-detail" id="cal-detail">Tippe ein Kästchen für den Tag</div>
-        <div class="cal-legend">
-          <span><i class="k-planned"></i>geplant</span>
-          <span><i class="k-planned k-core"></i>geplant und trainiert</span>
-          <span><i class="k-core"></i>zusätzlich trainiert</span>
-          <span><i></i>Ruhetag</span>
-        </div>
-      </div>
-    </div>
+         Kern = tatsächlich trainiert. Inhalt kommt aus calendarInnerHTML() -->
+    <div class="chart-card-v2 lg-span-2" id="ov-cal-card"></div>
 
     <!-- Volumen pro Muskelgruppe / Cardio-Verteilung pro Uebung -->
     <div class="chart-card-v2 lg-col1">
@@ -259,6 +236,8 @@
       <button class="seg-btn active" id="seg-plans" onclick="setPlansView('plans')">Trainingsplan</button>
       <button class="seg-btn" id="seg-days" onclick="setPlansView('days')">Trainingstage</button>
     </div>
+    <!-- Derselbe Trainingskalender wie in der Übersicht (zweite Instanz, Präfix "pcal") -->
+    <div class="chart-card-v2" id="plans-cal-card"></div>
     <div id="plans-list"></div>
     <div id="libdays-list" style="display:none"></div>
   </div>

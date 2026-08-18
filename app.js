@@ -3900,8 +3900,39 @@ function _calPlanInfo(date, index) {
   return { known: true, planned: true, name: d ? d.name : null };
 }
 
-function renderTrainingCalendar() {
-  const grid = document.getElementById('cal-grid');
+// Kalender-Innenleben. Eine Quelle fuer beide Einbauorte (Uebersicht + Plaene-Tab);
+// die IDs bekommen ein Praefix, damit zwei Instanzen nebeneinander bestehen koennen.
+function calendarInnerHTML(id) {
+  return `<div class="chart-card-v2-head">
+      <span class="chart-card-v2-title">Trainingskalender</span>
+      <span class="cal-stats" id="${id}-stats"></span>
+    </div>
+    <div class="cal-scroll" id="${id}-scroll">
+      <div class="cal-inner">
+        <div class="cal-months" id="${id}-months"></div>
+        <div class="cal-body">
+          <div class="cal-daylabels"><span>Mo</span><span></span><span>Mi</span><span></span><span>Fr</span><span></span><span>So</span></div>
+          <div class="cal-grid" id="${id}-grid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="cal-foot">
+      <div class="cal-detail" id="${id}-detail">Tippe ein K\u00e4stchen f\u00fcr den Tag</div>
+      <div class="cal-legend">
+        <span><i class="k-planned"></i>geplant</span>
+        <span><i class="k-planned k-core"></i>geplant und trainiert</span>
+        <span><i class="k-core"></i>zus\u00e4tzlich trainiert</span>
+        <span><i></i>Ruhetag</span>
+      </div>
+    </div>`;
+}
+
+function renderTrainingCalendar(id, cardId) {
+  id = id || 'cal';
+  cardId = cardId || 'ov-cal-card';
+  const card = document.getElementById(cardId);
+  if (card && !document.getElementById(id + '-grid')) card.innerHTML = calendarInnerHTML(id);
+  const grid = document.getElementById(id + '-grid');
   if (!grid) return;
   const byDay = buildCalendarData();
 
@@ -3943,20 +3974,20 @@ function renderTrainingCalendar() {
         ? (plan.planned ? 'geplant und trainiert' : 'zusaetzlich trainiert')
         : (plan.planned ? (future ? 'geplant' : 'geplant, nicht trainiert') : 'Ruhetag');
       cells += `<span class="${cls.join(' ')}"
-                      data-key="${key}" onclick="showCalDay('${key}')"
+                      data-key="${key}" onclick="showCalDay('${key}','${id}')"
                       role="button" tabindex="0"
                       aria-label="${day.toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})}, ${zustand}"></span>`;
     }
     cells += '</div>';
   }
   grid.innerHTML = cells;
-  const monthsEl = document.getElementById('cal-months');
+  const monthsEl = document.getElementById(id + '-months');
   if (monthsEl) monthsEl.innerHTML = months;
 
   // Kennzahlen: Einheiten im Zeitraum + aktuelle Wochenserie
   const inRange = DB.getWorkouts().filter(w => w.startTs >= start.getTime()).length;
   const streak = getWeekStreak();
-  const statsEl = document.getElementById('cal-stats');
+  const statsEl = document.getElementById(id + '-stats');
   if (statsEl) {
     statsEl.textContent = inRange
       ? `${inRange} ${inRange === 1 ? 'Einheit' : 'Einheiten'}${streak > 0 ? ` · Serie ${streak} ${streak === 1 ? 'Woche' : 'Wochen'}` : ''}`
@@ -3964,20 +3995,24 @@ function renderTrainingCalendar() {
   }
 
   // Ans rechte Ende scrollen — heute ist der interessante Rand.
-  const scroller = document.getElementById('cal-scroll');
+  const scroller = document.getElementById(id + '-scroll');
   if (scroller) requestAnimationFrame(() => { scroller.scrollLeft = scroller.scrollWidth; });
 }
 
 // Tippen auf ein Kästchen: Tag in der Fußzeile beschreiben.
-function showCalDay(key) {
-  const el = document.getElementById('cal-detail');
+function showCalDay(key, id) {
+  id = id || 'cal';
+  const el = document.getElementById(id + '-detail');
   if (!el) return;
   const entry = buildCalendarData()[key];
   const [y, m, d] = key.split('-').map(Number);
   const dateStr = new Date(y, m-1, d).toLocaleDateString('de-DE', { weekday:'long', day:'numeric', month:'long' });
-  document.querySelectorAll('.cal-day.sel').forEach(c => c.classList.remove('sel'));
-  const cell = document.querySelector(`.cal-day[data-key="${key}"]`);
-  if (cell) cell.classList.add('sel');
+  const scope = document.getElementById(id + '-grid');
+  if (scope) {
+    scope.querySelectorAll('.cal-day.sel').forEach(c => c.classList.remove('sel'));
+    const cell = scope.querySelector(`.cal-day[data-key="${key}"]`);
+    if (cell) cell.classList.add('sel');
+  }
   // Neben dem Ergebnis auch nennen, was fuer den Tag vorgesehen war — sonst bliebe
   // unklar, ob ein leerer Tag ein Ruhetag oder eine ausgefallene Einheit ist.
   const plan = _calPlanInfo(new Date(y, m-1, d), _calPlanIndex());
@@ -4782,14 +4817,17 @@ function renderPlansScreen() {
   const plansList = document.getElementById('plans-list');
   const daysList = document.getElementById('libdays-list');
   const h1 = document.getElementById('plans-h1');
+  const calCard = document.getElementById('plans-cal-card');
   if (plansViewMode === 'days') {
     if (plansList) plansList.style.display = 'none';
     if (daysList) daysList.style.display = '';
+    if (calCard) calCard.style.display = 'none';   // gehoert zum Plan, nicht zur Tage-Bibliothek
     if (h1) h1.textContent = 'Trainingstage';
     renderLibDays();
   } else {
     if (plansList) plansList.style.display = '';
     if (daysList) daysList.style.display = 'none';
+    if (calCard) { calCard.style.display = ''; renderTrainingCalendar('pcal', 'plans-cal-card'); }
     if (h1) h1.textContent = 'Trainingsplan';
     renderPlans();
   }
