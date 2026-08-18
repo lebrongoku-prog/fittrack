@@ -3873,6 +3873,33 @@ function buildCalendarData() {
   return byDay;
 }
 
+// Plan-Zeitraeume fuer die Kalender-Rekonstruktion. Auch archivierte Plaene zaehlen:
+// sie behalten ihren Wochenplan, also laesst sich fuer jeden vergangenen Tag sagen, ob
+// damals ein Training vorgesehen war.
+function _calPlanIndex() {
+  return DB.getPlans()
+    .filter(p => p && p.startDate)
+    .map(p => ({
+      start: p.startDate,
+      end: p.endDate || Infinity,
+      wp: (p.weekPlan && p.weekPlan.length) ? p.weekPlan : DEFAULT_WEEKPLAN,
+      days: resolvePlanDays(p),
+    }))
+    .sort((a, b) => a.start - b.start);
+}
+
+// War an diesem Datum ein Training geplant? known=false heisst: kein Plan deckt den Tag ab
+// (vor dem ersten Plan oder in einer Luecke) — dann wird keine Flaeche gezeichnet.
+function _calPlanInfo(date, index) {
+  const ts = date.getTime();
+  const p = index.find(x => ts >= x.start && ts <= x.end);
+  if (!p) return { known: false, planned: false, name: null };
+  const entry = p.wp[(date.getDay() + 6) % 7];
+  if (!entry || !entry.planDayId) return { known: true, planned: false, name: null };
+  const d = p.days.find(x => x && x.id === entry.planDayId);
+  return { known: true, planned: true, name: d ? d.name : null };
+}
+
 function renderTrainingCalendar() {
   const grid = document.getElementById('cal-grid');
   if (!grid) return;
@@ -3884,20 +3911,8 @@ function renderTrainingCalendar() {
   const lastMonday = new Date(today); lastMonday.setDate(today.getDate() - todayIdx);
   const start = new Date(lastMonday); start.setDate(lastMonday.getDate() - (CAL_WEEKS - 1) * 7);
 
-  // Farbstufen relativ zum besten Tag des Zeitraums — absolute Schwellen wären bei
-  // wechselnden Trainingsgewichten wenig aussagekräftig.
-  let maxVol = 0;
-  for (let i = 0; i < CAL_WEEKS * 7; i++) {
-    const d = new Date(start); d.setDate(start.getDate() + i);
-    const e = byDay[_dayKeyOf(d.getTime())];
-    if (e && e.vol > maxVol) maxVol = e.vol;
-  }
-  const levelOf = (vol) => {
-    if (!vol) return 0;
-    if (!maxVol) return 1;
-    const r = vol / maxVol;
-    return r >= 0.75 ? 4 : r >= 0.5 ? 3 : r >= 0.25 ? 2 : 1;
-  };
+  // Plan-Zeitraeume einmal vorbereiten (statt pro Tag aufzuloesen).
+  const planIndex = _calPlanIndex();
 
   let cells = '';
   let months = '';
@@ -3917,11 +3932,20 @@ function renderTrainingCalendar() {
       const entry = byDay[key];
       const future = day.getTime() > today.getTime();
       const isToday = day.getTime() === today.getTime();
-      const lvl = levelOf(entry ? entry.vol : 0);
-      cells += `<span class="cal-day cal-l${lvl}${future ? ' future' : ''}${isToday ? ' today' : ''}"
+      // Flaeche = war laut damaligem Plan ein Trainingstag, Kern = tatsaechlich trainiert.
+      const plan = _calPlanInfo(day, planIndex);
+      const cls = ['cal-day'];
+      if (plan.planned) cls.push('planned');
+      if (entry) cls.push('done');
+      if (future) cls.push('future');
+      if (isToday) cls.push('today');
+      const zustand = entry
+        ? (plan.planned ? 'geplant und trainiert' : 'zusaetzlich trainiert')
+        : (plan.planned ? (future ? 'geplant' : 'geplant, nicht trainiert') : 'Ruhetag');
+      cells += `<span class="${cls.join(' ')}"
                       data-key="${key}" onclick="showCalDay('${key}')"
                       role="button" tabindex="0"
-                      aria-label="${day.toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})}${entry ? ', trainiert' : ''}"></span>`;
+                      aria-label="${day.toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})}, ${zustand}"></span>`;
     }
     cells += '</div>';
   }
@@ -3954,9 +3978,22 @@ function showCalDay(key) {
   document.querySelectorAll('.cal-day.sel').forEach(c => c.classList.remove('sel'));
   const cell = document.querySelector(`.cal-day[data-key="${key}"]`);
   if (cell) cell.classList.add('sel');
-  el.innerHTML = entry
-    ? `<strong>${dateStr}</strong> · ${entry.names.join(', ')} · ${fmtNum(entry.vol)} kg`
-    : `<strong>${dateStr}</strong> · kein Training`;
+  // Neben dem Ergebnis auch nennen, was fuer den Tag vorgesehen war — sonst bliebe
+  // unklar, ob ein leerer Tag ein Ruhetag oder eine ausgefallene Einheit ist.
+  const plan = _calPlanInfo(new Date(y, m-1, d), _calPlanIndex());
+  let txt;
+  if (entry) {
+    txt = `<strong>${dateStr}</strong> · ${entry.names.join(', ')} · ${fmtNum(entry.vol)} kg`;
+    if (plan.known && !plan.planned) txt += ' · zusätzlich trainiert';
+  } else if (plan.planned) {
+    const heute = new Date(); heute.setHours(0,0,0,0);
+    const kommt = new Date(y, m-1, d).getTime() > heute.getTime();
+    txt = `<strong>${dateStr}</strong> · geplant: ${plan.name ? escapeHtml(plan.name) : 'Training'}`
+        + (kommt ? '' : ' · nicht trainiert');
+  } else {
+    txt = `<strong>${dateStr}</strong> · ${plan.known ? 'Ruhetag' : 'kein Training'}`;
+  }
+  el.innerHTML = txt;
 }
 
 // Muskel-Landkarte: zwei Silhouetten (vorne/hinten), deren Regionen nach Volumenanteil

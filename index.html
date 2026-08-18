@@ -107,8 +107,9 @@
       </div>
     </div>
 
-    <!-- Trainingskalender: ein Kästchen pro Tag, eingefärbt nach Volumen -->
-    <div class="chart-card-v2 lg-span-2">
+    <!-- Trainingskalender: ein Kästchen pro Tag. Fläche = laut Plan vorgesehen,
+         Kern = tatsächlich trainiert. Keine Volumen-Abstufung. -->
+    <div class="chart-card-v2 lg-span-2" id="ov-cal-card">
       <div class="chart-card-v2-head">
         <span class="chart-card-v2-title">Trainingskalender</span>
         <span class="cal-stats" id="cal-stats"></span>
@@ -125,9 +126,10 @@
       <div class="cal-foot">
         <div class="cal-detail" id="cal-detail">Tippe ein Kästchen für den Tag</div>
         <div class="cal-legend">
-          <span>weniger</span>
-          <i class="cal-l0"></i><i class="cal-l1"></i><i class="cal-l2"></i><i class="cal-l3"></i><i class="cal-l4"></i>
-          <span>mehr</span>
+          <span><i class="k-planned"></i>geplant</span>
+          <span><i class="k-planned k-core"></i>geplant und trainiert</span>
+          <span><i class="k-core"></i>zusätzlich trainiert</span>
+          <span><i></i>Ruhetag</span>
         </div>
       </div>
     </div>
