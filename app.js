@@ -3643,7 +3643,10 @@ function renderCardioDistanceChart(ws) {
           grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
           ticks: { callback: v => `${v}` , font:{size:11} }
         },
-        x: { grid: { display: false }, ticks: { font:{size:11} } }
+        // Im Wochen-Modus sind viele Labels absichtlich leer (nur Monatswechsel beschriftet) —
+        // dort darf Chart.js nichts wegskippen. Bei Tagen/Monaten schon, sonst überlappen
+        // zwölf Monatsnamen auf iPhone-Breite.
+        x: { grid: { display: false }, ticks: { font:{size:11}, autoSkip: grouping !== 'week', maxRotation: 0 } }
       }
     },
     plugins: [{
@@ -3740,21 +3743,57 @@ function renderVolumeChart(ws) {
     ctx.clearRect(0,0,canvas.width,canvas.height);
     return;
   }
-  // Group by week
-  const weekMap = {};   // key = `${Jahr}-${KW}` (jahresscharf), value = { label, val, ts(früheste) }
+  // Einteilung richtet sich nach dem gewählten Zeitraum: Kalenderwochen-Nummern („W30")
+  // sagten wenig und passten bei „7 Tage" gar nicht — dort gab es nur ein bis zwei Punkte,
+  // während „Letztes Jahr" trotzdem auf acht Wochen gekappt wurde.
+  const grouping = histRangeDays <= 7 ? 'day' : (histRangeDays >= 365 ? 'month' : 'week');
+  const maxPoints = grouping === 'day' ? 7 : (grouping === 'month' ? 12 : (histRangeDays >= 90 ? 13 : 6));
+
+  const bucketOf = (d) => {
+    if (grouping === 'day')   { const x = new Date(d); x.setHours(0,0,0,0); return x; }
+    if (grouping === 'month') return new Date(d.getFullYear(), d.getMonth(), 1);
+    const x = new Date(d); x.setHours(0,0,0,0);
+    x.setDate(x.getDate() - ((x.getDay() + 6) % 7));   // Montag der Woche
+    return x;
+  };
+  const labelOf = (start, prev) => {
+    if (grouping === 'day')   return start.toLocaleDateString('de-DE', { weekday: 'short' });
+    if (grouping === 'month') return start.toLocaleDateString('de-DE', { month: 'short' });
+    // Wochen: bei langen Zeiträumen nur den Monatswechsel beschriften, sonst das Datum
+    if (histRangeDays >= 90) {
+      return (!prev || prev.getMonth() !== start.getMonth())
+        ? start.toLocaleDateString('de-DE', { month: 'long' }) : '';
+    }
+    return start.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
+  };
+
+  const buckets = {};
   ws.forEach(w => {
-    const d = new Date(w.startTs);
-    const wNum = getISOWeek(d);
-    const key = `${d.getFullYear()}-${wNum}`;
+    const start = bucketOf(new Date(w.startTs));
+    const key = start.getTime();
     const val = volumeUnit === 'kg'
       ? calcVolume(w)
       : w.exercises.reduce((a,e) => a + (Array.isArray(e.sets) ? e.sets.length : 0), 0);
-    if (!weekMap[key]) weekMap[key] = { label: `W${wNum}`, val: 0, ts: w.startTs };
-    weekMap[key].val += val;
-    if (w.startTs < weekMap[key].ts) weekMap[key].ts = w.startTs;
+    if (!buckets[key]) buckets[key] = { start, val: 0, ts: w.startTs };
+    buckets[key].val += val;
+    if (w.startTs < buckets[key].ts) buckets[key].ts = w.startTs;
   });
-  // Chronologisch AUFSTEIGEND (älteste links, neueste rechts), letzte 8 Wochen
-  const sortedKeys = Object.keys(weekMap).sort((a,b) => weekMap[a].ts - weekMap[b].ts).slice(-8);
+  // Chronologisch AUFSTEIGEND (älteste links, neueste rechts)
+  const sortedKeys = Object.keys(buckets).sort((a,b) => buckets[a].start - buckets[b].start).slice(-maxPoints);
+  let _prevStart = null;
+  const xLabels = sortedKeys.map(k => {
+    const lbl = labelOf(buckets[k].start, _prevStart);
+    _prevStart = buckets[k].start;
+    return lbl;
+  });
+  // Volle Datumsangabe für die Kopfzeile beim Antippen eines Punktes
+  const xTitles = sortedKeys.map(k => {
+    const s = buckets[k].start;
+    if (grouping === 'day')   return s.toLocaleDateString('de-DE', { weekday:'long', day:'numeric', month:'long' });
+    if (grouping === 'month') return s.toLocaleDateString('de-DE', { month:'long', year:'numeric' });
+    const e = new Date(s); e.setDate(s.getDate() + 6);
+    return `Woche ${s.toLocaleDateString('de-DE',{day:'numeric',month:'short'})} – ${e.toLocaleDateString('de-DE',{day:'numeric',month:'short'})}`;
+  });
   const lastIdx = sortedKeys.length - 1;
   const ctx = canvas.getContext('2d');
   const isKg = volumeUnit === 'kg';
@@ -3769,9 +3808,9 @@ function renderVolumeChart(ws) {
   volumeChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: sortedKeys.map(k => weekMap[k].label),
+      labels: xLabels,
       datasets: [{
-        data: sortedKeys.map(k => Math.round(weekMap[k].val)),
+        data: sortedKeys.map(k => Math.round(buckets[k].val)),
         borderColor: accent,
         backgroundColor: (ctx2) => {
           const c = ctx2.chart.ctx;
@@ -3798,7 +3837,10 @@ function renderVolumeChart(ws) {
         legend: { display: false },
         tooltip: {
           enabled: true,
-          callbacks: { label: c => isKg ? (fmtNum(c.raw)+' kg') : (c.raw+' Sätze') }
+          callbacks: {
+            title: (items) => (items && items.length) ? (xTitles[items[0].dataIndex] || '') : '',
+            label: c => isKg ? (fmtNum(c.raw)+' kg') : (c.raw+' Sätze'),
+          }
         }
       },
       scales: {
@@ -3809,7 +3851,10 @@ function renderVolumeChart(ws) {
           grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
           ticks: { callback: v => isKg ? fmtNum(v) : v, font:{size:11} }
         },
-        x: { grid: { display: false }, ticks: { font:{size:11} } }
+        // Im Wochen-Modus sind viele Labels absichtlich leer (nur Monatswechsel beschriftet) —
+        // dort darf Chart.js nichts wegskippen. Bei Tagen/Monaten schon, sonst überlappen
+        // zwölf Monatsnamen auf iPhone-Breite.
+        x: { grid: { display: false }, ticks: { font:{size:11}, autoSkip: grouping !== 'week', maxRotation: 0 } }
       }
     },
     plugins: [{
