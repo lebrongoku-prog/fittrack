@@ -1726,6 +1726,8 @@ html.wo-running #wo-week-card { display: none; }
   border-radius: 2px; background: #0F766E;
 }
 .cal-day.future { opacity: .45; }
+/* Rand-Tage der ersten/letzten Woche, die noch ins Vor- bzw. Folgejahr fallen */
+.cal-day.outside { opacity: .25; pointer-events: none; }
 .cal-day.today { box-shadow: 0 0 0 1.5px var(--accent); }
 .cal-day.sel   { box-shadow: 0 0 0 1.5px var(--text); }
 .cal-foot { padding: 10px 16px 12px; }

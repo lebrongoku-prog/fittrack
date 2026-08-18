@@ -3897,7 +3897,6 @@ function getISOWeek(d) {
 // ─── Trainingskalender ─────────────────────────────────────────────
 // Ein Kästchen pro Tag der letzten 52 Wochen, eingefärbt nach Tagesvolumen.
 // Zeigt Regelmäßigkeit und Lücken auf einen Blick — das sieht man in keinem Diagramm.
-const CAL_WEEKS = 52;
 
 function _dayKeyOf(ts) {
   const d = new Date(ts);
@@ -3981,11 +3980,15 @@ function renderTrainingCalendar(id, cardId) {
   if (!grid) return;
   const byDay = buildCalendarData();
 
-  // Raster endet in der laufenden Woche; Start = Montag vor 51 Wochen.
+  // Immer das ganze Kalenderjahr: 1. Januar bis 31. Dezember. Das Raster beginnt am Montag
+  // der Woche, in der der 1. Januar liegt, damit die Wochentagszeilen durchgehend stimmen.
   const today = new Date(); today.setHours(0,0,0,0);
-  const todayIdx = (today.getDay()+6) % 7;
-  const lastMonday = new Date(today); lastMonday.setDate(today.getDate() - todayIdx);
-  const start = new Date(lastMonday); start.setDate(lastMonday.getDate() - (CAL_WEEKS - 1) * 7);
+  const jahr = today.getFullYear();
+  const jan1 = new Date(jahr, 0, 1);
+  const dez31 = new Date(jahr, 11, 31);
+  const start = new Date(jan1);
+  start.setDate(jan1.getDate() - ((jan1.getDay() + 6) % 7));
+  const wochen = Math.ceil((dez31 - start) / (7 * 86400000)) + 1;
 
   // Plan-Zeitraeume einmal vorbereiten (statt pro Tag aufzuloesen).
   const planIndex = _calPlanIndex();
@@ -3993,7 +3996,7 @@ function renderTrainingCalendar(id, cardId) {
   let cells = '';
   let months = '';
   let lastMonth = -1;
-  for (let w = 0; w < CAL_WEEKS; w++) {
+  for (let w = 0; w < wochen; w++) {
     const weekStart = new Date(start); weekStart.setDate(start.getDate() + w * 7);
     // Monatsbeschriftung, sobald eine Woche einen neuen Monat beginnt
     const m = weekStart.getMonth();
@@ -4008,11 +4011,13 @@ function renderTrainingCalendar(id, cardId) {
       const entry = byDay[key];
       const future = day.getTime() > today.getTime();
       const isToday = day.getTime() === today.getTime();
+      const ausserhalb = day.getFullYear() !== jahr;   // Rand-Tage der ersten/letzten Woche
       // Flaeche = war laut damaligem Plan ein Trainingstag, Kern = tatsaechlich trainiert.
       const plan = _calPlanInfo(day, planIndex);
       const cls = ['cal-day'];
-      if (plan.planned) cls.push('planned');
-      if (entry) cls.push('done');
+      if (ausserhalb) cls.push('outside');
+      if (plan.planned && !ausserhalb) cls.push('planned');
+      if (entry && !ausserhalb) cls.push('done');
       if (future) cls.push('future');
       if (isToday) cls.push('today');
       const zustand = entry
@@ -4030,18 +4035,21 @@ function renderTrainingCalendar(id, cardId) {
   if (monthsEl) monthsEl.innerHTML = months;
 
   // Kennzahlen: Einheiten im Zeitraum + aktuelle Wochenserie
-  const inRange = DB.getWorkouts().filter(w => w.startTs >= start.getTime()).length;
+  const inRange = DB.getWorkouts().filter(w => new Date(w.startTs).getFullYear() === jahr).length;
   const streak = getWeekStreak();
   const statsEl = document.getElementById(id + '-stats');
   if (statsEl) {
-    statsEl.textContent = inRange
-      ? `${inRange} ${inRange === 1 ? 'Einheit' : 'Einheiten'}${streak > 0 ? ` · Serie ${streak} ${streak === 1 ? 'Woche' : 'Wochen'}` : ''}`
-      : '';
+    statsEl.textContent = `${jahr} · ${inRange} ${inRange === 1 ? 'Einheit' : 'Einheiten'}`
+      + (streak > 0 ? ` · Serie ${streak} ${streak === 1 ? 'Woche' : 'Wochen'}` : '');
   }
 
-  // Ans rechte Ende scrollen — heute ist der interessante Rand.
+  // Zur laufenden Woche scrollen (nicht ans Jahresende — der Dezember ist noch leer).
   const scroller = document.getElementById(id + '-scroll');
-  if (scroller) requestAnimationFrame(() => { scroller.scrollLeft = scroller.scrollWidth; });
+  if (scroller) requestAnimationFrame(() => {
+    const heuteSpalte = Math.floor((today - start) / (7 * 86400000));
+    const spaltenBreite = 16;   // 13px Kaestchen + 3px Abstand
+    scroller.scrollLeft = Math.max(0, heuteSpalte * spaltenBreite - scroller.clientWidth * 0.7);
+  });
 }
 
 // Tippen auf ein Kästchen: Tag in der Fußzeile beschreiben.
@@ -4063,7 +4071,7 @@ function showCalDay(key, id) {
   const plan = _calPlanInfo(new Date(y, m-1, d), _calPlanIndex());
   let txt;
   if (entry) {
-    txt = `<strong>${dateStr}</strong> · ${entry.names.join(', ')} · ${fmtNum(entry.vol)} kg`;
+    txt = `<strong>${dateStr}</strong> · ${entry.names.join(', ')}`;
     if (plan.known && !plan.planned) txt += ' · zusätzlich trainiert';
   } else if (plan.planned) {
     const heute = new Date(); heute.setHours(0,0,0,0);
