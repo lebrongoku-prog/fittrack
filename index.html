@@ -74,6 +74,10 @@
     <!-- Hinweis, wenn der aktive Plan in den nächsten sieben Tagen endet -->
     <div id="ov-plan-end-notice"></div>
 
+    <!-- Trainingskalender: ein Kästchen pro Tag. Fläche = laut Plan vorgesehen,
+         Kern = tatsächlich trainiert. Inhalt kommt aus calendarInnerHTML() -->
+    <div class="chart-card-v2 lg-span-2" id="ov-cal-card"></div>
+
     <!-- Letzte Sessions (kompakter Rückblick) -->
     <div class="plan-section-card" id="ov-recent-sessions-card">
       <div class="plan-section-head">
@@ -106,10 +110,6 @@
         <canvas id="volume-chart"></canvas>
       </div>
     </div>
-
-    <!-- Trainingskalender: ein Kästchen pro Tag. Fläche = laut Plan vorgesehen,
-         Kern = tatsächlich trainiert. Inhalt kommt aus calendarInnerHTML() -->
-    <div class="chart-card-v2 lg-span-2" id="ov-cal-card"></div>
 
     <!-- Volumen pro Muskelgruppe / Cardio-Verteilung pro Uebung -->
     <div class="chart-card-v2 lg-col1">

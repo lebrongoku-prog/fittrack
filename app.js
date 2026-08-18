@@ -4048,9 +4048,24 @@ function renderTrainingCalendar(id, cardId) {
       + (streak > 0 ? ` · Serie ${streak} ${streak === 1 ? 'Woche' : 'Wochen'}` : '');
   }
 
-  // Plan-Laufzeiten als Balken unter dem Raster. Die Spaltenbreite (13px Kaestchen + 3px
-  // Abstand) ist hier hartkodiert und muss zu .cal-day/.cal-grid im CSS passen.
-  const SPALTE = 16;
+  // Kaestchengroesse an die verfuegbare Breite anpassen: im Querformat fehlten sonst wenige
+  // Pixel und das ganze Jahr musste trotzdem gescrollt werden. Kleiner als 10px wird nicht
+  // gegangen — dann bleibt es bei 13px und scrollt (Hochformat).
+  const CAL_GAP = 3, CAL_CELL_DEFAULT = 13, CAL_CELL_MIN = 10;
+  const scrollerEl = document.getElementById(id + '-scroll');
+  let zelle = CAL_CELL_DEFAULT;
+  if (scrollerEl && scrollerEl.clientWidth > 0) {
+    const cs = getComputedStyle(scrollerEl);
+    const frei = scrollerEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 22;
+    const passt = (z) => wochen * (z + CAL_GAP) <= frei;
+    if (!passt(CAL_CELL_DEFAULT)) {
+      for (let z = CAL_CELL_DEFAULT - 1; z >= CAL_CELL_MIN; z--) { if (passt(z)) { zelle = z; break; } }
+    }
+  }
+  if (card) card.style.setProperty('--cal-cell', zelle + 'px');
+  const SPALTE = zelle + CAL_GAP;
+
+  // Plan-Laufzeiten als Balken unter dem Raster.
   const plansEl = document.getElementById(id + '-plans');
   if (plansEl) {
     const wocheMs = 7 * 86400000;
@@ -4079,8 +4094,7 @@ function renderTrainingCalendar(id, cardId) {
   const scroller = document.getElementById(id + '-scroll');
   if (scroller) requestAnimationFrame(() => {
     const heuteSpalte = Math.floor((today - start) / (7 * 86400000));
-    const spaltenBreite = 16;   // 13px Kaestchen + 3px Abstand
-    scroller.scrollLeft = Math.max(0, heuteSpalte * spaltenBreite - scroller.clientWidth * 0.7);
+    scroller.scrollLeft = Math.max(0, heuteSpalte * SPALTE - scroller.clientWidth * 0.7);
   });
 }
 
@@ -8092,6 +8106,36 @@ function initTabScrollSync() {
 // _navLastScrollY ist module-level, damit ein programmatisch verursachter scrollTop-Sprung
 // nicht faelschlich als "User scrollt runter" interpretiert wird.
 let _navLastScrollY = 0;
+// Kalender bei Groessenaenderung (Drehen des Geraets) neu rechnen — die Kaestchengroesse
+// haengt an der verfuegbaren Breite.
+let _calResizeTimer = null;
+function initCalendarResize() {
+  window.addEventListener('resize', () => {
+    if (_calResizeTimer) clearTimeout(_calResizeTimer);
+    _calResizeTimer = setTimeout(() => {
+      _calResizeTimer = null;
+      if (document.getElementById('cal-grid')) renderTrainingCalendar('cal', 'ov-cal-card');
+      const pc = document.getElementById('plans-cal-card');
+      if (pc && pc.style.display !== 'none' && document.getElementById('pcal-grid')) {
+        renderTrainingCalendar('pcal', 'plans-cal-card');
+      }
+    }, 180);
+  });
+}
+
+// Tipp ausserhalb des Kalenders hebt die Tagesauswahl wieder auf.
+function initCalendarDeselect() {
+  document.addEventListener('click', (e) => {
+    if (e.target.closest && e.target.closest('.cal-scroll')) return;   // im Raster: Auswahl behalten
+    const sel = document.querySelectorAll('.cal-day.sel');
+    if (!sel.length) return;
+    sel.forEach(c => c.classList.remove('sel'));
+    document.querySelectorAll('.cal-detail').forEach(el => {
+      el.innerHTML = 'Tippe ein K\u00e4stchen f\u00fcr den Tag';
+    });
+  });
+}
+
 function initScrollHideNav() {
   const nav = document.getElementById('bottom-nav');
   if (!nav) return;
@@ -8186,6 +8230,9 @@ document.addEventListener('DOMContentLoaded', () => {
   driveInit();
   // Bottom-Nav versteckt sich beim Runterscrollen, taucht beim Hochscrollen wieder auf
   initScrollHideNav();
+  // Kalender: Kaestchengroesse beim Drehen neu rechnen, Auswahl bei Tipp daneben aufheben
+  initCalendarResize();
+  initCalendarDeselect();
   // Tab-Wechsel per nativem horizontalem Snap-Scroll am Tab-Container
   initTabScrollSync();
   // Bottom-Sheet-Modals nach unten wegswipen

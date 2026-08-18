@@ -105,7 +105,10 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Zeigt IMMER das laufende Kalenderjahr (1.1.–31.12.); Rand-Tage der ersten/letzten Woche tragen `.outside` (ausgegraut, nicht antippbar).
   Beim Rendern wird zur laufenden Woche gescrollt. Unter dem Raster markieren Balken (`.cal-plans`/`.cal-plan-seg`, Farben aus `CAL_PLAN_COLORS`)
   die Laufzeit jedes Plans samt Namen; Antippen öffnet die Plan-Detailansicht, archivierte Pläne sind blasser.
-  ACHTUNG: Die Balken rechnen mit einer Spaltenbreite von 16px (13px `.cal-day` + 3px Abstand) — wird das CSS geändert, muss `SPALTE` in `renderTrainingCalendar` mit.
+  Die Kästchengröße ist dynamisch: `renderTrainingCalendar` misst die freie Breite und verkleinert die Zelle von 13px bis minimal 10px,
+  wenn das Jahr sonst knapp nicht passt (Querformat). Gesetzt wird sie als CSS-Variable `--cal-cell` auf der Karte; `SPALTE` (Zelle + 3px Abstand)
+  steuert Plan-Balken und Scrollposition. `initCalendarResize()` rechnet beim Drehen neu, `initCalendarDeselect()` hebt die Tagesauswahl auf,
+  sobald außerhalb von `.cal-scroll` getippt wird.
   Zwei Instanzen: Übersicht (`cal`/`#ov-cal-card`) und Pläne-Tab (`pcal`/`#plans-cal-card`), Markup aus `calendarInnerHTML(id)`.
   Beide Karten sind per ID von der 520px-Grenze ab 560px ausgenommen, damit im Querformat mehr Wochen ohne Scrollen passen.
 - **Verlauf je Übung** (Übungen-Tab, aufgeklappte Karte): `getExerciseHistory` liefert pro Einheit `maxW` (schwerster Satz) UND `reps` (Summe aller Wiederholungen); `exHistPoints(exId, mode)` filtert daraus die Punkte des gewählten Modus (Einträge ohne Wert fallen raus — Körpergewichtsübungen haben kein Gewicht). Umschalter `.ex-chart-toggle` (Gewicht/Wdh.), Auswahl je Übung in `ft_ex_chart_modes` — bewusst ein eigener localStorage-Key statt eines Felds an der Übung, damit reine Anzeige-Einstellungen nicht in den Trainingsdaten und der Drive-Sicherung landen. `setExChartMode` frischt nur die betroffene Karte auf (ein Neuaufbau der Liste würde sie zuklappen). ACHTUNG: `.ex-chart-toggle` nutzt die Klasse `.stats-mode-toggle`, die `html.no-cardio` ausblendet — die Ausnahmeregel in style.css muss bestehen bleiben.

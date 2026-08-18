@@ -1705,10 +1705,10 @@ html.wo-running #wo-week-card { display: none; }
 .cal-scroll::-webkit-scrollbar { display: none; }
 .cal-inner { display: inline-block; min-width: 100%; }
 .cal-months { display: flex; gap: 3px; margin-left: 22px; margin-bottom: 3px; }
-.cal-month { width: 13px; flex: 0 0 13px; font-size: 9px; color: var(--text3); white-space: nowrap; }
+.cal-month { width: var(--cal-cell, 13px); flex: 0 0 var(--cal-cell, 13px); font-size: 9px; color: var(--text3); white-space: nowrap; }
 .cal-body { display: flex; gap: 5px; }
 .cal-daylabels { display: flex; flex-direction: column; gap: 3px; flex: 0 0 17px; }
-.cal-daylabels span { height: 13px; font-size: 9px; line-height: 13px; color: var(--text3); }
+.cal-daylabels span { height: var(--cal-cell, 13px); font-size: 9px; line-height: var(--cal-cell, 13px); color: var(--text3); }
 .cal-grid { display: flex; gap: 3px; }
 .cal-week { display: flex; flex-direction: column; gap: 3px; }
 /* Zwei Schichten pro Tag: die Fläche sagt, ob laut Plan ein Training vorgesehen war,
@@ -1716,7 +1716,7 @@ html.wo-running #wo-week-card { display: none; }
    der Kalender beantwortet nur „trainiert oder nicht". */
 .cal-day {
   position: relative;
-  width: 13px; height: 13px; border-radius: 3px; display: block;
+  width: var(--cal-cell, 13px); height: var(--cal-cell, 13px); border-radius: 3px; display: block;
   background: var(--border);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
@@ -1748,11 +1748,13 @@ html.wo-running #wo-week-card { display: none; }
 .cal-foot { padding: 10px 16px 12px; }
 .cal-detail { font-size: 12px; color: var(--text2); line-height: 1.4; min-height: 17px; }
 .cal-detail strong { color: var(--text); font-weight: 600; }
-.cal-legend { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 11px; color: var(--text3); }
-.cal-legend i { position: relative; width: 13px; height: 13px; border-radius: 3px; display: inline-block; background: var(--border); }
+/* Jede Legenden-Angabe ist ein eigener Flex-Block, sonst klebt der Text am Symbol und
+   sitzt vertikal daneben. */
+.cal-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 11px; color: var(--text3); }
+.cal-legend > span { display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
+.cal-legend i { position: relative; flex: 0 0 13px; width: 13px; height: 13px; border-radius: 3px; display: inline-block; background: var(--border); }
 .cal-legend i.k-planned { background: #CDE7E1; }
 .cal-legend i.k-core::before { content: ''; position: absolute; inset: 3px; border-radius: 2px; background: #0F766E; }
-.cal-legend { flex-wrap: wrap; gap: 6px 14px; }
 
 /* PR list v2 (with numbered colored circles) */
 .pr-list-v2 { padding: 4px 16px 8px; }
@@ -2260,6 +2262,12 @@ html.wo-running #wo-week-card { display: none; }
   #screen-overview.active > #ov-plan-end-notice:empty { display: none; }
   #screen-overview.active > #ov-plan-card,
   #screen-overview.active > #ov-plan-end-notice { grid-column: 1; }
+  /* Im Hochformat steht der Kalender direkt über „Letzte Einheiten" (DOM-Reihenfolge).
+     Im Zwei-Spalten-Layout würde er die beiden Kacheln auseinanderreißen — dort rutscht
+     er per order hinter sie, ohne dass das Markup doppelt vorgehalten werden muss.
+     (order wirkt nur im Grid; im Hochformat greift die DOM-Reihenfolge.) */
+  #screen-overview.active > #ov-cal-card { order: 1; }
+  #screen-overview.active > .chart-card-v2:not(#ov-cal-card) { order: 2; }
   #screen-overview.active > .program-card { grid-column: 1; }
   #screen-overview.active > .plan-section-card { grid-column: 2; }
   /* Stats-Karten in Übersicht (vom alten Verlauf-Tab) */
