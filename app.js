@@ -3917,6 +3917,10 @@ function buildCalendarData() {
   return byDay;
 }
 
+// Farben der Plan-Balken unter dem Kalender. Bewusst eigene Palette statt des Tab-Akzents:
+// die Balken stehen nebeneinander und muessen sich voneinander unterscheiden.
+const CAL_PLAN_COLORS = ['#0F766E', '#6E8FB8', '#B08968', '#7C6BAF', '#4B8B6F', '#A8577B'];
+
 // Plan-Zeitraeume fuer die Kalender-Rekonstruktion. Auch archivierte Plaene zaehlen:
 // sie behalten ihren Wochenplan, also laesst sich fuer jeden vergangenen Tag sagen, ob
 // damals ein Training vorgesehen war.
@@ -3958,6 +3962,7 @@ function calendarInnerHTML(id) {
           <div class="cal-daylabels"><span>Mo</span><span></span><span>Mi</span><span></span><span>Fr</span><span></span><span>So</span></div>
           <div class="cal-grid" id="${id}-grid"></div>
         </div>
+        <div class="cal-plans" id="${id}-plans"></div>
       </div>
     </div>
     <div class="cal-foot">
@@ -4041,6 +4046,33 @@ function renderTrainingCalendar(id, cardId) {
   if (statsEl) {
     statsEl.textContent = `${jahr} · ${inRange} ${inRange === 1 ? 'Einheit' : 'Einheiten'}`
       + (streak > 0 ? ` · Serie ${streak} ${streak === 1 ? 'Woche' : 'Wochen'}` : '');
+  }
+
+  // Plan-Laufzeiten als Balken unter dem Raster. Die Spaltenbreite (13px Kaestchen + 3px
+  // Abstand) ist hier hartkodiert und muss zu .cal-day/.cal-grid im CSS passen.
+  const SPALTE = 16;
+  const plansEl = document.getElementById(id + '-plans');
+  if (plansEl) {
+    const wocheMs = 7 * 86400000;
+    const rasterEnde = start.getTime() + wochen * wocheMs - 1;
+    const segs = DB.getPlans()
+      .filter(p => p && p.startDate && p.startDate <= rasterEnde && (p.endDate || Infinity) >= start.getTime())
+      .sort((a, b) => a.startDate - b.startDate)
+      .map((p, i) => {
+        const von = Math.max(0, Math.floor((p.startDate - start.getTime()) / wocheMs));
+        const bis = Math.min(wochen - 1, Math.floor(((p.endDate || rasterEnde) - start.getTime()) / wocheMs));
+        if (bis < von) return '';
+        const breite = (bis - von + 1) * SPALTE - 3;
+        const farbe = CAL_PLAN_COLORS[i % CAL_PLAN_COLORS.length];
+        const zeitraum = fmtDateRange(p.startDate, p.endDate);
+        return `<span class="cal-plan-seg${p.archived ? ' archived' : ''}"
+                      style="left:${von * SPALTE}px;width:${breite}px;background:${farbe}"
+                      onclick="openPlanDetail('${p.id}')" role="button"
+                      title="${escapeHtml(p.name)} · ${zeitraum}">${escapeHtml(p.name)}</span>`;
+      }).join('');
+    plansEl.innerHTML = segs;
+    plansEl.style.width = (wochen * SPALTE) + 'px';
+    plansEl.style.display = segs ? '' : 'none';
   }
 
   // Zur laufenden Woche scrollen (nicht ans Jahresende — der Dezember ist noch leer).

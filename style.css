@@ -1730,6 +1730,21 @@ html.wo-running #wo-week-card { display: none; }
 .cal-day.outside { opacity: .25; pointer-events: none; }
 .cal-day.today { box-shadow: 0 0 0 1.5px var(--accent); }
 .cal-day.sel   { box-shadow: 0 0 0 1.5px var(--text); }
+/* Laufzeit-Balken der Trainingspläne unter dem Raster. Absolut positioniert, weil ein
+   Balken mehrere Wochenspalten überspannt — Breite und Versatz rechnet das JS in Vielfachen
+   der Spaltenbreite (13px + 3px Abstand). Der Versatz links entspricht den Tages-Labels. */
+.cal-plans { position: relative; height: 17px; margin: 7px 0 0 22px; }
+.cal-plan-seg {
+  position: absolute; top: 0; height: 15px;
+  border-radius: 4px; box-sizing: border-box;
+  display: flex; align-items: center; padding: 0 5px;
+  font-size: 9.5px; font-weight: 700; letter-spacing: .2px; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.cal-plan-seg.archived { opacity: .5; }
+.cal-plan-seg:active { transform: scale(.98); }
+
 .cal-foot { padding: 10px 16px 12px; }
 .cal-detail { font-size: 12px; color: var(--text2); line-height: 1.4; min-height: 17px; }
 .cal-detail strong { color: var(--text); font-weight: 600; }
