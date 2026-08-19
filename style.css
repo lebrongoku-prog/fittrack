@@ -2076,8 +2076,10 @@ html.wo-running #wo-week-card { display: none; }
   color: var(--text3); cursor: pointer; user-select: none;
   transition: color .15s, background .15s;
 }
-.stats-mode-pill.active.mode-strength { background: var(--accent); color: #fff; }.ex-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.ex-chart-toggle .stats-mode-pill.active { background: var(--accent); color: #fff; }/* ═══════════════════════════════════
+.ex-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ex-chart-toggle .stats-mode-pill.active { background: var(--accent); color: #fff; }
+
+/* ═══════════════════════════════════
    KEIN AUTO-ZOOM AUF EINGABEFELDERN
 ═══════════════════════════════════ */
 /* iOS Safari zoomt beim Fokussieren automatisch hinein, sobald das Feld kleiner als
