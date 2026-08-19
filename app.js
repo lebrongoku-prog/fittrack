@@ -390,11 +390,6 @@ function woExType(we) {
   return exType(we && (we.exId || we.id));
 }
 function isWoExCardio(we) { return woExType(we) === 'cardio'; }
-// Plan-Day: enthaelt mindestens eine Cardio-Uebung?
-function planDayHasCardio(day) {
-  if (!day || !day.exercises) return false;
-  return day.exercises.some(e => isCardioEx(e.id || e));
-}
 // Plan-Day: ist eine reine Cardio-Session (keine Kraft-Uebungen)?
 function planDayIsPureCardio(day) {
   if (!day || !day.exercises || day.exercises.length === 0) return false;
@@ -424,29 +419,12 @@ function formatDistance(km) {
   return km.toFixed(km < 10 ? 2 : 1).replace('.', ',') + ' km';
 }
 
-function typeCls(t) { return 'type-' + (t || 'free'); }
 function fmtTimer(s) { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60; return h>0?`${h}:${pad(m)}:${pad(ss)}`:`${pad(m)}:${pad(ss)}`; }
 function fmtDur(s) { if(!s)return'0 min'; const h=Math.floor(s/3600),m=Math.floor((s%3600)/60); return h>0?`${h}h ${m}min`:`${m} min`; }
 function pad(n) { return String(n).padStart(2,'0'); }
 function fmtDate(ts) { return new Date(ts).toLocaleDateString('de-DE',{weekday:'short',day:'numeric',month:'short',year:'numeric'}); }
 function fmtDateShort(ts) { return new Date(ts).toLocaleDateString('de-DE',{day:'numeric',month:'short'}); }
-function fmtDateDay(ts) { return new Date(ts).toLocaleDateString('de-DE',{weekday:'long'}); }
 function fmtNum(n) { return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(Math.round(n)); }
-function dayOfWeek(ts) { const d=new Date(ts); return d.toLocaleDateString('de-DE',{weekday:'long'}); }
-
-function getWeekInfo() {
-  const ws = DB.getWorkouts();
-  // Aktiver Plan (per Datum), kein Edit-Kontext/DEFAULT-Fallback. Ohne aktiven Plan: total 0.
-  const active = getActivePlan();
-  const plan = active ? active.trainingDays : [];
-  if (ws.length === 0) return { weekNum:1, doneThisWeek:0, total:plan.length };
-  const first = [...ws].sort((a,b) => a.startTs - b.startTs)[0];
-  const diffWeeks = Math.floor((Date.now() - first.startTs) / (7*24*3600*1000));
-  const mon = new Date(); mon.setDate(mon.getDate() - ((mon.getDay()+6)%7)); mon.setHours(0,0,0,0);
-  const done = ws.filter(w => w.startTs >= mon.getTime()).length;
-  return { weekNum: diffWeeks+1, doneThisWeek: done, total: plan.length };
-}
-
 // Get current program week based on startDate of the ACTIVE plan (not editing context)
 function getProgramWeek() {
   const active = getActivePlan();
@@ -468,15 +446,6 @@ function _planProgramWeek(p) {
   const week = Math.floor((Date.now() - monStart.getTime()) / (7*24*3600*1000)) + 1;
   const total = p.weeksTotal || 12;
   return { num: Math.min(Math.max(week,1), total), total };
-}
-
-// Get current ISO calendar week
-function isoWeekNum(d=new Date()) {
-  const date = new Date(d);
-  date.setHours(0,0,0,0);
-  date.setDate(date.getDate() + 3 - ((date.getDay()+6)%7));
-  const week1 = new Date(date.getFullYear(), 0, 4);
-  return 1 + Math.round(((date-week1)/86400000 - 3 + ((week1.getDay()+6)%7))/7);
 }
 
 // Build the 7-day list starting Monday for the current week — uses ACTIVE plan, not edit context
@@ -569,8 +538,6 @@ function getNextPlanDay() {
   if (idx === -1) return plan[0];
   return plan[(idx + 1) % plan.length];
 }
-
-function getLastWorkout() { const ws = DB.getWorkouts(); return ws.length ? ws[0] : null; }
 
 function calcVolume(workout) {
   return workout.exercises.reduce((acc, ex) => {
@@ -965,7 +932,7 @@ function renderOverview() {
   renderBackupLine();
 
   // ─ Trainingskalender (ganzes Kalenderjahr) ─
-  // Wird hier gerendert, nicht in renderHomeStats: die Auswertungen liegen seit dem
+  // Wird hier gerendert, nicht in renderStatsPage: die Auswertungen liegen seit dem
   // Umbau im Übungen-Tab, der Kalender bleibt in der Übersicht.
   renderTrainingCalendar();
 
@@ -1111,14 +1078,6 @@ function renderRecentSessionsOnOverview() {
   }).join('');
 }
 
-function dayLabel(label) {
-  // Get today/morning label
-  const today = new Date();
-  const todayIdx = (today.getDay()+6) % 7;
-  const labels = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
-  return labels[todayIdx] || label;
-}
-
 // Ausgewählter Tag im Übersicht-Wochenplan-Strip (null = heute). Persistiert wie im Workouts-Tab.
 let selectedOverviewDayIdx = null;
 function selectOverviewDay(idx) {
@@ -1176,19 +1135,6 @@ function buildWpInfo(days, focusIdx, useHeuteLabel) {
   const exLabel = exCount === 1 ? 'Übung' : 'Übungen';
   const doneMark = d.dayDone ? ' <span class="wp-info-done">✓</span>' : '';
   return `<strong>${label}</strong> · ${escapeHtml(d.planDay.name)} · ${exCount} ${exLabel}${doneMark}`;
-}
-
-function heroAction() {
-  // Legacy entry point kept for safety; new flow goes through requestStartFromOverview().
-  const activeWo = DB.getActive();
-  if (activeWo) { resumeWorkout(); return; }
-  const week7 = getCurrentWeekDays();
-  const todayEntry = week7.find(d => d.isToday);
-  const upcoming = (todayEntry && todayEntry.planDay) ? todayEntry
-                : week7.find(d => d.isFuture && d.planDay);
-  const targetId = (upcoming && upcoming.planDay) ? upcoming.planDay.id
-                : (getNextPlanDay() ? getNextPlanDay().id : null);
-  if (targetId) requestStartFromOverview(targetId);
 }
 
 // Ask the user before starting a workout from the Übersicht hero.
@@ -1253,10 +1199,6 @@ function peSets(pe) {
   const reps = String(pe.targetReps != null ? pe.targetReps : 8);
   const w = (pe.targetWeight != null && pe.targetWeight !== '') ? String(pe.targetWeight) : '';
   return Array.from({ length: n }, () => ({ reps, weight: w }));
-}
-function _materializePeSets(pe) {
-  if (!Array.isArray(pe.sets) || !pe.sets.length) pe.sets = peSets(pe).map(s => ({ ...s }));
-  return pe.sets;
 }
 function _syncPeScalars(pe) {
   if (!Array.isArray(pe.sets) || !pe.sets.length) return;
@@ -2095,8 +2037,6 @@ function renderActiveWorkout() {
     </div>`;
   }).join('');
 }
-
-function updateBottomBar() { /* bottom bar removed in v2 */ }
 
 // ─── Ein/Aus-Klapp-State der Workout-Tab-Cards ─────────────────────
 // Default: alle Cards eingeklappt. Klick auf den Card-Header togglet
@@ -3486,7 +3426,7 @@ function setStatsVolMode(mode) {
   if (unitToggle) unitToggle.style.display = (mode === 'cardio') ? 'none' : '';
   const titleEl = document.getElementById('vol-card-title');
   if (titleEl) titleEl.textContent = mode === 'cardio' ? 'Distanzentwicklung' : 'Volumenentwicklung';
-  renderHomeStats();
+  renderStatsPage();
 }
 function setStatsMuscleMode(mode) {
   if (mode !== 'strength' && (mode !== 'cardio' || !CARDIO_ENABLED)) return;
@@ -3496,7 +3436,7 @@ function setStatsMuscleMode(mode) {
   _applyStatsToggleUI('muscle', mode);
   const titleEl = document.getElementById('muscle-card-title');
   if (titleEl) titleEl.textContent = mode === 'cardio' ? 'Distanz pro Cardio-Einheit' : 'Volumen pro Muskelgruppe';
-  renderHomeStats();
+  renderStatsPage();
 }
 function setStatsPrMode(mode) {
   if (mode !== 'strength' && (mode !== 'cardio' || !CARDIO_ENABLED)) return;
@@ -3506,7 +3446,7 @@ function setStatsPrMode(mode) {
   _applyStatsToggleUI('pr', mode);
   const titleEl = document.getElementById('pr-card-title');
   if (titleEl) titleEl.textContent = mode === 'cardio' ? 'Cardio-Bestleistungen' : 'PRs & Bestleistungen';
-  renderHomeStats();
+  renderStatsPage();
 }
 
 function openHistRangeDropdown() {
@@ -3522,7 +3462,7 @@ function setHistRange(days) {
   const label = days === 365 ? '1 Jahr' : `${days} Tage`;
   document.getElementById('hist-range-label').textContent = label;
   closeModal('modal-hist-range');
-  renderHomeStats();
+  renderStatsPage();
 }
 
 function toggleVolumeUnit() {
@@ -3538,7 +3478,7 @@ function filterWorkoutsByRange(ws, days) {
 
 // Rendert die 3 Stats-Karten (Volumenentwicklung, Muskelgruppen-Volumen, PRs) in der Übersicht.
 // Wird aus renderOverview aufgerufen — der frühere Verlauf-Tab existiert nicht mehr.
-function renderHomeStats() {
+function renderStatsPage() {
   const allWs = DB.getWorkouts();
   const ws = filterWorkoutsByRange(allWs, histRangeDays);
   // Karten-Toggle-UI initial spiegeln (defensiv)
@@ -3559,7 +3499,7 @@ function renderHomeStats() {
       renderCardioPerExerciseBars(ws, volEl);
     } else if (ws.length) {
       const vol = calcMuscleVolume(ws);
-      renderMuscleBars(vol, volEl);
+      renderMuscleMap(vol, volEl);
     } else {
       volEl.innerHTML = '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>';
     }
@@ -4182,6 +4122,7 @@ function showCalDay(key, id) {
 // Muskel-Landkarte: zwei Silhouetten (vorne/hinten), deren Regionen nach Volumenanteil
 // eingefärbt sind. Ersetzt die frühere Balkenliste — Ungleichgewichte sieht man als Bild
 // schneller als in einer Rangliste. Die Zahlen stehen darunter als Legende.
+// (Hieß früher renderMuscleBars; die Klassen .muscle-bars-v2 im Markup stammen noch daher.)
 // Vorne: Schultern, Brust, Bizeps, Bauch, Oberschenkel. Hinten: Rücken, Trizeps, Waden.
 function muscleMapSvg(vol, maxVol) {
   // Anteil → Deckkraft der Muskelfarbe (0 = unbenutzt, grau)
@@ -4234,7 +4175,7 @@ function muscleMapSvg(vol, maxVol) {
   </div>`;
 }
 
-function renderMuscleBars(vol, container) {
+function renderMuscleMap(vol, container) {
   const values = MUSCLE_ORDER.map(m => vol[m] || 0);
   const maxVol = Math.max(0, ...values);
   if (!maxVol) {
@@ -4394,13 +4335,6 @@ function deleteSession(i) {
 
 let editingDayIdx = null;
 let mehrInactivePlanExpanded = false; // Toggle für die kollabierbare "Andere Trainingstage"-Sektion
-
-function toggleMehrInactivePlans() {
-  mehrInactivePlanExpanded = !mehrInactivePlanExpanded;
-  // Trainingstage-Liste wird jetzt im Plan-Detail-Screen gerendert, nicht mehr im Mehr-Tab.
-  if (currentScreen === 'plan-detail') renderPlanDetail();
-  else if (currentScreen === 'mehr') renderMehr();
-}
 
 function renderMehr() {
   // Einstellungen-Overlay: Cloud-Sync, Papierkorb, Daten & Sicherheit.
@@ -5392,42 +5326,6 @@ function saveWeekPlanDay(i, value) {
 }
 
 // Visueller Wochenplaner: Wochentag antippen → Picker (Trainingstage des Plans + Ruhetag).
-let _weekdayPickIdx = null;
-function openWeekdayPicker(i) {
-  _weekdayPickIdx = i;
-  const plan = _resolveEditPlan();
-  const days = plan ? resolvePlanDays(plan) : [];
-  const wp = (plan && plan.weekPlan) || [];
-  const cur = wp[i] ? wp[i].planDayId : null;
-  const label = wp[i] ? wp[i].label : '';
-  const titleEl = document.getElementById('weekday-pick-title');
-  if (titleEl) titleEl.textContent = `${label}: Trainingstag wählen`;
-  const restRow = `<div class="day-pick-row ${!cur ? 'in-day' : 'not-in-day'}" onclick="pickWeekday('')">
-      <div class="day-pick-info"><div class="day-pick-name">Ruhetag</div></div>
-      <div class="day-pick-actions">${!cur ? '<span class="day-pick-icon done">✓</span>' : '<span class="day-pick-icon">+</span>'}</div>
-    </div>`;
-  const dayRows = days.map(d => {
-    const sel = cur === d.id;
-    const setCount = (d.exercises || []).reduce((a,e) => a + (e.targetSets || 0), 0);
-    return `<div class="day-pick-row ${sel ? 'in-day' : 'not-in-day'}" onclick="pickWeekday('${d.id}')">
-      <div class="day-pick-info">
-        <div class="day-pick-name">${escapeHtml(d.name)}</div>
-        <div class="day-pick-sub">${(d.exercises || []).length} Übungen · ${setCount} Sätze</div>
-      </div>
-      <div class="day-pick-actions">${sel ? '<span class="day-pick-icon done">✓</span>' : '<span class="day-pick-icon">+</span>'}</div>
-    </div>`;
-  }).join('');
-  const empty = days.length ? '' : '<p style="color:var(--text3);text-align:center;padding:16px 8px;font-size:13px">Noch keine Trainingstage in diesem Plan. Lege unten welche an.</p>';
-  document.getElementById('weekday-pick-list').innerHTML = restRow + dayRows + empty;
-  openModal('modal-weekday-pick');
-}
-function pickWeekday(dayId) {
-  if (_weekdayPickIdx === null) return;
-  saveWeekPlanDay(_weekdayPickIdx, dayId || '');
-  closeModal('modal-weekday-pick');
-  _weekdayPickIdx = null;
-}
-
 function openPlanDayModal(idx) {
   editingDayIdx = idx;
   resetDelEdit();
@@ -5951,7 +5849,7 @@ function renderExercisesScreen() {
   const subEl = document.getElementById('ex-subline');
   if (stats && subEl) subEl.textContent = 'Auswertungen zu deinem Training';
 
-  if (stats) renderHomeStats();
+  if (stats) renderStatsPage();
   else renderExercises();
 }
 
@@ -6403,14 +6301,6 @@ function planExDragEnd(e) {
   planExDraggedIdx = null;
 }
 
-function updatePlanTarget(exIdx, field, value) {
-  const plan = DB.getPlan();
-  plan[editingDayIdx].exercises[exIdx][field] = parseInt(value) || 1;
-  DB.savePlan(plan);
-  syncActiveWorkoutWithPlanDay(plan[editingDayIdx].id);
-  _renderAfterPlanEdit();
-}
-
 function removePlanEx(exIdx) {
   const plan = DB.getPlan();
   if (!plan[editingDayIdx] || !plan[editingDayIdx].exercises[exIdx]) return;
@@ -6623,17 +6513,6 @@ function renderPlanAddList(q) {
 
   document.getElementById('plan-add-list').innerHTML = groupsHTML ||
     '<p style="color:var(--text3);text-align:center;padding:20px">Keine Übung gefunden</p>';
-}
-
-function addToPlanDay(exId) {
-  const plan = DB.getPlan();
-  plan[editingDayIdx].exercises.push({ exId, targetSets:3, targetReps:8 });
-  DB.savePlan(plan);
-  syncActiveWorkoutWithPlanDay(plan[editingDayIdx].id);
-  closeModal('modal-add-to-plan');
-  renderPlanDayExList(plan[editingDayIdx]);
-  const ex = getEx(exId);
-  if (ex) showToast(`${ex.name} hinzugefügt`);
 }
 
 let editingExerciseId = null;

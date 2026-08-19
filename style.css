@@ -440,10 +440,7 @@ body.theme-plans .hist-action-dd {
 .ph-with-back { justify-content: flex-start; gap: 10px; align-items: center; }
 .ph-with-back .ph-left { flex: 1; min-width: 0; }
 .ph-left h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
-.ph-left .ph-sub { font-size: 13px; color: var(--text3); margin-top: 2px; }
-.ph-action { width: 36px; height: 36px; border-radius: 10px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.ph-action svg { width: 18px; height: 18px; stroke: var(--text2); fill: none; stroke-width: 1.8; }
-/* Zahnrad in der Übersicht: Zugang zu den Einstellungen, seit „Mehr" kein Tab mehr ist.
+.ph-left .ph-sub { font-size: 13px; color: var(--text3); margin-top: 2px; }/* Zahnrad in der Übersicht: Zugang zu den Einstellungen, seit „Mehr" kein Tab mehr ist.
    Auf dem farbigen Tab-Hintergrund → helle Fläche, damit es sich abhebt. */
 .ph-gear {
   width: 38px; height: 38px; flex-shrink: 0; margin-top: 2px;
@@ -456,12 +453,7 @@ body.theme-plans .hist-action-dd {
 .ph-gear:active { transform: scale(.94); }
 
 /* ─── Cards ─── */
-.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin: 0 12px 12px; overflow: hidden; }
-.section-header { display: flex; justify-content: space-between; align-items: center; padding: 6px 14px 6px; }
-.section-title { font-size: 17px; font-weight: 700; }
-.section-link { font-size: 14px; color: var(--accent); font-weight: 500; cursor: pointer; }
-
-/* ─── Buttons ─── */
+.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin: 0 12px 12px; overflow: hidden; }.section-title { font-size: 17px; font-weight: 700; }/* ─── Buttons ─── */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 13px 18px; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: opacity .15s, transform .1s; }
 .btn:active { opacity: .75; transform: scale(.97); }
 .btn-primary { background: var(--accent); color: #fff; }
@@ -469,22 +461,7 @@ body.theme-plans .hist-action-dd {
 .btn-ghost { background: var(--card2); color: var(--text2); }
 .btn-danger { background: var(--red-bg); color: var(--red); }
 .btn-sm { padding: 8px 14px; font-size: 13px; }
-.btn-full { width: 100%; }
-.btn-icon { width: 36px; height: 36px; padding: 0; border-radius: 50%; }
-
-/* ─── Numbered badge ─── */
-.num-badge { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.num-badge.done { background: var(--green); }
-
-/* ─── Day type badges ─── */
-.type-tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-.type-push   { background: var(--orange-bg); color: var(--orange); }
-.type-pull   { background: var(--green-bg);  color: var(--green); }
-.type-legs   { background: var(--purple-bg); color: var(--purple); }
-.type-free   { background: var(--accent-bg); color: var(--accent); }
-.type-cardio { background: var(--cardio-bg); color: var(--cardio); }
-
-/* ─── Divider ─── */
+.btn-full { width: 100%; }.num-badge.done { background: var(--green); }/* ─── Divider ─── */
 .divider { height: 1px; background: var(--border); }
 
 /* ─── Empty State ─── */
@@ -526,22 +503,7 @@ body.theme-plans .hist-action-dd {
   font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
   background: #D1FAE5; color: #059669;
   border-radius: 6px;
-}
-/* Kollabierbarer Header für inaktive (nicht im Wochenplan zugewiesene) Trainingstage */
-.plan-day-collapse-header {
-  display: flex; align-items: center; gap: 8px;
-  padding: 12px 16px;
-  font-size: 13px; font-weight: 600;
-  color: var(--text2);
-  background: var(--bg);
-  cursor: pointer;
-  border-top: 1px solid var(--border);
-  -webkit-tap-highlight-color: transparent;
-  user-select: none; -webkit-user-select: none;
-}
-.plan-day-collapse-header.expanded { border-bottom: 1px solid var(--border); }
-.plan-day-collapse-header:active { background: var(--card2); }
-.plan-day-collapse-arrow {
+}.plan-day-collapse-header.expanded { border-bottom: 1px solid var(--border); }.plan-day-collapse-arrow {
   display: inline-flex;
   width: 20px; height: 20px;
   align-items: center; justify-content: center;
@@ -764,14 +726,9 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   padding: 8px 0;
   font-size: 12px; color: var(--text3); font-style: italic;
   text-align: center;
-}
-.pdr-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
-.pdr-info { flex: 1; }
+}.pdr-info { flex: 1; }
 .pdr-name { font-size: 15px; font-weight: 600; }
-.pdr-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
-.pdr-arrow { color: var(--text3); font-size: 16px; }
-
-.mehr-row { display: flex; align-items: center; padding: 14px 16px; gap: 12px; }
+.pdr-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }.mehr-row { display: flex; align-items: center; padding: 14px 16px; gap: 12px; }
 .mehr-row + .mehr-row { border-top: 1px solid var(--border); }
 .mehr-row-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
 .mehr-row-info { flex: 1; }
@@ -816,22 +773,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .form-label { font-size: 13px; font-weight: 600; color: var(--text2); }
 .form-input { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 16px; color: var(--text); width: 100%; }
 .form-input:focus { outline: none; border-color: var(--accent); }
-.form-select { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 16px; color: var(--text); width: 100%; -webkit-appearance: none; }
-
-/* Plan day detail modal */
-.plan-ex-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-.plan-ex-row:last-child { border-bottom: none; }
-.plan-ex-name { flex: 1; font-size: 15px; }
-.plan-ex-target { font-size: 13px; color: var(--text3); }
-.plan-ex-del { width: 28px; height: 28px; border-radius: 50%; background: var(--red-bg); color: var(--red); border: none; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-
-/* Target editor inside plan */
-.target-row { display: flex; gap: 8px; align-items: center; }
-.target-input { width: 52px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 8px; padding: 8px; font-size: 15px; font-weight: 600; text-align: center; }
-.target-input:focus { outline: none; border-color: var(--accent); }
-.target-x { font-size: 15px; color: var(--text3); font-weight: 700; }
-
-/* Workout history detail modal */
+.form-select { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 16px; color: var(--text); width: 100%; -webkit-appearance: none; }.plan-ex-del { width: 28px; height: 28px; border-radius: 50%; background: var(--red-bg); color: var(--red); border: none; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }/* Workout history detail modal */
 .hist-ex-block { margin-bottom: 10px; }
 .hist-ex-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
 .hist-set-row { display: flex; gap: 8px; font-size: 13px; color: var(--text2); margin-bottom: 3px; }
@@ -909,9 +851,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   .card, .hero-card, .ov-ex-card, .chart-card, .mehr-section, .aex-card, .session-card,
   .hero-v2, .program-card, .plan-section-card, .session-card-v2, .chart-card-v2, .aex-v2,
   .ex-group
-    { max-width: 520px; margin-left: auto; margin-right: auto; }
-  .stats-row, .stats-row-v2, .two-col-grid { max-width: 520px; margin: 0 auto 12px; }
-  /* Ausnahme Trainingskalender: je breiter, desto mehr Wochen ohne Scrollen sichtbar.
+    { max-width: 520px; margin-left: auto; margin-right: auto; }  /* Ausnahme Trainingskalender: je breiter, desto mehr Wochen ohne Scrollen sichtbar.
      Im Querformat (844–932px) blieb er sonst auf 520px stehen. */
   #ov-cal-card, #plans-cal-card { max-width: none; margin-left: 14px; margin-right: 14px; }
   .info-row, .plan-carousel, .ex-tab-bar, .ex-tab-v2-bar { padding-left: calc((100vw - 520px)/2 + 14px); }
@@ -944,11 +884,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 
 /* ─── Util ─── */
 .hidden { display: none !important; }
-.flex { display: flex; }
-.flex-between { display: flex; justify-content: space-between; align-items: center; }
-.gap8 { gap: 8px; }
-.p16 { padding: 14px; }
-.text3 { color: var(--text3); }
+.flex { display: flex; }.text3 { color: var(--text3); }
 
 /* ══════════════════════════════════════
    NEW MOCKUP-ALIGNED COMPONENTS
@@ -1041,10 +977,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   border-radius: 8px;
   background: var(--card);
   box-shadow: 0 1px 4px rgba(15,23,42,0.06);
-}
-
-.hero-v2-progress-label { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
-.hero-v2-progress-bar { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 14px; }
+}.hero-v2-progress-bar { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 14px; }
 .hero-v2-progress-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s; }
 /* ─── Laufende Einheit: kompakter Kopf ───
    Im aktiven Zustand zählt nur, was man beim Eintragen braucht. Das Hantel-Bild entfällt,
@@ -1100,51 +1033,16 @@ html.wo-running #wo-week-card { display: none; }
   position: absolute; inset: 8px; border-radius: 50%;
   background: radial-gradient(circle, var(--accent-bg) 0%, transparent 70%);
 }
-.hero-v2-art svg { width: 100%; height: auto; position: relative; z-index: 1; }
-
-/* ─ Programm-Card (TRAININGSWOCHE) ─ */
-.program-card {
-  margin: 0 12px 12px; background: var(--card); border-radius: 18px; box-shadow: var(--shadow);
-  padding: 14px 16px; cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
-.program-card-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; }
-.program-card-row { display: flex; align-items: center; gap: 14px; }
-.program-card-val { font-size: 32px; font-weight: 800; line-height: 1; letter-spacing: -1px; }
-.program-card-val .of { font-size: 18px; color: var(--text3); font-weight: 600; margin-left: 4px; }
-.program-card-segbar { flex: 1; display: flex; gap: 4px; height: 8px; }
-.program-card-seg { flex: 1; background: var(--border); border-radius: 4px; }
-.program-card-seg.done { background: var(--accent); }
-.program-card-side { font-size: 12px; color: var(--text2); font-weight: 600; text-align: right; line-height: 1.4; }
-
-/* ─ Section card wrapper for Trainingsplan ─ */
+.hero-v2-art svg { width: 100%; height: auto; position: relative; z-index: 1; }.program-card-val .of { font-size: 18px; color: var(--text3); font-weight: 600; margin-left: 4px; }.program-card-seg.done { background: var(--accent); }/* ─ Section card wrapper for Trainingsplan ─ */
 .plan-section-card {
   margin: 0 12px 12px; background: var(--card); border-radius: 18px; box-shadow: var(--shadow);
   padding: 14px;
 }
 .plan-section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .plan-section-head h3 { font-size: 17px; font-weight: 700; }
-.plan-section-head a { font-size: 14px; color: var(--accent); font-weight: 500; cursor: pointer; }
-
-/* 7-day strip header */
-.next7-head {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 13px; color: var(--text2); font-weight: 500;
-  padding: 8px 12px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px;
-  background: #fafbfc;
-}
-.next7-head svg { width: 14px; height: 14px; stroke: var(--text3); fill: none; stroke-width: 1.8; }
-
-/* 7-day chips strip */
+.plan-section-head a { font-size: 14px; color: var(--accent); font-weight: 500; cursor: pointer; }/* 7-day chips strip */
 .next7-strip { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
-.next7-strip::-webkit-scrollbar { display: none; }
-.next7-chip {
-  flex-shrink: 0; min-width: 86px; padding: 12px 10px; border-radius: 12px;
-  background: transparent; border: 2px dashed var(--border);
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-  text-align: center;
-}
-/* Training day = white card with solid accent-tinted border */
+.next7-strip::-webkit-scrollbar { display: none; }/* Training day = white card with solid accent-tinted border */
 .next7-chip.training {
   background: var(--card);
   border: 2px solid var(--card-accent-border);
@@ -1159,15 +1057,9 @@ html.wo-running #wo-week-card { display: none; }
 .next7-chip.selected.training,
 .next7-chip.selected.rest  { border: 2px solid var(--red); }
 /* Completed: reduced opacity so it visually fades */
-.next7-chip.done { opacity: 0.55; }
-
-.n7-top { font-size: 12px; font-weight: 700; color: var(--text); }
-.n7-top .lbl { display: block; font-size: 10px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+.next7-chip.done { opacity: 0.55; }.n7-top .lbl { display: block; font-size: 10px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
 .next7-chip.training .n7-top .lbl { color: var(--accent-dark); }
-.next7-chip.today    .n7-top .lbl { color: var(--accent); }
-.n7-mid { font-size: 13px; font-weight: 600; line-height: 1.2; color: var(--text); }
-
-/* ─── Wochenplan: kompakte Variante C (Buchstabe + Akzent-Streifen) ─── */
+.next7-chip.today    .n7-top .lbl { color: var(--accent); }/* ─── Wochenplan: kompakte Variante C (Buchstabe + Akzent-Streifen) ─── */
 .wp-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -1206,16 +1098,7 @@ html.wo-running #wo-week-card { display: none; }
   border-radius: 50%; border: 2px solid var(--accent);
 }
 .wp-col.today.done .wp-letter::after { border-color: var(--green); }
-.wp-col.today:not(.training) .wp-letter { color: var(--accent-dark); font-weight: 700; }
-
-.wp-bar {
-  height: 4px;
-  border-radius: 2px;
-  background: var(--text3);
-  opacity: 0.25;
-  width: 30%;
-}
-.wp-col.training .wp-bar {
+.wp-col.today:not(.training) .wp-letter { color: var(--accent-dark); font-weight: 700; }.wp-col.training .wp-bar {
   background: var(--accent);
   opacity: 1;
   width: 70%;
@@ -1235,32 +1118,7 @@ html.wo-running #wo-week-card { display: none; }
 }
 .wp-info strong { color: var(--text); font-weight: 600; }
 .wp-info .wp-info-done { color: var(--green); margin-left: 3px; font-weight: 700; }
-.next7-chip.training .n7-mid { color: var(--accent-dark); }
-
-/* ─ Stacked grid for Volumen + PR cards (one per row, full width) ─ */
-.two-col-grid { display: flex; flex-direction: column; gap: 12px; padding: 0 12px 14px; }
-.tc-card { background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 14px 16px; }
-.tc-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.tc-card-title { font-size: 16px; font-weight: 700; }
-.tc-card-head svg { width: 18px; height: 18px; stroke: var(--text3); fill: none; stroke-width: 1.8; }
-.tc-card-head svg.star { fill: var(--accent); stroke: var(--accent); }
-.tc-muscle-row { display: flex; align-items: center; gap: 12px; font-size: 14px; padding: 8px 0; border-bottom: 1px solid var(--border); }
-.tc-muscle-row:last-child { border-bottom: none; }
-.tc-muscle-name { min-width: 84px; font-weight: 500; color: var(--text); }
-.tc-muscle-bar { flex: 1; height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
-.tc-muscle-fill { height: 100%; background: var(--accent); border-radius: 4px; }
-.tc-muscle-val { font-size: 13px; font-weight: 600; color: var(--text2); min-width: 60px; text-align: right; }
-
-.tc-pr-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-.tc-pr-row:last-child { border-bottom: none; }
-.tc-pr-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.tc-pr-icon svg { width: 18px; height: 18px; }
-.tc-pr-info { flex: 1; min-width: 0; }
-.tc-pr-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tc-pr-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
-.tc-pr-val { font-size: 15px; font-weight: 700; color: var(--green); white-space: nowrap; }
-
-/* ═══════════════════════════════════
+.next7-chip.training .n7-mid { color: var(--accent-dark); }.tc-card-head svg.star { fill: var(--accent); stroke: var(--accent); }/* ═══════════════════════════════════
    WORKOUT (Active session) – Mockup v2
 ═══════════════════════════════════ */
 
@@ -1289,38 +1147,7 @@ html.wo-running #wo-week-card { display: none; }
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   color: var(--accent);
 }
-.scv2-icon-circle svg { width: 30px; height: 30px; stroke: var(--accent) !important; }
-.scv2-progress-label { font-size: 13px; color: var(--text2); margin-top: 14px; margin-bottom: 6px; }
-.scv2-progress-bar { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 16px; }
-.scv2-progress-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s; }
-.scv2-buttons { display: flex; gap: 10px; }
-.scv2-btn-primary {
-  flex: 1; padding: 13px 20px; border-radius: 12px;
-  background: var(--gradient); color: #fff; border: none;
-  font-size: 15px; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent;
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
-}
-.scv2-btn-primary svg { fill: #fff !important; }
-.scv2-btn-secondary {
-  padding: 13px 20px; border-radius: 12px;
-  background: var(--card); color: var(--text); border: 1.5px solid var(--border);
-  font-size: 15px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent;
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-}
-.scv2-btn-secondary svg { fill: var(--text) !important; }
-
-/* Pause button (in header) */
-.pause-btn-v2 {
-  width: 44px; height: 44px; border-radius: 12px;
-  background: var(--card); border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-  box-shadow: var(--shadow);
-}
-.pause-btn-v2 svg { width: 18px; height: 18px; fill: var(--accent); }
-
-/* Exercise tab cards (replaces ex-tab pills) */
+.scv2-icon-circle svg { width: 30px; height: 30px; stroke: var(--accent) !important; }/* Exercise tab cards (replaces ex-tab pills) */
 .ex-tab-v2-bar { display: flex; gap: 10px; padding: 0 12px 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .ex-tab-v2-bar::-webkit-scrollbar { display: none; }
 /* Vorschau-Modus: die Tableiste ist leer (innerHTML='') → kollabieren, damit der
@@ -1592,35 +1419,7 @@ html.wo-running #wo-week-card { display: none; }
   font-size: 13px; color: var(--accent); font-weight: 600;
   cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: var(--shadow);
 }
-.hist-action-dd svg { width: 14px; height: 14px; }
-
-.stats-row-v2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 0 12px 14px; }
-.stat-card-v2 {
-  background: var(--card); border-radius: 16px; box-shadow: var(--shadow);
-  padding: 12px;
-}
-/* All three Verlauf cards share the same flat tab-accent-soft fill */
-.stat-card-v2.bg-blue,
-.stat-card-v2.bg-purple,
-.stat-card-v2.bg-orange { background: var(--accent-soft); }
-
-.stat-bubble {
-  width: 40px; height: 40px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 8px;
-}
-/* Uniform accent bubbles */
-.stat-bubble.b-blue,
-.stat-bubble.b-purple,
-.stat-bubble.b-orange { background: var(--accent); }
-.stat-bubble svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 2; }
-
-.stat-card-v2-label { font-size: 11.5px; color: var(--text2); font-weight: 600; margin-bottom: 2px; }
-.stat-card-v2-val { font-size: 22px; font-weight: 800; line-height: 1.1; letter-spacing: -0.4px; color: var(--accent-dark); }
-.stat-card-v2-val.text-orange { color: var(--accent-dark); }
-.stat-card-v2-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
-
-.chart-card-v2 {
+.hist-action-dd svg { width: 14px; height: 14px; }.chart-card-v2 {
   margin: 0 12px 12px; background: var(--card); border-radius: 18px;
   box-shadow: var(--shadow); padding: 14px;
 }
@@ -1801,11 +1600,7 @@ html.wo-running #wo-week-card { display: none; }
    Bestleistung selbst steht hervorgehoben rechts. */
 .pr-v2-delta { color: var(--text3); font-weight: 500; }
 .pr-v2-val { font-size: 14px; font-weight: 700; color: var(--green); }
-.pr-v2-arrow { color: var(--text3); font-size: 18px; line-height: 1; }
-
-/* Recent sessions v2 */
-.sess-list-v2 { padding: 4px 16px 8px; }
-.sess-v2-row {
+.pr-v2-arrow { color: var(--text3); font-size: 18px; line-height: 1; }.sess-v2-row {
   display: flex; align-items: center; gap: 12px; padding: 12px 0;
   border-bottom: 1px solid var(--border); cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
@@ -2006,20 +1801,7 @@ html.wo-running #wo-week-card { display: none; }
 /* Trainingstag-Detail: „Zu Trainingsplan" mit hellem Akzent-Fill + dunklem Akzent-Text */
 #screen-day-detail .ex-item-actions button.primary { color: var(--accent-dark); border-color: var(--accent-soft); background: var(--accent-soft); }
 .ex-item-actions button.danger  { color: var(--red); border-color: var(--red-bg); background: var(--red-bg); }
-.ex-item-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
-
-/* ═══════════════════════════════════
-   MEHR – additional sections
-═══════════════════════════════════ */
-.weekplan-row { padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
-.weekplan-row + .weekplan-row { border-top: 1px solid var(--border); }
-.weekplan-day-name { width: 40px; font-size: 13px; font-weight: 700; color: var(--text2); }
-.weekplan-day-name.today { color: var(--accent); }
-.weekplan-select {
-  flex: 1; background: var(--bg); border: 1px solid var(--border);
-  border-radius: 8px; padding: 8px 10px; font-size: 14px; -webkit-appearance: none;
-}
-/* Übungen-Tab: Suchfeld */
+.ex-item-actions button:disabled { opacity: 0.45; cursor: not-allowed; }.weekplan-day-name.today { color: var(--accent); }/* Übungen-Tab: Suchfeld */
 .ex-search-wrap { padding: 0 var(--screen-pad, 14px) 10px; }
 .ex-search-bar {
   width: 100%; background: rgba(255,255,255,0.92); border: 1px solid rgba(255,255,255,0.5);
@@ -2049,15 +1831,7 @@ html.wo-running #wo-week-card { display: none; }
 .wpe-name { flex: 1; min-width: 0; font-size: 13px; white-space: normal; overflow-wrap: anywhere; }
 .wpe-rest { flex: 1; min-width: 0; font-size: 13px; color: var(--text3); opacity: 0.6; }
 .wpe-chev { flex: 0 0 auto; font-size: 17px; line-height: 1; color: var(--text3); }
-.wpe-select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer; font-size: 16px; }
-
-/* Visueller Wochenplaner: tappbare Zeile statt Dropdown */
-.weekplan-row-tap { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.weekplan-row-tap:active { background: var(--card2); }
-.weekplan-pick-value { flex: 1; font-size: 14px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.weekplan-pick-value.rest { font-weight: 500; color: var(--text3); }
-.weekplan-pick-chev { font-size: 20px; color: var(--text3); line-height: 1; flex-shrink: 0; }
-.program-form-row { padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+.wpe-select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer; font-size: 16px; }.weekplan-pick-value.rest { font-weight: 500; color: var(--text3); }.program-form-row { padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
 .program-form-row + .program-form-row { border-top: 1px solid var(--border); }
 .program-form-row label { font-size: 12px; color: var(--text3); font-weight: 600; }
 .program-form-row input { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 15px; }
@@ -2081,11 +1855,7 @@ html.wo-running #wo-week-card { display: none; }
 .program-form-row-2col > div { flex: 1; display: flex; flex-direction: column; gap: 6px; }
 .plan-day-actions { display: flex; gap: 6px; margin-left: auto; }
 .plan-day-actions button { border: none; background: var(--bg); color: var(--text3); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-.plan-day-actions button.del { color: var(--red); background: var(--red-bg); }
-
-/* ─── Drag-and-Drop für Übungs-Reihenfolge im Plan-Day-Modal ─── */
-.plan-ex-row { cursor: default; }
-/* Plan-Day-Edit-Modal: Drag-Feedback an den .ex-item-Zeilen (neues Muskelfarben-Layout) */
+.plan-day-actions button.del { color: var(--red); background: var(--red-bg); }/* Plan-Day-Edit-Modal: Drag-Feedback an den .ex-item-Zeilen (neues Muskelfarben-Layout) */
 .plan-ex-item.dragging { opacity: 0.4; }
 .plan-ex-item.drop-target-above { position: relative; margin-top: 20px; }
 .plan-ex-item.drop-target-below { position: relative; margin-bottom: 20px; }
@@ -2465,28 +2235,14 @@ body.theme-exercises .ex-mode-toggle {
 
 /* Uebungs-Tab Cardio-Eintrag: Akzentfarbe + Pace/Distanz statt PR/1RM */
 .ex-card.ex-card-cardio { border-left: 3px solid var(--cardio); }
-.ex-card.ex-card-cardio .ex-name { color: var(--cardio); }
-.cardio-last-info { font-size: 12px; color: var(--text3); margin-top: 2px; }
-.cardio-pr-row {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 12px; color: var(--cardio);
-  font-weight: 700;
-}
-
-/* Verlauf-Kompakt: Cardio-Session in "Letzte Sessions"-Liste */
+.ex-card.ex-card-cardio .ex-name { color: var(--cardio); }/* Verlauf-Kompakt: Cardio-Session in "Letzte Sessions"-Liste */
 .recent-cardio-icon {
   width: 36px; height: 36px; border-radius: 50%;
   background: var(--cardio-bg); color: var(--cardio);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; font-weight: 700;
 }
-.recent-cardio-meta { color: var(--cardio); font-weight: 600; }
-
-/* Wochenplan-Strip Cardio-Tag */
-.next7-day.day-cardio .day-name-line { color: var(--cardio); }
-.next7-day.day-cardio .day-tag { background: var(--cardio-bg); color: var(--cardio); }
-
-/* Stats-Karten-Toggle (Kraft/Cardio) — kompakter als ex-mode-toggle, sitzt im Karten-Head */
+.recent-cardio-meta { color: var(--cardio); font-weight: 600; }/* Stats-Karten-Toggle (Kraft/Cardio) — kompakter als ex-mode-toggle, sitzt im Karten-Head */
 .stats-mode-toggle {
   display: inline-flex; align-items: center; gap: 2px;
   background: var(--card2); border: 1px solid var(--border);

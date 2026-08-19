@@ -12,10 +12,10 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 
 | Datei | Zweck |
 |---|---|
-| `index.html` (~985 Z.) | Markup, alle Screens + Modals |
-| `style.css` (~2450 Z.) | gesamtes Styling + Theme-Variablen |
-| `app.js` (~8000 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v99**) |
+| `index.html` (~950 Z.) | Markup, alle Screens + Modals |
+| `style.css` (~2300 Z.) | gesamtes Styling + Theme-Variablen |
+| `app.js` (~8250 Z.) | komplette Logik — **eine Datei, keine Module** |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v122**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -67,7 +67,7 @@ Regel: Nach jeder abgeschlossenen Umsetzung direkt hochladen und das Ergebnis me
 
 ### Pro-Satz-Datenmodell
 - Plan-Übungseintrag: `pe.sets = [{reps, weight}]` (weight als String, `''`=leer); Skalare `targetSets/targetReps/targetWeight` bleiben in Sync.
-- Helper: `peSets(pe)`, `_materializePeSets`, `_syncPeScalars`.
+- Helper: `peSets(pe)`, `_syncPeScalars`.
 - Vorschau-/Bibliothek-Tabellen zeigen „letzte Einheit gewinnt" via `displaySetsForPe(pe, last)`, gesteuert durch Zeitstempel `pe.setsUpdatedAt` (eigene Eingaben gelten bis zur nächsten abgeschlossenen Einheit).
 - `getLastExData(exId)` = Sätze der letzten ABGESCHLOSSENEN Einheit. `buildSetsForExercise` seedet den Workout-Start: die ANZAHL kommt aus dem Trainingstag, die Werte pro Satz aus der letzten Einheit.
 - **Satzanzahl wandert zurück in den Trainingstag:** `syncSetCountsToPlanDay(planDayId, cleanEx)` läuft in `finishWorkout` und übernimmt die tatsächlich trainierte Anzahl (in beide Richtungen; übersprungene Übungen bleiben unangetastet). Die Abschlussansicht weist die Änderung aus. Ohne das startete die nächste Einheit wieder mit der alten Planzahl — ein dauerhaft ergänzter Satz wäre jedes Mal neu nötig. Achtung: Trainingstage sind geteilt, die Änderung wirkt in allen referenzierenden Plänen.
@@ -119,9 +119,9 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Zwei Instanzen: Übersicht (`cal`/`#ov-cal-card`) und Pläne-Tab (`pcal`/`#plans-cal-card`), Markup aus `calendarInnerHTML(id)`.
   Beide Karten sind per ID von der 520px-Grenze ab 560px ausgenommen, damit im Querformat mehr Wochen ohne Scrollen passen.
 - **Verlauf je Übung** (Übungen-Tab, aufgeklappte Karte): `getExerciseHistory` liefert pro Einheit `maxW` (schwerster Satz) UND `reps` (Summe aller Wiederholungen); `exHistPoints(exId, mode)` filtert daraus die Punkte des gewählten Modus (Einträge ohne Wert fallen raus — Körpergewichtsübungen haben kein Gewicht). Umschalter `.ex-chart-toggle` (Gewicht/Wdh.), Auswahl je Übung in `ft_ex_chart_modes` — bewusst ein eigener localStorage-Key statt eines Felds an der Übung, damit reine Anzeige-Einstellungen nicht in den Trainingsdaten und der Drive-Sicherung landen. `setExChartMode` frischt nur die betroffene Karte auf (ein Neuaufbau der Liste würde sie zuklappen). ACHTUNG: `.ex-chart-toggle` nutzt die Klasse `.stats-mode-toggle`, die `html.no-cardio` ausblendet — die Ausnahmeregel in style.css muss bestehen bleiben.
-- **Muskel-Landkarte:** `renderMuscleBars()` zeichnet trotz des Namens keine Balken mehr, sondern zwei SVG-Silhouetten (`muscleMapSvg`, vorne/hinten) mit nach Volumenanteil abgestufter Deckkraft plus Zahlen-Legende.
+- **Muskel-Landkarte:** `renderMuscleMap()` zeichnet zwei SVG-Silhouetten (`muscleMapSvg`, vorne/hinten) mit nach Volumenanteil abgestufter Deckkraft plus Zahlen-Legende.
 - **Löschen ist zweifach abgesichert:** (1) `withUndo(label, fn, afterRestore)` + `showUndoToast()` — sichert die Stores vorab, „Rückgängig" 6 s lang. (2) **Papierkorb** (`ft_trash`, `trashPut/trashRestore/trashDeleteForever/emptyTrash/purgeTrash`, Liste via `renderTrash()` im Einstellungen-Overlay): gelöschte Einheiten, Pläne, Trainingstage und Übungen liegen `TRASH_KEEP_DAYS` = 30 Tage dort. `_snapshotStores` sichert `ft_trash` mit, sonst läge ein Objekt nach „Rückgängig" doppelt vor.
-- **Auswertungen** (Volumenentwicklung, Volumen pro Muskelgruppe, PRs und Bestleistungen) liegen auf der Stats-Seite des Übungen-Tabs, NICHT mehr in der Übersicht. `renderHomeStats()` füllt sie. Der Trainingskalender wird dagegen von `renderOverview()` gerendert — er gehört zur Übersicht. ACHTUNG: Vor dem Umbau hing sein Aufruf in `renderHomeStats()`; wandert er wieder dorthin, bleibt die Kalenderkarte in der Übersicht leer.
+- **Auswertungen** (Volumenentwicklung, Volumen pro Muskelgruppe, PRs und Bestleistungen) liegen auf der Stats-Seite des Übungen-Tabs, NICHT mehr in der Übersicht. `renderStatsPage()` füllt sie. Der Trainingskalender wird dagegen von `renderOverview()` gerendert — er gehört zur Übersicht. ACHTUNG: Vor dem Umbau hing sein Aufruf in `renderHomeStats()`; wandert er wieder dorthin, bleibt die Kalenderkarte in der Übersicht leer.
 - **PR-Liste:** hervorgehoben ist der Bestwert selbst, die Steigerung steht grau in Klammern in der Unterzeile (`.pr-v2-delta`).
 - **Übungskatalog:** nur noch Gruppierung nach Muskelgruppen — Sortierung nach Trainingstagen samt Umschalter wurde entfernt.
 - **Übersicht:** Sicherungs-Status als Chip im Kopf neben dem Titel (`renderBackupLine` → `#ov-backup-line` in `.ph-right`, Klasse `.backup-chip`; kurze Texte wegen des knappen Platzes, ausführliche Fassung im `title`-Attribut), Hinweis vor Plan-Ende (`renderPlanEndNotice` + `extendActivePlan`), Wochenserie (`getWeekStreak` → `.ppv-streak`), Einstieg ins freie Training (`startFreeWorkout`, Einheit ohne `planDayId`).
@@ -152,7 +152,9 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   1 Jahr = pro Monat. Frueher immer Kalenderwochen mit Label "WNN" und hart auf 8 Punkte gekappt —
   dadurch zeigte "Letztes Jahr" nur zwei Monate. `autoSkip` ist im Wochen-Modus AUS, weil dort
   Labels absichtlich leer sind; sonst an. X-Achse aufsteigend (aelteste links).
-- `_materializePeSets` ist inzwischen ungenutzt; diverse Cardio-Helfer bleiben im Code, aber unerreichbar (CARDIO_ENABLED=false).
+- Cardio-Helfer bleiben bewusst im Code, aber unerreichbar (CARDIO_ENABLED=false) — sie werden gebraucht, sobald das Flag wieder auf `true` steht.
+- Aufräum-Stand (26.07.2026): 16 Funktionen ohne Aufrufer, der tote Wochentag-Dialog (`modal-weekday-pick`) und 95 CSS-Regeln ohne Markup wurden entfernt.
+  Beim Suchen nach totem CSS beachten: Klassen wie `theme-*`, `plan-status-chip-*` oder `drive-log-*` werden zur Laufzeit zusammengesetzt und sind NICHT tot.
 
 ---
 
