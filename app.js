@@ -3917,9 +3917,9 @@ function buildCalendarData() {
   return byDay;
 }
 
-// Farben der Plan-Balken unter dem Kalender. Bewusst eigene Palette statt des Tab-Akzents:
-// die Balken stehen nebeneinander und muessen sich voneinander unterscheiden.
-const CAL_PLAN_COLORS = ['#0F766E', '#6E8FB8', '#B08968', '#7C6BAF', '#4B8B6F', '#A8577B'];
+// Farben der Plan-Zeitraeume im Kalender. Bewusst ohne Gruen/Teal: das ist die Farbe der
+// geplanten Flaechen und der trainierten Kerne — eine gruene Toenung dahinter waere matschig.
+const CAL_PLAN_COLORS = ['#6E8FB8', '#B08968', '#7C6BAF', '#A8577B', '#5B8C9E', '#8A9A5B'];
 
 // Plan-Zeitraeume fuer die Kalender-Rekonstruktion. Auch archivierte Plaene zaehlen:
 // sie behalten ihren Wochenplan, also laesst sich fuer jeden vergangenen Tag sagen, ob
@@ -3961,8 +3961,8 @@ function calendarInnerHTML(id) {
         <div class="cal-body">
           <div class="cal-daylabels"><span>Mo</span><span></span><span>Mi</span><span></span><span>Fr</span><span></span><span>So</span></div>
           <div class="cal-gridwrap">
+            <div class="cal-bands" id="${id}-bands"></div>
             <div class="cal-grid" id="${id}-grid"></div>
-            <div class="cal-marks" id="${id}-marks"></div>
           </div>
         </div>
         <div class="cal-plans" id="${id}-plans"></div>
@@ -4071,8 +4071,8 @@ function renderTrainingCalendar(id, cardId) {
   // Plan-Laufzeiten: je eine senkrechte Linie am Anfang und am Ende, der Name darunter.
   // Bewusst KEIN gefuellter Balken — das Raster soll die Hauptsache bleiben.
   const plansEl = document.getElementById(id + '-plans');
-  const marksEl = document.getElementById(id + '-marks');
-  if (plansEl && marksEl) {
+  const bandsEl = document.getElementById(id + '-bands');
+  if (plansEl && bandsEl) {
     // Spalte NICHT über Millisekunden-Division bestimmen: Zwischen Winter- und Sommerzeit
     // fehlt eine Stunde, wodurch ein Datum genau auf einer Wochengrenze in die Vorwoche
     // rutschte (die Startlinie stand eine Woche zu früh). Über ganze Tage gerundet stimmt es.
@@ -4087,29 +4087,25 @@ function renderTrainingCalendar(id, cardId) {
       .filter(p => p && p.startDate && p.startDate <= rasterEnde.getTime() && (p.endDate || Infinity) >= start.getTime())
       .sort((a, b) => a.startDate - b.startDate);
 
-    let marks = '', labels = '';
+    let bands = '', labels = '';
     sichtbar.forEach((p, i) => {
       const von = Math.max(0, spalteFuer(p.startDate));
       const bis = Math.min(wochen - 1, spalteFuer(p.endDate || rasterEnde.getTime()));
       if (bis < von) return;
       const farbe = CAL_PLAN_COLORS[i % CAL_PLAN_COLORS.length];
       const cls = p.archived ? ' archived' : '';
-      // Startlinie im Abstand links vor der Startspalte, Endlinie rechts nach der Endspalte
-      const xStart = von * SPALTE - 2;
-      const xEnde  = (bis + 1) * SPALTE - 4;
-      // Fällt der Planbeginn vor das Raster, entfällt die Startlinie (der Plan lief schon)
-      const zeigtStart = p.startDate >= start.getTime();
-      const zeigtEnde  = (p.endDate || Infinity) <= rasterEnde.getTime();
-      if (zeigtStart) marks += `<span class="cal-mark${cls}" style="left:${xStart}px;background:${farbe}"></span>`;
-      if (zeigtEnde)  marks += `<span class="cal-mark${cls}" style="left:${xEnde}px;background:${farbe}"></span>`;
-
-      const breite = (bis - von + 1) * SPALTE - 4;
       const zeitraum = fmtDateRange(p.startDate, p.endDate);
-      labels += `<span class="cal-plan-label${cls}" style="left:${von * SPALTE}px;max-width:${Math.max(breite, 54)}px;color:${farbe}"
+      // Getöntes Band hinter den Wochenspalten des Zeitraums
+      const links = von * SPALTE - 2;
+      const breite = (bis - von + 1) * SPALTE - 3 + 4;
+      bands += `<span class="cal-band${cls}" style="left:${links}px;width:${breite}px;background:${_withAlpha(farbe, 0.2)}"></span>`;
+
+      const laenge = (bis - von + 1) * SPALTE - 4;
+      labels += `<span class="cal-plan-label${cls}" style="left:${von * SPALTE}px;max-width:${Math.max(laenge, 54)}px;color:${farbe}"
                        onclick="openPlanDetail('${p.id}')" role="button"
                        title="${escapeHtml(p.name)} · ${zeitraum}">${escapeHtml(p.name)}</span>`;
     });
-    marksEl.innerHTML = marks;
+    bandsEl.innerHTML = bands;
     plansEl.innerHTML = labels;
     plansEl.style.width = (wochen * SPALTE) + 'px';
     plansEl.style.display = labels ? '' : 'none';

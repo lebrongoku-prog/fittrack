@@ -103,9 +103,10 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   `_calPlanIndex()`/`_calPlanInfo()` rekonstruieren den Plan je Datum aus `startDate`/`endDate`/`weekPlan` ALLER Pläne (auch archivierter — die behalten ihren Wochenplan);
   ohne abdeckenden Plan wird keine Fläche gezeichnet, kommende Tage sind blass (`.future`). Antippen beschreibt den Tag in `#cal-detail`, inklusive der geplanten Einheit.
   Zeigt IMMER das laufende Kalenderjahr (1.1.–31.12.); Rand-Tage der ersten/letzten Woche tragen `.outside` (ausgegraut, nicht antippbar).
-  Beim Rendern wird zur laufenden Woche gescrollt. Plan-Laufzeiten werden durch je eine senkrechte Linie an Anfang UND Ende markiert
-  (`.cal-marks`/`.cal-mark`, Overlay über dem Raster, Farben aus `CAL_PLAN_COLORS`), der Planname steht darunter (`.cal-plans`/`.cal-plan-label`)
-  und öffnet angetippt die Plan-Detailansicht; archivierte Pläne sind blasser. Reicht ein Plan über den Rasterrand hinaus, entfällt die jeweilige Linie.
+  Beim Rendern wird zur laufenden Woche gescrollt. Plan-Laufzeiten liegen als getöntes Band HINTER dem Raster
+  (`.cal-bands`/`.cal-band`, `z-index:0`, Raster darüber mit `z-index:1`; Farben aus `CAL_PLAN_COLORS`, 20% Deckkraft),
+  der Planname steht darunter (`.cal-plans`/`.cal-plan-label`) und öffnet angetippt die Plan-Detailansicht; archivierte Pläne sind blasser.
+  `CAL_PLAN_COLORS` enthält bewusst KEIN Grün/Teal — das sind die Farben der geplanten Flächen und trainierten Kerne, eine grüne Tönung dahinter wäre matschig.
   ACHTUNG Zeitzone: Die Spalte eines Datums wird über GANZE TAGE gerechnet (`spalteFuer`, `Math.round` auf Tagesdifferenz), nicht über Millisekunden-Division —
   zwischen Winter- und Sommerzeit fehlt sonst eine Stunde und ein Datum genau auf der Wochengrenze landet eine Woche zu früh.
   Die Kästchengröße ist dynamisch: `renderTrainingCalendar` misst die freie Breite und verkleinert die Zelle von 13px bis minimal 10px,
