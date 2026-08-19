@@ -423,6 +423,29 @@
       <div class="mehr-card" id="trash-card"></div>
     </div>
 
+    <!-- Welcher Stand läuft gerade? Beantwortet die wiederkehrende Frage, ob ein Update
+         schon angekommen ist — die PWA aktualisiert sich sonst erst beim zweiten Start. -->
+    <div class="mehr-section lg-col2">
+      <div class="mehr-section-title">App-Version</div>
+      <div class="mehr-card">
+        <div class="mehr-row">
+          <div class="mehr-row-icon" style="background:var(--accent-bg)">📦</div>
+          <div class="mehr-row-info">
+            <div class="mehr-row-label">Installierte Version</div>
+            <div class="mehr-row-sub" id="app-version">wird geprüft…</div>
+          </div>
+        </div>
+        <div class="mehr-row" onclick="updateJetzt()" style="cursor:pointer">
+          <div class="mehr-row-icon" style="background:var(--green-bg)">🔄</div>
+          <div class="mehr-row-info">
+            <div class="mehr-row-label">Jetzt aktualisieren</div>
+            <div class="mehr-row-sub">Holt den neuesten Stand sofort — ohne zweimal neu zu starten</div>
+          </div>
+          <div class="mehr-row-action">›</div>
+        </div>
+      </div>
+    </div>
+
     <div class="mehr-section lg-col2">
       <div class="mehr-section-title">Daten &amp; Sicherheit</div>
       <div class="mehr-card">

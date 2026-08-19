@@ -3451,6 +3451,7 @@ let editingDayIdx = null;
  // Toggle für die kollabierbare "Andere Trainingstage"-Sektion
 
 function renderMehr() {
+  renderAppVersion();
   // Einstellungen-Overlay: Cloud-Sync, Papierkorb, Daten & Sicherheit.
   // Trainingsplan-Daten/Wochenplan/Trainingstage sind in den Plan-Detail-Screen umgezogen.
   if (typeof renderDriveStatus === 'function') renderDriveStatus();
@@ -5964,6 +5965,36 @@ function emptyTrash() {
     `${n} ${n === 1 ? 'Eintrag wird' : 'Einträge werden'} unwiderruflich entfernt.`,
     () => { DB.saveTrash([]); renderTrash(); showToast('Papierkorb geleert'); },
     { danger: true, confirmLabel: 'Leeren' });
+}
+
+// ─── App-Version + Update ──────────────────────────────────────────
+// Die PWA übernimmt einen neuen Stand erst beim zweiten Start (erster Start
+// installiert den Service Worker, zweiter aktiviert ihn). Diese beiden Helfer
+// machen sichtbar, was läuft, und holen das Update auf Wunsch sofort.
+async function renderAppVersion() {
+  const el = document.getElementById('app-version');
+  if (!el) return;
+  try {
+    const keys = await caches.keys();
+    const eigene = keys.filter(k => k.startsWith('fittrack-v'))
+                       .sort((a, b) => parseInt(a.slice(10), 10) - parseInt(b.slice(10), 10));
+    el.textContent = eigene.length ? eigene[eigene.length - 1].replace('fittrack-', '') : 'unbekannt';
+  } catch { el.textContent = 'unbekannt'; }
+}
+
+function updateJetzt() {
+  confirmAction('Jetzt aktualisieren?',
+    'Die App lädt den neuesten Stand vom Server und startet neu. Deine Daten bleiben unberührt.',
+    async () => {
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      } catch {}
+      location.reload();
+    },
+    { confirmLabel: 'Aktualisieren' });
 }
 
 // Liste im Einstellungen-Overlay.
