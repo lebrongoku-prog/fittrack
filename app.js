@@ -493,19 +493,6 @@ function getWeekStreak() {
   return streak;
 }
 
-function getNextPlanDay() {
-  const active = getActivePlan();
-  if (!active) return null;
-  const plan = active.trainingDays;
-  const ws = DB.getWorkouts();
-  if (plan.length === 0) return null;
-  if (ws.length === 0) return plan[0];
-  const lastDayId = ws[0].planDayId;
-  const idx = plan.findIndex(d => d.id === lastDayId);
-  if (idx === -1) return plan[0];
-  return plan[(idx + 1) % plan.length];
-}
-
 function calcVolume(workout) {
   return workout.exercises.reduce((acc, ex) => {
     if (!Array.isArray(ex.sets)) return acc;
@@ -1223,14 +1210,12 @@ function syncActiveWorkoutWithPlanDay(planDayId) {
     if (activeIds.has(pe.exId)) continue;
     const ex = getEx(pe.exId);
     if (!ex) continue;
-    {
-      wo.exercises.push({
-        exId: pe.exId, id: pe.exId, name: ex.name,
-        targetSets: pe.targetSets, targetReps: pe.targetReps,
-        sets: buildSetsForExercise(pe.exId, peSets(pe)),
-        notes: '', done: false,
-      });
-    }
+    wo.exercises.push({
+      exId: pe.exId, id: pe.exId, name: ex.name,
+      targetSets: pe.targetSets, targetReps: pe.targetReps,
+      sets: buildSetsForExercise(pe.exId, peSets(pe)),
+      notes: '', done: false,
+    });
   }
 
   DB.saveActive(wo);
@@ -1312,15 +1297,11 @@ function _doStartWorkout(dayId) {
   showScreen('workouts');
 }
 
-function resumeWorkout() { showScreen('workouts'); }
-
 // ═══════════════════════════════════════════════
 // ACTIVE WORKOUT
 // ═══════════════════════════════════════════════
 
 let timerInterval = null;
-let timerPaused = false;
-
 function heroDumbbellSvg() {
   return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="color:var(--accent)">
     <rect x="36" y="55" width="48" height="10" rx="3" fill="currentColor" opacity="0.95"/>
@@ -2779,7 +2760,6 @@ function discardWorkout() {
 
 let volumeChart = null;
 let histRangeDays = 30;
-const HIST_RANGES = [7, 30, 90, 365];
 let volumeUnit = 'kg';   // 'kg' | 'sets'
 
 // ueber App-Restart hinweg merkt.
@@ -2986,14 +2966,6 @@ function renderVolumeChart(ws) {
       }
     }]
   });
-}
-
-function getISOWeek(d) {
-  const date = new Date(d);
-  date.setHours(0,0,0,0);
-  date.setDate(date.getDate() + 3 - ((date.getDay()+6)%7));
-  const week1 = new Date(date.getFullYear(), 0, 4);
-  return 1 + Math.round(((date-week1)/86400000 - 3 + ((week1.getDay()+6)%7))/7);
 }
 
 // ─── Trainingskalender ─────────────────────────────────────────────
@@ -3480,7 +3452,7 @@ function deleteSession(i) {
 // ═══════════════════════════════════════════════
 
 let editingDayIdx = null;
-let mehrInactivePlanExpanded = false; // Toggle für die kollabierbare "Andere Trainingstage"-Sektion
+ // Toggle für die kollabierbare "Andere Trainingstage"-Sektion
 
 function renderMehr() {
   // Einstellungen-Overlay: Cloud-Sync, Papierkorb, Daten & Sicherheit.
@@ -3854,11 +3826,6 @@ function savePlanNotes() {
 let plansViewMode = 'plans';   // 'plans' | 'days' — aktive Unteransicht im Trainingsplan-Tab
 let editingLibDayId = null;     // aktuell im Tag-Detail bearbeiteter Bibliotheks-Tag
 let libDaysArchiveExpanded = false;
-
-const WEEKDAYS = [
-  { key:'mon', label:'Montag' }, { key:'tue', label:'Dienstag' }, { key:'wed', label:'Mittwoch' },
-  { key:'thu', label:'Donnerstag' }, { key:'fri', label:'Freitag' }, { key:'sat', label:'Samstag' }, { key:'sun', label:'Sonntag' },
-];
 
 function setPlansView(mode) {
   if (mode !== 'plans' && mode !== 'days') return;
@@ -5462,14 +5429,11 @@ function saveNewEx() {
     const ex = exs.find(e => e.id === editingExerciseId);
     if (ex) {
       ex.name = name;
-      {
-        const muscle = document.getElementById('new-ex-muscle').value;
-        const cat = muscle === 'legs' ? 'legs'
+      const muscle = document.getElementById('new-ex-muscle').value;
+      ex.muscle = muscle;
+      ex.category = muscle === 'legs' ? 'legs'
                   : (muscle === 'back' || muscle === 'biceps') ? 'pull'
                   : 'push';
-        ex.muscle = muscle;
-        ex.category = cat;
-      }
       DB.saveExercises(exs);
     }
     editingExerciseId = null;
@@ -5481,13 +5445,11 @@ function saveNewEx() {
 
   // Create new
   const id = 'custom_' + Date.now();
-  {
-    const muscle = document.getElementById('new-ex-muscle').value;
-    const cat = muscle === 'legs' ? 'legs'
-              : (muscle === 'back' || muscle === 'biceps') ? 'pull'
-              : 'push';
-    exs.push({ id, name, muscle, category: cat, isCustom: true, notes: '' });
-  }
+  const muscle = document.getElementById('new-ex-muscle').value;
+  const cat = muscle === 'legs' ? 'legs'
+            : (muscle === 'back' || muscle === 'biceps') ? 'pull'
+            : 'push';
+  exs.push({ id, name, muscle, category: cat, isCustom: true, notes: '' });
   DB.saveExercises(exs);
   closeModal('modal-new-ex');
 
@@ -6076,7 +6038,6 @@ const DRIVE_CLIENT_ID = '153846550864-8pb6bdh4tgg74kqndo5aim9hod3h0vpn.apps.goog
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_FILE_NAME = 'fittrack-backup.json';
 const DRIVE_DEBOUNCE_MS = 2000;
-const DRIVE_DATA_VERSION = 1;
 const DRIVE_LOG_MAX = 50;
 
 // In-memory state
