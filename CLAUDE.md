@@ -13,9 +13,9 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | Datei | Zweck |
 |---|---|
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
-| `style.css` (~2110 Z.) | gesamtes Styling + Theme-Variablen |
-| `app.js` (~7045 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v124**) |
+| `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
+| `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v125**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 

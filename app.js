@@ -1615,7 +1615,6 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
     if (!ex) return '';
     const col = colorForExercise({ exId: pe.exId });
     const last = getLastExData(pe.exId);
-    const targetW = last ? `${last.maxWeight} kg` : '–';
     const lastStr = last ? `Zuletzt: ${last.sets.length}×${last.sets[0]?.reps||'?'} @ ${last.maxWeight} kg` : '';
     const exIdKey = pe.exId;
     const collapsedCls = isAexExpanded(exIdKey) ? '' : 'collapsed';
@@ -1748,7 +1747,6 @@ function renderActiveWorkout() {
     const col = colorForExercise(ex);
     const last = getLastExData(ex.exId || ex.id);
     const lastStr = last ? `Zuletzt: ${last.sets.length}×${last.sets[0]?.reps||'?'} @ ${last.maxWeight} kg` : '';
-    const targetW = last ? `${last.maxWeight} kg` : '–';
     // Einordnung der heutigen Eingaben: Bestleistung der Übung und — sobald das heutige
     // Höchstgewicht über der letzten Einheit liegt — die Differenz dazu. Progressive
     // Steigerung ist der Zweck des Tagebuchs; das Rechnen dafür gehört nicht in den Kopf.
@@ -2362,10 +2360,8 @@ function scrollToNextExercise() {
   requestAnimationFrame(() => scrollToEx(nextIdx));
 }
 
-let timerTs = null;
 function startTimer() {
   if (timerInterval) clearInterval(timerInterval);
-  timerTs = null;
   updateTimerDisplay();
   timerInterval = setInterval(updateTimerDisplay, 1000);
 }

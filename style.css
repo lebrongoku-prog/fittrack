@@ -30,11 +30,6 @@
   inherits: true;
   initial-value: #0a2a6b;
 }
-@property --section-tint {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: rgba(0, 102, 255, 0.18);
-}
 @property --card-accent-border {
   syntax: '<color>';
   inherits: true;
@@ -54,10 +49,6 @@
   /* Semantic muscle/color palette (used independently of theme) */
   --green:     #22c55e;
   --green-bg:  #dcfce7;
-  --orange:    #ff8c00;
-  --orange-bg: #fff3e0;
-  --purple:    #7b2fff;
-  --purple-bg: #f3ecff;
   --red:       #e53e3e;
   --red-bg:    #ffeaea;
 
@@ -68,7 +59,6 @@
   --accent-dark:          #0048d0;
   --gradient-from:        #0a2a6b;
   --gradient:             linear-gradient(135deg, var(--gradient-from), var(--accent));
-  --section-tint:         rgba(0, 102, 255, 0.18);
   --card-accent-border:   rgba(0, 102, 255, 0.35);
 
   --shadow:    0 1px 4px rgba(15, 23, 42, 0.06);
@@ -91,7 +81,6 @@ body.theme-overview {
   --accent-soft:        #CFFAFE;       /* cyan-100 */
   --accent-dark:        #0C4A6E;
   --gradient-from:      #0C4A6E;
-  --section-tint:       rgba(6, 182, 212, 0.18);
   --card-accent-border: rgba(6, 182, 212, 0.35);
 }
 body.theme-workouts {
@@ -100,7 +89,6 @@ body.theme-workouts {
   --accent-soft:        #D1FAE5;       /* emerald-100 */
   --accent-dark:        #059669;
   --gradient-from:      #064E3B;
-  --section-tint:       rgba(16, 185, 129, 0.20);
   --card-accent-border: rgba(5, 150, 105, 0.35);
 }
 body.theme-plans {
@@ -109,7 +97,6 @@ body.theme-plans {
   --accent-soft:        #FEF3C7;       /* amber-100 */
   --accent-dark:        #78350F;
   --gradient-from:      #78350F;
-  --section-tint:       rgba(245, 158, 11, 0.20);
   --card-accent-border: rgba(245, 158, 11, 0.35);
 }
 body.theme-exercises {
@@ -118,7 +105,6 @@ body.theme-exercises {
   --accent-soft:        #DBEAFE;       /* blue-100 */
   --accent-dark:        #1E3A8A;       /* blue-900 */
   --gradient-from:      #172554;
-  --section-tint:       rgba(30, 64, 175, 0.18);
   --card-accent-border: rgba(30, 64, 175, 0.35);
 }
 /* body.theme-mehr keeps the default (blue) */
@@ -889,11 +875,6 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 
 /* Extra muscle/accent colors */
 :root {
-  --teal:      #14b8a6;
-  --teal-bg:   #d1faf3;
-  --pink:      #ec4899;
-  --pink-bg:   #fce7f3;
-  --neutral-bg:#eef0f4;
   --neutral:   #94a3b8;
 }
 
