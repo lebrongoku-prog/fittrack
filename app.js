@@ -1117,6 +1117,49 @@ function buildSetsForExercise(exId, planSets) {
   });
 }
 
+// Passt die Satzanzahl eines Plan-Übungseintrags an die tatsächlich trainierten Sätze an.
+// Zusätzliche Sätze übernehmen die trainierten Werte, überzählige fallen weg.
+// Gibt true zurück, wenn sich etwas geändert hat.
+function _setzeSatzanzahl(pe, trainierteSaetze) {
+  const base = peSets(pe).map(s => ({ ...s }));
+  const before = base.length;
+  const after = trainierteSaetze.length;
+  if (before === after) return false;
+  if (after > before) {
+    for (let i = before; i < after; i++) {
+      const s = trainierteSaetze[i] || {};
+      base.push({
+        reps: String(s.reps || (base[base.length - 1] || {}).reps || '8'),
+        weight: String(s.weight != null ? s.weight : ''),
+      });
+    }
+    pe.sets = base;
+  } else {
+    pe.sets = base.slice(0, after);
+  }
+  _syncPeScalars(pe);
+  return true;
+}
+
+// Einmalige Nachführung: Trainingstage, deren Satzanzahl noch von vor der automatischen
+// Übernahme stammt, an die letzte tatsächlich absolvierte Einheit angleichen. Ohne das
+// zeigte die Vorschau weiter die alte Planzahl (z. B. 2), obwohl zuletzt 3 Sätze
+// trainiert wurden — die Übernahme greift sonst erst ab der nächsten Einheit.
+function migrateSetCountsFromHistory() {
+  if (localStorage.getItem('ft_setcounts_synced') === '1') return;
+  const days = DB.getTrainingDays();
+  let geaendert = false;
+  days.forEach(day => {
+    (day.exercises || []).forEach(pe => {
+      const last = getLastExData(pe.exId);
+      if (!last || !Array.isArray(last.sets) || !last.sets.length) return;
+      if (_setzeSatzanzahl(pe, last.sets)) geaendert = true;
+    });
+  });
+  if (geaendert) DB.saveTrainingDays(days);
+  localStorage.setItem('ft_setcounts_synced', '1');
+}
+
 // Übernimmt die TATSÄCHLICHE Satzanzahl einer abgeschlossenen Einheit in den Trainingstag.
 // Ohne das startet die nächste Einheit wieder mit der ursprünglich geplanten Anzahl — wer
 // dauerhaft einen Satz mehr macht, müsste ihn jedes Mal neu hinzufügen.
@@ -1135,25 +1178,9 @@ function syncSetCountsToPlanDay(planDayId, exercises) {
     if (we.skipped || !Array.isArray(we.sets) || !we.sets.length) return;
     const pe = day.exercises.find(p => p.exId === (we.exId || we.id));
     if (!pe) return;
-    const base = peSets(pe).map(s => ({ ...s }));
-    const before = base.length;
+    const before = peSets(pe).length;
     const after = we.sets.length;
-    if (before === after) return;
-
-    if (after > before) {
-      // Zusätzliche Sätze mit den Werten übernehmen, die tatsächlich trainiert wurden
-      for (let i = before; i < after; i++) {
-        const s = we.sets[i] || {};
-        base.push({
-          reps: String(s.reps || (base[base.length - 1] || {}).reps || '8'),
-          weight: String(s.weight != null ? s.weight : ''),
-        });
-      }
-      pe.sets = base;
-    } else {
-      pe.sets = base.slice(0, after);
-    }
-    _syncPeScalars(pe);
+    if (!_setzeSatzanzahl(pe, we.sets)) return;
     changes.push({ name: we.name, before, after });
   });
 
@@ -2457,7 +2484,6 @@ let addExContext = 'active'; // 'active' | 'preview'
 function openAddExModal(context) {
   // Kontext speichern — Default 'active' fuer Rueckwaerts-Kompatibilitaet
   addExContext = (context === 'preview' || context === 'libday') ? context : 'active';
-  document.querySelectorAll('#modal-add-ex .ex-mode-pill').forEach(p => p.classList.remove('active'));
   document.getElementById('add-ex-search').value = '';
   renderAddExList('');
   openModal('modal-add-ex');
@@ -6947,6 +6973,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Daten-Hygiene: verwaiste Wochenplan-Referenzen entfernen (legacy fallback, falls noch
   // jemand auf den ft_weekplan-Key zugreift — mit Multi-Plan sind die weekPlans pro Plan)
   cleanupOrphanWeekplan();
+  // Satzanzahl der Trainingstage einmalig an die letzte absolvierte Einheit angleichen
+  migrateSetCountsFromHistory();
   // Papierkorb ausmisten: Einträge älter als TRASH_KEEP_DAYS verschwinden endgültig
   purgeTrash();
   const activeWo = DB.getActive();
