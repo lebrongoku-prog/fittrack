@@ -3960,7 +3960,10 @@ function calendarInnerHTML(id) {
         <div class="cal-months" id="${id}-months"></div>
         <div class="cal-body">
           <div class="cal-daylabels"><span>Mo</span><span></span><span>Mi</span><span></span><span>Fr</span><span></span><span>So</span></div>
-          <div class="cal-grid" id="${id}-grid"></div>
+          <div class="cal-gridwrap">
+            <div class="cal-grid" id="${id}-grid"></div>
+            <div class="cal-marks" id="${id}-marks"></div>
+          </div>
         </div>
         <div class="cal-plans" id="${id}-plans"></div>
       </div>
@@ -3993,7 +3996,7 @@ function renderTrainingCalendar(id, cardId) {
   const dez31 = new Date(jahr, 11, 31);
   const start = new Date(jan1);
   start.setDate(jan1.getDate() - ((jan1.getDay() + 6) % 7));
-  const wochen = Math.ceil((dez31 - start) / (7 * 86400000)) + 1;
+  const wochen = Math.ceil((Math.round((dez31 - start) / 86400000) + 1) / 7);
 
   // Plan-Zeitraeume einmal vorbereiten (statt pro Tag aufzuloesen).
   const planIndex = _calPlanIndex();
@@ -4065,35 +4068,57 @@ function renderTrainingCalendar(id, cardId) {
   if (card) card.style.setProperty('--cal-cell', zelle + 'px');
   const SPALTE = zelle + CAL_GAP;
 
-  // Plan-Laufzeiten als Balken unter dem Raster.
+  // Plan-Laufzeiten: je eine senkrechte Linie am Anfang und am Ende, der Name darunter.
+  // Bewusst KEIN gefuellter Balken — das Raster soll die Hauptsache bleiben.
   const plansEl = document.getElementById(id + '-plans');
-  if (plansEl) {
-    const wocheMs = 7 * 86400000;
-    const rasterEnde = start.getTime() + wochen * wocheMs - 1;
-    const segs = DB.getPlans()
-      .filter(p => p && p.startDate && p.startDate <= rasterEnde && (p.endDate || Infinity) >= start.getTime())
-      .sort((a, b) => a.startDate - b.startDate)
-      .map((p, i) => {
-        const von = Math.max(0, Math.floor((p.startDate - start.getTime()) / wocheMs));
-        const bis = Math.min(wochen - 1, Math.floor(((p.endDate || rasterEnde) - start.getTime()) / wocheMs));
-        if (bis < von) return '';
-        const breite = (bis - von + 1) * SPALTE - 3;
-        const farbe = CAL_PLAN_COLORS[i % CAL_PLAN_COLORS.length];
-        const zeitraum = fmtDateRange(p.startDate, p.endDate);
-        return `<span class="cal-plan-seg${p.archived ? ' archived' : ''}"
-                      style="left:${von * SPALTE}px;width:${breite}px;background:${farbe}"
-                      onclick="openPlanDetail('${p.id}')" role="button"
-                      title="${escapeHtml(p.name)} · ${zeitraum}">${escapeHtml(p.name)}</span>`;
-      }).join('');
-    plansEl.innerHTML = segs;
+  const marksEl = document.getElementById(id + '-marks');
+  if (plansEl && marksEl) {
+    // Spalte NICHT über Millisekunden-Division bestimmen: Zwischen Winter- und Sommerzeit
+    // fehlt eine Stunde, wodurch ein Datum genau auf einer Wochengrenze in die Vorwoche
+    // rutschte (die Startlinie stand eine Woche zu früh). Über ganze Tage gerundet stimmt es.
+    const spalteFuer = (ts) => {
+      const d = new Date(ts); d.setHours(0, 0, 0, 0);
+      return Math.floor(Math.round((d - start) / 86400000) / 7);
+    };
+    const rasterEnde = new Date(start.getTime());
+    rasterEnde.setDate(rasterEnde.getDate() + wochen * 7);
+    rasterEnde.setMilliseconds(-1);
+    const sichtbar = DB.getPlans()
+      .filter(p => p && p.startDate && p.startDate <= rasterEnde.getTime() && (p.endDate || Infinity) >= start.getTime())
+      .sort((a, b) => a.startDate - b.startDate);
+
+    let marks = '', labels = '';
+    sichtbar.forEach((p, i) => {
+      const von = Math.max(0, spalteFuer(p.startDate));
+      const bis = Math.min(wochen - 1, spalteFuer(p.endDate || rasterEnde.getTime()));
+      if (bis < von) return;
+      const farbe = CAL_PLAN_COLORS[i % CAL_PLAN_COLORS.length];
+      const cls = p.archived ? ' archived' : '';
+      // Startlinie im Abstand links vor der Startspalte, Endlinie rechts nach der Endspalte
+      const xStart = von * SPALTE - 2;
+      const xEnde  = (bis + 1) * SPALTE - 4;
+      // Fällt der Planbeginn vor das Raster, entfällt die Startlinie (der Plan lief schon)
+      const zeigtStart = p.startDate >= start.getTime();
+      const zeigtEnde  = (p.endDate || Infinity) <= rasterEnde.getTime();
+      if (zeigtStart) marks += `<span class="cal-mark${cls}" style="left:${xStart}px;background:${farbe}"></span>`;
+      if (zeigtEnde)  marks += `<span class="cal-mark${cls}" style="left:${xEnde}px;background:${farbe}"></span>`;
+
+      const breite = (bis - von + 1) * SPALTE - 4;
+      const zeitraum = fmtDateRange(p.startDate, p.endDate);
+      labels += `<span class="cal-plan-label${cls}" style="left:${von * SPALTE}px;max-width:${Math.max(breite, 54)}px;color:${farbe}"
+                       onclick="openPlanDetail('${p.id}')" role="button"
+                       title="${escapeHtml(p.name)} · ${zeitraum}">${escapeHtml(p.name)}</span>`;
+    });
+    marksEl.innerHTML = marks;
+    plansEl.innerHTML = labels;
     plansEl.style.width = (wochen * SPALTE) + 'px';
-    plansEl.style.display = segs ? '' : 'none';
+    plansEl.style.display = labels ? '' : 'none';
   }
 
   // Zur laufenden Woche scrollen (nicht ans Jahresende — der Dezember ist noch leer).
   const scroller = document.getElementById(id + '-scroll');
   if (scroller) requestAnimationFrame(() => {
-    const heuteSpalte = Math.floor((today - start) / (7 * 86400000));
+    const heuteSpalte = Math.floor(Math.round((today - start) / 86400000) / 7);
     scroller.scrollLeft = Math.max(0, heuteSpalte * SPALTE - scroller.clientWidth * 0.7);
   });
 }
