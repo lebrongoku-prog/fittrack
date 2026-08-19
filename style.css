@@ -1624,7 +1624,10 @@ html.wo-running #wo-week-card { display: none; }
   margin: 0 12px 12px; background: var(--card); border-radius: 18px;
   box-shadow: var(--shadow); padding: 14px;
 }
-.chart-card-v2-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.chart-card-v2-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+/* Kennzahl rechts im Kalenderkopf. Bricht bei schmalem Bildschirm als Ganzes um,
+   statt sich zwischen die Buchstaben des Titels zu schieben. */
+.cal-stats { font-size: 12px; color: var(--text3); white-space: nowrap; margin-left: auto; }
 .chart-card-v2-title { font-size: 16px; font-weight: 700; }
 .chart-card-v2-toggle {
   padding: 5px 10px; border-radius: 8px;
@@ -1762,6 +1765,7 @@ html.wo-running #wo-week-card { display: none; }
 .cal-foot { padding: 10px 16px 12px; }
 .cal-detail { font-size: 12px; color: var(--text2); line-height: 1.4; min-height: 17px; }
 .cal-detail strong { color: var(--text); font-weight: 600; }
+.cal-detail-plan { margin-top: 3px; font-size: 12px; color: var(--text3); }
 /* Jede Legenden-Angabe ist ein eigener Flex-Block, sonst klebt der Text am Symbol und
    sitzt vertikal daneben. */
 .cal-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 11px; color: var(--text3); }
@@ -1793,6 +1797,9 @@ html.wo-running #wo-week-card { display: none; }
 }
 .pr-v2-name { font-size: 14px; font-weight: 600; }
 .pr-v2-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+/* Steigerung gegenüber der vorherigen Bestleistung — bewusst zurückgenommen, die
+   Bestleistung selbst steht hervorgehoben rechts. */
+.pr-v2-delta { color: var(--text3); font-weight: 500; }
 .pr-v2-val { font-size: 14px; font-weight: 700; color: var(--green); }
 .pr-v2-arrow { color: var(--text3); font-size: 18px; line-height: 1; }
 
@@ -1830,9 +1837,7 @@ html.wo-running #wo-week-card { display: none; }
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 .ex-sort-btn svg { width: 18px; height: 18px; stroke: var(--accent-dark); fill: none; stroke-width: 1.8; }
-.ex-sort-btn .ex-sort-ic-muscle { fill: var(--accent-dark); stroke: none; }
-.ex-sort-btn[data-mode="muscle"] .ex-sort-ic-plan { display: none; }
-.ex-sort-btn[data-mode="plan"]   .ex-sort-ic-muscle { display: none; }
+
 /* Alle-ein/ausklappen-Button: Icon nach Zustand (collapsed → „ausklappen", expanded → „einklappen") */
 #ex-collapse-all-btn .ex-coll-ic-collapse { display: none; }
 #ex-collapse-all-btn[data-state="expanded"] .ex-coll-ic-expand { display: none; }

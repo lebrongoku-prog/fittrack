@@ -821,7 +821,7 @@ function _applyTabState(name) {
 
   if (name === 'overview') renderOverview();
   else if (name === 'workouts') renderWorkoutsScreen();
-  else if (name === 'exercises') renderExercises();
+  else if (name === 'exercises') renderExercisesScreen();
   else if (name === 'plans') renderPlansScreen();
   else if (name === 'plan-detail') renderPlanDetail();
   else if (name === 'day-detail') renderLibDayDetail();
@@ -964,12 +964,14 @@ function renderOverview() {
   renderPlanEndNotice(active);
   renderBackupLine();
 
+  // ─ Trainingskalender (ganzes Kalenderjahr) ─
+  // Wird hier gerendert, nicht in renderHomeStats: die Auswertungen liegen seit dem
+  // Umbau im Übungen-Tab, der Kalender bleibt in der Übersicht.
+  renderTrainingCalendar();
+
   // ─ Letzte Einheiten (kompakt, 3 jüngste) ─
   renderRecentSessionsOnOverview();
 
-  // ─ Stats-Karten (Volumenentwicklung, Muskelgruppen-Volumen, PRs) ─
-  // Diese 3 Karten wurden vom alten Verlauf-Tab in die Übersicht verschoben.
-  renderHomeStats();
 }
 
 // Läuft der aktive Plan bald aus, rechtzeitig darauf hinweisen. Ohne diesen Hinweis fällt die
@@ -3550,9 +3552,6 @@ function renderHomeStats() {
   if (statsVolMode === 'cardio') renderCardioDistanceChart(ws);
   else renderVolumeChart(ws);
 
-  // ── Trainingskalender (immer 52 Wochen, unabhängig vom Zeitraum-Filter) ──
-  renderTrainingCalendar();
-
   // ── Karte 2: Muskelgruppen / Cardio-Verteilung ──
   const volEl = document.getElementById('muscle-bars');
   if (volEl) {
@@ -3928,6 +3927,7 @@ function _calPlanIndex() {
       end: p.endDate || Infinity,
       wp: (p.weekPlan && p.weekPlan.length) ? p.weekPlan : DEFAULT_WEEKPLAN,
       days: resolvePlanDays(p),
+      plan: p,
     }))
     .sort((a, b) => a.start - b.start);
 }
@@ -3937,11 +3937,11 @@ function _calPlanIndex() {
 function _calPlanInfo(date, index) {
   const ts = date.getTime();
   const p = index.find(x => ts >= x.start && ts <= x.end);
-  if (!p) return { known: false, planned: false, name: null };
+  if (!p) return { known: false, planned: false, name: null, plan: null };
   const entry = p.wp[(date.getDay() + 6) % 7];
-  if (!entry || !entry.planDayId) return { known: true, planned: false, name: null };
+  if (!entry || !entry.planDayId) return { known: true, planned: false, name: null, plan: p.plan };
   const d = p.days.find(x => x && x.id === entry.planDayId);
-  return { known: true, planned: true, name: d ? d.name : null };
+  return { known: true, planned: true, name: d ? d.name : null, plan: p.plan };
 }
 
 // Kalender-Innenleben. Eine Quelle fuer beide Einbauorte (Uebersicht + Plaene-Tab);
@@ -3973,6 +3973,30 @@ function calendarInnerHTML(id) {
         <span><i></i>Ruhetag</span>
       </div>
     </div>`;
+}
+
+// Wie viel vom Plan ist bislang erfüllt? Verglichen werden ABSOLVIERTE EINHEITEN im
+// Zeitraum gegen die bis dahin GEPLANTEN Trainingstage. Bezug ist immer nur die
+// Vergangenheit (bei laufenden Plänen bis heute) — sonst läge die Quote zwangsläufig
+// niedrig, solange der Plan noch läuft. Einheiten an nicht geplanten Tagen zählen mit,
+// damit ein nachgeholtes Training die Quote nicht drückt (beides Leonard-Entscheidung).
+function planErfuellung(plan) {
+  if (!plan || !plan.startDate) return null;
+  const heute = new Date(); heute.setHours(23, 59, 59, 999);
+  const bis = Math.min(plan.endDate || heute.getTime(), heute.getTime());
+  if (bis < plan.startDate) return null;
+
+  const wp = (plan.weekPlan && plan.weekPlan.length) ? plan.weekPlan : DEFAULT_WEEKPLAN;
+  let geplant = 0;
+  const d = new Date(plan.startDate); d.setHours(0, 0, 0, 0);
+  while (d.getTime() <= bis) {
+    const e = wp[(d.getDay() + 6) % 7];
+    if (e && e.planDayId) geplant++;
+    d.setDate(d.getDate() + 1);
+  }
+  const absolviert = DB.getWorkouts().filter(w => w.startTs >= plan.startDate && w.startTs <= bis).length;
+  if (!geplant) return null;
+  return { geplant, absolviert, prozent: Math.round(absolviert / geplant * 100) };
 }
 
 function renderTrainingCalendar(id, cardId) {
@@ -4144,6 +4168,14 @@ function showCalDay(key, id) {
   } else {
     txt = `<strong>${dateStr}</strong> · ${plan.known ? 'Ruhetag' : 'kein Training'}`;
   }
+  // Zweite Zeile: Stand des Plans, zu dem dieser Tag gehört
+  if (plan.plan) {
+    const q = planErfuellung(plan.plan);
+    if (q) {
+      txt += `<div class="cal-detail-plan">${escapeHtml(plan.plan.name)}: `
+           + `${q.absolviert} von ${q.geplant} geplanten Einheiten (${q.prozent} %)</div>`;
+    }
+  }
   el.innerHTML = txt;
 }
 
@@ -4249,13 +4281,19 @@ function prHTML(pr, number) {
   const setsStr = pr.sets ? `${pr.sets.length}×${pr.sets[0]?.reps||'?'}` : '';
   const num = number || 1;
   const valColor = muscleColor(muscleKey);
+  // Hervorgehoben ist die Bestleistung selbst; die Steigerung steht grau in Klammern
+  // am Ende der Beschreibung (Leonard-Wunsch).
+  const zunahme = (pr.prev && pr.weight > pr.prev)
+    ? ` <span class="pr-v2-delta">(+${fmtKg(pr.weight - pr.prev)} kg)</span>` : '';
+  // Einheit nur einmal nennen — sonst bricht die Zeile auf dem iPhone um
+  const verlauf = pr.prev ? ` • ${fmtKg(pr.prev)} → ${fmtKg(pr.weight)} kg` : '';
   return `<div class="pr-v2-row no-icon" style="--mc:${valColor};--mc-bg:${muscleBg(muscleKey)}" onclick="showHistDetailForEx('${pr.exId}')">
     <div class="pr-v2-num">${num}</div>
     <div>
       <div class="pr-v2-name">${pr.name}</div>
-      <div class="pr-v2-sub">${setsStr}${pr.prev ? ` • ${pr.prev} kg → ${pr.weight} kg` : ''}</div>
+      <div class="pr-v2-sub">${setsStr}${verlauf}${zunahme}</div>
     </div>
-    <div class="pr-v2-val" style="color:${valColor}">${pr.prev && pr.weight > pr.prev ? `+${(pr.weight-pr.prev).toFixed(1)} kg` : `${pr.weight} kg`}</div>
+    <div class="pr-v2-val" style="color:${valColor}">${fmtKg(pr.weight)} kg</div>
     <span class="pr-v2-arrow">›</span>
   </div>`;
 }
@@ -5601,7 +5639,6 @@ function confirmCopyPlanDays() {
 // SCREEN: ÜBUNGEN (Catalog)
 // ═══════════════════════════════════════════════
 let openExerciseId = null;   // currently expanded exercise in catalog
-let exSortMode = 'muscle';   // 'muscle' | 'plan' — im Cardio-Modus = 'alpha' | 'plan'
 let exMode = (CARDIO_ENABLED && localStorage.getItem('ft_ex_mode') === 'cardio') ? 'cardio' : 'strength'; // 'strength' | 'cardio'
 let exCatalogSearch = ''; // Suchtext im Übungen-Tab (filtert nach Name, klappt Treffer-Gruppen auf)
 function filterExerciseCatalog() {
@@ -5636,13 +5673,9 @@ function toggleExGroup(key) {
   renderExercises();
 }
 
-// Gruppen-Keys der aktuell sichtbaren Übungen-Ansicht (Muskelgruppen bzw. Plan-Tage).
+// Gruppen-Keys der aktuell sichtbaren Übungen-Ansicht (Muskelgruppen).
 // Cardio-Flachliste hat keine Gruppen → leeres Array.
 function _currentExGroupKeys() {
-  if (exSortMode === 'plan') {
-    const active = getActivePlan();
-    return (active ? active.trainingDays : []).map(d => 'plan:' + d.id);
-  }
   if (exMode === 'strength') return MUSCLE_ORDER.map(m => 'muscle:' + m);
   return [];
 }
@@ -5707,12 +5740,6 @@ function getPlanDaysUsingExercise(exId) {
   return active.trainingDays.filter(d => d.exercises.some(e => e.exId === exId));
 }
 
-function toggleExSortMode() {
-  exSortMode = exSortMode === 'muscle' ? 'plan' : 'muscle';
-  const btn = document.getElementById('ex-sort-btn');
-  if (btn) btn.dataset.mode = exSortMode;
-  renderExercises();
-}
 
 function buildExItemHTML(ex, context) {
   if (exType(ex) === 'cardio') return buildExItemCardioHTML(ex, context);
@@ -5874,8 +5901,6 @@ function buildExItemCardioHTML(ex, context) {
 }
 
 function renderExercises() {
-  const btn = document.getElementById('ex-sort-btn');
-  if (btn) btn.dataset.mode = exSortMode;
   // Alle-ein/ausklappen-Button: nur bei gruppierter Ansicht zeigen, Icon nach Zustand
   const collBtn = document.getElementById('ex-collapse-all-btn');
   if (collBtn) {
@@ -5890,25 +5915,44 @@ function renderExercises() {
 
   const subEl = document.getElementById('ex-subline');
   if (subEl) {
-    if (exMode === 'cardio') {
-      subEl.textContent = exSortMode === 'plan'
-        ? 'Cardio-Einheiten sortiert nach Trainingstagen'
-        : 'Cardio-Einheiten alphabetisch';
-    } else {
-      subEl.textContent = exSortMode === 'plan'
-        ? 'Übungskatalog sortiert nach Trainingstagen'
-        : 'Übungskatalog sortiert nach Muskelgruppen';
-    }
+    subEl.textContent = (exMode === 'cardio')
+      ? 'Cardio-Einheiten alphabetisch'
+      : 'Übungskatalog sortiert nach Muskelgruppen';
   }
-  if (exSortMode === 'plan') {
-    renderExercisesByPlan();
-  } else if (exMode === 'cardio') {
-    renderExercisesCardioFlat();
-  } else {
-    renderExercisesByMuscle();
-  }
+  if (exMode === 'cardio') renderExercisesCardioFlat();
+  else renderExercisesByMuscle();
   // Diagramm der aufgeklappten Übung zeichnen (das Markup steht erst nach dem Render im DOM)
   _renderOpenExerciseChart();
+}
+
+// Seiten des Übungen-Tabs: Katalog oder Stats (Aufbau analog zum Pläne-Tab).
+let exercisesViewMode = 'list';   // 'list' | 'stats'
+function setExercisesView(mode) {
+  exercisesViewMode = (mode === 'stats') ? 'stats' : 'list';
+  renderExercisesScreen();
+}
+function renderExercisesScreen() {
+  const stats = exercisesViewMode === 'stats';
+  const segL = document.getElementById('seg-ex-list');
+  const segS = document.getElementById('seg-ex-stats');
+  if (segL) segL.classList.toggle('active', !stats);
+  if (segS) segS.classList.toggle('active', stats);
+  const viewL = document.getElementById('ex-view-list');
+  const viewS = document.getElementById('ex-view-stats');
+  if (viewL) viewL.style.display = stats ? 'none' : '';
+  if (viewS) viewS.style.display = stats ? '' : 'none';
+  // Kopfzeilen-Knöpfe gehören zum Katalog, nicht zu den Auswertungen
+  ['ex-collapse-all-btn', 'ex-mode-toggle'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = stats ? 'none' : '';
+  });
+  const addBtn = document.querySelector('#screen-exercises .ex-add-btn');
+  if (addBtn) addBtn.style.display = stats ? 'none' : '';
+  const subEl = document.getElementById('ex-subline');
+  if (stats && subEl) subEl.textContent = 'Auswertungen zu deinem Training';
+
+  if (stats) renderHomeStats();
+  else renderExercises();
 }
 
 // Gewichtsentwicklung einer Übung: pro Einheit das höchste Gewicht, chronologisch.
@@ -6048,40 +6092,6 @@ function renderExercisesCardioFlat() {
   // Eine virtuelle Gruppe ohne Gruppen-Header, damit das CSS-Layout (ex-list) gleich bleibt
   document.getElementById('exercises-groups').innerHTML =
     `<div class="ex-group" style="--mc:var(--cardio)"><div class="ex-list">${itemsHTML}</div></div>`;
-}
-
-function renderExercisesByPlan() {
-  // Immer der AKTIVE Plan (per Datum) — kein Edit-Kontext (editingPlanId) und kein
-  // DEFAULT_PLAN-Fallback. Konsistent mit "Im Plan"/"Verwendet in" (getActivePlan).
-  // Ohne aktiven Plan: leer (statt der fest einprogrammierten Default-Tage).
-  const active = getActivePlan();
-  const plan = active ? active.trainingDays : [];
-  const exMap = {};
-  DB.getExercises().forEach(e => exMap[e.id] = e);
-
-  const groupsHTML = plan.map(day => {
-    // Plan-Reihenfolge beibehalten; Übungen die im Plan stehen aber nicht mehr existieren überspringen.
-    // Nach exMode filtern (Kraft-Modus zeigt nur strength-Eintraege, Cardio-Modus nur cardio).
-    const items = day.exercises.map(pe => exMap[pe.exId])
-      .filter(Boolean)
-      .filter(ex => exType(ex) === exMode)
-      .filter(_exMatchesSearch);
-    if (!items.length) return '';
-    const itemsHTML = items.map(ex => buildExItemHTML(ex, { dayId: day.id })).join('');
-    const isCollapsed = !exCatalogSearch && collapsedExGroups.has('plan:' + day.id);
-    return `<div class="ex-group${isCollapsed ? ' collapsed' : ''}">
-      <div class="ex-group-title" onclick="toggleExGroup('plan:${day.id}')">
-        ${pd(day.name)}
-        <span class="count">(${items.length})</span>
-        <span class="ex-group-arrow">${isCollapsed ? '▸' : '▾'}</span>
-      </div>
-      <div class="ex-list">${itemsHTML}</div>
-    </div>`;
-  }).filter(Boolean).join('');
-
-  document.getElementById('exercises-groups').innerHTML = groupsHTML || (exCatalogSearch
-    ? '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Keine Treffer.</p>'
-    : '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Noch keine Trainingstage mit Übungen vorhanden.</p>');
 }
 
 function renderExercisesByMuscle() {
@@ -6675,7 +6685,7 @@ function saveNewEx() {
     }
     editingExerciseId = null;
     closeModal('modal-new-ex');
-    if (currentScreen === 'exercises') renderExercises();
+    if (currentScreen === 'exercises') renderExercisesScreen();
     showToast('Übung aktualisiert');
     return;
   }
@@ -7076,7 +7086,7 @@ function applyExercisesImport() {
   DB.saveExercises(exs);
 
   // UI-Refresh: wenn der User aktuell im Uebungen-Tab ist, dort neu rendern
-  if (currentScreen === 'exercises') renderExercises();
+  if (currentScreen === 'exercises') renderExercisesScreen();
 
   const parts = [
     newExCount ? `${newExCount} neue Übung${newExCount === 1 ? '' : 'en'}` : null,
@@ -8218,7 +8228,7 @@ function initScrollHideNav() {
 function prerenderAllTabs() {
   try { renderOverview(); }       catch (e) { console.warn('prerender overview', e); }
   try { renderWorkoutsScreen(); } catch (e) { console.warn('prerender workouts', e); }
-  try { renderExercises(); }      catch (e) { console.warn('prerender exercises', e); }
+  try { renderExercisesScreen(); } catch (e) { console.warn('prerender exercises', e); }
   try { renderPlansScreen(); }    catch (e) { console.warn('prerender plans', e); }
   try { renderMehr(); }           catch (e) { console.warn('prerender mehr', e); }
 }
