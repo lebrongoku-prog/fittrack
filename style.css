@@ -1721,6 +1721,8 @@ html.wo-running #wo-week-card { display: none; }
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .cal-day.planned { background: #CDE7E1; }
+/* Rahmen + Beschriftung der Plan-Zeiträume — dasselbe Grün wie die trainierten Kerne. */
+.cal-scroll { --cal-plan-color: #0F766E; }
 .cal-day.done::before {
   content: ''; position: absolute; inset: 3px;
   border-radius: 2px; background: #0F766E;
@@ -1734,16 +1736,21 @@ html.wo-running #wo-week-card { display: none; }
    absolut auf Positionen, die das JS in Vielfachen der Spaltenbreite (--cal-cell + 3px)
    rechnet. Der Versatz links entspricht den Tages-Labels. */
 .cal-gridwrap { position: relative; }
-/* Getöntes Band hinter den Wochenspalten eines Plan-Zeitraums. Liegt UNTER dem Raster,
-   damit die Kästchen (geplant/trainiert) unverändert lesbar bleiben. */
+/* Umrandung um die Wochenspalten eines Plan-Zeitraums — ohne Füllung, damit die Kästchen
+   (geplant/trainiert) unverändert lesbar bleiben. Liegt unter dem Raster. */
 .cal-bands { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
-.cal-band { position: absolute; top: -3px; bottom: -3px; border-radius: 4px; }
-.cal-band.archived { opacity: .8; }
+.cal-band {
+  position: absolute; top: -3px; bottom: -3px;
+  border: 1.5px solid var(--cal-plan-color); border-radius: 5px;
+  box-sizing: border-box;
+}
+.cal-band.archived { opacity: .5; }
 .cal-grid { position: relative; z-index: 1; }
 
 .cal-plans { position: relative; height: 15px; margin: 6px 0 0 22px; }
 .cal-plan-label {
   position: absolute; top: 0;
+  color: var(--cal-plan-color);
   font-size: 10px; font-weight: 700; letter-spacing: .2px; line-height: 15px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   padding-left: 3px;
