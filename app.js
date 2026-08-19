@@ -4814,10 +4814,6 @@ function renderExercises() {
     collBtn.style.display = keys.length ? '' : 'none';
     collBtn.dataset.state = (keys.length && keys.every(k => collapsedExGroups.has(k))) ? 'collapsed' : 'expanded';
   }
-  const subEl = document.getElementById('ex-subline');
-  if (subEl) {
-    subEl.textContent = 'Übungskatalog sortiert nach Muskelgruppen';
-  }
   renderExercisesByMuscle();
   // Diagramm der aufgeklappten Übung zeichnen (das Markup steht erst nach dem Render im DOM)
   _renderOpenExerciseChart();
@@ -4846,9 +4842,6 @@ function renderExercisesScreen() {
   });
   const addBtn = document.querySelector('#screen-exercises .ex-add-btn');
   if (addBtn) addBtn.style.display = stats ? 'none' : '';
-  const subEl = document.getElementById('ex-subline');
-  if (stats && subEl) subEl.textContent = 'Auswertungen zu deinem Training';
-
   if (stats) renderStatsPage();
   else renderExercises();
 }
