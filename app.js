@@ -834,7 +834,6 @@ function renderOverview() {
     const heroDay = plan.find(d => d.id === activeWo.planDayId);
     wrap.innerHTML = buildSessionCard(activeWo, heroDay, todayEntry, false, {
       label: 'LAUFENDE EINHEIT',
-      continueOnClick: 'heroActionContinue()',
     });
   } else if (todayEntry.planDay && !todayEntry.dayDone) {
     wrap.innerHTML = buildSessionCard(null, todayEntry.planDay, todayEntry, true, {
@@ -1065,17 +1064,6 @@ function confirmStartYes() {
 function confirmStartNo() {
   closeModal('modal-confirm-start');
   pendingStartDayId = null;
-}
-
-// "Nächste Übung" auf der Hero — navigiert + scrollt zur nächsten unerledigten Übung.
-function heroActionContinue() {
-  if (currentScreen === 'overview') {
-    showScreen('workouts');
-    // Workouts-Tab hat gerade gerendert; im nächsten Frame zur nächsten Übung scrollen
-    requestAnimationFrame(() => scrollToNextExercise());
-  } else {
-    scrollToNextExercise();
-  }
 }
 
 // Keep the active-session timer running across tabs (but not while paused).
@@ -1436,20 +1424,12 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
   }
 
   // Active mode — same outer structure as preview; bottom is only the button row
-  const continueOnClick = opts.continueOnClick || 'scrollToNextExercise()';
   const paused = !!(active && active.paused);
   const pauseLabel = paused ? 'Fortsetzen' : 'Pausieren';
   const pauseIcon = paused
     ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>'
     : '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
 
-  const allDone = active && active.exercises.length > 0 && active.exercises.every(e => e.done || e.skipped);
-  const nextBtn = allDone ? '' : `
-        <button class="hero-v2-btn hero-v2-btn-next" onclick="${continueOnClick}">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,4 15,12 5,20"/><rect x="17" y="4" width="2.6" height="16" rx="1"/></svg>
-          Nächste Übung
-        </button>`;
-  const rowClass = allDone ? 'hero-v2-button-row two-buttons' : 'hero-v2-button-row';
   // Pause-Button hat nur Sinn, wenn ueberhaupt eine Kraft-Uebung im Workout steckt
   const hasStrengthEx = !!(active && active.exercises.length);
   const pauseBtn = hasStrengthEx
@@ -1462,8 +1442,7 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
   return `<div class="hero-v2 col-layout active-mode">
     ${topRow}
     <div class="hero-v2-bottom">
-      <div class="${rowClass}">
-        ${nextBtn}
+      <div class="hero-v2-button-row">
         ${pauseBtn}
         <button class="hero-v2-btn-danger" onclick="confirmFinish()">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>
@@ -2191,6 +2170,7 @@ const REST_DEFAULT_SEC = 90;
 let restState = null;     // { exId, name, endTs, total, interval }
 
 function startRestTimer(exId, name) {
+  hideRestDone();
   const total = REST_DEFAULT_SEC;
   stopRestTimer(/*silent*/ true);
   restState = { exId, name: name || '', endTs: Date.now() + total * 1000, total, interval: null };
@@ -2198,12 +2178,82 @@ function startRestTimer(exId, name) {
   restState.interval = setInterval(tickRestTimer, 250);
 }
 
+// ── Signal am Ende der Satzpause ──────────────────────────────────────────────
+// ACHTUNG: `navigator.vibrate` gibt es auf dem iPhone NICHT — Safari unterstuetzt die
+// Vibration-API auf keiner Plattform. Dort traegt allein der Ton, und der schweigt, wenn
+// der Klingelschalter auf lautlos steht. Deshalb zusaetzlich eine sichtbare Meldung:
+// Eines der drei Signale erreicht praktisch jede Situation.
+let _audioCtx = null;
+function _audioContext() {
+  if (_audioCtx) return _audioCtx;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  try { _audioCtx = new AC(); } catch { return null; }
+  return _audioCtx;
+}
+
+// iOS gibt Ton erst frei, wenn der Audio-Kontext aus einer echten Nutzergeste heraus
+// entsperrt wurde. Darum bei jeder Beruehrung nachfassen, solange er schlaeft — der
+// erste Satz-Haken einer Einheit erledigt das lange vor der ersten Pause.
+function initAudioUnlock() {
+  document.addEventListener('pointerdown', () => {
+    const ctx = _audioContext();
+    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+  }, { passive: true });
+}
+
+// Kurzer Zweiklang statt eines einzelnen Piepsers: zwischen Musik und Geraetelaerm geht
+// ein einzelner Ton unter.
+function playRestDoneSound() {
+  const ctx = _audioContext();
+  if (!ctx) return;
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+  const t0 = ctx.currentTime;
+  [[880, 0], [1320, 0.17]].forEach(([hz, versatz]) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = hz;
+    gain.gain.setValueAtTime(0.0001, t0 + versatz);
+    gain.gain.exponentialRampToValueAtTime(0.3, t0 + versatz + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + versatz + 0.15);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t0 + versatz);
+    osc.stop(t0 + versatz + 0.16);
+  });
+}
+
+// „Pause vorbei" bleibt kurz stehen — ohne das verschwindet die Leiste kommentarlos und
+// man weiss nicht, ob die Pause abgelaufen oder versehentlich abgebrochen wurde.
+let _restDoneTimeout = null;
+const REST_DONE_MS = 5000;
+function showRestDone() {
+  const bar = document.getElementById('rest-bar');
+  if (!bar) return;
+  bar.innerHTML = `
+    <div class="rest-bar-inner">
+      <span class="rest-bar-time">Pause vorbei</span>
+      <button class="rest-bar-btn rest-bar-close" onclick="hideRestDone()" aria-label="Ausblenden">✕</button>
+    </div>`;
+  bar.classList.add('show', 'done');
+  clearTimeout(_restDoneTimeout);
+  _restDoneTimeout = setTimeout(hideRestDone, REST_DONE_MS);
+}
+function hideRestDone() {
+  clearTimeout(_restDoneTimeout);
+  _restDoneTimeout = null;
+  const bar = document.getElementById('rest-bar');
+  if (bar) { bar.classList.remove('show', 'done'); bar.innerHTML = ''; }
+}
+
 function tickRestTimer() {
   if (!restState) return;
   const left = Math.round((restState.endTs - Date.now()) / 1000);
   if (left <= 0) {
     if (navigator.vibrate) navigator.vibrate([180, 90, 180]);
-    stopRestTimer();
+    playRestDoneSound();
+    stopRestTimer(true);
+    showRestDone();
     return;
   }
   renderRestBar();
@@ -2240,6 +2290,7 @@ function renderRestBar() {
   if (!restState) { bar.classList.remove('show'); bar.innerHTML = ''; return; }
   const left = Math.max(0, Math.round((restState.endTs - Date.now()) / 1000));
   const pct = restState.total > 0 ? Math.max(0, Math.min(100, left / restState.total * 100)) : 0;
+  bar.classList.remove('done');
   bar.innerHTML = `
     <div class="rest-bar-fill" style="width:${pct}%"></div>
     <div class="rest-bar-inner">
@@ -2369,15 +2420,6 @@ function removeSet(ei) {
   }
 }
 
-function scrollToEx(i) {
-  const el = document.getElementById('aex-'+i);
-  if (!el) return;
-  // Use scroll-margin-top via scrollIntoView — works with the CSS setting we added.
-  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  // Update active tab highlight
-  document.querySelectorAll('.ex-tab-v2').forEach((t,idx) => t.classList.toggle('active', idx===i));
-}
-
 // Klappt die naechste unerledigte/nicht-uebersprungene Card auf (falls noch zu).
 // Re-rendert nur wenn sich der Collapse-State tatsaechlich aendert. Kein Scroll.
 function expandNextExercise() {
@@ -2392,14 +2434,6 @@ function expandNextExercise() {
     renderWorkoutsScreen();
   }
   return nextIdx;
-}
-
-// "Naechste Uebung"-Button im Hero: expand + scroll. Wird genutzt vom continueOnClick.
-function scrollToNextExercise() {
-  const nextIdx = expandNextExercise();
-  if (nextIdx < 0) return;
-  // Im naechsten Frame zur (ggf. frisch expandierten) Card scrollen
-  requestAnimationFrame(() => scrollToEx(nextIdx));
 }
 
 function startTimer() {
@@ -7113,6 +7147,7 @@ function prerenderAllTabs() {
 
 document.addEventListener('DOMContentLoaded', () => {
   // Daten-Migration: altes ft_program/ft_plan2/ft_weekplan in neue ft_plans-Struktur
+  initAudioUnlock();
   migrateRemoveCardio();
   migrateToMultiPlan();
   // Tag-Modell v2: eingebettete Plan-Tage in geteilte Bibliothek-Referenzen überführen (einmalig)

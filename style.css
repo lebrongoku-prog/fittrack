@@ -234,6 +234,8 @@ html.workout-active body.theme-workouts #workout-active-bar { display: none; }
   transition: bottom 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 #rest-bar.show { display: block; }
+/* Abgelaufen: kraeftigeres Gruen, damit die Meldung im Augenwinkel auffaellt. */
+#rest-bar.done { background: #15803D; }
 /* Nav ausgeblendet: der Timer setzt sich an deren Stelle, inklusive Home-Indikator-Polster. */
 #rest-bar.nav-hidden {
   bottom: 0;
@@ -258,14 +260,17 @@ html.workout-active #rest-bar.show ~ #workout-active-bar {
   display: flex; align-items: center; gap: 8px; padding: 0 14px;
 }
 .rest-bar-time { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; margin-right: auto; }
+/* Breite Trefferflaechen — die Knoepfe werden zwischen zwei Saetzen im Vorbeigehen
+   getroffen. min-width statt fester Breite, damit „Reset" nicht abgeschnitten wird. */
 .rest-bar-btn {
   background: rgba(255,255,255,0.18); color: #fff; border: none;
-  border-radius: 9px; padding: 7px 9px; font-size: 13px; font-weight: 700;
+  border-radius: 10px; min-width: 62px; padding: 9px 12px;
+  font-size: 13px; font-weight: 700;
   font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
 }
 .rest-bar-btn:active { transform: scale(.94); }
-.rest-bar-close { background: transparent; font-size: 15px; padding: 7px 6px; }
+.rest-bar-close { background: transparent; font-size: 16px; min-width: 34px; padding: 9px 6px; }
 
 /* ─── Kopfleiste der laufenden Einheit ─── */
 #wo-sticky-bar {
@@ -1053,9 +1058,6 @@ html.wo-running #wo-week-card { display: none; }
 
 .hero-v2-button-row { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
 .hero-v2-button-row .hero-v2-btn { flex: 1; padding: 14px 10px; align-self: auto; justify-content: center; font-size: 14px; white-space: nowrap; }
-/* "Nächste Übung" – solid accent-dark (no gradient) */
-.hero-v2-btn-next { background: var(--accent-dark) !important; box-shadow: none !important; }
-
 .hero-v2-button-row .hero-v2-btn-pause {
   flex: 1;
   padding: 14px 10px; border-radius: 12px; border: none;
@@ -1066,14 +1068,14 @@ html.wo-running #wo-week-card { display: none; }
 }
 .hero-v2-button-row .hero-v2-btn-pause svg { fill: #fff; }
 .hero-v2-button-row .hero-v2-btn-pause:active { transform: scale(.97); }
-/* „Beenden" bekommt eine eigene Zeile: drei nebeneinander passten auf iPhone-Breite nicht
-   und liefen rechts aus dem Bild. Gefüllt in Rot mit weißer Schrift. */
+/* Seit „Nächste Übung" entfallen ist, teilen sich Pausieren und Beenden eine Zeile zu
+   gleichen Teilen (beide flex:1). Vorher lag Beenden auf einer eigenen Zeile, weil drei
+   Knoepfe nebeneinander auf iPhone-Breite rechts aus dem Bild liefen. */
 .hero-v2-button-row .hero-v2-btn-danger {
-  flex: 1 0 100%; min-width: 0; padding: 13px; font-size: 14px; margin-top: 2px;
+  flex: 1; min-width: 0; padding: 14px 10px; font-size: 14px;
   background: var(--red); color: #fff; border: none;
 }
 .hero-v2-button-row .hero-v2-btn-danger svg { fill: #fff; }
-.hero-v2-button-row.two-buttons .hero-v2-btn-danger { flex: 1 0 100%; min-width: 0; }
 .hero-v2-btn-danger {
   padding: 13px 14px; border-radius: 12px; border: none;
   background: var(--red); color: #fff;
@@ -1287,6 +1289,14 @@ html.wo-running #wo-week-card { display: none; }
 /* Zugeklappt bleibt die Karte ruhig: die Bestleistung erscheint erst beim Aufklappen.
    (Die Differenz zur letzten Einheit bleibt sichtbar — sie betrifft den heutigen Satz.) */
 .aex-v2.collapsed .aex-cmp-pr { display: none; }
+/* Zugeklappt zeigt der Kopf nur den Namen — die Angaben zur letzten Einheit erscheinen
+   erst beim Aufklappen (Leonard-Wunsch 20.08.2026). Damit der Name dann auf einer Linie
+   mit der Nummernscheibe steht, bekommt der Textblock deren Hoehe und zentriert darin.
+   Der Kopf bleibt bewusst oben ausgerichtet, sonst wanderte die Scheibe beim Aufklappen. */
+.aex-v2.collapsed .aex-v2-last { display: none; }
+.aex-v2.collapsed .aex-v2-info {
+  min-height: 32px; display: flex; flex-direction: column; justify-content: center;
+}
 .aex-v2-target { font-size: 12px; color: var(--c, var(--accent)); margin-top: 3px; font-weight: 500; }
 .aex-v2-target b { font-weight: 700; }
 .aex-v2-last { font-size: 12px; color: var(--text3); margin-top: 1px; }
