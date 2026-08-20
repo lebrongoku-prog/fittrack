@@ -1423,13 +1423,6 @@ html.wo-running #wo-week-card { display: none; }
    statt sich zwischen die Buchstaben des Titels zu schieben. */
 .cal-stats { font-size: 12px; color: var(--text3); white-space: nowrap; margin-left: auto; }
 .chart-card-v2-title { font-size: 16px; font-weight: 700; }
-.chart-card-v2-toggle {
-  padding: 5px 10px; border-radius: 8px;
-  background: var(--bg); border: 1px solid var(--border);
-  font-size: 12px; font-weight: 600; color: var(--text2);
-  display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
-}
-
 /* Muscle bars v2 (with icons + colors) */
 .muscle-bars-v2 { padding: 4px 16px 8px; }/* Variante ohne Muskel-Icon (User-Anpassung): Icon-Spalte entfaellt, Name-Spalte weiter */
 .muscle-bar-v2-row.no-icon { grid-template-columns: 90px 1fr auto; }/* ─── Zahlenblock ─── */
@@ -2105,7 +2098,8 @@ html.wo-running #wo-week-card { display: none; }
   transition: color .15s, background .15s;
 }
 .ex-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.ex-chart-toggle .stats-mode-pill.active { background: var(--accent); color: #fff; }
+.ex-chart-toggle .stats-mode-pill.active,
+.vol-unit-toggle .stats-mode-pill.active { background: var(--accent); color: #fff; }
 
 /* Knopfleiste rechts im Tab-Kopf (Übungen). Eigene Klasse statt Inline-Stil, damit die
    Leiste auf der Stats-Seite per visibility ausgeblendet werden kann und ihre Höhe

@@ -395,7 +395,7 @@ function fmtDateShort(ts) { return new Date(ts).toLocaleDateString('de-DE',{day:
 // Liefert den Wert MIT Einheit, weil die Einheit von der Größe abhängt.
 function fmtVol(kg) {
   if (Math.abs(kg) < 1000) return Math.round(kg) + ' kg';
-  return (kg / 1000).toFixed(1).replace('.0', '').replace('.', ',') + ' t';
+  return (kg / 1000).toFixed(1).replace('.0', '') + ' t';
 }
 
 // Beschriftung der Volumen-Achse. Die Einheit gilt für die GANZE Achse (entschieden am
@@ -403,7 +403,7 @@ function fmtVol(kg) {
 function volAchsenWert(v, inTonnen) {
   if (!v) return '0';
   return inTonnen
-    ? (v / 1000).toFixed(1).replace('.0', '').replace('.', ',') + ' t'
+    ? (v / 1000).toFixed(1).replace('.0', '') + ' t'
     : Math.round(v) + ' kg';
 }
 // Get current program week based on startDate of the ACTIVE plan (not editing context)
@@ -1931,7 +1931,7 @@ function openNumpadFromInput(el) {
 
   const steps = isWeight ? [-5, -2.5, 2.5, 5] : [-2, -1, 1, 2];
   document.getElementById('np-quick').innerHTML = steps.map(s =>
-    `<button class="np-quick-btn" onclick="npStep(${s})">${s > 0 ? '+' : '−'}${String(Math.abs(s)).replace('.', ',')}</button>`
+    `<button class="np-quick-btn" onclick="npStep(${s})">${s > 0 ? '+' : '−'}${Math.abs(s)}</button>`
   ).join('');
 
   npRenderValue();
@@ -1940,7 +1940,7 @@ function openNumpadFromInput(el) {
 
 function npRenderValue() {
   const el = document.getElementById('np-value');
-  if (el && npState) el.textContent = (npState.value === '' ? '–' : npState.value.replace('.', ','));
+  if (el && npState) el.textContent = (npState.value === '' ? '–' : npState.value);
 }
 
 function npTap(key) {
@@ -1968,7 +1968,7 @@ function npStep(delta) {
   const next = Math.max(0, Math.round((cur + delta) * 100) / 100);
   npState.value = String(next);
   // Der Schritt schließt die Eingabe ab: Eine danach getippte Ziffer beginnt neu,
-  // sonst entstünde aus „+2,5" und einer 6 der Unsinnswert 82,56.
+  // sonst entstünde aus „+2.5" und einer 6 der Unsinnswert 82.56.
   npState.fresh = true;
   npRenderValue();
 }
@@ -1978,7 +1978,7 @@ function closeNumpad() {
   npState = null;
   closeModal('modal-numpad');
   if (!st) return;
-  // Trailing-Komma abschneiden ("62," → "62")
+  // Trailing-Punkt abschneiden ("62." → "62")
   let v = st.value.replace(',', '.');
   if (v.endsWith('.')) v = v.slice(0, -1);
   st.commit(v);
@@ -2115,9 +2115,10 @@ function celebratePR(name, weight, prev) {
   setTimeout(() => burst.remove(), 2200);
 }
 
+// Gewichtsangabe mit Punkt als Dezimaltrenner (Leonard-Wunsch, 20.08.2026) — deshalb
+// bewusst KEIN toLocaleString('de-DE'), das würde ein Komma setzen.
 function fmtKg(v) {
-  const n = Math.round(v * 100) / 100;
-  return String(n).replace('.', ',');
+  return String(Math.round(v * 100) / 100);
 }
 
 // Bestleistung als Bild sichern/teilen. Auf dem iPhone öffnet das das Teilen-Menü,
@@ -2816,9 +2817,13 @@ function setHistRange(days) {
   renderStatsPage();
 }
 
-function toggleVolumeUnit() {
-  volumeUnit = volumeUnit === 'kg' ? 'sets' : 'kg';
-  document.getElementById('vol-unit-label').textContent = volumeUnit === 'kg' ? 'Kg' : 'Sätze';
+// Kg oder Sätze — beide Möglichkeiten stehen nebeneinander, statt sich einen Knopf zu
+// teilen, der bei jedem Tipp umschlägt (Leonard-Wunsch, 20.08.2026).
+function setVolumeUnit(unit) {
+  volumeUnit = (unit === 'sets') ? 'sets' : 'kg';
+  document.querySelectorAll('#vol-unit-toggle .stats-mode-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.unit === volumeUnit);
+  });
   renderVolumeChart(filterWorkoutsByRange(DB.getWorkouts(), histRangeDays));
 }
 
@@ -2996,14 +3001,18 @@ function renderVolumeChart(ws) {
         c.font = '600 12px -apple-system, sans-serif';
         const w = c.measureText(txt).width + 14;
         const h = 22;
-        const x = last.x - w/2;
-        const y = last.y - h - 8;
+        // In die Zeichenfläche einpassen: Beim letzten Punkt liegt die Hälfte des Badges
+        // sonst außerhalb und wird am Kartenrand abgeschnitten (sichtbar ab „1 Jahr",
+        // wo der letzte Punkt ganz rechts sitzt).
+        const ca = chart.chartArea;
+        const x = Math.min(Math.max(last.x - w/2, ca.left), ca.right - w);
+        const y = Math.max(last.y - h - 8, 2);
         c.fillStyle = accent;
         c.beginPath(); c.roundRect(x, y, w, h, 6); c.fill();
         c.fillStyle = '#fff';
         c.textBaseline = 'middle';
         c.textAlign = 'center';
-        c.fillText(txt, last.x, y + h/2);
+        c.fillText(txt, x + w/2, y + h/2);   // Mitte des Kastens, nicht des Punktes
         c.restore();
       }
     }]
@@ -3454,7 +3463,7 @@ function showHistDetail(i, highlightExId) {
   document.getElementById('hist-detail-body').innerHTML =
     `<p style="color:var(--text3);font-size:13px;margin-bottom:14px">Dauer: ${fmtDur(w.duration)} • ${w.exercises.length} Übung${w.exercises.length===1?'':'en'}</p>` +
     blocks +
-    `<button class="btn btn-danger btn-full" style="margin-top:18px" onclick="deleteSession(${i})">🗑 Session löschen</button>`;
+    `<button class="btn btn-danger btn-full" style="margin-top:18px" onclick="deleteSession(${i})">🗑 Einheit löschen</button>`;
   openModal('modal-hist-detail');
 }
 
@@ -5013,6 +5022,9 @@ function toggleExPlanFilter() {
     showToast(getActivePlan() ? 'Im aktiven Plan sind keine Übungen hinterlegt.' : 'Es gibt gerade keinen aktiven Trainingsplan.');
     return;
   }
+  // Beim Filtern die Gruppen mit aufklappen — sonst bleibt die verkürzte Liste hinter
+  // zugeklappten Kopfzeilen verborgen und der Filter sieht wirkungslos aus.
+  if (exPlanFilterAn) collapsedExGroups.clear();
   renderExercises();
 }
 
