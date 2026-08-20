@@ -3435,6 +3435,36 @@ function showHistDetailForEx(exId, bestTs) {
   if (idx >= 0) showHistDetail(idx, exId);
 }
 
+// Schwerster Satz einer Übung innerhalb einer Einheit (0 = kein Gewicht eingetragen).
+function _maxGewicht(ex) {
+  const sets = Array.isArray(ex.sets) ? ex.sets : [];
+  return Math.max(0, ...sets.map(s => parseFloat(s.weight) || 0));
+}
+
+// Höchstgewicht derselben Übung in der letzten Einheit DAVOR. ws ist neueste-zuerst,
+// ältere Einheiten stehen also HINTER abIndex. null = die Übung war vorher nie dabei.
+function _maxDerVorherigenEinheit(ws, abIndex, exId) {
+  for (let k = abIndex + 1; k < ws.length; k++) {
+    const ex = (ws[k].exercises || []).find(e => (e.exId || e.id) === exId);
+    if (!ex) continue;
+    const m = _maxGewicht(ex);
+    if (m > 0) return m;
+  }
+  return null;
+}
+
+// Eine Zeile Einordnung: Wie steht der schwerste Satz zur letzten Einheit? Das ist die
+// Frage, für die man eine vergangene Einheit überhaupt aufmacht — die reinen Zahlen
+// stehen ohnehin darunter.
+function _fortschrittZeile(jetzt, vorher) {
+  if (!jetzt) return '';                                   // Körpergewichtsübung
+  if (vorher === null) return '<div class="hd-delta hd-delta-flat">erste Einheit mit dieser Übung</div>';
+  const d = Math.round((jetzt - vorher) * 100) / 100;
+  if (d > 0) return `<div class="hd-delta hd-delta-up">▲ +${fmtKg(d)} kg zur letzten Einheit</div>`;
+  if (d < 0) return `<div class="hd-delta hd-delta-down">▼ ${fmtKg(d)} kg zur letzten Einheit</div>`;
+  return '<div class="hd-delta hd-delta-flat">= gehalten</div>';
+}
+
 function showHistDetail(i, highlightExId) {
   const ws = DB.getWorkouts();
   const w = ws[i];
@@ -3442,27 +3472,49 @@ function showHistDetail(i, highlightExId) {
   const plan = DB.getPlan();
   const day = plan.find(d => d.id === w.planDayId);
   document.getElementById('hist-detail-title').textContent =
-    `${day ? day.name : (w.planDayName||'Freestyle')} — ${fmtDate(w.startTs)}`;
+    `${day ? day.name : (w.planDayName || 'Freies Training')} — ${fmtDate(w.startTs)}`;
 
   // PR-Marker pro Übung (gewichtsbasiert).
   const prByExId = {};
   (w.prs || []).forEach(p => { prByExId[p.exId] = p; });
 
-  const blocks = (w.exercises || []).map(ex => {
+  const uebungen = w.exercises || [];
+  const saetze = uebungen.reduce((n, ex) => n + (Array.isArray(ex.sets) ? ex.sets.length : 0), 0);
+  const kopf = `<div class="hd-stats">
+    <div class="hd-stat"><b>${fmtDur(w.duration)}</b><span>Dauer</span></div>
+    <div class="hd-stat"><b>${fmtVol(calcVolume(w))}</b><span>Volumen</span></div>
+    <div class="hd-stat"><b>${saetze}</b><span>Sätze</span></div>
+  </div>`;
+
+  const schritte = uebungen.map((ex, idx) => {
     const id = ex.exId || ex.id;
+    const exData = getEx(id);
+    const farbe = muscleColor(exData ? exData.muscle : 'chest');
     const pr = prByExId[id];
     const sets = Array.isArray(ex.sets) ? ex.sets : [];
-    const setsStr = sets.map((s,si) => `<div class="hist-set-row"><span>Satz ${si+1}:</span><span>${s.weight||'–'} kg × ${s.reps||'–'} Wdh.</span></div>`).join('');
-    const prChip = pr
-      ? `<span class="hist-pr-chip" style="background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;margin-left:8px">🏆 PR ${pr.weight} kg</span>`
-      : '';
-    const hervor = (highlightExId && id === highlightExId) ? ' hist-ex-block-hl' : '';
-    return `<div class="hist-ex-block${hervor}"><div class="hist-ex-title">${ex.name}${prChip}</div>${setsStr}${ex.notes?`<div style="font-size:12px;color:var(--text3);margin-top:4px">📝 ${ex.notes}</div>`:''}</div>`;
+    // Ohne Gewicht (Körpergewichtsübung) nur die Wiederholungen — „–×10" liest sich nicht.
+    const chips = sets.map(s => s.weight
+      ? `<span class="hd-chip">${s.weight}<i>×</i>${s.reps || '–'}</span>`
+      : `<span class="hd-chip">${s.reps || '–'}<i> Wdh.</i></span>`).join('');
+    const prChip = pr ? `<span class="hd-pr">🏆 PR ${pr.weight} kg</span>` : '';
+    const delta = _fortschrittZeile(_maxGewicht(ex), _maxDerVorherigenEinheit(ws, i, id));
+    // Die Umrandung sitzt auf dem Inhalt, nicht auf dem ganzen Schritt — sonst liefe sie
+    // um die Nummernscheibe herum, die links auf der Linie sitzt.
+    const hervor = (highlightExId && id === highlightExId) ? ' hd-step-hl' : '';
+    return `<div class="hd-step" style="--mc:${farbe}">
+      <div class="hd-step-num">${idx + 1}</div>
+      <div class="hd-step-body${hervor}">
+        <div class="hd-step-title">${ex.name}${prChip}</div>
+        ${delta}
+        <div class="hd-chips">${chips}</div>
+        ${ex.notes ? `<div class="hd-note">${ex.notes}</div>` : ''}
+      </div>
+    </div>`;
   }).join('');
 
   document.getElementById('hist-detail-body').innerHTML =
-    `<p style="color:var(--text3);font-size:13px;margin-bottom:14px">Dauer: ${fmtDur(w.duration)} • ${w.exercises.length} Übung${w.exercises.length===1?'':'en'}</p>` +
-    blocks +
+    kopf +
+    `<div class="hd-rail">${schritte}</div>` +
     `<button class="btn btn-danger btn-full" style="margin-top:18px" onclick="deleteSession(${i})">🗑 Einheit löschen</button>`;
   openModal('modal-hist-detail');
 }
@@ -3473,7 +3525,7 @@ function deleteSession(i) {
   if (!w) return;
   const plan = DB.getPlan();
   const day = plan.find(d => d.id === w.planDayId);
-  const dayName = day ? day.name : (w.planDayName || 'Freestyle');
+  const dayName = day ? day.name : (w.planDayName || 'Freies Training');
   const dateStr = fmtDate(w.startTs);
   // Erst hist-detail-Modal schließen, dann confirmAction öffnen (z-index/DOM-Order-Schutz)
   closeModal('modal-hist-detail');
