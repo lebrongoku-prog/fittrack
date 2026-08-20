@@ -2436,6 +2436,35 @@ function _woTimerText() {
   const wo = DB.getActive();
   return wo ? fmtTimer(Math.floor(getElapsedMs(wo) / 1000)) : '';
 }
+
+// Zeit in der Laufanzeige: Der Doppelpunkt steckt in einem eigenen Element und blinkt
+// im Sekundentakt — er ersetzt den früher dauerhaft pulsierenden Punkt.
+// ACHTUNG: Die Anzeige wird JEDE SEKUNDE aufgefrischt. Würde dabei das innerHTML neu
+// geschrieben, entstünde jedes Mal ein neues Element und die Blink-Animation begänne von
+// vorn — sichtbar als Stottern. Darum wird die Struktur nur bei einem Formatwechsel
+// (m:ss ↔ h:mm:ss) neu gebaut, sonst nur der Text der Ziffernfelder gesetzt.
+function _woTimerRender(el) {
+  const teile = _woTimerText().split(':');
+  if (el.children.length !== teile.length * 2 - 1) {
+    el.innerHTML = teile.map(() => '<span></span>').join('<span class="wab-colon">:</span>');
+  }
+  let i = 0;
+  for (const kind of el.children) {
+    if (!kind.classList.contains('wab-colon')) kind.textContent = teile[i++];
+  }
+}
+
+// Abgehakte Sätze der laufenden Einheit gegen die Gesamtzahl — die Pille zeigt damit
+// den Stand, ohne dass man in den Trainings-Tab wechseln muss.
+function _woSatzStand(wo) {
+  let gesamt = 0, fertig = 0;
+  (wo.exercises || []).forEach(ex => {
+    const sets = Array.isArray(ex.sets) ? ex.sets : [];
+    gesamt += sets.length;
+    fertig += sets.filter(s => s.done).length;
+  });
+  return gesamt ? `${fertig}/${gesamt}` : '';
+}
 function syncWorkoutActiveUI() {
   const wo = DB.getActive();
   const active = !!wo;
@@ -2443,7 +2472,9 @@ function syncWorkoutActiveUI() {
   // Läuft eine Einheit, blendet der Workouts-Tab den Wochenplan aus (Platz für die Sätze).
   document.documentElement.classList.toggle('wo-running', active && currentScreen === 'workouts');
   const barTimer = document.getElementById('wab-timer');
-  if (active && barTimer) barTimer.textContent = _woTimerText();
+  if (active && barTimer) _woTimerRender(barTimer);
+  const barSets = document.getElementById('wab-sets');
+  if (active && barSets) barSets.textContent = _woSatzStand(wo);
   const sbTimer = document.getElementById('wsb-timer');
   if (active && sbTimer) sbTimer.textContent = _woTimerText();
   const sbTitle = document.getElementById('wsb-title');

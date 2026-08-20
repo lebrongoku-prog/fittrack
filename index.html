@@ -513,10 +513,12 @@
 <!-- ══ BOTTOM NAV ══ -->
 <!-- Aktives-Workout-Mini-Leiste über der Bottom-Nav (app-weit, ausser auf dem Workouts-Tab). -->
 <div id="workout-active-bar" onclick="showScreen('workouts')">
-  <span class="wab-dot"></span>
-  <span class="wab-text">Einheit läuft</span>
-  <span id="wab-timer" class="wab-timer">0:00</span>
-  <span class="wab-chev">›</span>
+  <span class="wab-pill">
+    <span class="wab-dot"></span>
+    <span id="wab-timer" class="wab-timer">0:00</span>
+    <span id="wab-sets" class="wab-sets"></span>
+    <span class="wab-chev">›</span>
+  </span>
 </div>
 
 <nav id="bottom-nav">

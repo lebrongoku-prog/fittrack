@@ -176,27 +176,44 @@ body.theme-mehr #statusbar-scrim { opacity: 1; }
 html.workout-active #workout-glow { display: block; animation: wo-breathe 2.2s ease-in-out infinite; }
 
 /* (b) Mini-Leiste ueber der Bottom-Nav. */
+/* Laufanzeige = schwebende Pille statt vollem Streifen (Leonard-Entscheidung 20.08.2026).
+   Der Rahmen bleibt volle Breite und nimmt KEINE Tipps an (pointer-events:none) — nur die
+   Pille selbst ist antippbar, damit der Inhalt links und rechts bedienbar bleibt. */
 #workout-active-bar {
   position: fixed; left: 0; right: 0;
-  bottom: calc(var(--nav-h) + var(--safe-b));
-  height: 44px; z-index: 99;
-  display: none; align-items: center; justify-content: center; gap: 10px; padding: 0 18px;
-  background: #10B981; color: #fff;   /* feste Workouts-Akzentfarbe (Emerald) */
-  font-size: 14px; font-weight: 600;
-  box-shadow: 0 -3px 14px rgba(0,0,0,0.18);
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  bottom: calc(var(--nav-h) + var(--safe-b) + 10px);
+  z-index: 99;
+  display: none; align-items: center; justify-content: center;
+  pointer-events: none;
   transition: opacity 0.25s ease, transform 0.25s ease;
 }
 html.workout-active #workout-active-bar { display: flex; }
-/* Auf dem Workouts-Tab ist der aktive Block ohnehin sichtbar → Leiste dort ausblenden. */
+/* Auf dem Workouts-Tab ist der aktive Block ohnehin sichtbar → Pille dort ausblenden. */
 html.workout-active body.theme-workouts #workout-active-bar { display: none; }
-/* Mit der Bottom-Nav-Auto-Hide mit ausblenden (Klasse via initScrollHideNav gespiegelt). */
-/* Beim Runterscrollen NICHT verschwinden, sondern an den unteren Bildschirmrand wandern
-   (die Bottom-Nav gleitet weg, die Leiste rueckt um die Nav-Hoehe nach unten nach). */
+/* Mit der Bottom-Nav-Auto-Hide mitwandern (Klasse via initScrollHideNav gespiegelt):
+   Die Nav gleitet weg, die Pille rueckt um deren Hoehe nach — NICHT zusaetzlich um die
+   10px Abstand, sonst klebte sie auf Geraeten ohne Home-Indikator am Bildschirmrand. */
 #workout-active-bar.nav-hidden { transform: translateY(var(--nav-h)); }
-.wab-dot { width: 9px; height: 9px; border-radius: 50%; background: #fff; flex-shrink: 0; animation: wo-pulse 1.4s ease-in-out infinite; }
-.wab-timer { margin-left: 4px; font-variant-numeric: tabular-nums; opacity: 0.95; }
-.wab-chev { font-size: 22px; line-height: 1; opacity: 0.9; }
+.wab-pill {
+  pointer-events: auto;
+  display: inline-flex; align-items: center; gap: 8px;
+  max-width: calc(100% - 32px);
+  background: #10B981; color: #fff;   /* feste Workouts-Akzentfarbe (Emerald) */
+  border-radius: 999px; padding: 9px 15px;
+  font-size: 13.5px; font-weight: 700;
+  box-shadow: 0 8px 20px -7px rgba(16, 185, 129, 0.75), 0 2px 6px rgba(0,0,0,0.12);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.wab-pill:active { transform: scale(.97); }
+/* Punkt steht still — die Bewegung uebernimmt der Doppelpunkt der Uhr (Variante 2). */
+.wab-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; flex-shrink: 0; }
+.wab-timer { font-variant-numeric: tabular-nums; }
+/* Blinkt im Sekundentakt wie eine Stoppuhr: zeigt „laeuft" und die vergehende Zeit zugleich. */
+.wab-colon { animation: wab-blink 1s steps(1, end) infinite; }
+@keyframes wab-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.2; } }
+.wab-sets { font-weight: 500; opacity: 0.85; white-space: nowrap; }
+.wab-chev { font-size: 18px; line-height: 1; opacity: 0.9; }
+@media (prefers-reduced-motion: reduce) { .wab-colon { animation: none; } }
 
 /* ─── Satzpause (Countdown über der Bottom-Nav) ─── */
 #rest-bar {
@@ -209,7 +226,7 @@ html.workout-active body.theme-workouts #workout-active-bar { display: none; }
   overflow: hidden;
 }
 #rest-bar.show { display: block; }
-html.workout-active #rest-bar.show ~ #workout-active-bar { bottom: calc(var(--nav-h) + var(--safe-b) + 48px); }
+html.workout-active #rest-bar.show ~ #workout-active-bar { bottom: calc(var(--nav-h) + var(--safe-b) + 58px); }
 .rest-bar-fill {
   position: absolute; left: 0; top: 0; bottom: 0;
   background: rgba(255,255,255,0.16);
@@ -260,7 +277,7 @@ html.workout-active #rest-bar.show ~ #workout-active-bar { bottom: calc(var(--na
 .aex-v2.collapsed .aex-libday-actions { display: none; }
 
 /* Inhalt nicht hinter der Mini-Leiste verbergen (auf Workouts ist sie aus → normal). */
-html.workout-active .screen { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 56px); }
+html.workout-active .screen { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 54px); }
 html.workout-active body.theme-workouts #screen-workouts { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px); }
 
 @keyframes wo-pulse  { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.55); opacity: 0.45; } }
