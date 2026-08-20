@@ -7039,11 +7039,11 @@ function initScrollHideNav() {
       requestAnimationFrame(() => {
         const cur = screenEl.scrollTop;
         const delta = cur - _navLastScrollY;
-        if (cur < 60) {
-          setNavHidden(false);
-        } else if (Math.abs(delta) > 5) {
-          setNavHidden(delta > 0);
-        }
+        // Scrollen blendet die Nav nur noch AUS, nie wieder ein (Leonard-Entscheidung,
+        // 20.08.2026) — auch nicht am Seitenanfang. Zurück holt sie ausschließlich der
+        // Tipp auf eine nicht-interaktive Fläche. Die 60px-Grenze bleibt, damit ein
+        // kleiner Wisch ganz oben die Leiste nicht sofort wegnimmt.
+        if (cur >= 60 && delta > 5) setNavHidden(true);
         _navLastScrollY = cur;
         _navTickingByTab.set(tabName, false);
         if (tabName === 'workouts') checkStickyBar();
