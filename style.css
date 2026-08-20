@@ -1096,7 +1096,10 @@ html.wo-running #wo-week-card { display: none; }
 .hero-v2-btn-danger:active { transform: scale(.97); }
 
 /* Dumbbell SVG container – small accent halo on white card */
-.hero-v2-art { width: 92px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative; }
+/* Die Hantel ist quadratisch und bestimmt damit die Hoehe der oberen Zeile. Sie liegt
+   knapp unter dem Platzbedarf des Textes, damit oberhalb des Titels kein Leerraum
+   entsteht (Leonard-Wunsch 20.08.2026). */
+.hero-v2-art { width: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative; }
 .hero-v2-art .glow {
   position: absolute; inset: 8px; border-radius: 50%;
   background: radial-gradient(circle, var(--accent-bg) 0%, transparent 70%);
