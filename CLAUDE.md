@@ -173,6 +173,18 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   der einen Neustart überlebt, lässt den Katalog später unerklärlich leer wirken.
 - **Übungskatalog:** nur noch Gruppierung nach Muskelgruppen — Sortierung nach Trainingstagen samt Umschalter wurde entfernt.
 - **Übersicht:** Sicherungs-Status als Chip im Kopf neben dem Titel (`renderBackupLine` → `#ov-backup-line` in `.ph-right`, Klasse `.backup-chip`; kurze Texte wegen des knappen Platzes, ausführliche Fassung im `title`-Attribut), Hinweis vor Plan-Ende (`renderPlanEndNotice` + `extendActivePlan`), Wochenserie (`getWeekStreak` → `.ppv-streak`), Einstieg ins freie Training (`startFreeWorkout`, Einheit ohne `planDayId`).
+- **Laufanzeige waehrend einer Einheit** (`#workout-active-bar`, sichtbar nur AUSSERHALB des Workouts-Tabs):
+  schwebende Pille statt vollem Streifen (Leonard-Entscheidung 20.08.2026). Der Rahmen bleibt volle Breite, nimmt aber
+  keine Tipps an (`pointer-events:none`) — nur `.wab-pill` ist antippbar, damit der Inhalt daneben bedienbar bleibt.
+  Inhalt: ruhender Punkt, Zeit, Satzstand (`_woSatzStand`, abgehakte/gesamte Saetze), Pfeil.
+  Der frueher dauerhaft pulsierende Punkt ist ersetzt durch den **blinkenden Doppelpunkt der Uhr** (`.wab-colon`, 1 s).
+  ACHTUNG: `syncWorkoutActiveUI` laeuft JEDE SEKUNDE. `_woTimerRender` schreibt deshalb NICHT das innerHTML neu, sondern
+  nur den Text der Ziffernfelder — ein neu erzeugtes Element wuerde die Blink-Animation jede Sekunde neu starten.
+  Die Struktur wird nur bei einem Formatwechsel (m:ss <-> h:mm:ss) neu gebaut.
+  Positionen: normal `nav-h + safe-b + 10px`, mit laufender Satzpause `+58px`, bei ausgeblendeter Nav um `nav-h` nach unten
+  (bewusst NICHT zusaetzlich um die 10px, sonst klebt sie am Rand).
+- **Erledigt-Box der Uebungskarte** (`.aex-v2-done-box`) ist 40x40 wie die Satz-Haken (`.aex-v2-setcheck`) — gleiche Groesse,
+  gleicher Radius, gleiches Icon; beide werden mit feuchten Haenden getroffen.
 - **Wochenplan-Strips:** `.ppv-*` (Dashboard-Karte, `buildPlanCard(p, onTap, hideToday, hideStatus)`) + `.wp-col` (Workouts-Strip, `buildWpCol`). Zeigen NUR Wochentage, keine Tagnamen: geplant = Kreis in Akzentfarbe, erledigt = grüner Kreis + weißer Haken (`::before`), heute = Ring (`::after`). Im Workouts-Strip markiert `.selected` zusätzlich den angetippten Tag per Spalten-Hintergrund. Den vollen Tagnamen zeigen die Info-Zeile (`buildWpInfo`) bzw. die Session-Karte.
 - **Wochenplan in der Plan-Detailansicht:** `.wpe-list`/`.wpe-row` = eine Zeile pro Wochentag (nicht 7 Spalten), damit lange Tagnamen vollständig umbrechen können; unsichtbares `<select>`-Overlay pro Zeile weist den Tag zu.
 - **Löschen** = „Bearbeiten"-Modus (Kästchen auswählen → „Löschen (N)" → Sicherheits-Dialog) via `_delCtx`/`_delSel`/`buildDelEditList`; inline ✕ fragt ebenfalls nach. **Hinzufügen** = Multi-Select-Modals mit „Hinzufügen (N)".
