@@ -1357,11 +1357,21 @@ html.wo-running #wo-week-card { display: none; }
   font-size: 13px; color: var(--text3); font-weight: 500; flex-shrink: 0;
 }
 .aex-v2-done input { display: none; }
+/* Gleiche Größe und Optik wie der Satz-Haken (.aex-v2-setcheck) — beide markieren
+   dasselbe, nur auf unterschiedlicher Ebene, und beide werden mit feuchten Händen
+   getroffen. */
 .aex-v2-done-box {
-  width: 20px; height: 20px; border-radius: 6px; border: 1.8px solid var(--border);
-  background: #fff; display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 10px; border: 1.8px solid var(--border);
+  background: var(--card); display: flex; align-items: center; justify-content: center;
+  transition: background .12s, border-color .12s, transform .12s;
 }
+.aex-v2-done-box svg {
+  width: 17px; height: 17px; fill: none; stroke: var(--border);
+  stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
+}
+.aex-v2-done:active .aex-v2-done-box { transform: scale(.92); }
 .aex-v2-done.checked .aex-v2-done-box { background: var(--green); border-color: var(--green); }
+.aex-v2-done.checked .aex-v2-done-box svg { stroke: #fff; }
 .aex-v2-done.checked { color: var(--green); }
 
 .aex-v2-actions { display: flex; gap: 8px; padding: 8px 14px 12px; border-top: 1px solid var(--border); align-items: center; }

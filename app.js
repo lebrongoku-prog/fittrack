@@ -1838,7 +1838,7 @@ function renderActiveWorkout() {
         </div>
         <label class="aex-v2-done ${ex.done?'checked':''}" title="Ganze Übung als erledigt markieren">
           <input type="checkbox" aria-label="Ganze Übung als erledigt markieren" ${ex.done?'checked':''} onchange="toggleExDone(${ei},this.checked)">
-          <div class="aex-v2-done-box">${ex.done?'<svg width="12" height="12" viewBox="0 0 24 24" stroke="white" fill="none" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':''}</div>
+          <div class="aex-v2-done-box"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
         </label>
       </div>
       <div class="aex-v2-body">
