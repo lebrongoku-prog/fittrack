@@ -3492,9 +3492,10 @@ function showHistDetail(i, highlightExId) {
     const farbe = muscleColor(exData ? exData.muscle : 'chest');
     const pr = prByExId[id];
     const sets = Array.isArray(ex.sets) ? ex.sets : [];
-    // Ohne Gewicht (Körpergewichtsübung) nur die Wiederholungen — „–×10" liest sich nicht.
+    // Reihenfolge Wiederholungen × Gewicht — so wird der Satz gesprochen („8 mal 92 Kilo").
+    // Ohne Gewicht (Körpergewichtsübung) nur die Wiederholungen.
     const chips = sets.map(s => s.weight
-      ? `<span class="hd-chip">${s.weight}<i>×</i>${s.reps || '–'}</span>`
+      ? `<span class="hd-chip">${s.reps || '–'}<i>×</i>${s.weight}<i> kg</i></span>`
       : `<span class="hd-chip">${s.reps || '–'}<i> Wdh.</i></span>`).join('');
     const prChip = pr ? `<span class="hd-pr">🏆 PR ${pr.weight} kg</span>` : '';
     const delta = _fortschrittZeile(_maxGewicht(ex), _maxDerVorherigenEinheit(ws, i, id));
