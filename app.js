@@ -3252,6 +3252,10 @@ function renderTrainingCalendar(id, cardId) {
     cells += '</div>';
   }
   grid.innerHTML = cells;
+  // Mit den Zellen verschwindet die Markierung — die Tagesbeschreibung darf nicht
+  // stehenbleiben, sonst gehoert sie sichtbar zu keinem Tag mehr.
+  const detailEl = document.getElementById(id + '-detail');
+  if (detailEl) detailEl.innerHTML = '';
   const monthsEl = document.getElementById(id + '-months');
   if (monthsEl) monthsEl.innerHTML = months;
 
@@ -7077,12 +7081,11 @@ function initCalendarResize() {
 function initCalendarDeselect() {
   document.addEventListener('click', (e) => {
     if (e.target.closest && e.target.closest('.cal-scroll')) return;   // im Raster: Auswahl behalten
-    const sel = document.querySelectorAll('.cal-day.sel');
-    if (!sel.length) return;
-    sel.forEach(c => c.classList.remove('sel'));
-    document.querySelectorAll('.cal-detail').forEach(el => {
-      el.innerHTML = '';
-    });
+    // KEIN Vorab-Abbruch, wenn gerade keine Zelle markiert ist: Beim Neuzeichnen des
+    // Rasters verliert die Zelle ihr .sel, die Beschreibung darunter bleibt aber stehen.
+    // Ein Abbruch liess den Text dann fuer immer stehen.
+    document.querySelectorAll('.cal-day.sel').forEach(c => c.classList.remove('sel'));
+    document.querySelectorAll('.cal-detail').forEach(el => { el.innerHTML = ''; });
   });
 }
 
