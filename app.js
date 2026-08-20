@@ -4835,13 +4835,11 @@ function renderExercisesScreen() {
   const viewS = document.getElementById('ex-view-stats');
   if (viewL) viewL.style.display = stats ? 'none' : '';
   if (viewS) viewS.style.display = stats ? '' : 'none';
-  // Kopfzeilen-Knöpfe gehören zum Katalog, nicht zu den Auswertungen
-  ['ex-collapse-all-btn'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = stats ? 'none' : '';
-  });
-  const addBtn = document.querySelector('#screen-exercises .ex-add-btn');
-  if (addBtn) addBtn.style.display = stats ? 'none' : '';
+  // Kopfzeilen-Knöpfe gehören zum Katalog, nicht zu den Auswertungen. Sie werden
+  // unsichtbar geschaltet statt ausgeblendet — sonst schrumpft der Kopf um ihre Höhe
+  // und der Seitenwechsler springt beim Wechsel auf die Stats-Seite nach oben.
+  const kopfAktionen = document.getElementById('ex-head-actions');
+  if (kopfAktionen) kopfAktionen.style.visibility = stats ? 'hidden' : '';
   if (stats) renderStatsPage();
   else renderExercises();
 }

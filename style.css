@@ -2079,6 +2079,11 @@ html.wo-running #wo-week-card { display: none; }
 .ex-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .ex-chart-toggle .stats-mode-pill.active { background: var(--accent); color: #fff; }
 
+/* Knopfleiste rechts im Tab-Kopf (Übungen). Eigene Klasse statt Inline-Stil, damit die
+   Leiste auf der Stats-Seite per visibility ausgeblendet werden kann und ihre Höhe
+   den Kopf weiterhin stützt — sonst rutscht der Seitenwechsler nach oben. */
+.ph-actions { display: flex; gap: 8px; align-items: center; }
+
 /* ═══════════════════════════════════
    KEIN AUTO-ZOOM AUF EINGABEFELDERN
 ═══════════════════════════════════ */
