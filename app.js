@@ -7039,8 +7039,14 @@ function initScrollHideNav() {
   const nav = document.getElementById('bottom-nav');
   if (!nav) return;
   const bar = document.getElementById('workout-active-bar');
-  // Mini-Leiste mit der Nav zusammen aus-/einblenden.
-  const setNavHidden = (h) => { nav.classList.toggle('nav-hidden', h); if (bar) bar.classList.toggle('nav-hidden', h); };
+  const rest = document.getElementById('rest-bar');
+  // Laufanzeige UND Satzpause folgen der Nav: die Pille rueckt nach, die Pausenleiste
+  // nimmt bei ausgeblendeter Nav deren Platz ein.
+  const setNavHidden = (h) => {
+    nav.classList.toggle('nav-hidden', h);
+    if (bar) bar.classList.toggle('nav-hidden', h);
+    if (rest) rest.classList.toggle('nav-hidden', h);
+  };
   const _navTickingByTab = new Map();
 
   function attachToScreen(screenEl, tabName) {

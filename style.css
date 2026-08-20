@@ -216,25 +216,46 @@ html.workout-active body.theme-workouts #workout-active-bar { display: none; }
 @media (prefers-reduced-motion: reduce) { .wab-colon { animation: none; } }
 
 /* ─── Satzpause (Countdown über der Bottom-Nav) ─── */
+/* Satzpause: nimmt exakt die Geometrie der Bottom-Nav an — gleiche Breite, gleiche Hoehe,
+   gleiche Kante. Bei sichtbarer Nav sitzt sie buendig darueber, bei ausgeblendeter Nav
+   ruecken beide Werte auf deren Platz (Leonard-Wunsch 20.08.2026). */
 #rest-bar {
   position: fixed; left: 0; right: 0;
   bottom: calc(var(--nav-h) + var(--safe-b));
+  height: var(--nav-h);
   z-index: 100;
   display: none;
   background: #0F766E; color: #fff;
   box-shadow: 0 -3px 14px rgba(0,0,0,0.2);
   overflow: hidden;
+  /* Landscape: dasselbe Notch-Polster wie die Nav */
+  padding-left: max(var(--safe-l), var(--safe-r));
+  padding-right: max(var(--safe-l), var(--safe-r));
+  transition: bottom 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 #rest-bar.show { display: block; }
-html.workout-active #rest-bar.show ~ #workout-active-bar { bottom: calc(var(--nav-h) + var(--safe-b) + 58px); }
+/* Nav ausgeblendet: der Timer setzt sich an deren Stelle, inklusive Home-Indikator-Polster. */
+#rest-bar.nav-hidden {
+  bottom: 0;
+  height: calc(var(--nav-h) + var(--safe-b));
+  padding-bottom: var(--safe-b);
+}
+/* Die Pille steht IMMER ueber der Satzpause. Ein Wert genuegt fuer beide Nav-Zustaende:
+   bei ausgeblendeter Nav schiebt die eigene .nav-hidden-Verschiebung sie um genau die
+   Nav-Hoehe mit nach unten, der Abstand zur Pausenleiste bleibt derselbe. */
+html.workout-active #rest-bar.show ~ #workout-active-bar {
+  bottom: calc(var(--nav-h) * 2 + var(--safe-b) + 10px);
+}
 .rest-bar-fill {
   position: absolute; left: 0; top: 0; bottom: 0;
   background: rgba(255,255,255,0.16);
   transition: width .25s linear;
 }
+/* Inhaltszeile fuellt die Nav-Hoehe — die Knoepfe sitzen damit auf derselben Linie wie
+   die Nav-Eintraege darunter. */
 .rest-bar-inner {
-  position: relative; height: 48px;
-  display: flex; align-items: center; gap: 8px; padding: 0 12px;
+  position: relative; height: var(--nav-h);
+  display: flex; align-items: center; gap: 8px; padding: 0 14px;
 }
 .rest-bar-time { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; margin-right: auto; }
 .rest-bar-btn {
