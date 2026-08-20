@@ -391,7 +391,21 @@ function fmtDur(s) { if(!s)return'0 min'; const h=Math.floor(s/3600),m=Math.floo
 function pad(n) { return String(n).padStart(2,'0'); }
 function fmtDate(ts) { return new Date(ts).toLocaleDateString('de-DE',{weekday:'short',day:'numeric',month:'short',year:'numeric'}); }
 function fmtDateShort(ts) { return new Date(ts).toLocaleDateString('de-DE',{day:'numeric',month:'short'}); }
-function fmtNum(n) { return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(Math.round(n)); }
+// Volumenangaben ab einer Tonne in „t" — fünfstellige Kilogramm-Zahlen liest niemand.
+// Liefert den Wert MIT Einheit, weil die Einheit von der Größe abhängt.
+function fmtVol(kg) {
+  if (Math.abs(kg) < 1000) return Math.round(kg) + ' kg';
+  return (kg / 1000).toFixed(1).replace('.0', '').replace('.', ',') + ' t';
+}
+
+// Beschriftung der Volumen-Achse. Die Einheit gilt für die GANZE Achse (entschieden am
+// größten Wert) — gemischt stünde „500 kg" neben „1,5 t" und die Skala wäre unlesbar.
+function volAchsenWert(v, inTonnen) {
+  if (!v) return '0';
+  return inTonnen
+    ? (v / 1000).toFixed(1).replace('.0', '').replace('.', ',') + ' t'
+    : Math.round(v) + ' kg';
+}
 // Get current program week based on startDate of the ACTIVE plan (not editing context)
 function getProgramWeek() {
   const active = getActivePlan();
@@ -2700,7 +2714,7 @@ function renderWorkoutSummary(wo, prevWorkouts, setChanges) {
     if (prevVol > 0 && Math.abs(diff) >= 1) {
       const up = diff > 0;
       deltaHTML = `<div class="sum-delta ${up ? 'up' : 'down'}">
-        ${up ? '▲' : '▼'} ${fmtNum(Math.abs(diff))} kg Volumen gegenüber der letzten Einheit</div>`;
+        ${up ? '▲' : '▼'} ${fmtVol(Math.abs(diff))} Volumen gegenüber der letzten Einheit</div>`;
     } else if (prevVol > 0) {
       deltaHTML = `<div class="sum-delta flat">Gleiches Volumen wie bei der letzten Einheit</div>`;
     }
@@ -2745,7 +2759,7 @@ function renderWorkoutSummary(wo, prevWorkouts, setChanges) {
     <div class="sum-day">${pd(escapeHtml(wo.planDayName || 'Freies Training'))}</div>
     <div class="sum-stats">
       <div class="sum-stat"><span class="sum-stat-val">${fmtDur(wo.duration)}</span><span class="sum-stat-lbl">Dauer</span></div>
-      <div class="sum-stat"><span class="sum-stat-val">${fmtNum(vol)} kg</span><span class="sum-stat-lbl">Volumen</span></div>
+      <div class="sum-stat"><span class="sum-stat-val">${fmtVol(vol)}</span><span class="sum-stat-lbl">Volumen</span></div>
       <div class="sum-stat"><span class="sum-stat-val">${setCount}</span><span class="sum-stat-lbl">${setCount === 1 ? 'Satz' : 'Sätze'}</span></div>
       <div class="sum-stat"><span class="sum-stat-val">${exCount}</span><span class="sum-stat-lbl">${exCount === 1 ? 'Übung' : 'Übungen'}</span></div>
     </div>
@@ -2901,6 +2915,7 @@ function renderVolumeChart(ws) {
   const lastIdx = sortedKeys.length - 1;
   const ctx = canvas.getContext('2d');
   const isKg = volumeUnit === 'kg';
+  const achseInTonnen = isKg && sortedKeys.some(k => buckets[k].val >= 1000);
   // Read the current theme accent (so the chart matches the active tab)
   const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#0066ff';
   const accentRGB = (() => {
@@ -2934,6 +2949,11 @@ function renderVolumeChart(ws) {
     options: {
       responsive: true, maintainAspectRatio: false,
       animation: { duration: 600 },
+      // Tooltip an der ganzen Spalte auslösen, nicht nur exakt auf dem Punkt: Ein Tipp
+      // irgendwo unter dem Punkt (in der gefüllten Fläche) genügt. Auf dem Touchscreen
+      // ist der 5px-Punkt sonst kaum zu treffen.
+      interaction: { mode: 'index', intersect: false },
+
       // Top-Padding gibt dem Custom-Label-Plugin (lastPointLabel) Platz, damit das Badge
       // ueber dem letzten Punkt nicht am oberen Chart-Rand abgeschnitten wird.
       layout: { padding: { top: 28 } },
@@ -2943,7 +2963,7 @@ function renderVolumeChart(ws) {
           enabled: true,
           callbacks: {
             title: (items) => (items && items.length) ? (xTitles[items[0].dataIndex] || '') : '',
-            label: c => isKg ? (fmtNum(c.raw)+' kg') : (c.raw+' Sätze'),
+            label: c => isKg ? fmtVol(c.raw) : (c.raw+' Sätze'),
           }
         }
       },
@@ -2953,7 +2973,7 @@ function renderVolumeChart(ws) {
           // Reserve ~10% ueber dem Max-Wert, damit der letzte Punkt nicht direkt am Top liegt
           grace: '10%',
           grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
-          ticks: { callback: v => isKg ? fmtNum(v) : v, font:{size:11} }
+          ticks: { callback: v => isKg ? volAchsenWert(v, achseInTonnen) : v, font:{size:11} }
         },
         // Im Wochen-Modus sind viele Labels absichtlich leer (nur Monatswechsel beschriftet) —
         // dort darf Chart.js nichts wegskippen. Bei Tagen/Monaten schon, sonst überlappen
@@ -2970,7 +2990,7 @@ function renderVolumeChart(ws) {
         const last = meta.data[lastIdx];
         if (!last) return;
         const val = ds.data[lastIdx];
-        const txt = isKg ? (fmtNum(val)+' kg') : (val+' Sätze');
+        const txt = isKg ? fmtVol(val) : (val+' Sätze');
         const c = chart.ctx;
         c.save();
         c.font = '600 12px -apple-system, sans-serif';
@@ -3345,7 +3365,7 @@ function renderMuscleMap(vol, container) {
     return `<div class="mmap-legend-row${dim}">
       <span class="mmap-dot" style="background:${v ? muscleColor(m) : 'var(--border)'}"></span>
       <span class="mmap-legend-name">${muscleName(m)}</span>
-      <span class="mmap-legend-val">${v ? fmtNum(v) + ' kg' : '–'}</span>
+      <span class="mmap-legend-val">${v ? fmtVol(v) : '–'}</span>
     </div>`;
   }).join('');
   container.innerHTML = muscleMapSvg(vol, maxVol) + `<div class="mmap-legend">${legend}</div>`;
@@ -3385,7 +3405,7 @@ function prHTML(pr, number) {
     ? ` <span class="pr-v2-delta">(+${fmtKg(pr.weight - pr.prev)} kg)</span>` : '';
   // Einheit nur einmal nennen — sonst bricht die Zeile auf dem iPhone um
   const verlauf = pr.prev ? ` • ${fmtKg(pr.prev)} → ${fmtKg(pr.weight)} kg` : '';
-  return `<div class="pr-v2-row no-icon" style="--mc:${valColor};--mc-bg:${muscleBg(muscleKey)}" onclick="showHistDetailForEx('${pr.exId}')">
+  return `<div class="pr-v2-row no-icon" style="--mc:${valColor};--mc-bg:${muscleBg(muscleKey)}" onclick="showHistDetailForEx('${pr.exId}', ${pr.date || 0})">
     <div class="pr-v2-num">${num}</div>
     <div>
       <div class="pr-v2-name">${pr.name}</div>
@@ -3396,14 +3416,17 @@ function prHTML(pr, number) {
   </div>`;
 }
 
-function showHistDetailForEx(exId) {
-  // Find most recent workout containing this exercise
+// Öffnet die Einheit, in der die Bestleistung aufgestellt wurde (nicht die neueste mit
+// dieser Übung) — nur dann zeigt die hervorgehobene Übung auch wirklich den Bestwert.
+function showHistDetailForEx(exId, bestTs) {
   const ws = DB.getWorkouts();
-  const idx = ws.findIndex(w => w.exercises.some(e => (e.exId||e.id) === exId));
-  if (idx >= 0) showHistDetail(idx);
+  const hatUebung = w => w.exercises.some(e => (e.exId || e.id) === exId);
+  let idx = bestTs ? ws.findIndex(w => w.startTs === bestTs && hatUebung(w)) : -1;
+  if (idx < 0) idx = ws.findIndex(hatUebung);
+  if (idx >= 0) showHistDetail(idx, exId);
 }
 
-function showHistDetail(i) {
+function showHistDetail(i, highlightExId) {
   const ws = DB.getWorkouts();
   const w = ws[i];
   if (!w) return;
@@ -3424,7 +3447,8 @@ function showHistDetail(i) {
     const prChip = pr
       ? `<span class="hist-pr-chip" style="background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;margin-left:8px">🏆 PR ${pr.weight} kg</span>`
       : '';
-    return `<div class="hist-ex-block"><div class="hist-ex-title">${ex.name}${prChip}</div>${setsStr}${ex.notes?`<div style="font-size:12px;color:var(--text3);margin-top:4px">📝 ${ex.notes}</div>`:''}</div>`;
+    const hervor = (highlightExId && id === highlightExId) ? ' hist-ex-block-hl' : '';
+    return `<div class="hist-ex-block${hervor}"><div class="hist-ex-title">${ex.name}${prChip}</div>${setsStr}${ex.notes?`<div style="font-size:12px;color:var(--text3);margin-top:4px">📝 ${ex.notes}</div>`:''}</div>`;
   }).join('');
 
   document.getElementById('hist-detail-body').innerHTML =
@@ -4808,6 +4832,8 @@ function buildExItemHTML(ex, context) {
 
 function renderExercises() {
   // Alle-ein/ausklappen-Button: nur bei gruppierter Ansicht zeigen, Icon nach Zustand
+  const filterBtn = document.getElementById('ex-plan-filter-btn');
+  if (filterBtn) filterBtn.classList.toggle('active', exPlanFilterAn);
   const collBtn = document.getElementById('ex-collapse-all-btn');
   if (collBtn) {
     const keys = _currentExGroupKeys();
@@ -4946,6 +4972,7 @@ function _renderOpenExerciseChart() {
     },
     options: {
       responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: { callbacks: {
@@ -4967,8 +4994,33 @@ function _renderOpenExerciseChart() {
   });
 }
 
+// Katalog-Filter „nur aus dem aktiven Plan". Bewusst NICHT gespeichert: ein Filter, der
+// einen Neustart überlebt, lässt den Katalog später unerklärlich leer wirken.
+let exPlanFilterAn = false;
+
+// Übungs-IDs, die im aktiven Plan über irgendeinen Trainingstag vorkommen.
+function exIdsImAktivenPlan() {
+  const plan = getActivePlan();
+  const ids = new Set();
+  if (plan) plan.trainingDays.forEach(d => d.exercises.forEach(e => ids.add(e.exId)));
+  return ids;
+}
+
+function toggleExPlanFilter() {
+  exPlanFilterAn = !exPlanFilterAn;
+  if (exPlanFilterAn && !exIdsImAktivenPlan().size) {
+    exPlanFilterAn = false;
+    showToast(getActivePlan() ? 'Im aktiven Plan sind keine Übungen hinterlegt.' : 'Es gibt gerade keinen aktiven Trainingsplan.');
+    return;
+  }
+  renderExercises();
+}
+
 function renderExercisesByMuscle() {
-  const exs = DB.getExercises().filter(_exMatchesSearch);
+  const planIds = exPlanFilterAn ? exIdsImAktivenPlan() : null;
+  const exs = DB.getExercises()
+    .filter(_exMatchesSearch)
+    .filter(e => !planIds || planIds.has(e.id));
   const byMuscle = {};
   MUSCLE_ORDER.forEach(m => byMuscle[m] = []);
   exs.forEach(e => { if (byMuscle[e.muscle]) byMuscle[e.muscle].push(e); });
@@ -4990,9 +5042,11 @@ function renderExercisesByMuscle() {
     </div>`;
   }).filter(Boolean).join('');
 
-  document.getElementById('exercises-groups').innerHTML = groupsHTML || (exCatalogSearch
-    ? '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Keine Treffer.</p>'
-    : '<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">Keine Übungen vorhanden. Füge eine neue Übung hinzu.</p>');
+  const leerText = exCatalogSearch ? 'Keine Treffer.'
+    : exPlanFilterAn ? 'Keine Übung aus dem aktiven Plan gefunden.'
+    : 'Keine Übungen vorhanden. Füge eine neue Übung hinzu.';
+  document.getElementById('exercises-groups').innerHTML = groupsHTML
+    || `<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">${leerText}</p>`;
 }
 
 function toggleExItem(id) {

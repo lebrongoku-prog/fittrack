@@ -758,6 +758,12 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .form-input:focus { outline: none; border-color: var(--accent); }
 .form-select { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 16px; color: var(--text); width: 100%; -webkit-appearance: none; }.plan-ex-del { width: 28px; height: 28px; border-radius: 50%; background: var(--red-bg); color: var(--red); border: none; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }/* Workout history detail modal */
 .hist-ex-block { margin-bottom: 10px; }
+/* Über die PR-Liste geöffnet: die Übung, die den Bestwert hält, bekommt eine Umrandung
+   in der Akzentfarbe — sonst müsste man sie in der Liste aller Übungen suchen. */
+.hist-ex-block-hl {
+  border: 2px solid var(--accent); border-radius: 10px;
+  background: var(--accent-bg); padding: 10px 12px; margin: 0 -2px 12px;
+}
 .hist-ex-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
 .hist-set-row { display: flex; gap: 8px; font-size: 13px; color: var(--text2); margin-bottom: 3px; }
 
@@ -1176,13 +1182,16 @@ html.wo-running #wo-week-card { display: none; }
 .aex-v2-header { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 
 /* Chevron-Indikator im Card-Header (zeigt ein/aus-Klapp-Status) */
+/* Höhe = Höhe der Nummernscheibe rechts daneben. Der Kopf richtet oben aus
+   (align-items: flex-start), deshalb liegen die Mitten nur bei gleicher Höhe
+   auf einer Linie. */
 .aex-v2-chev {
-  width: 24px; height: 24px; flex-shrink: 0;
+  width: 32px; height: 32px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   color: var(--text3);
   transition: transform 0.18s ease;
 }
-.aex-v2-chev svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+.aex-v2-chev svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 2.4; }
 .aex-v2.collapsed .aex-v2-chev { transform: rotate(-90deg); }
 /* Zugeklappte Karte: Satz-Tabelle, Notizfeld und Aktionsleiste ausblenden — der Kopf bleibt. */
 .aex-v2.collapsed .aex-v2-body,
@@ -1395,6 +1404,21 @@ html.wo-running #wo-week-card { display: none; }
   box-shadow: var(--shadow); padding: 14px;
 }
 .chart-card-v2-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+/* Kleines „i" hinter einem Kartentitel, öffnet die Lesehilfe. margin-right:auto hält es
+   direkt am Titel — der Kopf verteilt seine Kinder sonst auf beide Ränder. */
+.info-btn {
+  width: 19px; height: 19px; flex-shrink: 0; margin-right: auto;
+  border: 1.5px solid var(--text3); border-radius: 50%; background: none;
+  color: var(--text3); font-size: 12px; font-weight: 700; line-height: 1;
+  font-family: Georgia, serif; cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.info-btn:active { border-color: var(--accent); color: var(--accent); }
+/* Fließtext in Erklär-Dialogen */
+.info-text { font-size: 13.5px; line-height: 1.55; color: var(--text2); }
+.info-text p { margin: 0 0 12px; }
+.info-text b { color: var(--text); }
 /* Kennzahl rechts im Kalenderkopf. Bricht bei schmalem Bildschirm als Ganzes um,
    statt sich zwischen die Buchstaben des Titels zu schieben. */
 .cal-stats { font-size: 12px; color: var(--text3); white-space: nowrap; margin-left: auto; }
@@ -1574,6 +1598,10 @@ html.wo-running #wo-week-card { display: none; }
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 .ex-sort-btn svg { width: 18px; height: 18px; stroke: var(--accent-dark); fill: none; stroke-width: 1.8; }
+/* Aktiver Filter „nur aus dem aktiven Plan": gefüllter Knopf, damit auf einen Blick
+   erkennbar ist, warum der Katalog verkürzt ist. */
+#ex-plan-filter-btn.active { background: var(--accent-dark); }
+#ex-plan-filter-btn.active svg { stroke: #fff; fill: #fff; }
 
 /* Alle-ein/ausklappen-Button: Icon nach Zustand (collapsed → „ausklappen", expanded → „einklappen") */
 #ex-collapse-all-btn .ex-coll-ic-collapse { display: none; }

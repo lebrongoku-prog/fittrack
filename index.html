@@ -134,6 +134,9 @@
         <h1>Übungen</h1>
       </div>
       <div class="ph-actions" id="ex-head-actions">
+        <div class="ex-sort-btn" id="ex-plan-filter-btn" onclick="toggleExPlanFilter()" title="Nur Übungen aus dem aktiven Trainingsplan">
+          <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        </div>
         <div class="ex-sort-btn" id="ex-collapse-all-btn" data-state="collapsed" onclick="toggleAllExGroups()" title="Alle ein-/ausklappen">
           <svg class="ex-coll-ic-expand" viewBox="0 0 24 24"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>
           <svg class="ex-coll-ic-collapse" viewBox="0 0 24 24"><polyline points="7 11 12 6 17 11"/><polyline points="7 18 12 13 17 18"/></svg>
@@ -180,6 +183,7 @@
       <div class="chart-card-v2 lg-col1">
         <div class="chart-card-v2-head">
           <span class="chart-card-v2-title" id="muscle-card-title">Volumen pro Muskelgruppe</span>
+          <button class="info-btn" onclick="openModal('modal-muscle-info')" aria-label="Wie ist diese Auswertung zu lesen?">i</button>
         </div>
         <div class="muscle-bars-v2" id="muscle-bars">
           <p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>
@@ -631,6 +635,37 @@
       <div class="hist-range-option" onclick="setHistRange(30)" data-value="30">Letzte 30 Tage</div>
       <div class="hist-range-option" onclick="setHistRange(90)" data-value="90">Letzte 90 Tage</div>
       <div class="hist-range-option" onclick="setHistRange(365)" data-value="365">Letztes Jahr</div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-muscle-info" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Volumen pro Muskelgruppe</div>
+    <div class="sheet-body">
+      <div class="info-text">
+        <p><b>Was gezählt wird.</b> Volumen ist Gewicht × Wiederholungen, aufaddiert über alle
+        Sätze. Drei Sätze mit 50 kg × 10 Wdh. ergeben 1500 kg. Sätze ohne Gewichtsangabe
+        (Körpergewichtsübungen) zählen mit 0 kg — sie tauchen hier also nicht auf.</p>
+
+        <p><b>Zuordnung.</b> Jede Übung zählt vollständig zu der Muskelgruppe, die im
+        Übungskatalog bei ihr hinterlegt ist. Es gibt keine Aufteilung auf mehrere Gruppen:
+        Bankdrücken geht komplett auf die Brust, obwohl der Trizeps mitarbeitet.</p>
+
+        <p><b>Die Silhouetten.</b> Je kräftiger eine Fläche eingefärbt ist, desto größer ihr
+        Anteil. Der Bezug ist immer die stärkste Gruppe im Zeitraum — die ist voll eingefärbt,
+        alle anderen im Verhältnis dazu. Die Farbtiefe zeigt also das Verhältnis der Gruppen
+        zueinander, keinen absoluten Wert.</p>
+
+        <p><b>Zeitraum.</b> Es gilt der Zeitraum, der oben in der Volumenentwicklung
+        eingestellt ist. Stellst du ihn dort um, ändert sich auch diese Auswertung.</p>
+
+        <p><b>Wozu.</b> Der Blick zeigt Schieflagen: Wenn eine Gruppe über Wochen blass bleibt,
+        kommt sie im Plan zu kurz. Ein Vergleich der Zahlen zwischen zwei Muskelgruppen sagt
+        dagegen wenig — Beinübungen bewegen naturgemäß mehr Gewicht als Armübungen.</p>
+      </div>
+      <button class="btn-primary" style="width:100%;margin-top:4px" onclick="closeModal('modal-muscle-info')">Verstanden</button>
     </div>
   </div>
 </div>
