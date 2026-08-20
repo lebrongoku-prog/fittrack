@@ -972,7 +972,7 @@ function renderRecentSessionsOnOverview() {
   const allDays = DB.getTrainingDays();
   container.innerHTML = ws.map((w, i) => {
     const day = allDays.find(d => d.id === w.planDayId);
-    const dayName = day ? day.name : (w.planDayName || 'Freestyle');
+    const dayName = day ? day.name : (w.planDayName || 'Freies Training');
     return `<div class="sess-v2-row" onclick="showHistDetail(${i})">
       <div class="sess-v2-info">
         <div class="sess-v2-name">${pd(dayName)}</div>
@@ -1324,7 +1324,7 @@ function _doStartWorkout(dayId) {
   // wurde der Wochentag über die Trainingstag-Kennung gesucht und traf bei einem Tag, der
   // zweimal pro Woche im Plan steht (z. B. Push an Mo und Sa), immer den ersten Treffer.
   const wo = {
-    id:'wo_'+Date.now(), planDayId: dayId, planDayName: day ? day.name : 'Freestyle',
+    id:'wo_'+Date.now(), planDayId: dayId, planDayName: day ? day.name : 'Freies Training',
     startTs: Date.now(), dayIdx: (new Date().getDay()+6) % 7, exercises,
   };
   DB.saveActive(wo);
@@ -3462,7 +3462,7 @@ function _fortschrittZeile(jetzt, vorher) {
   const d = Math.round((jetzt - vorher) * 100) / 100;
   if (d > 0) return `<div class="hd-delta hd-delta-up">▲ +${fmtKg(d)} kg zur letzten Einheit</div>`;
   if (d < 0) return `<div class="hd-delta hd-delta-down">▼ ${fmtKg(d)} kg zur letzten Einheit</div>`;
-  return '<div class="hd-delta hd-delta-flat">= gehalten</div>';
+  return '';   // gleich geblieben: keine Zeile (Leonard-Wunsch) — nur Veränderung ist eine Meldung wert
 }
 
 function showHistDetail(i, highlightExId) {

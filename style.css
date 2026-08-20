@@ -781,11 +781,13 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .hd-step-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .hd-pr { background: var(--accent-bg); color: var(--accent); padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
 /* Einordnung gegenüber der letzten Einheit derselben Übung. */
-.hd-delta { font-size: 11.5px; font-weight: 700; margin: 5px 0 5px; }
+/* Abstand liegt oben statt unten, damit die Chips auch dann sauber sitzen, wenn die
+   Zeile fehlt (Übung unverändert oder ohne Gewicht). */
+.hd-delta { font-size: 11.5px; font-weight: 700; margin: 5px 0 0; }
 .hd-delta-up   { color: var(--green); }
 .hd-delta-down { color: var(--text3); }
 .hd-delta-flat { color: var(--text3); font-weight: 600; }
-.hd-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.hd-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
 .hd-chip {
   background: var(--card2); border-radius: 7px; padding: 4px 8px;
   font-size: 12.5px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums;
