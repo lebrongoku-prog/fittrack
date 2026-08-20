@@ -850,7 +850,7 @@ function renderOverview() {
   const planCardEl = document.getElementById('ov-plan-card');
   if (planCardEl) {
     planCardEl.innerHTML = active
-      ? buildPlanCard(active, "showScreen('plans')", /*hideToday*/ false, /*hideStatus*/ true)
+      ? buildPlanCard(active, "showScreen('plans')", /*hideToday*/ false, /*hideStatus*/ true, /*hideMeta*/ true)
       : `<div class="plan-card-v2" onclick="showScreen('plans')" style="cursor:pointer">
            <div class="ppv-name" style="color:var(--text2)">Kein aktiver Trainingsplan</div>
            <div class="ppv-meta">Tippe, um einen Plan anzulegen oder zu aktivieren.</div>
@@ -1356,8 +1356,10 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
   const processedEx = active ? active.exercises.filter(e=>e.done || e.skipped).length : 0;
   // Ohne Trainingstag (freies Training) den Namen der Einheit anhängen statt nur den Wochentag.
   const titleSuffix = planDay ? escapeHtml(planDay.name) : (active && active.planDayName ? escapeHtml(active.planDayName) : '');
-  const title = `${dayFullName(selDay.dayKey)}${titleSuffix ? ' — ' + titleSuffix : ''}`;
-  const label = opts.label || (isPreview ? 'VORSCHAU' : 'LAUFENDE EINHEIT');
+  const title = `${dayFullName(selDay.dayKey)}${titleSuffix ? ': ' + titleSuffix : ''}`;
+  // Die Vorschau traegt kein Etikett mehr — „Vorschau" / „Naechste Einheit" sagte nichts,
+  // was der Titel nicht schon zeigt (Leonard-Wunsch 20.08.2026). Die laufende Einheit behaelt es.
+  const label = isPreview ? '' : (opts.label || 'LAUFENDE EINHEIT');
   const meta = `${exCount} Übungen • ${totalSets} Sätze`;
   const pct = !isPreview && active && active.exercises.length
     ? (processedEx / active.exercises.length * 100) : 0;
@@ -1389,7 +1391,7 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
 
   const topRow = `<div class="hero-v2-top">
     <div class="hero-v2-text">
-      <div class="hero-v2-label">${label}</div>
+      ${label ? `<div class="hero-v2-label">${label}</div>` : ''}
       ${titleBlock}
       ${isPreview ? metaPreview : metaActive}
     </div>
@@ -2231,7 +2233,7 @@ function showRestDone() {
   const bar = document.getElementById('rest-bar');
   if (!bar) return;
   bar.innerHTML = `
-    <div class="rest-bar-inner">
+    <div class="rest-bar-inner rest-bar-done-row">
       <span class="rest-bar-time">Pause vorbei</span>
       <button class="rest-bar-btn rest-bar-close" onclick="hideRestDone()" aria-label="Ausblenden">✕</button>
     </div>`;
@@ -3156,7 +3158,7 @@ function calendarInnerHTML(id) {
       </div>
     </div>
     <div class="cal-foot">
-      <div class="cal-detail" id="${id}-detail">Tippe ein K\u00e4stchen f\u00fcr den Tag</div>
+      <div class="cal-detail" id="${id}-detail"></div>
       <div class="cal-legend">
         <span><i class="k-planned"></i>geplant</span>
         <span><i class="k-planned k-core"></i>geplant und trainiert</span>
@@ -3359,12 +3361,16 @@ function showCalDay(key, id) {
   } else {
     txt = `<strong>${dateStr}</strong> · ${plan.known ? 'Ruhetag' : 'kein Training'}`;
   }
-  // Zweite Zeile: Stand des Plans, zu dem dieser Tag gehört
+  // Zweite Zeile: der Plan selbst mit Laufzeit. Dritte Zeile: sein Stand bis hierher.
   if (plan.plan) {
+    const wochen = planWochen(plan.plan);
+    const spanne = (plan.plan.startDate && plan.plan.endDate)
+      ? ` (${fmtDateRange(plan.plan.startDate, plan.plan.endDate)}${wochen ? `, ${wochen} Wochen` : ''})`
+      : '';
+    txt += `<div class="cal-detail-plan">${escapeHtml(plan.plan.name)}${spanne}</div>`;
     const q = planErfuellung(plan.plan);
     if (q) {
-      txt += `<div class="cal-detail-plan">${escapeHtml(plan.plan.name)}: `
-           + `${q.absolviert} von ${q.geplant} geplanten Einheiten (${q.prozent} %)</div>`;
+      txt += `<div class="cal-detail-plan">${q.absolviert} von ${q.geplant} geplanten Einheiten (${q.prozent}%)</div>`;
     }
   }
   el.innerHTML = txt;
@@ -3667,6 +3673,15 @@ function planStatus(p) {
 }
 const PLAN_STATUS_LABEL = { active: 'Aktuell', future: 'Zukunft', past: 'Beendet', archived: 'Archiviert' };
 
+// Laufzeit in Wochen. Faellt auf die Rechnung aus Start/Ende zurueck — aeltere Plaene
+// haben kein weeksTotal, sonst stuende dort „undefined Wochen".
+function planWochen(p) {
+  if (!p) return null;
+  if (p.weeksTotal) return p.weeksTotal;
+  if (!p.startDate || !p.endDate) return null;
+  return Math.max(1, Math.round((p.endDate - p.startDate) / (7 * 24 * 3600 * 1000)));
+}
+
 function fmtDateRange(start, end) {
   const fmt = (ts) => new Date(ts).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
   return `${fmt(start)} – ${fmt(end)}`;
@@ -3674,7 +3689,7 @@ function fmtDateRange(start, end) {
 
 // Dashboard-Karte eines Plans (Trainingsplan-Liste UND Übersicht-Tab). Reine Vorschau —
 // Tippen öffnet den Plan-Detail. Fortschritt/Adhärenz nur beim aktiven Plan (laufende Woche).
-function buildPlanCard(p, onTap, hideToday, hideStatus) {
+function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta) {
   const todayIdx = (new Date().getDay()+6) % 7;
   const status = planStatus(p);
   const isCurrent = status === 'active';
@@ -3718,7 +3733,7 @@ function buildPlanCard(p, onTap, hideToday, hideStatus) {
       <div class="ppv-name">${escapeHtml(p.name)}</div>
       ${hideStatus ? '' : `<span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>`}
     </div>
-    <div class="ppv-meta">${fmtDateRange(p.startDate, p.endDate)} · ${p.weeksTotal} Wochen</div>
+    ${hideMeta ? '' : `<div class="ppv-meta">${fmtDateRange(p.startDate, p.endDate)}${planWochen(p) ? ` · ${planWochen(p)} Wochen` : ''}</div>`}
     ${progress}
     <div class="ppv-strip">${strip}</div>
   </div>`;
@@ -3742,7 +3757,9 @@ function renderPlans() {
     else subEl.textContent = `${active.length} aktiv${archived.length ? ` • ${archived.length} archiviert` : ''}`;
   }
 
-  const renderRow = buildPlanCard;
+  // Nicht direkt an map() geben: das reicht (element, index, array) durch, der Index
+  // landete als onTap und erzeugte ab dem zweiten Plan ein totes onclick="1".
+  const renderRow = (p) => buildPlanCard(p, null, /*hideToday*/ true);
 
   let html = '';
   if (!active.length && !archived.length) {
@@ -7064,7 +7081,7 @@ function initCalendarDeselect() {
     if (!sel.length) return;
     sel.forEach(c => c.classList.remove('sel'));
     document.querySelectorAll('.cal-detail').forEach(el => {
-      el.innerHTML = 'Tippe ein K\u00e4stchen f\u00fcr den Tag';
+      el.innerHTML = '';
     });
   });
 }
