@@ -1652,8 +1652,10 @@ html.wo-running #wo-week-card { display: none; }
 .cal-band.archived { opacity: .5; }
 .cal-grid { position: relative; z-index: 1; }
 
-.cal-foot { padding: 10px 16px 12px; }
-.cal-detail { font-size: 12px; color: var(--text2); line-height: 1.4; margin-top: 10px; }
+/* Polster sitzt auf der Detailzeile, nicht auf dem Fuss: Ohne ausgewaehlten Tag ist die
+   Zeile ausgeblendet und der Kalender endet direkt unter dem Raster. */
+.cal-foot { padding: 0; }
+.cal-detail { font-size: 12px; color: var(--text2); line-height: 1.4; padding: 12px 16px 14px; }
 /* Ohne ausgewaehlten Tag ist die Zeile leer — dann darf sie auch keinen Platz belegen.
    (Frueher stand hier dauerhaft ein Hinweistext, der den Raum gefuellt hat.) */
 .cal-detail:empty { display: none; }
@@ -1661,7 +1663,13 @@ html.wo-running #wo-week-card { display: none; }
 .cal-detail-plan { margin-top: 3px; font-size: 12px; color: var(--text3); }
 /* Jede Legenden-Angabe ist ein eigener Flex-Block, sonst klebt der Text am Symbol und
    sitzt vertikal daneben. */
+/* Kopfzeile rechts: Kennzahl und das „i" fuer die Lesehilfe stehen zusammen. */
+.cal-head-right { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
+.cal-head-right .info-btn { margin-right: 0; }
+.cal-head-right .cal-stats { margin-left: 0; }
+/* Legende steht nur noch im Erklaer-Dialog, nicht mehr in der Karte. */
 .cal-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 11px; color: var(--text3); }
+.cal-legend-modal { gap: 10px 18px; margin: 14px 0 0; font-size: 12.5px; color: var(--text2); }
 .cal-legend > span { display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
 .cal-legend i { position: relative; flex: 0 0 13px; width: 13px; height: 13px; border-radius: 3px; display: inline-block; background: var(--border); }
 .cal-legend i.k-planned { background: #CDE7E1; }

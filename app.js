@@ -3155,7 +3155,10 @@ function _calPlanInfo(date, index) {
 function calendarInnerHTML(id) {
   return `<div class="chart-card-v2-head">
       <span class="chart-card-v2-title">Trainingskalender</span>
-      <span class="cal-stats" id="${id}-stats"></span>
+      <span class="cal-head-right">
+        <span class="cal-stats" id="${id}-stats"></span>
+        <button class="info-btn" onclick="openModal('modal-cal-info')" aria-label="Was bedeuten die Farben?">i</button>
+      </span>
     </div>
     <div class="cal-scroll" id="${id}-scroll">
       <div class="cal-inner">
@@ -3171,12 +3174,6 @@ function calendarInnerHTML(id) {
     </div>
     <div class="cal-foot">
       <div class="cal-detail" id="${id}-detail"></div>
-      <div class="cal-legend">
-        <span><i class="k-planned"></i>geplant</span>
-        <span><i class="k-planned k-core"></i>geplant und trainiert</span>
-        <span><i class="k-core"></i>zus\u00e4tzlich trainiert</span>
-        <span><i></i>Ruhetag</span>
-      </div>
     </div>`;
 }
 

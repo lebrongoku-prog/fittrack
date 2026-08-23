@@ -640,6 +640,37 @@
   </div>
 </div>
 
+<div id="modal-cal-info" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Trainingskalender lesen</div>
+    <div class="sheet-body">
+      <div class="info-text">
+        <p>Ein Kästchen ist ein Tag, eine Spalte eine Woche — von oben (Montag) nach unten (Sonntag).
+        Jedes Kästchen hat zwei Schichten: die <b>Fläche</b> sagt, ob laut Plan trainiert werden sollte,
+        der <b>Kern</b>, ob es tatsächlich stattgefunden hat.</p>
+      </div>
+      <div class="cal-legend cal-legend-modal">
+        <span><i class="k-planned"></i>geplant, nicht trainiert</span>
+        <span><i class="k-planned k-core"></i>geplant und trainiert</span>
+        <span><i class="k-core"></i>zusätzlich trainiert</span>
+        <span><i></i>Ruhetag</span>
+      </div>
+      <div class="info-text" style="margin-top:16px">
+        <p><b>Der Rahmen</b> umschließt die Wochen eines Trainingsplans. Liegen zwei Pläne nebeneinander,
+        siehst du an den Rahmen, wo der eine endet und der nächste beginnt; archivierte Pläne sind blasser.</p>
+
+        <p><b>Ein Tipp auf ein Kästchen</b> beschreibt den Tag unter dem Raster: was geplant war, was du
+        trainiert hast, und wie weit der zugehörige Plan zu diesem Zeitpunkt erfüllt war.</p>
+
+        <p>Gezeigt wird immer das laufende Kalenderjahr. Tage, die zu keinem Plan gehören, bleiben ohne
+        Fläche — dort war schlicht nichts vorgesehen.</p>
+      </div>
+      <button class="btn-primary" style="width:100%;margin-top:4px" onclick="closeModal('modal-cal-info')">Verstanden</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-muscle-info" class="overlay hidden">
   <div class="sheet">
     <div class="sheet-handle"></div>
