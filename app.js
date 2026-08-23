@@ -1344,6 +1344,15 @@ function heroDumbbellSvg() {
   </svg>`;
 }
 
+// Mittlere Dauer der bisher absolvierten Einheiten dieses Trainingstags. Vor der ersten
+// Einheit gibt es nichts zu mitteln — dann null, und die Herocard laesst die Angabe weg.
+function avgDauerFuerTag(planDayId) {
+  if (!planDayId) return null;
+  const ws = DB.getWorkouts().filter(w => w.planDayId === planDayId && w.duration > 0);
+  if (!ws.length) return null;
+  return Math.round(ws.reduce((summe, w) => summe + w.duration, 0) / ws.length);
+}
+
 function buildSessionCard(active, planDay, selDay, isPreview, opts) {
   opts = opts || {};
   const totalSets = active
@@ -1367,6 +1376,7 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
     ? `<div class="hero-v2-timer">${fmtTimer(Math.floor(getElapsedMs(active)/1000))}</div>`
     : '';
 
+  const avgDauer = planDay ? avgDauerFuerTag(planDay.id) : null;
   const metaPreview = `<div class="hero-v2-meta">
         <span style="display:inline-flex;gap:5px;align-items:center">
           <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
@@ -1375,6 +1385,9 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
         <span style="display:inline-flex;gap:5px;align-items:center">
           <svg viewBox="0 0 24 24"><polyline points="12 2 22 8 12 14 2 8 12 2"/><polyline points="2 12 12 18 22 12"/><polyline points="2 16 12 22 22 16"/></svg>
           ${totalSets} Sätze</span>
+        ${avgDauer ? `<span class="hero-v2-meta-avg">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+          Ø ${fmtDur(avgDauer)}</span>` : ''}
       </div>`;
 
   // Active-mode meta is more compact: progress label + thin bar replace the meta row
