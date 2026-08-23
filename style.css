@@ -1600,12 +1600,14 @@ html.wo-running #wo-week-card { display: none; }
 /* ─── Trainingskalender ─── */
 /* NUR waagerecht scrollen. `overflow-x: auto` allein genuegt nicht: Sobald eine Achse
    nicht mehr `visible` ist, macht der Browser aus der anderen ebenfalls `auto` — das
-   Raster liess sich dadurch senkrecht verschieben. */
-.cal-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding: 4px 16px 0; }
+   Raster liess sich dadurch senkrecht verschieben.
+   Das Polster oben UND unten muss den Ueberstand der Plan-Umrandung aufnehmen
+   (`.cal-band` reicht je 3px ueber das Raster hinaus). Fehlt es unten, schneidet
+   `overflow-y: hidden` deren untere Kante ab. */
+.cal-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding: 4px 16px; }
 .cal-scroll::-webkit-scrollbar { display: none; }
-/* vertical-align:top entfernt den Unterlaengen-Spalt, den ein inline-block sonst unter
-   sich laesst — der erzeugte 3px Ueberstand und damit ueberhaupt erst eine senkrechte
-   Scrollmoeglichkeit. */
+/* vertical-align:top vermeidet den Unterlaengen-Spalt, den ein inline-block sonst unter
+   sich laesst. */
 .cal-inner { display: inline-block; vertical-align: top; min-width: 100%; }
 .cal-months { display: flex; gap: 3px; margin-left: 22px; margin-bottom: 3px; }
 .cal-month { width: var(--cal-cell, 13px); flex: 0 0 var(--cal-cell, 13px); font-size: 9px; color: var(--text3); white-space: nowrap; }
