@@ -200,9 +200,12 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   statt eines Hintergrunds — sie muss auch das 16px-Polster des Scrollers und den 5px-Spalt zum Raster abdecken,
   sonst scrollen dort Kaestchen sichtbar durch. Ueber das Pseudo-Element geht das, ohne die `flex-basis: 17px` der
   Spalte und damit das Raster zu verschieben. Die Monatszeile darueber scrollt bewusst mit.
-  Das seitliche Polster des Kalenderbereichs steht in `--cal-pad-x` (:root, 1px). DREI Stellen haengen daran:
-  `.cal-scroll`, die Abdeckung der eingefrorenen Spalte und `.cal-detail` — beim Aendern nur die Variable anfassen,
-  sonst laufen Raster und Tagesbeschreibung auseinander.
+  Zwei Masse liegen als Variablen in `:root`, weil je drei Stellen daran haengen — beim Aendern NUR die Variable
+  anfassen, sonst laufen die Teile auseinander:
+  `--cal-pad-x` (1px, seitliches Polster) → `.cal-scroll`, Abdeckung der eingefrorenen Spalte, `.cal-detail`;
+  `--cal-label-gap` (3px, Abstand Wochentagsspalte ↔ Raster) → `.cal-body` gap, rechte Kante der Abdeckung
+  (muss GENAU den Spalt zudecken, sonst verdeckt sie die erste Rasterspalte), Einzug der Monatszeile
+  (`calc(17px + var(--cal-label-gap))`).
 - **Lesehilfe im Trainingskalender:** `.info-btn` neben der Kennzahl oben rechts (`.cal-head-right` fasst beide
   zusammen) oeffnet `#modal-cal-info`. Die Farb-Legende steht NUR dort, nicht mehr in der Karte — dadurch ist die
   Karte rund 100px flacher. Das Polster des Fussbereichs sitzt auf `.cal-detail`, damit die Karte ohne ausgewaehlten

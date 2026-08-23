@@ -1609,9 +1609,9 @@ html.wo-running #wo-week-card { display: none; }
 /* vertical-align:top vermeidet den Unterlaengen-Spalt, den ein inline-block sonst unter
    sich laesst. */
 .cal-inner { display: inline-block; vertical-align: top; min-width: 100%; }
-.cal-months { display: flex; gap: 3px; margin-left: 22px; margin-bottom: 3px; }
+.cal-months { display: flex; gap: 3px; margin-left: calc(17px + var(--cal-label-gap)); margin-bottom: 3px; }
 .cal-month { width: var(--cal-cell, 13px); flex: 0 0 var(--cal-cell, 13px); font-size: 9px; color: var(--text3); white-space: nowrap; }
-.cal-body { display: flex; gap: 5px; }
+.cal-body { display: flex; gap: var(--cal-label-gap); }
 /* Bleibt beim waagerechten Scrollen stehen. Braucht eine eigene Flaeche und eine hoehere
    Ebene als Raster (z-index:1) und Plan-Rahmen (z-index:0), sonst scrollen die Kaestchen
    sichtbar darunter durch. */
@@ -1624,7 +1624,7 @@ html.wo-running #wo-week-card { display: none; }
    dort Kaestchen sichtbar durch. Ueber ein Pseudo-Element geht das, ohne die Breite der
    Spalte (flex-basis 17px) und damit das Raster zu verschieben. */
 .cal-daylabels::before {
-  content: ''; position: absolute; top: 0; bottom: 0; left: calc(-1 * var(--cal-pad-x)); right: -5px;
+  content: ''; position: absolute; top: 0; bottom: 0; left: calc(-1 * var(--cal-pad-x)); right: calc(-1 * var(--cal-label-gap));
   background: var(--card); z-index: -1;
 }
 .cal-daylabels span { height: var(--cal-cell, 13px); font-size: 9px; line-height: var(--cal-cell, 13px); color: var(--text3); }
@@ -1646,6 +1646,10 @@ html.wo-running #wo-week-card { display: none; }
    der Scroller selbst, die Abdeckung der eingefrorenen Wochentagsspalte und die
    Tagesbeschreibung darunter — sonst laufen sie beim Aendern auseinander. */
 :root { --cal-pad-x: 1px; }
+/* Abstand zwischen der Wochentagsspalte und dem Raster. Ebenfalls eine Variable, weil
+   drei Stellen ihn brauchen: der Abstand selbst, die Abdeckung der eingefrorenen Spalte
+   (sie muss genau diesen Spalt zudecken, nicht mehr) und der Einzug der Monatszeile. */
+:root { --cal-label-gap: 3px; }
 .cal-day.done::before {
   content: ''; position: absolute; inset: 3px;
   border-radius: 2px; background: #0F766E;
