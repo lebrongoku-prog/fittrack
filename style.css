@@ -1547,7 +1547,14 @@ html.wo-running #wo-week-card { display: none; }
   padding: 14px 18px 12px;
   font-variant-numeric: tabular-nums;
 }
-#np-value { font-size: 40px; font-weight: 800; color: var(--text); letter-spacing: -1px; }
+/* KEIN negatives letter-spacing und eine feste Mindestbreite: Der Platzhalter fuer das
+   leere Feld ist ein Gedankenstrich „–", also selbst eine waagerechte Linie. Schrumpfte
+   die Box beim Wechsel auf die Ziffer, zeichnete iOS den Bereich unvollstaendig neu und
+   der Strich blieb quer durch die Zahl stehen. */
+#np-value {
+  font-size: 40px; font-weight: 800; color: var(--text);
+  display: inline-block; min-width: 42px; text-align: center;
+}
 .np-unit { font-size: 16px; font-weight: 700; color: var(--text3); }
 .np-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; padding: 0 14px 12px; }
 .np-quick-btn {
@@ -1629,18 +1636,6 @@ html.wo-running #wo-week-card { display: none; }
 }
 .cal-band.archived { opacity: .5; }
 .cal-grid { position: relative; z-index: 1; }
-
-.cal-plans { position: relative; height: 15px; margin: 6px 0 0 22px; }
-.cal-plan-label {
-  position: absolute; top: 0;
-  color: var(--cal-plan-color);
-  font-size: 10px; font-weight: 700; letter-spacing: .2px; line-height: 15px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  padding-left: 3px;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
-.cal-plan-label.archived { opacity: .55; }
-.cal-plan-label:active { opacity: .7; }
 
 .cal-foot { padding: 10px 16px 12px; }
 .cal-detail { font-size: 12px; color: var(--text2); line-height: 1.4; margin-top: 10px; }

@@ -3167,7 +3167,6 @@ function calendarInnerHTML(id) {
             <div class="cal-grid" id="${id}-grid"></div>
           </div>
         </div>
-        <div class="cal-plans" id="${id}-plans"></div>
       </div>
     </div>
     <div class="cal-foot">
@@ -3300,9 +3299,8 @@ function renderTrainingCalendar(id, cardId) {
 
   // Plan-Laufzeiten: je eine senkrechte Linie am Anfang und am Ende, der Name darunter.
   // Bewusst KEIN gefuellter Balken — das Raster soll die Hauptsache bleiben.
-  const plansEl = document.getElementById(id + '-plans');
   const bandsEl = document.getElementById(id + '-bands');
-  if (plansEl && bandsEl) {
+  if (bandsEl) {
     // Spalte NICHT über Millisekunden-Division bestimmen: Zwischen Winter- und Sommerzeit
     // fehlt eine Stunde, wodurch ein Datum genau auf einer Wochengrenze in die Vorwoche
     // rutschte (die Startlinie stand eine Woche zu früh). Über ganze Tage gerundet stimmt es.
@@ -3317,28 +3315,21 @@ function renderTrainingCalendar(id, cardId) {
       .filter(p => p && p.startDate && p.startDate <= rasterEnde.getTime() && (p.endDate || Infinity) >= start.getTime())
       .sort((a, b) => a.startDate - b.startDate);
 
-    let bands = '', labels = '';
+    // Umrandung um die Wochenspalten des Zeitraums — ohne Füllung, damit die Kästchen
+    // ungestört bleiben. Farbe: --cal-plan-color in style.css. Eine Beschriftung mit dem
+    // Plannamen gibt es nicht mehr (Leonard-Wunsch 20.08.2026) — der Name steht beim
+    // Antippen eines Tages in der Beschreibung darunter.
+    let bands = '';
     sichtbar.forEach((p) => {
       const von = Math.max(0, spalteFuer(p.startDate));
       const bis = Math.min(wochen - 1, spalteFuer(p.endDate || rasterEnde.getTime()));
       if (bis < von) return;
       const cls = p.archived ? ' archived' : '';
-      const zeitraum = fmtDateRange(p.startDate, p.endDate);
-      // Umrandung um die Wochenspalten des Zeitraums — ohne Füllung, damit die Kästchen
-      // ungestört bleiben. Farbe: --cal-plan-color in style.css.
       const links = von * SPALTE - 2;
       const breite = (bis - von + 1) * SPALTE - 3 + 4;
       bands += `<span class="cal-band${cls}" style="left:${links}px;width:${breite}px"></span>`;
-
-      const laenge = (bis - von + 1) * SPALTE - 4;
-      labels += `<span class="cal-plan-label${cls}" style="left:${von * SPALTE}px;max-width:${Math.max(laenge, 54)}px"
-                       onclick="openPlanDetail('${p.id}')" role="button"
-                       title="${escapeHtml(p.name)} · ${zeitraum}">${escapeHtml(p.name)}</span>`;
     });
     bandsEl.innerHTML = bands;
-    plansEl.innerHTML = labels;
-    plansEl.style.width = (wochen * SPALTE) + 'px';
-    plansEl.style.display = labels ? '' : 'none';
   }
 
   // Zur laufenden Woche scrollen (nicht ans Jahresende — der Dezember ist noch leer).
@@ -3381,9 +3372,7 @@ function showCalDay(key, id) {
   // Zweite Zeile: der Plan selbst mit Laufzeit. Dritte Zeile: sein Stand bis hierher.
   if (plan.plan) {
     const wochen = planWochen(plan.plan);
-    const spanne = (plan.plan.startDate && plan.plan.endDate)
-      ? ` (${fmtDateRange(plan.plan.startDate, plan.plan.endDate)}${wochen ? `, ${wochen} Wochen` : ''})`
-      : '';
+    const spanne = wochen ? ` (${wochen} Wochen)` : '';
     txt += `<div class="cal-detail-plan">${escapeHtml(plan.plan.name)}${spanne}</div>`;
     const q = planErfuellung(plan.plan);
     if (q) {
