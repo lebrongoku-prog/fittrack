@@ -195,6 +195,11 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   sonst stünde „500 kg" neben „1,5 t". Der frühere `fmtNum` („2.8k") ist damit entfallen.
 - **Diagramm-Tooltips** (Volumenentwicklung und Verlauf je Übung) laufen auf `interaction: { mode:'index', intersect:false }` —
   ein Tipp irgendwo in der Spalte unter dem Punkt genügt. Ohne das musste der 5px-Punkt exakt getroffen werden.
+- **Wochentagsspalte im Kalender ist eingefroren:** `.cal-daylabels` ist `position: sticky; left: 0` mit `z-index: 2`
+  (ueber Raster `z-index:1` und Plan-Rahmen `z-index:0`). Die Flaeche malt ein `::before` mit `left:-16px; right:-5px`
+  statt eines Hintergrunds — sie muss auch das 16px-Polster des Scrollers und den 5px-Spalt zum Raster abdecken,
+  sonst scrollen dort Kaestchen sichtbar durch. Ueber das Pseudo-Element geht das, ohne die `flex-basis: 17px` der
+  Spalte und damit das Raster zu verschieben. Die Monatszeile darueber scrollt bewusst mit.
 - **Lesehilfe im Trainingskalender:** `.info-btn` neben der Kennzahl oben rechts (`.cal-head-right` fasst beide
   zusammen) oeffnet `#modal-cal-info`. Die Farb-Legende steht NUR dort, nicht mehr in der Karte — dadurch ist die
   Karte rund 100px flacher. Das Polster des Fussbereichs sitzt auf `.cal-detail`, damit die Karte ohne ausgewaehlten

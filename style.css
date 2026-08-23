@@ -1612,7 +1612,21 @@ html.wo-running #wo-week-card { display: none; }
 .cal-months { display: flex; gap: 3px; margin-left: 22px; margin-bottom: 3px; }
 .cal-month { width: var(--cal-cell, 13px); flex: 0 0 var(--cal-cell, 13px); font-size: 9px; color: var(--text3); white-space: nowrap; }
 .cal-body { display: flex; gap: 5px; }
-.cal-daylabels { display: flex; flex-direction: column; gap: 3px; flex: 0 0 17px; }
+/* Bleibt beim waagerechten Scrollen stehen. Braucht eine eigene Flaeche und eine hoehere
+   Ebene als Raster (z-index:1) und Plan-Rahmen (z-index:0), sonst scrollen die Kaestchen
+   sichtbar darunter durch. */
+.cal-daylabels {
+  display: flex; flex-direction: column; gap: 3px; flex: 0 0 17px;
+  position: sticky; left: 0; z-index: 2;
+}
+/* Die Flaeche wird per Pseudo-Element gemalt statt als Hintergrund: Sie muss auch das
+   16px-Polster des Scrollers links UND den 5px-Spalt zum Raster abdecken, sonst scrollen
+   dort Kaestchen sichtbar durch. Ueber ein Pseudo-Element geht das, ohne die Breite der
+   Spalte (flex-basis 17px) und damit das Raster zu verschieben. */
+.cal-daylabels::before {
+  content: ''; position: absolute; top: 0; bottom: 0; left: -16px; right: -5px;
+  background: var(--card); z-index: -1;
+}
 .cal-daylabels span { height: var(--cal-cell, 13px); font-size: 9px; line-height: var(--cal-cell, 13px); color: var(--text3); }
 .cal-grid { display: flex; gap: 3px; }
 .cal-week { display: flex; flex-direction: column; gap: 3px; }
