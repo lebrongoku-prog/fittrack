@@ -1604,7 +1604,7 @@ html.wo-running #wo-week-card { display: none; }
    Das Polster oben UND unten muss den Ueberstand der Plan-Umrandung aufnehmen
    (`.cal-band` reicht je 3px ueber das Raster hinaus). Fehlt es unten, schneidet
    `overflow-y: hidden` deren untere Kante ab. */
-.cal-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding: 4px 16px; }
+.cal-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding: 4px var(--cal-pad-x); }
 .cal-scroll::-webkit-scrollbar { display: none; }
 /* vertical-align:top vermeidet den Unterlaengen-Spalt, den ein inline-block sonst unter
    sich laesst. */
@@ -1624,7 +1624,7 @@ html.wo-running #wo-week-card { display: none; }
    dort Kaestchen sichtbar durch. Ueber ein Pseudo-Element geht das, ohne die Breite der
    Spalte (flex-basis 17px) und damit das Raster zu verschieben. */
 .cal-daylabels::before {
-  content: ''; position: absolute; top: 0; bottom: 0; left: -16px; right: -5px;
+  content: ''; position: absolute; top: 0; bottom: 0; left: calc(-1 * var(--cal-pad-x)); right: -5px;
   background: var(--card); z-index: -1;
 }
 .cal-daylabels span { height: var(--cal-cell, 13px); font-size: 9px; line-height: var(--cal-cell, 13px); color: var(--text3); }
@@ -1642,6 +1642,10 @@ html.wo-running #wo-week-card { display: none; }
 .cal-day.planned { background: #CDE7E1; }
 /* Rahmen + Beschriftung der Plan-Zeiträume — dasselbe Grün wie die trainierten Kerne. */
 .cal-scroll { --cal-plan-color: #0F766E; }
+/* Seitliches Polster des Kalenderbereichs. Als Variable, weil drei Stellen ihn brauchen:
+   der Scroller selbst, die Abdeckung der eingefrorenen Wochentagsspalte und die
+   Tagesbeschreibung darunter — sonst laufen sie beim Aendern auseinander. */
+:root { --cal-pad-x: 1px; }
 .cal-day.done::before {
   content: ''; position: absolute; inset: 3px;
   border-radius: 2px; background: #0F766E;
@@ -1669,7 +1673,7 @@ html.wo-running #wo-week-card { display: none; }
 /* Polster sitzt auf der Detailzeile, nicht auf dem Fuss: Ohne ausgewaehlten Tag ist die
    Zeile ausgeblendet und der Kalender endet direkt unter dem Raster. */
 .cal-foot { padding: 0; }
-.cal-detail { font-size: 12px; color: var(--text2); line-height: 1.4; padding: 12px 16px 14px; }
+.cal-detail { font-size: 12px; color: var(--text2); line-height: 1.4; padding: 12px var(--cal-pad-x) 14px; }
 /* Ohne ausgewaehlten Tag ist die Zeile leer — dann darf sie auch keinen Platz belegen.
    (Frueher stand hier dauerhaft ein Hinweistext, der den Raum gefuellt hat.) */
 .cal-detail:empty { display: none; }
