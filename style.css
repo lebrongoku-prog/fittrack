@@ -1637,7 +1637,9 @@ html.wo-running #wo-week-card { display: none; }
    dort Kaestchen sichtbar durch. Ueber ein Pseudo-Element geht das, ohne die Breite der
    Spalte (flex-basis 17px) und damit das Raster zu verschieben. */
 .cal-daylabels::before {
-  content: ''; position: absolute; top: 0; bottom: 0; left: calc(-1 * var(--cal-pad-x)); right: calc(-1 * var(--cal-label-gap));
+  content: ''; position: absolute;
+  top: calc(-1 * var(--cal-band-over)); bottom: calc(-1 * var(--cal-band-over));
+  left: calc(-1 * var(--cal-pad-x)); right: calc(-1 * var(--cal-label-gap));
   background: var(--card); z-index: -1;
 }
 .cal-daylabels span { height: var(--cal-cell, 16px); font-size: 11px; line-height: var(--cal-cell, 16px); color: var(--text3); }
@@ -1667,6 +1669,10 @@ html.wo-running #wo-week-card { display: none; }
    der Monatszeile. ACHTUNG: renderTrainingCalendar rechnet mit demselben Wert (+ Abstand)
    den freien Platz aus — beim Aendern dort mit anpassen. */
 :root { --cal-label-w: 20px; }
+/* Ueberstand der Plan-Umrandung ueber das Raster (oben wie unten). Die Abdeckung der
+   eingefrorenen Wochentagsspalte muss GENAU so weit reichen, sonst schaut die Umrandung
+   beim Scrollen ober- und unterhalb der Spalte hervor. */
+:root { --cal-band-over: 3px; }
 .cal-day.done::before {
   content: ''; position: absolute; inset: 3px;
   border-radius: 2px; background: #0F766E;
@@ -1687,7 +1693,7 @@ html.wo-running #wo-week-card { display: none; }
    (geplant/trainiert) unverändert lesbar bleiben. Liegt unter dem Raster. */
 .cal-bands { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
 .cal-band {
-  position: absolute; top: -3px; bottom: -3px;
+  position: absolute; top: calc(-1 * var(--cal-band-over)); bottom: calc(-1 * var(--cal-band-over));
   border: 1.5px solid var(--cal-plan-color); border-radius: 5px;
   box-sizing: border-box;
 }

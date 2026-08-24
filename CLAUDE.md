@@ -218,6 +218,8 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   `--cal-pad-x` (1px, seitliches Polster) → `.cal-scroll`, Abdeckung der eingefrorenen Spalte, `.cal-detail`;
   `--cal-label-w` (20px, Breite der Wochentagsspalte) → `.cal-daylabels`, Einzug der Monatszeile UND die
   Platzrechnung in `renderTrainingCalendar` (dort als Zahl 23 = Breite + Abstand);
+  `--cal-band-over` (3px, Ueberstand der Plan-Umrandung ueber das Raster) → `.cal-band` top/bottom UND die
+  obere/untere Kante der Abdeckung — sonst schaut die Umrandung beim Scrollen ueber und unter der Spalte hervor;
   `--cal-label-gap` (3px, Abstand Wochentagsspalte ↔ Raster) → `.cal-body` gap, rechte Kante der Abdeckung
   (muss GENAU den Spalt zudecken, sonst verdeckt sie die erste Rasterspalte), Einzug der Monatszeile
   (`calc(17px + var(--cal-label-gap))`).
