@@ -1677,12 +1677,16 @@ html.wo-running #wo-week-card { display: none; }
 /* Polster sitzt auf der Detailzeile, nicht auf dem Fuss: Ohne ausgewaehlten Tag ist die
    Zeile ausgeblendet und der Kalender endet direkt unter dem Raster. */
 .cal-foot { padding: 0; }
-.cal-detail { font-size: 12px; color: var(--text2); line-height: 1.4; padding: 12px var(--cal-pad-x) 14px; }
+/* Kein Polster nach unten: Der Abstand zum Kartenrand kommt allein aus der Karte selbst,
+   damit er mit und ohne eingeblendete Beschreibung gleich gross ausfaellt. */
+.cal-detail { font-size: 12px; color: var(--text2); line-height: 1.4; padding: 12px var(--cal-pad-x) 0; }
 /* Ohne ausgewaehlten Tag ist die Zeile leer — dann darf sie auch keinen Platz belegen.
    (Frueher stand hier dauerhaft ein Hinweistext, der den Raum gefuellt hat.) */
 .cal-detail:empty { display: none; }
 .cal-detail strong { color: var(--text); font-weight: 600; }
 .cal-detail-plan { margin-top: 3px; font-size: 12px; color: var(--text3); }
+/* „(zur Einheit)" — der einzige antippbare Teil der Beschreibung. */
+.cal-detail-link { color: var(--accent); font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 /* Jede Legenden-Angabe ist ein eigener Flex-Block, sonst klebt der Text am Symbol und
    sitzt vertikal daneben. */
 /* Kopfzeile rechts: Kennzahl und das „i" fuer die Lesehilfe stehen zusammen. */

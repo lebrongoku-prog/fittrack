@@ -867,7 +867,6 @@ function renderOverview() {
   renderTrainingCalendar();
 
   // ─ Letzte Einheiten (kompakt, 3 jüngste) ─
-  renderRecentSessionsOnOverview();
 
 }
 
@@ -956,7 +955,9 @@ function maybePromptBackup() {
   }, 900);
 }
 
-function renderRecentSessionsOnOverview() {
+// Die drei letzten Einheiten als Einstieg in die Detailansicht. Steht seit dem
+// 20.08.2026 auf der Stats-Seite des Uebungen-Tabs, nicht mehr auf der Uebersicht.
+function renderRecentSessions() {
   const container = document.getElementById('ov-recent-sessions-list');
   if (!container) return;
   const ws = DB.getWorkouts()
@@ -2928,7 +2929,10 @@ function renderStatsPage() {
     else volEl.innerHTML = '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>';
   }
 
-  // ── Karte 3: PR-Liste ──
+  // ── Karte 3: Letzte Einheiten ──
+  renderRecentSessions();
+
+  // ── Karte 4: PR-Liste ──
   const prEl = document.getElementById('hist-pr-list');
   if (prEl) {
     const prs = getAllPRs();
@@ -3356,7 +3360,14 @@ function showCalDay(key, id) {
   const plan = _calPlanInfo(new Date(y, m-1, d), _calPlanIndex());
   let txt;
   if (entry) {
-    txt = `<strong>${dateStr}</strong> · ${entry.names.join(', ')}`;
+    // An diesem Tag wurde trainiert → direkter Weg in die Detailansicht der Einheit.
+    // getWorkouts() ist neueste-zuerst; bei mehreren Einheiten am selben Tag oeffnet
+    // der Verweis die zuletzt begonnene.
+    const woIdx = DB.getWorkouts().findIndex(w => _dayKeyOf(w.startTs) === key);
+    const link = woIdx >= 0
+      ? ` <a class="cal-detail-link" onclick="event.stopPropagation();showHistDetail(${woIdx})">(zur Einheit)</a>`
+      : '';
+    txt = `<strong>${dateStr}</strong>: ${entry.names.join(', ')}${link}`;
     if (plan.known && !plan.planned) txt += ' · zusätzlich trainiert';
   } else if (plan.planned) {
     const heute = new Date(); heute.setHours(0,0,0,0);
