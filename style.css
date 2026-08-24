@@ -835,13 +835,23 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .hd-delta-up   { color: var(--green); }
 .hd-delta-down { color: var(--text3); }
 .hd-delta-flat { color: var(--text3); font-weight: 600; }
-.hd-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+/* Aufbau wie in der aufgeklappten Uebungskarte: links die Saetze untereinander,
+   rechts die Notiz. Unter 460px untereinander — genau wie `.aex-v2-body`. */
+.hd-cols { display: flex; gap: 12px; align-items: flex-start; margin-top: 5px; }
+.hd-chips { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; flex: 0 0 auto; }
 .hd-chip {
   background: var(--card2); border-radius: 7px; padding: 4px 8px;
   font-size: 12.5px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums;
 }
 .hd-chip i { font-style: normal; color: var(--text3); font-weight: 600; }
-.hd-note { margin-top: 8px; font-size: 12px; color: var(--text3); }
+.hd-note {
+  flex: 1; min-width: 0; font-size: 12px; color: var(--text3); line-height: 1.45;
+  background: var(--card2); border-radius: 10px; padding: 10px 12px;
+}
+@media (max-width: 460px) {
+  .hd-cols { flex-direction: column; gap: 8px; }
+  .hd-note { width: 100%; }
+}
 /* Über die PR-Liste geöffnet: die Übung, die den Bestwert hält, wird umrandet — sonst
    müsste man sie in der Liste aller Übungen suchen. Die Umrandung sitzt auf dem Inhalt,
    damit sie nicht um die Nummernscheibe auf der Linie herumläuft. */
@@ -2164,9 +2174,15 @@ html.wo-running #wo-week-card { display: none; }
     grid-template-columns: 1fr 1fr;
     column-gap: 0;
     align-items: start;
+    /* Ohne align-content verteilt das Grid die uebrige Bildschirmhoehe auf die Zeilen —
+       zwischen den Karten klafften dadurch ~100px Leerraum. */
+    align-content: start;
   }
-  #screen-overview.active > .ph,
-  #screen-overview.active > #ov-hero-wrap { grid-column: 1 / -1; }
+  #screen-overview.active > .ph { grid-column: 1 / -1; }
+  /* Wochenplan und Herocard teilen sich die erste Zeile zu gleichen Teilen — die Herocard
+     spannte vorher ueber beide Spalten (Leonard-Wunsch 20.08.2026). Spalte folgt der
+     DOM-Reihenfolge: Wochenplan links, Herocard rechts. */
+  #screen-overview.active > #ov-hero-wrap { grid-column: 2; }
   /* Der Plan-Ende-Hinweis ist meistens leer, belegte als Grid-Element aber trotzdem eine
      Zelle in Spalte 2 — dadurch rutschte „Letzte Einheiten" eine Zeile nach unten und stand
      versetzt neben der Plan-Karte. Leer = raus aus dem Grid, sonst unter die Plan-Karte. */
@@ -2193,10 +2209,15 @@ html.wo-running #wo-week-card { display: none; }
     min-width: 100px;
   }
 
-  /* WORKOUTS — Übungs-Liste 2-spaltig */
+  /* WORKOUTS — Übungs-Liste 2-spaltig, SPALTENWEISE gefuellt (1-2-3-4 links, 5-6-7-8
+     rechts) statt zeilenweise (1-3-5-7 links). Dafuer braucht das Grid die Zeilenzahl:
+     `--ex-rows` wird beim Rendern als Inline-Variable gesetzt (ceil(Anzahl/2)) und ist
+     im Hochformat wirkungslos, weil dort kein Grid aktiv ist. */
   #active-ex-list {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(var(--ex-rows, 1), auto);
+    grid-auto-flow: column;
     column-gap: 12px;
     align-items: start;
   }
@@ -2223,6 +2244,7 @@ html.wo-running #wo-week-card { display: none; }
     grid-template-columns: 1fr 1fr;
     column-gap: 0;
     align-items: start;
+    align-content: start;
     grid-auto-flow: dense;
   }
   #screen-mehr.active > .ph { grid-column: 1 / -1; }

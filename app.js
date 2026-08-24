@@ -1640,12 +1640,20 @@ function renderWorkoutsScreen() {
   checkStickyBar();
 }
 
+// Zeilenzahl fuer die zweispaltige Uebungsliste im Querformat. Das Grid fuellt
+// spaltenweise; ohne diesen Wert wuesste es nicht, wo die erste Spalte endet.
+// Im Hochformat ohne Wirkung, dort ist die Liste kein Grid.
+function _setzeUebungsSpalten(container, anzahl) {
+  if (container) container.style.setProperty('--ex-rows', Math.max(1, Math.ceil(anzahl / 2)));
+}
+
 function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-ex-list') {
   // (Mini-Kacheln im Workouts-Tab wurden entfernt)
   if (mode !== 'libday') document.getElementById('ex-tab-bar').innerHTML = '';
 
   // Cards (read-only target view). mode='libday' rendert dieselben Cards für einen
   // Bibliotheks-Trainingstag in den Container `containerId` (Drag&Drop/Add routen zum Lib-Tag).
+  _setzeUebungsSpalten(document.getElementById(containerId), planDay.exercises.length);
   document.getElementById(containerId).innerHTML = planDay.exercises.map((pe, ei) => {
     const ex = getEx(pe.exId);
     if (!ex) return '';
@@ -1779,6 +1787,7 @@ function renderActiveWorkout() {
   ensureActiveExpanded(wo);
 
   // Exercise cards
+  _setzeUebungsSpalten(document.getElementById('active-ex-list'), wo.exercises.length);
   document.getElementById('active-ex-list').innerHTML = wo.exercises.map((ex, ei) => {
     const col = colorForExercise(ex);
     const last = getLastExData(ex.exId || ex.id);
@@ -3592,8 +3601,10 @@ function showHistDetail(i, highlightExId) {
       <div class="hd-step-body${hervor}">
         <div class="hd-step-title">${ex.name}${prChip}</div>
         ${delta}
-        <div class="hd-chips">${chips}</div>
-        ${ex.notes ? `<div class="hd-note">${ex.notes}</div>` : ''}
+        <div class="hd-cols">
+          <div class="hd-chips">${chips}</div>
+          ${ex.notes ? `<div class="hd-note">${ex.notes}</div>` : ''}
+        </div>
       </div>
     </div>`;
   }).join('');
