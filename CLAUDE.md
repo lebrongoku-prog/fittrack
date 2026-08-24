@@ -138,7 +138,10 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Der Plaene-Tab nutzt sie ueber den Alias `renderRow` — der muss eine Lambda bleiben (`p => buildPlanCard(p, ...)`),
   denn `array.map(buildPlanCard)` reicht (element, index, array) durch: Der Index landete als `onTap` und erzeugte
   ab der zweiten Karte ein totes `onclick="1"` (Fehler gefunden und behoben 20.08.2026).
-  `hideMeta` blendet die Laufzeitzeile aus — nur die Uebersicht setzt es, im Plaene-Tab bleibt sie stehen.
+  `hideMeta` blendet die Laufzeitzeile aus. Der LAUFENDE Plan wird in beiden Tabs identisch gezeichnet
+  (ohne Laufzeit, ohne Status-Chip); archivierte und kommende Plaene behalten beides, sonst waeren mehrere
+  Karten untereinander nicht unterscheidbar (Leonard-Entscheidung 20.08.2026). Unterschiedlich bleibt nur der
+  Tipp: Uebersicht → `showScreen('plans')`, Plaene-Tab → `openPlanDetail(p.id)`.
 - **Trainingskalender** (Übersicht, `#ov-cal-card`): `renderTrainingCalendar()` zeichnet 52 Wochen à 7 Kästchen (`.cal-day`).
   KEINE Volumen-Abstufung — zwei Schichten: Fläche (`.planned`) = laut damaligem Plan vorgesehen, Kern (`.done::before`) = tatsächlich trainiert.
   `_calPlanIndex()`/`_calPlanInfo()` rekonstruieren den Plan je Datum aus `startDate`/`endDate`/`weekPlan` ALLER Pläne (auch archivierter — die behalten ihren Wochenplan);
@@ -158,7 +161,7 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   (`--cal-plan-color` auf `.cal-scroll`, dasselbe Grün wie die trainierten Kerne) — die Farbe liegt im CSS, nicht im JS.
   ACHTUNG Zeitzone: Die Spalte eines Datums wird über GANZE TAGE gerechnet (`spalteFuer`, `Math.round` auf Tagesdifferenz), nicht über Millisekunden-Division —
   zwischen Winter- und Sommerzeit fehlt sonst eine Stunde und ein Datum genau auf der Wochengrenze landet eine Woche zu früh.
-  Die Kästchengröße ist dynamisch: `renderTrainingCalendar` misst die freie Breite und verkleinert die Zelle von 13px bis minimal 10px,
+  Die Kästchengröße ist dynamisch: `renderTrainingCalendar` misst die freie Breite und verkleinert die Zelle von 16px bis minimal 13px,
   wenn das Jahr sonst knapp nicht passt (Querformat). Gesetzt wird sie als CSS-Variable `--cal-cell` auf der Karte; `SPALTE` (Zelle + 3px Abstand)
   steuert Plan-Balken und Scrollposition. `initCalendarResize()` rechnet beim Drehen neu, `initCalendarDeselect()` hebt die Tagesauswahl auf,
   sobald außerhalb von `.cal-scroll` getippt wird.
@@ -213,6 +216,8 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Zwei Masse liegen als Variablen in `:root`, weil je drei Stellen daran haengen — beim Aendern NUR die Variable
   anfassen, sonst laufen die Teile auseinander:
   `--cal-pad-x` (1px, seitliches Polster) → `.cal-scroll`, Abdeckung der eingefrorenen Spalte, `.cal-detail`;
+  `--cal-label-w` (20px, Breite der Wochentagsspalte) → `.cal-daylabels`, Einzug der Monatszeile UND die
+  Platzrechnung in `renderTrainingCalendar` (dort als Zahl 23 = Breite + Abstand);
   `--cal-label-gap` (3px, Abstand Wochentagsspalte ↔ Raster) → `.cal-body` gap, rechte Kante der Abdeckung
   (muss GENAU den Spalt zudecken, sonst verdeckt sie die erste Rasterspalte), Einzug der Monatszeile
   (`calc(17px + var(--cal-label-gap))`).
