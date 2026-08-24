@@ -1674,8 +1674,11 @@ html.wo-running #wo-week-card { display: none; }
 .cal-day.future { opacity: .45; }
 /* Rand-Tage der ersten/letzten Woche, die noch ins Vor- bzw. Folgejahr fallen */
 .cal-day.outside { opacity: .25; pointer-events: none; }
-.cal-day.today { box-shadow: 0 0 0 1.5px var(--accent); }
-.cal-day.sel   { box-shadow: 0 0 0 1.5px var(--text); }
+/* Ringe INNEN zeichnen (inset). Aussen ragten sie 1,5px ueber das Kaestchen hinaus — in
+   der ersten Spalte lag das genau unter der eingefrorenen Wochentagsspalte, deren
+   Abdeckung den linken Bogen verschluckte. */
+.cal-day.today { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.cal-day.sel   { box-shadow: inset 0 0 0 1.5px var(--text); }
 /* Plan-Laufzeiten: senkrechte Linie an Anfang und Ende, Name darunter. Beide liegen
    absolut auf Positionen, die das JS in Vielfachen der Spaltenbreite (--cal-cell + 3px)
    rechnet. Der Versatz links entspricht den Tages-Labels. */
