@@ -3293,12 +3293,15 @@ function renderTrainingCalendar(id, cardId) {
   // Kaestchengroesse an die verfuegbare Breite anpassen: im Querformat fehlten sonst wenige
   // Pixel und das ganze Jahr musste trotzdem gescrollt werden. Kleiner als 10px wird nicht
   // gegangen — dann bleibt es bei 13px und scrollt (Hochformat).
-  const CAL_GAP = 3, CAL_CELL_DEFAULT = 13, CAL_CELL_MIN = 10;
+  // 16/13 statt frueher 13/10 — rund ein Viertel groesser (Leonard-Wunsch 20.08.2026).
+  // Ganze Pixel, damit die Kaestchenkanten scharf bleiben.
+  const CAL_GAP = 3, CAL_CELL_DEFAULT = 16, CAL_CELL_MIN = 13;
   const scrollerEl = document.getElementById(id + '-scroll');
   let zelle = CAL_CELL_DEFAULT;
   if (scrollerEl && scrollerEl.clientWidth > 0) {
     const cs = getComputedStyle(scrollerEl);
-    const frei = scrollerEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 22;
+    // 23 = Breite der Wochentagsspalte (--cal-label-w) + Abstand (--cal-label-gap).
+    const frei = scrollerEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 23;
     const passt = (z) => wochen * (z + CAL_GAP) <= frei;
     if (!passt(CAL_CELL_DEFAULT)) {
       for (let z = CAL_CELL_DEFAULT - 1; z >= CAL_CELL_MIN; z--) { if (passt(z)) { zelle = z; break; } }
@@ -3784,7 +3787,14 @@ function renderPlans() {
 
   // Nicht direkt an map() geben: das reicht (element, index, array) durch, der Index
   // landete als onTap und erzeugte ab dem zweiten Plan ein totes onclick="1".
-  const renderRow = (p) => buildPlanCard(p, null, /*hideToday*/ true);
+  // Der laufende Plan wird EXAKT wie in der Uebersicht gezeichnet (ohne Laufzeitzeile und
+  // ohne Status-Chip). Alle anderen behalten beides — sonst waeren mehrere Karten
+  // untereinander nicht mehr auseinanderzuhalten (Leonard-Entscheidung 20.08.2026).
+  // Der Tipp bleibt unterschiedlich: hier fuehrt er in die Bearbeitung (Standard-onTap),
+  // in der Uebersicht auf diesen Tab.
+  const renderRow = (p) => planStatus(p) === 'active'
+    ? buildPlanCard(p, null, /*hideToday*/ false, /*hideStatus*/ true, /*hideMeta*/ true)
+    : buildPlanCard(p, null, /*hideToday*/ true);
 
   let html = '';
   if (!active.length && !archived.length) {
