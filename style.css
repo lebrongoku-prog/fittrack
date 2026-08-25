@@ -2332,7 +2332,10 @@ html.wo-running #wo-week-card { display: none; }
 /* „Alle ein-/ausklappen": rechtsbuendig unter der Saetze-Kachel, auf Hoehe des ersten
    Uebungstitels. Absolut, damit es die Zeitleiste nicht nach unten schiebt. */
 .hd-toggle-all {
-  position: absolute; top: 0; right: 0;
+  /* z-index NOETIG: Die `.hd-step`s sind ebenfalls positioniert (fuer die Nummernscheibe)
+     und stehen im Markup NACH dem Knopf — ohne eigene Ebene liegt der erste Uebungstitel
+     darueber und schluckt den Tipp. */
+  position: absolute; top: 0; right: 0; z-index: 1;
   background: none; border: none; padding: 0; font-family: inherit;
   font-size: 11.5px; font-weight: 700; color: var(--accent);
   cursor: pointer; -webkit-tap-highlight-color: transparent;

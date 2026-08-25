@@ -179,7 +179,11 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   gezeichnet — beim Aufklappen NOETIG, weil ein verstecktes Canvas keine Breite hat und Chart.js sonst die
   alten Masse behaelt. Der Knopf „Alle ein-/ausklappen" sitzt absolut im `.hd-rail` (top/right 0), damit er
   rechtsbuendig unter der Saetze-Kachel und auf Hoehe des ersten Uebungstitels steht, ohne die Zeitleiste
-  nach unten zu schieben.
+  nach unten zu schieben. Er braucht dabei zwingend ein `z-index`: Die `.hd-step`s sind fuer die Nummernscheibe
+  ebenfalls positioniert und stehen im Markup NACH dem Knopf — ohne eigene Ebene liegt der erste Uebungstitel
+  darueber und schluckt den Tipp (gefunden 25.08.2026).
+  TESTHINWEIS: `btn.click()` umgeht die Trefferpruefung und haette das nicht gezeigt — bei absolut
+  positionierten Bedienelementen immer mit `document.elementFromPoint` pruefen, wer an der Stelle wirklich liegt.
 - **Detailansicht einer Uebung** (`#modal-ex-detail`, `openExDetail(exId)`): Bestleistung, letzte Ausfuehrung und
   Entwicklung — dieselben Bausteine wie die aufgeklappte Katalogkarte, weil beide `exStatsHTML(exId)` und
   `exChartHTML(exId, canvasId)` nutzen. Erreichbar ueber „Details" ueber dem Notizfeld JEDER aufgeklappten
