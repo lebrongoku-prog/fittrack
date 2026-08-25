@@ -847,8 +847,11 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   font-size: 12.5px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums;
 }
 .hd-chip i { font-style: normal; color: var(--text3); font-weight: 600; }
+/* Rechte Spalte: Notiz (falls vorhanden) und darunter das Verlaufsdiagramm. Ohne Notiz
+   beginnt das Diagramm genau dort, wo sonst die Notiz staende. */
+.hd-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .hd-note {
-  flex: 1; min-width: 0; font-size: 12px; color: var(--text3); line-height: 1.45;
+  font-size: 12px; color: var(--text3); line-height: 1.45;
   background: var(--card2); border-radius: 10px; padding: 10px 12px;
 }
 @media (max-width: 460px) {
@@ -2312,6 +2315,29 @@ html.wo-running #wo-week-card { display: none; }
   transition: color .15s, background .15s;
 }
 .ex-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+/* Einklappbare Ueberschrift des Diagramms (Einheiten-Detailansicht). */
+.ex-chart-collapse {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: none; border: none; padding: 0; font: inherit; color: inherit;
+  text-transform: inherit; letter-spacing: inherit;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.ex-chart-chev { display: inline-block; transition: transform .15s ease; font-size: 10px; }
+.ex-chart-block.collapsed .ex-chart-chev { transform: rotate(-90deg); }
+.ex-chart-block.collapsed .ex-chart-body { display: none; }
+.ex-chart-block.collapsed .ex-chart-head { margin-bottom: 0; }
+/* In der Einheiten-Detailansicht ist der Platz schmaler als im Katalog. */
+#hist-detail-body .ex-chart-wrap { height: 120px; margin: 2px 0 0; }
+#hist-detail-body .ex-chart-empty { margin-bottom: 0; }
+/* „Alle ein-/ausklappen": rechtsbuendig unter der Saetze-Kachel, auf Hoehe des ersten
+   Uebungstitels. Absolut, damit es die Zeitleiste nicht nach unten schiebt. */
+.hd-toggle-all {
+  position: absolute; top: 0; right: 0;
+  background: none; border: none; padding: 0; font-family: inherit;
+  font-size: 11.5px; font-weight: 700; color: var(--accent);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.hd-toggle-all:active { opacity: .6; }
 .ex-chart-toggle .stats-mode-pill.active,
 .vol-unit-toggle .stats-mode-pill.active { background: var(--accent); color: #fff; }
 

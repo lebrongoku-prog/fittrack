@@ -3612,7 +3612,10 @@ function showHistDetail(i, highlightExId) {
         ${delta}
         <div class="hd-cols">
           <div class="hd-chips">${chips}</div>
-          ${ex.notes ? `<div class="hd-note">${ex.notes}</div>` : ''}
+          <div class="hd-right">
+            ${ex.notes ? `<div class="hd-note">${ex.notes}</div>` : ''}
+            ${exChartHTML(id, `hd-chart-${idx}`, { collapsible: true })}
+          </div>
         </div>
       </div>
     </div>`;
@@ -3620,9 +3623,46 @@ function showHistDetail(i, highlightExId) {
 
   document.getElementById('hist-detail-body').innerHTML =
     kopf +
-    `<div class="hd-rail">${schritte}</div>` +
+    `<div class="hd-rail">
+       <button class="hd-toggle-all" id="hd-toggle-all" onclick="toggleAllHdCharts()">Alle einklappen</button>
+       ${schritte}
+     </div>` +
     `<button class="btn btn-danger btn-full" style="margin-top:18px" onclick="deleteSession(${i})">🗑 Einheit löschen</button>`;
   openModal('modal-hist-detail');
+  _renderHdCharts();
+}
+
+// ── Verlaufsdiagramme in der Einheiten-Detailansicht ────────────────────────────
+// Eine Instanz je Uebung; alle zusammen verwaltet, weil sie beim Umschalten des Modus
+// und beim Auf-/Zuklappen gemeinsam neu gezeichnet werden.
+let _hdCharts = [];
+function _renderHdCharts() {
+  _hdCharts.forEach(c => c.destroy());
+  _hdCharts = [];
+  document.querySelectorAll('#hist-detail-body .ex-chart-block:not(.collapsed) canvas').forEach(cv => {
+    const chart = _zeichneExDiagramm(cv, cv.dataset.ex);
+    if (chart) _hdCharts.push(chart);
+  });
+}
+
+// Ein Knopf fuer alle: Sind alle zu, klappt er alle auf — sonst klappt er alle zu.
+function toggleAllHdCharts() {
+  const bloecke = [...document.querySelectorAll('#hist-detail-body .ex-chart-block')];
+  if (!bloecke.length) return;
+  const alleZu = bloecke.every(b => b.classList.contains('collapsed'));
+  bloecke.forEach(b => b.classList.toggle('collapsed', !alleZu));
+  if (alleZu) _renderHdCharts();
+  _syncHdToggleAllLabel();
+}
+
+// Beschriftung folgt dem tatsaechlichen Zustand — auch wenn einzelne Diagramme
+// ueber ihre eigene Ueberschrift umgeschaltet wurden.
+function _syncHdToggleAllLabel() {
+  const btn = document.getElementById('hd-toggle-all');
+  if (!btn) return;
+  const bloecke = [...document.querySelectorAll('#hist-detail-body .ex-chart-block')];
+  const alleZu = bloecke.length > 0 && bloecke.every(b => b.classList.contains('collapsed'));
+  btn.textContent = alleZu ? 'Alle ausklappen' : 'Alle einklappen';
 }
 
 function deleteSession(i) {
@@ -4958,12 +4998,17 @@ function exStatsHTML(exId) {
 // Entwicklung der Uebung — umschaltbar zwischen schwerstem Satz und Gesamtwiederholungen.
 // Die Wahl bleibt je Uebung gespeichert (getExChartMode). Erst ab zwei Einheiten sinnvoll:
 // ein einzelner Punkt ist keine Entwicklung. Gezeichnet wird ueber _zeichneExDiagramm().
-function exChartHTML(exId, canvasId) {
+function exChartHTML(exId, canvasId, opts) {
+  opts = opts || {};
   const mode = getExChartMode(exId);
   const enough = exHistPoints(exId, mode).length >= 2;
-  return `
+  // Einklappbare Variante (Einheiten-Detailansicht): die Ueberschrift wird zur Schaltflaeche.
+  const kopf = opts.collapsible
+    ? `<button class="ex-chart-collapse" onclick="toggleChartBlock(this)"><span class="ex-chart-chev">▾</span>Entwicklung</button>`
+    : '<span>Entwicklung</span>';
+  return `<div class="ex-chart-block">
     <div class="ex-item-body-label ex-chart-head">
-      <span>Entwicklung</span>
+      ${kopf}
       <div class="stats-mode-toggle ex-chart-toggle" data-ex="${exId}">
         <div class="stats-mode-pill${mode === 'weight' ? ' active' : ''}" data-mode="weight"
              onclick="setExChartMode('${exId}','weight')">Gewicht</div>
@@ -4971,8 +5016,21 @@ function exChartHTML(exId, canvasId) {
              onclick="setExChartMode('${exId}','reps')">Wdh.</div>
       </div>
     </div>
-    <div class="ex-chart-wrap" data-ex="${exId}"${enough ? '' : ' style="display:none"'}><canvas id="${canvasId}"></canvas></div>
-    <div class="ex-chart-empty" data-ex="${exId}"${enough ? ' style="display:none"' : ''}>${exChartEmptyText(mode)}</div>`;
+    <div class="ex-chart-body">
+      <div class="ex-chart-wrap" data-ex="${exId}"${enough ? '' : ' style="display:none"'}><canvas id="${canvasId}" data-ex="${exId}"></canvas></div>
+      <div class="ex-chart-empty" data-ex="${exId}"${enough ? ' style="display:none"' : ''}>${exChartEmptyText(mode)}</div>
+    </div>
+  </div>`;
+}
+
+// Ein-/Ausklappen eines einzelnen Diagramms. Beim Aufklappen neu zeichnen: Ein verstecktes
+// Canvas hat keine Breite, Chart.js behielte sonst die alten Masse.
+function toggleChartBlock(btn) {
+  const block = btn.closest('.ex-chart-block');
+  if (!block) return;
+  block.classList.toggle('collapsed');
+  if (!block.classList.contains('collapsed')) _renderHdCharts();
+  _syncHdToggleAllLabel();
 }
 
 function buildExItemHTML(ex, context) {
@@ -5119,6 +5177,7 @@ function setExChartMode(exId, mode) {
   });
   _renderOpenExerciseChart();
   _renderExDetailChart();
+  _renderHdCharts();
 }
 function exChartEmptyText(mode) {
   return mode === 'reps'
@@ -6102,6 +6161,7 @@ function closeModal(id) {
   // Das Diagramm der Uebungs-Detailansicht hier abraeumen: Geschlossen wird das Modal
   // ueber den Hintergrund-Tipp oder die Wischgeste, beide landen in dieser Funktion.
   if (id === 'modal-ex-detail' && _exDetailChart) { _exDetailChart.destroy(); _exDetailChart = null; }
+  if (id === 'modal-hist-detail') { _hdCharts.forEach(c => c.destroy()); _hdCharts = []; }
 }
 
 // Swipe-down-to-dismiss für ALLE Bottom-Sheet-Modals (.overlay > .sheet).
