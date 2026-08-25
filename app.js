@@ -1696,10 +1696,12 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
           <div class="aex-v2-srow head"><span>Satz</span><span>Wdh.</span><span>kg</span></div>
           ${ptRows}
         </div>
-        <div class="aex-v2-notes">
+        <div class="aex-v2-notes-col">
           <button class="aex-v2-details" onclick="openExDetail('${ex.id}')">Details<span>›</span></button>
-          <textarea class="aex-v2-notes-area" data-ex-id="${ex.id}" placeholder="Notizen"
-                    onchange="saveExerciseNote('${ex.id}', this.value)">${ex.notes || ''}</textarea>
+          <div class="aex-v2-notes">
+            <textarea class="aex-v2-notes-area" data-ex-id="${ex.id}" placeholder="Notizen"
+                      onchange="saveExerciseNote('${ex.id}', this.value)">${ex.notes || ''}</textarea>
+          </div>
         </div>
       </div>
       <div class="aex-v2-actions">
@@ -1851,10 +1853,12 @@ function renderActiveWorkout() {
           <div class="aex-v2-srow head"><span>Satz</span><span>Wdh.</span><span>kg</span><span></span></div>
           ${setRows}
         </div>
-        <div class="aex-v2-notes">
+        <div class="aex-v2-notes-col">
           <button class="aex-v2-details" onclick="openExDetail('${ex.exId || ex.id}')">Details<span>›</span></button>
-          <textarea class="aex-v2-notes-area" data-ex-id="${ex.exId || ex.id}" placeholder="Notizen"
-                    onchange="updateNotes(${ei},this.value)">${(getEx(ex.exId || ex.id)?.notes) || ''}</textarea>
+          <div class="aex-v2-notes">
+            <textarea class="aex-v2-notes-area" data-ex-id="${ex.exId || ex.id}" placeholder="Notizen"
+                      onchange="updateNotes(${ei},this.value)">${(getEx(ex.exId || ex.id)?.notes) || ''}</textarea>
+          </div>
         </div>
       </div>
       ${ex.done ? '' : (ex.skipped

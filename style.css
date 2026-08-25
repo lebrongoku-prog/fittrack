@@ -1408,9 +1408,13 @@ html.wo-running #wo-week-card { display: none; }
 .aex-v2-setcheck.on svg { stroke: #fff; }
 .aex-v2-srow.set-done .aex-v2-snum { color: var(--green); }
 
+/* Spalte rechts: „Details" auf Hoehe der Kopfzeile (Satz | Wdh. | kg), darunter das
+   Notizfeld. Die 22px der Kopfzeile (16px Zeilenhoehe + 6px Abstand) traegt jetzt der
+   Knopf statt eines Polsters am Notizfeld — dadurch beginnt das Feld weiterhin bündig
+   mit den Wert-Feldern. */
+.aex-v2-notes-col { width: 172px; flex-shrink: 0; display: flex; flex-direction: column; }
 .aex-v2-notes {
-  width: 172px; flex-shrink: 0;
-  margin-top: 22px;                /* Oberkante bündig mit den Wert-Feldern (unter der Kopfzeile) */
+  flex: 1;
   background: var(--card2); border: 1px solid transparent; border-radius: 10px;
   padding: 10px 12px;
   display: flex; flex-direction: column;
@@ -1419,14 +1423,15 @@ html.wo-running #wo-week-card { display: none; }
    Zahlen keine 30 Pixel übrig — dreistellige Gewichte wurden abgeschnitten. */
 @media (max-width: 460px) {
   .aex-v2-body { flex-direction: column; gap: 10px; }
-  .aex-v2-notes { width: auto; margin-top: 0; }
+  .aex-v2-notes-col { width: auto; }
   .aex-v2-notes-area { min-height: 42px; }
 }
 .aex-v2-notes-lbl { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 4px; }
 /* „Details" ueber dem Notizfeld — Einstieg in die Detailansicht der Uebung. */
 .aex-v2-details {
   display: flex; align-items: center; gap: 4px; align-self: flex-start;
-  background: none; border: none; padding: 0 0 6px; font-family: inherit;
+  background: none; border: none; padding: 0; font-family: inherit;
+  line-height: 16px; margin-bottom: 6px;   /* = Hoehe der Kopfzeile links daneben */
   font-size: 12px; font-weight: 700; color: var(--accent);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
