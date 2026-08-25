@@ -1697,6 +1697,7 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
           ${ptRows}
         </div>
         <div class="aex-v2-notes">
+          <button class="aex-v2-details" onclick="openExDetail('${ex.id}')">Details<span>›</span></button>
           <textarea class="aex-v2-notes-area" data-ex-id="${ex.id}" placeholder="Notizen"
                     onchange="saveExerciseNote('${ex.id}', this.value)">${ex.notes || ''}</textarea>
         </div>
@@ -1851,6 +1852,7 @@ function renderActiveWorkout() {
           ${setRows}
         </div>
         <div class="aex-v2-notes">
+          <button class="aex-v2-details" onclick="openExDetail('${ex.exId || ex.id}')">Details<span>›</span></button>
           <textarea class="aex-v2-notes-area" data-ex-id="${ex.exId || ex.id}" placeholder="Notizen"
                     onchange="updateNotes(${ei},this.value)">${(getEx(ex.exId || ex.id)?.notes) || ''}</textarea>
         </div>
@@ -4920,6 +4922,55 @@ function getPlanDaysUsingExercise(exId) {
 }
 
 
+// Bestleistung + letzte Ausfuehrung. Gemeinsamer Baustein von Uebungskatalog und
+// Detail-Modal, damit beide nicht auseinanderlaufen.
+function exStatsHTML(exId) {
+  const pr = getExercisePR(exId);
+  const last = getLastExData(exId);
+  const prVal = pr != null
+    ? `<div class="ex-stat-val">${pr} kg</div>`
+    : `<div class="ex-stat-val muted">Noch keine</div>`;
+  let lastVal;
+  if (last) {
+    const dateStr = new Date(last.date).toLocaleDateString('de-DE',
+      { day:'numeric', month:'long', year:'2-digit' });
+    const fmt = formatLastSets(last.sets) || '–';
+    lastVal = `<div class="ex-stat-val">${fmt}<span class="date">· ${dateStr}</span></div>`;
+  } else {
+    lastVal = `<div class="ex-stat-val muted">Noch keine</div>`;
+  }
+  return `<div class="ex-item-stats">
+    <div class="ex-stat ex-stat-pr">
+      <div class="ex-stat-key">Bestleistung</div>
+      ${prVal}
+    </div>
+    <div class="ex-stat ex-stat-last">
+      <div class="ex-stat-key">Letzte Ausführung</div>
+      ${lastVal}
+    </div>
+  </div>`;
+}
+
+// Entwicklung der Uebung — umschaltbar zwischen schwerstem Satz und Gesamtwiederholungen.
+// Die Wahl bleibt je Uebung gespeichert (getExChartMode). Erst ab zwei Einheiten sinnvoll:
+// ein einzelner Punkt ist keine Entwicklung. Gezeichnet wird ueber _zeichneExDiagramm().
+function exChartHTML(exId, canvasId) {
+  const mode = getExChartMode(exId);
+  const enough = exHistPoints(exId, mode).length >= 2;
+  return `
+    <div class="ex-item-body-label ex-chart-head">
+      <span>Entwicklung</span>
+      <div class="stats-mode-toggle ex-chart-toggle" data-ex="${exId}">
+        <div class="stats-mode-pill${mode === 'weight' ? ' active' : ''}" data-mode="weight"
+             onclick="setExChartMode('${exId}','weight')">Gewicht</div>
+        <div class="stats-mode-pill${mode === 'reps' ? ' active' : ''}" data-mode="reps"
+             onclick="setExChartMode('${exId}','reps')">Wdh.</div>
+      </div>
+    </div>
+    <div class="ex-chart-wrap" data-ex="${exId}"${enough ? '' : ' style="display:none"'}><canvas id="${canvasId}"></canvas></div>
+    <div class="ex-chart-empty" data-ex="${exId}"${enough ? ' style="display:none"' : ''}>${exChartEmptyText(mode)}</div>`;
+}
+
 function buildExItemHTML(ex, context) {
   const meta = MUSCLE_META[ex.muscle] || MUSCLE_META.chest;
   // In by-plan view, an exercise may appear in multiple days — use a composite key
@@ -4941,49 +4992,8 @@ function buildExItemHTML(ex, context) {
          <div class="ex-item-using-empty">Wird aktuell in keinem Trainingstag verwendet.</div>
        </div>`;
 
-  // Stats
-  const pr = getExercisePR(ex.id);
-  const last = getLastExData(ex.id);
-  const prVal = pr != null
-    ? `<div class="ex-stat-val">${pr} kg</div>`
-    : `<div class="ex-stat-val muted">Noch keine</div>`;
-  let lastVal;
-  if (last) {
-    const dateStr = new Date(last.date).toLocaleDateString('de-DE',
-      { day:'numeric', month:'long', year:'2-digit' });
-    const fmt = formatLastSets(last.sets) || '–';
-    lastVal = `<div class="ex-stat-val">${fmt}<span class="date">· ${dateStr}</span></div>`;
-  } else {
-    lastVal = `<div class="ex-stat-val muted">Noch keine</div>`;
-  }
-  const statsBlock = `<div class="ex-item-stats">
-    <div class="ex-stat ex-stat-pr">
-      <div class="ex-stat-key">Bestleistung</div>
-      ${prVal}
-    </div>
-    <div class="ex-stat ex-stat-last">
-      <div class="ex-stat-key">Letzte Ausführung</div>
-      ${lastVal}
-    </div>
-  </div>`;
-
-  // Entwicklung der Übung — umschaltbar zwischen schwerstem Satz und Gesamtwiederholungen.
-  // Die Wahl bleibt je Übung gespeichert (getExChartMode). Erst ab zwei Einheiten sinnvoll:
-  // ein einzelner Punkt ist keine Entwicklung. Gezeichnet wird in _renderOpenExerciseChart().
-  const chartMode = getExChartMode(ex.id);
-  const enoughPoints = isOpen ? exHistPoints(ex.id, chartMode).length >= 2 : false;
-  const chartBlock = !isOpen ? '' : `
-    <div class="ex-item-body-label ex-chart-head">
-      <span>Entwicklung</span>
-      <div class="stats-mode-toggle ex-chart-toggle" data-ex="${ex.id}">
-        <div class="stats-mode-pill${chartMode === 'weight' ? ' active' : ''}" data-mode="weight"
-             onclick="setExChartMode('${ex.id}','weight')">Gewicht</div>
-        <div class="stats-mode-pill${chartMode === 'reps' ? ' active' : ''}" data-mode="reps"
-             onclick="setExChartMode('${ex.id}','reps')">Wdh.</div>
-      </div>
-    </div>
-    <div class="ex-chart-wrap" data-ex="${ex.id}"${enoughPoints ? '' : ' style="display:none"'}><canvas id="ex-chart-${uniqueKey}"></canvas></div>
-    <div class="ex-chart-empty" data-ex="${ex.id}"${enoughPoints ? ' style="display:none"' : ''}>${exChartEmptyText(chartMode)}</div>`;
+  const statsBlock = exStatsHTML(ex.id);
+  const chartBlock = !isOpen ? '' : exChartHTML(ex.id, 'ex-chart-' + uniqueKey);
 
   return `<div class="ex-item ${isOpen?'open':''}" id="ex-item-${uniqueKey}" style="--mc:${meta.color}">
     <div class="ex-item-head" onclick="toggleExItem('${uniqueKey}')">
@@ -5093,12 +5103,18 @@ function setExChartMode(exId, mode) {
   document.querySelectorAll(`.ex-chart-toggle[data-ex="${exId}"] .stats-mode-pill`).forEach(p => {
     p.classList.toggle('active', p.dataset.mode === m[exId]);
   });
-  const hint = document.querySelector(`.ex-chart-empty[data-ex="${exId}"]`);
-  const wrap = document.querySelector(`.ex-chart-wrap[data-ex="${exId}"]`);
+  // querySelectorAll, nicht querySelector: Katalogkarte und Detail-Modal koennen gleichzeitig
+  // offen sein — sonst bliebe eines der beiden auf dem alten Modus stehen.
   const enough = exHistPoints(exId, m[exId]).length >= 2;
-  if (hint) { hint.style.display = enough ? 'none' : ''; hint.textContent = exChartEmptyText(m[exId]); }
-  if (wrap) wrap.style.display = enough ? '' : 'none';
+  document.querySelectorAll(`.ex-chart-empty[data-ex="${exId}"]`).forEach(hint => {
+    hint.style.display = enough ? 'none' : '';
+    hint.textContent = exChartEmptyText(m[exId]);
+  });
+  document.querySelectorAll(`.ex-chart-wrap[data-ex="${exId}"]`).forEach(wrap => {
+    wrap.style.display = enough ? '' : 'none';
+  });
   _renderOpenExerciseChart();
+  _renderExDetailChart();
 }
 function exChartEmptyText(mode) {
   return mode === 'reps'
@@ -5125,19 +5141,25 @@ function _withAlpha(color, alpha) {
 let _exChart = null;
 function _renderOpenExerciseChart() {
   if (_exChart) { _exChart.destroy(); _exChart = null; }
-  if (!openExerciseId || typeof Chart === 'undefined') return;
-  const canvas = document.getElementById('ex-chart-' + openExerciseId);
-  if (!canvas) return;
+  if (!openExerciseId) return;
   const exId = openExerciseId.includes('__') ? openExerciseId.split('__')[1] : openExerciseId;
+  _exChart = _zeichneExDiagramm(document.getElementById('ex-chart-' + openExerciseId), exId);
+}
+
+// Zeichnet den Verlauf einer Uebung in ein beliebiges Canvas und gibt die Chart-Instanz
+// zurueck (oder null). Genutzt vom Katalog UND vom Detail-Modal — beide halten ihre
+// eigene Instanz, sonst wuerde das eine das andere zerstoeren.
+function _zeichneExDiagramm(canvas, exId) {
+  if (!canvas || typeof Chart === 'undefined') return null;
   const mode = getExChartMode(exId);
   const hist = exHistPoints(exId, mode);
-  if (hist.length < 2) return;
+  if (hist.length < 2) return null;
   const unit = mode === 'reps' ? 'Wdh.' : 'kg';
   const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#1E40AF';
   // getComputedStyle liefert je nach Browser „#1E40AF" ODER „rgb(30, 64, 175)" — ein
   // angehängtes Alpha-Suffix wäre im zweiten Fall ungültig und die Fläche würde schwarz.
   const accentFill = _withAlpha(accent, 0.14);
-  _exChart = new Chart(canvas.getContext('2d'), {
+  return new Chart(canvas.getContext('2d'), {
     type: 'line',
     data: {
       labels: hist.map(h => fmtDateShort(h.ts)),
@@ -5176,6 +5198,37 @@ function _renderOpenExerciseChart() {
 // Katalog-Filter „nur aus dem aktiven Plan". Bewusst NICHT gespeichert: ein Filter, der
 // einen Neustart überlebt, lässt den Katalog später unerklärlich leer wirken.
 let exPlanFilterAn = false;
+
+// ── Detailansicht einer Uebung als Modal ────────────────────────────────────────
+// Zeigt dieselben Bausteine wie die aufgeklappte Karte im Uebungskatalog (Bestleistung,
+// letzte Ausfuehrung, Entwicklung mit Umschalter). Erreichbar ueber „Details" in der
+// aufgeklappten Uebungskarte — dort ist der Katalog sonst nur ueber einen Tabwechsel zu haben.
+let _exDetailId = null;
+let _exDetailChart = null;
+
+function openExDetail(exId) {
+  const ex = getEx(exId);
+  if (!ex) return;
+  _exDetailId = exId;
+  document.getElementById('exd-title').textContent = ex.name;
+  document.getElementById('exd-body').innerHTML = exStatsHTML(exId) + exChartHTML(exId, 'exd-chart');
+  openModal('modal-ex-detail');
+  // Direkt zeichnen: openModal blendet synchron ein, das Canvas hat seine Breite sofort.
+  // Ein Umweg ueber requestAnimationFrame waere unnoetig und in Hintergrund-Tabs unzuverlaessig.
+  _renderExDetailChart();
+}
+
+function _renderExDetailChart() {
+  if (_exDetailChart) { _exDetailChart.destroy(); _exDetailChart = null; }
+  if (!_exDetailId) return;
+  _exDetailChart = _zeichneExDiagramm(document.getElementById('exd-chart'), _exDetailId);
+}
+
+function closeExDetail() {
+  if (_exDetailChart) { _exDetailChart.destroy(); _exDetailChart = null; }
+  _exDetailId = null;
+  closeModal('modal-ex-detail');
+}
 
 // Übungs-IDs, die im aktiven Plan über irgendeinen Trainingstag vorkommen.
 function exIdsImAktivenPlan() {

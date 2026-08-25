@@ -1423,6 +1423,15 @@ html.wo-running #wo-week-card { display: none; }
   .aex-v2-notes-area { min-height: 42px; }
 }
 .aex-v2-notes-lbl { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 4px; }
+/* „Details" ueber dem Notizfeld — Einstieg in die Detailansicht der Uebung. */
+.aex-v2-details {
+  display: flex; align-items: center; gap: 4px; align-self: flex-start;
+  background: none; border: none; padding: 0 0 6px; font-family: inherit;
+  font-size: 12px; font-weight: 700; color: var(--accent);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.aex-v2-details span { font-size: 14px; line-height: 1; }
+.aex-v2-details:active { opacity: .6; }
 .aex-v2-notes-area {
   flex: 1; min-height: 60px; background: transparent; border: none;
   font-size: 12px; color: var(--text2); line-height: 1.4;
