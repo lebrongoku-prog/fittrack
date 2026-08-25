@@ -171,6 +171,15 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   je 4px betragen — `.cal-band` reicht mit `top:-3px; bottom:-3px` ueber das Raster hinaus, und ohne das untere
   Polster schneidet `overflow-y: hidden` die untere Kante der Plan-Umrandung ab.
   Beide Karten sind per ID von der 520px-Grenze ab 560px ausgenommen, damit im Querformat mehr Wochen ohne Scrollen passen.
+- **Verlaufsdiagramme in der Einheiten-Detailansicht:** Jede Uebung bekommt ihr Diagramm ueber
+  `exChartHTML(exId, canvasId, {collapsible:true})` — dieselbe Funktion wie Katalog und Uebungs-Modal, nur mit
+  klickbarer Ueberschrift. Standardmaessig ausgeklappt; `toggleChartBlock` schaltet eines, `toggleAllHdCharts`
+  alle (Beschriftung folgt via `_syncHdToggleAllLabel` dem echten Zustand, auch nach Einzel-Klicks).
+  Die Diagramme liegen in `_hdCharts` (ein Array, nicht eine Instanz) und werden von `_renderHdCharts()` neu
+  gezeichnet — beim Aufklappen NOETIG, weil ein verstecktes Canvas keine Breite hat und Chart.js sonst die
+  alten Masse behaelt. Der Knopf „Alle ein-/ausklappen" sitzt absolut im `.hd-rail` (top/right 0), damit er
+  rechtsbuendig unter der Saetze-Kachel und auf Hoehe des ersten Uebungstitels steht, ohne die Zeitleiste
+  nach unten zu schieben.
 - **Detailansicht einer Uebung** (`#modal-ex-detail`, `openExDetail(exId)`): Bestleistung, letzte Ausfuehrung und
   Entwicklung — dieselben Bausteine wie die aufgeklappte Katalogkarte, weil beide `exStatsHTML(exId)` und
   `exChartHTML(exId, canvasId)` nutzen. Erreichbar ueber „Details" ueber dem Notizfeld JEDER aufgeklappten
