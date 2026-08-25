@@ -2328,6 +2328,10 @@ html.wo-running #wo-week-card { display: none; }
 .ex-chart-chev { display: inline-block; transition: transform .15s ease; font-size: 10px; }
 .ex-chart-block.collapsed .ex-chart-chev { transform: rotate(-90deg); }
 .ex-chart-block.collapsed .ex-chart-body { display: none; }
+/* Zugeklappt bleibt nur die Ueberschrift stehen — der Gewicht/Wdh.-Umschalter gehoert zum
+   Diagramm und haette ohne es keine sichtbare Wirkung. Er bleibt im Markup (nur versteckt),
+   damit setExChartMode seinen Zustand weiter mitfuehrt. */
+.ex-chart-block.collapsed .ex-chart-toggle { display: none; }
 .ex-chart-block.collapsed .ex-chart-head { margin-bottom: 0; }
 /* In der Einheiten-Detailansicht ist der Platz schmaler als im Katalog. */
 #hist-detail-body .ex-chart-wrap { height: 120px; margin: 2px 0 0; }
