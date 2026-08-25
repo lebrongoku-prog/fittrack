@@ -171,6 +171,15 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   je 4px betragen — `.cal-band` reicht mit `top:-3px; bottom:-3px` ueber das Raster hinaus, und ohne das untere
   Polster schneidet `overflow-y: hidden` die untere Kante der Plan-Umrandung ab.
   Beide Karten sind per ID von der 520px-Grenze ab 560px ausgenommen, damit im Querformat mehr Wochen ohne Scrollen passen.
+- **Detailansicht einer Uebung** (`#modal-ex-detail`, `openExDetail(exId)`): Bestleistung, letzte Ausfuehrung und
+  Entwicklung — dieselben Bausteine wie die aufgeklappte Katalogkarte, weil beide `exStatsHTML(exId)` und
+  `exChartHTML(exId, canvasId)` nutzen. Erreichbar ueber „Details" ueber dem Notizfeld JEDER aufgeklappten
+  Uebungskarte (`.aex-v2-details`) — Vorschau, laufende Einheit und Trainingstag-Detail.
+  Gezeichnet wird ueber `_zeichneExDiagramm(canvas, exId)`; Katalog (`_exChart`) und Modal (`_exDetailChart`) halten
+  je EINE eigene Instanz, sonst zerstoerte die eine die andere. `setExChartMode` frischt deshalb beide auf und nutzt
+  `querySelectorAll` statt `querySelector` — Katalogkarte und Modal koennen gleichzeitig offen sein.
+  Das Abraeumen des Modal-Diagramms haengt in `closeModal`, weil das Sheet ueber den Hintergrund-Tipp ODER die
+  Wischgeste geschlossen wird und beide dort landen.
 - **Verlauf je Übung** (Übungen-Tab, aufgeklappte Karte): `getExerciseHistory` liefert pro Einheit `maxW` (schwerster Satz) UND `reps` (Summe aller Wiederholungen); `exHistPoints(exId, mode)` filtert daraus die Punkte des gewählten Modus (Einträge ohne Wert fallen raus — Körpergewichtsübungen haben kein Gewicht). Umschalter `.ex-chart-toggle` (Gewicht/Wdh.), Auswahl je Übung in `ft_ex_chart_modes` — bewusst ein eigener localStorage-Key statt eines Felds an der Übung, damit reine Anzeige-Einstellungen nicht in den Trainingsdaten und der Drive-Sicherung landen. `setExChartMode` frischt nur die betroffene Karte auf (ein Neuaufbau der Liste würde sie zuklappen). `.ex-chart-toggle` nutzt die Pillen-Optik von `.stats-mode-toggle` mit; die frühere `html.no-cardio`-Ausnahme ist mit dem Cardio-Ausbau entfallen.
 - **Muskel-Landkarte:** `renderMuscleMap()` zeichnet zwei SVG-Silhouetten (`muscleMapSvg`, vorne/hinten) mit nach Volumenanteil abgestufter Deckkraft plus Zahlen-Legende.
 - **Löschen ist zweifach abgesichert:** (1) `withUndo(label, fn, afterRestore)` + `showUndoToast()` — sichert die Stores vorab, „Rückgängig" 6 s lang. (2) **Papierkorb** (`ft_trash`, `trashPut/trashRestore/trashDeleteForever/emptyTrash/purgeTrash`, Liste via `renderTrash()` im Einstellungen-Overlay): gelöschte Einheiten, Pläne, Trainingstage und Übungen liegen `TRASH_KEEP_DAYS` = 30 Tage dort. `_snapshotStores` sichert `ft_trash` mit, sonst läge ein Objekt nach „Rückgängig" doppelt vor.

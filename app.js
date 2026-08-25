@@ -5224,12 +5224,6 @@ function _renderExDetailChart() {
   _exDetailChart = _zeichneExDiagramm(document.getElementById('exd-chart'), _exDetailId);
 }
 
-function closeExDetail() {
-  if (_exDetailChart) { _exDetailChart.destroy(); _exDetailChart = null; }
-  _exDetailId = null;
-  closeModal('modal-ex-detail');
-}
-
 // Übungs-IDs, die im aktiven Plan über irgendeinen Trainingstag vorkommen.
 function exIdsImAktivenPlan() {
   const plan = getActivePlan();
@@ -6099,7 +6093,12 @@ function openModal(id) {
     if (e.target === this) { closeModal(id); this.removeEventListener('click',h); }
   });
 }
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function closeModal(id) {
+  document.getElementById(id).classList.add('hidden');
+  // Das Diagramm der Uebungs-Detailansicht hier abraeumen: Geschlossen wird das Modal
+  // ueber den Hintergrund-Tipp oder die Wischgeste, beide landen in dieser Funktion.
+  if (id === 'modal-ex-detail' && _exDetailChart) { _exDetailChart.destroy(); _exDetailChart = null; }
+}
 
 // Swipe-down-to-dismiss für ALLE Bottom-Sheet-Modals (.overlay > .sheet).
 // Zieht das Sheet fingergebunden nach unten; ab Schwelle schließt es, sonst schnappt es zurück.
