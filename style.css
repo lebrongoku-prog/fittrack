@@ -2314,7 +2314,10 @@ html.wo-running #wo-week-card { display: none; }
   color: var(--text3); cursor: pointer; user-select: none;
   transition: color .15s, background .15s;
 }
-.ex-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+/* Kleiner und ohne Fettung (Leonard-Wunsch 25.08.2026) — gilt nur fuer die Diagramm-
+   Ueberschrift, NICHT fuer das gleichnamige „Notizen"-Label, das dieselbe Klasse nutzt. */
+.ex-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  font-size: 10.5px; font-weight: 500; }
 /* Einklappbare Ueberschrift des Diagramms (Einheiten-Detailansicht). */
 .ex-chart-collapse {
   display: inline-flex; align-items: center; gap: 5px;
