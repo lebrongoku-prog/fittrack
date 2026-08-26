@@ -2331,7 +2331,7 @@ html.wo-running #wo-week-card { display: none; }
   text-transform: inherit; letter-spacing: inherit;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.ex-chart-chev { display: inline-block; transition: transform .15s ease; font-size: 10px; }
+.ex-chart-chev { display: inline-block; transition: transform .15s ease; font-size: 15px; line-height: 1; }
 .ex-chart-block.collapsed .ex-chart-chev { transform: rotate(-90deg); }
 .ex-chart-block.collapsed .ex-chart-body { display: none; }
 /* Zugeklappt bleibt nur die Ueberschrift stehen — der Gewicht/Wdh.-Umschalter gehoert zum
