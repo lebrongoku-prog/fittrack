@@ -2317,7 +2317,13 @@ html.wo-running #wo-week-card { display: none; }
 /* Kleiner und ohne Fettung (Leonard-Wunsch 25.08.2026) — gilt nur fuer die Diagramm-
    Ueberschrift, NICHT fuer das gleichnamige „Notizen"-Label, das dieselbe Klasse nutzt. */
 .ex-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  font-size: 10.5px; font-weight: 500; }
+  font-size: 10.5px; font-weight: 500; min-height: 18px; }
+/* Kompakter Umschalter, NUR in dieser Ueberschrift (der Kg/Saetze-Umschalter der
+   Volumenkarte bleibt unveraendert). Seine Hoehe bestimmt die Zeilenhoehe: War er hoeher
+   als der Text, sprang „Entwicklung" beim Aufklappen nach unten. Zusammen mit der festen
+   min-height bleibt die Zeile in beiden Zustaenden exakt gleich hoch. */
+.ex-chart-head .stats-mode-toggle { padding: 1px; }
+.ex-chart-head .stats-mode-pill { padding: 1px 8px; font-size: 10px; }
 /* Einklappbare Ueberschrift des Diagramms (Einheiten-Detailansicht). */
 .ex-chart-collapse {
   display: inline-flex; align-items: center; gap: 5px;
