@@ -717,6 +717,10 @@ function _applyTabState(name) {
   // „Plan bearbeiten → Bottom-Nav Workouts" würde sonst der editierte Zukunftsplan erscheinen).
   if (name !== 'plan-detail') editingPlanId = null;
 
+  // Kopfzeile der laufenden Einheit gehoert zum Trainings-Tab: Zustand beim Verlassen
+  // zuruecksetzen, damit sie beim Zurueckkehren nicht faelschlich sofort wieder steht.
+  if (name !== 'workouts') updateStickyBar(false);
+
   if (name === 'overview') renderOverview();
   else if (name === 'workouts') renderWorkoutsScreen();
   else if (name === 'exercises') renderExercisesScreen();

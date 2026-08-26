@@ -286,7 +286,10 @@ html.workout-active #rest-bar.show ~ #workout-active-bar {
   background: rgba(16,185,129,0.97); color: #fff;
   box-shadow: 0 2px 12px rgba(0,0,0,0.16);
 }
-#wo-sticky-bar.show { display: flex; }
+/* NUR im Trainings-Tab. Der Riegel liegt im CSS, nicht im JS: Beim Tabwechsel
+   verschwindet die Kopfzeile damit sofort und nicht erst beim naechsten Scroll- oder
+   Sekundentakt. */
+body.theme-workouts #wo-sticky-bar.show { display: flex; }
 .wsb-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; flex-shrink: 0; animation: wo-pulse 1.4s ease-in-out infinite; }
 .wsb-title { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wsb-timer { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
