@@ -95,13 +95,9 @@
     <!-- Wochenplan-Strip in weisser Kachel (Layout analog Uebersicht-Tab).
          Während einer laufenden Einheit wird die Kachel ausgeblendet (html.wo-running),
          damit die Eingabe der Sätze ohne Scrollen beginnt. -->
-    <div class="plan-section-card" id="wo-week-card">
-      <div class="plan-section-head">
-        <h3>Wochenplan</h3>
-      </div>
-      <div class="wp-grid" id="wo-week-strip"></div>
-      <div class="wp-info" id="wo-wp-info"></div>
-    </div>
+    <!-- Wochenplan: dieselbe Karte wie in Uebersicht und Plaene-Tab, gefuellt von
+         renderWorkoutWeekStrip() ueber buildPlanCard(). -->
+    <div id="wo-week-card"></div>
 
     <!-- Session card (active or preview) -->
     <div id="wo-session-card-wrap"></div>

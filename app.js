@@ -987,64 +987,6 @@ function renderRecentSessions() {
   }).join('');
 }
 
-// Ausgewählter Tag im Übersicht-Wochenplan-Strip (null = heute). Persistiert wie im Workouts-Tab.
-let selectedOverviewDayIdx = null;
-function selectOverviewDay(idx) {
-  selectedOverviewDayIdx = idx;
-  renderNext7Strip(getCurrentWeekDays());
-}
-function renderNext7Strip(days) {
-  const root = document.getElementById('ov-next7-strip');
-  if (!root) return;
-  const todayIdx = days.findIndex(d => d.isToday);
-  const selIdx = (selectedOverviewDayIdx !== null && selectedOverviewDayIdx >= 0 && selectedOverviewDayIdx < days.length)
-    ? selectedOverviewDayIdx : todayIdx;
-  root.innerHTML = days.map((d, i) => buildWpCol(d, i, /*isWorkoutsTab*/ false, i === selIdx)).join('');
-  // Info-Zeile zeigt den AUSGEWÄHLTEN Tag (Tippen aktualisiert sie); „Heute"/„Morgen" für heute/morgen.
-  const info = document.getElementById('ov-wp-info');
-  if (info) info.innerHTML = buildWpInfo(days, selIdx, /*useHeuteLabel*/ true);
-}
-
-// Eine einzelne Spalte (= ein Tag) im Wochenplan-Strip.
-function buildWpCol(d, i, isWorkoutsTab, isOverviewSelected) {
-  const classes = ['wp-col'];
-  if (d.isToday) classes.push('today');
-  if (d.isRest) classes.push('rest'); else classes.push('training');
-  if (d.dayDone && d.planDay) classes.push('done');
-  if (isWorkoutsTab && i === selectedWorkoutDayIdx) classes.push('selected');
-  if (!isWorkoutsTab && isOverviewSelected) classes.push('selected');
-  // Übersicht: Tippen wählt den Tag aus → Info-Zeile darunter aktualisiert sich (analog Workouts-Strip).
-  const onclick = isWorkoutsTab ? `onclick="selectWorkoutDay(${i})"` : `onclick="selectOverviewDay(${i})"`;
-  // Kein Trainingstag-Name mehr im Strip (Leonard-Wunsch): geplante Tage werden allein durch den
-  // eingefärbten Kreis um den Wochentag markiert — Akzentfarbe = geplant, grün = erledigt,
-  // Ring = heute. Den Namen des ausgewählten Tags zeigt die Info-Zeile (buildWpInfo) bzw. die
-  // Session-Karte darunter.
-  return `<div class="${classes.join(' ')}" ${onclick}>
-    <span class="wp-letter">${d.label}</span>
-  </div>`;
-}
-
-// Info-Zeile unter dem Wochenplan. Format:
-//   Trainingstag: "Heute · Push · 5 Übungen" (mit "✓" wenn dayDone)
-//   Ruhetag:      "Heute · Ruhetag · nächstes Training: Mittwoch"
-// useHeuteLabel: bei true wird "Heute" / "Morgen" / "Gestern" geschrieben statt Wochentag-Name.
-function buildWpInfo(days, focusIdx, useHeuteLabel) {
-  if (focusIdx < 0 || focusIdx >= days.length) return '';
-  const d = days[focusIdx];
-  let label;
-  if (useHeuteLabel && d.isToday) label = 'Heute';
-  else if (useHeuteLabel && d.isTomorrow) label = 'Morgen';
-  else label = dayFullName(d.dayKey);
-  if (!d.planDay) {
-    // Ruhetag → KEIN „nächstes Training: …"-Hinweis mehr (Leonard-Wunsch)
-    return `<strong>${label}</strong> · Ruhetag`;
-  }
-  const exCount = (d.planDay.exercises || []).length;
-  const exLabel = exCount === 1 ? 'Übung' : 'Übungen';
-  const doneMark = d.dayDone ? ' <span class="wp-info-done">✓</span>' : '';
-  return `<strong>${label}</strong> · ${escapeHtml(d.planDay.name)} · ${exCount} ${exLabel}${doneMark}`;
-}
-
 // Ask the user before starting a workout from the Übersicht hero.
 let pendingStartDayId = null;
 function requestStartFromOverview(dayId) {
@@ -1564,16 +1506,21 @@ function jumpToWorkoutDay(idx) {
   renderWorkoutsScreen();
 }
 
+// Wochenplan im Trainings-Tab: dieselbe Karte wie in Uebersicht und Plaene-Tab
+// (Leonard-Wunsch 20.08.2026). Einziger Unterschied: Der angetippte Tag bleibt markiert,
+// weil die Auswahl hier steuert, welcher Tag darunter angezeigt wird.
 function renderWorkoutWeekStrip() {
   ensureSelectedDayIdx();
-  const days = getCurrentWeekDays();
-  const root = document.getElementById('wo-week-strip');
-  if (root) root.innerHTML = days.map((d, i) => buildWpCol(d, i, /*isWorkoutsTab*/ true)).join('');
-  // Info-Zeile bezieht sich auf den SELEKTIERTEN Tag (nicht heute)
-  const info = document.getElementById('wo-wp-info');
-  if (info) {
-    info.innerHTML = buildWpInfo(days, selectedWorkoutDayIdx, /*useHeuteLabel*/ false);
-  }
+  const root = document.getElementById('wo-week-card');
+  if (!root) return;
+  const plan = getActivePlan();
+  root.innerHTML = plan
+    ? buildPlanCard(plan, "showScreen('plans')", /*hideToday*/ false, /*hideStatus*/ true, /*hideMeta*/ true,
+                    { selectedIdx: selectedWorkoutDayIdx, dayOnTap: 'selectWorkoutDay' })
+    : `<div class="plan-card-v2" onclick="showScreen('plans')" style="cursor:pointer">
+         <div class="ppv-name" style="color:var(--text2)">Kein aktiver Trainingsplan</div>
+         <div class="ppv-meta">Tippe, um einen Plan anzulegen oder zu aktivieren.</div>
+       </div>`;
 }
 
 function renderWorkoutsScreen() {
@@ -3792,7 +3739,10 @@ function fmtDateRange(start, end) {
 
 // Dashboard-Karte eines Plans (Trainingsplan-Liste UND Übersicht-Tab). Reine Vorschau —
 // Tippen öffnet den Plan-Detail. Fortschritt/Adhärenz nur beim aktiven Plan (laufende Woche).
-function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta) {
+// opts.selectedIdx  = Wochentag, der als ausgewaehlt markiert wird (Trainings-Tab)
+// opts.dayOnTap      = Funktionsname fuer den Tipp auf einen Wochentag
+function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
+  opts = opts || {};
   const todayIdx = (new Date().getDay()+6) % 7;
   const status = planStatus(p);
   const isCurrent = status === 'active';
@@ -3811,10 +3761,14 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta) {
     if (d) cls.push('training');
     if (done) cls.push('done');
     if (today) cls.push('today');
+    if (opts.selectedIdx === i) cls.push('selected');
     // Beim aktiven Plan springt ein Tipp auf einen Wochentag in den Trainings-Tab auf genau
     // diesen Tag — sonst wäre der Streifen auf der Übersicht reine Anzeige.
+    // Im Trainings-Tab waehlt der Tipp den Tag AUS (man ist schon dort); ueberall sonst
+    // springt er in den Trainings-Tab auf diesen Tag.
+    const tapFn = opts.dayOnTap || 'jumpToWorkoutDay';
     const tap = isCurrent
-      ? ` onclick="event.stopPropagation();jumpToWorkoutDay(${i})" role="button" tabindex="0" aria-label="${w.label} öffnen"`
+      ? ` onclick="event.stopPropagation();${tapFn}(${i})" role="button" tabindex="0" aria-label="${w.label} öffnen"`
       : '';
     return `<div class="${cls.join(' ')}"${tap}><span class="ppv-wd">${w.label}</span></div>`;
   }).join('');

@@ -631,7 +631,7 @@ body.theme-plans .hist-action-dd {
 .ppv-col.today:not(.training) .ppv-wd { color: var(--accent-dark); font-weight: 700; }
 /* Erledigt-Haken am Kreis. Nötig, weil im Workouts-Tab die Akzentfarbe selbst grün ist —
    ohne den Haken wären „geplant" und „erledigt" dort kaum zu unterscheiden. */
-.ppv-col.done .ppv-wd::before, .wp-col.done .wp-letter::before {
+.ppv-col.done .ppv-wd::before {
   content: '✓';
   position: absolute; top: -2px; right: -3px; z-index: 1;
   width: 14px; height: 14px; border-radius: 50%;
@@ -1156,60 +1156,10 @@ html.wo-running #wo-week-card { display: none; }
 /* Completed: reduced opacity so it visually fades */
 .next7-chip.done { opacity: 0.55; }.n7-top .lbl { display: block; font-size: 10px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
 .next7-chip.training .n7-top .lbl { color: var(--accent-dark); }
-.next7-chip.today    .n7-top .lbl { color: var(--accent); }/* ─── Wochenplan: kompakte Variante C (Buchstabe + Akzent-Streifen) ─── */
-.wp-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-}
-.wp-col {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 10px 0;
-  border-radius: 10px;
-  min-width: 0;            /* Spalten exakt gleich breit (1fr) */
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, opacity 0.15s;
-}
-/* Ausgewählter Tag (dessen Session-Karte unten steht) = Spalten-Hintergrund.
-   „Heute" trägt dagegen den Ring um den Kreis — so bleiben beide unterscheidbar. */
-.wp-col.selected { background: var(--accent-bg); }
-
-/* Wochentag als Kreis: Akzentfarbe = Training geplant, grün = erledigt, Ring = heute.
-   Der Name des Trainingstags steht nicht mehr im Strip, sondern in der Info-Zeile darunter. */
-.wp-letter {
-  position: relative;
-  display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; box-sizing: border-box;
-  border-radius: 50%;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text3);
-  letter-spacing: 0.2px;
-}
-.wp-col.training .wp-letter { background: var(--accent); color: #fff; font-weight: 700; }
-.wp-col.done     .wp-letter { background: var(--green);  color: #fff; font-weight: 700; }.wp-col.today .wp-letter::after {
-  content: ''; position: absolute; inset: -4px;
-  border-radius: 50%; border: 2px solid var(--accent);
-}
-.wp-col.today.done .wp-letter::after { border-color: var(--green); }
-.wp-col.today:not(.training) .wp-letter { color: var(--accent-dark); font-weight: 700; }.wp-col.training .wp-bar {
-  background: var(--accent);
-  opacity: 1;
-  width: 70%;
-}/* Info-Zeile darunter */
-/* Info-Zeile darunter — bricht um statt abzuschneiden: seit die Strips keine Namen mehr
-   zeigen, ist sie die einzige Stelle im Workouts-Tab mit dem vollen Trainingstag-Namen. */
-.wp-info {
-  font-size: 12px;
-  color: var(--text2);
-  padding: 10px 8px 2px;
-  text-align: center;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-.wp-info strong { color: var(--text); font-weight: 600; }
-.wp-info .wp-info-done { color: var(--green); margin-left: 3px; font-weight: 700; }
+.next7-chip.today    .n7-top .lbl { color: var(--accent); }/* Ausgewaehlter Tag im Wochenplan des Trainings-Tabs: Die Auswahl steuert dort, welcher
+   Tag unten angezeigt wird — ohne Markierung waere nicht erkennbar, welcher das ist.
+   („Heute" traegt dagegen den Ring um den Kreis, beide bleiben unterscheidbar.) */
+.ppv-col.selected { background: var(--accent-bg); border-radius: 9px; }
 .next7-chip.training .n7-mid { color: var(--accent-dark); }.tc-card-head svg.star { fill: var(--accent); stroke: var(--accent); }/* ═══════════════════════════════════
    WORKOUT (Active session) – Mockup v2
 ═══════════════════════════════════ */
