@@ -300,16 +300,6 @@ body.theme-workouts #wo-sticky-bar.show { display: flex; }
 }
 .wsb-finish:active { transform: scale(.95); }
 
-/* Entfernen-Button in den Trainingstag-Bibliothek-Cards (renderPreviewWorkout mode='libday') */
-.aex-libday-actions { padding: 0 12px 12px; }
-.aex-libday-remove {
-  width: 100%; padding: 8px; background: transparent; border: 1px dashed var(--border);
-  border-radius: 8px; color: var(--text3); font-size: 13px; font-weight: 600;
-  font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
-.aex-libday-remove:active { background: var(--card2); }
-.aex-v2.collapsed .aex-libday-actions { display: none; }
-
 /* Inhalt nicht hinter der Mini-Leiste verbergen (auf Workouts ist sie aus → normal). */
 html.workout-active .screen { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 54px); }
 html.workout-active body.theme-workouts #screen-workouts { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px); }
@@ -333,8 +323,6 @@ body.theme-exercises .ph-sub-accent { color: #fff; font-weight: 700; }
 body.theme-workouts #screen-workouts .ph { background: transparent; }
 body.theme-workouts #wo-sub-text { color: rgba(255,255,255,0.85); }
 body.theme-workouts #wo-sub-dot   { background: #fff !important; }
-body.theme-workouts .pause-btn-v2 { background: rgba(255,255,255,0.95); border-color: transparent; }
-body.theme-workouts .pause-btn-v2 svg { fill: var(--accent-dark); }
 /* History dropdown sits on the dark gradient – swap to glass look */
 body.theme-plans .hist-action-dd {
   background: rgba(255,255,255,0.95); border-color: transparent;
@@ -495,7 +483,7 @@ body.theme-plans .hist-action-dd {
 .btn-ghost { background: var(--card2); color: var(--text2); }
 .btn-danger { background: var(--red-bg); color: var(--red); }
 .btn-sm { padding: 8px 14px; font-size: 13px; }
-.btn-full { width: 100%; }.num-badge.done { background: var(--green); }/* ─── Divider ─── */
+.btn-full { width: 100%; }/* ─── Divider ─── */
 .divider { height: 1px; background: var(--border); }
 
 /* ─── Empty State ─── */
@@ -540,7 +528,7 @@ body.theme-plans .hist-action-dd {
   font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
   background: #D1FAE5; color: #059669;
   border-radius: 6px;
-}.plan-day-collapse-header.expanded { border-bottom: 1px solid var(--border); }.plan-day-collapse-arrow {
+}.plan-day-collapse-arrow {
   display: inline-flex;
   width: 20px; height: 20px;
   align-items: center; justify-content: center;
@@ -1130,7 +1118,7 @@ html.wo-running #wo-week-card { display: none; }
   position: absolute; inset: 8px; border-radius: 50%;
   background: radial-gradient(circle, var(--accent-bg) 0%, transparent 70%);
 }
-.hero-v2-art svg { width: 100%; height: auto; position: relative; z-index: 1; }.program-card-val .of { font-size: 18px; color: var(--text3); font-weight: 600; margin-left: 4px; }.program-card-seg.done { background: var(--accent); }/* ─ Section card wrapper for Trainingsplan ─ */
+.hero-v2-art svg { width: 100%; height: auto; position: relative; z-index: 1; }/* ─ Section card wrapper for Trainingsplan ─ */
 .plan-section-card {
   margin: 0 12px 12px; background: var(--card); border-radius: 18px; box-shadow: var(--shadow);
   padding: 14px;
@@ -1142,7 +1130,6 @@ html.wo-running #wo-week-card { display: none; }
    Tag unten angezeigt wird — ohne Markierung waere nicht erkennbar, welcher das ist.
    („Heute" traegt dagegen den Ring um den Kreis, beide bleiben unterscheidbar.) */
 .ppv-col.selected { background: var(--accent-bg); border-radius: 9px; }
-.tc-card-head svg.star { fill: var(--accent); stroke: var(--accent); }
 /* ═══════════════════════════════════
    WORKOUT (Active session) – Mockup v2
 ═══════════════════════════════════ */
@@ -1190,16 +1177,6 @@ html.wo-running #wo-week-card { display: none; }
   background: var(--green-bg);
   border-color: var(--green);
 }
-.ex-tab-v2.done .ex-tab-v2-num { background: var(--green); }
-.ex-tab-v2.done .ex-tab-v2-name { color: var(--green); }
-.ex-tab-v2-num {
-  width: 22px; height: 22px; border-radius: 50%;
-  background: var(--c, var(--accent)); color: #fff;
-  font-size: 11px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.ex-tab-v2.muted .ex-tab-v2-num { background: var(--neutral); }
-.ex-tab-v2-name { font-size: 11.5px; font-weight: 600; line-height: 1.25; min-height: 28px; color: var(--c, var(--text)); }
 
 /* Active exercise card – v2 with colored left border + white bg */
 .aex-v2 {
@@ -1215,9 +1192,7 @@ html.wo-running #wo-week-card { display: none; }
 }
 .aex-v2.done .aex-v2-num     { background: var(--green); }
 .aex-v2.done .aex-v2-name    { color: var(--green); }
-.aex-v2.done .aex-v2-target  { color: var(--green); }
 .aex-v2.done .aex-v2-notes   { background: var(--green-bg); }
-.aex-v2.done .aex-v2-notes-lbl { color: var(--green); }
 .aex-v2.done .aex-v2-notes-area::placeholder { color: var(--green); opacity: 0.55; }
 .aex-v2.done .aex-v2-inp     { background: #fff; }
 .aex-v2.done .aex-v2-inp.done-inp { background: var(--green); color: #fff; border-color: var(--green); }
@@ -1268,46 +1243,10 @@ html.wo-running #wo-week-card { display: none; }
 .aex-v2.collapsed .aex-v2-info {
   min-height: 32px; display: flex; flex-direction: column; justify-content: center;
 }
-.aex-v2-target { font-size: 12px; color: var(--c, var(--accent)); margin-top: 3px; font-weight: 500; }
-.aex-v2-target b { font-weight: 700; }
 .aex-v2-last { font-size: 12px; color: var(--text3); margin-top: 1px; }
 
 .aex-v2-body { display: flex; gap: 12px; padding: 0 12px 12px; }
 .aex-v2-table { flex: 1; }
-/* Inline-Ziel-Editor (Sätze × Wdh.) oben in der Vorschau-Karte */
-.aex-v2-target-edit { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
-.aex-v2-target-lbl { font-size: 12px; color: var(--text3); font-weight: 700; margin-right: 2px; }
-.aex-v2-target-inp {
-  width: 44px; text-align: center; background: var(--bg); border: 1px solid var(--border);
-  border-radius: 8px; padding: 6px 4px; font-size: 15px; font-weight: 700; color: var(--text);
-  -webkit-appearance: none; -moz-appearance: textfield;
-}
-.aex-v2-target-inp:focus { outline: none; border-color: var(--accent); background: #fff; }
-/* Editierbare Ziel-Tabelle in der Vorschau-Karte (Sätze-Stepper + Wdh.-Input + kg-Referenz) */
-.aex-target-table { display: flex; flex-direction: column; gap: 8px; }
-.aex-target-row { display: grid; grid-template-columns: 54px 1fr; align-items: center; }
-.aex-target-row .ax-lbl { font-size: 12px; color: var(--text3); font-weight: 600; }
-.aex-set-stepper { display: flex; align-items: center; gap: 12px; }
-.aex-step-btn {
-  width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--bg); color: var(--text); font-size: 18px; font-weight: 700; line-height: 1;
-  display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
-.aex-step-btn:active { transform: scale(.94); }
-.aex-step-val { font-size: 16px; font-weight: 700; min-width: 18px; text-align: center; }
-.aex-target-cell {
-  width: 70px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-  padding: 7px; font-size: 15px; font-weight: 600; text-align: center; color: var(--text);
-  -webkit-appearance: none; -moz-appearance: textfield;
-}
-.aex-target-cell:focus { outline: none; border-color: var(--accent); background: #fff; }
-.aex-target-ref { font-size: 14px; color: var(--text3); }
-.aex-v2-target-x { font-size: 13px; color: var(--text3); font-weight: 600; }
-.aex-v2-target-unit { font-size: 12px; color: var(--text3); font-weight: 600; }
-.aex-v2-row { display: grid; grid-template-columns: 50px 1fr 1fr 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
-.aex-v2-row.head { margin-bottom: 6px; }
-.aex-v2-row.head .lbl { font-size: 12px; color: var(--text3); font-weight: 600; }
-.aex-v2-row .ax-lbl { font-size: 12px; color: var(--text3); font-weight: 600; }
 /* Kein <input>, sondern eine Schaltfläche, die den Zahlenblock öffnet — siehe
    openNumpadFromInput(). Dadurch kann iOS beim Antippen nicht hineinzoomen. */
 .aex-v2-inp {
@@ -1324,7 +1263,6 @@ html.wo-running #wo-week-card { display: none; }
 .aex-v2-inp:focus-visible { outline: 2px solid var(--c, var(--accent)); outline-offset: 1px; }
 .aex-v2-inp.is-disabled { cursor: default; }
 .aex-v2-inp.done-inp { background: var(--green-bg); border-color: var(--green); color: var(--green); }
-.aex-v2-row .num-cell { font-size: 13px; font-weight: 600; text-align: center; color: var(--text3); }
 /* Pro-Satz-Tabelle als ZEILEN (eine Zeile pro Satz): Satznr | Wdh. | kg | Haken */
 .aex-v2-srow { display: grid; grid-template-columns: 34px 1fr 1fr 40px; gap: 7px; align-items: center; margin-bottom: 8px; }
 .aex-v2-srow.head { margin-bottom: 6px; line-height: 16px; }
@@ -1365,7 +1303,6 @@ html.wo-running #wo-week-card { display: none; }
   .aex-v2-notes-col { width: auto; }
   .aex-v2-notes-area { min-height: 42px; }
 }
-.aex-v2-notes-lbl { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 4px; }
 /* „Details" ueber dem Notizfeld — Einstieg in die Detailansicht der Uebung. */
 .aex-v2-details {
   display: flex; align-items: center; gap: 4px; align-self: flex-start;
@@ -1502,8 +1439,7 @@ html.wo-running #wo-week-card { display: none; }
 .cal-stats { font-size: 12px; color: var(--text3); white-space: nowrap; margin-left: auto; }
 .chart-card-v2-title { font-size: 16px; font-weight: 700; }
 /* Muscle bars v2 (with icons + colors) */
-.muscle-bars-v2 { padding: 4px 16px 8px; }/* Variante ohne Muskel-Icon (User-Anpassung): Icon-Spalte entfaellt, Name-Spalte weiter */
-.muscle-bar-v2-row.no-icon { grid-template-columns: 90px 1fr auto; }/* ─── Zahlenblock ─── */
+.muscle-bars-v2 { padding: 4px 16px 8px; }/* ─── Zahlenblock ─── */
 .np-sheet { padding-bottom: calc(12px + var(--safe-b)); }
 .np-head { padding: 2px 18px 0; }
 .np-title { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.3; }
@@ -1783,10 +1719,6 @@ html.wo-running #wo-week-card { display: none; }
 }
 .ex-item-stripe { width: 4px; align-self: stretch; border-radius: 2px; background: var(--mc, var(--accent)); flex-shrink: 0; }
 .ex-item-name { flex: 1; font-size: 15px; font-weight: 500; color: var(--text); }
-.ex-item-note-indicator {
-  font-size: 11px; padding: 2px 7px; border-radius: 10px;
-  background: var(--accent-bg); color: var(--accent); font-weight: 600;
-}
 .ex-item-plan-tag {
   font-size: 11px; padding: 2px 7px; border-radius: 10px;
   background: var(--green-bg); color: var(--green); font-weight: 600;
@@ -1823,9 +1755,7 @@ html.wo-running #wo-week-card { display: none; }
 .sheet .ex-group-title .count { color: var(--text3); }
 .sheet .ex-list { box-shadow: none; border: 1px solid var(--border); }
 .sheet .ex-item-head { padding: 11px 14px; gap: 10px; }
-.sheet .ex-item-add-icon { color: var(--accent); font-size: 22px; font-weight: 700; line-height: 1; }
 .sheet .ex-item.in-current-day { opacity: 0.5; pointer-events: none; }
-.sheet .ex-item.in-current-day .ex-item-add-icon { color: var(--green); }
 
 /* Plan-Add-Modal: Multi-Select Checkbox am rechten Rand des Items */
 .plan-add-check {
@@ -1905,7 +1835,7 @@ html.wo-running #wo-week-card { display: none; }
 /* Trainingstag-Detail: „Zu Trainingsplan" mit hellem Akzent-Fill + dunklem Akzent-Text */
 #screen-day-detail .ex-item-actions button.primary { color: var(--accent-dark); border-color: var(--accent-soft); background: var(--accent-soft); }
 .ex-item-actions button.danger  { color: var(--red); border-color: var(--red-bg); background: var(--red-bg); }
-.ex-item-actions button:disabled { opacity: 0.45; cursor: not-allowed; }.weekplan-day-name.today { color: var(--accent); }/* Übungen-Tab: Suchfeld */
+.ex-item-actions button:disabled { opacity: 0.45; cursor: not-allowed; }/* Übungen-Tab: Suchfeld */
 .ex-search-wrap { padding: 0 var(--screen-pad, 14px) 10px; }
 .ex-search-bar {
   width: 100%; background: rgba(255,255,255,0.92); border: 1px solid rgba(255,255,255,0.5);
@@ -1935,7 +1865,7 @@ html.wo-running #wo-week-card { display: none; }
 .wpe-name { flex: 1; min-width: 0; font-size: 13px; white-space: normal; overflow-wrap: anywhere; }
 .wpe-rest { flex: 1; min-width: 0; font-size: 13px; color: var(--text3); opacity: 0.6; }
 .wpe-chev { flex: 0 0 auto; font-size: 17px; line-height: 1; color: var(--text3); }
-.wpe-select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer; font-size: 16px; }.weekplan-pick-value.rest { font-weight: 500; color: var(--text3); }.program-form-row { padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+.wpe-select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer; font-size: 16px; }.program-form-row { padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
 .program-form-row + .program-form-row { border-top: 1px solid var(--border); }
 .program-form-row label { font-size: 12px; color: var(--text3); font-weight: 600; }
 .program-form-row input { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 15px; }
@@ -1972,9 +1902,6 @@ html.wo-running #wo-week-card { display: none; }
   touch-action: none;
 }
 .plan-ex-handle:active { cursor: grabbing; }
-.plan-ex-row.dragging { opacity: 0.4; }
-.plan-ex-row.drop-target-above { position: relative; margin-top: 20px; }
-.plan-ex-row.drop-target-below { position: relative; margin-bottom: 20px; }
 
 /* Drag-Handle + Drop-Indicators für Workout-Detail-Cards (Active + Vorschau) */
 .aex-drag-handle {
@@ -1991,12 +1918,12 @@ html.wo-running #wo-week-card { display: none; }
 .aex-v2.drop-target-below { position: relative; margin-bottom: 20px; }
 /* Einfüge-Lücke (iOS-Stil): die Karten rücken auseinander, eine kräftige Akzent-Linie mittig in der
    Lücke signalisiert die Einfügestelle (markanter als die frühere dünne Kantenlinie). */
-.plan-ex-item.drop-target-above::before, .plan-ex-row.drop-target-above::before, .aex-v2.drop-target-above::before,
-.plan-ex-item.drop-target-below::after, .plan-ex-row.drop-target-below::after, .aex-v2.drop-target-below::after {
+.plan-ex-item.drop-target-above::before, .aex-v2.drop-target-above::before,
+.plan-ex-item.drop-target-below::after, .aex-v2.drop-target-below::after {
   content: ''; position: absolute; left: 8px; right: 8px; height: 4px; border-radius: 3px; background: var(--accent);
 }
-.plan-ex-item.drop-target-above::before, .plan-ex-row.drop-target-above::before, .aex-v2.drop-target-above::before { top: -12px; }
-.plan-ex-item.drop-target-below::after, .plan-ex-row.drop-target-below::after, .aex-v2.drop-target-below::after { bottom: -12px; }
+.plan-ex-item.drop-target-above::before, .aex-v2.drop-target-above::before { top: -12px; }
+.plan-ex-item.drop-target-below::after, .aex-v2.drop-target-below::after { bottom: -12px; }
 
 /* Verlauf-Zeitraum-Dropdown-Optionen */
 .hist-range-option {
@@ -2021,8 +1948,6 @@ html.wo-running #wo-week-card { display: none; }
 .aex-v2.skipped .aex-v2-inp { background: var(--card); color: var(--text3); opacity: 0.7; }
 .aex-v2.skipped .aex-v2-notes { background: var(--card); border-color: var(--border); }
 .aex-v2.skipped .aex-v2-notes-area { color: var(--text3); }
-.aex-v2.skipped .aex-v2-row .ax-lbl,
-.aex-v2.skipped .aex-v2-row .num-cell { color: var(--text3); }
 
 /* ═══════════════════════════════════════════════
    GOOGLE DRIVE SYNC UI
