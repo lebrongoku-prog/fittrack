@@ -290,7 +290,14 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   (bewusst NICHT zusaetzlich um die 10px, sonst klebt sie am Rand).
 - **Erledigt-Box der Uebungskarte** (`.aex-v2-done-box`) ist 40x40 wie die Satz-Haken (`.aex-v2-setcheck`) — gleiche Groesse,
   gleicher Radius, gleiches Icon; beide werden mit feuchten Haenden getroffen.
-- **Wochenplan-Strips:** `.ppv-*` (Dashboard-Karte, `buildPlanCard(p, onTap, hideToday, hideStatus)`) + `.wp-col` (Workouts-Strip, `buildWpCol`). Zeigen NUR Wochentage, keine Tagnamen: geplant = Kreis in Akzentfarbe, erledigt = grüner Kreis + weißer Haken (`::before`), heute = Ring (`::after`). Im Workouts-Strip markiert `.selected` zusätzlich den angetippten Tag per Spalten-Hintergrund. Den vollen Tagnamen zeigen die Info-Zeile (`buildWpInfo`) bzw. die Session-Karte.
+- **Wochenplan** ist in ALLEN DREI Tabs dieselbe Karte (`buildPlanCard`): Uebersicht, Trainings-Tab (`#wo-week-card`,
+  gefuellt von `renderWorkoutWeekStrip`) und Plaene-Tab. Nur zwei Dinge unterscheiden sich, beide ueber `opts`:
+  Im Trainings-Tab waehlt ein Tipp den Tag AUS (`opts.dayOnTap: 'selectWorkoutDay'`) und der gewaehlte Tag wird
+  markiert (`opts.selectedIdx` → `.ppv-col.selected`) — die Auswahl steuert dort, welcher Tag darunter erscheint.
+  Sonst springt der Tipp per `jumpToWorkoutDay` in den Trainings-Tab.
+  Der frueher eigene Streifen (`buildWpCol`/`buildWpInfo`/`renderNext7Strip`/`selectOverviewDay`, Klassen `.wp-*`)
+  wurde am 20.08.2026 entfernt — er hatte danach keinen Aufrufer mehr. ACHTUNG beim Aufraeumen: Die Regel fuer den
+  Erledigt-Haken war eine Selektorliste (`.ppv-col.done …, .wp-col.done …`) — dort durfte nur der tote Teil weg.
 - **Wochenplan in der Plan-Detailansicht:** `.wpe-list`/`.wpe-row` = eine Zeile pro Wochentag (nicht 7 Spalten), damit lange Tagnamen vollständig umbrechen können; unsichtbares `<select>`-Overlay pro Zeile weist den Tag zu.
 - **Löschen** = „Bearbeiten"-Modus (Kästchen auswählen → „Löschen (N)" → Sicherheits-Dialog) via `_delCtx`/`_delSel`/`buildDelEditList`; inline ✕ fragt ebenfalls nach. **Hinzufügen** = Multi-Select-Modals mit „Hinzufügen (N)".
 - **Bottom-Nav**: Scrollen blendet sie nur AUS (ab 60px Scrolltiefe, Runterwisch > 5px) und NIE wieder ein — auch nicht
