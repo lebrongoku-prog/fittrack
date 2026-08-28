@@ -3594,30 +3594,6 @@ function _renderHdCharts() {
     const chart = _zeichneExDiagramm(cv, cv.dataset.ex);
     if (chart) _hdCharts.push(chart);
   });
-  _richteHdSaetzeAus();
-}
-
-// Unterkante der Satz-Kaestchen auf die X-Achse des Diagramms legen (Leonard-Wunsch
-// 25.08.2026). Die Achse ist NICHT die Unterkante des Canvas — darunter liegen noch die
-// Datumsbeschriftungen. Ihre Lage kennt nur Chart.js (`chartArea.bottom`), deshalb wird
-// der Versatz nach dem Zeichnen gemessen und als margin-top gesetzt; die Abstaende
-// zwischen den Kaestchen bleiben dadurch unberuehrt.
-function _richteHdSaetzeAus() {
-  document.querySelectorAll('#hist-detail-body .hd-cols').forEach(reihe => {
-    const chips = reihe.querySelector('.hd-chips');
-    if (!chips) return;
-    chips.style.marginTop = '';
-    // Unter 460px stehen Saetze und Diagramm untereinander — dann gibt es nichts auszurichten.
-    if (getComputedStyle(reihe).flexDirection === 'column') return;
-    const block = reihe.querySelector('.ex-chart-block');
-    if (!block || block.classList.contains('collapsed')) return;
-    const canvas = block.querySelector('canvas');
-    const chart = _hdCharts.find(c => c.canvas === canvas);
-    if (!chart || !chart.chartArea) return;
-    const achseY = canvas.getBoundingClientRect().top + chart.chartArea.bottom;
-    const versatz = achseY - chips.getBoundingClientRect().bottom;
-    if (versatz > 0) chips.style.marginTop = Math.round(versatz) + 'px';
-  });
 }
 
 // Ein Knopf fuer alle: Sind alle zu, klappt er alle auf — sonst klappt er alle zu.
@@ -3627,7 +3603,6 @@ function toggleAllHdCharts() {
   const alleZu = bloecke.every(b => b.classList.contains('collapsed'));
   bloecke.forEach(b => b.classList.toggle('collapsed', !alleZu));
   if (alleZu) _renderHdCharts();
-  else _richteHdSaetzeAus();
   _syncHdToggleAllLabel();
 }
 
@@ -5012,8 +4987,7 @@ function toggleChartBlock(btn) {
   const block = btn.closest('.ex-chart-block');
   if (!block) return;
   block.classList.toggle('collapsed');
-  if (block.classList.contains('collapsed')) _richteHdSaetzeAus();
-  else _renderHdCharts();
+  if (!block.classList.contains('collapsed')) _renderHdCharts();
   _syncHdToggleAllLabel();
 }
 

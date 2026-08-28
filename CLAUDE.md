@@ -184,11 +184,10 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   nach unten zu schieben. Er braucht dabei zwingend ein `z-index`: Die `.hd-step`s sind fuer die Nummernscheibe
   ebenfalls positioniert und stehen im Markup NACH dem Knopf — ohne eigene Ebene liegt der erste Uebungstitel
   darueber und schluckt den Tipp (gefunden 25.08.2026).
-  Die Satz-Kaestchen werden per `_richteHdSaetzeAus()` mit ihrer Unterkante auf die X-Achse des Diagramms gelegt
-  (Leonard-Wunsch 25.08.2026). Der Versatz MUSS gemessen werden: Die Achse ist nicht die Unterkante des Canvas,
-  darunter liegen die Datumsbeschriftungen — die Lage kennt nur Chart.js (`chartArea.bottom`). Gesetzt wird ein
-  `margin-top` auf `.hd-chips`, damit die Abstaende zwischen den Saetzen unberuehrt bleiben. Aufgerufen nach jedem
-  Zeichnen und nach jedem Auf-/Zuklappen; unter 460px (Spalten untereinander) passiert nichts.
+  Die Satz-Kaestchen stehen IMMER oben in ihrer Zeile und bewegen sich beim Auf-/Zuklappen der Diagramme nicht
+  (Leonard-Entscheidung 28.08.2026). Eine frueher eingebaute Ausrichtung ihrer Unterkante auf die X-Achse des
+  Diagramms (`_richteHdSaetzeAus`, per gemessenem `margin-top`) wurde wieder entfernt: Sie liess die Kaestchen beim
+  Umschalten springen. Beides zusammen geht nicht — die Achse liegt tiefer als der Zeilenanfang.
   TESTHINWEIS: `btn.click()` umgeht die Trefferpruefung und haette das nicht gezeigt — bei absolut
   positionierten Bedienelementen immer mit `document.elementFromPoint` pruefen, wer an der Stelle wirklich liegt.
 - **Detailansicht einer Uebung** (`#modal-ex-detail`, `openExDetail(exId)`): Bestleistung, letzte Ausfuehrung und
