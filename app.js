@@ -1648,7 +1648,6 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
           ${ptRows}
         </div>
         <div class="aex-v2-notes-col">
-          <button class="aex-v2-details" onclick="openExDetail('${ex.id}')">Details<span>›</span></button>
           <div class="aex-v2-notes">
             <textarea class="aex-v2-notes-area" data-ex-id="${ex.id}" placeholder="Notizen"
                       onchange="saveExerciseNote('${ex.id}', this.value)">${ex.notes || ''}</textarea>
@@ -1659,9 +1658,12 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
         <button class="btn btn-ghost btn-sm" onclick="addPreviewSet('${planDay.id}',${ei},'${mode}')">+ Satz</button>
         ${ptSets.length > 1 ? `<button class="btn btn-ghost btn-sm" onclick="removePreviewSet('${planDay.id}',${ei},'${mode}')">− Satz</button>` : ''}
         ${mode === 'libday' ? `<button class="btn btn-ghost btn-sm aex-skip-btn" onclick="removeLibDayExercise(${ei})">Übung entfernen</button>` : ''}
+        <button class="btn btn-ghost btn-sm aex-v2-details" onclick="toggleAexChart('${exIdKey}')">Details</button>
       </div>
+      ${aexChartOffen.has(exIdKey) ? `<div class="aex-v2-chart">${exChartHTML(ex.id, 'aex-chart-' + exIdKey)}</div>` : ''}
     </div>`;
   }).join('');
+  _renderAexCharts();
 }
 
 // Pro-Satz-Ziel editieren (Wdh/kg) in den Vorschau-Karten (Workouts-Vorschau + Trainingstag-Detail).
@@ -1805,7 +1807,6 @@ function renderActiveWorkout() {
           ${setRows}
         </div>
         <div class="aex-v2-notes-col">
-          <button class="aex-v2-details" onclick="openExDetail('${ex.exId || ex.id}')">Details<span>›</span></button>
           <div class="aex-v2-notes">
             <textarea class="aex-v2-notes-area" data-ex-id="${ex.exId || ex.id}" placeholder="Notizen"
                       onchange="updateNotes(${ei},this.value)">${(getEx(ex.exId || ex.id)?.notes) || ''}</textarea>
@@ -1820,9 +1821,12 @@ function renderActiveWorkout() {
              <button class="btn btn-ghost btn-sm" onclick="addSet(${ei})">+ Satz</button>
              ${ex.sets.length > 1 ? `<button class="btn btn-ghost btn-sm" onclick="removeSet(${ei})">− Satz</button>` : ''}
              <button class="btn btn-ghost btn-sm aex-skip-btn" onclick="skipExercise(${ei})">» Überspringen</button>
+             <button class="btn btn-ghost btn-sm aex-v2-details" onclick="toggleAexChart('${exIdKey}')">Details</button>
            </div>`)}
+      ${aexChartOffen.has(exIdKey) ? `<div class="aex-v2-chart">${exChartHTML(ex.exId || ex.id, 'aex-chart-' + exIdKey)}</div>` : ''}
     </div>`;
   }).join('');
+  _renderAexCharts();
 }
 
 // ─── Ein/Aus-Klapp-State der Workout-Tab-Cards ─────────────────────
@@ -1830,6 +1834,29 @@ function renderActiveWorkout() {
 // fuer die jeweilige Uebung (per exId). State ist in-memory pro Session.
 const expandedAexIds = new Set();
 function isAexExpanded(exId) { return expandedAexIds.has(exId); }
+
+// Aufgeklappte Verlaufsdiagramme INNERHALB der Uebungskarten (Schluessel = Kartenschluessel).
+// Standard ist zu; beim Zuklappen der Karte wird der Eintrag entfernt, damit das Diagramm
+// beim naechsten Aufklappen wieder geschlossen ist (Leonard-Wunsch 28.08.2026).
+const aexChartOffen = new Set();
+function toggleAexChart(key) {
+  if (aexChartOffen.has(key)) aexChartOffen.delete(key);
+  else aexChartOffen.add(key);
+  if (currentScreen === 'workouts') renderWorkoutsScreen();
+  else if (currentScreen === 'day-detail') renderLibDayDetail();
+}
+
+// Diagramme in den Uebungskarten neu zeichnen. Eigene Liste, damit sie unabhaengig von
+// Katalog und Einheiten-Detailansicht verwaltet werden.
+let _aexCharts = [];
+function _renderAexCharts() {
+  _aexCharts.forEach(c => c.destroy());
+  _aexCharts = [];
+  document.querySelectorAll('.aex-v2-chart canvas').forEach(cv => {
+    const chart = _zeichneExDiagramm(cv, cv.dataset.ex);
+    if (chart) _aexCharts.push(chart);
+  });
+}
 // Hat der Nutzer die letzte offene Karte selbst zugeklappt, bleibt alles zu — sonst würde
 // sich die Karte sofort wieder öffnen und ließe sich nicht schließen.
 let _aexUserClosedAll = false;
@@ -1847,8 +1874,12 @@ function toggleAexCollapse(exId, ev) {
     const t = ev.target;
     if (t.closest && (t.closest('.aex-drag-handle') || t.closest('.aex-v2-done'))) return;
   }
-  if (expandedAexIds.has(exId)) expandedAexIds.delete(exId);
-  else expandedAexIds.add(exId);
+  if (expandedAexIds.has(exId)) {
+    expandedAexIds.delete(exId);
+    aexChartOffen.delete(exId);      // Diagramm schliesst mit und bleibt zu
+  } else {
+    expandedAexIds.add(exId);
+  }
   // Merken, ob der Nutzer bewusst alles zugeklappt hat (siehe ensureActiveExpanded)
   _aexUserClosedAll = expandedAexIds.size === 0;
   if (currentScreen === 'workouts') renderWorkoutsScreen();
@@ -5134,8 +5165,8 @@ function setExChartMode(exId, mode) {
     wrap.style.display = enough ? '' : 'none';
   });
   _renderOpenExerciseChart();
-  _renderExDetailChart();
   _renderHdCharts();
+  _renderAexCharts();
 }
 function exChartEmptyText(mode) {
   return mode === 'reps'
@@ -5219,31 +5250,6 @@ function _zeichneExDiagramm(canvas, exId) {
 // Katalog-Filter „nur aus dem aktiven Plan". Bewusst NICHT gespeichert: ein Filter, der
 // einen Neustart überlebt, lässt den Katalog später unerklärlich leer wirken.
 let exPlanFilterAn = false;
-
-// ── Detailansicht einer Uebung als Modal ────────────────────────────────────────
-// Zeigt dieselben Bausteine wie die aufgeklappte Karte im Uebungskatalog (Bestleistung,
-// letzte Ausfuehrung, Entwicklung mit Umschalter). Erreichbar ueber „Details" in der
-// aufgeklappten Uebungskarte — dort ist der Katalog sonst nur ueber einen Tabwechsel zu haben.
-let _exDetailId = null;
-let _exDetailChart = null;
-
-function openExDetail(exId) {
-  const ex = getEx(exId);
-  if (!ex) return;
-  _exDetailId = exId;
-  document.getElementById('exd-title').textContent = ex.name;
-  document.getElementById('exd-body').innerHTML = exStatsHTML(exId) + exChartHTML(exId, 'exd-chart');
-  openModal('modal-ex-detail');
-  // Direkt zeichnen: openModal blendet synchron ein, das Canvas hat seine Breite sofort.
-  // Ein Umweg ueber requestAnimationFrame waere unnoetig und in Hintergrund-Tabs unzuverlaessig.
-  _renderExDetailChart();
-}
-
-function _renderExDetailChart() {
-  if (_exDetailChart) { _exDetailChart.destroy(); _exDetailChart = null; }
-  if (!_exDetailId) return;
-  _exDetailChart = _zeichneExDiagramm(document.getElementById('exd-chart'), _exDetailId);
-}
 
 // Übungs-IDs, die im aktiven Plan über irgendeinen Trainingstag vorkommen.
 function exIdsImAktivenPlan() {
@@ -6118,7 +6124,6 @@ function closeModal(id) {
   document.getElementById(id).classList.add('hidden');
   // Das Diagramm der Uebungs-Detailansicht hier abraeumen: Geschlossen wird das Modal
   // ueber den Hintergrund-Tipp oder die Wischgeste, beide landen in dieser Funktion.
-  if (id === 'modal-ex-detail' && _exDetailChart) { _exDetailChart.destroy(); _exDetailChart = null; }
   if (id === 'modal-hist-detail') { _hdCharts.forEach(c => c.destroy()); _hdCharts = []; }
 }
 
