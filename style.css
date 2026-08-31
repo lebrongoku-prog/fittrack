@@ -585,10 +585,28 @@ body.theme-plans .hist-action-dd {
 .plan-status-chip-archived { background: var(--card2); color: var(--text3); }
 
 /* ── Plan-Dashboard-Karte (Trainingsplan-Tab Vorschau) ── */
+/* Wochenplan-Karte im selben transparenten Stil wie `.weitere-btn` (Leonard-Wunsch
+   28.08.2026): 12-%-Weiss-Schleier statt weisser Flaeche. Weil sie damit auf dem farbigen
+   Tab-Hintergrund liegt, muessen ALLE Inhalte hell sein — dunkle Schrift waere unlesbar. */
 .plan-card-v2 {
-  margin: 0 12px 12px; background: var(--card); border-radius: 16px; box-shadow: var(--shadow);
+  margin: 0 12px 12px; background: rgba(255,255,255,.12); border-radius: var(--radius);
+  box-shadow: 0 1px 6px rgba(0,0,0,.18);
   padding: 14px 16px; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
+.plan-card-v2 .ppv-name  { color: #fff; }
+.plan-card-v2 .ppv-meta  { color: rgba(255,255,255,.7); }
+.plan-card-v2 .ppv-wk    { color: rgba(255,255,255,.85); }
+.plan-card-v2 .ppv-adh   { color: #fff; }
+.plan-card-v2 .ppv-bar      { background: rgba(255,255,255,.25); }
+.plan-card-v2 .ppv-bar-fill { background: #fff; }
+.plan-card-v2 .ppv-streak   { color: #fff; }
+.plan-card-v2 .ppv-wd       { color: rgba(255,255,255,.75); }
+/* Geplante Tage als weisser Kreis mit dunkler Schrift: Die Akzentfarbe liegt zu nah am
+   Tab-Hintergrund, der Kreis waere auf dem Schleier kaum zu erkennen. */
+.plan-card-v2 .ppv-col.training .ppv-wd { background: rgba(255,255,255,.92); color: var(--accent-dark); }
+.plan-card-v2 .ppv-col.today .ppv-wd::after { border-color: rgba(255,255,255,.9); }
+.plan-card-v2 .ppv-col.today:not(.training) .ppv-wd { color: #fff; }
+.plan-card-v2 .ppv-col.selected .ppv-wd { box-shadow: 0 0 0 2px rgba(255,255,255,.55); }
 .plan-card-v2:active { transform: scale(0.995); }
 .ppv-head { display: flex; align-items: flex-start; gap: 8px; }
 .ppv-name { flex: 1; min-width: 0; font-size: 17px; font-weight: 700; color: var(--text); }
@@ -629,6 +647,13 @@ body.theme-plans .hist-action-dd {
   font-size: 9px; font-weight: 900; line-height: 14px; text-align: center;
   box-shadow: 0 0 0 1.5px var(--green);
 }
+
+/* Archivierte Karten: Der graue Name aus der Listenansicht wuerde die weisse Schrift der
+   Schleier-Karte ueberschreiben und waere dort unlesbar — deshalb hier heller, aber
+   gedaempft, damit „archiviert" weiterhin erkennbar bleibt. */
+.plan-card-v2.plan-status-past .ppv-name,
+.plan-card-v2.plan-status-archived .ppv-name { color: rgba(255,255,255,.82); }
+.plan-card-v2 .plan-status-chip { background: rgba(255,255,255,.2); color: #fff; }
 
 .plan-status-past .plan-list-name,
 .plan-status-archived .plan-list-name { color: var(--text2); }
