@@ -2205,6 +2205,44 @@ function _audioContext() {
   return _audioCtx;
 }
 
+// ── Glas-Modus ─────────────────────────────────────────────────────────────────
+// Schaltet ALLE Karten der App auf den durchsichtigen Stil der `.weitere-btn`-Knoepfe um.
+// Der Zustand liegt in einem EIGENEN localStorage-Key, nicht in den Trainingsdaten: Eine
+// reine Anzeige-Einstellung hat in der Drive-Sicherung nichts verloren (wie ft_ex_chart_modes).
+const GLAS_KEY = 'ft_glas';
+function glasAktiv() { try { return localStorage.getItem(GLAS_KEY) === '1'; } catch { return false; } }
+
+function applyGlasModus() {
+  const an = glasAktiv();
+  document.documentElement.classList.toggle('glas', an);
+  const btn = document.getElementById('glas-btn');
+  if (btn) btn.setAttribute('aria-pressed', an ? 'true' : 'false');
+}
+
+function toggleGlasModus() {
+  try { localStorage.setItem(GLAS_KEY, glasAktiv() ? '0' : '1'); } catch {}
+  applyGlasModus();
+  // Diagramme neu zeichnen: Achsen- und Rasterfarben kommen aus JS, nicht aus dem CSS.
+  _zeichneAlleDiagrammeNeu();
+}
+
+// Chart.js liest Textfarben aus seiner eigenen Vorgabe — die muss dem Modus folgen,
+// sonst stehen dunkle Achsenbeschriftungen auf dem dunklen Schleier.
+function _setzeChartFarben() {
+  if (typeof Chart === 'undefined') return;
+  const an = glasAktiv();
+  Chart.defaults.color = an ? 'rgba(255,255,255,0.8)' : '#64748B';
+  Chart.defaults.borderColor = an ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.06)';
+}
+
+function _zeichneAlleDiagrammeNeu() {
+  _setzeChartFarben();
+  if (currentScreen === 'exercises') renderExercisesScreen();
+  else if (currentScreen === 'workouts') renderWorkoutsScreen();
+  else if (currentScreen === 'overview') renderOverview();
+  else if (currentScreen === 'plans') renderPlansScreen();
+}
+
 // iOS gibt Ton erst frei, wenn der Audio-Kontext aus einer echten Nutzergeste heraus
 // entsperrt wurde. Darum bei jeder Beruehrung nachfassen, solange er schlaeft — der
 // erste Satz-Haken einer Einheit erledigt das lange vor der ersten Pause.
@@ -3002,8 +3040,10 @@ function renderVolumeChart(ws) {
   const ctx = canvas.getContext('2d');
   const isKg = volumeUnit === 'kg';
   const achseInTonnen = isKg && sortedKeys.some(k => buckets[k].val >= 1000);
-  // Read the current theme accent (so the chart matches the active tab)
-  const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#0066ff';
+  // Read the current theme accent (so the chart matches the active tab).
+  // Glas-Modus: Weiss, sonst laege die Linie in der Farbe des Untergrunds.
+  const accent = glasAktiv() ? '#ffffff'
+    : (getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#0066ff');
   const accentRGB = (() => {
     // Convert hex to "r,g,b" for rgba()
     const h = accent.replace('#','');
@@ -5207,7 +5247,10 @@ function _zeichneExDiagramm(canvas, exId) {
   const hist = exHistPoints(exId, mode);
   if (hist.length < 2) return null;
   const unit = mode === 'reps' ? 'Wdh.' : 'kg';
-  const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#1E40AF';
+  // Im Glas-Modus liegt die Linie auf dem Schleier — die Akzentfarbe waere dort die Farbe
+  // des Untergrunds und damit unsichtbar.
+  const accent = glasAktiv() ? '#ffffff'
+    : (getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#1E40AF');
   // getComputedStyle liefert je nach Browser „#1E40AF" ODER „rgb(30, 64, 175)" — ein
   // angehängtes Alpha-Suffix wäre im zweiten Fall ungültig und die Fläche würde schwarz.
   const accentFill = _withAlpha(accent, 0.14);
@@ -7278,6 +7321,8 @@ function prerenderAllTabs() {
 
 document.addEventListener('DOMContentLoaded', () => {
   // Daten-Migration: altes ft_program/ft_plan2/ft_weekplan in neue ft_plans-Struktur
+  applyGlasModus();
+  _setzeChartFarben();
   initAudioUnlock();
   migrateRemoveCardio();
   migrateToMultiPlan();

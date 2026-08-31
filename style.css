@@ -917,6 +917,67 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
    Block-Element — volle Breite kaeme so nicht zustande. */
 .weitere-btn.archiv-btn { width: calc(100% - 28px); margin: 16px 14px 8px; }
 
+/* ─── Glas-Modus ────────────────────────────────────────────────────────────────
+   Schaltet alle Karten auf denselben 12-%-Weiss-Schleier wie `.weitere-btn`.
+   Die Farbtoken werden AUF DEN KARTEN neu gesetzt, nicht global auf :root — dadurch
+   erben nur deren Inhalte die hellen Farben. Global gesetzt wuerden auch die Bottom-
+   Sheets (`.sheet`) durchsichtig, die auf einem abgedunkelten Grund liegen und dann
+   unlesbar waeren. Modals bleiben deshalb bewusst unveraendert. */
+html.glas .card,
+html.glas .mehr-card,
+html.glas .plan-section-card,
+html.glas .chart-card-v2,
+html.glas .session-card-v2,
+html.glas .hero-v2,
+html.glas .aex-v2,
+html.glas .ex-list {
+  background: rgba(255,255,255,.12);
+  box-shadow: 0 1px 6px rgba(0,0,0,.18);
+  border-color: rgba(255,255,255,.22);
+  --text:   #fff;
+  --text2:  rgba(255,255,255,.85);
+  --text3:  rgba(255,255,255,.65);
+  --card:   rgba(255,255,255,.10);
+  --card2:  rgba(255,255,255,.16);
+  --border: rgba(255,255,255,.24);
+  --bg:     rgba(255,255,255,.10);
+  /* Die Akzentfarbe ist die Farbe des Tab-Hintergrunds — auf dem Schleier waere sie
+     praktisch unsichtbar. Innerhalb der Karten wird sie deshalb zu Weiss. */
+  --accent:      #fff;
+  --accent-dark: #fff;
+  --accent-bg:   rgba(255,255,255,.20);
+  --accent-soft: rgba(255,255,255,.28);
+}
+/* Ueberschriften und Zahlen, die fest auf dunkle Werte gesetzt sind. */
+html.glas .chart-card-v2-title,
+html.glas .plan-section-head h3,
+html.glas .hero-v2-title,
+html.glas .aex-v2-name,
+html.glas .ex-item-name,
+html.glas .hd-stat b { color: #fff; }
+/* Akzentfarbene Schrift liegt zu nah am Tab-Hintergrund. */
+html.glas .hero-v2-label,
+html.glas .ppv-adh,
+html.glas .ex-chart-toggle .stats-mode-pill.active,
+html.glas .vol-unit-toggle .stats-mode-pill.active { color: #fff; }
+html.glas .ex-chart-toggle .stats-mode-pill.active,
+html.glas .vol-unit-toggle .stats-mode-pill.active { background: rgba(255,255,255,.28); }
+/* Die Abdeckung der eingefrorenen Wochentagsspalte deckt sonst mit `var(--card)` ab und
+   liegt als hellerer Streifen auf dem Schleier. Sie MUSS deckend bleiben (sonst scrollen
+   Kaestchen sichtbar darunter durch), daher der gleiche Ton wie die Karte selbst. */
+html.glas .cal-daylabels::before { background: rgba(255,255,255,.12); }
+/* Kalender-Kaestchen: Die hellen Grautoene verschwinden auf dem Schleier. */
+html.glas .cal-day { background: rgba(255,255,255,.16); }
+html.glas .cal-day.planned { background: rgba(255,255,255,.42); }
+/* Knoepfe, die frei auf dem Tab-Hintergrund liegen (nicht in einer Karte) — sonst
+   bleiben sie als helle Bloecke stehen. */
+html.glas #wo-add-ex-wrap .btn {
+  background: rgba(255,255,255,.12); color: #fff;
+  box-shadow: 0 1px 6px rgba(0,0,0,.18);
+}
+/* Der Knopf selbst zeigt seinen Zustand. */
+#glas-btn[aria-pressed="true"] { background: rgba(255,255,255,.42); }
+
 /* ─── Toast ─── */
 #toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 14px); left: 50%; transform: translateX(-50%) translateY(16px); background: #111; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 500; opacity: 0; transition: all .28s; z-index: 500; white-space: nowrap; pointer-events: none; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
