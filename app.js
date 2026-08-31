@@ -1578,7 +1578,7 @@ function renderWorkoutsScreen() {
     renderPreviewWorkout(planDay);
     // Preview-Mode: Button schreibt nur in den Plan-Tag (kein aktives Workout vorhanden)
     addWrap.style.display = '';
-    addWrap.innerHTML = `<button class="btn btn-ghost btn-full" onclick="openAddExModal('preview')">+ Übung zum Trainingstag hinzufügen</button>`;
+    addWrap.innerHTML = `<button type="button" class="weitere-btn" onclick="openAddExModal('preview')">+ Übung zum Trainingstag hinzufügen</button>`;
     stopTimer();
   } else {
     document.getElementById('ex-tab-bar').innerHTML = '';
@@ -3838,11 +3838,11 @@ function renderPlans() {
     html += active.map(renderRow).join('');
     if (archived.length) {
       const expanded = plansArchiveExpanded;
-      html += `<div class="plans-list-archive-header${expanded ? ' expanded' : ''}" onclick="togglePlansArchive()">
-        <span class="plan-day-collapse-arrow">${expanded ? '▾' : '▸'}</span>
-        <span class="plan-day-collapse-label">Archivierte Pläne</span>
-        <span class="plan-day-collapse-count">${archived.length}</span>
-      </div>`;
+      html += `<button type="button" class="weitere-btn archiv-btn" aria-expanded="${expanded}"
+              onclick="togglePlansArchive()">
+        Archivierte Pläne<span class="count">${archived.length}</span>
+        <span class="weitere-pfeil">${expanded ? '▾' : '▸'}</span>
+      </button>`;
       if (expanded) html += archived.map(renderRow).join('');
     }
   }
@@ -5288,12 +5288,13 @@ function renderExercisesByMuscle() {
     const itemsHTML = items.map(ex => buildExItemHTML(ex)).join('');
     const isCollapsed = !exCatalogSearch && collapsedExGroups.has('muscle:' + m);
     return `<div class="ex-group${isCollapsed ? ' collapsed' : ''}" style="--mc:${meta.color}">
-      <div class="ex-group-title" onclick="toggleExGroup('muscle:${m}')">
+      <button type="button" class="weitere-btn ex-group-btn" aria-expanded="${!isCollapsed}"
+              onclick="toggleExGroup('muscle:${m}')">
         <span class="dot"></span>
         ${meta.name}
         <span class="count">(${items.length})</span>
-        <span class="ex-group-arrow">${isCollapsed ? '▸' : '▾'}</span>
-      </div>
+        <span class="weitere-pfeil">${isCollapsed ? '▸' : '▾'}</span>
+      </button>
       <div class="ex-list">${itemsHTML}</div>
     </div>`;
   }).filter(Boolean).join('');

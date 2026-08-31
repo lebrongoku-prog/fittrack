@@ -857,6 +857,35 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   border-radius: 10px; padding: 8px 10px; margin: -4px -8px 0;
 }
 
+/* ─── Ausklapp-Knopf auf farbigem Tab-Hintergrund ───────────────────────────────
+   Uebernommen aus der Health-Command-Center-App (Leonard-Wunsch 28.08.2026).
+   KEIN Rahmen, dafuer ein weicher Schatten: Auf dem farbigen Tab-Hintergrund wirkte eine
+   Kontur hart, der Schatten weist den Knopf trotzdem als Knopf aus. Weisse Schrift auf
+   einem 12-%-Weiss-Schleier setzt einen FARBIGEN/dunklen Grund voraus — auf einer weissen
+   Karte waere er unlesbar (dort stattdessen dunkle Schrift auf rgba(0,0,0,.06)).
+   `font:inherit` MUSS vor den Schrift-Angaben stehen, sonst gewinnt die Browser-
+   Standardschrift fuer <button>. Es MUSS ein <button> sein: initScrollHideNav nimmt echte
+   Bedienelemente von der „Tableiste wieder einblenden"-Erkennung automatisch aus. */
+.weitere-btn{
+  display:flex; align-items:center; justify-content:center; gap:.4rem; width:100%;
+  background:rgba(255,255,255,.12);
+  border:0; border-radius:var(--radius);
+  padding:.6rem .75rem; margin-bottom:.7rem;
+  cursor:pointer;
+  font:inherit; font-size:.79rem; font-weight:600; color:#fff;
+  box-shadow:0 1px 6px rgba(0,0,0,.18);
+  -webkit-tap-highlight-color:transparent;
+}
+.weitere-pfeil{font-size:.9rem; line-height:1}
+/* Muskelgruppen-Kopf im Katalog: farbiger Punkt und Anzahl behalten ihre Rolle. */
+.ex-group-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mc, var(--accent)); flex-shrink: 0; }
+.ex-group-btn .count { opacity: .7; font-weight: 600; }
+.archiv-btn .count { opacity: .7; font-weight: 600; }
+/* „Archivierte Plaene" steht direkt im Screen, braucht also eigene Seitenabstaende.
+   Breite explizit rechnen: <button> schrumpft bei `width:auto` auf den Inhalt, auch als
+   Block-Element — volle Breite kaeme so nicht zustande. */
+.weitere-btn.archiv-btn { width: calc(100% - 28px); margin: 16px 14px 8px; }
+
 /* ─── Toast ─── */
 #toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 14px); left: 50%; transform: translateX(-50%) translateY(16px); background: #111; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 500; opacity: 0; transition: all .28s; z-index: 500; white-space: nowrap; pointer-events: none; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
