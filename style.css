@@ -61,8 +61,10 @@
   --gradient:             linear-gradient(135deg, var(--gradient-from), var(--accent));
   --card-accent-border:   rgba(0, 102, 255, 0.35);
 
-  --shadow:    0 1px 4px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.09);
+  /* Einheitlicher Kartenschatten — derselbe Wert wie bei .weitere-btn
+     (Leonard-Wunsch 28.08.2026). Vorher waren es zwei unterschiedlich starke Schatten. */
+  --shadow:    0 1px 6px rgba(0, 0, 0, 0.18);
+  --shadow-md: 0 1px 6px rgba(0, 0, 0, 0.18);
   --radius:    14px;
   --radius-sm: 8px;
   --nav-h:     60px;
@@ -878,6 +880,10 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 }
 .weitere-pfeil{font-size:.9rem; line-height:1}
 /* Muskelgruppen-Kopf im Katalog: farbiger Punkt und Anzahl behalten ihre Rolle. */
+/* Beschriftung linksbuendig statt zentriert (Leonard-Wunsch 28.08.2026); der Pfeil
+   wandert dafuer an den rechten Rand, sonst klebte er direkt an der Anzahl. */
+.ex-group-btn { justify-content: flex-start; }
+.ex-group-btn .weitere-pfeil { margin-left: auto; }
 .ex-group-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mc, var(--accent)); flex-shrink: 0; }
 .ex-group-btn .count { opacity: .7; font-weight: 600; }
 .archiv-btn .count { opacity: .7; font-weight: 600; }
