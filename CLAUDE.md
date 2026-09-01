@@ -270,6 +270,15 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   `.cal-scroll` traegt zusaetzlich `overscroll-behavior-x: contain`: Ohne das reicht die Wischgeste an
   `#tab-container` (Snap-Scroller) weiter, der Tab wandert mit, rastet zurueck und die Kalenderbewegung
   bricht ab. Preis dieser Entscheidung: Aus dem Kalender heraus laesst sich der Tab nicht wechseln.
+  Dazu setzt `renderTrainingCalendar` `touch-action: pan-x` per Inline-Stil auf den Scroller — aber NUR,
+  solange das Raster wirklich scrollt (`scrollWidth > clientWidth`). Ohne das muss iOS bei jedem Wischen
+  zwischen senkrechtem Seiten-Scroll und waagerechtem Raster-Scroll entscheiden und bleibt zwischendurch
+  stehen. Das Stocken trat NUR in Tabs auf, deren Seite laenger als der Bildschirm ist (Uebersicht) —
+  im Plaene-Tab passte alles auf den Bildschirm, dort gab es keinen Streit um die Geste. Passt das Jahr
+  ganz hinein (Querformat), muss die Angabe wieder weg, sonst schluckt der Kalender die Geste, ohne
+  selbst zu scrollen, und die Seite laesst sich dort gar nicht mehr senkrecht bewegen.
+  TESTHINWEIS: Der Inline-Stil wird in einem `requestAnimationFrame` gesetzt — in einem versteckten
+  Browser-Tab feuert das nie. Zum Pruefen `requestAnimationFrame` voruebergehend synchron machen.
 - **Kalenderkarten sind von der Tipp-Animation ausgenommen** (`#ov-cal-card:active`/`#plans-cal-card:active`
   → `transform: none`, dazu `transition: none`). Ein `transform` auf dem Vorfahren bricht auf iOS die laufende
   Wischgeste in einem Scrollbereich darin ab — das Raster liess sich dadurch gar nicht mehr waagerecht scrollen

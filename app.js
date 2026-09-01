@@ -3379,6 +3379,14 @@ function renderTrainingCalendar(id, cardId) {
   if (scroller) requestAnimationFrame(() => {
     const heuteSpalte = Math.floor(Math.round((today - start) / 86400000) / 7);
     scroller.scrollLeft = Math.max(0, heuteSpalte * SPALTE - scroller.clientWidth * 0.7);
+    // `touch-action: pan-x` NUR, solange das Raster ueberhaupt scrollt. Ohne das muss iOS
+    // bei jedem Wischen zwischen senkrechtem Seiten-Scroll und waagerechtem Raster-Scroll
+    // entscheiden; kippt es zwischendurch auf senkrecht, bleibt das Raster stehen — das
+    // Stocken. Es trat nur in Tabs auf, deren Seite laenger als der Bildschirm ist.
+    // Passt das Jahr ganz hinein (Querformat), MUSS die Angabe wieder weg: Sonst schluckt
+    // der Kalender die Geste, ohne selbst zu scrollen, und die Seite laesst sich dort
+    // gar nicht mehr senkrecht bewegen. Tippen auf ein Kaestchen bleibt unberuehrt.
+    scroller.style.touchAction = scroller.scrollWidth > scroller.clientWidth + 1 ? 'pan-x' : '';
   });
 }
 
