@@ -3204,6 +3204,7 @@ function calendarInnerHTML(id) {
     <div class="cal-body">
       <div class="cal-daylabels"><span>Mo</span><span></span><span>Mi</span><span></span><span>Fr</span><span></span><span>So</span></div>
       <div class="cal-scroll" id="${id}-scroll">
+        <span class="cal-sticky-anchor" aria-hidden="true"></span>
         <div class="cal-inner">
           <div class="cal-months" id="${id}-months"></div>
           <div class="cal-gridwrap">
@@ -3379,14 +3380,10 @@ function renderTrainingCalendar(id, cardId) {
   if (scroller) requestAnimationFrame(() => {
     const heuteSpalte = Math.floor(Math.round((today - start) / 86400000) / 7);
     scroller.scrollLeft = Math.max(0, heuteSpalte * SPALTE - scroller.clientWidth * 0.7);
-    // `touch-action: pan-x` NUR, solange das Raster ueberhaupt scrollt. Ohne das muss iOS
-    // bei jedem Wischen zwischen senkrechtem Seiten-Scroll und waagerechtem Raster-Scroll
-    // entscheiden; kippt es zwischendurch auf senkrecht, bleibt das Raster stehen — das
-    // Stocken. Es trat nur in Tabs auf, deren Seite laenger als der Bildschirm ist.
-    // Passt das Jahr ganz hinein (Querformat), MUSS die Angabe wieder weg: Sonst schluckt
-    // der Kalender die Geste, ohne selbst zu scrollen, und die Seite laesst sich dort
-    // gar nicht mehr senkrecht bewegen. Tippen auf ein Kaestchen bleibt unberuehrt.
-    scroller.style.touchAction = scroller.scrollWidth > scroller.clientWidth + 1 ? 'pan-x' : '';
+    // KEIN `touch-action` hier. Der Versuch (01.09.2026), dem Browser mit `pan-x` die Wahl
+    // zwischen senkrechtem Seiten- und waagerechtem Rasterscroll abzunehmen, hat das
+    // Stocken nicht behoben — und in Tabs, deren Seite senkrecht scrollt (Uebersicht),
+    // nimmt es der Geste zusaetzlich den senkrechten Ausweg. Beim Wiederaufgreifen bedenken.
   });
 }
 

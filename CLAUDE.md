@@ -264,21 +264,24 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   erste Rasterzeile auf einer Linie. Deshalb eine FESTE Hoehe statt einer gemessenen Schrifthoehe.
   ACHTUNG Platzrechnung: `renderTrainingCalendar` misst `scrollerEl.clientWidth`. Der ist bereits um die
   Wochentagsspalte verkuerzt — sie darf dort NICHT noch einmal abgezogen werden (frueher `- 23`).
-  `.cal-body` ist ein GRID mit `minmax(0, 1fr)`, bewusst kein Flex: Ein Flex-Kind mit `flex-basis:auto`
-  bemisst sich zuerst an seiner max-content-Breite, der Browser rechnet also bei jedem Layout die volle
-  Breite aller 371 Kaestchen aus und staucht den Scroller danach wieder zusammen — das Wischen stockte.
-  `.cal-scroll` traegt zusaetzlich `overscroll-behavior-x: contain`: Ohne das reicht die Wischgeste an
+  **`.cal-scroll` MUSS ein gewoehnlicher Block bleiben** (in `.cal-body`, ebenfalls ein Block). Kein Flex,
+  kein Grid. Platz fuer die Wochentagsspalte macht ein `margin-left`; die Spalte selbst liegt ABSOLUT
+  darueber. Vorgeschichte (26.08.-01.09.2026): Als Flex-Kind und danach als Grid-Kind stockte das Wischen
+  auf dem iPhone mitten in der Geste. Ein Flex-/Grid-Kind bekommt seine Breite vom Layout-Algorithmus des
+  Elternteils, ein Block schlicht vom umgebenden Kasten — nur Letzteres war je erprobt.
+  `.cal-scroll` traegt `overscroll-behavior-x: contain`: Ohne das reicht die Wischgeste an
   `#tab-container` (Snap-Scroller) weiter, der Tab wandert mit, rastet zurueck und die Kalenderbewegung
-  bricht ab. Preis dieser Entscheidung: Aus dem Kalender heraus laesst sich der Tab nicht wechseln.
-  Dazu setzt `renderTrainingCalendar` `touch-action: pan-x` per Inline-Stil auf den Scroller — aber NUR,
-  solange das Raster wirklich scrollt (`scrollWidth > clientWidth`). Ohne das muss iOS bei jedem Wischen
-  zwischen senkrechtem Seiten-Scroll und waagerechtem Raster-Scroll entscheiden und bleibt zwischendurch
-  stehen. Das Stocken trat NUR in Tabs auf, deren Seite laenger als der Bildschirm ist (Uebersicht) —
-  im Plaene-Tab passte alles auf den Bildschirm, dort gab es keinen Streit um die Geste. Passt das Jahr
-  ganz hinein (Querformat), muss die Angabe wieder weg, sonst schluckt der Kalender die Geste, ohne
-  selbst zu scrollen, und die Seite laesst sich dort gar nicht mehr senkrecht bewegen.
-  TESTHINWEIS: Der Inline-Stil wird in einem `requestAnimationFrame` gesetzt — in einem versteckten
+  bricht ab. Preis: Aus dem Kalender heraus laesst sich der Tab nicht per Wisch wechseln.
+  `.cal-sticky-anchor` ist ein unsichtbares `position: sticky`-Kind IM Scroller (0x0). Vor dem Umbau sass
+  dort die Wochentagsspalte als sticky Element; ein klebendes Kind zwingt WebKit, den Scrollbereich auf
+  der Compositor-Ebene zu fuehren. Ohne so ein Kind kann er auf den Hauptthread zurueckfallen und bleibt
+  stehen, sobald dort etwas laeuft. NICHT entfernen, ohne auf dem iPhone gegenzupruefen.
+  KEIN `touch-action` auf dem Scroller: Der Versuch mit `pan-x` (01.09.2026) hat das Stocken nicht
+  behoben und nimmt der Geste in Tabs mit senkrecht scrollender Seite zusaetzlich den Ausweg.
+  TESTHINWEIS: Die Scrollposition wird in einem `requestAnimationFrame` gesetzt — in einem versteckten
   Browser-Tab feuert das nie. Zum Pruefen `requestAnimationFrame` voruebergehend synchron machen.
+  Wischen selbst ist auf diesem Rechner NICHT pruefbar: Mausgesten loesen es nicht aus, die Browser-
+  Ansicht laesst sich nicht einblenden und Xcode (iOS-Simulator, `simctl`) ist nicht installiert.
 - **Kalenderkarten sind von der Tipp-Animation ausgenommen** (`#ov-cal-card:active`/`#plans-cal-card:active`
   → `transform: none`, dazu `transition: none`). Ein `transform` auf dem Vorfahren bricht auf iOS die laufende
   Wischgeste in einem Scrollbereich darin ab — das Raster liess sich dadurch gar nicht mehr waagerecht scrollen

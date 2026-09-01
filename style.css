@@ -1683,30 +1683,32 @@ html.wo-running #wo-week-card { display: none; }
    Kante des Scrollers wirklich, statt von einer deckenden Flaeche ueberdeckt zu werden.
    Die alte Loesung (sticky Spalte + deckende Maske) brauchte eine Farbe — im
    Transparenz-Modus gibt es keine, dort schienen die Kaestchen durch die Spalte hindurch. */
-/* GRID, nicht Flex: Ein Flex-Kind mit `flex-basis:auto` bemisst sich zuerst an seiner
-   max-content-Breite — der Browser muesste dafuer bei jedem Layout die volle Breite aller
-   371 Kaestchen ausrechnen und den Scroller anschliessend wieder zusammenstauchen. Mit
-   `minmax(0, 1fr)` haengt die Spaltenbreite gar nicht am Inhalt; der Scroller verhaelt
-   sich damit wieder wie der einfache Block von frueher. (Das Wischen stockte sonst.) */
-.cal-body {
-  display: grid;
-  grid-template-columns: var(--cal-label-w) minmax(0, 1fr);
-  gap: var(--cal-label-gap);
-  padding-left: var(--cal-pad-x);
-}
+/* WICHTIG — hier steckt Erfahrung drin, bitte nicht "aufraeumen":
+   `.cal-body` ist ein GEWOEHNLICHER BLOCK, und `.cal-scroll` darin ebenfalls. Kein Flex,
+   kein Grid. Der Scrollbereich hatte diese Bauweise, als das Wischen zuletzt fluessig lief;
+   als Flex- bzw. Grid-Kind (26.-01.09.2026) stockte es auf dem iPhone mitten in der Geste.
+   Ein Flex-/Grid-Kind bekommt seine Breite vom Layout-Algorithmus des Elternteils; ein
+   Block nimmt sie schlicht vom umgebenden Kasten. Nur Letzteres war je erprobt.
+   Platz fuer die Wochentagsspalte macht deshalb ein `margin-left`, und die Spalte selbst
+   liegt absolut darueber — sie steht damit AUSSERHALB des Scrollers (die Kaestchen
+   verschwinden an dessen Kante, statt ueberdeckt zu werden) und fasst ihn trotzdem nicht an. */
+.cal-body { position: relative; }
 .cal-scroll {
+  margin-left: calc(var(--cal-pad-x) + var(--cal-label-w) + var(--cal-label-gap));
   overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
   padding: var(--cal-pad-y) var(--cal-pad-x) var(--cal-pad-y) 0;
-  /* Der Kalender liegt in #tab-container, einem waagerechten Snap-Scroller. Ohne `contain`
-     reicht die Wischgeste an ihn weiter: Der Tab faengt an mitzuwandern, rastet zurueck und
-     die Kalenderbewegung bricht ab — genau das Stocken. `contain` haelt die waagerechte
-     Geste im Kalender. Preis: Aus dem Kalender heraus laesst sich der Tab nicht wechseln
-     (ueberall sonst auf dem Bildschirm weiterhin schon). */
+  /* Haelt die waagerechte Geste im Kalender, statt sie an #tab-container (Snap-Scroller)
+     weiterzureichen. Seit dieser Angabe laeuft der Kalender im Plaene-Tab sauber.
+     Preis: Aus dem Kalender heraus laesst sich der Tab nicht per Wisch wechseln. */
   overscroll-behavior-x: contain;
-  /* Snap wird zwar nicht vererbt — die Angabe schliesst aus, dass der Snap-Vorfahr
-     ueberhaupt Rastpunkte im Kalender sucht. */
-  scroll-snap-type: none;
 }
+/* Unsichtbarer Halt im Scroller. Vor dem Umbau sass hier die Wochentagsspalte als
+   `position: sticky` — ein klebendes Kind zwingt WebKit, den Scrollbereich auf der
+   Compositor-Ebene zu fuehren. Ohne so ein Kind kann er auf den Hauptthread zurueckfallen,
+   und dann bleibt die Bewegung stehen, sobald dort etwas anderes laeuft. Das ist der
+   letzte Unterschied zum erprobten Stand — deshalb hier wiederhergestellt. Kostet nichts:
+   null Breite, null Hoehe, unsichtbar. */
+.cal-sticky-anchor { position: sticky; left: 0; display: block; width: 0; height: 0; }
 .cal-scroll::-webkit-scrollbar { display: none; }
 /* vertical-align:top vermeidet den Unterlaengen-Spalt, den ein inline-block sonst unter
    sich laesst. */
@@ -1716,12 +1718,16 @@ html.wo-running #wo-week-card { display: none; }
   height: var(--cal-months-h);
 }
 .cal-month { width: var(--cal-cell, 16px); flex: 0 0 var(--cal-cell, 16px); font-size: 11px; line-height: var(--cal-months-h); color: var(--text3); white-space: nowrap; }
-/* Steht ausserhalb des Scrollers und muss die Monatszeile darin senkrecht nachbilden,
-   damit „Mo" auf einer Linie mit der ersten Rasterzeile liegt. Deshalb eine feste Hoehe
-   fuer die Monatszeile (--cal-months-h) statt einer gemessenen Schrifthoehe. */
+/* Liegt absolut ueber dem linken Rand von `.cal-body` — bewusst NICHT als Flex-/Grid-Spalte,
+   damit `.cal-scroll` ein gewoehnlicher Block bleiben kann (siehe oben).
+   Der obere Abstand bildet die Monatszeile im Scroller nach, damit „Mo" auf einer Linie mit
+   der ersten Rasterzeile liegt; dafuer hat die Monatszeile eine FESTE Hoehe (--cal-months-h)
+   statt einer gemessenen Schrifthoehe. */
 .cal-daylabels {
-  display: flex; flex-direction: column; gap: 3px; flex: 0 0 var(--cal-label-w);
-  padding-top: calc(var(--cal-pad-y) + var(--cal-months-h) + var(--cal-months-gap));
+  position: absolute; left: var(--cal-pad-x);
+  top: calc(var(--cal-pad-y) + var(--cal-months-h) + var(--cal-months-gap));
+  width: var(--cal-label-w);
+  display: flex; flex-direction: column; gap: 3px;
 }
 .cal-daylabels span { height: var(--cal-cell, 16px); font-size: 11px; line-height: var(--cal-cell, 16px); color: var(--text3); }
 .cal-grid { display: flex; gap: 3px; }
