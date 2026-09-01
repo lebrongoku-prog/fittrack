@@ -604,6 +604,11 @@ body.theme-plans .hist-action-dd {
 .card:active, .plan-section-card:active, .chart-card-v2:active, .session-card-v2:active,
 .hero-v2:active, .aex-v2:active, .ex-list:active, .plan-card-v2:active,
 .plan-list-row:active, .mehr-card:active { transform: scale(0.995); }
+/* AUSNAHME Kalenderkarten: Sie enthalten einen eigenen waagerechten Scrollbereich. Ein
+   transform auf dem Vorfahren waehrend `:active` bricht auf iOS die laufende Wischgeste ab
+   — das Raster liess sich dadurch gar nicht mehr scrollen. */
+#ov-cal-card:active, #plans-cal-card:active { transform: none; }
+#ov-cal-card, #plans-cal-card { transition: none; }
 .ppv-head { display: flex; align-items: flex-start; gap: 8px; }
 .ppv-name { flex: 1; min-width: 0; font-size: 17px; font-weight: 700; color: var(--text); }
 .plan-status-past .ppv-name, .plan-status-archived .ppv-name { color: var(--text2); }
