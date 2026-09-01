@@ -594,7 +594,16 @@ body.theme-plans .hist-action-dd {
   box-shadow: var(--shadow);
   padding: 14px 16px; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.plan-card-v2:active { transform: scale(0.995); }
+/* Tipp-Rueckmeldung fuer ALLE Karten (Leonard-Wunsch 28.08.2026) — dieselbe dezente
+   Stauchung wie bei der Wochenplan-Karte. `transition` NUR auf transform, damit die
+   Farbwechsel der Karten (z. B. erledigte Uebung) unveraendert bleiben. */
+.card, .plan-section-card, .chart-card-v2, .session-card-v2, .hero-v2, .aex-v2,
+.ex-list, .plan-card-v2, .plan-list-row, .mehr-card {
+  transition: transform .1s ease;
+}
+.card:active, .plan-section-card:active, .chart-card-v2:active, .session-card-v2:active,
+.hero-v2:active, .aex-v2:active, .ex-list:active, .plan-card-v2:active,
+.plan-list-row:active, .mehr-card:active { transform: scale(0.995); }
 .ppv-head { display: flex; align-items: flex-start; gap: 8px; }
 .ppv-name { flex: 1; min-width: 0; font-size: 17px; font-weight: 700; color: var(--text); }
 .plan-status-past .ppv-name, .plan-status-archived .ppv-name { color: var(--text2); }
@@ -903,14 +912,13 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
    erben nur deren Inhalte die hellen Farben. Global gesetzt wuerden auch die Bottom-
    Sheets (`.sheet`) durchsichtig, die auf einem abgedunkelten Grund liegen und dann
    unlesbar waeren. Modals bleiben deshalb bewusst unveraendert. */
-html.glas .card,
-html.glas .mehr-card,
-html.glas .plan-section-card,
-html.glas .chart-card-v2,
-html.glas .session-card-v2,
-html.glas .hero-v2,
-html.glas .aex-v2,
-html.glas .ex-list {
+html.glas .screen:not(#screen-mehr) .card,
+html.glas .screen:not(#screen-mehr) .plan-section-card,
+html.glas .screen:not(#screen-mehr) .chart-card-v2,
+html.glas .screen:not(#screen-mehr) .session-card-v2,
+html.glas .screen:not(#screen-mehr) .hero-v2,
+html.glas .screen:not(#screen-mehr) .aex-v2,
+html.glas .screen:not(#screen-mehr) .ex-list {
   background: rgba(255,255,255,.12);
   box-shadow: 0 1px 6px rgba(0,0,0,.18);
   border-color: rgba(255,255,255,.22);
@@ -929,67 +937,67 @@ html.glas .ex-list {
   --accent-soft: rgba(255,255,255,.28);
 }
 /* Ueberschriften und Zahlen, die fest auf dunkle Werte gesetzt sind. */
-html.glas .chart-card-v2-title,
-html.glas .plan-section-head h3,
-html.glas .hero-v2-title,
-html.glas .aex-v2-name,
-html.glas .ex-item-name,
-html.glas .hd-stat b { color: #fff; }
+html.glas .screen:not(#screen-mehr) .chart-card-v2-title,
+html.glas .screen:not(#screen-mehr) .plan-section-head h3,
+html.glas .screen:not(#screen-mehr) .hero-v2-title,
+html.glas .screen:not(#screen-mehr) .aex-v2-name,
+html.glas .screen:not(#screen-mehr) .ex-item-name,
+html.glas .screen:not(#screen-mehr) .hd-stat b { color: #fff; }
 /* Akzentfarbene Schrift liegt zu nah am Tab-Hintergrund. */
-html.glas .hero-v2-label,
-html.glas .ppv-adh,
-html.glas .ex-chart-toggle .stats-mode-pill.active,
-html.glas .vol-unit-toggle .stats-mode-pill.active { color: #fff; }
-html.glas .ex-chart-toggle .stats-mode-pill.active,
-html.glas .vol-unit-toggle .stats-mode-pill.active { background: rgba(255,255,255,.28); }
+html.glas .screen:not(#screen-mehr) .hero-v2-label,
+html.glas .screen:not(#screen-mehr) .ppv-adh,
+html.glas .screen:not(#screen-mehr) .ex-chart-toggle .stats-mode-pill.active,
+html.glas .screen:not(#screen-mehr) .vol-unit-toggle .stats-mode-pill.active { color: #fff; }
+html.glas .screen:not(#screen-mehr) .ex-chart-toggle .stats-mode-pill.active,
+html.glas .screen:not(#screen-mehr) .vol-unit-toggle .stats-mode-pill.active { background: rgba(255,255,255,.28); }
 /* Die Abdeckung der eingefrorenen Wochentagsspalte deckt sonst mit `var(--card)` ab und
    liegt als hellerer Streifen auf dem Schleier. Sie MUSS deckend bleiben (sonst scrollen
    Kaestchen sichtbar darunter durch), daher der gleiche Ton wie die Karte selbst. */
-html.glas .cal-daylabels::before { background: rgba(255,255,255,.12); }
+html.glas .screen:not(#screen-mehr) .cal-daylabels::before { background: rgba(255,255,255,.12); }
 /* Kalender-Kaestchen: Die hellen Grautoene verschwinden auf dem Schleier. */
-html.glas .cal-day { background: rgba(255,255,255,.16); }
-html.glas .cal-day.planned { background: rgba(255,255,255,.42); }
+html.glas .screen:not(#screen-mehr) .cal-day { background: rgba(255,255,255,.16); }
+html.glas .screen:not(#screen-mehr) .cal-day.planned { background: rgba(255,255,255,.42); }
 /* Knoepfe, die frei auf dem Tab-Hintergrund liegen (nicht in einer Karte) — sonst
    bleiben sie als helle Bloecke stehen. */
-html.glas #wo-add-ex-wrap .btn {
+html.glas .screen:not(#screen-mehr) #wo-add-ex-wrap .btn {
   background: rgba(255,255,255,.12); color: #fff;
   box-shadow: 0 1px 6px rgba(0,0,0,.18);
 }
 /* Wochenplan-Karte: im Normalmodus weiss, hier durchsichtig. Alle Inhalte muessen hell
    werden — die Karte liegt dann direkt auf dem farbigen Tab-Hintergrund. */
-html.glas .plan-card-v2 {
+html.glas .screen:not(#screen-mehr) .plan-card-v2 {
   background: rgba(255,255,255,.12);
   box-shadow: 0 1px 6px rgba(0,0,0,.18);
 }
-html.glas .plan-card-v2 .ppv-name  { color: #fff; }
-html.glas .plan-card-v2 .ppv-meta  { color: rgba(255,255,255,.7); }
-html.glas .plan-card-v2 .ppv-wk    { color: rgba(255,255,255,.85); }
-html.glas .plan-card-v2 .ppv-adh   { color: #fff; }
-html.glas .plan-card-v2 .ppv-bar      { background: rgba(255,255,255,.25); }
-html.glas .plan-card-v2 .ppv-bar-fill { background: #fff; }
-html.glas .plan-card-v2 .ppv-streak   { color: #fff; }
-html.glas .plan-card-v2 .ppv-wd       { color: rgba(255,255,255,.75); }
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-name  { color: #fff; }
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-meta  { color: rgba(255,255,255,.7); }
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-wk    { color: rgba(255,255,255,.85); }
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-adh   { color: #fff; }
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-bar      { background: rgba(255,255,255,.25); }
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-bar-fill { background: #fff; }
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-streak   { color: #fff; }
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-wd       { color: rgba(255,255,255,.75); }
 /* Geplante Tage weiss gefuellt: Die Akzentfarbe liegt zu nah am Tab-Hintergrund. */
-html.glas .plan-card-v2 .ppv-col.training .ppv-wd { background: rgba(255,255,255,.92); color: var(--accent-dark); }
-html.glas .plan-card-v2 .ppv-col.today .ppv-wd::after { border-color: rgba(255,255,255,.9); }
-html.glas .plan-card-v2 .ppv-col.today:not(.training) .ppv-wd { color: #fff; }
-html.glas .plan-card-v2 .ppv-col.selected .ppv-wd { box-shadow: 0 0 0 2px rgba(255,255,255,.55); }
-html.glas .plan-card-v2.plan-status-past .ppv-name,
-html.glas .plan-card-v2.plan-status-archived .ppv-name { color: rgba(255,255,255,.82); }
-html.glas .plan-card-v2 .plan-status-chip { background: rgba(255,255,255,.2); color: #fff; }
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.training .ppv-wd { background: rgba(255,255,255,.92); color: var(--accent-dark); }
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today .ppv-wd::after { border-color: rgba(255,255,255,.9); }
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today:not(.training) .ppv-wd { color: #fff; }
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.selected .ppv-wd { box-shadow: 0 0 0 2px rgba(255,255,255,.55); }
+html.glas .screen:not(#screen-mehr) .plan-card-v2.plan-status-past .ppv-name,
+html.glas .screen:not(#screen-mehr) .plan-card-v2.plan-status-archived .ppv-name { color: rgba(255,255,255,.82); }
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .plan-status-chip { background: rgba(255,255,255,.2); color: #fff; }
 
 /* Trainingstag-Karten in der Bibliothek. */
-html.glas .plan-list-row {
+html.glas .screen:not(#screen-mehr) .plan-list-row {
   background: rgba(255,255,255,.12);
   box-shadow: 0 1px 6px rgba(0,0,0,.18);
   --text: #fff; --text2: rgba(255,255,255,.85); --text3: rgba(255,255,255,.65);
   --border: rgba(255,255,255,.24);
 }
-html.glas .plan-list-row .plan-list-name { color: #fff; }
+html.glas .screen:not(#screen-mehr) .plan-list-row .plan-list-name { color: #fff; }
 
 /* Die Ruhetag-Karte traegt ihren hellen Verlauf ueber die Klasse (frueher inline gesetzt,
    was jede Regel geschlagen haette) — hier wird er durch den Schleier ersetzt. */
-html.glas .session-card-v2.rest-card { background: rgba(255,255,255,.12); }
+html.glas .screen:not(#screen-mehr) .session-card-v2.rest-card { background: rgba(255,255,255,.12); }
 
 /* Tableiste ebenfalls durchsichtig. */
 html.glas #bottom-nav {
@@ -1008,13 +1016,13 @@ html.glas .nav-btn.active span { color: #fff; }
 /* Freistehende Knoepfe in den Detailansichten (nicht in einer Karte) — sonst bleiben sie
    als helle Bloecke auf dem Schleier stehen. Die Modal-Varianten derselben Klassen sind
    ueber die ID bzw. den Container ausgenommen, dort ist der Grund weiterhin weiss. */
-html.glas #plan-add-day-btn,
-html.glas #day-add-ex-wrap .btn {
+html.glas .screen:not(#screen-mehr) #plan-add-day-btn,
+html.glas .screen:not(#screen-mehr) #day-add-ex-wrap .btn {
   background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.35);
   box-shadow: 0 1px 6px rgba(0,0,0,.18);
 }
 /* Das native Kalender-Symbol in Datumsfeldern ist schwarz gezeichnet. */
-html.glas .program-form-row input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
 /* Der Knopf selbst zeigt seinen Zustand. */
 #glas-btn[aria-pressed="true"] { background: rgba(255,255,255,.42); }
 
@@ -1344,7 +1352,9 @@ html.wo-running #wo-week-card { display: none; }
   margin: 0 26px 12px; background: var(--card); border-radius: 14px;
   box-shadow: var(--shadow); overflow: hidden;
   scroll-margin-top: 20px;
-  transition: background 0.2s ease;
+  /* transform mit aufnehmen, sonst schlaegt diese Regel die gemeinsame Tipp-Animation
+     der Karten und die Stauchung springt. */
+  transition: background 0.2s ease, transform 0.1s ease;
 }
 /* Done: entire card turns green-tinted */
 .aex-v2.done {
