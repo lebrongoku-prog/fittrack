@@ -903,7 +903,9 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 /* Muskelgruppen-Kopf im Katalog: farbiger Punkt und Anzahl behalten ihre Rolle. */
 /* Beschriftung linksbuendig statt zentriert (Leonard-Wunsch 28.08.2026); der Pfeil
    wandert dafuer an den rechten Rand, sonst klebte er direkt an der Anzahl. */
-.ex-group-btn { justify-content: flex-start; }
+/* Schriftgroesse wie die Uebungstitel der Uebungskarten im Trainings-Tab (`.aex-v2-name`,
+   16px) — Leonard-Wunsch 01.09.2026. Ueberschreibt die .79rem von `.weitere-btn`. */
+.ex-group-btn { justify-content: flex-start; font-size: 16px; }
 .ex-group-btn .weitere-pfeil { margin-left: auto; }
 .ex-group-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mc, var(--accent)); flex-shrink: 0; }
 .ex-group-btn .count { opacity: .7; font-weight: 600; }
