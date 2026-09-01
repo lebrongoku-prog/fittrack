@@ -246,24 +246,28 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   sonst stünde „500 kg" neben „1,5 t". Der frühere `fmtNum` („2.8k") ist damit entfallen.
 - **Diagramm-Tooltips** (Volumenentwicklung und Verlauf je Übung) laufen auf `interaction: { mode:'index', intersect:false }` —
   ein Tipp irgendwo in der Spalte unter dem Punkt genügt. Ohne das musste der 5px-Punkt exakt getroffen werden.
-- **Wochentagsspalte im Kalender ist eingefroren:** `.cal-daylabels` ist `position: sticky; left: 0` mit `z-index: 2`
-  (ueber Raster `z-index:1` und Plan-Rahmen `z-index:0`). Die Flaeche malt ein `::before` mit `left:-16px; right:-5px`
-  statt eines Hintergrunds — sie muss auch das 16px-Polster des Scrollers und den 5px-Spalt zum Raster abdecken,
-  sonst scrollen dort Kaestchen sichtbar durch. Ueber das Pseudo-Element geht das, ohne die `flex-basis: 17px` der
-  Spalte und damit das Raster zu verschieben. Die Monatszeile darueber scrollt bewusst mit.
-  Zwei Masse liegen als Variablen in `:root`, weil je drei Stellen daran haengen — beim Aendern NUR die Variable
-  anfassen, sonst laufen die Teile auseinander:
-  `--cal-pad-x` (1px, seitliches Polster) → `.cal-scroll`, Abdeckung der eingefrorenen Spalte, `.cal-detail`;
-  `--cal-label-w` (20px, Breite der Wochentagsspalte) → `.cal-daylabels`, Einzug der Monatszeile UND die
-  Platzrechnung in `renderTrainingCalendar` (dort als Zahl 23 = Breite + Abstand);
-  `--cal-band-over` (3px) = Ueberstand der Plan-Umrandung ueber das Raster → `.cal-band` top/bottom;
-  `--cal-mask-over` (6px) = wie weit die Abdeckung der Spalte reicht. Muss GROESSER sein als der Ueberstand:
-  Lagen beide Kanten exakt aufeinander, blieb die Umrandungslinie durch Teilpixel-Rundung sichtbar.
-  `--cal-months-gap` (8px) = Abstand der Monatszeile zum Raster; muss zur Maske passen, sonst schneidet
-  die Abdeckung den Monatsnamen an;
-  `--cal-label-gap` (3px, Abstand Wochentagsspalte ↔ Raster) → `.cal-body` gap, rechte Kante der Abdeckung
-  (muss GENAU den Spalt zudecken, sonst verdeckt sie die erste Rasterspalte), Einzug der Monatszeile
-  (`calc(17px + var(--cal-label-gap))`).
+- **Wochentagsspalte im Kalender steht AUSSERHALB des Scrollers** (Umbau 01.09.2026). `.cal-body` ist die aeussere
+  Zeile: links die feste `.cal-daylabels`, rechts `.cal-scroll` (`flex:1 1 auto; min-width:0` — ohne `min-width:0`
+  waechst ein Flex-Kind auf seinen Inhalt statt zu scrollen). Die Kaestchen verschwinden dadurch an der linken Kante
+  des Scrollers wirklich, statt von einer Flaeche ueberdeckt zu werden.
+  Vorher war die Spalte `position: sticky` INNERHALB des Scrollers und malte eine deckende Maske (`::before`).
+  Das brauchte eine Farbe — im Transparenz-Modus gibt es keine, dort schienen die Kaestchen durch die Spalte
+  hindurch. Mit dem Umbau entfielen die Maske, `--cal-mask-over` und der Einzug der Monatszeile.
+  Masse als Variablen in `:root` — beim Aendern NUR die Variable anfassen:
+  `--cal-pad-x` (1px, seitliches Polster) → `.cal-body`, `.cal-scroll`, `.cal-detail`;
+  `--cal-pad-y` (4px, Polster oben/unten im Scroller) → `.cal-scroll` UND der obere Abstand der Wochentagsspalte;
+  `--cal-label-w` (20px) / `--cal-label-gap` (3px) → Breite der Spalte und ihr Abstand zum Scroller;
+  `--cal-band-over` (3px) = Ueberstand der Plan-Umrandung ueber das Raster → `.cal-band` top/bottom, muss in
+  `--cal-pad-y` passen, sonst schneidet `overflow-y: hidden` die Kante ab;
+  `--cal-months-h` (13px) = feste Hoehe der Monatszeile, `--cal-months-gap` (8px) = ihr Abstand zum Raster.
+  Beide zusammen (plus `--cal-pad-y`) sind der obere Abstand der Wochentagsspalte — nur so liegen „Mo" und die
+  erste Rasterzeile auf einer Linie. Deshalb eine FESTE Hoehe statt einer gemessenen Schrifthoehe.
+  ACHTUNG Platzrechnung: `renderTrainingCalendar` misst `scrollerEl.clientWidth`. Der ist bereits um die
+  Wochentagsspalte verkuerzt — sie darf dort NICHT noch einmal abgezogen werden (frueher `- 23`).
+- **Kalenderkarten sind von der Tipp-Animation ausgenommen** (`#ov-cal-card:active`/`#plans-cal-card:active`
+  → `transform: none`, dazu `transition: none`). Ein `transform` auf dem Vorfahren bricht auf iOS die laufende
+  Wischgeste in einem Scrollbereich darin ab — das Raster liess sich dadurch gar nicht mehr waagerecht scrollen
+  (gefunden 01.09.2026). Gilt fuer jede Karte, die kuenftig einen eigenen Scrollbereich bekommt.
 - **Lesehilfe im Trainingskalender:** `.info-btn` neben der Kennzahl oben rechts (`.cal-head-right` fasst beide
   zusammen) oeffnet `#modal-cal-info`. Die Farb-Legende steht NUR dort, nicht mehr in der Karte — dadurch ist die
   Karte rund 100px flacher. Das Polster des Fussbereichs sitzt auf `.cal-detail`, damit die Karte ohne ausgewaehlten

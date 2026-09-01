@@ -3201,11 +3201,11 @@ function calendarInnerHTML(id) {
         <button class="info-btn" onclick="openModal('modal-cal-info')" aria-label="Was bedeuten die Farben?">i</button>
       </span>
     </div>
-    <div class="cal-scroll" id="${id}-scroll">
-      <div class="cal-inner">
-        <div class="cal-months" id="${id}-months"></div>
-        <div class="cal-body">
-          <div class="cal-daylabels"><span>Mo</span><span></span><span>Mi</span><span></span><span>Fr</span><span></span><span>So</span></div>
+    <div class="cal-body">
+      <div class="cal-daylabels"><span>Mo</span><span></span><span>Mi</span><span></span><span>Fr</span><span></span><span>So</span></div>
+      <div class="cal-scroll" id="${id}-scroll">
+        <div class="cal-inner">
+          <div class="cal-months" id="${id}-months"></div>
           <div class="cal-gridwrap">
             <div class="cal-bands" id="${id}-bands"></div>
             <div class="cal-grid" id="${id}-grid"></div>
@@ -3328,8 +3328,9 @@ function renderTrainingCalendar(id, cardId) {
   let zelle = CAL_CELL_DEFAULT;
   if (scrollerEl && scrollerEl.clientWidth > 0) {
     const cs = getComputedStyle(scrollerEl);
-    // 23 = Breite der Wochentagsspalte (--cal-label-w) + Abstand (--cal-label-gap).
-    const frei = scrollerEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 23;
+    // Die Wochentagsspalte steht AUSSERHALB des Scrollers — seine Breite ist also bereits
+    // um sie verkuerzt. Hier darf sie deshalb NICHT noch einmal abgezogen werden.
+    const frei = scrollerEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     const passt = (z) => wochen * (z + CAL_GAP) <= frei;
     if (!passt(CAL_CELL_DEFAULT)) {
       for (let z = CAL_CELL_DEFAULT - 1; z >= CAL_CELL_MIN; z--) { if (passt(z)) { zelle = z; break; } }

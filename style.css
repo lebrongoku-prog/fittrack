@@ -955,10 +955,6 @@ html.glas .screen:not(#screen-mehr) .ex-chart-toggle .stats-mode-pill.active,
 html.glas .screen:not(#screen-mehr) .vol-unit-toggle .stats-mode-pill.active { color: #fff; }
 html.glas .screen:not(#screen-mehr) .ex-chart-toggle .stats-mode-pill.active,
 html.glas .screen:not(#screen-mehr) .vol-unit-toggle .stats-mode-pill.active { background: rgba(255,255,255,.28); }
-/* Die Abdeckung der eingefrorenen Wochentagsspalte deckt sonst mit `var(--card)` ab und
-   liegt als hellerer Streifen auf dem Schleier. Sie MUSS deckend bleiben (sonst scrollen
-   Kaestchen sichtbar darunter durch), daher der gleiche Ton wie die Karte selbst. */
-html.glas .screen:not(#screen-mehr) .cal-daylabels::before { background: rgba(255,255,255,.12); }
 /* Kalender-Kaestchen: Die hellen Grautoene verschwinden auf dem Schleier. */
 html.glas .screen:not(#screen-mehr) .cal-day { background: rgba(255,255,255,.16); }
 html.glas .screen:not(#screen-mehr) .cal-day.planned { background: rgba(255,255,255,.42); }
@@ -1681,33 +1677,34 @@ html.wo-running #wo-week-card { display: none; }
 /* NUR waagerecht scrollen. `overflow-x: auto` allein genuegt nicht: Sobald eine Achse
    nicht mehr `visible` ist, macht der Browser aus der anderen ebenfalls `auto` — das
    Raster liess sich dadurch senkrecht verschieben.
-   Das Polster oben UND unten muss den Ueberstand der Plan-Umrandung aufnehmen
-   (`.cal-band` reicht je 3px ueber das Raster hinaus). Fehlt es unten, schneidet
-   `overflow-y: hidden` deren untere Kante ab. */
-.cal-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding: 4px var(--cal-pad-x); }
+   Das Polster oben UND unten (--cal-pad-y) nimmt den Ueberstand der Plan-Umrandung auf. */
+/* Die Wochentagsspalte steht AUSSERHALB des Scrollers (feste linke Spalte), der Scroller
+   daneben. Dadurch verschwinden die Kaestchen beim waagerechten Scrollen an der linken
+   Kante des Scrollers wirklich, statt von einer deckenden Flaeche ueberdeckt zu werden.
+   Die alte Loesung (sticky Spalte + deckende Maske) brauchte eine Farbe — im
+   Transparenz-Modus gibt es keine, dort schienen die Kaestchen durch die Spalte hindurch. */
+.cal-body { display: flex; gap: var(--cal-label-gap); padding-left: var(--cal-pad-x); }
+/* min-width:0 ist Pflicht: Ohne das waechst ein Flex-Kind auf seinen Inhalt statt zu scrollen. */
+.cal-scroll {
+  flex: 1 1 auto; min-width: 0;
+  overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+  padding: var(--cal-pad-y) var(--cal-pad-x) var(--cal-pad-y) 0;
+}
 .cal-scroll::-webkit-scrollbar { display: none; }
 /* vertical-align:top vermeidet den Unterlaengen-Spalt, den ein inline-block sonst unter
    sich laesst. */
 .cal-inner { display: inline-block; vertical-align: top; min-width: 100%; }
-.cal-months { display: flex; gap: 3px; margin-left: calc(var(--cal-label-w) + var(--cal-label-gap)); margin-bottom: var(--cal-months-gap); }
-.cal-month { width: var(--cal-cell, 16px); flex: 0 0 var(--cal-cell, 16px); font-size: 11px; color: var(--text3); white-space: nowrap; }
-.cal-body { display: flex; gap: var(--cal-label-gap); }
-/* Bleibt beim waagerechten Scrollen stehen. Braucht eine eigene Flaeche und eine hoehere
-   Ebene als Raster (z-index:1) und Plan-Rahmen (z-index:0), sonst scrollen die Kaestchen
-   sichtbar darunter durch. */
+.cal-months {
+  display: flex; gap: 3px; margin-bottom: var(--cal-months-gap);
+  height: var(--cal-months-h);
+}
+.cal-month { width: var(--cal-cell, 16px); flex: 0 0 var(--cal-cell, 16px); font-size: 11px; line-height: var(--cal-months-h); color: var(--text3); white-space: nowrap; }
+/* Steht ausserhalb des Scrollers und muss die Monatszeile darin senkrecht nachbilden,
+   damit „Mo" auf einer Linie mit der ersten Rasterzeile liegt. Deshalb eine feste Hoehe
+   fuer die Monatszeile (--cal-months-h) statt einer gemessenen Schrifthoehe. */
 .cal-daylabels {
   display: flex; flex-direction: column; gap: 3px; flex: 0 0 var(--cal-label-w);
-  position: sticky; left: 0; z-index: 2;
-}
-/* Die Flaeche wird per Pseudo-Element gemalt statt als Hintergrund: Sie muss auch das
-   16px-Polster des Scrollers links UND den 5px-Spalt zum Raster abdecken, sonst scrollen
-   dort Kaestchen sichtbar durch. Ueber ein Pseudo-Element geht das, ohne die Breite der
-   Spalte (flex-basis 17px) und damit das Raster zu verschieben. */
-.cal-daylabels::before {
-  content: ''; position: absolute;
-  top: calc(-1 * var(--cal-mask-over)); bottom: calc(-1 * var(--cal-mask-over));
-  left: calc(-1 * var(--cal-pad-x)); right: calc(-1 * var(--cal-label-gap));
-  background: var(--card); z-index: -1;
+  padding-top: calc(var(--cal-pad-y) + var(--cal-months-h) + var(--cal-months-gap));
 }
 .cal-daylabels span { height: var(--cal-cell, 16px); font-size: 11px; line-height: var(--cal-cell, 16px); color: var(--text3); }
 .cal-grid { display: flex; gap: 3px; }
@@ -1724,25 +1721,25 @@ html.wo-running #wo-week-card { display: none; }
 .cal-day.planned { background: #CDE7E1; }
 /* Rahmen + Beschriftung der Plan-Zeiträume — dasselbe Grün wie die trainierten Kerne. */
 .cal-scroll { --cal-plan-color: #0F766E; }
-/* Seitliches Polster des Kalenderbereichs. Als Variable, weil drei Stellen ihn brauchen:
-   der Scroller selbst, die Abdeckung der eingefrorenen Wochentagsspalte und die
-   Tagesbeschreibung darunter — sonst laufen sie beim Aendern auseinander. */
+/* Seitliches Polster des Kalenderbereichs — die Zeile mit Wochentagsspalte und Scroller
+   sowie die Tagesbeschreibung darunter nutzen ihn, damit beide buendig stehen. */
 :root { --cal-pad-x: 1px; }
-/* Abstand zwischen der Wochentagsspalte und dem Raster. Ebenfalls eine Variable, weil
-   drei Stellen ihn brauchen: der Abstand selbst, die Abdeckung der eingefrorenen Spalte
-   (sie muss genau diesen Spalt zudecken, nicht mehr) und der Einzug der Monatszeile. */
+/* Polster oben und unten im Scroller. Muss den Ueberstand der Plan-Umrandung aufnehmen
+   (`.cal-band` reicht --cal-band-over ueber das Raster hinaus); fehlt es, schneidet
+   `overflow-y: hidden` deren Kante ab. Die Wochentagsspalte rechnet es mit, um senkrecht
+   zum Raster zu passen. */
+:root { --cal-pad-y: 4px; }
+/* Abstand zwischen der Wochentagsspalte und dem Scroller. */
 :root { --cal-label-gap: 3px; }
-/* Breite der Wochentagsspalte. Haengt an zwei Stellen: der Spalte selbst und dem Einzug
-   der Monatszeile. ACHTUNG: renderTrainingCalendar rechnet mit demselben Wert (+ Abstand)
-   den freien Platz aus — beim Aendern dort mit anpassen. */
+/* Breite der Wochentagsspalte. Sie steht ausserhalb des Scrollers — die Platzrechnung in
+   renderTrainingCalendar misst den Scroller und muss sie deshalb NICHT mehr abziehen. */
 :root { --cal-label-w: 20px; }
 /* Ueberstand der Plan-Umrandung ueber das Raster (oben wie unten). */
 :root { --cal-band-over: 3px; }
-/* Die Abdeckung der eingefrorenen Spalte reicht bewusst WEITER als dieser Ueberstand:
-   Lagen beide Kanten exakt aufeinander, blieb die Umrandungslinie durch Teilpixel-Rundung
-   sichtbar. Der Abstand der Monatszeile zum Raster ist entsprechend groesser gewaehlt,
-   damit die Abdeckung den Monatsnamen nicht anschneidet — beim Aendern beide anfassen. */
-:root { --cal-mask-over: 6px; --cal-months-gap: 8px; }
+/* Feste Hoehe der Monatszeile. Feste Hoehe statt gemessener Schrifthoehe, weil die
+   Wochentagsspalte ausserhalb des Scrollers denselben Wert als oberen Abstand nutzt —
+   nur so liegen „Mo" und die erste Rasterzeile garantiert auf einer Linie. */
+:root { --cal-months-h: 13px; --cal-months-gap: 8px; }
 .cal-day.done::before {
   content: ''; position: absolute; inset: 3px;
   border-radius: 2px; background: #0F766E;
@@ -1750,9 +1747,8 @@ html.wo-running #wo-week-card { display: none; }
 .cal-day.future { opacity: .45; }
 /* Rand-Tage der ersten/letzten Woche, die noch ins Vor- bzw. Folgejahr fallen */
 .cal-day.outside { opacity: .25; pointer-events: none; }
-/* Ringe INNEN zeichnen (inset). Aussen ragten sie 1,5px ueber das Kaestchen hinaus — in
-   der ersten Spalte lag das genau unter der eingefrorenen Wochentagsspalte, deren
-   Abdeckung den linken Bogen verschluckte. */
+/* Ringe INNEN zeichnen (inset). Aussen ragten sie 1,5px ueber das Kaestchen hinaus und
+   wurden in der ersten Spalte am linken Rand des Scrollers abgeschnitten. */
 .cal-day.today { box-shadow: inset 0 0 0 1.5px var(--accent); }
 .cal-day.sel   { box-shadow: inset 0 0 0 1.5px var(--text); }
 /* Plan-Laufzeiten: senkrechte Linie an Anfang und Ende, Name darunter. Beide liegen
