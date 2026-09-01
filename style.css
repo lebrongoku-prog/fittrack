@@ -605,6 +605,11 @@ body.theme-plans .hist-action-dd {
    waehrend der Beruehrung; `:has(canvas:active)` waere kuerzer, verlaesst sich aber
    darauf, dass Safari einem <canvas> ueberhaupt `:active` gibt. */
 .keine-tipp-anim:active { transform: none !important; }
+/* Die ausklappbaren Muskelgruppen-Koepfe im Katalog reagieren wie eine Karte
+   (Leonard-Wunsch 01.09.2026). Nur dieser eine `.weitere-btn` — die anderen beiden
+   („Uebung hinzufuegen", „Archivierte Plaene") bleiben unveraendert. */
+.ex-group-btn { transition: transform .1s ease; }
+.ex-group-btn:active { transform: scale(0.995); }
 #ov-cal-card, #plans-cal-card { transition: none; }
 .ppv-head { display: flex; align-items: flex-start; gap: 8px; }
 .ppv-name { flex: 1; min-width: 0; font-size: 17px; font-weight: 700; color: var(--text); }
@@ -987,7 +992,21 @@ html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-wd       { color: rgba(25
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.training .ppv-wd { background: rgba(255,255,255,.92); color: var(--accent-dark); }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today .ppv-wd::after { border-color: rgba(255,255,255,.9); }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today:not(.training) .ppv-wd { color: #fff; }
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.selected .ppv-wd { box-shadow: 0 0 0 2px rgba(255,255,255,.55); }
+/* Ausgewaehlter Tag im Trainings-Tab: KEIN weisser Ring um den Kreis mehr, und die Flaeche
+   dahinter in transparentem Weiss statt in der Tab-Farbe (Leonard-Wunsch 01.09.2026).
+   `.ppv-col.selected` greift sonst auf `--accent-bg` zu, und das ist auf der Plan-Karte
+   die Themefarbe des Tabs — im Glas-Modus ein farbiger Klecks auf dem Schleier. */
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.selected .ppv-wd { box-shadow: none; }
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.selected { background: rgba(255,255,255,.18); }
+/* Suchfeld des Katalogs — sonst bleibt es als weisser Balken auf dem Schleier stehen. */
+html.glas .screen:not(#screen-mehr) .ex-search-bar {
+  background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.24);
+  color: #fff; box-shadow: 0 1px 6px rgba(0,0,0,.18);
+}
+html.glas .screen:not(#screen-mehr) .ex-search-bar::placeholder { color: rgba(255,255,255,.7); }
+html.glas .screen:not(#screen-mehr) .ex-search-bar:focus {
+  background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.45);
+}
 html.glas .screen:not(#screen-mehr) .plan-card-v2.plan-status-past .ppv-name,
 html.glas .screen:not(#screen-mehr) .plan-card-v2.plan-status-archived .ppv-name { color: rgba(255,255,255,.82); }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .plan-status-chip { background: rgba(255,255,255,.2); color: #fff; }
@@ -1160,7 +1179,9 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
   padding: 12px 18px 14px; display: flex; gap: 12px; align-items: stretch;
   position: relative; overflow: hidden;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
-  border: 1px solid var(--card-accent-border);
+  /* KEINE Kontur (Leonard-Wunsch 01.09.2026) — im Glas-Modus zeichnete sie eine weisse
+     Linie um die Karte. Abgegrenzt wird sie allein ueber den Schatten. Die gleichnamige
+     Kontur der `.session-card-v2` bleibt bewusst bestehen. */
 }
 /* Der Textblock steht mittig zur Hantel. Vorher war er oben ausgerichtet und der Rest
    der Icon-Hoehe blieb als Leerraum ueber dem Knopf stehen — besonders sichtbar, seit die
