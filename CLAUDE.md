@@ -156,6 +156,15 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   (ohne Laufzeit, ohne Status-Chip); archivierte und kommende Plaene behalten beides, sonst waeren mehrere
   Karten untereinander nicht unterscheidbar (Leonard-Entscheidung 20.08.2026). Unterschiedlich bleibt nur der
   Tipp: Uebersicht → `showScreen('plans')`, Plaene-Tab → `openPlanDetail(p.id)`.
+- **Nachgetragene Trainingstage ohne Einheit** (`ft_manual_days`, Liste von `'YYYY-MM-DD'`): Tage, an denen
+  trainiert wurde, zu denen aber KEINE Aufzeichnung existiert. `migrateImportManualDays()` hat am 01.09.2026
+  einmalig 24 Daten aus Leonards alter Liste eingetragen (Merker `ft_manual_days_imported`).
+  Bewusst KEINE Einheiten anlegen — die haetten weder Uebungen noch Saetze noch Volumen und wuerden Verlauf,
+  Statistik und PRs verfaelschen. `buildCalendarData()` mischt sie ein (nur wo keine echte Einheit liegt),
+  sie faerben also das Kaestchen und zaehlen in der Kennzahl des Kalenders sowie in `planErfuellung` mit.
+  `getWeekStreak` laesst sie bewusst aussen vor (die Serie speist sich aus echten Einheiten).
+  In der Tagesbeschreibung stehen sie als „Training (ohne Aufzeichnung)" und ohne Verweis „zur Einheit".
+  Sie liegen in der Drive-Sicherung (`manualDays`).
 - **Trainingskalender** (Übersicht, `#ov-cal-card`): `renderTrainingCalendar()` zeichnet 52 Wochen à 7 Kästchen (`.cal-day`).
   KEINE Volumen-Abstufung — zwei Schichten: Fläche (`.planned`) = laut damaligem Plan vorgesehen, Kern (`.done::before`) = tatsächlich trainiert.
   `_calPlanIndex()`/`_calPlanInfo()` rekonstruieren den Plan je Datum aus `startDate`/`endDate`/`weekPlan` ALLER Pläne (auch archivierter — die behalten ihren Wochenplan);
@@ -167,6 +176,10 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Zeigt IMMER das laufende Kalenderjahr (1.1.–31.12.); Rand-Tage der ersten/letzten Woche tragen `.outside` (ausgegraut, nicht antippbar).
   Beim Rendern wird zur laufenden Woche gescrollt. Plan-Laufzeiten sind als Rahmen OHNE Füllung um die Wochenspalten gezeichnet
   (`.cal-bands`/`.cal-band`, `z-index:0`, Raster darüber mit `z-index:1`); archivierte Pläne sind blasser.
+  Der HEUTE laufende Plan traegt zusaetzlich `.current`. Im Transparenz-Modus sind alle Umrandungen weiss
+  (Gruen verschwindet auf dem Schleier); unterschieden wird dort ueber Staerke und Deckkraft:
+  laufend = 2px volles Weiss, kommend = 1px 45-%-Weiss, archiviert = 1px 35-%-Weiss. Im normalen Modus
+  bleibt alles wie gehabt (Gruen, archiviert mit halber Deckkraft).
   Eine Beschriftung mit dem Plannamen unter dem Raster gibt es NICHT mehr (entfernt 20.08.2026) — der Name steht
   beim Antippen eines Tages in der Beschreibung darunter, dort mit der Wochenzahl in Klammern (ohne Datumsspanne).
   Beim Antippen eines Tages innerhalb eines Plans nennt eine zweite Zeile den Stand des Plans (`planErfuellung`): absolvierte Einheiten gegen

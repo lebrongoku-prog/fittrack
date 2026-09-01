@@ -968,6 +968,16 @@ html.glas .screen:not(#screen-mehr) .aex-v2.done .aex-v2-notes-area::placeholder
 /* Kalender-Kaestchen: Die hellen Grautoene verschwinden auf dem Schleier. */
 html.glas .screen:not(#screen-mehr) .cal-day { background: rgba(255,255,255,.16); }
 html.glas .screen:not(#screen-mehr) .cal-day.planned { background: rgba(255,255,255,.42); }
+/* Plan-Umrandungen im Transparenz-Modus: Das Gruen verschwindet auf dem Schleier, also
+   Weiss. Damit trotzdem erkennbar bleibt, welcher Plan gerade laeuft, wird abgestuft —
+   der laufende Plan bekommt eine kraeftige, durchgezogene Linie, die uebrigen (archiviert
+   oder noch kommend) eine duennere und blassere. */
+html.glas .screen:not(#screen-mehr) .cal-scroll { --cal-plan-color: rgba(255,255,255,.45); }
+html.glas .screen:not(#screen-mehr) .cal-band { border-width: 1px; }
+html.glas .screen:not(#screen-mehr) .cal-band.archived { opacity: 1; border-color: rgba(255,255,255,.35); }
+html.glas .screen:not(#screen-mehr) .cal-band.current {
+  border-width: 2px; border-color: #fff;
+}
 /* Knoepfe, die frei auf dem Tab-Hintergrund liegen (nicht in einer Karte) — sonst
    bleiben sie als helle Bloecke stehen. */
 html.glas .screen:not(#screen-mehr) #wo-add-ex-wrap .btn {

@@ -364,6 +364,12 @@ const DB = {
   getTrainingDays() { const s = localStorage.getItem('ft_trainingdays'); return s ? JSON.parse(s) : []; },
   saveTrainingDays(v) { localStorage.setItem('ft_trainingdays', JSON.stringify(v)); markLocalChange(); },
 
+  // Nachgetragene Trainingstage OHNE Einheit: nur ein Datum ('YYYY-MM-DD'), keine Uebungen,
+  // keine Saetze, kein Volumen. Sie faerben das Kaestchen im Trainingskalender und zaehlen
+  // in dessen Kennzahlen mit — mehr steht ueber sie nicht zur Verfuegung.
+  getManualDays() { const s = localStorage.getItem('ft_manual_days'); return s ? JSON.parse(s) : []; },
+  saveManualDays(v) { localStorage.setItem('ft_manual_days', JSON.stringify(v)); markLocalChange(); },
+
   getWorkouts() { const s = localStorage.getItem('ft_workouts'); return s ? JSON.parse(s) : []; },
   saveWorkouts(v) { localStorage.setItem('ft_workouts', JSON.stringify(v)); markLocalChange(); },
   addWorkout(w) { const ws = this.getWorkouts(); ws.unshift(w); this.saveWorkouts(ws); },
@@ -3150,6 +3156,34 @@ function _dayKeyOf(ts) {
 }
 
 // Volumen + Einheiten pro Kalendertag über den gesamten Verlauf.
+// Nachgetragene Trainingstage aus Leonards alter Liste (Screenshot, 01.09.2026). Zu diesen
+// Tagen gibt es KEINE Aufzeichnung — bewusst keine Einheiten anlegen, sonst stuenden im
+// Verlauf Einheiten ohne Uebungen und ohne Volumen. Laeuft genau einmal (Merker
+// ft_manual_days_imported) und ergaenzt nur, was noch fehlt.
+const MANUELLE_TAGE_IMPORT = [
+  '2026-04-04', '2026-03-28', '2026-03-21', '2026-03-14', '2026-03-10', '2026-03-07',
+  '2026-03-04', '2026-02-28', '2026-02-24', '2026-02-21', '2026-02-17', '2026-02-14',
+  '2026-02-11', '2026-02-09', '2026-02-08', '2026-02-04', '2026-02-02', '2026-01-28',
+  '2026-01-26', '2026-01-24', '2026-01-23', '2026-01-19', '2026-01-14', '2026-01-13',
+];
+function migrateImportManualDays() {
+  if (localStorage.getItem('ft_manual_days_imported') === '1') return;
+  const vorhanden = DB.getManualDays();
+  const menge = new Set(vorhanden);
+  MANUELLE_TAGE_IMPORT.forEach(d => menge.add(d));
+  localStorage.setItem('ft_manual_days', JSON.stringify([...menge].sort().reverse()));
+  localStorage.setItem('ft_manual_days_imported', '1');
+}
+
+// Zaehlt die nachgetragenen Tage in einem Zeitraum (Zeitstempel, beide Grenzen inklusive).
+function manuelleTageIm(vonTs, bisTs) {
+  return DB.getManualDays().filter(k => {
+    const [y, m, d] = k.split('-').map(Number);
+    const t = new Date(y, m - 1, d).getTime();
+    return t >= vonTs && t <= bisTs;
+  }).length;
+}
+
 function buildCalendarData() {
   const byDay = {};
   DB.getWorkouts().forEach(w => {
@@ -3159,6 +3193,12 @@ function buildCalendarData() {
     byDay[key].count += 1;
     const nm = w.planDayName || 'Freies Training';
     if (!byDay[key].names.includes(nm)) byDay[key].names.push(nm);
+  });
+  // Nachgetragene Tage ergaenzen — aber nur, wo keine echte Einheit liegt. Eine
+  // aufgezeichnete Einheit ist immer die bessere Auskunft.
+  DB.getManualDays().forEach(key => {
+    if (byDay[key]) return;
+    byDay[key] = { vol: 0, count: 1, names: ['Training (ohne Aufzeichnung)'], manual: true };
   });
   return byDay;
 }
@@ -3238,7 +3278,10 @@ function planErfuellung(plan) {
     if (e && e.planDayId) geplant++;
     d.setDate(d.getDate() + 1);
   }
-  const absolviert = DB.getWorkouts().filter(w => w.startTs >= plan.startDate && w.startTs <= bis).length;
+  // Nachgetragene Tage zaehlen mit — sonst widerspraeche der Stand den gruenen Kaestchen,
+  // die im selben Kalender daneben stehen.
+  const absolviert = DB.getWorkouts().filter(w => w.startTs >= plan.startDate && w.startTs <= bis).length
+    + manuelleTageIm(plan.startDate, bis);
   if (!geplant) return null;
   return { geplant, absolviert, prozent: Math.round(absolviert / geplant * 100) };
 }
@@ -3311,7 +3354,8 @@ function renderTrainingCalendar(id, cardId) {
   if (monthsEl) monthsEl.innerHTML = months;
 
   // Kennzahlen: Einheiten im Zeitraum + aktuelle Wochenserie
-  const inRange = DB.getWorkouts().filter(w => new Date(w.startTs).getFullYear() === jahr).length;
+  const inRange = DB.getWorkouts().filter(w => new Date(w.startTs).getFullYear() === jahr).length
+    + DB.getManualDays().filter(k => Number(k.slice(0, 4)) === jahr).length;
   const streak = getWeekStreak();
   const statsEl = document.getElementById(id + '-stats');
   if (statsEl) {
@@ -3367,7 +3411,12 @@ function renderTrainingCalendar(id, cardId) {
       const von = Math.max(0, spalteFuer(p.startDate));
       const bis = Math.min(wochen - 1, spalteFuer(p.endDate || rasterEnde.getTime()));
       if (bis < von) return;
-      const cls = p.archived ? ' archived' : '';
+      // `current` = der Plan, der HEUTE laeuft. Er hebt sich dadurch von archivierten und
+      // kommenden Plaenen ab — im Transparenz-Modus sind alle Umrandungen weiss, dort ist
+      // die Abstufung der einzige Unterschied.
+      const jetzt = Date.now();
+      const laeuft = !p.archived && p.startDate <= jetzt && (p.endDate || Infinity) >= jetzt;
+      const cls = (p.archived ? ' archived' : '') + (laeuft ? ' current' : '');
       const links = von * SPALTE - 2;
       const breite = (bis - von + 1) * SPALTE - 3 + 4;
       bands += `<span class="cal-band${cls}" style="left:${links}px;width:${breite}px"></span>`;
@@ -6718,6 +6767,7 @@ function collectLocalData() {
     plans: DB.getPlans(),
     workouts: DB.getWorkouts(),
     trainingDays: DB.getTrainingDays(),   // v4: planunabhängige Trainingstage-Bibliothek
+    manualDays: DB.getManualDays(),       // v4: nachgetragene Tage ohne Aufzeichnung
   };
 }
 
@@ -6758,6 +6808,7 @@ function driveApplyCloudData(data) {
   // v4: Trainingstage-Bibliothek nur überschreiben, wenn in der Cloud vorhanden
   // (ältere Backups ohne dieses Feld lassen die lokale Bibliothek unangetastet).
   if (Array.isArray(data.trainingDays)) localStorage.setItem('ft_trainingdays', JSON.stringify(data.trainingDays));
+  if (Array.isArray(data.manualDays)) localStorage.setItem('ft_manual_days', JSON.stringify(data.manualDays));
   // Legacy-Keys bei v1-Migration sauber halten (sonst würde migrateToMultiPlan beim nächsten App-Start nochmal greifen)
   if (Array.isArray(data.plan)) {
     localStorage.removeItem('ft_program');
@@ -7356,6 +7407,7 @@ document.addEventListener('DOMContentLoaded', () => {
   _setzeChartFarben();
   initAudioUnlock();
   migrateRemoveCardio();
+  migrateImportManualDays();
   migrateToMultiPlan();
   // Tag-Modell v2: eingebettete Plan-Tage in geteilte Bibliothek-Referenzen überführen (einmalig)
   migrateDayModelV2();
