@@ -1437,7 +1437,7 @@ function buildRestHero(isToday) {
 
 function buildRestCard(selDay) {
   const isToday = !!(selDay && selDay.isToday);
-  return `<div class="session-card-v2" style="background:linear-gradient(135deg,#f5f7fa 0%,#fafbfc 100%)">
+  return `<div class="session-card-v2 rest-card">
     <div class="scv2-pill" style="border-color:var(--text3);color:var(--text2)">RUHETAG</div>
     <div class="scv2-row">
       <div style="flex:1">
