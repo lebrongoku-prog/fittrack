@@ -166,18 +166,11 @@ body.theme-mehr #statusbar-scrim { opacity: 1; }
    body.className bei jedem Tab-Wechsel komplett neu gesetzt wird (eine body-Klasse
    ginge dabei verloren). Gesetzt/entfernt via syncWorkoutActiveUI() in app.js. */
 
-/* (a) Pulsierender Glow um den GESAMTEN Bildschirmrand (oben, seitlich, bis unter die
-       Bottom-Nav). Inset-Box-Shadow auf einem Vollbild-Overlay (z-index ueber allem,
-       pointer-events:none). border-radius folgt grob den iPhone-Ecken. */
-#workout-glow {
-  position: fixed; inset: 0; z-index: 200; pointer-events: none; display: none;
-  border-radius: 40px;
-  /* Dezenter Vollbild-Rahmen (wie die frühere Intensität, nur rundum statt nur oben). */
-  box-shadow: inset 0 0 14px 1px var(--accent);
-}
-html.workout-active #workout-glow { display: block; animation: wo-breathe 2.2s ease-in-out infinite; }
+/* Der pulsierende Rahmen um den Bildschirmrand (#workout-glow) ist am 01.09.2026 entfallen
+   (Leonard-Wunsch). Dass eine Einheit laeuft, zeigen die Laufanzeige-Pille und der Kopf
+   im Trainings-Tab deutlich genug. Mit ihm fiel @keyframes wo-breathe weg. */
 
-/* (b) Mini-Leiste ueber der Bottom-Nav. */
+/* Mini-Leiste ueber der Bottom-Nav. */
 /* Laufanzeige = schwebende Pille statt vollem Streifen (Leonard-Entscheidung 20.08.2026).
    Der Rahmen bleibt volle Breite und nimmt KEINE Tipps an (pointer-events:none) — nur die
    Pille selbst ist antippbar, damit der Inhalt links und rechts bedienbar bleibt. */
@@ -307,7 +300,6 @@ html.workout-active .screen { padding-bottom: calc(var(--nav-h) + var(--safe-b) 
 html.workout-active body.theme-workouts #screen-workouts { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px); }
 
 @keyframes wo-pulse  { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.55); opacity: 0.45; } }
-@keyframes wo-breathe { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
 /* Header texts adapt to the dark themed backgrounds */
 body.theme-overview .ph h1,
 body.theme-workouts .ph h1,
@@ -608,6 +600,11 @@ body.theme-plans .hist-action-dd {
    transform auf dem Vorfahren waehrend `:active` bricht auf iOS die laufende Wischgeste ab
    — das Raster liess sich dadurch gar nicht mehr scrollen. */
 #ov-cal-card:active, #plans-cal-card:active { transform: none; }
+/* Ein Tipp INS Diagramm zeigt nur den Messwert an — die Karte soll dabei nicht zucken
+   (Leonard-Wunsch 01.09.2026). Die Klasse setzt `_initKeineTippAnimationAufDiagramm`
+   waehrend der Beruehrung; `:has(canvas:active)` waere kuerzer, verlaesst sich aber
+   darauf, dass Safari einem <canvas> ueberhaupt `:active` gibt. */
+.keine-tipp-anim:active { transform: none !important; }
 #ov-cal-card, #plans-cal-card { transition: none; }
 .ppv-head { display: flex; align-items: flex-start; gap: 8px; }
 .ppv-name { flex: 1; min-width: 0; font-size: 17px; font-weight: 700; color: var(--text); }
@@ -955,6 +952,14 @@ html.glas .screen:not(#screen-mehr) .ex-chart-toggle .stats-mode-pill.active,
 html.glas .screen:not(#screen-mehr) .vol-unit-toggle .stats-mode-pill.active { color: #fff; }
 html.glas .screen:not(#screen-mehr) .ex-chart-toggle .stats-mode-pill.active,
 html.glas .screen:not(#screen-mehr) .vol-unit-toggle .stats-mode-pill.active { background: rgba(255,255,255,.28); }
+/* Abgeschlossene Uebung: `.aex-v2.done .aex-v2-notes` traegt sonst ein helles Gruen, auf
+   dem die im Glas-Modus weisse Notizschrift nicht mehr lesbar ist. */
+html.glas .screen:not(#screen-mehr) .aex-v2.done .aex-v2-notes {
+  background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.24);
+}
+html.glas .screen:not(#screen-mehr) .aex-v2.done .aex-v2-notes-area::placeholder {
+  color: rgba(255,255,255,.55);
+}
 /* Kalender-Kaestchen: Die hellen Grautoene verschwinden auf dem Schleier. */
 html.glas .screen:not(#screen-mehr) .cal-day { background: rgba(255,255,255,.16); }
 html.glas .screen:not(#screen-mehr) .cal-day.planned { background: rgba(255,255,255,.42); }
@@ -2369,7 +2374,9 @@ html.wo-running #wo-week-card { display: none; }
 }
 /* Kleiner und ohne Fettung (Leonard-Wunsch 25.08.2026) — gilt nur fuer die Diagramm-
    Ueberschrift, NICHT fuer das gleichnamige „Notizen"-Label, das dieselbe Klasse nutzt. */
-.ex-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+/* Der Gewicht/Wdh.-Umschalter steht DIREKT hinter „Entwicklung", nicht rechtsbuendig
+   (Leonard-Wunsch 01.09.2026) — deshalb `flex-start` statt `space-between`. */
+.ex-chart-head { display: flex; align-items: center; justify-content: flex-start; gap: 10px;
   font-size: 10.5px; font-weight: 500; min-height: 18px; }
 /* Kompakter Umschalter, NUR in dieser Ueberschrift (der Kg/Saetze-Umschalter der
    Volumenkarte bleibt unveraendert). Seine Hoehe bestimmt die Zeilenhoehe: War er hoeher

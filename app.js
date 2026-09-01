@@ -5253,10 +5253,17 @@ function _zeichneExDiagramm(canvas, exId) {
   const hist = exHistPoints(exId, mode);
   if (hist.length < 2) return null;
   const unit = mode === 'reps' ? 'Wdh.' : 'kg';
-  // Im Glas-Modus liegt die Linie auf dem Schleier — die Akzentfarbe waere dort die Farbe
-  // des Untergrunds und damit unsichtbar.
-  const accent = glasAktiv() ? '#ffffff'
+  // Weiss NUR auf dem Schleier, nicht ueberall im Glas-Modus: Der Glas-Modus gilt bewusst
+  // nur innerhalb der Tabs (`.screen:not(#screen-mehr)`, siehe CSS). Modalfenster und die
+  // Einstellungen behalten ihren weissen Grund — eine weisse Linie war dort unsichtbar
+  // (Detailansicht einer Einheit, gemeldet 01.09.2026). Massgeblich ist also, WO das
+  // Diagramm haengt. Die Farben werden hier ausdruecklich gesetzt, weil Chart.defaults
+  // global auf den Glas-Modus eingestellt ist.
+  const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)');
+  const accent = aufGlas ? '#ffffff'
     : (getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#1E40AF');
+  const schrift = aufGlas ? 'rgba(255,255,255,0.8)' : '#64748B';
+  const raster  = aufGlas ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.06)';
   // getComputedStyle liefert je nach Browser „#1E40AF" ODER „rgb(30, 64, 175)" — ein
   // angehängtes Alpha-Suffix wäre im zweiten Fall ungültig und die Fläche würde schwarz.
   const accentFill = _withAlpha(accent, 0.14);
@@ -5289,8 +5296,8 @@ function _zeichneExDiagramm(canvas, exId) {
         } },
       },
       scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 0, autoSkipPadding: 12 } },
-        y: { grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { font: { size: 10 }, precision: 0, callback: (v) => v + ' ' + unit } },
+        x: { grid: { display: false }, ticks: { color: schrift, font: { size: 10 }, maxRotation: 0, autoSkipPadding: 12 } },
+        y: { grid: { color: raster }, ticks: { color: schrift, font: { size: 10 }, precision: 0, callback: (v) => v + ' ' + unit } },
       },
     },
   });
@@ -7237,6 +7244,28 @@ function initCalendarResize() {
   });
 }
 
+// Ein Tipp INS Diagramm zeigt nur den Messwert (Chart.js-Tooltip) — die umgebende Karte
+// soll dabei nicht zucken. Waehrend der Beruehrung bekommt sie `.keine-tipp-anim`; das CSS
+// setzt ihr `transform: none`. Bewusst ueber pointerdown/-up statt `:has(canvas:active)`:
+// Ob Safari einem <canvas> ueberhaupt `:active` gibt, haengt an Details der Trefferpruefung.
+const TIPP_ANIM_KARTEN = '.card, .plan-section-card, .chart-card-v2, .session-card-v2, ' +
+  '.hero-v2, .aex-v2, .ex-list, .plan-card-v2, .plan-list-row, .mehr-card';
+function _initKeineTippAnimationAufDiagramm() {
+  let aktiv = null;
+  const loesen = () => { if (aktiv) { aktiv.classList.remove('keine-tipp-anim'); aktiv = null; } };
+  document.addEventListener('pointerdown', (e) => {
+    loesen();
+    const cv = e.target && e.target.closest ? e.target.closest('canvas') : null;
+    if (!cv) return;
+    const karte = cv.closest(TIPP_ANIM_KARTEN);
+    if (!karte) return;
+    aktiv = karte;
+    karte.classList.add('keine-tipp-anim');
+  }, { passive: true, capture: true });
+  document.addEventListener('pointerup', loesen, { passive: true, capture: true });
+  document.addEventListener('pointercancel', loesen, { passive: true, capture: true });
+}
+
 // Tipp ausserhalb des Kalenders hebt die Tagesauswahl wieder auf.
 function initCalendarDeselect() {
   document.addEventListener('click', (e) => {
@@ -7270,16 +7299,12 @@ function initScrollHideNav() {
     // trifft nur den Hintergrund (Kinder/Karten bubblen, sind aber !== screenEl).
     screenEl.addEventListener('click', (e) => {
       if (currentScreen !== tabName) return;
-      // Tipp auf eine NICHT-interaktive Stelle (Hintergrund ODER „tote" Karte ohne Aktion) toggelt die
-      // Bottom-Nav. Interaktive Elemente (Buttons/Links/Inputs/onclick/role=button/drag) lösen ihre
-      // eigene Aktion aus → NICHT toggeln. composedPath() = der Event-Pfad zum Klick-Zeitpunkt (robust,
-      // auch wenn ein Handler die DOM danach neu rendert).
-      const path = e.composedPath ? e.composedPath() : [e.target];
-      for (const el of path) {
-        if (el === screenEl) break;
-        if (el.nodeType === 1 && el.matches &&
-            el.matches('a, button, input, select, textarea, label, [onclick], [role="button"], [draggable="true"]')) return;
-      }
+      // NUR der blanke Tab-Hintergrund holt die Bottom-Nav zurueck — ein Tipp auf eine Karte
+      // nicht mehr (Leonard-Entscheidung 01.09.2026). `e.target === screenEl` trifft genau
+      // das: Jedes Kind (Karte, Kopfzeile, Knopf) meldet sich selbst als Ziel, auch wenn das
+      // Ereignis danach bis hierher hochblubbert. Die fruehere Pruefung ueber composedPath
+      // liess auch „tote" Karten ohne eigene Aktion durch — genau das war unerwuenscht.
+      if (e.target !== screenEl) return;
       setNavHidden(!nav.classList.contains('nav-hidden'));
     });
     screenEl.addEventListener('scroll', () => {
@@ -7356,6 +7381,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Kalender: Kaestchengroesse beim Drehen neu rechnen, Auswahl bei Tipp daneben aufheben
   initCalendarResize();
   initCalendarDeselect();
+  _initKeineTippAnimationAufDiagramm();
   // Tab-Wechsel per nativem horizontalem Snap-Scroll am Tab-Container
   initTabScrollSync();
   // Bottom-Sheet-Modals nach unten wegswipen

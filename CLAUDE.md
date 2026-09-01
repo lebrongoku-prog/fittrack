@@ -209,6 +209,18 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Gezeichnet wird ueber `_renderAexCharts()` nach jedem Rendern der Kartenliste; die Instanzen liegen in `_aexCharts`.
   Die vier Knoepfe passen nur einzeilig, weil `.aex-v2-actions .btn-sm` Polster und Schrift verkleinert.
   Das frueher hier verlinkte Modal `#modal-ex-detail` wurde ersatzlos entfernt.
+- **Diagrammfarben richten sich nach dem UNTERGRUND, nicht nach dem globalen Glas-Modus.** `_zeichneExDiagramm`
+  prueft `canvas.closest('.screen:not(#screen-mehr)')` — genau die Flaechen, auf die der Glas-Modus im CSS wirkt.
+  Nur dort werden Linie und Achsen weiss; in Modalfenstern und den Einstellungen (weisser Grund) bleiben sie
+  dunkel. Die Farben stehen ausdruecklich in den Optionen, weil `Chart.defaults` global auf den Glas-Modus
+  eingestellt ist — ohne das war das Diagramm in der Detailansicht einer Einheit weiss auf weiss (01.09.2026).
+- **Kein Zucken beim Diagramm-Tipp:** `_initKeineTippAnimationAufDiagramm` haengt die Klasse `.keine-tipp-anim`
+  an die umgebende Karte, solange ein `<canvas>` beruehrt wird (pointerdown/-up/-cancel, capture). Ein Tipp ins
+  Diagramm zeigt nur den Messwert, die Karte soll dabei ruhig bleiben. Bewusst NICHT `:has(canvas:active)` —
+  ob Safari einem `<canvas>` ueberhaupt `:active` gibt, haengt an Details der Trefferpruefung.
+- **Der pulsierende Rahmen am Bildschirmrand waehrend einer Einheit ist weg** (`#workout-glow`, 01.09.2026,
+  Leonard-Wunsch). Mit ihm fiel `@keyframes wo-breathe`. `html.workout-active` bleibt — daran haengen die
+  Laufanzeige-Pille und das zusaetzliche Polster der Tabs.
 - **Verlauf je Übung** (Übungen-Tab, aufgeklappte Karte): `getExerciseHistory` liefert pro Einheit `maxW` (schwerster Satz) UND `reps` (Summe aller Wiederholungen); `exHistPoints(exId, mode)` filtert daraus die Punkte des gewählten Modus (Einträge ohne Wert fallen raus — Körpergewichtsübungen haben kein Gewicht). Umschalter `.ex-chart-toggle` (Gewicht/Wdh.), Auswahl je Übung in `ft_ex_chart_modes` — bewusst ein eigener localStorage-Key statt eines Felds an der Übung, damit reine Anzeige-Einstellungen nicht in den Trainingsdaten und der Drive-Sicherung landen. `setExChartMode` frischt nur die betroffene Karte auf (ein Neuaufbau der Liste würde sie zuklappen). `.ex-chart-toggle` nutzt die Pillen-Optik von `.stats-mode-toggle` mit; die frühere `html.no-cardio`-Ausnahme ist mit dem Cardio-Ausbau entfallen.
 - **Muskel-Landkarte:** `renderMuscleMap()` zeichnet zwei SVG-Silhouetten (`muscleMapSvg`, vorne/hinten) mit nach Volumenanteil abgestufter Deckkraft plus Zahlen-Legende.
 - **Löschen ist zweifach abgesichert:** (1) `withUndo(label, fn, afterRestore)` + `showUndoToast()` — sichert die Stores vorab, „Rückgängig" 6 s lang. (2) **Papierkorb** (`ft_trash`, `trashPut/trashRestore/trashDeleteForever/emptyTrash/purgeTrash`, Liste via `renderTrash()` im Einstellungen-Overlay): gelöschte Einheiten, Pläne, Trainingstage und Übungen liegen `TRASH_KEEP_DAYS` = 30 Tage dort. `_snapshotStores` sichert `ft_trash` mit, sonst läge ein Objekt nach „Rückgängig" doppelt vor.
@@ -333,7 +345,10 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
 - **Löschen** = „Bearbeiten"-Modus (Kästchen auswählen → „Löschen (N)" → Sicherheits-Dialog) via `_delCtx`/`_delSel`/`buildDelEditList`; inline ✕ fragt ebenfalls nach. **Hinzufügen** = Multi-Select-Modals mit „Hinzufügen (N)".
 - **Bottom-Nav**: Scrollen blendet sie nur AUS (ab 60px Scrolltiefe, Runterwisch > 5px) und NIE wieder ein — auch nicht
   am Seitenanfang (Leonard-Entscheidung, 20.08.2026; vorher holte sie jeder Hochwisch zurueck). Zurueck kommt sie
-  ausschliesslich durch einen Tipp auf eine nicht-interaktive Flaeche (`e.composedPath()`-Check in `initScrollHideNav`).
+  ausschliesslich durch einen Tipp auf den BLANKEN Tab-Hintergrund: `e.target === screenEl` in `initScrollHideNav`
+  (Leonard-Entscheidung 01.09.2026). Die fruehere Pruefung ueber `e.composedPath()` liess auch Tipps auf „tote"
+  Karten ohne eigene Aktion durch — unerwuenscht. Folge: In einem Tab, dessen Inhalt den Bildschirm restlos
+  fuellt, gibt es keine Flaeche zum Zurueckholen; dort hilft nur ein Tabwechsel.
   ACHTUNG beim Testen: Der Scroll-Handler laeuft in `requestAnimationFrame` — in einem versteckten Tab feuert der nie,
   die Sperre `_navTickingByTab` bleibt dann auf `true` haengen und JEDES weitere Scroll-Ereignis wird verworfen.
 - Übersicht hat eine Plan-Dashboard-Karte (`buildPlanCard`) + „Letzte Sessions" + Volumen-Chart (`renderVolumeChart`, Chart.js).
