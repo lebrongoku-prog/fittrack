@@ -1683,12 +1683,29 @@ html.wo-running #wo-week-card { display: none; }
    Kante des Scrollers wirklich, statt von einer deckenden Flaeche ueberdeckt zu werden.
    Die alte Loesung (sticky Spalte + deckende Maske) brauchte eine Farbe — im
    Transparenz-Modus gibt es keine, dort schienen die Kaestchen durch die Spalte hindurch. */
-.cal-body { display: flex; gap: var(--cal-label-gap); padding-left: var(--cal-pad-x); }
-/* min-width:0 ist Pflicht: Ohne das waechst ein Flex-Kind auf seinen Inhalt statt zu scrollen. */
+/* GRID, nicht Flex: Ein Flex-Kind mit `flex-basis:auto` bemisst sich zuerst an seiner
+   max-content-Breite — der Browser muesste dafuer bei jedem Layout die volle Breite aller
+   371 Kaestchen ausrechnen und den Scroller anschliessend wieder zusammenstauchen. Mit
+   `minmax(0, 1fr)` haengt die Spaltenbreite gar nicht am Inhalt; der Scroller verhaelt
+   sich damit wieder wie der einfache Block von frueher. (Das Wischen stockte sonst.) */
+.cal-body {
+  display: grid;
+  grid-template-columns: var(--cal-label-w) minmax(0, 1fr);
+  gap: var(--cal-label-gap);
+  padding-left: var(--cal-pad-x);
+}
 .cal-scroll {
-  flex: 1 1 auto; min-width: 0;
   overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
   padding: var(--cal-pad-y) var(--cal-pad-x) var(--cal-pad-y) 0;
+  /* Der Kalender liegt in #tab-container, einem waagerechten Snap-Scroller. Ohne `contain`
+     reicht die Wischgeste an ihn weiter: Der Tab faengt an mitzuwandern, rastet zurueck und
+     die Kalenderbewegung bricht ab — genau das Stocken. `contain` haelt die waagerechte
+     Geste im Kalender. Preis: Aus dem Kalender heraus laesst sich der Tab nicht wechseln
+     (ueberall sonst auf dem Bildschirm weiterhin schon). */
+  overscroll-behavior-x: contain;
+  /* Snap wird zwar nicht vererbt — die Angabe schliesst aus, dass der Snap-Vorfahr
+     ueberhaupt Rastpunkte im Kalender sucht. */
+  scroll-snap-type: none;
 }
 .cal-scroll::-webkit-scrollbar { display: none; }
 /* vertical-align:top vermeidet den Unterlaengen-Spalt, den ein inline-block sonst unter

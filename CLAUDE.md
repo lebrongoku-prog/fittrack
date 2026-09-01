@@ -264,6 +264,12 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   erste Rasterzeile auf einer Linie. Deshalb eine FESTE Hoehe statt einer gemessenen Schrifthoehe.
   ACHTUNG Platzrechnung: `renderTrainingCalendar` misst `scrollerEl.clientWidth`. Der ist bereits um die
   Wochentagsspalte verkuerzt — sie darf dort NICHT noch einmal abgezogen werden (frueher `- 23`).
+  `.cal-body` ist ein GRID mit `minmax(0, 1fr)`, bewusst kein Flex: Ein Flex-Kind mit `flex-basis:auto`
+  bemisst sich zuerst an seiner max-content-Breite, der Browser rechnet also bei jedem Layout die volle
+  Breite aller 371 Kaestchen aus und staucht den Scroller danach wieder zusammen — das Wischen stockte.
+  `.cal-scroll` traegt zusaetzlich `overscroll-behavior-x: contain`: Ohne das reicht die Wischgeste an
+  `#tab-container` (Snap-Scroller) weiter, der Tab wandert mit, rastet zurueck und die Kalenderbewegung
+  bricht ab. Preis dieser Entscheidung: Aus dem Kalender heraus laesst sich der Tab nicht wechseln.
 - **Kalenderkarten sind von der Tipp-Animation ausgenommen** (`#ov-cal-card:active`/`#plans-cal-card:active`
   → `transform: none`, dazu `transition: none`). Ein `transform` auf dem Vorfahren bricht auf iOS die laufende
   Wischgeste in einem Scrollbereich darin ab — das Raster liess sich dadurch gar nicht mehr waagerecht scrollen
