@@ -178,7 +178,8 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   (`.cal-bands`/`.cal-band`, `z-index:0`, Raster darüber mit `z-index:1`); archivierte Pläne sind blasser.
   Der HEUTE laufende Plan traegt zusaetzlich `.current`. Im Transparenz-Modus sind alle Umrandungen weiss
   (Gruen verschwindet auf dem Schleier); unterschieden wird dort ueber Staerke und Deckkraft:
-  laufend = 2px volles Weiss, kommend = 1px 45-%-Weiss, archiviert = 1px 35-%-Weiss. Im normalen Modus
+  laufend = 2px 65-%-Weiss, kommend = 1px 55-%-Weiss, archiviert = 1px 45-%-Weiss. Der Unterschied liegt
+  vor allem in der STAERKE — volles Weiss fuer den laufenden Plan war zu markant. Im normalen Modus
   bleibt alles wie gehabt (Gruen, archiviert mit halber Deckkraft).
   Eine Beschriftung mit dem Plannamen unter dem Raster gibt es NICHT mehr (entfernt 20.08.2026) — der Name steht
   beim Antippen eines Tages in der Beschreibung darunter, dort mit der Wochenzahl in Klammern (ohne Datumsspanne).
