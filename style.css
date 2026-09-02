@@ -1804,7 +1804,7 @@ html.wo-running #wo-week-card { display: none; }
 /* Groesse EINES Kaestchens. FESTE Groesse in jeder Ausrichtung — das Raster scrollt damit
    im Querformat genauso waagerecht wie im Hochformat (Leonard-Wunsch 01.09.2026).
    renderTrainingCalendar liest den Wert hier aus, statt ihn selbst zu setzen. */
-:root { --cal-cell: 19px; }
+:root { --cal-cell: 21px; }
 :root { --cal-label-gap: 4px; }
 /* Breite der Wochentagsspalte. Sie steht ausserhalb des Scrollers — die Platzrechnung in
    renderTrainingCalendar misst den Scroller und muss sie deshalb NICHT mehr abziehen. */

@@ -278,8 +278,8 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Das brauchte eine Farbe — im Transparenz-Modus gibt es keine, dort schienen die Kaestchen durch die Spalte
   hindurch. Mit dem Umbau entfielen die Maske, `--cal-mask-over` und der Einzug der Monatszeile.
   **Rastergroesse (01.09.2026 angehoben, nur das Raster — Titel und Kennzahl der Karte blieben
-  unveraendert):** Kaestchen 19px, Abstand 3px, Wochentagsspalte 24px, Schrift der Wochentage und
-  Monate 13px. Rund 13 Wochen sind gleichzeitig sichtbar.
+  unveraendert):** Kaestchen 21px, Abstand 3px, Wochentagsspalte 24px, Schrift der Wochentage und
+  Monate 13px. Rund 12 Wochen sind gleichzeitig sichtbar.
   Die Groesse ist FEST und passt sich der Bildschirmbreite NICHT mehr an (Leonard-Wunsch): Das Raster
   ist im Querformat genauso gross wie im Hochformat und scrollt auch dort waagerecht. Die frueheren
   Konstanten `CAL_CELL_DEFAULT`/`CAL_CELL_MIN` und die Schleife, die das Kaestchen bis zum Hineinpassen
@@ -291,7 +291,7 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Seiten auseinanderliefen — je weiter rechts, desto staerker.
   Masse als Variablen in `:root` — beim Aendern NUR die Variable anfassen:
   `--cal-pad-x` (1px, seitliches Polster) → `.cal-body`, `.cal-scroll`, `.cal-detail`;
-  `--cal-cell` (19px) / `--cal-gap` (3px) → die Raster-Regeln UND das JS (beide werden dort gelesen);
+  `--cal-cell` (21px) / `--cal-gap` (3px) → die Raster-Regeln UND das JS (beide werden dort gelesen);
   `--cal-pad-y` (5px, Polster oben/unten im Scroller) → `.cal-scroll` UND der obere Abstand der Wochentagsspalte;
   `--cal-label-w` (24px) / `--cal-label-gap` (4px) → Breite der Spalte und ihr Abstand zum Scroller;
   `--cal-band-over` (4px) = Ueberstand der Plan-Umrandung ueber das Raster → `.cal-band` top/bottom, muss in
