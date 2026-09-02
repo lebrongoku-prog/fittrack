@@ -612,7 +612,7 @@ body.theme-plans .hist-action-dd {
 .ex-group-btn:active { transform: scale(0.995); }
 #ov-cal-card, #plans-cal-card { transition: none; }
 .ppv-head { display: flex; align-items: flex-start; gap: 8px; }
-.ppv-name { flex: 1; min-width: 0; font-size: 17px; font-weight: 700; color: var(--text); }
+.ppv-name { flex: 1; min-width: 0; font-size: 16px; font-weight: 700; color: var(--text); }
 .plan-status-past .ppv-name, .plan-status-archived .ppv-name { color: var(--text2); }
 .ppv-meta { font-size: 12px; color: var(--text3); margin-top: 4px; }
 .ppv-progress { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
@@ -905,7 +905,12 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
    wandert dafuer an den rechten Rand, sonst klebte er direkt an der Anzahl. */
 /* Schriftgroesse wie die Uebungstitel der Uebungskarten im Trainings-Tab (`.aex-v2-name`,
    16px) — Leonard-Wunsch 01.09.2026. Ueberschreibt die .79rem von `.weitere-btn`. */
-.ex-group-btn { justify-content: flex-start; font-size: 16px; }
+.ex-group-btn { justify-content: flex-start; font-size: 16px; min-height: var(--ex-row-h); }
+/* Pfeil in Form und Groesse wie der der Uebungskarten (`.ex-item-chev`): immer „▾",
+   beim Aufklappen um 180° gedreht. Die Farbe bleibt weiss — der Knopf steht auf farbigem
+   Grund, das Grau der Karten waere dort nicht lesbar. */
+.ex-group-btn .weitere-pfeil { font-size: 14px; transition: transform .2s; }
+.ex-group-btn[aria-expanded="true"] .weitere-pfeil { transform: rotate(180deg); }
 .ex-group-btn .weitere-pfeil { margin-left: auto; }
 .ex-group-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mc, var(--accent)); flex-shrink: 0; }
 .ex-group-btn .count { opacity: .7; font-weight: 600; }
@@ -1203,7 +1208,9 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    Vorschau kein Etikett mehr traegt (Leonard-Wunsch 20.08.2026). */
 .hero-v2-text { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .hero-v2-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
-.hero-v2-title { font-size: 22px; font-weight: 800; line-height: 1.15; margin-bottom: 8px; letter-spacing: -0.4px; color: var(--text); }
+/* Alle Kartentitel gleich gross wie „Trainingskalender" (16px, Leonard-Wunsch 01.09.2026):
+   .chart-card-v2-title, .plan-section-head h3, .ppv-name, .scv2-title und dieser hier. */
+.hero-v2-title { font-size: 16px; font-weight: 800; line-height: 1.15; margin-bottom: 8px; letter-spacing: -0.4px; color: var(--text); }
 .hero-v2-meta { font-size: 13px; color: var(--text2); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .hero-v2-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text3); }
 /* Die mittlere Dauer steht auf einer eigenen Zeile: zusammen mit Uebungen und Saetzen
@@ -1254,7 +1261,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
   min-height: 0; padding: 14px 16px;
 }
 .hero-v2.rest-mode .hero-v2-text .hero-v2-label { color: var(--text3); margin-bottom: 6px; }
-.hero-v2.rest-mode .hero-v2-text .hero-v2-title { font-size: 18px; margin-bottom: 0; color: var(--text); }
+.hero-v2.rest-mode .hero-v2-text .hero-v2-title { margin-bottom: 0; color: var(--text); }
 .hero-v2.rest-mode .hero-v2-art { width: 80px; opacity: 0.35; }
 .hero-v2.rest-mode .hero-v2-art svg { width: 100%; height: auto; }
 
@@ -1282,7 +1289,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 .hero-v2.active-mode .hero-v2-art { display: none; }
 .hero-v2.active-mode .hero-v2-label { margin-bottom: 6px; }
 .hero-v2.active-mode .hero-v2-title {
-  font-size: 17px; line-height: 1.25;
+  line-height: 1.25;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .hero-v2.active-mode .hero-v2-title-row { margin-bottom: 6px; align-items: center; }
@@ -1335,7 +1342,7 @@ html.wo-running #wo-week-card { display: none; }
   padding: 14px;
 }
 .plan-section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.plan-section-head h3 { font-size: 17px; font-weight: 700; }
+.plan-section-head h3 { font-size: 16px; font-weight: 700; }
 .plan-section-head a { font-size: 14px; color: var(--accent); font-weight: 500; cursor: pointer; }
 /* Ausgewaehlter Tag im Wochenplan des Trainings-Tabs: Die Auswahl steuert dort, welcher
    Tag unten angezeigt wird — ohne Markierung waere nicht erkennbar, welcher das ist.
@@ -1363,7 +1370,7 @@ html.wo-running #wo-week-card { display: none; }
   letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;
 }
 .scv2-row { display: flex; gap: 14px; align-items: flex-start; }
-.scv2-title { font-size: 20px; font-weight: 800; line-height: 1.2; margin-bottom: 6px; letter-spacing: -0.3px; color: var(--text); }
+.scv2-title { font-size: 16px; font-weight: 800; line-height: 1.2; margin-bottom: 6px; letter-spacing: -0.3px; color: var(--text); }
 .scv2-meta { font-size: 13px; color: var(--text2); display: flex; gap: 6px; align-items: center; }
 .scv2-meta svg { width: 13px; height: 13px; stroke: var(--text2); fill: none; stroke-width: 1.8; }
 .scv2-icon-circle {
@@ -1848,12 +1855,12 @@ html.wo-running #wo-week-card { display: none; }
 .cal-foot { padding: 0; }
 /* Kein Polster nach unten: Der Abstand zum Kartenrand kommt allein aus der Karte selbst,
    damit er mit und ohne eingeblendete Beschreibung gleich gross ausfaellt. */
-.cal-detail { font-size: 12px; color: var(--text2); line-height: 1.4; padding: 12px var(--cal-pad-x) 0; }
+.cal-detail { font-size: 16px; color: var(--text2); line-height: 1.4; padding: 12px var(--cal-pad-x) 0; }
 /* Ohne ausgewaehlten Tag ist die Zeile leer — dann darf sie auch keinen Platz belegen.
    (Frueher stand hier dauerhaft ein Hinweistext, der den Raum gefuellt hat.) */
 .cal-detail:empty { display: none; }
 .cal-detail strong { color: var(--text); font-weight: 600; }
-.cal-detail-plan { margin-top: 3px; font-size: 12px; color: var(--text3); }
+.cal-detail-plan { margin-top: 3px; font-size: 16px; color: var(--text3); }
 /* „(zur Einheit)" — der einzige antippbare Teil der Beschreibung. */
 .cal-detail-link { color: var(--accent); font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 /* Jede Legenden-Angabe ist ein eigener Flex-Block, sonst klebt der Text am Symbol und
@@ -1964,8 +1971,13 @@ html.wo-running #wo-week-card { display: none; }
 
 .ex-list { background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
 .ex-item + .ex-item { border-top: 1px solid var(--border); }
+/* Gemeinsame Zeilenhoehe von eingeklappter Uebungskarte und Muskelgruppen-Knopf
+   (Leonard-Wunsch 01.09.2026). Als Variable, damit die beiden nicht auseinanderlaufen —
+   der Knopf traegt eine andere Schriftgroesse und waere sonst 5px flacher. */
+:root { --ex-row-h: 44px; }
 .ex-item-head {
   display: flex; align-items: center; gap: 12px;
+  min-height: var(--ex-row-h);
   padding: 13px 14px; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .ex-item-stripe { width: 4px; align-self: stretch; border-radius: 2px; background: var(--mc, var(--accent)); flex-shrink: 0; }
@@ -2157,16 +2169,8 @@ html.wo-running #wo-week-card { display: none; }
 }
 .plan-ex-handle:active { cursor: grabbing; }
 
-/* Drag-Handle + Drop-Indicators für Workout-Detail-Cards (Active + Vorschau) */
-.aex-drag-handle {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 22px; height: 28px; flex-shrink: 0;
-  color: var(--text3); font-size: 18px; line-height: 1;
-  cursor: grab; user-select: none; -webkit-user-select: none;
-  touch-action: none;
-  margin-right: 2px;
-}
-.aex-drag-handle:active { cursor: grabbing; }
+/* Drop-Indicators fuer die Uebungskarten. Den sichtbaren Griff (drei Striche, `≡`) gibt es
+   nicht mehr (Leonard-Wunsch 01.09.2026); das Sortieren haengt jetzt am ganzen Kartenkopf. */
 .aex-v2.dragging { opacity: 0.4; }
 .aex-v2.drop-target-above { position: relative; margin-top: 20px; }
 .aex-v2.drop-target-below { position: relative; margin-bottom: 20px; }

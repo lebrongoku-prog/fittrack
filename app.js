@@ -1660,10 +1660,9 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
                  ondragover="aexDragOver(event,${ei})"
                  ondragleave="aexDragLeave(event)"
                  ondrop="aexDrop(event,${ei})">
-      <div class="aex-v2-header" onclick="toggleAexCollapse('${exIdKey}', event)">
-        <span class="aex-drag-handle"
-              onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
-              onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">≡</span>
+      <div class="aex-v2-header" onclick="toggleAexCollapse('${exIdKey}', event)"
+           onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
+           onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">
         <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
         <div class="aex-v2-num">${ei+1}</div>
         <div class="aex-v2-info">
@@ -1814,10 +1813,9 @@ function renderActiveWorkout() {
                  ondragover="aexDragOver(event,${ei})"
                  ondragleave="aexDragLeave(event)"
                  ondrop="aexDrop(event,${ei})">
-      <div class="aex-v2-header" onclick="toggleAexCollapse('${exIdKey}', event)">
-        <span class="aex-drag-handle"
-              onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
-              onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">≡</span>
+      <div class="aex-v2-header" onclick="toggleAexCollapse('${exIdKey}', event)"
+           onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
+           onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">
         <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
         <div class="aex-v2-num">${ei+1}</div>
         <div class="aex-v2-info">
@@ -1899,9 +1897,10 @@ function ensureActiveExpanded(wo) {
 }
 function toggleAexCollapse(exId, ev) {
   if (ev) {
-    // Klicks auf Drag-Handle / Erledigt-Checkbox sollen NICHT togglen
+    // Klick auf die Erledigt-Box soll NICHT togglen. (Der frueher hier mitgeprüfte
+    // Drag-Griff `.aex-drag-handle` ist entfallen — das Sortieren haengt am ganzen Kopf.)
     const t = ev.target;
-    if (t.closest && (t.closest('.aex-drag-handle') || t.closest('.aex-v2-done'))) return;
+    if (t.closest && t.closest('.aex-v2-done')) return;
   }
   if (expandedAexIds.has(exId)) {
     expandedAexIds.delete(exId);
@@ -5415,7 +5414,7 @@ function renderExercisesByMuscle() {
         <span class="dot"></span>
         ${meta.name}
         <span class="count">(${items.length})</span>
-        <span class="weitere-pfeil">${isCollapsed ? '▸' : '▾'}</span>
+        <span class="weitere-pfeil">▾</span>
       </button>
       <div class="ex-list">${itemsHTML}</div>
     </div>`;
