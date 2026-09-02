@@ -189,9 +189,7 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   (`--cal-plan-color` auf `.cal-scroll`, dasselbe Grün wie die trainierten Kerne) — die Farbe liegt im CSS, nicht im JS.
   ACHTUNG Zeitzone: Die Spalte eines Datums wird über GANZE TAGE gerechnet (`spalteFuer`, `Math.round` auf Tagesdifferenz), nicht über Millisekunden-Division —
   zwischen Winter- und Sommerzeit fehlt sonst eine Stunde und ein Datum genau auf der Wochengrenze landet eine Woche zu früh.
-  Die Kästchengröße ist dynamisch: `renderTrainingCalendar` misst die freie Breite und verkleinert die Zelle von 16px bis minimal 13px,
-  wenn das Jahr sonst knapp nicht passt (Querformat). Gesetzt wird sie als CSS-Variable `--cal-cell` auf der Karte; `SPALTE` (Zelle + 3px Abstand)
-  steuert Plan-Balken und Scrollposition. `initCalendarResize()` rechnet beim Drehen neu, `initCalendarDeselect()` hebt die Tagesauswahl auf,
+  `SPALTE` (Kaestchen + Abstand) steuert Plan-Umrandungen und Scrollposition. `initCalendarResize()` rechnet beim Drehen neu, `initCalendarDeselect()` hebt die Tagesauswahl auf,
   sobald außerhalb von `.cal-scroll` getippt wird.
   Zwei Instanzen: Übersicht (`cal`/`#ov-cal-card`) und Pläne-Tab (`pcal`/`#plans-cal-card`), Markup aus `calendarInnerHTML(id)`.
   `.cal-scroll` setzt `overflow-x: auto` UND `overflow-y: hidden`: Ohne die zweite Angabe macht der Browser aus der
@@ -279,23 +277,26 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Vorher war die Spalte `position: sticky` INNERHALB des Scrollers und malte eine deckende Maske (`::before`).
   Das brauchte eine Farbe — im Transparenz-Modus gibt es keine, dort schienen die Kaestchen durch die Spalte
   hindurch. Mit dem Umbau entfielen die Maske, `--cal-mask-over` und der Einzug der Monatszeile.
-  **Rastergroesse (01.09.2026 um die Haelfte angehoben, nur das Raster — Titel und Kennzahl der Karte
-  blieben unveraendert):** Kaestchen 24px (`CAL_CELL_DEFAULT`), Abstand 4px, Wochentagsspalte 30px,
-  Schrift der Wochentage und Monate 16px. `CAL_CELL_MIN` blieb bewusst bei 13px: Im Querformat schrumpft
-  das Raster damit weiter so weit, dass das ganze Jahr ohne Scrollen hineinpasst (dort landet es bei 16px).
-  Im Hochformat sind rund 10 Wochen gleichzeitig sichtbar (vorher 16).
-  `--cal-gap` ist die EINZIGE Quelle fuer den Abstand: `renderTrainingCalendar` liest ihn per
-  `getComputedStyle` und rechnet daraus die Spaltenbreite fuer Plan-Umrandungen und Scrollposition.
-  Frueher stand die Zahl doppelt da (CSS + JS-Konstante) — laufen die auseinander, verschieben sich die
-  Umrandungen gegenueber den Spalten, und zwar umso staerker, je weiter rechts man scrollt.
+  **Rastergroesse (01.09.2026 angehoben, nur das Raster — Titel und Kennzahl der Karte blieben
+  unveraendert):** Kaestchen 19px, Abstand 3px, Wochentagsspalte 24px, Schrift der Wochentage und
+  Monate 13px. Rund 13 Wochen sind gleichzeitig sichtbar.
+  Die Groesse ist FEST und passt sich der Bildschirmbreite NICHT mehr an (Leonard-Wunsch): Das Raster
+  ist im Querformat genauso gross wie im Hochformat und scrollt auch dort waagerecht. Die frueheren
+  Konstanten `CAL_CELL_DEFAULT`/`CAL_CELL_MIN` und die Schleife, die das Kaestchen bis zum Hineinpassen
+  des ganzen Jahres verkleinerte, sind damit entfallen.
+  `--cal-cell` und `--cal-gap` sind die EINZIGEN Quellen fuer Kaestchen und Abstand:
+  `renderTrainingCalendar` LIEST beide per `getComputedStyle` (setzt `--cal-cell` also nicht mehr selbst)
+  und rechnet daraus die Spaltenbreite fuer Plan-Umrandungen und Scrollposition. Standen die Werte
+  doppelt da (CSS + JS-Konstante), verschoben sich die Umrandungen gegenueber den Spalten, sobald die
+  Seiten auseinanderliefen — je weiter rechts, desto staerker.
   Masse als Variablen in `:root` — beim Aendern NUR die Variable anfassen:
   `--cal-pad-x` (1px, seitliches Polster) → `.cal-body`, `.cal-scroll`, `.cal-detail`;
-  `--cal-gap` (4px, Abstand zwischen den Kaestchen) → alle vier Raster-Regeln UND das JS;
-  `--cal-pad-y` (6px, Polster oben/unten im Scroller) → `.cal-scroll` UND der obere Abstand der Wochentagsspalte;
-  `--cal-label-w` (30px) / `--cal-label-gap` (5px) → Breite der Spalte und ihr Abstand zum Scroller;
-  `--cal-band-over` (5px) = Ueberstand der Plan-Umrandung ueber das Raster → `.cal-band` top/bottom, muss in
+  `--cal-cell` (19px) / `--cal-gap` (3px) → die Raster-Regeln UND das JS (beide werden dort gelesen);
+  `--cal-pad-y` (5px, Polster oben/unten im Scroller) → `.cal-scroll` UND der obere Abstand der Wochentagsspalte;
+  `--cal-label-w` (24px) / `--cal-label-gap` (4px) → Breite der Spalte und ihr Abstand zum Scroller;
+  `--cal-band-over` (4px) = Ueberstand der Plan-Umrandung ueber das Raster → `.cal-band` top/bottom, muss in
   `--cal-pad-y` passen, sonst schneidet `overflow-y: hidden` die Kante ab;
-  `--cal-months-h` (20px) = feste Hoehe der Monatszeile, `--cal-months-gap` (12px) = ihr Abstand zum Raster.
+  `--cal-months-h` (16px) = feste Hoehe der Monatszeile, `--cal-months-gap` (10px) = ihr Abstand zum Raster.
   Beide zusammen (plus `--cal-pad-y`) sind der obere Abstand der Wochentagsspalte — nur so liegen „Mo" und die
   erste Rasterzeile auf einer Linie. Deshalb eine FESTE Hoehe statt einer gemessenen Schrifthoehe.
   ACHTUNG Platzrechnung: `renderTrainingCalendar` misst `scrollerEl.clientWidth`. Der ist bereits um die

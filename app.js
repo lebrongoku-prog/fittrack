@@ -3386,34 +3386,19 @@ function renderTrainingCalendar(id, cardId) {
       + (streak > 0 ? ` · Serie ${streak} ${streak === 1 ? 'Woche' : 'Wochen'}` : '');
   }
 
-  // Kaestchengroesse an die verfuegbare Breite anpassen: im Querformat fehlten sonst wenige
-  // Pixel und das ganze Jahr musste trotzdem gescrollt werden. Kleiner als 10px wird nicht
-  // gegangen — dann bleibt es bei 13px und scrollt (Hochformat).
-  // 16/13 statt frueher 13/10 — rund ein Viertel groesser (Leonard-Wunsch 20.08.2026).
-  // Ganze Pixel, damit die Kaestchenkanten scharf bleiben.
-  // Der Abstand kommt aus dem CSS (--cal-gap), damit er nur an EINER Stelle steht: Er
-  // bestimmt hier die Spaltenbreite fuer Plan-Umrandungen und Scrollposition und im CSS
-  // die tatsaechlichen Luecken. Liefen beide auseinander, verschoben sich die Umrandungen
-  // gegenueber den Spalten — je weiter rechts, desto staerker.
-  const CAL_GAP = parseFloat(getComputedStyle(document.documentElement)
-    .getPropertyValue('--cal-gap')) || 4;
-  // Groesse EINES Kaestchens. Das Minimum bleibt bewusst klein: Im Querformat schrumpft das
-  // Raster so weit, dass das ganze Jahr ohne Scrollen hineinpasst — diese Eigenschaft soll
-  // die groessere Darstellung im Hochformat nicht kosten.
-  const CAL_CELL_DEFAULT = 24, CAL_CELL_MIN = 13;
-  const scrollerEl = document.getElementById(id + '-scroll');
-  let zelle = CAL_CELL_DEFAULT;
-  if (scrollerEl && scrollerEl.clientWidth > 0) {
-    const cs = getComputedStyle(scrollerEl);
-    // Die Wochentagsspalte steht AUSSERHALB des Scrollers — seine Breite ist also bereits
-    // um sie verkuerzt. Hier darf sie deshalb NICHT noch einmal abgezogen werden.
-    const frei = scrollerEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-    const passt = (z) => wochen * (z + CAL_GAP) <= frei;
-    if (!passt(CAL_CELL_DEFAULT)) {
-      for (let z = CAL_CELL_DEFAULT - 1; z >= CAL_CELL_MIN; z--) { if (passt(z)) { zelle = z; break; } }
-    }
-  }
-  if (card) card.style.setProperty('--cal-cell', zelle + 'px');
+  // Kaestchengroesse und Abstand kommen BEIDE aus dem CSS (--cal-cell, --cal-gap), damit
+  // jedes Mass nur an einer Stelle steht: Hier ergeben sie die Spaltenbreite fuer
+  // Plan-Umrandungen und Scrollposition, im CSS die tatsaechlichen Kaestchen und Luecken.
+  // Liefen die beiden Seiten auseinander, verschoeben sich die Umrandungen gegenueber den
+  // Spalten — je weiter rechts, desto staerker.
+  // FESTE Groesse, keine Anpassung an die Bildschirmbreite mehr (Leonard-Wunsch 01.09.2026):
+  // Das Raster soll im Querformat genauso gross sein wie im Hochformat und dort ebenfalls
+  // waagerecht gescrollt werden. Die frueheren Konstanten CAL_CELL_DEFAULT/CAL_CELL_MIN und
+  // die Schleife, die das Kaestchen bis zum Hineinpassen des ganzen Jahres verkleinert hat,
+  // sind damit entfallen.
+  const wurzelStil = getComputedStyle(document.documentElement);
+  const CAL_GAP = parseFloat(wurzelStil.getPropertyValue('--cal-gap')) || 3;
+  const zelle = parseFloat(wurzelStil.getPropertyValue('--cal-cell')) || 19;
   const SPALTE = zelle + CAL_GAP;
 
   // Plan-Laufzeiten: je eine senkrechte Linie am Anfang und am Ende, der Name darunter.

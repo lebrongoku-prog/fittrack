@@ -975,13 +975,13 @@ html.glas .screen:not(#screen-mehr) .cal-day.planned { background: rgba(255,255,
    der laufende Plan bekommt eine kraeftige, durchgezogene Linie, die uebrigen (archiviert
    oder noch kommend) eine duennere und blassere. */
 html.glas .screen:not(#screen-mehr) .cal-scroll { --cal-plan-color: rgba(255,255,255,.55); }
-html.glas .screen:not(#screen-mehr) .cal-band { border-width: 1.5px; }
+html.glas .screen:not(#screen-mehr) .cal-band { border-width: 1.2px; }
 html.glas .screen:not(#screen-mehr) .cal-band.archived { opacity: 1; border-color: rgba(255,255,255,.45); }
 /* Der laufende Plan hebt sich vor allem ueber die STAERKE ab (2px gegen 1px), nicht ueber
    volles Weiss — das war zu markant (Leonard 01.09.2026). Reihenfolge der Deckkraft:
    laufend .65 > kommend .55 > archiviert .45. */
 html.glas .screen:not(#screen-mehr) .cal-band.current {
-  border-width: 3px; border-color: rgba(255,255,255,.65);
+  border-width: 2.4px; border-color: rgba(255,255,255,.65);
 }
 /* Knoepfe, die frei auf dem Tab-Hintergrund liegen (nicht in einer Karte) — sonst
    bleiben sie als helle Bloecke stehen. */
@@ -1760,7 +1760,7 @@ html.wo-running #wo-week-card { display: none; }
   display: flex; gap: var(--cal-gap); margin-bottom: var(--cal-months-gap);
   height: var(--cal-months-h);
 }
-.cal-month { width: var(--cal-cell, 24px); flex: 0 0 var(--cal-cell, 24px); font-size: 16px; line-height: var(--cal-months-h); color: var(--text3); white-space: nowrap; }
+.cal-month { width: var(--cal-cell, 19px); flex: 0 0 var(--cal-cell, 19px); font-size: 13px; line-height: var(--cal-months-h); color: var(--text3); white-space: nowrap; }
 /* Liegt absolut ueber dem linken Rand von `.cal-body` — bewusst NICHT als Flex-/Grid-Spalte,
    damit `.cal-scroll` ein gewoehnlicher Block bleiben kann (siehe oben).
    Der obere Abstand bildet die Monatszeile im Scroller nach, damit „Mo" auf einer Linie mit
@@ -1772,7 +1772,7 @@ html.wo-running #wo-week-card { display: none; }
   width: var(--cal-label-w);
   display: flex; flex-direction: column; gap: var(--cal-gap);
 }
-.cal-daylabels span { height: var(--cal-cell, 24px); font-size: 16px; line-height: var(--cal-cell, 24px); color: var(--text3); }
+.cal-daylabels span { height: var(--cal-cell, 19px); font-size: 13px; line-height: var(--cal-cell, 19px); color: var(--text3); }
 .cal-grid { display: flex; gap: var(--cal-gap); }
 .cal-week { display: flex; flex-direction: column; gap: var(--cal-gap); }
 /* Zwei Schichten pro Tag: die Fläche sagt, ob laut Plan ein Training vorgesehen war,
@@ -1780,7 +1780,7 @@ html.wo-running #wo-week-card { display: none; }
    der Kalender beantwortet nur „trainiert oder nicht". */
 .cal-day {
   position: relative;
-  width: var(--cal-cell, 24px); height: var(--cal-cell, 24px); border-radius: 6px; display: block;
+  width: var(--cal-cell, 19px); height: var(--cal-cell, 19px); border-radius: 5px; display: block;
   background: var(--border);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
@@ -1794,36 +1794,40 @@ html.wo-running #wo-week-card { display: none; }
    (`.cal-band` reicht --cal-band-over ueber das Raster hinaus); fehlt es, schneidet
    `overflow-y: hidden` deren Kante ab. Die Wochentagsspalte rechnet es mit, um senkrecht
    zum Raster zu passen. */
-:root { --cal-pad-y: 6px; }
+:root { --cal-pad-y: 5px; }
 /* Abstand zwischen der Wochentagsspalte und dem Scroller. */
 /* Abstand zwischen den Kaestchen. EINE Quelle fuer CSS UND JS: renderTrainingCalendar
    liest den Wert von der Karte und rechnet damit die Spaltenbreite fuer Plan-Umrandungen
    und Scrollposition. Standen beide getrennt da, liefen die Umrandungen bei abweichenden
    Werten gegenueber den Spalten aus dem Tritt — je weiter rechts, desto staerker. */
-:root { --cal-gap: 4px; }
-:root { --cal-label-gap: 5px; }
+:root { --cal-gap: 3px; }
+/* Groesse EINES Kaestchens. FESTE Groesse in jeder Ausrichtung — das Raster scrollt damit
+   im Querformat genauso waagerecht wie im Hochformat (Leonard-Wunsch 01.09.2026).
+   renderTrainingCalendar liest den Wert hier aus, statt ihn selbst zu setzen. */
+:root { --cal-cell: 19px; }
+:root { --cal-label-gap: 4px; }
 /* Breite der Wochentagsspalte. Sie steht ausserhalb des Scrollers — die Platzrechnung in
    renderTrainingCalendar misst den Scroller und muss sie deshalb NICHT mehr abziehen. */
-:root { --cal-label-w: 30px; }
+:root { --cal-label-w: 24px; }
 /* Ueberstand der Plan-Umrandung ueber das Raster (oben wie unten). */
-:root { --cal-band-over: 5px; }
+:root { --cal-band-over: 4px; }
 /* Feste Hoehe der Monatszeile. Feste Hoehe statt gemessener Schrifthoehe, weil die
    Wochentagsspalte ausserhalb des Scrollers denselben Wert als oberen Abstand nutzt —
    nur so liegen „Mo" und die erste Rasterzeile garantiert auf einer Linie. */
-:root { --cal-months-h: 20px; --cal-months-gap: 12px; }
+:root { --cal-months-h: 16px; --cal-months-gap: 10px; }
 /* Der Kern behaelt sein Groessenverhaeltnis zum Kaestchen (frueher 3px bei 16px) —
    daher 4,5px und keine runde Zahl. */
 .cal-day.done::before {
-  content: ''; position: absolute; inset: 4.5px;
-  border-radius: 3px; background: #0F766E;
+  content: ''; position: absolute; inset: 3.5px;
+  border-radius: 2.5px; background: #0F766E;
 }
 .cal-day.future { opacity: .45; }
 /* Rand-Tage der ersten/letzten Woche, die noch ins Vor- bzw. Folgejahr fallen */
 .cal-day.outside { opacity: .25; pointer-events: none; }
 /* Ringe INNEN zeichnen (inset). Aussen ragten sie 1,5px ueber das Kaestchen hinaus und
    wurden in der ersten Spalte am linken Rand des Scrollers abgeschnitten. */
-.cal-day.today { box-shadow: inset 0 0 0 2px var(--accent); }
-.cal-day.sel   { box-shadow: inset 0 0 0 2px var(--text); }
+.cal-day.today { box-shadow: inset 0 0 0 1.6px var(--accent); }
+.cal-day.sel   { box-shadow: inset 0 0 0 1.6px var(--text); }
 /* Plan-Laufzeiten: senkrechte Linie an Anfang und Ende, Name darunter. Beide liegen
    absolut auf Positionen, die das JS in Vielfachen der Spaltenbreite (--cal-cell + 3px)
    rechnet. Der Versatz links entspricht den Tages-Labels. */
@@ -1833,7 +1837,7 @@ html.wo-running #wo-week-card { display: none; }
 .cal-bands { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
 .cal-band {
   position: absolute; top: calc(-1 * var(--cal-band-over)); bottom: calc(-1 * var(--cal-band-over));
-  border: 2px solid var(--cal-plan-color); border-radius: 7px;
+  border: 1.6px solid var(--cal-plan-color); border-radius: 6px;
   box-sizing: border-box;
 }
 .cal-band.archived { opacity: .5; }
