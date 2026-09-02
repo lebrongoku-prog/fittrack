@@ -3391,7 +3391,16 @@ function renderTrainingCalendar(id, cardId) {
   // gegangen — dann bleibt es bei 13px und scrollt (Hochformat).
   // 16/13 statt frueher 13/10 — rund ein Viertel groesser (Leonard-Wunsch 20.08.2026).
   // Ganze Pixel, damit die Kaestchenkanten scharf bleiben.
-  const CAL_GAP = 3, CAL_CELL_DEFAULT = 16, CAL_CELL_MIN = 13;
+  // Der Abstand kommt aus dem CSS (--cal-gap), damit er nur an EINER Stelle steht: Er
+  // bestimmt hier die Spaltenbreite fuer Plan-Umrandungen und Scrollposition und im CSS
+  // die tatsaechlichen Luecken. Liefen beide auseinander, verschoben sich die Umrandungen
+  // gegenueber den Spalten — je weiter rechts, desto staerker.
+  const CAL_GAP = parseFloat(getComputedStyle(document.documentElement)
+    .getPropertyValue('--cal-gap')) || 4;
+  // Groesse EINES Kaestchens. Das Minimum bleibt bewusst klein: Im Querformat schrumpft das
+  // Raster so weit, dass das ganze Jahr ohne Scrollen hineinpasst — diese Eigenschaft soll
+  // die groessere Darstellung im Hochformat nicht kosten.
+  const CAL_CELL_DEFAULT = 24, CAL_CELL_MIN = 13;
   const scrollerEl = document.getElementById(id + '-scroll');
   let zelle = CAL_CELL_DEFAULT;
   if (scrollerEl && scrollerEl.clientWidth > 0) {
