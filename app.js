@@ -860,7 +860,7 @@ function renderOverview() {
   const planCardEl = document.getElementById('ov-plan-card');
   if (planCardEl) {
     planCardEl.innerHTML = active
-      ? buildPlanCard(active, "showScreen('plans')", /*hideToday*/ false, /*hideStatus*/ true, /*hideMeta*/ true)
+      ? buildPlanCard(active, "wischeZuTab('plans')", /*hideToday*/ false, /*hideStatus*/ true, /*hideMeta*/ true)
       : `<div class="plan-card-v2" onclick="showScreen('plans')" style="cursor:pointer">
            <div class="ppv-name" style="color:var(--text2)">Kein aktiver Trainingsplan</div>
            <div class="ppv-meta">Tippe, um einen Plan anzulegen oder zu aktivieren.</div>
@@ -1506,10 +1506,33 @@ function selectWorkoutDay(idx) {
 }
 
 // Aus der Plan-Karte (Übersicht) in den Trainings-Tab auf einen bestimmten Wochentag springen.
+// Tabwechsel MIT der Wischbewegung statt hartem Sprung (Leonard-Wunsch 01.09.2026).
+// Bewusst OHNE `_suppressScrollSync`: Genau dadurch laeuft der Scroll-Handler aus
+// `initTabScrollSync` mit und fuehrt Hintergrund-Crossfade, Theme und Nav waehrend der
+// Bewegung nach; im Settle ruft er `_applyTabState` — dasselbe wie bei einer echten
+// Wischgeste. `showScreen` dagegen scrollt hart (`behavior:'auto'`) und unterdrueckt den
+// Handler, weil es fuer Sprunge aus Overlays und beim Start gedacht ist.
+function wischeZuTab(name) {
+  const container = document.getElementById('tab-container');
+  const idx = TAB_ORDER.indexOf(name);
+  // Aus einem Vollbild-Overlay heraus gibt es nichts zu wischen (der Tab-Container liegt
+  // darunter) — dort bleibt es beim harten Wechsel.
+  const imOverlay = ['plan-detail', 'day-detail', 'mehr'].includes(currentScreen);
+  if (!container || idx < 0 || imOverlay || container.clientWidth <= 0) { showScreen(name); return; }
+  if (currentScreen === name) return;
+  // Wer Bewegung reduziert haben moechte, bekommt den Sprung.
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    showScreen(name); return;
+  }
+  container.scrollTo({ left: idx * container.clientWidth, behavior: 'smooth' });
+}
+
 function jumpToWorkoutDay(idx) {
   selectedWorkoutDayIdx = idx;
-  showScreen('workouts');
+  // Erst zeichnen, dann wischen: Der Trainings-Tab liegt bereits (ausserhalb des Bildes)
+  // im DOM, der gewaehlte Tag ist also schon richtig, waehrend er hereinwandert.
   renderWorkoutsScreen();
+  wischeZuTab('workouts');
 }
 
 // Wochenplan im Trainings-Tab: dieselbe Karte wie in Uebersicht und Plaene-Tab
@@ -1521,7 +1544,7 @@ function renderWorkoutWeekStrip() {
   if (!root) return;
   const plan = getActivePlan();
   root.innerHTML = plan
-    ? buildPlanCard(plan, "showScreen('plans')", /*hideToday*/ false, /*hideStatus*/ true, /*hideMeta*/ true,
+    ? buildPlanCard(plan, "wischeZuTab('plans')", /*hideToday*/ false, /*hideStatus*/ true, /*hideMeta*/ true,
                     { selectedIdx: selectedWorkoutDayIdx, dayOnTap: 'selectWorkoutDay' })
     : `<div class="plan-card-v2" onclick="showScreen('plans')" style="cursor:pointer">
          <div class="ppv-name" style="color:var(--text2)">Kein aktiver Trainingsplan</div>

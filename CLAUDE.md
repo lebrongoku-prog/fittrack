@@ -359,6 +359,19 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Der frueher eigene Streifen (`buildWpCol`/`buildWpInfo`/`renderNext7Strip`/`selectOverviewDay`, Klassen `.wp-*`)
   wurde am 20.08.2026 entfernt — er hatte danach keinen Aufrufer mehr. ACHTUNG beim Aufraeumen: Die Regel fuer den
   Erledigt-Haken war eine Selektorliste (`.ppv-col.done …, .wp-col.done …`) — dort durfte nur der tote Teil weg.
+- **Tabwechsel per Wischbewegung aus der App heraus:** `wischeZuTab(name)` scrollt `#tab-container` mit
+  `behavior:'smooth'` und OHNE `_suppressScrollSync` — dadurch fuehrt der Handler aus `initTabScrollSync`
+  Hintergrund-Crossfade, Theme und Nav waehrend der Bewegung mit und ruft im Settle `_applyTabState`,
+  genau wie bei einer echten Wischgeste. `showScreen` bleibt der harte Sprung (`behavior:'auto'` plus
+  unterdrueckter Handler) und ist die Rueckfallebene: aus Vollbild-Overlays heraus, bei unbekanntem Ziel
+  und bei `prefers-reduced-motion`. Im Einsatz bei der Wochenplan-Karte: Tipp auf einen Wochentag
+  (`jumpToWorkoutDay`) wischt in den Trainings-Tab, Tipp auf die Karte selbst in den Plaene-Tab
+  (Leonard-Wunsch 01.09.2026). Gilt in ALLEN Tabs, die diese Karte zeigen — sie ist bewusst ueberall dieselbe.
+  TESTHINWEIS: In einer versteckten Browser-Ansicht (`visibilityState:'hidden'`) laeuft weder die weiche
+  Scrollbewegung noch feuern ueberhaupt `scroll`-Ereignisse — der ganze Tab-Sync ist dort nicht pruefbar.
+- **Der heutige Wochentag wird in der Plan-Detailansicht NICHT hervorgehoben** (01.09.2026). Die Klasse
+  `.wpe-row.today` steht weiter im Markup, hat aber keine Regeln mehr — dort wird ein Plan bearbeitet,
+  das aktuelle Datum spielt keine Rolle und die eingefaerbte Zeile las sich wie eine Auswahl.
 - **Wochenplan in der Plan-Detailansicht:** `.wpe-list`/`.wpe-row` = eine Zeile pro Wochentag (nicht 7 Spalten), damit lange Tagnamen vollständig umbrechen können; unsichtbares `<select>`-Overlay pro Zeile weist den Tag zu.
 - **Löschen** = „Bearbeiten"-Modus (Kästchen auswählen → „Löschen (N)" → Sicherheits-Dialog) via `_delCtx`/`_delSel`/`buildDelEditList`; inline ✕ fragt ebenfalls nach. **Hinzufügen** = Multi-Select-Modals mit „Hinzufügen (N)".
 - **Bottom-Nav**: Scrollen blendet sie nur AUS (ab 60px Scrolltiefe, Runterwisch > 5px) und NIE wieder ein — auch nicht

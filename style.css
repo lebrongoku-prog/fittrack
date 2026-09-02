@@ -2096,10 +2096,11 @@ html.wo-running #wo-week-card { display: none; }
 }
 .wpe-row:last-child { border-bottom: none; }
 .wpe-row:active { background: var(--card2); }
-.wpe-row.today { background: var(--accent-bg); }
+/* Der heutige Wochentag wird in der Plan-Detailansicht NICHT hervorgehoben
+   (Leonard-Wunsch 01.09.2026) — hier wird ein Plan bearbeitet, das aktuelle Datum spielt
+   dabei keine Rolle und die eingefaerbte Zeile las sich wie eine Auswahl. */
 .wpe-day { flex: 0 0 32px; font-size: 13px; font-weight: 700; color: var(--text3); }
 .wpe-row.training .wpe-day { color: var(--text); }
-.wpe-row.today .wpe-day { color: var(--accent-dark); }
 .wpe-name { flex: 1; min-width: 0; font-size: 13px; white-space: normal; overflow-wrap: anywhere; }
 .wpe-rest { flex: 1; min-width: 0; font-size: 13px; color: var(--text3); opacity: 0.6; }
 .wpe-chev { flex: 0 0 auto; font-size: 17px; line-height: 1; color: var(--text3); }
