@@ -3093,9 +3093,15 @@ function renderVolumeChart(ws) {
   const isKg = volumeUnit === 'kg';
   const achseInTonnen = isKg && sortedKeys.some(k => buckets[k].val >= 1000);
   // Read the current theme accent (so the chart matches the active tab).
-  // Glas-Modus: Weiss, sonst laege die Linie in der Farbe des Untergrunds.
-  const accent = glasAktiv() ? '#ffffff'
+  // Weiss NUR auf dem Schleier (der Glas-Modus gilt bloss innerhalb der Tabs) — sonst laege
+  // die Linie in der Farbe des Untergrunds.
+  const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)');
+  const accent = aufGlas ? '#ffffff'
     : (getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#0066ff');
+  // Das Badge ueber dem letzten Punkt wird sonst in derselben Farbe gefuellt wie seine
+  // Schrift — auf dem Schleier also weiss auf weiss und damit unlesbar (gemeldet 01.09.2026).
+  const badgeFlaeche = aufGlas ? '#ffffff' : accent;
+  const badgeSchrift = aufGlas ? '#0F172A' : '#fff';
   const accentRGB = (() => {
     // Convert hex to "r,g,b" for rgba()
     const h = accent.replace('#','');
@@ -3180,9 +3186,9 @@ function renderVolumeChart(ws) {
         const ca = chart.chartArea;
         const x = Math.min(Math.max(last.x - w/2, ca.left), ca.right - w);
         const y = Math.max(last.y - h - 8, 2);
-        c.fillStyle = accent;
+        c.fillStyle = badgeFlaeche;
         c.beginPath(); c.roundRect(x, y, w, h, 6); c.fill();
-        c.fillStyle = '#fff';
+        c.fillStyle = badgeSchrift;
         c.textBaseline = 'middle';
         c.textAlign = 'center';
         c.fillText(txt, x + w/2, y + h/2);   // Mitte des Kastens, nicht des Punktes

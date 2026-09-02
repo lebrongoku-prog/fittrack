@@ -967,6 +967,11 @@ html.glas .screen:not(#screen-mehr) .ex-chart-toggle .stats-mode-pill.active,
 html.glas .screen:not(#screen-mehr) .vol-unit-toggle .stats-mode-pill.active { color: #fff; }
 html.glas .screen:not(#screen-mehr) .ex-chart-toggle .stats-mode-pill.active,
 html.glas .screen:not(#screen-mehr) .vol-unit-toggle .stats-mode-pill.active { background: rgba(255,255,255,.28); }
+/* Seitenschalter (Uebungen: Katalog|Stats, Plaene: Trainingsplan|Trainingstage): Die weisse
+   Pille der aktuellen Seite ist im Transparenz-Modus ein Fremdkoerper. */
+html.glas .screen:not(#screen-mehr) .seg-btn.active {
+  background: rgba(255,255,255,.28); color: #fff;
+}
 /* Abgeschlossene Uebung: `.aex-v2.done .aex-v2-notes` traegt sonst ein helles Gruen, auf
    dem die im Glas-Modus weisse Notizschrift nicht mehr lesbar ist. */
 html.glas .screen:not(#screen-mehr) .aex-v2.done .aex-v2-notes {
@@ -1902,7 +1907,11 @@ html.wo-running #wo-week-card { display: none; }
   color: var(--text2); font-size: 11px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
 }
-.pr-v2-name { font-size: 14px; font-weight: 600; }
+/* `color: var(--text)` ist noetig, obwohl die Karte die Variable im Glas-Modus auf Weiss
+   setzt: Eine Farbe wird als FERTIGER Wert vererbt. Ohne eigene Angabe erbt der Name die
+   am <body> ausgerechnete dunkle Farbe, und das Umdefinieren von --text auf der Karte
+   erreicht ihn gar nicht. */
+.pr-v2-name { font-size: 14px; font-weight: 600; color: var(--text); }
 .pr-v2-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
 /* Steigerung gegenüber der vorherigen Bestleistung — bewusst zurückgenommen, die
    Bestleistung selbst steht hervorgehoben rechts. */
