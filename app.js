@@ -876,8 +876,32 @@ function renderOverview() {
   // Umbau im Übungen-Tab, der Kalender bleibt in der Übersicht.
   renderTrainingCalendar();
 
-  // ─ Letzte Einheiten (kompakt, 3 jüngste) ─
+  _ruhetagHeroAusrichten();
+}
 
+// Ruhetag-Herocard: genauso hoch wie die Wochenplan-Karte darueber, und die Hantel auf
+// einer Linie mit der Mitte des Knopfes „Freies Training starten" (Leonard-Wunsch 01.09.2026).
+// GEMESSEN statt fest verdrahtet: Die Plan-Karte waechst um die Serien-Zeile („N Wochen in
+// Folge"), ihre Hoehe ist also nicht konstant.
+// Die Hantel wird per `transform` verschoben, NICHT per Abstand: Ein transform veraendert das
+// Layout nicht und kann die Kartenhoehe deshalb nicht zurueckwirkend beeinflussen — sonst
+// haetten sich Hoehe und Versatz gegenseitig aufgeschaukelt.
+function _ruhetagHeroAusrichten() {
+  const hero = document.querySelector('#screen-overview .hero-v2.rest-mode');
+  if (!hero) return;
+  const art = hero.querySelector('.hero-v2-art');
+  const btn = hero.querySelector('.free-wo-btn');
+  if (art) art.style.transform = '';          // vor dem Messen zuruecksetzen, sonst summiert es sich
+  const plan = document.querySelector('#ov-plan-card .plan-card-v2');
+  const planHoehe = plan ? plan.getBoundingClientRect().height : 0;
+  // Hoehe 0 heisst: Der Tab ist gerade nicht sichtbar (Vorab-Rendern beim Start). Dann nichts
+  // setzen — beim naechsten Rendern im sichtbaren Tab stimmen die Masse.
+  hero.style.minHeight = planHoehe > 0 ? Math.round(planHoehe) + 'px' : '';
+  if (!art || !btn) return;
+  const a = art.getBoundingClientRect(), b = btn.getBoundingClientRect();
+  if (!a.height || !b.height) return;
+  const versatz = Math.round((b.top + b.height / 2) - (a.top + a.height / 2));
+  art.style.transform = versatz ? `translateY(${versatz}px)` : '';
 }
 
 // Läuft der aktive Plan bald aus, rechtzeitig darauf hinweisen. Ohne diesen Hinweis fällt die
@@ -7303,6 +7327,7 @@ function initCalendarResize() {
     _calResizeTimer = setTimeout(() => {
       _calResizeTimer = null;
       if (document.getElementById('cal-grid')) renderTrainingCalendar('cal', 'ov-cal-card');
+      _ruhetagHeroAusrichten();   // Plan-Karte ist im Querformat anders hoch
       const pc = document.getElementById('plans-cal-card');
       if (pc && pc.style.display !== 'none' && document.getElementById('pcal-grid')) {
         renderTrainingCalendar('pcal', 'plans-cal-card');

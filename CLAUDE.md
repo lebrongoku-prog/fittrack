@@ -229,8 +229,18 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Umschalten springen. Beides zusammen geht nicht — die Achse liegt tiefer als der Zeilenanfang.
   TESTHINWEIS: `btn.click()` umgeht die Trefferpruefung und haette das nicht gezeigt — bei absolut
   positionierten Bedienelementen immer mit `document.elementFromPoint` pruefen, wer an der Stelle wirklich liegt.
+- **Ruhetag-Herocard** (`buildRestHero`, Uebersicht): `_ruhetagHeroAusrichten()` setzt am Ende von
+  `renderOverview()` ihre `min-height` auf die GEMESSENE Hoehe der Wochenplan-Karte darueber und
+  verschiebt die Hantel per `transform: translateY(...)` auf die Mitte des Knopfes „Freies Training
+  starten" (Leonard-Wunsch 01.09.2026). Gemessen statt fest verdrahtet, weil die Plan-Karte um die
+  Serien-Zeile („N Wochen in Folge") waechst. Die Hantel MUSS per `transform` wandern, nicht per
+  Abstand: Ein transform veraendert das Layout nicht und kann die Kartenhoehe deshalb nicht
+  zurueckwirkend beeinflussen — sonst schaukelten sich Hoehe und Versatz gegenseitig auf.
+  Bei Hoehe 0 (Vorab-Rendern im unsichtbaren Tab) wird nichts gesetzt. Laeuft auch im Resize-Handler.
 - **„Details" in der Uebungskarte** ist ein Knopf in der Aktionsleiste (`.aex-v2-details`, ganz rechts, graue Box mit
-  Akzentfarbe). Er klappt das Verlaufsdiagramm AM ENDE der Karte auf (`.aex-v2-chart`, unter „+ Satz / − Satz").
+  Akzentfarbe). Er sitzt per `margin-left:auto` IMMER am rechten Rand — sonst wandert er mit der Zahl der uebrigen
+  Knoepfe (in der laufenden Einheit kommt „Ueberspringen" hinzu) und stuende in Vorschau und aktivem
+  Modus an verschiedenen Stellen. Er klappt das Verlaufsdiagramm AM ENDE der Karte auf (`.aex-v2-chart`, unter „+ Satz / − Satz").
   Standard ist zu; `aexChartOffen` (Set der Kartenschluessel) haelt den Zustand, `toggleAexCollapse` loescht den
   Eintrag beim Zuklappen der Karte — das Diagramm ist danach wieder geschlossen (Leonard-Wunsch 28.08.2026).
   Gezeichnet wird ueber `_renderAexCharts()` nach jedem Rendern der Kartenliste; die Instanzen liegen in `_aexCharts`.

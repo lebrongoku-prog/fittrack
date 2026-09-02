@@ -477,7 +477,10 @@ body.theme-plans .hist-action-dd {
 .btn-ghost { background: var(--card2); color: var(--text2); }
 .btn-danger { background: var(--red-bg); color: var(--red); }
 .btn-sm { padding: 8px 14px; font-size: 13px; }
-.btn-full { width: 100%; }/* ─── Divider ─── */
+.btn-full { width: 100%; }
+/* „Verstanden" in den Lesehilfe-Fenstern: genau 44px hoch (Leonard-Wunsch 01.09.2026).
+   Aus Polster und Schrift ergaeben sich 43px — die Angabe hebt ihn auf das runde Mass. */
+.info-ok-btn { min-height: 44px; }/* ─── Divider ─── */
 .divider { height: 1px; background: var(--border); }
 
 /* ─── Empty State ─── */
@@ -1262,6 +1265,11 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 }
 .hero-v2.rest-mode .hero-v2-text .hero-v2-label { color: var(--text3); margin-bottom: 6px; }
 .hero-v2.rest-mode .hero-v2-text .hero-v2-title { margin-bottom: 0; color: var(--text); }
+/* Hoehe und die senkrechte Lage der Hantel setzt `_ruhetagHeroAusrichten()` im JS:
+   Die Karte soll so hoch sein wie die Wochenplan-Karte darueber, und deren Hoehe schwankt
+   (die Serien-Zeile „N Wochen in Folge" ist nicht immer da). Die Hantel wird per
+   `transform` verschoben — das veraendert das Layout nicht und kann die Kartenhoehe
+   deshalb nicht zurueckwirkend beeinflussen. */
 .hero-v2.rest-mode .hero-v2-art { width: 80px; opacity: 0.35; }
 .hero-v2.rest-mode .hero-v2-art svg { width: 100%; height: auto; }
 
@@ -1527,7 +1535,10 @@ html.wo-running #wo-week-card { display: none; }
 }
 /* „Details" sitzt ganz rechts in der Knopfleiste — graue Box wie die uebrigen Knoepfe,
    aber in der Akzentfarbe beschriftet. */
-.aex-v2-details { color: var(--accent); }
+/* „Details" sitzt IMMER am rechten Rand — sonst wandert der Knopf mit der Zahl der
+   uebrigen Knoepfe: in der laufenden Einheit kommt „» Ueberspringen" hinzu und schob ihn
+   nach rechts (Leonard-Wunsch 01.09.2026). */
+.aex-v2-details { color: var(--accent); margin-left: auto; }
 /* Vier Knoepfe muessen auf iPhone-Breite in EINE Zeile passen (Leonard-Entscheidung
    28.08.2026): weniger Innenabstand, kleinere Schrift, kein Umbruch. Ohne das liefen
    „+ Satz / − Satz / Überspringen / Details" rechts aus der Karte. */
