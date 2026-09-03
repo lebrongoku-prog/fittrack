@@ -117,8 +117,11 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   `font:inherit` MUSS vor den Schrift-Angaben stehen, sonst gewinnt die Browser-Standardschrift fuer `<button>`.
   Es MUSS ein `<button>` sein: `initScrollHideNav` nimmt echte Bedienelemente von der „Tableiste wieder
   einblenden"-Erkennung aus — ein `<div>` wuerde die Nav bei jedem Tipp zurueckholen.
-  `.archiv-btn` braucht `width: calc(100% - 28px)`: Ein `<button>` schrumpft bei `width:auto` auf seinen Inhalt,
-  auch als Block-Element.
+  `.archiv-btn` ist in Breite, Hoehe und Schriftgroesse identisch mit „+ Uebung zum Trainingstag
+  hinzufuegen" (01.09.2026): `width: calc(100% - 96px)` mit 48px Rand bildet dessen Behaelter-Polster
+  nach, und sein Pfeil laeuft auf 14px statt 32px — mit der Original-Box waere der Knopf 51px statt
+  33,7px hoch. Die Breitenangabe ist noetig, weil ein `<button>` bei `width:auto` auf seinen Inhalt
+  schrumpft, auch als Block-Element.
   NICHT umgestellt (bewusst, weil nicht beauftragt): das Archiv der Trainingstage (`.plans-list-archive-header`)
   und die Gruppenkoepfe im Uebung-hinzufuegen-Dialog (`.ex-group-title`).
 - **Alle Kartentitel sind 16px** (01.09.2026, Vorbild „Trainingskalender"): `.chart-card-v2-title`,

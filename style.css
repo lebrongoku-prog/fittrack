@@ -932,12 +932,19 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 /* „Archivierte Plaene" steht direkt im Screen, braucht also eigene Seitenabstaende.
    Breite explizit rechnen: <button> schrumpft bei `width:auto` auf den Inhalt, auch als
    Block-Element — volle Breite kaeme so nicht zustande. */
-/* Gleiches seitliches Polster wie beim Muskelgruppen-Knopf (14px statt der 12px aus
-   `.weitere-btn`), damit der Pfeil genauso weit vom Rand steht wie in den Uebungskarten. */
+/* Gleiche Breite und Hoehe wie „+ Uebung zum Trainingstag hinzufuegen" (Leonard-Wunsch
+   01.09.2026). Dessen Behaelter hat 48px seitliches Polster — dieselbe Einrueckung stellt
+   `calc(100% - 96px)` mit 48px Rand her. Die Schriftgroesse ist bei beiden die .79rem aus
+   `.weitere-btn`. Ein `<button>` schrumpft bei `width:auto` auf seinen Inhalt, auch als
+   Block-Element — die Breitenangabe ist also noetig. */
 .weitere-btn.archiv-btn {
-  width: calc(100% - 28px); margin: 16px 14px 8px;
-  padding-left: 14px; padding-right: 14px;
+  width: calc(100% - 96px); margin: 16px 48px 8px;
 }
+/* Der Pfeil traegt in den Uebungskarten eine 32px-Box und wuerde den Knopf sonst auf 51px
+   aufblasen; hier bestimmt die Textzeile die Hoehe. 14px ist knapp darunter, der Knopf ist
+   damit exakt so hoch wie der Hinzufuegen-Knopf. */
+.archiv-btn .aex-v2-chev { width: 14px; height: 14px; }
+.archiv-btn .aex-v2-chev svg { width: 14px; height: 14px; }
 
 /* ─── Glas-Modus ────────────────────────────────────────────────────────────────
    Schaltet alle Karten auf denselben 12-%-Weiss-Schleier wie `.weitere-btn`.
