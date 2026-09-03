@@ -149,6 +149,10 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Groesse der `.ex-item-chev` nachgebaut: immer „▾", 14px, per `[aria-expanded="true"]` um 180 Grad
   gedreht (die frueher im JS getauschten Zeichen „▸/▾" sind weg). Die Farbe bleibt weiss —
   der Knopf steht auf farbigem Grund. `.archiv-btn` behaelt den alten Pfeil.
+- **Uebungskarten (`.aex-v2`) haben KEINEN Ausklapp-Pfeil mehr** (01.09.2026): Auf- und zugeklappt
+  wird weiterhin per Tipp auf den Kartenkopf (`toggleAexCollapse` haengt am `.aex-v2-header`).
+  Die Klasse `.aex-v2-chev` samt `AEX_CHEV_SVG` lebt nur noch im Archiv-Knopf des Plaene-Tabs weiter,
+  der sie von hier uebernommen hat — es ist der einzige Ausklapp-Pfeil, den die App noch zeigt.
 - **Uebungskarten (`.aex-v2`) haben KEINEN sichtbaren Drag-Griff mehr** (die drei Striche `≡`,
   entfernt 01.09.2026). Das Sortieren haengt jetzt am ganzen Kartenkopf: `.aex-v2-header` traegt
   `onpointerdown`/`onpointerup` und schaltet `draggable` der Karte. Der Klick zum Auf-/Zuklappen
@@ -395,6 +399,14 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
 - **Herocards haben KEINE Kontur** (01.09.2026) — im Glas-Modus zog sie eine weisse Linie um die Karte.
   Abgegrenzt wird allein ueber den Schatten. Gilt fuer `.hero-v2` UND `.session-card-v2` (deren einzige
   Verwendung die Ruhetag-Karte im Trainings-Tab ist).
+- **Alle vier TAB-Kopfzeilen sind gleich hoch** (`--ph-h`, 64px als `min-height` auf
+  `.ph:not(.plan-detail-ph):not(.ph-with-back)`, 01.09.2026). Ohne das richtete sich jede nach ihrem
+  Inhalt — Uebersicht 64px, Uebungen/Plaene 60px, Training 54,5px — und die erste Karte bzw. der
+  Seitenschalter darunter sprang beim Tabwechsel um bis zu 10px. Der Wert ist die natuerliche Hoehe
+  der Uebersicht: 16px Polster + 38px Knopf + 2px Rand + 8px. Die Vollbild-Overlays sind ausgenommen.
+  Der Sicherungs-Chip ist genauso hoch wie die Knoepfe daneben (38px, `min-height` + `box-sizing`);
+  `.ph-gear` hat dafuer sein eigenes `margin-top` verloren — den Abstand setzt `.ph-right` fuer alle
+  drei gemeinsam, sonst sassen die Knoepfe 1px tiefer als der Chip.
 - **Übersicht:** Sicherungs-Status als Chip im Kopf neben dem Titel (`renderBackupLine` → `#ov-backup-line` in `.ph-right`, Klasse `.backup-chip`; kurze Texte wegen des knappen Platzes, ausführliche Fassung im `title`-Attribut), Hinweis vor Plan-Ende (`renderPlanEndNotice` + `extendActivePlan`), Wochenserie (`getWeekStreak` → `.ppv-streak`), Einstieg ins freie Training (`startFreeWorkout`, Einheit ohne `planDayId`).
 - **Ende der Satzpause** meldet sich dreifach: Vibration, Ton und sichtbare Meldung „Pause vorbei" (5 s, `.done`).
   Grund fuer den Aufwand: `navigator.vibrate` gibt es auf dem iPhone NICHT (Safari unterstuetzt die Vibration-API auf

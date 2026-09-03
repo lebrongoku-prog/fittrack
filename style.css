@@ -452,14 +452,26 @@ body.theme-plans .hist-action-dd {
 
 /* ─── Page Header ─── */
 .ph { padding: 16px 14px 8px; display: flex; justify-content: space-between; align-items: flex-start; }
+/* Alle vier TAB-Kopfzeilen gleich hoch, damit die erste Karte bzw. der Seitenschalter darunter
+   in jedem Tab auf derselben Hoehe beginnt (Leonard-Wunsch 01.09.2026). Ohne das richtete sich
+   jede Kopfzeile nach ihrem eigenen Inhalt: Uebersicht 64px (Knopfreihe), Uebungen/Plaene 60px,
+   Training 54,5px (nur der Titel) — die Karten darunter sprangen beim Tabwechsel um bis zu 10px.
+   Der Wert ist die natuerliche Hoehe der Uebersicht: 16px Polster + 38px Knopf + 2px Rand + 8px.
+   Die Vollbild-Overlays (Plan-Detail, Trainingstag, Einstellungen) sind ausgenommen — sie haben
+   eine eigene Kopfzeile mit Zurueck-Pfeil. */
+:root { --ph-h: 64px; }
+.ph:not(.plan-detail-ph):not(.ph-with-back) { min-height: var(--ph-h); box-sizing: border-box; }
 /* Kopfzeile mit Zurück-Pfeil: Titel schließt links an den Pfeil an, statt nach rechts zu rutschen. */
 .ph-with-back { justify-content: flex-start; gap: 10px; align-items: center; }
 .ph-with-back .ph-left { flex: 1; min-width: 0; }
 .ph-left h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
 .ph-left .ph-sub { font-size: 13px; color: var(--text3); margin-top: 2px; }/* Zahnrad in der Übersicht: Zugang zu den Einstellungen, seit „Mehr" kein Tab mehr ist.
    Auf dem farbigen Tab-Hintergrund → helle Fläche, damit es sich abhebt. */
+/* KEIN eigenes `margin-top` mehr: Den Abstand nach oben setzt `.ph-right` fuer alle drei
+   Elemente gemeinsam. Mit einem zusaetzlichen Rand nur an den Knoepfen sassen sie 1px
+   tiefer als der Sicherungs-Chip daneben (01.09.2026). */
 .ph-gear {
-  width: 38px; height: 38px; flex-shrink: 0; margin-top: 2px;
+  width: 38px; height: 38px; flex-shrink: 0;
   border-radius: 12px; border: none;
   background: rgba(255,255,255,0.18);
   display: flex; align-items: center; justify-content: center;
@@ -1152,8 +1164,11 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 /* Sicherungs-Status im Kopf der Übersicht, links neben dem Zahnrad. Sitzt auf dem
    farbigen Tab-Hintergrund → helle, halbtransparente Fläche wie das Zahnrad. */
 .ph-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-top: 2px; }
+/* Genauso hoch wie die Knoepfe daneben (`.ph-gear`, 38px) — Leonard-Wunsch 01.09.2026.
+   `box-sizing` ist noetig, damit das Polster in die Hoehe hineinzaehlt. */
 .backup-chip {
   display: flex; align-items: center; gap: 6px;
+  min-height: 38px; box-sizing: border-box;
   max-width: 168px; padding: 7px 10px;
   border-radius: 11px; background: rgba(255,255,255,0.18);
   font-size: 11.5px; font-weight: 600; color: #fff;
@@ -1459,6 +1474,9 @@ html.wo-running #wo-week-card { display: none; }
 /* Höhe = Höhe der Nummernscheibe rechts daneben. Der Kopf richtet oben aus
    (align-items: flex-start), deshalb liegen die Mitten nur bei gleicher Höhe
    auf einer Linie. */
+/* Die Uebungskarten tragen seit dem 01.09.2026 KEINEN Pfeil mehr (Leonard-Wunsch) — auf-
+   und zugeklappt wird weiter per Tipp auf den Kartenkopf. Die Klasse lebt nur noch im
+   Archiv-Knopf des Plaene-Tabs weiter, der sie von hier uebernommen hat. */
 .aex-v2-chev {
   width: 32px; height: 32px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
@@ -1466,7 +1484,6 @@ html.wo-running #wo-week-card { display: none; }
   transition: transform 0.18s ease;
 }
 .aex-v2-chev svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 2.4; }
-.aex-v2.collapsed .aex-v2-chev { transform: rotate(-90deg); }
 /* Zugeklappte Karte: Satz-Tabelle, Notizfeld und Aktionsleiste ausblenden — der Kopf bleibt. */
 .aex-v2.collapsed .aex-v2-body,
 .aex-v2.collapsed .aex-v2-actions { display: none; }

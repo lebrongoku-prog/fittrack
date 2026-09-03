@@ -1687,7 +1687,6 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
       <div class="aex-v2-header" onclick="toggleAexCollapse('${exIdKey}', event)"
            onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
            onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">
-        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
         <div class="aex-v2-num">${ei+1}</div>
         <div class="aex-v2-info">
           <div class="aex-v2-name">${ex.name}</div>
@@ -1840,7 +1839,6 @@ function renderActiveWorkout() {
       <div class="aex-v2-header" onclick="toggleAexCollapse('${exIdKey}', event)"
            onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
            onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">
-        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
         <div class="aex-v2-num">${ei+1}</div>
         <div class="aex-v2-info">
           <div class="aex-v2-name">${ex.name}</div>
