@@ -3338,17 +3338,17 @@ function planErfuellung(plan) {
   return { geplant, absolviert, prozent: Math.round(absolviert / geplant * 100) };
 }
 
-// Je Kalender (cal | pcal): Wurde er schon einmal auf die laufende Woche gesetzt? Danach
-// bestimmt allein der Nutzer, wo das Raster steht.
+// Je Kalender (cal | pcal): Wurde er schon einmal auf die laufende Woche gesetzt, und wo
+// steht er gerade? `_calScrollPos` fuehrt ein Scroll-Listener nach — BEWUSST nicht als
+// Momentaufnahme zu Beginn des Renderns: Beim App-Start laeuft der Renderer zweimal kurz
+// hintereinander, und die zweite Runde haette dann den Stand VOR dem ersten Positionieren
+// festgehalten und das Raster wieder auf Null gezogen (Leonard-Meldung 01.09.2026).
 const _calPositioniert = {};
+const _calScrollPos = {};
 
 function renderTrainingCalendar(id, cardId) {
   id = id || 'cal';
   cardId = cardId || 'ov-cal-card';
-  // Vor dem Neuaufbau merken: Das Raster wird gleich neu geschrieben, und obwohl der
-  // Scrollbereich selbst bestehen bleibt, soll die Position sicher wieder dieselbe sein.
-  const _vorherigerScroller = document.getElementById(id + '-scroll');
-  const gemerktePos = _vorherigerScroller ? _vorherigerScroller.scrollLeft : 0;
   const card = document.getElementById(cardId);
   if (card && !document.getElementById(id + '-grid')) card.innerHTML = calendarInnerHTML(id);
   const grid = document.getElementById(id + '-grid');
@@ -3482,13 +3482,20 @@ function renderTrainingCalendar(id, cardId) {
   // bei jedem Tabwechsel erneut (ueber `_applyTabState`), und ein erneutes Setzen liess das
   // Raster jedes Mal zur aktuellen Woche zurueckspringen (gemeldet 01.09.2026).
   const scroller = document.getElementById(id + '-scroll');
+  if (scroller && !scroller.dataset.posMerker) {
+    scroller.dataset.posMerker = '1';
+    scroller.addEventListener('scroll', () => {
+      if (_calPositioniert[id]) _calScrollPos[id] = scroller.scrollLeft;
+    }, { passive: true });
+  }
   if (scroller) requestAnimationFrame(() => {
-    if (_calPositioniert[id]) { scroller.scrollLeft = gemerktePos; return; }
+    if (_calPositioniert[id]) { scroller.scrollLeft = _calScrollPos[id] || 0; return; }
+    if (!scroller.clientWidth) return;   // im unsichtbaren Tab nicht messbar — spaeter erneut
     const heuteSpalte = Math.floor(Math.round((today - start) / 86400000) / 7);
-    scroller.scrollLeft = Math.max(0, heuteSpalte * SPALTE - scroller.clientWidth * 0.7);
-    // Erst als „positioniert" merken, wenn wirklich gemessen werden konnte. In einem
-    // unsichtbaren Tab ist clientWidth 0 — die Position waere dann sinnlos eingefroren.
-    if (scroller.clientWidth > 0) _calPositioniert[id] = true;
+    const ziel = Math.max(0, heuteSpalte * SPALTE - scroller.clientWidth * 0.7);
+    scroller.scrollLeft = ziel;
+    _calScrollPos[id] = ziel;
+    _calPositioniert[id] = true;
     // KEIN `touch-action` hier. Der Versuch (01.09.2026), dem Browser mit `pan-x` die Wahl
     // zwischen senkrechtem Seiten- und waagerechtem Rasterscroll abzunehmen, hat das
     // Stocken nicht behoben — und in Tabs, deren Seite senkrecht scrollt (Uebersicht),
@@ -3996,8 +4003,8 @@ function renderPlans() {
       const expanded = plansArchiveExpanded;
       html += `<button type="button" class="weitere-btn archiv-btn" aria-expanded="${expanded}"
               onclick="togglePlansArchive()">
-        Archivierte Pläne${expanded ? `<span class="count">(${archived.length})</span>` : ''}
-        <span class="ex-item-chev">▾</span>
+        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
+        <span class="archiv-label">Archivierte Pläne${expanded ? ` <span class="count">(${archived.length})</span>` : ''}</span>
       </button>`;
       if (expanded) html += archived.map(renderRow).join('');
     }
@@ -5208,7 +5215,6 @@ function buildExItemHTML(ex, context) {
       <div class="ex-item-name">${ex.name}</div>
       ${noteIndicator}
       ${planTag}
-      <span class="ex-item-chev">▾</span>
     </div>
     <div class="ex-item-body">
       ${statsBlock}
@@ -5456,10 +5462,10 @@ function renderExercisesByMuscle() {
     return `<div class="ex-group${isCollapsed ? ' collapsed' : ''}" style="--mc:${meta.color}">
       <button type="button" class="weitere-btn ex-group-btn" aria-expanded="${!isCollapsed}"
               onclick="toggleExGroup('muscle:${m}')">
+        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
         <span class="dot"></span>
         ${meta.name}
         ${isCollapsed ? '' : `<span class="count">(${items.length})</span>`}
-        <span class="ex-item-chev">▾</span>
       </button>
       <div class="ex-list">${itemsHTML}</div>
     </div>`;

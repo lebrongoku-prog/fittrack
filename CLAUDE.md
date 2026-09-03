@@ -132,11 +132,14 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Die Anzahl in Klammern erscheint NUR im ausgeklappten Zustand; eingeklappt steht dort nur der
   Name (Leonard-Wunsch 01.09.2026). Dasselbe gilt fuer „Archivierte Plaene" im Plaene-Tab, der
   ausserdem die Tipp-Animation der Karten traegt und dasselbe 14px-Polster bekommen hat.
-  **Der Pfeil ist in beiden Knoepfen dieselbe Klasse wie in den Uebungskarten (`.ex-item-chev`)** —
-  bewusst kein Nachbau, damit Form, Groesse und Drehung nicht auseinanderlaufen. Zwei Anpassungen:
-  `margin-left:auto` schiebt ihn nach rechts (in der Karte macht das die Namensspalte mit `flex:1`)
-  und `color: inherit` holt die Farbe vom Knopf, der auf farbigem Grund steht. Gedreht wird ueber
-  `[aria-expanded="true"]` statt ueber `.open`. Die fruehere Klasse `.weitere-pfeil` ist entfallen. Als Variable, weil der Knopf eine andere
+  **Der Pfeil ist in beiden Knoepfen dieselbe Klasse wie in den Uebungskarten des TRAININGS-Tabs
+  (`.aex-v2-chev` mit `AEX_CHEV_SVG`)** — bewusst kein Nachbau, damit Form, Groesse und Drehung nicht
+  auseinanderlaufen. Er steht wie dort GANZ LINKS, vor der Farbmarke (32x32-Box, 19px-SVG, 14px vom
+  Rand). Angepasst ist nur die Farbe (`color: inherit`, weil der Knopf auf farbigem Grund steht);
+  gedreht wird ueber `[aria-expanded="false"]` statt ueber `.collapsed`. Die frueheren Klassen
+  `.weitere-pfeil` und der Pfeil der Katalog-Uebungen (`.ex-item-chev` in `buildExItemHTML`) sind
+  entfallen (01.09.2026). Beim Archiv-Knopf liegt der Pfeil ABSOLUT am linken Rand, damit die
+  Beschriftung im ganzen Knopf mittig steht — im Fluss waere sie um seine halbe Breite versetzt. Als Variable, weil der Knopf eine andere
   Schriftgroesse traegt (16px gegen 15px) und sonst 5px flacher waere. Sein Pfeil ist in Form und
   Groesse der `.ex-item-chev` nachgebaut: immer „▾", 14px, per `[aria-expanded="true"]` um 180 Grad
   gedreht (die frueher im JS getauschten Zeichen „▸/▾" sind weg). Die Farbe bleibt weiss —
@@ -200,10 +203,14 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   sie aus Start/Ende, falls `weeksTotal` fehlt) sowie der Stand (`planErfuellung`). Eine Hinweiszeile gibt es nicht mehr.
   Zeigt IMMER das laufende Kalenderjahr (1.1.–31.12.); Rand-Tage der ersten/letzten Woche tragen `.outside` (ausgegraut, nicht antippbar).
   Beim ERSTEN Rendern wird zur laufenden Woche gescrollt, danach bleibt die Position des Nutzers stehen
-  (`_calPositioniert` je Kalender, Stand wird vor dem Neuaufbau gemerkt). Ohne das sprang das Raster bei
-  jedem Tabwechsel zurueck, weil `_applyTabState` den Renderer erneut aufruft (Leonard-Meldung 01.09.2026).
+  (`_calPositioniert` und `_calScrollPos` je Kalender). Ohne das sprang das Raster bei jedem Tabwechsel
+  zurueck, weil `_applyTabState` den Renderer erneut aufruft (Leonard-Meldung 01.09.2026).
   Als „positioniert" gilt der Kalender erst, wenn `clientWidth > 0` war — im unsichtbaren Tab waere die
-  Position sonst sinnlos eingefroren. Plan-Laufzeiten sind als Rahmen OHNE Füllung um die Wochenspalten gezeichnet
+  Position sonst sinnlos eingefroren.
+  ACHTUNG: Die aktuelle Position fuehrt ein Scroll-Listener in `_calScrollPos` nach; sie darf NICHT zu
+  Beginn des Renderns als Momentaufnahme genommen werden. Beim App-Start laeuft der Renderer zweimal
+  dicht hintereinander (`prerenderAllTabs` + `_applyTabState`) — die zweite Runde haette dann den Stand
+  VOR dem ersten Positionieren festgehalten und das Raster wieder auf Null gezogen. Plan-Laufzeiten sind als Rahmen OHNE Füllung um die Wochenspalten gezeichnet
   (`.cal-bands`/`.cal-band`, `z-index:0`, Raster darüber mit `z-index:1`); archivierte Pläne sind blasser.
   ALLE Zeitraeume werden gleich gezeichnet — gleiche Farbe, gleiche Staerke (1,2px), keine Abstufung
   nach laufend/kommend/archiviert (Leonard-Wunsch 01.09.2026; die Klassen `.cal-band.current` und
