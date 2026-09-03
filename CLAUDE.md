@@ -468,6 +468,18 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   1 Jahr = pro Monat. Frueher immer Kalenderwochen mit Label "WNN" und hart auf 8 Punkte gekappt —
   dadurch zeigte "Letztes Jahr" nur zwei Monate. `autoSkip` ist im Wochen-Modus AUS, weil dort
   Labels absichtlich leer sind; sonst an. X-Achse aufsteigend (aelteste links).
+- Aufraeum-Stand (01.09.2026): Nach dem Umbau der Ausklapp-Pfeile und der Plan-Umrandungen wurden
+  `.ex-item-chev` (2 Regeln) und eine ungenutzte Variable in der Band-Schleife entfernt. Zusaetzlich
+  fielen 11 alte Klassennamen aus gemischten Selektorlisten der beiden Responsive-Bloecke:
+  `.hero-card`, `.ov-ex-card`, `.chart-card`, `.aex-card`, `.session-card`, `.program-card`,
+  `.stats-row`, `.stats-row-v2`, `.two-col-grid`, `.info-row`, `.plan-carousel`, `.ex-tab-bar`.
+  ACHTUNG bei so einer Pruefung: `.chart-card` und `.session-card` sehen in einer einfachen Textsuche
+  lebendig aus, weil `chart-card-v2` bzw. `session-card-v2` sie als Praefix enthalten — es braucht eine
+  Suche mit Wortgrenze, die ein folgendes `-` ausschliesst. Umgekehrt sah `.ex-tab-bar` benutzt aus,
+  ist aber die ID des Elements; seine KLASSE heisst `ex-tab-v2-bar`.
+  Stehen geblieben (bewusst): `.ex-tab-v2-bar { padding-left: … }` in beiden Responsive-Bloecken hat
+  keine Wirkung, weil die spaetere Basisregel `padding: 0 12px 12px` bei gleicher Spezifitaet gewinnt.
+  Das zu reparieren waere eine Layout-AENDERUNG, kein Aufraeumen.
 - Aufräum-Stand (25.08.2026): CSS ist frei von toten Klassen — 55 Regeln ohne Markup entfernt (alte Ziel-Tabelle der
   Uebungskarten `.aex-target-*`/`.aex-v2-target-*`, Uebungs-Tableiste `.ex-tab-v2-num`/`-name`, `.next7-*`-Streifen,
   `.weekplan-*`, `.plan-ex-row`, `.pause-btn-v2`, `.num-badge`, `.tc-card-head` u. a.).
