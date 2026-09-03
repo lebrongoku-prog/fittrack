@@ -404,9 +404,18 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Inhalt — Uebersicht 64px, Uebungen/Plaene 60px, Training 54,5px — und die erste Karte bzw. der
   Seitenschalter darunter sprang beim Tabwechsel um bis zu 10px. Der Wert ist die natuerliche Hoehe
   der Uebersicht: 16px Polster + 38px Knopf + 2px Rand + 8px. Die Vollbild-Overlays sind ausgenommen.
-  Der Sicherungs-Chip ist genauso hoch wie die Knoepfe daneben (38px, `min-height` + `box-sizing`);
-  `.ph-gear` hat dafuer sein eigenes `margin-top` verloren — den Abstand setzt `.ph-right` fuer alle
-  drei gemeinsam, sonst sassen die Knoepfe 1px tiefer als der Chip.
+  **Alle Knoepfe oben rechts sind gleich gross und stehen an derselben Stelle** (01.09.2026):
+  `--ph-btn` (38px) gilt fuer `.ph-gear` (Zahnrad, Glas), `.ex-sort-btn` (Filter, Alle ein-/ausklappen),
+  `.ex-add-btn` (Neu) und als `min-height` fuer den Sicherungs-Chip — vorher standen 36px und 38px
+  nebeneinander. `--ph-h` haengt an diesem Wert (16 + 38 + 2 + 8).
+  Die Tab-Kopfzeile richtet ihre Kinder ueber `align-items: flex-end` an der UNTERKANTE aus: Damit
+  liegen Knoepfe und Tab-Titel auf einer Linie und sitzen in jedem Tab an derselben Stelle (Knopf-
+  und Titel-Unterkante bei 64px ab Screen-Oberkante, erste Karte bei 72px).
+  `.ph-right` und `.ph-gear` haben dafuer ihre eigenen `margin-top` verloren — mit `flex-end` haetten
+  sie keine Wirkung mehr, und vorher sassen die Knoepfe dadurch 1px tiefer als der Chip.
+  ACHTUNG: Die Unterzeilen (`.ph-sub`) sind in allen vier Tabs per Inline-Style ausgeblendet und
+  werden nie eingeblendet (das JS setzt nur ihren Text). Wuerde eine sichtbar, waere SIE buendig mit
+  den Knoepfen und der Titel rutschte nach oben.
 - **Übersicht:** Sicherungs-Status als Chip im Kopf neben dem Titel (`renderBackupLine` → `#ov-backup-line` in `.ph-right`, Klasse `.backup-chip`; kurze Texte wegen des knappen Platzes, ausführliche Fassung im `title`-Attribut), Hinweis vor Plan-Ende (`renderPlanEndNotice` + `extendActivePlan`), Wochenserie (`getWeekStreak` → `.ppv-streak`), Einstieg ins freie Training (`startFreeWorkout`, Einheit ohne `planDayId`).
 - **Ende der Satzpause** meldet sich dreifach: Vibration, Ton und sichtbare Meldung „Pause vorbei" (5 s, `.done`).
   Grund fuer den Aufwand: `navigator.vibrate` gibt es auf dem iPhone NICHT (Safari unterstuetzt die Vibration-API auf

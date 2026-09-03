@@ -460,7 +460,17 @@ body.theme-plans .hist-action-dd {
    Die Vollbild-Overlays (Plan-Detail, Trainingstag, Einstellungen) sind ausgenommen — sie haben
    eine eigene Kopfzeile mit Zurueck-Pfeil. */
 :root { --ph-h: 64px; }
-.ph:not(.plan-detail-ph):not(.ph-with-back) { min-height: var(--ph-h); box-sizing: border-box; }
+/* Einheitliche Groesse ALLER Knoepfe oben rechts in den Tabs (Uebersicht: Sicherungs-Chip,
+   Zahnrad, Glas-Knopf; Uebungen: Filter, Alle ein-/ausklappen, Neu; Plaene: Neu).
+   Eine Variable, damit sie nicht wieder auseinanderlaufen — 36px und 38px standen frueher
+   nebeneinander (Leonard-Wunsch 01.09.2026). --ph-h haengt an diesem Wert: 16 + 38 + 2 + 8. */
+:root { --ph-btn: 38px; }
+/* `flex-end`: Die Knoepfe rechts und der Titel links stehen mit ihrer UNTERKANTE auf einer
+   Linie. Zusammen mit der gemeinsamen Kopfhoehe sitzen sie dadurch in jedem Tab an genau
+   derselben Stelle. Die Overlays behalten ihre eigene Ausrichtung. */
+.ph:not(.plan-detail-ph):not(.ph-with-back) {
+  min-height: var(--ph-h); box-sizing: border-box; align-items: flex-end;
+}
 /* Kopfzeile mit Zurück-Pfeil: Titel schließt links an den Pfeil an, statt nach rechts zu rutschen. */
 .ph-with-back { justify-content: flex-start; gap: 10px; align-items: center; }
 .ph-with-back .ph-left { flex: 1; min-width: 0; }
@@ -471,7 +481,7 @@ body.theme-plans .hist-action-dd {
    Elemente gemeinsam. Mit einem zusaetzlichen Rand nur an den Knoepfen sassen sie 1px
    tiefer als der Sicherungs-Chip daneben (01.09.2026). */
 .ph-gear {
-  width: 38px; height: 38px; flex-shrink: 0;
+  width: var(--ph-btn); height: var(--ph-btn); flex-shrink: 0;
   border-radius: 12px; border: none;
   background: rgba(255,255,255,0.18);
   display: flex; align-items: center; justify-content: center;
@@ -1163,12 +1173,14 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 /* Sicherungs-Hinweis auf der Übersicht */
 /* Sicherungs-Status im Kopf der Übersicht, links neben dem Zahnrad. Sitzt auf dem
    farbigen Tab-Hintergrund → helle, halbtransparente Fläche wie das Zahnrad. */
-.ph-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-top: 2px; }
+/* Kein `margin-top` mehr: Die Zeile richtet sich ueber `align-items: flex-end` an der
+   Unterkante aus, ein oberer Abstand haette dort keine Wirkung. */
+.ph-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 /* Genauso hoch wie die Knoepfe daneben (`.ph-gear`, 38px) — Leonard-Wunsch 01.09.2026.
    `box-sizing` ist noetig, damit das Polster in die Hoehe hineinzaehlt. */
 .backup-chip {
   display: flex; align-items: center; gap: 6px;
-  min-height: 38px; box-sizing: border-box;
+  min-height: var(--ph-btn); box-sizing: border-box;
   max-width: 168px; padding: 7px 10px;
   border-radius: 11px; background: rgba(255,255,255,0.18);
   font-size: 11.5px; font-weight: 600; color: #fff;
@@ -1964,7 +1976,7 @@ html.wo-running #wo-week-card { display: none; }
    ÜBUNGEN – Catalog tab
 ═══════════════════════════════════ */
 .ex-add-btn {
-  width: 36px; height: 36px; border-radius: 10px;
+  width: var(--ph-btn); height: var(--ph-btn); border-radius: 10px;
   background: rgba(255,255,255,0.95); border: 1px solid transparent;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
@@ -1973,7 +1985,7 @@ html.wo-running #wo-week-card { display: none; }
 .ex-add-btn svg { width: 18px; height: 18px; stroke: var(--accent-dark); fill: none; stroke-width: 2.2; }
 
 .ex-sort-btn {
-  width: 36px; height: 36px; border-radius: 10px;
+  width: var(--ph-btn); height: var(--ph-btn); border-radius: 10px;
   background: rgba(255,255,255,0.95); border: 1px solid transparent;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
