@@ -396,6 +396,17 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
 - **Übungskatalog:** nur noch Gruppierung nach Muskelgruppen — Sortierung nach Trainingstagen samt Umschalter wurde entfernt.
 - **Kopf der Uebersicht:** Reihenfolge rechts = Sicherungs-Chip, Zahnrad (Einstellungen), Glas-Knopf
   (Leonard-Wunsch 01.09.2026, vorher umgekehrt). Beide Knoepfe sind `.ph-gear`.
+- **Einheitliches Kartenpolster: 14px** (01.09.2026, Vorbild „Trainingskalender"). Gilt fuer jede
+  Karte, die die volle Breite einnimmt — auch fuer die Zeilen INNERHALB einer Karte, die ihr Polster
+  selbst tragen (`.plan-day-row`, `.mehr-row`, `.plan-day-empty`, `.trash-empty`, `.program-form-row`,
+  `#drive-disconnected`/`#drive-connected`, `.aex-v2-body`, `.ex-item-body`). Vorher standen dort
+  12px, 16px und 18px nebeneinander.
+  ACHTUNG bei Listen, die IN einer bereits gepolsterten Karte liegen (`.pr-list-v2`,
+  `.muscle-bars-v2`): Die brauchen seitlich 0 — mit eigenen 16px stuenden ihre Zeilen 30px vom
+  Kartenrand und damit weiter innen als der Titel darueber.
+  Die Wochenplan-Karte (`.plan-card-v2`) hat denselben Eckenradius wie die uebrigen grossen Karten
+  (18px statt frueher 14px). 14px behalten bewusst die Listen-Karten: `.ex-list`, `.mehr-card`,
+  `.aex-v2`, `.plan-list-row`.
 - **Herocards haben KEINE Kontur** (01.09.2026) — im Glas-Modus zog sie eine weisse Linie um die Karte.
   Abgegrenzt wird allein ueber den Schatten. Gilt fuer `.hero-v2` UND `.session-card-v2` (deren einzige
   Verwendung die Ruhetag-Karte im Trainings-Tab ist).
