@@ -3338,9 +3338,17 @@ function planErfuellung(plan) {
   return { geplant, absolviert, prozent: Math.round(absolviert / geplant * 100) };
 }
 
+// Je Kalender (cal | pcal): Wurde er schon einmal auf die laufende Woche gesetzt? Danach
+// bestimmt allein der Nutzer, wo das Raster steht.
+const _calPositioniert = {};
+
 function renderTrainingCalendar(id, cardId) {
   id = id || 'cal';
   cardId = cardId || 'ov-cal-card';
+  // Vor dem Neuaufbau merken: Das Raster wird gleich neu geschrieben, und obwohl der
+  // Scrollbereich selbst bestehen bleibt, soll die Position sicher wieder dieselbe sein.
+  const _vorherigerScroller = document.getElementById(id + '-scroll');
+  const gemerktePos = _vorherigerScroller ? _vorherigerScroller.scrollLeft : 0;
   const card = document.getElementById(cardId);
   if (card && !document.getElementById(id + '-grid')) card.innerHTML = calendarInnerHTML(id);
   const grid = document.getElementById(id + '-grid');
@@ -3469,11 +3477,18 @@ function renderTrainingCalendar(id, cardId) {
     bandsEl.innerHTML = bands;
   }
 
-  // Zur laufenden Woche scrollen (nicht ans Jahresende — der Dezember ist noch leer).
+  // Beim ERSTEN Aufbau zur laufenden Woche scrollen (nicht ans Jahresende — der Dezember
+  // ist noch leer). Danach die Position des Nutzers HALTEN: `renderTrainingCalendar` laeuft
+  // bei jedem Tabwechsel erneut (ueber `_applyTabState`), und ein erneutes Setzen liess das
+  // Raster jedes Mal zur aktuellen Woche zurueckspringen (gemeldet 01.09.2026).
   const scroller = document.getElementById(id + '-scroll');
   if (scroller) requestAnimationFrame(() => {
+    if (_calPositioniert[id]) { scroller.scrollLeft = gemerktePos; return; }
     const heuteSpalte = Math.floor(Math.round((today - start) / 86400000) / 7);
     scroller.scrollLeft = Math.max(0, heuteSpalte * SPALTE - scroller.clientWidth * 0.7);
+    // Erst als „positioniert" merken, wenn wirklich gemessen werden konnte. In einem
+    // unsichtbaren Tab ist clientWidth 0 — die Position waere dann sinnlos eingefroren.
+    if (scroller.clientWidth > 0) _calPositioniert[id] = true;
     // KEIN `touch-action` hier. Der Versuch (01.09.2026), dem Browser mit `pan-x` die Wahl
     // zwischen senkrechtem Seiten- und waagerechtem Rasterscroll abzunehmen, hat das
     // Stocken nicht behoben — und in Tabs, deren Seite senkrecht scrollt (Uebersicht),
@@ -3982,7 +3997,7 @@ function renderPlans() {
       html += `<button type="button" class="weitere-btn archiv-btn" aria-expanded="${expanded}"
               onclick="togglePlansArchive()">
         Archivierte Pläne${expanded ? `<span class="count">(${archived.length})</span>` : ''}
-        <span class="weitere-pfeil">${expanded ? '▾' : '▸'}</span>
+        <span class="ex-item-chev">▾</span>
       </button>`;
       if (expanded) html += archived.map(renderRow).join('');
     }
@@ -5444,7 +5459,7 @@ function renderExercisesByMuscle() {
         <span class="dot"></span>
         ${meta.name}
         ${isCollapsed ? '' : `<span class="count">(${items.length})</span>`}
-        <span class="weitere-pfeil">▾</span>
+        <span class="ex-item-chev">▾</span>
       </button>
       <div class="ex-list">${itemsHTML}</div>
     </div>`;

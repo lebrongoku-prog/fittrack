@@ -902,7 +902,6 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   box-shadow:0 1px 6px rgba(0,0,0,.18);
   -webkit-tap-highlight-color:transparent;
 }
-.weitere-pfeil{font-size:.9rem; line-height:1}
 /* Muskelgruppen-Kopf im Katalog: farbiger Punkt und Anzahl behalten ihre Rolle. */
 /* Beschriftung linksbuendig statt zentriert (Leonard-Wunsch 28.08.2026); der Pfeil
    wandert dafuer an den rechten Rand, sonst klebte er direkt an der Anzahl. */
@@ -915,12 +914,14 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   justify-content: flex-start; font-size: 16px; min-height: var(--ex-row-h);
   padding-left: 14px; padding-right: 14px; gap: 12px;
 }
-/* Pfeil in Form und Groesse wie der der Uebungskarten (`.ex-item-chev`): immer „▾",
-   beim Aufklappen um 180° gedreht. Die Farbe bleibt weiss — der Knopf steht auf farbigem
-   Grund, das Grau der Karten waere dort nicht lesbar. */
-.ex-group-btn .weitere-pfeil { font-size: 14px; transition: transform .2s; }
-.ex-group-btn[aria-expanded="true"] .weitere-pfeil { transform: rotate(180deg); }
-.ex-group-btn .weitere-pfeil { margin-left: auto; }
+/* EXAKT derselbe Pfeil wie in den Uebungskarten: dieselbe Klasse `.ex-item-chev`, damit
+   Form, Groesse und Drehung nicht auseinanderlaufen koennen (Leonard-Wunsch 01.09.2026).
+   Zwei Anpassungen fuer den Knopf: `margin-left:auto` schiebt ihn an den rechten Rand (in
+   der Karte uebernimmt das die Namensspalte mit `flex:1`), und die Farbe kommt vom Knopf,
+   weil er auf farbigem Grund steht. Gedreht wird ueber aria-expanded statt ueber `.open`. */
+.ex-group-btn .ex-item-chev, .archiv-btn .ex-item-chev { margin-left: auto; color: inherit; }
+.ex-group-btn[aria-expanded="true"] .ex-item-chev,
+.archiv-btn[aria-expanded="true"] .ex-item-chev { transform: rotate(180deg); }
 /* 12px statt 8px — um die Haelfte groesser (Leonard-Wunsch 01.09.2026). */
 .ex-group-btn .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--mc, var(--accent)); flex-shrink: 0; }
 .ex-group-btn .count { opacity: .7; font-weight: 600; }
@@ -928,7 +929,12 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 /* „Archivierte Plaene" steht direkt im Screen, braucht also eigene Seitenabstaende.
    Breite explizit rechnen: <button> schrumpft bei `width:auto` auf den Inhalt, auch als
    Block-Element — volle Breite kaeme so nicht zustande. */
-.weitere-btn.archiv-btn { width: calc(100% - 28px); margin: 16px 14px 8px; }
+/* Gleiches seitliches Polster wie beim Muskelgruppen-Knopf (14px statt der 12px aus
+   `.weitere-btn`), damit der Pfeil genauso weit vom Rand steht wie in den Uebungskarten. */
+.weitere-btn.archiv-btn {
+  width: calc(100% - 28px); margin: 16px 14px 8px;
+  padding-left: 14px; padding-right: 14px;
+}
 
 /* ─── Glas-Modus ────────────────────────────────────────────────────────────────
    Schaltet alle Karten auf denselben 12-%-Weiss-Schleier wie `.weitere-btn`.
