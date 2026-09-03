@@ -139,8 +139,9 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Uebungskarten des TRAININGS-Tabs (`.aex-v2-chev` mit `AEX_CHEV_SVG`) — bewusst kein Nachbau, damit
   Form, Groesse und Drehung nicht auseinanderlaufen (32x32-Box, 19px-SVG, 14px vom Rand). Angepasst ist
   nur die Farbe (`color: inherit`, weil der Knopf auf farbigem Grund steht); gedreht wird ueber
-  `[aria-expanded="false"]` statt ueber `.collapsed`. Er liegt ABSOLUT am linken Rand, damit die
-  Beschriftung im ganzen Knopf mittig steht — im Fluss waere sie um seine halbe Breite versetzt. Als Variable, weil der Knopf eine andere
+  `[aria-expanded="false"]` statt ueber `.collapsed`. Pfeil und Beschriftung stehen ZUSAMMEN mittig
+  im Knopf (beide im Fluss, Zentrierung aus `.weitere-btn`); der Pfeil lag zwischenzeitlich absolut
+  am linken Rand, das wurde am 01.09.2026 zurueckgenommen. Als Variable, weil der Knopf eine andere
   Schriftgroesse traegt (16px gegen 15px) und sonst 5px flacher waere. Sein Pfeil ist in Form und
   Groesse der `.ex-item-chev` nachgebaut: immer „▾", 14px, per `[aria-expanded="true"]` um 180 Grad
   gedreht (die frueher im JS getauschten Zeichen „▸/▾" sind weg). Die Farbe bleibt weiss —

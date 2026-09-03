@@ -921,15 +921,10 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
    auseinanderlaufen koennen. Einzige Anpassung: Die Farbe kommt vom Knopf, der auf
    farbigem Grund steht. Gedreht wird ueber aria-expanded statt ueber `.collapsed`. */
 .archiv-btn .aex-v2-chev { color: inherit; }
-/* Beschriftung mittig im GANZEN Knopf (Leonard-Wunsch 01.09.2026). Dafuer liegt der Pfeil
-   absolut am linken Rand — stuende er im Fluss, waere der Text um seine halbe Breite nach
-   rechts versetzt. Die Drehung muss die Zentrierung mitnehmen. */
-.archiv-btn { position: relative; }
-.archiv-btn .archiv-label { flex: 1; text-align: center; }
-.archiv-btn .aex-v2-chev {
-  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-}
-.archiv-btn[aria-expanded="false"] .aex-v2-chev { transform: translateY(-50%) rotate(-90deg); }
+/* Pfeil und Beschriftung stehen zusammen mittig im Knopf (Leonard-Wunsch 01.09.2026):
+   beide im Fluss, die Zentrierung macht `justify-content:center` aus `.weitere-btn`.
+   Vorher lag der Pfeil absolut am linken Rand — daher hier kein `position`/`translateY` mehr. */
+.archiv-btn[aria-expanded="false"] .aex-v2-chev { transform: rotate(-90deg); }
 /* 12px statt 8px — um die Haelfte groesser (Leonard-Wunsch 01.09.2026). */
 .ex-group-btn .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--mc, var(--accent)); flex-shrink: 0; }
 .ex-group-btn .count { opacity: .7; font-weight: 600; }
