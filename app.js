@@ -3457,15 +3457,14 @@ function renderTrainingCalendar(id, cardId) {
       const von = Math.max(0, spalteFuer(p.startDate));
       const bis = Math.min(wochen - 1, spalteFuer(p.endDate || rasterEnde.getTime()));
       if (bis < von) return;
-      // `current` = der Plan, der HEUTE laeuft. Er hebt sich dadurch von archivierten und
-      // kommenden Plaenen ab — im Transparenz-Modus sind alle Umrandungen weiss, dort ist
-      // die Abstufung der einzige Unterschied.
-      const jetzt = Date.now();
-      const laeuft = !p.archived && p.startDate <= jetzt && (p.endDate || Infinity) >= jetzt;
-      const cls = (p.archived ? ' archived' : '') + (laeuft ? ' current' : '');
+      // Alle Zeitraeume werden GLEICH gezeichnet — gleiche Farbe, gleiche Staerke
+      // (Leonard-Wunsch 01.09.2026). Die frueheren Abstufungen fuer archivierte, laufende
+      // und kommende Plaene sind entfallen; welcher Plan zu einem Tag gehoert, sagt die
+      // Beschreibung unter dem Raster.
+      const cls = '';
       const links = von * SPALTE - 2;
       const breite = (bis - von + 1) * SPALTE - 3 + 4;
-      bands += `<span class="cal-band${cls}" style="left:${links}px;width:${breite}px"></span>`;
+      bands += `<span class="cal-band" style="left:${links}px;width:${breite}px"></span>`;
     });
     bandsEl.innerHTML = bands;
   }
@@ -3631,20 +3630,21 @@ function getAllPRs() {
 function prHTML(pr, number) {
   const ex = getEx(pr.exId);
   const muscleKey = ex ? ex.muscle : 'chest';
-  const setsStr = pr.sets ? `${pr.sets.length}×${pr.sets[0]?.reps||'?'}` : '';
   const num = number || 1;
   const valColor = muscleColor(muscleKey);
   // Hervorgehoben ist die Bestleistung selbst; die Steigerung steht grau in Klammern
   // am Ende der Beschreibung (Leonard-Wunsch).
   const zunahme = (pr.prev && pr.weight > pr.prev)
     ? ` <span class="pr-v2-delta">(+${fmtKg(pr.weight - pr.prev)} kg)</span>` : '';
-  // Einheit nur einmal nennen — sonst bricht die Zeile auf dem iPhone um
-  const verlauf = pr.prev ? ` • ${fmtKg(pr.prev)} → ${fmtKg(pr.weight)} kg` : '';
+  // Einheit nur einmal nennen — sonst bricht die Zeile auf dem iPhone um.
+  // Die Satzangabe („3×6") stand frueher davor und ist am 01.09.2026 entfallen
+  // (Leonard-Wunsch) — deshalb hier auch kein fuehrendes Trennzeichen mehr.
+  const verlauf = pr.prev ? `${fmtKg(pr.prev)} → ${fmtKg(pr.weight)} kg` : '';
   return `<div class="pr-v2-row no-icon" style="--mc:${valColor};--mc-bg:${muscleBg(muscleKey)}" onclick="showHistDetailForEx('${pr.exId}', ${pr.date || 0})">
     <div class="pr-v2-num">${num}</div>
     <div>
       <div class="pr-v2-name">${pr.name}</div>
-      <div class="pr-v2-sub">${setsStr}${verlauf}${zunahme}</div>
+      <div class="pr-v2-sub">${verlauf}${zunahme}</div>
     </div>
     <div class="pr-v2-val" style="color:${valColor}">${fmtKg(pr.weight)} kg</div>
     <span class="pr-v2-arrow">›</span>
@@ -3981,7 +3981,7 @@ function renderPlans() {
       const expanded = plansArchiveExpanded;
       html += `<button type="button" class="weitere-btn archiv-btn" aria-expanded="${expanded}"
               onclick="togglePlansArchive()">
-        Archivierte Pläne<span class="count">${archived.length}</span>
+        Archivierte Pläne${expanded ? `<span class="count">(${archived.length})</span>` : ''}
         <span class="weitere-pfeil">${expanded ? '▾' : '▸'}</span>
       </button>`;
       if (expanded) html += archived.map(renderRow).join('');
@@ -5443,7 +5443,7 @@ function renderExercisesByMuscle() {
               onclick="toggleExGroup('muscle:${m}')">
         <span class="dot"></span>
         ${meta.name}
-        <span class="count">(${items.length})</span>
+        ${isCollapsed ? '' : `<span class="count">(${items.length})</span>`}
         <span class="weitere-pfeil">▾</span>
       </button>
       <div class="ex-list">${itemsHTML}</div>

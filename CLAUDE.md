@@ -125,8 +125,13 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   `.plan-section-head h3`, `.ppv-name`, `.scv2-title`, `.hero-v2-title` (auch in `rest-mode` und
   `active-mode` — deren eigene Groessenangaben sind entfallen). `.mehr-section-title` ist KEIN
   Kartentitel, sondern eine Abschnittsbeschriftung ueber der Karte, und bleibt.
-- **Muskelgruppen-Knopf und eingeklappte Uebungskarte sind gleich hoch** (`--ex-row-h`, 44px, als
-  `min-height` auf `.ex-item-head` und `.ex-group-btn`). Als Variable, weil der Knopf eine andere
+- **Muskelgruppen-Knopf ist wie die eingeklappte Uebungskarte gebaut** (`.ex-group-btn` gegen
+  `.ex-item-head`): gleiche Hoehe (`--ex-row-h`, 44px als `min-height` auf beiden), gleiches
+  seitliches Polster (14px — davon haengt ab, wie weit der Pfeil vom Rand steht) und gleicher
+  Abstand zur Farbmarke (12px). Der Farbpunkt ist 12px (01.09.2026 um die Haelfte vergroessert).
+  Die Anzahl in Klammern erscheint NUR im ausgeklappten Zustand; eingeklappt steht dort nur der
+  Name (Leonard-Wunsch 01.09.2026). Dasselbe gilt fuer „Archivierte Plaene" im Plaene-Tab, der
+  ausserdem die Tipp-Animation der Karten traegt. Als Variable, weil der Knopf eine andere
   Schriftgroesse traegt (16px gegen 15px) und sonst 5px flacher waere. Sein Pfeil ist in Form und
   Groesse der `.ex-item-chev` nachgebaut: immer „▾", 14px, per `[aria-expanded="true"]` um 180 Grad
   gedreht (die frueher im JS getauschten Zeichen „▸/▾" sind weg). Die Farbe bleibt weiss —
@@ -191,11 +196,10 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Zeigt IMMER das laufende Kalenderjahr (1.1.–31.12.); Rand-Tage der ersten/letzten Woche tragen `.outside` (ausgegraut, nicht antippbar).
   Beim Rendern wird zur laufenden Woche gescrollt. Plan-Laufzeiten sind als Rahmen OHNE Füllung um die Wochenspalten gezeichnet
   (`.cal-bands`/`.cal-band`, `z-index:0`, Raster darüber mit `z-index:1`); archivierte Pläne sind blasser.
-  Der HEUTE laufende Plan traegt zusaetzlich `.current`. Im Transparenz-Modus sind alle Umrandungen weiss
-  (Gruen verschwindet auf dem Schleier); unterschieden wird dort ueber Staerke und Deckkraft:
-  laufend = 2px 65-%-Weiss, kommend = 1px 55-%-Weiss, archiviert = 1px 45-%-Weiss. Der Unterschied liegt
-  vor allem in der STAERKE — volles Weiss fuer den laufenden Plan war zu markant. Im normalen Modus
-  bleibt alles wie gehabt (Gruen, archiviert mit halber Deckkraft).
+  ALLE Zeitraeume werden gleich gezeichnet — gleiche Farbe, gleiche Staerke (1,2px), keine Abstufung
+  nach laufend/kommend/archiviert (Leonard-Wunsch 01.09.2026; die Klassen `.cal-band.current` und
+  `.cal-band.archived` sind damit entfallen). Welcher Plan zu einem Tag gehoert, sagt die Beschreibung
+  unter dem Raster. Im Transparenz-Modus sind die Umrandungen weiss (55 %), sonst gruen.
   Eine Beschriftung mit dem Plannamen unter dem Raster gibt es NICHT mehr (entfernt 20.08.2026) — der Name steht
   beim Antippen eines Tages in der Beschreibung darunter, dort mit der Wochenzahl in Klammern (ohne Datumsspanne).
   Beim Antippen eines Tages innerhalb eines Plans nennt eine zweite Zeile den Stand des Plans (`planErfuellung`): absolvierte Einheiten gegen
@@ -261,8 +265,14 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
 - **Verlauf je Übung** (Übungen-Tab, aufgeklappte Karte): `getExerciseHistory` liefert pro Einheit `maxW` (schwerster Satz) UND `reps` (Summe aller Wiederholungen); `exHistPoints(exId, mode)` filtert daraus die Punkte des gewählten Modus (Einträge ohne Wert fallen raus — Körpergewichtsübungen haben kein Gewicht). Umschalter `.ex-chart-toggle` (Gewicht/Wdh.), Auswahl je Übung in `ft_ex_chart_modes` — bewusst ein eigener localStorage-Key statt eines Felds an der Übung, damit reine Anzeige-Einstellungen nicht in den Trainingsdaten und der Drive-Sicherung landen. `setExChartMode` frischt nur die betroffene Karte auf (ein Neuaufbau der Liste würde sie zuklappen). `.ex-chart-toggle` nutzt die Pillen-Optik von `.stats-mode-toggle` mit; die frühere `html.no-cardio`-Ausnahme ist mit dem Cardio-Ausbau entfallen.
 - **Muskel-Landkarte:** `renderMuscleMap()` zeichnet zwei SVG-Silhouetten (`muscleMapSvg`, vorne/hinten) mit nach Volumenanteil abgestufter Deckkraft plus Zahlen-Legende.
 - **Löschen ist zweifach abgesichert:** (1) `withUndo(label, fn, afterRestore)` + `showUndoToast()` — sichert die Stores vorab, „Rückgängig" 6 s lang. (2) **Papierkorb** (`ft_trash`, `trashPut/trashRestore/trashDeleteForever/emptyTrash/purgeTrash`, Liste via `renderTrash()` im Einstellungen-Overlay): gelöschte Einheiten, Pläne, Trainingstage und Übungen liegen `TRASH_KEEP_DAYS` = 30 Tage dort. `_snapshotStores` sichert `ft_trash` mit, sonst läge ein Objekt nach „Rückgängig" doppelt vor.
-- **Auswertungen** (Volumenentwicklung, Volumen pro Muskelgruppe, Letzte Einheiten, PRs und Bestleistungen) liegen auf der Stats-Seite des Übungen-Tabs, NICHT mehr in der Übersicht. „Letzte Einheiten" (`renderRecentSessions`, Karte `#ov-recent-sessions-card`) ist am 20.08.2026 dorthin gewandert — die ID behielt ihr `ov-`Präfix. `renderStatsPage()` füllt sie. Der Trainingskalender wird dagegen von `renderOverview()` gerendert — er gehört zur Übersicht. ACHTUNG: Vor dem Umbau hing sein Aufruf in `renderHomeStats()`; wandert er wieder dorthin, bleibt die Kalenderkarte in der Übersicht leer.
+- **Auswertungen** (Volumenentwicklung, Volumen pro Muskelgruppe, Letzte Einheiten, PRs und Bestleistungen) liegen auf der Stats-Seite des Übungen-Tabs, NICHT mehr in der Übersicht. „Letzte Einheiten" (`renderRecentSessions`, Karte `#ov-recent-sessions-card`) ist am 20.08.2026 dorthin gewandert — die ID behielt ihr `ov-`Präfix.
+  Reihenfolge auf der Stats-Seite: Volumenentwicklung, Volumen pro Muskelgruppe, PRs & Bestleistungen, Letzte Einheiten (01.09.2026). `renderStatsPage()` füllt sie. Der Trainingskalender wird dagegen von `renderOverview()` gerendert — er gehört zur Übersicht. ACHTUNG: Vor dem Umbau hing sein Aufruf in `renderHomeStats()`; wandert er wieder dorthin, bleibt die Kalenderkarte in der Übersicht leer.
 - **PR-Liste:** hervorgehoben ist der Bestwert selbst, die Steigerung steht grau in Klammern in der Unterzeile (`.pr-v2-delta`).
+  Die Unterzeile nennt nur noch den Verlauf („37.5 → 40 kg") plus die Steigerung — die Satzangabe („3×6")
+  ist am 01.09.2026 entfallen (Leonard-Wunsch), damit auch das fuehrende Trennzeichen davor.
+  `.pr-v2-name` braucht ein eigenes `color: var(--text)`: Eine Schriftfarbe wird als FERTIGER Wert vererbt,
+  ohne eigene Angabe erbt der Name die am `<body>` ausgerechnete dunkle Farbe und das Umdefinieren von
+  `--text` auf der Glas-Karte erreicht ihn gar nicht.
   Ein Tipp auf die Zeile öffnet über `showHistDetailForEx(exId, bestTs)` die Einheit, in der der Rekord AUFGESTELLT wurde (nicht die
   neueste mit dieser Übung) und hebt die Übung dort per `.hd-step-hl` farbig umrandet hervor.
 - **Querformat (ab 1024px):** Uebersicht ist ein 2-Spalten-Grid — Wochenplan links, Herocard rechts in DERSELBEN

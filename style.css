@@ -611,8 +611,8 @@ body.theme-plans .hist-action-dd {
 /* Die ausklappbaren Muskelgruppen-Koepfe im Katalog reagieren wie eine Karte
    (Leonard-Wunsch 01.09.2026). Nur dieser eine `.weitere-btn` — die anderen beiden
    („Uebung hinzufuegen", „Archivierte Plaene") bleiben unveraendert. */
-.ex-group-btn { transition: transform .1s ease; }
-.ex-group-btn:active { transform: scale(0.995); }
+.ex-group-btn, .archiv-btn { transition: transform .1s ease; }
+.ex-group-btn:active, .archiv-btn:active { transform: scale(0.995); }
 #ov-cal-card, #plans-cal-card { transition: none; }
 .ppv-head { display: flex; align-items: flex-start; gap: 8px; }
 .ppv-name { flex: 1; min-width: 0; font-size: 16px; font-weight: 700; color: var(--text); }
@@ -908,14 +908,21 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
    wandert dafuer an den rechten Rand, sonst klebte er direkt an der Anzahl. */
 /* Schriftgroesse wie die Uebungstitel der Uebungskarten im Trainings-Tab (`.aex-v2-name`,
    16px) — Leonard-Wunsch 01.09.2026. Ueberschreibt die .79rem von `.weitere-btn`. */
-.ex-group-btn { justify-content: flex-start; font-size: 16px; min-height: var(--ex-row-h); }
+/* Aufbau wie die eingeklappte Uebungskarte (`.ex-item-head`): gleiche Hoehe (--ex-row-h),
+   gleiches seitliches Polster (14px, damit der Pfeil an derselben Stelle steht) und
+   derselbe Abstand zwischen Farbmarke und Name. */
+.ex-group-btn {
+  justify-content: flex-start; font-size: 16px; min-height: var(--ex-row-h);
+  padding-left: 14px; padding-right: 14px; gap: 12px;
+}
 /* Pfeil in Form und Groesse wie der der Uebungskarten (`.ex-item-chev`): immer „▾",
    beim Aufklappen um 180° gedreht. Die Farbe bleibt weiss — der Knopf steht auf farbigem
    Grund, das Grau der Karten waere dort nicht lesbar. */
 .ex-group-btn .weitere-pfeil { font-size: 14px; transition: transform .2s; }
 .ex-group-btn[aria-expanded="true"] .weitere-pfeil { transform: rotate(180deg); }
 .ex-group-btn .weitere-pfeil { margin-left: auto; }
-.ex-group-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mc, var(--accent)); flex-shrink: 0; }
+/* 12px statt 8px — um die Haelfte groesser (Leonard-Wunsch 01.09.2026). */
+.ex-group-btn .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--mc, var(--accent)); flex-shrink: 0; }
 .ex-group-btn .count { opacity: .7; font-weight: 600; }
 .archiv-btn .count { opacity: .7; font-weight: 600; }
 /* „Archivierte Plaene" steht direkt im Screen, braucht also eigene Seitenabstaende.
@@ -987,15 +994,10 @@ html.glas .screen:not(#screen-mehr) .cal-day.planned { background: rgba(255,255,
    Weiss. Damit trotzdem erkennbar bleibt, welcher Plan gerade laeuft, wird abgestuft —
    der laufende Plan bekommt eine kraeftige, durchgezogene Linie, die uebrigen (archiviert
    oder noch kommend) eine duennere und blassere. */
+/* Im Transparenz-Modus verschwindet das Gruen auf dem Schleier — dort Weiss. Alle
+   Zeitraeume gleich, ohne Abstufung nach laufend/kommend/archiviert (Leonard-Wunsch
+   01.09.2026): Welcher Plan zu einem Tag gehoert, sagt die Beschreibung unter dem Raster. */
 html.glas .screen:not(#screen-mehr) .cal-scroll { --cal-plan-color: rgba(255,255,255,.55); }
-html.glas .screen:not(#screen-mehr) .cal-band { border-width: 1.2px; }
-html.glas .screen:not(#screen-mehr) .cal-band.archived { opacity: 1; border-color: rgba(255,255,255,.45); }
-/* Der laufende Plan hebt sich vor allem ueber die STAERKE ab (2px gegen 1px), nicht ueber
-   volles Weiss — das war zu markant (Leonard 01.09.2026). Reihenfolge der Deckkraft:
-   laufend .65 > kommend .55 > archiviert .45. */
-html.glas .screen:not(#screen-mehr) .cal-band.current {
-  border-width: 2.4px; border-color: rgba(255,255,255,.65);
-}
 /* Knoepfe, die frei auf dem Tab-Hintergrund liegen (nicht in einer Karte) — sonst
    bleiben sie als helle Bloecke stehen. */
 html.glas .screen:not(#screen-mehr) #wo-add-ex-wrap .btn {
@@ -1860,10 +1862,9 @@ html.wo-running #wo-week-card { display: none; }
 .cal-bands { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
 .cal-band {
   position: absolute; top: calc(-1 * var(--cal-band-over)); bottom: calc(-1 * var(--cal-band-over));
-  border: 1.6px solid var(--cal-plan-color); border-radius: 6px;
+  border: 1.2px solid var(--cal-plan-color); border-radius: 6px;
   box-sizing: border-box;
 }
-.cal-band.archived { opacity: .5; }
 .cal-grid { position: relative; z-index: 1; }
 
 /* Polster sitzt auf der Detailzeile, nicht auf dem Fuss: Ohne ausgewaehlten Tag ist die
