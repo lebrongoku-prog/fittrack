@@ -3469,7 +3469,6 @@ function renderTrainingCalendar(id, cardId) {
       // (Leonard-Wunsch 01.09.2026). Die frueheren Abstufungen fuer archivierte, laufende
       // und kommende Plaene sind entfallen; welcher Plan zu einem Tag gehoert, sagt die
       // Beschreibung unter dem Raster.
-      const cls = '';
       const links = von * SPALTE - 2;
       const breite = (bis - von + 1) * SPALTE - 3 + 4;
       bands += `<span class="cal-band" style="left:${links}px;width:${breite}px"></span>`;

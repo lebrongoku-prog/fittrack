@@ -2103,8 +2103,6 @@ html.wo-running #wo-week-card { display: none; }
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .day-pick-remove:active { transform: scale(.95); }
-.ex-item-chev { color: var(--text3); font-size: 14px; transition: transform 0.2s; flex-shrink: 0; }
-.ex-item.open .ex-item-chev { transform: rotate(180deg); }
 
 .ex-item-body {
   padding: 0 12px 14px;
