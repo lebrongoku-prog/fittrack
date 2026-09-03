@@ -5461,7 +5461,6 @@ function renderExercisesByMuscle() {
     return `<div class="ex-group${isCollapsed ? ' collapsed' : ''}" style="--mc:${meta.color}">
       <button type="button" class="weitere-btn ex-group-btn" aria-expanded="${!isCollapsed}"
               onclick="toggleExGroup('muscle:${m}')">
-        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
         <span class="dot"></span>
         ${meta.name}
         ${isCollapsed ? '' : `<span class="count">(${items.length})</span>`}

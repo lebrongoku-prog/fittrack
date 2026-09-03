@@ -132,13 +132,14 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Die Anzahl in Klammern erscheint NUR im ausgeklappten Zustand; eingeklappt steht dort nur der
   Name (Leonard-Wunsch 01.09.2026). Dasselbe gilt fuer „Archivierte Plaene" im Plaene-Tab, der
   ausserdem die Tipp-Animation der Karten traegt und dasselbe 14px-Polster bekommen hat.
-  **Der Pfeil ist in beiden Knoepfen dieselbe Klasse wie in den Uebungskarten des TRAININGS-Tabs
-  (`.aex-v2-chev` mit `AEX_CHEV_SVG`)** — bewusst kein Nachbau, damit Form, Groesse und Drehung nicht
-  auseinanderlaufen. Er steht wie dort GANZ LINKS, vor der Farbmarke (32x32-Box, 19px-SVG, 14px vom
-  Rand). Angepasst ist nur die Farbe (`color: inherit`, weil der Knopf auf farbigem Grund steht);
-  gedreht wird ueber `[aria-expanded="false"]` statt ueber `.collapsed`. Die frueheren Klassen
-  `.weitere-pfeil` und der Pfeil der Katalog-Uebungen (`.ex-item-chev` in `buildExItemHTML`) sind
-  entfallen (01.09.2026). Beim Archiv-Knopf liegt der Pfeil ABSOLUT am linken Rand, damit die
+  **Der Muskelgruppen-Knopf hat KEINEN Ausklapp-Pfeil** (01.09.2026) — ebensowenig die Uebungen im
+  Katalog. Ob eine Gruppe offen ist, zeigt die Liste darunter. Damit sind `.weitere-pfeil` und
+  `.ex-item-chev` restlos entfallen.
+  **Nur der Archiv-Knopf im Plaene-Tab traegt einen Pfeil**, und zwar dieselbe Klasse wie die
+  Uebungskarten des TRAININGS-Tabs (`.aex-v2-chev` mit `AEX_CHEV_SVG`) — bewusst kein Nachbau, damit
+  Form, Groesse und Drehung nicht auseinanderlaufen (32x32-Box, 19px-SVG, 14px vom Rand). Angepasst ist
+  nur die Farbe (`color: inherit`, weil der Knopf auf farbigem Grund steht); gedreht wird ueber
+  `[aria-expanded="false"]` statt ueber `.collapsed`. Er liegt ABSOLUT am linken Rand, damit die
   Beschriftung im ganzen Knopf mittig steht — im Fluss waere sie um seine halbe Breite versetzt. Als Variable, weil der Knopf eine andere
   Schriftgroesse traegt (16px gegen 15px) und sonst 5px flacher waere. Sein Pfeil ist in Form und
   Groesse der `.ex-item-chev` nachgebaut: immer „▾", 14px, per `[aria-expanded="true"]` um 180 Grad

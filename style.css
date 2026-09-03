@@ -914,14 +914,13 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   justify-content: flex-start; font-size: 16px; min-height: var(--ex-row-h);
   padding-left: 14px; padding-right: 14px; gap: 12px;
 }
-/* EXAKT derselbe Pfeil wie in den Uebungskarten des TRAININGS-Tabs: dieselbe Klasse
-   `.aex-v2-chev` mit demselben SVG, damit Form, Groesse und Drehung nicht auseinanderlaufen
-   koennen (Leonard-Wunsch 01.09.2026). Er steht wie dort GANZ LINKS, vor der Farbmarke.
-   Einzige Anpassung: Die Farbe kommt vom Knopf, der auf farbigem Grund steht.
-   Gedreht wird ueber aria-expanded statt ueber `.collapsed` — zugeklappt zeigt er nach
-   rechts (-90 Grad), aufgeklappt nach unten, exakt wie in der Uebungskarte. */
-.ex-group-btn .aex-v2-chev, .archiv-btn .aex-v2-chev { color: inherit; }
-.ex-group-btn[aria-expanded="false"] .aex-v2-chev { transform: rotate(-90deg); }
+/* Der Muskelgruppen-Knopf traegt KEINEN Pfeil mehr (Leonard-Wunsch 01.09.2026) — der
+   Zustand ist an der aufgeklappten Liste darunter ohnehin zu sehen. Der Archiv-Knopf
+   behaelt seinen: EXAKT derselbe wie in den Uebungskarten des TRAININGS-Tabs, dieselbe
+   Klasse `.aex-v2-chev` mit demselben SVG, damit Form, Groesse und Drehung nicht
+   auseinanderlaufen koennen. Einzige Anpassung: Die Farbe kommt vom Knopf, der auf
+   farbigem Grund steht. Gedreht wird ueber aria-expanded statt ueber `.collapsed`. */
+.archiv-btn .aex-v2-chev { color: inherit; }
 /* Beschriftung mittig im GANZEN Knopf (Leonard-Wunsch 01.09.2026). Dafuer liegt der Pfeil
    absolut am linken Rand — stuende er im Fluss, waere der Text um seine halbe Breite nach
    rechts versetzt. Die Drehung muss die Zentrierung mitnehmen. */
