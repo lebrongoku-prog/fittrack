@@ -3493,6 +3493,48 @@ async function runLaeufeLaden({ interactive = false } = {}) {
   }
 }
 
+// Detailansicht eines gelaufenen Tages — Gegenstueck zu `showHistDetail` fuer die
+// Krafteinheiten (Leonard-Wunsch 04.09.2026). Sie zeigt alles, was die Tabelle „Workout Data"
+// zu diesem Tag hergibt; Werte, die dort fehlen, bleiben WEG statt als „–" dazustehen.
+// Ein Intervalltraining hat weder Strecke noch Tempo — die Kacheln entstehen deshalb aus einer
+// gefilterten Liste und nicht aus einem festen Raster.
+function showRunDetail(key) {
+  const l = runNachTag()[key];
+  if (!l) return;
+  const [y, m, d] = key.split('-').map(Number);
+  const datum = new Date(y, m - 1, d).toLocaleDateString('de-DE',
+    { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const hiit = l.art === 'hiit';
+  document.getElementById('run-detail-title').textContent =
+    `${hiit ? 'Intervalltraining' : 'Lauf'} — ${datum}`;
+
+  const kacheln = [
+    !hiit && l.km != null   ? { wert: fmtKm(l.km),               label: 'Strecke' } : null,
+    l.minutes != null       ? { wert: fmtMin(l.minutes),         label: 'Dauer' } : null,
+    !hiit && l.kmh          ? { wert: fmtPace(l.kmh),            label: 'Pace' } : null,
+    !hiit && l.kmh          ? { wert: `${(Math.round(l.kmh * 10) / 10)} km/h`, label: 'Tempo' } : null,
+    l.avgHR != null         ? { wert: `${Math.round(l.avgHR)}`,  label: 'Ø Puls' } : null,
+    l.maxHR != null         ? { wert: `${Math.round(l.maxHR)}`,  label: 'Max Puls' } : null,
+    !hiit && l.elevM != null? { wert: `${Math.round(l.elevM)} m`, label: 'Höhenmeter' } : null,
+  ].filter(Boolean);
+
+  const geplant = runGeplanteTage()[key];
+  const soll = geplant && geplant.einheit
+    ? [geplant.einheit.km ? fmtKm(geplant.einheit.km) : null,
+       geplant.einheit.minutes ? fmtMin(geplant.einheit.minutes) : null,
+       geplant.einheit.zone || null].filter(Boolean).join(' · ')
+    : '';
+
+  document.getElementById('run-detail-body').innerHTML =
+    `<div class="hd-stats run-detail-stats">`
+    + kacheln.map(k => `<div class="hd-stat"><b>${k.wert}</b><span>${k.label}</span></div>`).join('')
+    + `</div>`
+    + `<div class="run-detail-zeile"><span>Kategorie</span><strong>${escapeHtml(l.typ || (hiit ? 'Intervalltraining' : 'Laufen'))}</strong></div>`
+    + (geplant ? `<div class="run-detail-zeile"><span>Geplant</span><strong>${soll || escapeHtml(geplant.plan.name || 'Laufplan')}</strong></div>` : '')
+    + `<p class="run-detail-quelle">Aus der Tabelle „Workout Data" gelesen. FitTrack ändert dort nichts.</p>`;
+  openModal('modal-run-detail');
+}
+
 // ── Laufplaene ─────────────────────────────────────────────────────
 // Ein Plan ist ein DATIERTER Ablauf (Woche 1..N ab dem Startdatum), kein Wochenmuster wie
 // die Trainingsplaene. Die Einheiten sind deshalb EINGEBETTET und nicht — wie die
@@ -4313,7 +4355,13 @@ function showCalDay(key, id) {
         ? [fmtMin(lauf.minutes), lauf.maxHR ? `max. ${Math.round(lauf.maxHR)} bpm` : null].filter(Boolean).join(' · ')
         : `${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}`;
       const bez = lauf.art === 'hiit' ? 'HIIT: ' : '';
-      txt += `<div class="cal-detail-run">${bez}${werte}</div>`;
+      // Wie beim Trainingstag ein KNOPF, der die Detailansicht oeffnet (Leonard-Wunsch
+      // 04.09.2026). `stopPropagation` ist Pflicht — sonst raeumt initCalendarDeselect die
+      // Beschreibung im selben Klick weg.
+      txt += `<button type="button" class="cal-detail-tag cal-detail-run"
+                      onclick="event.stopPropagation();showRunDetail('${key}')"><span
+                      class="cal-detail-tagname">${bez}${werte}</span><span
+                      class="cal-detail-chev">▾</span></button>`;
     } else if (gepl) {
       const u = gepl.einheit;
       const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null].filter(Boolean).join(' · ') : '';
