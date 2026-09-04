@@ -867,6 +867,23 @@
   </div>
 </div>
 
+<!-- Notiz zu EINER geplanten Laufeinheit. Eigenes Fenster, weil die Zeile im Laufplan nur
+     eine Vorschau zeigt (sie muss einzeilig bleiben) — geschrieben wird hier mit Platz. -->
+<div id="modal-run-note" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="run-note-title">Notiz</div>
+    <div class="sheet-body">
+      <textarea id="run-note-text" class="program-form-textarea" rows="5"
+                placeholder="z. B. 6 × 800 m, 2 min Trabpause · flache Runde am See"></textarea>
+      <div class="run-note-actions">
+        <button class="btn btn-ghost" onclick="closeModal('modal-run-note')">Abbrechen</button>
+        <button class="btn btn-primary" onclick="saveRunNote()">Speichern</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Detailansicht eines gelaufenen Tages — Gegenstueck zu #modal-hist-detail (04.09.2026). -->
 <div id="modal-run-detail" class="overlay hidden">
   <div class="sheet">

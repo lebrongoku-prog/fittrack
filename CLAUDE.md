@@ -230,6 +230,9 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Kaestchen hellgruen (`#CDE7E1`). `.done::before` steht SPAETER in der Datei und gewinnt damit
   bei gleicher Spezifitaet — ein geplanter und absolvierter Tag ist gefuellt. Mit der Flaeche
   entfiel auch die Glas-Sonderregel dafuer; die Umrandung bleibt im Transparenz-Modus dunkelgruen.
+  STRICHSTAERKE: 2,1px gegen 1,4px beim Laufkreis. Absolut gleich dick wirkten sie NICHT gleich —
+  das Quadrat ist mit 14px 1,5-mal so gross wie der 9,34px-Kreis. 1,4 × 14/9,34 = 2,1px stellt
+  das Verhaeltnis her (Leonard-Meldung 04.09.2026); beim Aendern der Insets nachrechnen.
   `_calPlanIndex()`/`_calPlanInfo()` rekonstruieren den Plan je Datum aus `startDate`/`endDate`/`weekPlan` ALLER Pläne (auch archivierter — die behalten ihren Wochenplan);
   ohne abdeckenden Plan wird keine Fläche gezeichnet, kommende Tage sind blass (`.future`). Antippen beschreibt den Tag in `#cal-detail`, inklusive der geplanten Einheit.
   **Aufbau der Fusszeile (01.09.2026):** Zeile 1 nur Wochentag und Datum (`.cal-detail-datum`),
@@ -640,7 +643,18 @@ ACHTUNG, zwei Stellen, die den Abruf sonst STILL blockieren (beide am 01.09.2026
    Laufdaten waeren eingefroren.
 
 **Datenmodell Laufplan:** `{ id, name, notes, startDate, endDate, runDays:[0..6], archived,
-raceDate, units:[{week, dayIdx, km, minutes, zone}] }`. Notizen speichern sich STILL (ohne
+raceDate, units:[{week, dayIdx, km, minutes, zone, note}] }`. `note` ist die Notiz zu EINER
+geplanten Einheit (04.09.2026). In der Planzeile steht nur eine gekuerzte Vorschau — sie muss
+einzeilig bleiben —, geschrieben wird in `#modal-run-note` (`openRunNote`/`saveRunNote`).
+Der Knopf `.lp-notiz` ist bewusst KEIN Eingabefeld: Ein Feld bekaeme auf iOS den Fokus und die
+Tastatur ginge ueber einer einzigen sichtbaren Zeile auf. Nach dem Speichern zieht
+`saveRunNote` die Vorschau von Hand nach, statt die Seite neu zu bauen (sonst verlieren die
+Nachbarfelder ihre offenen Eingaben — dieselbe Ueberlegung wie bei `setRunZone`).
+ACHTUNG `setRunUnit`: `zone` UND `note` sind TEXT, nur km und Minuten werden als Zahl gelesen.
+Die Notiz erscheint auch in der Detailansicht eines Laufs (`showRunDetail`), sofern der Tag zu
+einer geplanten Einheit gehoert.
+Mit dem Notizfeld hat `.lp-einheit` sieben Spalten und fuellt die Zeile voll aus — der fruehere
+Einzug der Tagesspalte ist entfallen, fuer beides zusammen reicht der Platz auf 375px nicht. Notizen speichern sich STILL (ohne
 Re-Render) — sonst verliert das Feld beim Tippen den Fokus.
 ACHTUNG: Der Bestaetigungsdialog heisst `confirmAction`, NICHT `confirmDialog` — ein Aufruf unter
 dem falschen Namen scheitert still, das Loeschen tat monatelang nichts (gefunden 01.09.2026).

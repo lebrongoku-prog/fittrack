@@ -1869,13 +1869,14 @@ html.wo-running #wo-week-card { display: none; }
 .lp-woche-btn::after { content: '▾'; font-size: 13px; color: var(--text3); transition: transform .15s ease; }
 .lp-woche-btn[aria-expanded="false"]::after { transform: rotate(-90deg); }
 /* Feste Spalten statt Umbruch: Auf iPhone-Breite rutschte die Zone sonst in eine zweite Zeile. */
+/* Sieben Spalten: Tag · km · „km" · min · „min" · Zone · Notiz. Die Notiz nimmt den Rest
+   (04.09.2026) — dadurch fuellt die Zeile jetzt die volle Breite und der fruehere Einzug der
+   Tagesspalte ist entfallen; fuer beides zusammen reicht der Platz auf 375px nicht.
+   Die festen Werte sind gemessen: „01.09.26" braucht 41,7px, eine Zahl wie „12.5" bei 16px
+   31,8px, „Zone" bei 13px 31,9px. */
 .lp-einheit {
-  display: grid; grid-template-columns: 50px 60px 15px 60px 21px 64px;
+  display: grid; grid-template-columns: 44px 44px 14px 44px 20px 46px 1fr;
   gap: 5px; align-items: center; padding: 4px 0;
-  /* Feste statt mitwachsender Felder, und die ganze Zeile mittig — dadurch ist die
-     Tagesspalte gegenueber den Formularfeldern darueber leicht eingerueckt
-     (Leonard-Wunsch 04.09.2026). Vorher fuellten die Felder die Zeile bis zum Rand. */
-  justify-content: center;
 }
 .lp-tag { display: flex; flex-direction: column; line-height: 1.15; }
 .lp-tag strong { font-size: 13px; color: var(--text); }
@@ -1883,7 +1884,7 @@ html.wo-running #wo-week-card { display: none; }
 /* km/min/Zone haben eine FESTE, gemeinsame Hoehe. Ohne die war die Zone 2px hoeher:
    Ein <select> rechnet seine Zeilenhoehe anders als ein <input> (Leonard-Meldung
    04.09.2026). Mit `box-sizing: border-box` gilt der Wert einschliesslich Rand. */
-.lp-feld, .lp-zone { height: 38px; box-sizing: border-box; }
+.lp-feld, .lp-zone, .lp-notiz { height: 38px; box-sizing: border-box; }
 .lp-feld {
   width: 100%; min-width: 0; text-align: center; padding: 0 2px; border-radius: 9px;
   border: 1px solid var(--border); background: var(--card2); color: var(--text);
@@ -1900,6 +1901,22 @@ html.wo-running #wo-week-card { display: none; }
   background: var(--card2); color: var(--text); font-family: inherit; font-size: 13px; font-weight: 600;
 }
 .lp-zone.leer { color: var(--text3); }
+/* Notiz: In der Zeile steht nur eine gekuerzte VORSCHAU — geschrieben wird im eigenen
+   Fenster (`#modal-run-note`), weil die Zeile einzeilig bleiben muss (Leonard-Wunsch
+   04.09.2026). Ein `<button>`, kein Eingabefeld: Ein Feld bekaeme auf iOS den Fokus und die
+   Tastatur wuerde ueber der einen sichtbaren Zeile aufgehen. */
+.lp-notiz {
+  width: 100%; min-width: 0; padding: 0 8px; border-radius: 9px; border: 1px solid var(--border);
+  background: var(--card2); color: var(--text); font-family: inherit; font-size: 12px; font-weight: 600;
+  text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
+}
+.lp-notiz.leer { color: var(--text3); font-weight: 400; }
+.lp-notiz:active { opacity: .6; }
+/* Knopfzeile im Notizfenster. */
+.run-note-actions { display: flex; gap: 8px; margin-top: 12px; }
+.run-note-actions .btn { flex: 1; }
 /* Das unsichtbare Bedienelement MUSS 16px tragen — sonst zoomt iOS beim Fokussieren hinein. */
 .lp-zone-sel {
   position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 16px;
@@ -2037,7 +2054,11 @@ html.wo-running #wo-week-card { display: none; }
    Spezifitaet: Ein geplanter UND absolvierter Tag ist gefuellt. */
 .cal-day.planned::before {
   content: ''; position: absolute; inset: 3.5px;
-  border-radius: 2.5px; box-shadow: inset 0 0 0 1.4px #0F766E;
+  /* 2,1px statt 1,4px: Beide Umrandungen waren absolut gleich dick, das Quadrat ist mit 14px
+     aber 1,5-mal so gross wie der 9,34px-Kreis — die gleiche Strichstaerke wirkt darauf
+     duenner. 1,4 × 14/9,34 = 2,1px stellt das Verhaeltnis her (Leonard-Meldung 04.09.2026).
+     Beim Aendern von --cal-cell oder einem der beiden Insets hier nachrechnen. */
+  border-radius: 2.5px; box-shadow: inset 0 0 0 2.1px #0F766E;
 }
 /* Rahmen + Beschriftung der Plan-Zeiträume — dasselbe Grün wie die trainierten Kerne. */
 .cal-scroll { --cal-plan-color: #0F766E; }
@@ -2106,6 +2127,9 @@ html.wo-running #wo-week-card { display: none; }
 }
 .run-detail-zeile + .run-detail-zeile { border-top: 1px solid var(--border); }
 .run-detail-zeile strong { color: var(--text); font-weight: 600; text-align: right; }
+.run-detail-notiz { padding: 9px 0; border-top: 1px solid var(--border); font-size: 14px; }
+.run-detail-notiz span { color: var(--text3); }
+.run-detail-notiz p { margin: 4px 0 0; color: var(--text); line-height: 1.45; white-space: pre-wrap; }
 .run-detail-quelle { margin: 12px 0 0; font-size: 12px; color: var(--text3); line-height: 1.45; }
 .cal-detail-run.geplant { color: var(--text3); }
 /* Fusszeile: Datum in Zeile 1, Trainingstag in Zeile 2. Ist der Tag aufgezeichnet, ist die

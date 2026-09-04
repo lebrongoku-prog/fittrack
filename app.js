@@ -3493,6 +3493,36 @@ async function runLaeufeLaden({ interactive = false } = {}) {
   }
 }
 
+// Notiz zu EINER geplanten Laufeinheit. Die Zeile im Laufplan muss einzeilig bleiben, dort
+// steht deshalb nur eine gekuerzte Vorschau; geschrieben wird in einem eigenen Fenster mit
+// Platz fuer mehrere Zeilen (Leonard-Wunsch 04.09.2026).
+let _runNoteZiel = null;
+
+function openRunNote(id, woche, dayIdx) {
+  const p = DB.getRunPlans().find(x => x.id === id);
+  if (!p) return;
+  _runNoteZiel = { id, woche, dayIdx };
+  const u = runEinheit(p, woche, dayIdx) || {};
+  const d = runEinheitDatum(p, woche, dayIdx);
+  document.getElementById('run-note-title').textContent =
+    `Notiz — ${WOCHENTAGE_KURZ[dayIdx]}, ${d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+  document.getElementById('run-note-text').value = u.note || '';
+  openModal('modal-run-note');
+}
+
+function saveRunNote() {
+  if (!_runNoteZiel) return closeModal('modal-run-note');
+  const { id, woche, dayIdx } = _runNoteZiel;
+  const text = document.getElementById('run-note-text').value.trim();
+  setRunUnit(id, woche, dayIdx, 'note', text);
+  // Die Vorschau von Hand nachziehen — ein Neuaufbau der Seite naehme den Feldern daneben
+  // die noch nicht gespeicherten Eingaben (dieselbe Ueberlegung wie bei `setRunZone`).
+  const knopf = document.querySelector(`.lp-notiz[data-woche="${woche}"][data-tag="${dayIdx}"]`);
+  if (knopf) { knopf.textContent = text || 'Notiz'; knopf.classList.toggle('leer', !text); }
+  _runNoteZiel = null;
+  closeModal('modal-run-note');
+}
+
 // Detailansicht eines gelaufenen Tages — Gegenstueck zu `showHistDetail` fuer die
 // Krafteinheiten (Leonard-Wunsch 04.09.2026). Sie zeigt alles, was die Tabelle „Workout Data"
 // zu diesem Tag hergibt; Werte, die dort fehlen, bleiben WEG statt als „–" dazustehen.
@@ -3531,6 +3561,8 @@ function showRunDetail(key) {
     + `</div>`
     + `<div class="run-detail-zeile"><span>Kategorie</span><strong>${escapeHtml(l.typ || (hiit ? 'Intervalltraining' : 'Laufen'))}</strong></div>`
     + (geplant ? `<div class="run-detail-zeile"><span>Geplant</span><strong>${soll || escapeHtml(geplant.plan.name || 'Laufplan')}</strong></div>` : '')
+    + (geplant && geplant.einheit && geplant.einheit.note
+        ? `<div class="run-detail-notiz"><span>Notiz</span><p>${escapeHtml(geplant.einheit.note)}</p></div>` : '')
     + `<p class="run-detail-quelle">Aus der Tabelle „Workout Data" gelesen. FitTrack ändert dort nichts.</p>`;
   openModal('modal-run-detail');
 }
@@ -3768,6 +3800,9 @@ function renderRunPlanDetail() {
                   onchange="setRunZone('${p.id}',${w},${di},this)">
             ${HERZZONEN.map(z => `<option value="${z}"${(u.zone || '') === z ? ' selected' : ''}>${z || 'Zone'}</option>`).join('')}
           </select></div>
+        <button type="button" class="lp-notiz${u.note ? '' : ' leer'}" aria-label="Notiz"
+                data-woche="${w}" data-tag="${di}"
+                onclick="openRunNote('${p.id}',${w},${di})">${escapeHtml(u.note || 'Notiz')}</button>
       </div>`;
     }).join('');
     wochenBlocks.push(`<div class="lp-woche">
@@ -3896,7 +3931,8 @@ function setRunUnit(id, woche, dayIdx, feld, wert) {
     p.units = p.units || [];
     let u = p.units.find(x => x.week === woche && x.dayIdx === dayIdx);
     if (!u) { u = { week: woche, dayIdx }; p.units.push(u); }
-    if (feld === 'zone') u.zone = wert;
+    // Zone und Notiz sind TEXT — nur km und Minuten werden als Zahl gelesen.
+    if (feld === 'zone' || feld === 'note') u[feld] = wert;
     else { const v = parseFloat(String(wert).replace(',', '.')); u[feld] = isFinite(v) ? v : null; }
   });
   if (currentScreen === 'overview') renderOverview();
