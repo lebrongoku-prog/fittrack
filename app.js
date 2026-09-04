@@ -3385,6 +3385,9 @@ let runLaden = false, runFehler = '';
 
 // Erkennt eine Laufeinheit an der Typ-Spalte — dieselbe Regel wie in HCC.
 function istLauf(typ) { return /lauf|ausf(ü|ue)hren|run|jog/i.test(String(typ || '')); }
+// „Hochintensives Intervalltraining" gehoert ebenfalls in den Laufbereich, hat aber keine
+// sinnvolle Strecke: Dort zaehlen Dauer und Maximalpuls (Leonard-Wunsch 01.09.2026).
+function istHiit(typ) { return /intervalltraining|hochintensiv|hiit/i.test(String(typ || '')); }
 
 function runVerbunden() { return !!runToken && Date.now() < runTokenExp; }
 
@@ -3430,11 +3433,13 @@ function runZeileLesen(kopf, zeile) {
   const d = new Date(datumRoh);
   if (isNaN(d)) return null;
   const typ = String(val('Type') ?? '').trim();
-  if (!istLauf(typ)) return null;
+  const hiit = istHiit(typ);
+  if (!istLauf(typ) && !hiit) return null;
   const p = (n) => String(n).padStart(2, '0');
   return {
     date: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`,
-    typ, minutes: zahl('Duration (min)'), km: zahl('Distance (km)'),
+    typ, art: hiit ? 'hiit' : 'lauf',
+    minutes: zahl('Duration (min)'), km: zahl('Distance (km)'),
     avgHR: zahl('Avg HR'), maxHR: zahl('Max HR'),
     kmh: zahl('Speed (km/h)'), elevM: zahl('Elevation (m)'),
   };
@@ -3614,9 +3619,12 @@ function renderLaufKalenderSeite() {
   const zeilen = liste.length ? liste.map(l => {
     const [y, m, d] = l.date.split('-').map(Number);
     const datum = new Date(y, m - 1, d).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' });
+    const werte = l.art === 'hiit'
+      ? ['Intervalltraining', fmtMin(l.minutes), l.maxHR ? `max. ${Math.round(l.maxHR)} bpm` : null].filter(Boolean).join(' · ')
+      : `${fmtKm(l.km)} · ${fmtMin(l.minutes)} · ${fmtPace(l.kmh)}${l.avgHR ? ` · ${Math.round(l.avgHR)} bpm` : ''}`;
     return `<div class="lauf-row">
       <div class="lauf-row-tag">${datum}</div>
-      <div class="lauf-row-werte">${fmtKm(l.km)} · ${fmtMin(l.minutes)} · ${fmtPace(l.kmh)}${l.avgHR ? ` · ${Math.round(l.avgHR)} bpm` : ''}</div>
+      <div class="lauf-row-werte">${werte}</div>
     </div>`;
   }).join('') : '<p class="lauf-leer">Noch keine Läufe gelesen.</p>';
   const letzte = `<div class="chart-card-v2">
@@ -4057,12 +4065,16 @@ function renderTrainingCalendar(id, cardId) {
   const einheitWort = modus.kraft
     ? (n => n === 1 ? 'Einheit' : 'Einheiten')
     : (n => n === 1 ? 'Lauf' : 'Läufe');
+  // Zeigt der Kalender BEIDE Sportarten, gehoeren auch beide Zahlen in die Kennzahl.
+  const laeufeImJahr = DB.getRuns().filter(l => Number(l.date.slice(0, 4)) === jahr).length;
+  const zusatzLauf = (modus.kraft && modus.lauf)
+    ? ` · ${laeufeImJahr} ${laeufeImJahr === 1 ? 'Lauf' : 'Läufe'}` : '';
   const streak = getWeekStreak();
   const titelEl = document.getElementById(id === 'cal' ? 'cal-filter-btn' : id + '-titel');
   if (titelEl) titelEl.textContent = modus.titel;
   const statsEl = document.getElementById(id + '-stats');
   if (statsEl) {
-    statsEl.textContent = `${jahr} · ${inRange} ${einheitWort(inRange)}`
+    statsEl.textContent = `${jahr} · ${inRange} ${einheitWort(inRange)}${zusatzLauf}`
       + (streak > 0 ? ` · Serie ${streak} ${streak === 1 ? 'Woche' : 'Wochen'}` : '');
   }
 
@@ -4204,9 +4216,13 @@ function showCalDay(key, id) {
     const lauf = runNachTag()[key];
     const gepl = runGeplanteTage()[key];
     if (lauf) {
-      // Nur Strecke und Zeit, ohne das Wort „Lauf" (Leonard-Wunsch 01.09.2026) —
-      // Pace und Puls sind ebenfalls entfallen.
-      txt += `<div class="cal-detail-run">${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}</div>`;
+      // Lauf: Strecke und Zeit. Intervalltraining hat keine sinnvolle Strecke — dort
+      // stehen Dauer und Maximalpuls (Leonard-Wunsch 01.09.2026).
+      const werte = lauf.art === 'hiit'
+        ? [fmtMin(lauf.minutes), lauf.maxHR ? `max. ${Math.round(lauf.maxHR)} bpm` : null].filter(Boolean).join(' · ')
+        : `${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}`;
+      const bez = lauf.art === 'hiit' ? 'Intervalltraining: ' : '';
+      txt += `<div class="cal-detail-run">${bez}${werte}</div>`;
     } else if (gepl) {
       const u = gepl.einheit;
       const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null].filter(Boolean).join(' · ') : '';

@@ -456,6 +456,19 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   → `transform: none`, dazu `transition: none`). Ein `transform` auf dem Vorfahren bricht auf iOS die laufende
   Wischgeste in einem Scrollbereich darin ab — das Raster liess sich dadurch gar nicht mehr waagerecht scrollen
   (gefunden 01.09.2026). Gilt fuer jede Karte, die kuenftig einen eigenen Scrollbereich bekommt.
+- **Intervalltraining zaehlt zum Laufbereich** (04.09.2026): Die Tabelle „Workout Data" fuehrt neben den
+  Laufeinheiten die Kategorie „Hochintensives Intervalltraining" (Spalte `Type`). `istHiit(typ)`
+  (`/intervalltraining|hochintensiv|hiit/i`) erkennt sie, `runZeileLesen` laesst sie durch und setzt
+  `art: 'hiit'` (sonst `'lauf'`). Im Kalender bekommen diese Tage denselben hellgruenen Kreis wie ein Lauf
+  und zaehlen in die Kennzahl der Laeufe mit. Unterschiedlich ist nur die BESCHRIFTUNG, weil eine Strecke
+  fehlt: Fusszeile und „Letzte Laeufe" zeigen „Intervalltraining: 28min · max. 182 bpm" (Dauer aus
+  `Duration (min)`, Puls aus `Max HR`) statt Strecke, Zeit, Pace und Durchschnittspuls.
+  ACHTUNG: `istLauf` allein reicht NICHT — „Hochintensives Intervalltraining" enthaelt keines seiner
+  Stichwoerter und wurde vorher stillschweigend weggefiltert.
+- **Kennzahl des Kalenders nennt beide Sportarten** (04.09.2026): Zeigt der Kalender beide (Filter
+  „Trainingskalender"), steht dort „2026 · 25 Einheiten · 3 Laeufe". In den Einzelansichten bleibt es bei
+  einer Zahl (Gymkalender: Einheiten, Laufkalender: Laeufe). Die Zahl der Laeufe wird IMMER gerechnet,
+  angehaengt aber nur bei `modus.kraft && modus.lauf`.
 - **Lesehilfe im Trainingskalender:** `.info-btn` neben der Kennzahl oben rechts (`.cal-head-right` fasst beide
   zusammen) oeffnet `#modal-cal-info`. Die Farb-Legende steht NUR dort, nicht mehr in der Karte — dadurch ist die
   Karte rund 100px flacher. Das Polster des Fussbereichs sitzt auf `.cal-detail`, damit die Karte ohne ausgewaehlten
