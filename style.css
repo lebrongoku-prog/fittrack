@@ -1075,6 +1075,20 @@ html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today:not(.training) 
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.selected .ppv-wd { box-shadow: none; }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.selected { background: rgba(255,255,255,.18); }
 /* Suchfeld des Katalogs — sonst bleibt es als weisser Balken auf dem Schleier stehen. */
+/* Kopf-Knoepfe in Uebungen und Plaene bekommen im Transparenz-Modus dasselbe Aussehen wie
+   die der Uebersicht (`.ph-gear`): 18-%-Weiss, weisse Symbole, kein Schatten, 12px-Radius.
+   Sonst stehen dort weisse Kacheln auf dem Schleier. */
+html.glas .screen:not(#screen-mehr) .ex-sort-btn,
+html.glas .screen:not(#screen-mehr) .ex-add-btn {
+  background: rgba(255,255,255,0.18); border-color: transparent;
+  border-radius: 12px; box-shadow: none;
+}
+html.glas .screen:not(#screen-mehr) .ex-sort-btn svg,
+html.glas .screen:not(#screen-mehr) .ex-add-btn svg { stroke: #fff; }
+/* Aktiver Filter: auf dem Schleier waere die dunkle Akzentfarbe ein Fremdkoerper —
+   stattdessen eine deutlich hellere Flaeche, wie beim aktiven Seitenschalter. */
+html.glas .screen:not(#screen-mehr) #ex-plan-filter-btn.active { background: rgba(255,255,255,.45); }
+html.glas .screen:not(#screen-mehr) #ex-plan-filter-btn.active svg { stroke: #fff; fill: #fff; }
 html.glas .screen:not(#screen-mehr) .ex-search-bar {
   background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.24);
   color: #fff; box-shadow: 0 1px 6px rgba(0,0,0,.18);
@@ -1935,14 +1949,14 @@ html.wo-running #wo-week-card { display: none; }
 /* „(zur Einheit)" — der einzige antippbare Teil der Beschreibung. */
 /* Die ganze Beschreibungszeile ist die Schaltflaeche in die Einheit — dasselbe Muster wie
    bei den PR-Zeilen und den Trainingstag-Zeilen. Der frueher hier stehende Textlink
-   „(zur Einheit)" war schwer zu treffen. */
-.cal-detail-row {
-  display: flex; align-items: center; gap: 8px;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
-.cal-detail-row .cal-detail-main { flex: 1; min-width: 0; }
+   „(zur Einheit)" war schwer zu treffen.
+   BEWUSST ein gewoehnlicher Block und kein Flex: Der Pfeil steht damit im Textfluss direkt
+   hinter dem Namen des Trainingstags (Leonard-Wunsch 01.09.2026) statt rechtsbuendig am
+   Kartenrand — und folgt ihm auch, wenn die Zeile umbricht. Die Trefferflaeche bleibt
+   trotzdem die volle Breite, weil der Block sie einnimmt. */
+.cal-detail-row { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .cal-detail-row:active { opacity: .6; }
-.cal-detail-chev { color: var(--accent); font-size: 20px; line-height: 1; flex-shrink: 0; font-weight: 600; }
+.cal-detail-chev { color: var(--accent); font-weight: 700; margin-left: 5px; }
 /* Jede Legenden-Angabe ist ein eigener Flex-Block, sonst klebt der Text am Symbol und
    sitzt vertikal daneben. */
 /* Kopfzeile rechts: Kennzahl und das „i" fuer die Lesehilfe stehen zusammen. */

@@ -3532,10 +3532,8 @@ function showCalDay(key, id) {
     // im selben Klick wieder weg.
     txt = woIdx >= 0
       ? `<div class="cal-detail-row" role="button" tabindex="0"
-              onclick="event.stopPropagation();showHistDetail(${woIdx})">
-           <span class="cal-detail-main">${kopf}</span>
-           <span class="cal-detail-chev">›</span>
-         </div>`
+              onclick="event.stopPropagation();showHistDetail(${woIdx})">${kopf}<span
+              class="cal-detail-chev">›</span></div>`
       : kopf;
   } else if (plan.planned) {
     const heute = new Date(); heute.setHours(0,0,0,0);
