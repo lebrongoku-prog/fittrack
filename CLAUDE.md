@@ -664,6 +664,11 @@ Alles ist damit 323px breit, genau wie im Gymplan.
   schob das Datum ein weiteres Mal zurueck. `lpDatumFeld` liest deshalb die LOKALEN Datumsteile.
   Die Trainingsplaene sind nicht betroffen: `_msToDate`/`_dateToMs` rechnen beide in UTC und
   bleiben unter sich stimmig — beim Angleichen der beiden Seiten also nicht halb umstellen.
+- **Die aufgeklappte Karte hat KEINE Tipp-Animation** (04.09.2026): `.lauf-plan.offen` setzt
+  `transition: none` und `:active { transform: none }`. Die Karte IST hier das
+  Bearbeitungsformular — jeder Tipp in ein Feld liess sie zucken. Eingeklappt behaelt sie die
+  Animation, dort oeffnet der Tipp sie ja. Spezifitaet reicht (3 Klassen gegen
+  `.chart-card-v2:active` mit 2).
 - **km, min und Zone haben eine feste gemeinsame Hoehe** (38px, `box-sizing: border-box`). Ohne die
   war die Zone 2px hoeher: Ein `<select>` rechnet seine Zeilenhoehe anders als ein `<input>`.
 - **`.lp-einheit` hat feste, schmalere Felder** (60px statt mitwachsend) und `justify-content:

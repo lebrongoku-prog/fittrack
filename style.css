@@ -635,6 +635,11 @@ body.theme-plans .hist-action-dd {
 .ex-group-btn, .archiv-btn { transition: transform .1s ease; }
 .ex-group-btn:active, .archiv-btn:active { transform: scale(0.995); }
 #ov-cal-card, #plans-cal-card { transition: none; }
+/* AUSNAHME aufgeklappter Laufplan: Die Karte IST hier das Bearbeitungsformular. Jeder Tipp
+   in ein Feld liess die ganze Karte zucken (Leonard-Meldung 04.09.2026). Eingeklappt bleibt
+   sie eine gewoehnliche Karte und behaelt die Animation — dort oeffnet der Tipp sie ja. */
+.lauf-plan.offen { transition: none; }
+.lauf-plan.offen:active { transform: none; }
 .ppv-head { display: flex; align-items: flex-start; gap: 8px; }
 .ppv-name { flex: 1; min-width: 0; font-size: 16px; font-weight: 700; color: var(--text); }
 .plan-status-past .ppv-name, .plan-status-archived .ppv-name { color: var(--text2); }
