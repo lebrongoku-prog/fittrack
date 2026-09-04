@@ -583,9 +583,16 @@ Der Wochenkopf ist NICHT `.weitere-btn`: Der setzt weisse Schrift auf farbigem G
 steht er auf einer weissen Karte.
 
 **Gemeinsamer Kalender:** Nur der Kalender in der UEBERSICHT (`id === 'cal'`) zeigt zusaetzlich
-die Laeufe — der im Plaene-Tab bleibt vorerst reines Krafttraining. Ein Lauf ist eine dritte
-Schicht (`.cal-day.run`, violette Ecke; geplant = Ring), bewusst kein weiterer Kernzustand:
-sonst waere an einem Tag mit beidem nicht mehr erkennbar, dass auch Kraft trainiert wurde.
+die Laeufe — der im Plaene-Tab bleibt vorerst reines Krafttraining. DREI Schichten im selben
+Kaestchen: Flaeche (laut Plan vorgesehen) · gruener Kern `::before` (Kraft absolviert) ·
+kleines Quadrat `::after` mittig in der Tabfarbe (`var(--accent)`, gelaufen; geplant = nur Kontur).
+An einem Tag mit beidem bleibt so beides sichtbar.
+GROESSENVERHAELTNIS (Leonard-Vorgabe 01.09.2026): Das Lauf-Quadrat verhaelt sich zum Kern wie der
+Kern zum ganzen Kaestchen. Kaestchen 21px, Kern 14px (inset 3,5) → 14 x 14/21 = 9,33px, also
+inset 5,83px. CSS kann nicht durch eine Laenge teilen, der Wert steht deshalb FEST — beim Aendern
+von `--cal-cell` oder dem Kern-Inset hier nachrechnen.
+Die Lauf-Zeile steht ZUUNTERST in der Tagesbeschreibung, nach dem Plan-Stand, in derselben
+Schriftgroesse (16px) wie die uebrigen Fusszeilen.
 
 ---
 

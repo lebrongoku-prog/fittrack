@@ -4019,21 +4019,6 @@ function showCalDay(key, id) {
   } else {
     txt = `<strong>${dateStr}</strong> · ${plan.known ? 'Ruhetag' : 'kein Training'}`;
   }
-  // Lauf desselben Tages ergaenzen — geleistet, sonst geplant.
-  if (id === 'cal') {
-    const lauf = runNachTag()[key];
-    const gepl = runGeplanteTage()[key];
-    if (lauf) {
-      const teile = [fmtKm(lauf.km), fmtMin(lauf.minutes)];
-      if (lauf.kmh) teile.push(fmtPace(lauf.kmh));
-      txt += `<div class="cal-detail-run">Lauf: ${teile.join(' · ')}</div>`;
-    } else if (gepl) {
-      const u = gepl.einheit;
-      const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null].filter(Boolean).join(' · ') : '';
-      txt += `<div class="cal-detail-run geplant">Lauf geplant${soll ? ': ' + soll : ''}</div>`;
-    }
-  }
-
   // Zweite Zeile: der Plan selbst mit Laufzeit. Dritte Zeile: sein Stand bis hierher.
   if (plan.plan) {
     const wochen = planWochen(plan.plan);
@@ -4042,6 +4027,23 @@ function showCalDay(key, id) {
     const q = planErfuellung(plan.plan);
     if (q) {
       txt += `<div class="cal-detail-plan">${q.absolviert} von ${q.geplant} geplanten Einheiten (${q.prozent}%)</div>`;
+    }
+  }
+
+  // Der Lauf steht ZUUNTERST — nach allen Angaben zum Trainingstag (Leonard-Wunsch
+  // 01.09.2026) und in derselben Schriftgroesse wie die uebrigen Fusszeilen.
+  if (id === 'cal') {
+    const lauf = runNachTag()[key];
+    const gepl = runGeplanteTage()[key];
+    if (lauf) {
+      const teile = [fmtKm(lauf.km), fmtMin(lauf.minutes)];
+      if (lauf.kmh) teile.push(fmtPace(lauf.kmh));
+      if (lauf.avgHR) teile.push(`${Math.round(lauf.avgHR)} bpm`);
+      txt += `<div class="cal-detail-run">Lauf: ${teile.join(' · ')}</div>`;
+    } else if (gepl) {
+      const u = gepl.einheit;
+      const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null].filter(Boolean).join(' · ') : '';
+      txt += `<div class="cal-detail-run geplant">Lauf geplant${soll ? ': ' + soll : ''}</div>`;
     }
   }
   el.innerHTML = txt;
