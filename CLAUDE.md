@@ -633,13 +633,10 @@ Die Seite „Laufen" zeigt jetzt nur noch Laufwochenplan und „Diese Woche"; di
 `.lauf-liste`/`.lauf-row*`).
 `.mehr-card` bringt KEIN Polster mit — `#run-source-card .lauf-quelle` setzt die 14px selbst.
 
-**„Jetzt synchronisieren" holt BEIDES** (04.09.2026): `driveManualSync` sichert erst nach Drive
-und ruft danach `runLaeufeLaden({interactive:false})` — aber NUR, wenn `DB.getRunsStand()` gesetzt
-ist. Ohne diese Bedingung spraenge mitten in der Drive-Sicherung ein zweites Google-Anmeldefenster
-auf (die Tabelle haengt an einem eigenen Token-Client). `interactive:false` heisst `prompt: ''`,
-also stille Verlaengerung — das setzt eine frueher erteilte Zustimmung voraus, genau der Fall, den
-`getRunsStand()` abfragt. Der automatische Sync (`markLocalChange`, `driveInit`) ruft die Tabelle
-BEWUSST nicht mit ab.
+**Die Laeufe haengen an KEINEM Sync** (04.09.2026 ausdruecklich so entschieden): „Jetzt
+synchronisieren" sichert nur nach Drive, `markLocalChange`/`driveInit` ebenso. Die Tabelle wird
+allein ueber „Aktualisieren" in der Laufdaten-Karte gelesen. Eine Kopplung war kurz eingebaut und
+wurde auf Leonards Wunsch wieder entfernt — nicht erneut einbauen, ohne zu fragen.
 
 **Aufbau der aufgeklappten Laufplan-Karte** (04.09.2026, an die Gymplan-Detailansicht angeglichen):
 `.lauf-plan.offen` hat `padding: 0` — die `.program-form-row`s bringen die 14px selbst mit, so wie

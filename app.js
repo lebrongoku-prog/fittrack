@@ -7752,13 +7752,6 @@ function driveDisconnect() {
 }
 async function driveManualSync() {
   await driveSync('manuell');
-  // Die absolvierten Laeufe stehen bewusst NICHT in der Drive-Sicherung — sie gehoeren der
-  // Tabelle „Workout Data". „Jetzt synchronisieren" holt sie deshalb zusaetzlich von dort
-  // (Leonard-Wunsch 04.09.2026), damit ein Knopf wirklich alles auf Stand bringt.
-  // NUR, wenn die Tabelle schon einmal gelesen wurde: sonst spraenge mitten in der
-  // Drive-Sicherung ein zweites Google-Anmeldefenster auf. `interactive:false` verlaengert
-  // still — die Zustimmung liegt ja bereits vor.
-  if (DB.getRunsStand()) await runLaeufeLaden({ interactive: false });
 }
 async function driveTestConnection() {
   try {
