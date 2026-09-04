@@ -3637,6 +3637,27 @@ function renderLaufVerwaltung() {
     + (archiv.length ? `<div class="mehr-section-title" style="margin-top:6px">Archiviert</div>` + archiv.map(runPlanKarte).join('') : '');
 }
 
+// Datumsfeld: sichtbar ist ein gewoehnlicher Kasten, das native `<input type="date">` liegt
+// unsichtbar darueber. Grund: Die Masse eines nativen Datumsfeldes legt der BROWSER fest —
+// auf iOS anders als in Chrome. Dadurch sprengte „Ende" die Spalte und „Wettkampf" lief
+// ueber den Kartenrand hinaus (Leonard-Meldung 04.09.2026). So bestimmt allein das CSS die
+// Breite, das Antippen oeffnet unveraendert den nativen Datumswaehler. Dasselbe Muster wie
+// beim Wochenplan im Plan-Detail (`.wpe-select`).
+function lpDatumFeld(ts, onChange) {
+  // ACHTUNG Zeitzone: `setRunPlan` speichert LOKALE Mitternacht (`… + 'T00:00:00'`).
+  // Mit `toISOString()` gelesen ist das in Mitteleuropa 22:00 des VORTAGS — das Feld zeigte
+  // dadurch einen Tag zu frueh an, und jedes erneute Speichern schob das Datum ein weiteres
+  // Mal zurueck (gefunden 04.09.2026). Beide Darstellungen kommen deshalb aus den LOKALEN
+  // Datumsteilen. Die Trainingsplaene sind nicht betroffen: `_msToDate`/`_dateToMs` rechnen
+  // beide in UTC und bleiben damit unter sich stimmig.
+  const p2 = (n) => String(n).padStart(2, '0');
+  const d = ts ? new Date(ts) : null;
+  const iso = d ? `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}` : '';
+  const txt = d ? `${p2(d.getDate())}.${p2(d.getMonth() + 1)}.${d.getFullYear()}` : '–';
+  return `<div class="lp-datum${ts ? '' : ' leer'}"><span class="lp-datum-txt">${txt}</span>
+    <input type="date" class="lp-datum-inp" value="${iso}" onchange="${onChange}"></div>`;
+}
+
 function runPlanKarte(p) {
   const offen = _laufOffenePlaene.has(p.id);
   const wochen = runPlanWochen(p);
@@ -3662,9 +3683,11 @@ function runPlanKarte(p) {
                onchange="setRunUnit('${p.id}',${w},${di},'km',this.value)"><span class="lp-eh">km</span>
         <input class="lp-feld" type="text" value="${u.minutes ?? ''}" placeholder="—"
                onchange="setRunUnit('${p.id}',${w},${di},'minutes',this.value)"><span class="lp-eh">min</span>
-        <select class="lp-zone" onchange="setRunUnit('${p.id}',${w},${di},'zone',this.value)">
-          ${HERZZONEN.map(z => `<option value="${z}"${(u.zone || '') === z ? ' selected' : ''}>${z || 'Zone'}</option>`).join('')}
-        </select>
+        <div class="lp-zone${u.zone ? '' : ' leer'}"><span class="lp-zone-txt">${u.zone || 'Zone'}</span>
+          <select class="lp-zone-sel" aria-label="Herzzone"
+                  onchange="setRunZone('${p.id}',${w},${di},this)">
+            ${HERZZONEN.map(z => `<option value="${z}"${(u.zone || '') === z ? ' selected' : ''}>${z || 'Zone'}</option>`).join('')}
+          </select></div>
       </div>`;
     }).join('');
     wochenBlocks.push(`<div class="lp-woche">
@@ -3680,17 +3703,14 @@ function runPlanKarte(p) {
       <input type="text" value="${escapeHtml(p.name || '')}" onchange="setRunPlan('${p.id}','name',this.value)"></div>
     <div class="program-form-row lp-3col">
       <div><label>Start</label>
-        <input type="date" value="${p.startDate ? new Date(p.startDate).toISOString().slice(0,10) : ''}"
-               onchange="setRunPlan('${p.id}','startDate',this.value)"></div>
+        ${lpDatumFeld(p.startDate, `setRunPlan('${p.id}','startDate',this.value)`)}</div>
       <div><label>Ende</label>
-        <input type="date" value="${p.endDate ? new Date(p.endDate).toISOString().slice(0,10) : ''}"
-               onchange="setRunPlan('${p.id}','endDate',this.value)"></div>
+        ${lpDatumFeld(p.endDate, `setRunPlan('${p.id}','endDate',this.value)`)}</div>
       <div class="lp-wochen"><label>Wochen</label>
         <div class="lp-wochen-v">${p.startDate && p.endDate ? wochen : '–'}</div></div>
     </div>
     <div class="program-form-row"><label>Wettkampf (optional)</label>
-      <input type="date" value="${p.raceDate ? new Date(p.raceDate).toISOString().slice(0,10) : ''}"
-             onchange="setRunPlan('${p.id}','raceDate',this.value)"></div>
+      ${lpDatumFeld(p.raceDate, `setRunPlan('${p.id}','raceDate',this.value)`)}</div>
     <div class="program-form-row"><label>Notizen</label>
       <textarea class="program-form-textarea" rows="2" placeholder="z. B. Ziel, Streckenprofil"
                 onchange="setRunPlan('${p.id}','notes',this.value)">${escapeHtml(p.notes || '')}</textarea></div>
@@ -3750,6 +3770,17 @@ function toggleRunDay(id, di) {
 
 // Einheiten sichern sich beim Verlassen des Feldes und OHNE Neuaufbau — sonst verliert man
 // beim Weitertippen den Fokus und halb getippte Werte.
+// Der sichtbare Text liegt neben dem unsichtbaren <select> und muss von Hand nachgezogen
+// werden — ein Neuaufbau der Karte naehme den Feldern darueber die noch offenen Eingaben.
+function setRunZone(id, woche, dayIdx, sel) {
+  setRunUnit(id, woche, dayIdx, 'zone', sel.value);
+  const box = sel.closest('.lp-zone');
+  if (!box) return;
+  box.classList.toggle('leer', !sel.value);
+  const txt = box.querySelector('.lp-zone-txt');
+  if (txt) txt.textContent = sel.value || 'Zone';
+}
+
 function setRunUnit(id, woche, dayIdx, feld, wert) {
   _runPlanAendern(id, p => {
     p.units = p.units || [];

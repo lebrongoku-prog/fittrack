@@ -1868,16 +1868,30 @@ html.wo-running #wo-week-card { display: none; }
 .lp-tag { display: flex; flex-direction: column; line-height: 1.15; }
 .lp-tag strong { font-size: 13px; color: var(--text); }
 .lp-tag span { font-size: 10px; color: var(--text3); }
+/* km/min/Zone haben eine FESTE, gemeinsame Hoehe. Ohne die war die Zone 2px hoeher:
+   Ein <select> rechnet seine Zeilenhoehe anders als ein <input> (Leonard-Meldung
+   04.09.2026). Mit `box-sizing: border-box` gilt der Wert einschliesslich Rand. */
+.lp-feld, .lp-zone { height: 38px; box-sizing: border-box; }
 .lp-feld {
-  width: 100%; min-width: 0; text-align: center; padding: 8px 2px; border-radius: 9px;
+  width: 100%; min-width: 0; text-align: center; padding: 0 2px; border-radius: 9px;
   border: 1px solid var(--border); background: var(--card2); color: var(--text);
   font-family: inherit; font-weight: 600;
 }
 .lp-feld:focus { outline: none; border-color: var(--accent); }
 .lp-eh { font-size: 10px; color: var(--text3); }
+/* Die Zone ist ein gewoehnlicher Kasten mit einem unsichtbaren <select> darueber — ein
+   sichtbares <select> bringt auf jeder Plattform eigene Masse mit (Pfeil, Mindestbreite)
+   und sprengte die Spalte. Dasselbe Muster wie `.wpe-select` im Plan-Detail. */
 .lp-zone {
-  width: 100%; min-width: 0; padding: 8px 2px; border-radius: 9px; border: 1px solid var(--border);
-  background: var(--card2); color: var(--text); font-family: inherit; font-weight: 600;
+  position: relative; display: flex; align-items: center; justify-content: center;
+  width: 100%; min-width: 0; padding: 0 2px; border-radius: 9px; border: 1px solid var(--border);
+  background: var(--card2); color: var(--text); font-family: inherit; font-size: 13px; font-weight: 600;
+}
+.lp-zone.leer { color: var(--text3); }
+/* Das unsichtbare Bedienelement MUSS 16px tragen — sonst zoomt iOS beim Fokussieren hinein. */
+.lp-zone-sel {
+  position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 16px;
+  -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer;
 }
 /* Sieben Tage in EINER Zeile — `1 1 0` statt `1` mit Mindestbreite, sonst bricht „So" um. */
 .lp-tagwahl-reihe { display: flex; gap: 4px; flex-wrap: nowrap; }
@@ -1903,13 +1917,27 @@ html.wo-running #wo-week-card { display: none; }
 .lauf-plan .lp-3col { flex-direction: row; gap: 8px; }
 .lauf-plan .lp-3col > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 0; }
 .lauf-plan .lp-3col > .lp-wochen { flex: 0 0 46px; }
-.lauf-plan .lp-3col input[type="date"] { padding-left: 8px; padding-right: 8px; }
-.lp-wochen-v {
+.lauf-plan .lp-3col .lp-datum { padding-left: 8px; padding-right: 8px; }
+/* Datumsfeld und Wochenzahl sind gewoehnliche Kaesten — dieselbe Hoehe wie ein Textfeld
+   (10px Polster + 19px Zeile + 1px Rand = 41px). Beim Datum liegt das native
+   `<input type="date">` unsichtbar darueber: Seine Masse bestimmt sonst der Browser, auf
+   iOS anders als in Chrome — „Ende" schob sich dort in die Wochenspalte und „Wettkampf"
+   lief ueber den Kartenrand hinaus (Leonard-Meldung 04.09.2026). */
+.lp-datum, .lp-wochen-v {
   background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-  padding: 10px 4px; font-size: 16px; font-weight: 600; color: var(--text);
-  text-align: center; line-height: 21px;
+  padding: 10px 12px; font-size: 15px; line-height: 19px; color: var(--text);
+  box-sizing: border-box; min-width: 0;
 }
-.lauf-plan .program-form-row input[type="date"] { width: 100%; min-width: 0; box-sizing: border-box; }
+.lp-datum { position: relative; overflow: hidden; }
+.lp-datum-txt { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lp-datum.leer { color: var(--text3); }
+.lp-wochen-v { padding-left: 4px; padding-right: 4px; font-weight: 600; text-align: center; }
+/* 16px verhindert den iOS-Zoom beim Fokussieren, auch wenn das Feld unsichtbar ist. */
+.lp-datum .lp-datum-inp {
+  position: absolute; inset: 0; width: 100%; height: 100%; box-sizing: border-box;
+  opacity: 0; padding: 0; font-size: 16px;
+  -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer;
+}
 
 /* ─── Trainingskalender ─── */
 /* NUR waagerecht scrollen. `overflow-x: auto` allein genuegt nicht: Sobald eine Achse

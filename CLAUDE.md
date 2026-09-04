@@ -647,12 +647,25 @@ Alles ist damit 323px breit, genau wie im Gymplan.
 - **Start | Ende | Wochen in EINER Zeile** (`.lp-3col`). Die Wochenzahl ist ABGELEITET
   (`runPlanWochen`) und deshalb kein Eingabefeld, sondern `.lp-wochen-v` — sieht aus wie eines,
   gleiche Hoehe. Der Abschnittstitel heisst nur noch „Lauftage" (die Wochenzahl stand vorher dort).
-- **Datumsfelder erben die Schrift nicht von selbst** — der Browser setzt `<input type="date">` auf
-  MONOSPACE. `.program-form-row input[type="date"] { font-family: inherit }` behebt das global
-  (Gymplan wie Laufplan) und ist Voraussetzung fuer die dreispaltige Zeile: „03.09.2026" misst in
-  Monospace 97px, in der App-Schrift 85px. Bei 131px Feldbreite abzueglich Polster und dem rund
-  17px breiten Kalendersymbol von Chrome ging es vorher um 1px nicht auf — sichtbar als
-  „03.09.202". Das seitliche Polster ist in dieser Zeile zusaetzlich auf 8px verkleinert.
+- **Datum und Herzzone sind KEINE nativen Bedienelemente mehr** (04.09.2026). Sichtbar ist je ein
+  gewoehnlicher Kasten (`.lp-datum` / `.lp-zone`), das native `<input type="date">` bzw. `<select>`
+  liegt unsichtbar darueber (`opacity:0`, `position:absolute; inset:0`) — dasselbe Muster wie
+  `.wpe-select` im Plan-Detail. Grund: Die Masse eines nativen Datumsfeldes und eines Auswahlfeldes
+  legt der BROWSER fest, auf iOS anders als in Chrome. Auf dem iPhone schob sich „Ende" dadurch in
+  die Wochenspalte und „Wettkampf" lief ueber den Kartenrand hinaus, obwohl in Chrome alles passte.
+  Jetzt bestimmt allein das CSS die Breite. Die unsichtbaren Bedienelemente MUESSEN 16px tragen,
+  sonst zoomt iOS beim Fokussieren hinein. Der Text der Zone wird von `setRunZone` von Hand
+  nachgezogen — ein Neuaufbau der Karte naehme den Feldern darueber die offenen Eingaben.
+  `.program-form-row input[type="date"] { font-family: inherit }` bleibt fuer den GYMPLAN noetig,
+  der weiter native Datumsfelder nutzt (der Browser setzt sie sonst auf Monospace).
+- **ZEITZONEN-Falle bei den Laufplan-Daten** (gefunden 04.09.2026): `setRunPlan` speichert LOKALE
+  Mitternacht (`new Date(wert + 'T00:00:00')`). Wer das mit `toISOString()` zurueckliest, bekommt in
+  Mitteleuropa 22:00 des VORTAGS — das Feld zeigte einen Tag zu frueh, und jedes erneute Speichern
+  schob das Datum ein weiteres Mal zurueck. `lpDatumFeld` liest deshalb die LOKALEN Datumsteile.
+  Die Trainingsplaene sind nicht betroffen: `_msToDate`/`_dateToMs` rechnen beide in UTC und
+  bleiben unter sich stimmig — beim Angleichen der beiden Seiten also nicht halb umstellen.
+- **km, min und Zone haben eine feste gemeinsame Hoehe** (38px, `box-sizing: border-box`). Ohne die
+  war die Zone 2px hoeher: Ein `<select>` rechnet seine Zeilenhoehe anders als ein `<input>`.
 - **`.lp-einheit` hat feste, schmalere Felder** (60px statt mitwachsend) und `justify-content:
   center`. Dadurch ist die Tagesspalte gegenueber den Formularfeldern darueber um 14px
   eingerueckt (Leonard-Wunsch).
