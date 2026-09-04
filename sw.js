@@ -1,5 +1,5 @@
 // FitTrack Service Worker — Offline-Support
-const CACHE = 'fittrack-v238';
+const CACHE = 'fittrack-v239';
 const ASSETS = [
   './',
   './index.html',
@@ -19,6 +19,10 @@ const NO_CACHE_HOSTS = [
   'apis.google.com',
   'oauth2.googleapis.com',
   'www.googleapis.com',
+  // Die Laufdaten-Tabelle: Der Abruf traegt einen Zugangs-Schluessel im Kopf und darf
+  // NIE im Zwischenspeicher landen — weder aus Datenschutzgruenden noch, weil sonst
+  // veraltete Laufdaten ausgeliefert wuerden.
+  'sheets.googleapis.com',
 ];
 
 self.addEventListener('install', e => {

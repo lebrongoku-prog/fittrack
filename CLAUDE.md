@@ -561,6 +561,13 @@ Uebernommen aus der App „Health Command Center" (01.09.2026, Leonard-Entscheid
 bestehenden Client, verlangte Google fuer die Sicherung eine neue Zustimmung — und solange der
 Bereich im Google-Projekt nicht freigeschaltet ist, waere die Drive-Sicherung mit kaputt.
 VORAUSSETZUNG: Der Bereich muss im Google-Cloud-Projekt von FitTrack freigeschaltet sein.
+ACHTUNG, zwei Stellen, die den Abruf sonst STILL blockieren (beide am 01.09.2026 aufgetreten):
+1. Die **Content-Security-Policy** in `index.html` (`connect-src`) muss `https://sheets.googleapis.com`
+   auflisten — sonst blockt der Browser die Anfrage, bevor sie rausgeht, und Safari meldet nur
+   „Load failed". `www.googleapis.com` reicht NICHT, die Sheets-API laeuft auf einem eigenen Host.
+2. Der Host muss in `sw.js` in `NO_CACHE_HOSTS` stehen. Sonst faellt der Abruf in den
+   Cache-first-Zweig: Der Zugangs-Schluessel im Kopf landete im Zwischenspeicher und die
+   Laufdaten waeren eingefroren.
 
 **Datenmodell Laufplan:** `{ id, name, startDate, endDate, runDays:[0..6], archived, raceDate,
 units:[{week, dayIdx, km, minutes, zone}] }`. Ein Laufplan ist ein DATIERTER Ablauf (Woche 1..N ab

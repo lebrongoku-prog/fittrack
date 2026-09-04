@@ -3325,8 +3325,10 @@ async function runLaeufeLaden({ interactive = false } = {}) {
     const kopfR = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${RUN_SHEET_ID}?fields=sheets.properties.title`,
       { headers: { Authorization: 'Bearer ' + runToken } });
-    if (!kopfR.ok) throw new Error(kopfR.status === 403
-      ? 'Kein Zugriff auf die Tabelle — ist der Bereich „spreadsheets.readonly" im Google-Projekt freigeschaltet?'
+    if (!kopfR.ok) throw new Error(
+      kopfR.status === 403 ? 'Google verweigert den Zugriff. Zwei mögliche Gründe: die „Google Sheets API" ist im Projekt nicht eingeschaltet, oder dein Konto darf diese Tabelle nicht lesen.'
+      : kopfR.status === 401 ? 'Die Anmeldung ist abgelaufen — bitte erneut auf „Verbinden" tippen.'
+      : kopfR.status === 404 ? 'Diese Tabelle gibt es nicht (oder die hinterlegte Kennung stimmt nicht).'
       : `Tabelle nicht lesbar (${kopfR.status})`);
     const meta = await kopfR.json();
     const blatt = ((meta.sheets || [])[0] || {}).properties?.title;
@@ -3341,7 +3343,12 @@ async function runLaeufeLaden({ interactive = false } = {}) {
     const laeufe = werte.slice(1).map(z => runZeileLesen(kopf, z)).filter(Boolean);
     DB.saveRuns(laeufe);
   } catch (e) {
-    runFehler = e.message || String(e);
+    // Ein fehlgeschlagenes fetch() meldet nur „Load failed" / „Failed to fetch" — das sagt
+    // niemandem etwas. Ursache ist praktisch immer, dass die Anfrage gar nicht rausging.
+    const roh = e.message || String(e);
+    runFehler = /load failed|failed to fetch|networkerror/i.test(roh)
+      ? 'Die Anfrage kam nicht bis zu Google — kein Netz, oder die App darf die Tabellen-Adresse nicht aufrufen.'
+      : roh;
   } finally {
     runLaden = false;
     renderLaufenScreen();
