@@ -680,7 +680,10 @@ body.theme-plans .hist-action-dd {
 .plan-status-archived .plan-list-name { color: var(--text2); }
 .plan-status-past .plan-list-meta,
 .plan-status-archived .plan-list-meta { color: var(--text3); }
-.plan-status-past, .plan-status-archived { opacity: 0.85; }
+/* Archivierte Plaene treten staerker zurueck als bloss vergangene (Leonard-Wunsch
+   01.09.2026) — sie sind bewusst aus der Hauptliste genommen worden. */
+.plan-status-past { opacity: 0.85; }
+.plan-status-archived { opacity: 0.7; }
 
 /* Archivierte-Pläne kollabierbarer Header */
 .plans-list-archive-header {
@@ -949,6 +952,9 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .archiv-btn[aria-expanded="false"] .aex-v2-chev { transform: rotate(-90deg); }
 /* 12px statt 8px — um die Haelfte groesser (Leonard-Wunsch 01.09.2026). */
 .ex-group-btn .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--mc, var(--accent)); flex-shrink: 0; }
+/* Name und Anzahl bilden EIN Flex-Kind: Sonst trennt sie der 12px-Abstand des Knopfes,
+   statt eines gewoehnlichen Leerzeichens (Leonard-Meldung 01.09.2026). */
+.ex-group-btn .ex-group-name { min-width: 0; }
 .ex-group-btn .count { opacity: .7; font-weight: 600; }
 .archiv-btn .count { opacity: .7; font-weight: 600; }
 /* „Archivierte Plaene" steht direkt im Screen, braucht also eigene Seitenabstaende.
@@ -960,7 +966,9 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
    `.weitere-btn`. Ein `<button>` schrumpft bei `width:auto` auf seinen Inhalt, auch als
    Block-Element — die Breitenangabe ist also noetig. */
 .weitere-btn.archiv-btn {
-  width: calc(100% - 96px); margin: 16px 48px 8px;
+  /* Unten 12px wie der Abstand zwischen zwei Karten — mit 8px klebte die erste
+     archivierte Karte am Knopf (Leonard-Meldung 01.09.2026). */
+  width: calc(100% - 96px); margin: 16px 48px 12px;
 }
 /* Der Pfeil traegt in den Uebungskarten eine 32px-Box und wuerde den Knopf sonst auf 51px
    aufblasen; hier bestimmt die Textzeile die Hoehe. 14px ist knapp darunter, der Knopf ist

@@ -5460,8 +5460,7 @@ function renderExercisesByMuscle() {
       <button type="button" class="weitere-btn ex-group-btn" aria-expanded="${!isCollapsed}"
               onclick="toggleExGroup('muscle:${m}')">
         <span class="dot"></span>
-        ${meta.name}
-        ${isCollapsed ? '' : `<span class="count">(${items.length})</span>`}
+        <span class="ex-group-name">${meta.name}${isCollapsed ? '' : ` <span class="count">(${items.length})</span>`}</span>
       </button>
       <div class="ex-list">${itemsHTML}</div>
     </div>`;
