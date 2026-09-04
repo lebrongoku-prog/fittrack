@@ -3780,6 +3780,17 @@ function toggleCalFilter() {
   _calFilter = _CAL_FILTER_FOLGE[_calFilter] || 'beide';
   renderTrainingCalendar('cal', 'ov-cal-card');
 }
+// Welche Sportart zeigt WELCHER Kalender? Die Uebersicht folgt dem Filter im Titel, der
+// Plaene-Tab der gewaehlten Seite: Gymplan → Krafttraining, Laufplan → Laeufe.
+function _calModus(id) {
+  if (id === 'pcal') {
+    return plansViewMode === 'runplans'
+      ? { kraft: false, lauf: true,  titel: 'Laufkalender' }
+      : { kraft: true,  lauf: false, titel: 'Gymkalender' };
+  }
+  return { kraft: _calFilter !== 'lauf', lauf: _calFilter !== 'kraft',
+           titel: _CAL_FILTER_TITEL[_calFilter] || 'Trainingskalender' };
+}
 function calZeigtKraft() { return _calFilter !== 'lauf'; }
 function calZeigtLauf()  { return _calFilter !== 'kraft'; }
 
@@ -3788,7 +3799,7 @@ function calendarInnerHTML(id) {
   const titel = id === 'cal'
     ? `<button class="chart-card-v2-title cal-filter-btn" id="cal-filter-btn" onclick="toggleCalFilter()"
                aria-label="Zwischen Training, Läufen und beidem umschalten">Trainingskalender</button>`
-    : '<span class="chart-card-v2-title">Trainingskalender</span>';
+    : `<span class="chart-card-v2-title" id="${id}-titel">Trainingskalender</span>`;
   return `<div class="chart-card-v2-head">
       ${titel}
       <span class="cal-head-right">
@@ -3872,8 +3883,9 @@ function renderTrainingCalendar(id, cardId) {
   const planIndex = _calPlanIndex();
   // Gemeinsamer Kalender: Die Laeufe kommen NUR in der Uebersicht dazu (Leonard-Entscheidung
   // 01.09.2026 — der Kalender im Plaene-Tab bleibt vorerst reines Krafttraining).
-  const zeigtLaeufe = id === 'cal' && calZeigtLauf();
-  const zeigtKraft = id !== 'cal' || calZeigtKraft();
+  const modus = _calModus(id);
+  const zeigtLaeufe = modus.lauf;
+  const zeigtKraft = modus.kraft;
   const laeufeTag = zeigtLaeufe ? runNachTag() : {};
   const laufGeplant = zeigtLaeufe ? runGeplanteTage() : {};
 
@@ -3931,8 +3943,8 @@ function renderTrainingCalendar(id, cardId) {
   const inRange = DB.getWorkouts().filter(w => new Date(w.startTs).getFullYear() === jahr).length
     + DB.getManualDays().filter(k => Number(k.slice(0, 4)) === jahr).length;
   const streak = getWeekStreak();
-  const titelEl = document.getElementById('cal-filter-btn');
-  if (id === 'cal' && titelEl) titelEl.textContent = _CAL_FILTER_TITEL[_calFilter] || 'Trainingskalender';
+  const titelEl = document.getElementById(id === 'cal' ? 'cal-filter-btn' : id + '-titel');
+  if (titelEl) titelEl.textContent = modus.titel;
   const statsEl = document.getElementById(id + '-stats');
   if (statsEl) {
     statsEl.textContent = `${jahr} · ${inRange} ${inRange === 1 ? 'Einheit' : 'Einheiten'}`
@@ -4035,8 +4047,9 @@ function showCalDay(key, id) {
   // Neben dem Ergebnis auch nennen, was fuer den Tag vorgesehen war — sonst bliebe
   // unklar, ob ein leerer Tag ein Ruhetag oder eine ausgefallene Einheit ist.
   const plan = _calPlanInfo(new Date(y, m-1, d), _calPlanIndex());
-  // Im Filter „nur Laeufe" bleibt vom Trainingsteil nur das Datum stehen.
-  const kraft = id !== 'cal' || calZeigtKraft();
+  // Im Lauf-Modus bleibt vom Trainingsteil nur das Datum stehen.
+  const modus = _calModus(id);
+  const kraft = modus.kraft;
   // Erste Zeile: nur Wochentag und Datum. Zweite Zeile: der Trainingstag — wurde an dem Tag
   // aufgezeichnet, ist er ein Ausklapp-Knopf mit den Eckdaten der Einheit (Leonard-Wunsch
   // 01.09.2026). Die frueheren Zeilen zum Trainingsplan und zur Erfuellungsquote sind entfallen.
@@ -4052,7 +4065,8 @@ function showCalDay(key, id) {
         // vor dem Umbau der Fusszeile (Leonard-Wunsch 01.09.2026). `stopPropagation` ist
         // Pflicht: Sonst raeumt initCalendarDeselect die Beschreibung im selben Klick weg.
         txt += `<button type="button" class="cal-detail-tag"
-                        onclick="event.stopPropagation();showHistDetail(${woIdx})">${name}<span
+                        onclick="event.stopPropagation();showHistDetail(${woIdx})"><span
+                        class="cal-detail-tagname">${name}</span><span
                         class="cal-detail-chev">▾</span></button>`;
       } else {
         txt += `<div class="cal-detail-tag-txt">${name}</div>`;
@@ -4069,7 +4083,7 @@ function showCalDay(key, id) {
 
   // Der Lauf steht ZUUNTERST — nach allen Angaben zum Trainingstag (Leonard-Wunsch
   // 01.09.2026) und in derselben Schriftgroesse wie die uebrigen Fusszeilen.
-  if (id === 'cal' && calZeigtLauf()) {
+  if (modus.lauf) {
     const lauf = runNachTag()[key];
     const gepl = runGeplanteTage()[key];
     if (lauf) {
@@ -4985,13 +4999,17 @@ function renderPlansScreen() {
   zeige(plansList, plansViewMode === 'plans');
   zeige(daysList, plansViewMode === 'days');
   zeige(runList, plansViewMode === 'runplans');
-  // Der Trainingskalender gehoert zum Trainingsplan — weder zur Tage-Bibliothek noch zum Laufplan.
-  zeige(calCard, plansViewMode === 'plans');
-  if (plansViewMode === 'days') { if (h1) h1.textContent = 'Trainingstage'; renderLibDays(); }
-  else if (plansViewMode === 'runplans') { if (h1) h1.textContent = 'Laufplan'; renderLaufVerwaltung(); }
-  else {
+  // Der Kalender gehoert zu den beiden PLAN-Seiten: Gymplan zeigt ihn mit den
+  // Trainingseinheiten, Laufplan mit den Laufeinheiten. Die Tage-Bibliothek hat keinen.
+  zeige(calCard, plansViewMode !== 'days');
+  if (plansViewMode === 'days') { if (h1) h1.textContent = 'Gymtage'; renderLibDays(); }
+  else if (plansViewMode === 'runplans') {
+    if (h1) h1.textContent = 'Laufplan';
     if (calCard) renderTrainingCalendar('pcal', 'plans-cal-card');
-    if (h1) h1.textContent = 'Trainingsplan';
+    renderLaufVerwaltung();
+  } else {
+    if (calCard) renderTrainingCalendar('pcal', 'plans-cal-card');
+    if (h1) h1.textContent = 'Gymplan';
     renderPlans();
   }
 }

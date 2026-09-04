@@ -2001,15 +2001,25 @@ html.wo-running #wo-week-card { display: none; }
 .cal-detail-run.geplant { color: var(--text3); }
 /* Fusszeile: Datum in Zeile 1, Trainingstag in Zeile 2. Ist der Tag aufgezeichnet, ist die
    zweite Zeile ein Ausklapp-Knopf mit den Eckdaten der Einheit darunter. */
-.cal-detail-tag, .cal-detail-tag-txt { display: block; width: 100%; margin-top: 2px; }
+.cal-detail-tag, .cal-detail-tag-txt { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 2px; }
+/* Nicht fett (Leonard-Wunsch 01.09.2026) — der Trainingstag liest sich wie gewoehnlicher Text,
+   der Pfeil daneben zeigt, dass sich etwas oeffnet. */
 .cal-detail-tag {
   border: none; background: none; padding: 0; text-align: left;
-  font: inherit; color: var(--text); font-weight: 600;
+  font: inherit; color: inherit; font-weight: 400;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none; user-select: none;
 }
 .cal-detail-tag:active { opacity: .6; }
-.cal-detail-tag .cal-detail-chev { display: inline-block; }
+/* Der Name nimmt die Breite, der Knopf sitzt direkt dahinter statt am Zeilenende. */
+.cal-detail-tagname { min-width: 0; }
+/* Kleiner quadratischer Knopf statt eines blossen Zeichens. */
+.cal-detail-tag .cal-detail-chev {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; flex-shrink: 0;
+  border-radius: 5px; background: var(--card2); color: var(--text2);
+  font-size: 11px; line-height: 1; font-weight: 700;
+}
 
 /* Titel des Uebersichts-Kalenders ist ein Filter (Training | Laeufe | beides). Sieht aus
    wie die uebrigen Kartentitel, ist aber ein Knopf. */

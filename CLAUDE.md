@@ -97,7 +97,9 @@ Regel: Nach jeder abgeschlossenen Umsetzung direkt hochladen und das Ergebnis me
 Drei Begriffe, konsequent durchgehalten — nicht mischen:
 **Plan** (der Zeitraum) · **Trainingstag** (die wiederverwendbare Vorlage) · **Einheit** (eine absolvierte Trainingseinheit).
 „Session" und „Workout" kommen in der UI NICHT mehr vor (Bezeichner im Code heißen weiter `workout`/`wo`).
-Nav-Labels: Übersicht · Training · Übungen · Pläne.
+Nav-Labels: Übersicht · Training · Übungen · Plan.
+Seiten im Plan-Tab: **Gymplan** · **Gymtage** · **Laufplan** (umbenannt 01.09.2026).
+Seiten im Trainings-Tab: **Gym** · **Laufen**.
 
 ---
 
@@ -624,6 +626,10 @@ von `--cal-cell` oder dem Kern-Inset hier nachrechnen.
 Die Lauf-Zeile steht ZUUNTERST in der Tagesbeschreibung, nach dem Plan-Stand, und erbt Groesse
 UND Farbe von `.cal-detail` — sie sieht damit aus wie die Angaben zur Trainingseinheit darueber.
 Sie nennt nur Strecke und Zeit; Pace und Puls sind am 01.09.2026 entfallen (Leonard-Wunsch).
+**Welcher Kalender welche Sportart zeigt, entscheidet `_calModus(id)`:** Die Uebersicht (`cal`)
+folgt dem Filter im Titel, der Plan-Tab (`pcal`) der gewaehlten Seite — Gymplan zeigt den
+**Gymkalender** (nur Krafttraining), Laufplan den **Laufkalender** (nur Laeufe), Gymtage keinen.
+Der Titel wird beim Rendern gesetzt (`#cal-filter-btn` bzw. `#pcal-titel`), nicht im Markup.
 **Der Titel des Uebersichts-Kalenders ist ein FILTER** (`toggleCalFilter`, `_calFilter`):
 beide → nur Training → nur Laeufe → beide. Er steuert die Marken im Raster UND die Zeilen in der
 Tagesbeschreibung. Der Titel BENENNT den Zustand statt ihn anzuhaengen: „Trainingskalender" /
