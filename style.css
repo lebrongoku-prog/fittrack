@@ -1989,12 +1989,25 @@ html.wo-running #wo-week-card { display: none; }
   /* KREIS und FESTE Farbe des Laufen-Tabs (Violett) — nicht `var(--accent)`: Der Lauf
      gehoert zu seiner eigenen Domaene und soll in jedem Kalender gleich aussehen, auch
      wenn die Karte spaeter in einem anders eingefaerbten Tab steht. */
-  border-radius: 50%; background: #8B5CF6;
+  /* Helles Gruen (Leonard-Wunsch 01.09.2026) — hebt sich vom dunklen Trainingskern ab,
+     bleibt aber in derselben Farbfamilie. Fest verdrahtet, damit der Lauf in jedem
+     Kalender gleich aussieht. */
+  border-radius: 50%; background: #4ADE80;
 }
-.cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 1.4px #8B5CF6; }
-/* Fusszeile zum Lauf: gleiche Groesse wie die uebrigen Zeilen unter dem Raster. */
-.cal-detail-run { margin-top: 3px; font-size: 16px; color: #7C3AED; font-weight: 600; }
-.cal-detail-run.geplant { color: var(--text3); font-weight: 500; }
+.cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 1.4px #4ADE80; }
+/* Fusszeile zum Lauf: gleiche Groesse UND gleiche Schriftfarbe wie die Angaben zur
+   Trainingseinheit darueber — sie erbt beides von `.cal-detail`. */
+.cal-detail-run { margin-top: 3px; }
+.cal-detail-run.geplant { color: var(--text3); }
+/* Titel des Uebersichts-Kalenders ist ein Filter (Training | Laeufe | beides). Sieht aus
+   wie die uebrigen Kartentitel, ist aber ein Knopf. */
+.cal-filter-btn {
+  border: none; background: none; padding: 0; margin: 0;
+  font: inherit; font-size: 16px; font-weight: 700; color: inherit; text-align: left;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.cal-filter-btn:active { opacity: .6; }
+.cal-filter-zusatz { font-weight: 500; color: var(--text3); }
 .cal-day.future { opacity: .45; }
 /* Rand-Tage der ersten/letzten Woche, die noch ins Vor- bzw. Folgejahr fallen */
 .cal-day.outside { opacity: .25; pointer-events: none; }

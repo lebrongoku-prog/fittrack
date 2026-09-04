@@ -3769,9 +3769,28 @@ function _calPlanInfo(date, index) {
 
 // Kalender-Innenleben. Eine Quelle fuer beide Einbauorte (Uebersicht + Plaene-Tab);
 // die IDs bekommen ein Praefix, damit zwei Instanzen nebeneinander bestehen koennen.
+// Filter des Uebersichts-Kalenders. Startet IMMER bei 'beide' (Leonard-Wunsch) — bewusst
+// nicht gespeichert: Ein Filter, der einen Neustart ueberlebt, laesst den Kalender spaeter
+// unerklaerlich unvollstaendig wirken. Dieselbe Ueberlegung wie beim Katalog-Filter.
+let _calFilter = 'beide';           // 'beide' | 'kraft' | 'lauf'
+const _CAL_FILTER_FOLGE = { beide: 'kraft', kraft: 'lauf', lauf: 'beide' };
+const _CAL_FILTER_ZUSATZ = { beide: '', kraft: ' · nur Training', lauf: ' · nur Läufe' };
+function toggleCalFilter() {
+  _calFilter = _CAL_FILTER_FOLGE[_calFilter] || 'beide';
+  renderTrainingCalendar('cal', 'ov-cal-card');
+}
+function calZeigtKraft() { return _calFilter !== 'lauf'; }
+function calZeigtLauf()  { return _calFilter !== 'kraft'; }
+
 function calendarInnerHTML(id) {
+  // Nur der Kalender der Uebersicht zeigt beide Sportarten — nur dort ist der Titel ein Filter.
+  const titel = id === 'cal'
+    ? `<button class="chart-card-v2-title cal-filter-btn" onclick="toggleCalFilter()"
+               aria-label="Zwischen Training, Läufen und beidem umschalten">Trainingskalender<span
+               class="cal-filter-zusatz" id="cal-filter-zusatz"></span></button>`
+    : '<span class="chart-card-v2-title">Trainingskalender</span>';
   return `<div class="chart-card-v2-head">
-      <span class="chart-card-v2-title">Trainingskalender</span>
+      ${titel}
       <span class="cal-head-right">
         <span class="cal-stats" id="${id}-stats"></span>
         <button class="info-btn" onclick="openModal('modal-cal-info')" aria-label="Was bedeuten die Farben?">i</button>
@@ -3853,7 +3872,8 @@ function renderTrainingCalendar(id, cardId) {
   const planIndex = _calPlanIndex();
   // Gemeinsamer Kalender: Die Laeufe kommen NUR in der Uebersicht dazu (Leonard-Entscheidung
   // 01.09.2026 — der Kalender im Plaene-Tab bleibt vorerst reines Krafttraining).
-  const zeigtLaeufe = id === 'cal';
+  const zeigtLaeufe = id === 'cal' && calZeigtLauf();
+  const zeigtKraft = id !== 'cal' || calZeigtKraft();
   const laeufeTag = zeigtLaeufe ? runNachTag() : {};
   const laufGeplant = zeigtLaeufe ? runGeplanteTage() : {};
 
@@ -3880,8 +3900,8 @@ function renderTrainingCalendar(id, cardId) {
       const plan = _calPlanInfo(day, planIndex);
       const cls = ['cal-day'];
       if (ausserhalb) cls.push('outside');
-      if (plan.planned && !ausserhalb) cls.push('planned');
-      if (entry && !ausserhalb) cls.push('done');
+      if (zeigtKraft && plan.planned && !ausserhalb) cls.push('planned');
+      if (zeigtKraft && entry && !ausserhalb) cls.push('done');
       const lauf = !ausserhalb && laeufeTag[key];
       const laufGepl = !ausserhalb && laufGeplant[key];
       if (lauf) cls.push('run');
@@ -3911,6 +3931,8 @@ function renderTrainingCalendar(id, cardId) {
   const inRange = DB.getWorkouts().filter(w => new Date(w.startTs).getFullYear() === jahr).length
     + DB.getManualDays().filter(k => Number(k.slice(0, 4)) === jahr).length;
   const streak = getWeekStreak();
+  const zusatzEl = document.getElementById('cal-filter-zusatz');
+  if (id === 'cal' && zusatzEl) zusatzEl.textContent = _CAL_FILTER_ZUSATZ[_calFilter] || '';
   const statsEl = document.getElementById(id + '-stats');
   if (statsEl) {
     statsEl.textContent = `${jahr} · ${inRange} ${inRange === 1 ? 'Einheit' : 'Einheiten'}`
@@ -4013,8 +4035,12 @@ function showCalDay(key, id) {
   // Neben dem Ergebnis auch nennen, was fuer den Tag vorgesehen war — sonst bliebe
   // unklar, ob ein leerer Tag ein Ruhetag oder eine ausgefallene Einheit ist.
   const plan = _calPlanInfo(new Date(y, m-1, d), _calPlanIndex());
+  // Im Filter „nur Laeufe" bleibt vom Trainingsteil nur das Datum stehen.
+  const kraft = id !== 'cal' || calZeigtKraft();
   let txt;
-  if (entry) {
+  if (!kraft) {
+    txt = `<strong>${dateStr}</strong>`;
+  } else if (entry) {
     // An diesem Tag wurde trainiert → direkter Weg in die Detailansicht der Einheit.
     // getWorkouts() ist neueste-zuerst; bei mehreren Einheiten am selben Tag oeffnet
     // der Verweis die zuletzt begonnene.
@@ -4040,7 +4066,7 @@ function showCalDay(key, id) {
     txt = `<strong>${dateStr}</strong> · ${plan.known ? 'Ruhetag' : 'kein Training'}`;
   }
   // Zweite Zeile: der Plan selbst mit Laufzeit. Dritte Zeile: sein Stand bis hierher.
-  if (plan.plan) {
+  if (kraft && plan.plan) {
     const wochen = planWochen(plan.plan);
     const spanne = wochen ? ` (${wochen} Wochen)` : '';
     txt += `<div class="cal-detail-plan">${escapeHtml(plan.plan.name)}${spanne}</div>`;
@@ -4052,14 +4078,12 @@ function showCalDay(key, id) {
 
   // Der Lauf steht ZUUNTERST — nach allen Angaben zum Trainingstag (Leonard-Wunsch
   // 01.09.2026) und in derselben Schriftgroesse wie die uebrigen Fusszeilen.
-  if (id === 'cal') {
+  if (id === 'cal' && calZeigtLauf()) {
     const lauf = runNachTag()[key];
     const gepl = runGeplanteTage()[key];
     if (lauf) {
-      const teile = [fmtKm(lauf.km), fmtMin(lauf.minutes)];
-      if (lauf.kmh) teile.push(fmtPace(lauf.kmh));
-      if (lauf.avgHR) teile.push(`${Math.round(lauf.avgHR)} bpm`);
-      txt += `<div class="cal-detail-run">Lauf: ${teile.join(' · ')}</div>`;
+      // Nur Strecke und Zeit (Leonard-Wunsch 01.09.2026) — Pace und Puls sind entfallen.
+      txt += `<div class="cal-detail-run">Lauf: ${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}</div>`;
     } else if (gepl) {
       const u = gepl.einheit;
       const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null].filter(Boolean).join(' · ') : '';

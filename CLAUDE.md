@@ -604,16 +604,23 @@ steht er auf einer weissen Karte.
 **Gemeinsamer Kalender:** Nur der Kalender in der UEBERSICHT (`id === 'cal'`) zeigt zusaetzlich
 die Laeufe — der im Plaene-Tab bleibt vorerst reines Krafttraining. DREI Schichten im selben
 Kaestchen: Flaeche (laut Plan vorgesehen) · gruener Kern `::before` (Kraft absolviert) ·
-kleiner KREIS `::after` mittig im festen Violett des Laufen-Tabs (#8B5CF6; geplant = nur Kontur).
-Bewusst nicht `var(--accent)`: Der Lauf gehoert zu seiner eigenen Domaene und soll in jedem
-Kalender gleich aussehen, auch wenn die Karte spaeter in einem anders eingefaerbten Tab steht.
+kleiner KREIS `::after` mittig in hellem Gruen (#4ADE80; geplant = nur Kontur). Bewusst fest
+verdrahtet und nicht `var(--accent)`: Der Lauf soll in jedem Kalender gleich aussehen, auch wenn
+die Karte spaeter in einem anders eingefaerbten Tab steht.
 An einem Tag mit beidem bleibt so beides sichtbar.
 GROESSENVERHAELTNIS (Leonard-Vorgabe 01.09.2026): Das Lauf-Quadrat verhaelt sich zum Kern wie der
 Kern zum ganzen Kaestchen. Kaestchen 21px, Kern 14px (inset 3,5) → 14 x 14/21 = 9,33px, also
 inset 5,83px. CSS kann nicht durch eine Laenge teilen, der Wert steht deshalb FEST — beim Aendern
 von `--cal-cell` oder dem Kern-Inset hier nachrechnen.
-Die Lauf-Zeile steht ZUUNTERST in der Tagesbeschreibung, nach dem Plan-Stand, in derselben
-Schriftgroesse (16px) wie die uebrigen Fusszeilen.
+Die Lauf-Zeile steht ZUUNTERST in der Tagesbeschreibung, nach dem Plan-Stand, und erbt Groesse
+UND Farbe von `.cal-detail` — sie sieht damit aus wie die Angaben zur Trainingseinheit darueber.
+Sie nennt nur Strecke und Zeit; Pace und Puls sind am 01.09.2026 entfallen (Leonard-Wunsch).
+**Der Titel „Trainingskalender" ist im Uebersichts-Kalender ein FILTER** (`toggleCalFilter`,
+`_calFilter`): beide → nur Training → nur Laeufe → beide. Er steuert sowohl die Marken im Raster
+als auch die Zeilen in der Tagesbeschreibung; der aktive Filter steht als Zusatz im Titel
+(„· nur Training"). Startet IMMER bei „beide" und wird BEWUSST nicht gespeichert — ein Filter,
+der einen Neustart ueberlebt, laesst den Kalender spaeter unerklaerlich unvollstaendig wirken
+(dieselbe Ueberlegung wie beim Katalog-Filter). Im Plaene-Tab ist der Titel kein Knopf.
 
 ---
 
