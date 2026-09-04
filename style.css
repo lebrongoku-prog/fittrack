@@ -656,13 +656,18 @@ body.theme-plans .hist-action-dd {
   font-size: 12px; font-weight: 600; color: var(--text3);
 }
 .ppv-col.training .ppv-wd { background: var(--accent); color: #fff; font-weight: 700; }
-.ppv-col.done .ppv-wd     { background: var(--green);  color: #fff; font-weight: 700; }
+/* Erledigt-Akzent nach Sportart (Leonard-Wunsch 01.09.2026): Gym im Dunkelgruen der
+   trainierten Kalender-Kaestchen, Lauf im Hellgruen der Laufkreise. */
+.ppv-col.done .ppv-wd     { background: #0F766E;  color: #fff; font-weight: 700; }
+.run-plan .ppv-col.done .ppv-wd { background: #4ADE80; }
+.run-plan .ppv-col.done .ppv-wd::before { color: #4ADE80; box-shadow: 0 0 0 1.5px #4ADE80; }
 /* Heute: Ring um den Kreis — funktioniert auch auf Ruhetagen (Kreis dann ohne Füllung). */
 .ppv-col.today .ppv-wd::after {
   content: ''; position: absolute; inset: -4px;
   border-radius: 50%; border: 2px solid var(--accent);
 }
-.ppv-col.today.done .ppv-wd::after { border-color: var(--green); }
+.ppv-col.today.done .ppv-wd::after { border-color: #0F766E; }
+.run-plan .ppv-col.today.done .ppv-wd::after { border-color: #4ADE80; }
 .ppv-col.today:not(.training) .ppv-wd { color: var(--accent-dark); font-weight: 700; }
 /* Erledigt-Haken am Kreis. Nötig, weil im Workouts-Tab die Akzentfarbe selbst grün ist —
    ohne den Haken wären „geplant" und „erledigt" dort kaum zu unterscheiden. */
@@ -670,9 +675,9 @@ body.theme-plans .hist-action-dd {
   content: '✓';
   position: absolute; top: -2px; right: -3px; z-index: 1;
   width: 14px; height: 14px; border-radius: 50%;
-  background: #fff; color: var(--green);
+  background: #fff; color: #0F766E;
   font-size: 9px; font-weight: 900; line-height: 14px; text-align: center;
-  box-shadow: 0 0 0 1.5px var(--green);
+  box-shadow: 0 0 0 1.5px #0F766E;
 }
 
 .plan-status-past .plan-list-name,
@@ -1300,6 +1305,14 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 @media (min-width: 1024px) { .hero-v2-meta-avg .dot { display: block; } }
 .hero-v2-meta svg { width: 14px; height: 14px; stroke: var(--text2); fill: none; stroke-width: 1.8; }
 .hero-v2-btn { align-self: flex-start; padding: 13px 22px; border-radius: 12px; background: var(--gradient); color: #fff; border: none; font-size: 15px; font-weight: 700; display: inline-flex; gap: 8px; align-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
+/* Heutiger Lauf in der Herocard — eine Karte deckt damit Gym und Laufen ab. */
+.hero-v2-lauf {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  margin-top: 8px; font-size: 13px; color: var(--text2);
+}
+.hero-v2-lauf.erledigt { color: #0F766E; font-weight: 600; }
+.hero-v2-lauf-ic { width: 20px; height: 20px; flex-shrink: 0; display: block; }
+.hero-v2-lauf-ic svg { width: 100%; height: 100%; color: #4ADE80; }
 .hero-v2-btn svg { fill: #fff !important; }
 .hero-v2-btn:active { transform: scale(.97); }
 /* Wide button variant (used in Workouts hero): volle Breite bis zur rechten Kante
@@ -2567,6 +2580,11 @@ html.wo-running #wo-week-card { display: none; }
      spannte vorher ueber beide Spalten (Leonard-Wunsch 20.08.2026). Spalte folgt der
      DOM-Reihenfolge: Wochenplan links, Herocard rechts. */
   #screen-overview.active > #ov-hero-wrap { grid-column: 2; }
+  /* Gym- und Laufwochenplan teilen sich eine Zeile (Leonard-Wunsch 01.09.2026): Der
+     Gymplan liegt bereits in Spalte 1, der Laufplan kommt daneben in Spalte 2. Die
+     Herocard rutscht dadurch in die naechste Zeile ueber die volle Breite. */
+  #screen-overview.active > #ov-runplan-card { grid-column: 2; }
+  #screen-overview.active > #ov-hero-wrap { grid-column: 1 / -1; }
   /* Der Plan-Ende-Hinweis ist meistens leer, belegte als Grid-Element aber trotzdem eine
      Zelle in Spalte 2 — dadurch rutschte „Letzte Einheiten" eine Zeile nach unten und stand
      versetzt neben der Plan-Karte. Leer = raus aus dem Grid, sonst unter die Plan-Karte. */

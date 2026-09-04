@@ -642,6 +642,25 @@ der einen Neustart ueberlebt, laesst den Kalender spaeter unerklaerlich unvollst
 
 ---
 
+### Laufwochenplan
+`buildRunPlanCard()` ist das Gegenstueck zu `buildPlanCard` — gleiche Klassen, gleiche Masse,
+gleiche Bedienung, nur andere Quelle (Lauftage statt Trainingstage, gelaufene Einheiten statt
+Krafteinheiten). BEWUSST eine eigene Funktion: Die beiden Datenmodelle haben ausser der Woche
+nichts gemeinsam. Steht in der **Uebersicht** unter dem Gymwochenplan (`#ov-runplan-card`; im
+Querformat teilen sich beide eine Zeile, die Herocard rutscht darunter ueber die volle Breite)
+und im **Trainings-Tab auf der Seite „Laufen" zuoberst**.
+FARBE der Erledigt-Akzente (Kreis + Haken): Gym #0F766E (wie die trainierten Kalender-Kaestchen),
+Lauf #4ADE80 (wie die Laufkreise) — `.run-plan` als Modifikator.
+Die **Kennzahl** des Kalenders zaehlt im Laufkalender Laeufe statt Krafteinheiten.
+
+### Herocard deckt beide Plaene ab
+`heroLaufZeile()` haengt in Trainings- UND Ruhetag-Herocard eine Zeile zum heutigen Lauf an
+(„Gelaufen: 8 km · 45min" bzw. „Lauf heute: …"). Ohne Lauf heute bleibt sie weg. Das Symbol
+`heroRunnerSvg()` traegt BEWUSST keine Farbe im SVG — der Aufrufer setzt sie per `color`
+(Hellgruen); das Hantel-Symbol dagegen folgt mit `var(--accent)` der Tabfarbe.
+
+---
+
 ## Google-Drive-Sync
 - **Token-Anfragen müssen IMMER enden.** `driveRequestToken` hat `error_callback` + 45-s-Timeout (`DRIVE_TOKEN_TIMEOUT_MS`), weil Google Identity Services in der installierten PWA gelegentlich weder `callback` noch `error_callback` aufruft. Ohne das blieb die Promise offen, `driveSync` erreichte sein `finally` nie, `driveSyncInFlight` blieb `true` — die Sicherung „lief" endlos und jeder weitere Versuch wurde abgewiesen, bis die App neu gestartet wurde. Beim Ändern dieses Codes die Zeitgrenze NICHT entfernen.
 - `driveSync` erkennt zusätzlich hängende Läufe (`driveSyncStartedAt` + `DRIVE_SYNC_STUCK_MS` = 2 min) und lässt danach einen neuen Sync zu.

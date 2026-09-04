@@ -891,6 +891,9 @@ function renderOverview() {
   // Umbau im Übungen-Tab, der Kalender bleibt in der Übersicht.
   renderTrainingCalendar();
 
+  const runCard = document.getElementById('ov-runplan-card');
+  if (runCard) runCard.innerHTML = buildRunPlanCard();
+
   _ruhetagHeroAusrichten();
 }
 
@@ -1330,6 +1333,106 @@ function _doStartWorkout(dayId) {
 // ═══════════════════════════════════════════════
 
 let timerInterval = null;
+// ── Laufwochenplan ─────────────────────────────────────────────────
+// Baugleich mit `buildPlanCard` (gleiche Klassen, gleiche Masse, gleiche Bedienung) — nur
+// die Quelle ist eine andere: Lauftage statt Trainingstage, gelaufene Einheiten statt
+// Krafteinheiten. Bewusst eine eigene Funktion statt eines Schalters in buildPlanCard:
+// Die beiden Datenmodelle haben nichts gemeinsam ausser der Woche.
+function runWochenStatus() {
+  const heute = new Date(); heute.setHours(0, 0, 0, 0);
+  const mo = new Date(heute); mo.setDate(mo.getDate() - ((heute.getDay() + 6) % 7));
+  const so = new Date(mo); so.setDate(so.getDate() + 6); so.setHours(23, 59, 59, 999);
+  const gelaufen = DB.getRuns().filter(l => {
+    const [y, m, d] = l.date.split('-').map(Number);
+    const t = new Date(y, m - 1, d).getTime();
+    return t >= mo.getTime() && t <= so.getTime();
+  });
+  const p = runPlanAktiv();
+  return { done: gelaufen.length, planned: p ? (p.runDays || []).length : 0, mo, gelaufen };
+}
+
+function buildRunPlanCard(onTap) {
+  const p = runPlanAktiv();
+  if (!p) {
+    return `<div class="plan-card-v2 run-plan" onclick="${onTap || "setPlansView('runplans');wischeZuTab('plans')"}" style="cursor:pointer">
+      <div class="ppv-name" style="color:var(--text2)">Kein aktiver Laufplan</div>
+      <div class="ppv-meta">Tippe, um einen Laufplan anzulegen.</div>
+    </div>`;
+  }
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const st = runWochenStatus();
+  const gelaufenAmTag = {};
+  st.gelaufen.forEach(l => {
+    const [y, m, d] = l.date.split('-').map(Number);
+    gelaufenAmTag[(new Date(y, m - 1, d).getDay() + 6) % 7] = true;
+  });
+  const strip = WOCHENTAGE_KURZ.map((label, i) => {
+    const geplant = (p.runDays || []).includes(i);
+    const cls = ['ppv-col'];
+    if (geplant) cls.push('training');
+    if (gelaufenAmTag[i]) cls.push('done');
+    if (i === todayIdx) cls.push('today');
+    return `<div class="${cls.join(' ')}"><span class="ppv-wd">${label}</span></div>`;
+  }).join('');
+  // Woche N von M — gerechnet wie beim Trainingsplan, ab dem Montag der Startwoche.
+  const wochen = runPlanWochen(p);
+  const monStart = new Date(p.startDate); monStart.setHours(0, 0, 0, 0);
+  monStart.setDate(monStart.getDate() - ((monStart.getDay() + 6) % 7));
+  const num = Math.min(Math.max(Math.floor((Date.now() - monStart.getTime()) / (7 * 864e5)) + 1, 1), wochen || 1);
+  const pct = Math.round(num / (wochen || 1) * 100);
+  return `<div class="plan-card-v2 run-plan active" onclick="${onTap || "setPlansView('runplans');wischeZuTab('plans')"}">
+    <div class="ppv-head"><div class="ppv-name">${escapeHtml(p.name || 'Laufplan')}</div></div>
+    <div class="ppv-progress">
+      <span class="ppv-wk">Woche ${num} / ${wochen}</span>
+      <div class="ppv-bar"><div class="ppv-bar-fill" style="width:${Math.min(100, pct)}%"></div></div>
+      <span class="ppv-adh">${st.done}/${st.planned} diese Woche</span>
+    </div>
+    <div class="ppv-strip">${strip}</div>
+  </div>`;
+}
+
+// Heutiger Lauf als Zeile fuer die Herocard — so deckt EINE Karte beide Plaene ab
+// (Leonard-Wunsch 01.09.2026). Gibt es fuer heute weder einen gelaufenen noch einen
+// geplanten Lauf, bleibt die Zeile weg.
+function heroLaufZeile() {
+  const key = _dayKeyOf(Date.now());
+  const lauf = runNachTag()[key];
+  const gepl = runGeplanteTage()[key];
+  if (!lauf && !gepl) return '';
+  let txt;
+  if (lauf) {
+    txt = `Gelaufen: ${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}`;
+  } else {
+    const u = gepl.einheit;
+    const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null]
+      .filter(Boolean).join(' · ') : '';
+    txt = 'Lauf heute' + (soll ? ': ' + soll : '');
+  }
+  return `<div class="hero-v2-lauf${lauf ? ' erledigt' : ''}">
+    <span class="hero-v2-lauf-ic">${heroRunnerSvg()}</span>
+    <span>${txt}</span>
+  </div>`;
+}
+
+// Laufsymbol fuer die Herocard — Gegenstueck zu `heroDumbbellSvg`, nach Leonards Vorlage
+// (Strichfigur im Laufschritt mit drei Tempolinien).
+function heroRunnerSvg() {
+  // KEINE Farbe im SVG: Der Aufrufer bestimmt sie ueber `color` (in der Herocard das
+  // Hellgruen der Laufkreise). Beim Hantel-Symbol steht dort `var(--accent)`, weil es der
+  // Tabfarbe folgen soll — der Lauf hat seine eigene Farbe.
+  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="82" cy="26" r="11" fill="currentColor"/>
+    <path d="M74 44 L92 38 L104 52" stroke="currentColor" stroke-width="11"
+          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M74 44 L52 52 L58 70 L44 96" stroke="currentColor" stroke-width="12"
+          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M58 70 L80 78 L86 100" stroke="currentColor" stroke-width="12"
+          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M24 40 h20 M12 56 h30 M24 72 h20" stroke="currentColor" stroke-width="8"
+          stroke-linecap="round" fill="none" opacity="0.85"/>
+  </svg>`;
+}
+
 function heroDumbbellSvg() {
   return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="color:var(--accent)">
     <rect x="36" y="55" width="48" height="10" rx="3" fill="currentColor" opacity="0.95"/>
@@ -1414,6 +1517,8 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
     </div>
   </div>`;
 
+  const laufZeile = heroLaufZeile();
+
   if (isPreview) {
     const previewOnClick = opts.previewOnClick || `startWorkout('${planDay.id}')`;
     // Wenn an einem anderen Tag bereits ein Workout aktiv ist, soll der Start-Button hier verschwinden.
@@ -1432,6 +1537,7 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
          </button>`;
     return `<div class="hero-v2 col-layout">
       ${topRow}
+      ${laufZeile}
       <div class="hero-v2-bottom">
         ${bottomHTML}
       </div>
@@ -1487,6 +1593,7 @@ function buildRestHero(isToday, dayName) {
     <div class="hero-v2-text" style="flex:1">
       <div class="hero-v2-label">RUHETAG</div>
       <div class="hero-v2-title">${titel}</div>
+      ${heroLaufZeile()}
       ${freeWorkoutBtn()}
     </div>
     <div class="hero-v2-art">
@@ -3452,6 +3559,8 @@ let _laufOffenePlaene = new Set();
 function renderLaufKalenderSeite() {
   const el = document.getElementById('wo-view-laufen');
   if (!el) return;
+  // Zuoberst derselbe Laufwochenplan wie in der Uebersicht (Leonard-Wunsch 01.09.2026).
+  const wochenplan = `<div id="wo-runplan-card">${buildRunPlanCard()}</div>`;
   const laeufe = DB.getRuns();
   const stand = DB.getRunsStand();
 
@@ -3515,7 +3624,7 @@ function renderLaufKalenderSeite() {
     <div class="lauf-liste">${zeilen}</div>
   </div>`;
 
-  el.innerHTML = verbindung + woche + letzte;
+  el.innerHTML = wochenplan + verbindung + woche + letzte;
 }
 
 // ── Seite 2: Laufplanverwaltung ────────────────────────────────────
@@ -3940,14 +4049,20 @@ function renderTrainingCalendar(id, cardId) {
   if (monthsEl) monthsEl.innerHTML = months;
 
   // Kennzahlen: Einheiten im Zeitraum + aktuelle Wochenserie
-  const inRange = DB.getWorkouts().filter(w => new Date(w.startTs).getFullYear() === jahr).length
-    + DB.getManualDays().filter(k => Number(k.slice(0, 4)) === jahr).length;
+  // Der Laufkalender zaehlt Laeufe, der Gymkalender Krafteinheiten (Leonard-Wunsch 01.09.2026).
+  const inRange = modus.kraft
+    ? DB.getWorkouts().filter(w => new Date(w.startTs).getFullYear() === jahr).length
+      + DB.getManualDays().filter(k => Number(k.slice(0, 4)) === jahr).length
+    : DB.getRuns().filter(l => Number(l.date.slice(0, 4)) === jahr).length;
+  const einheitWort = modus.kraft
+    ? (n => n === 1 ? 'Einheit' : 'Einheiten')
+    : (n => n === 1 ? 'Lauf' : 'Läufe');
   const streak = getWeekStreak();
   const titelEl = document.getElementById(id === 'cal' ? 'cal-filter-btn' : id + '-titel');
   if (titelEl) titelEl.textContent = modus.titel;
   const statsEl = document.getElementById(id + '-stats');
   if (statsEl) {
-    statsEl.textContent = `${jahr} · ${inRange} ${inRange === 1 ? 'Einheit' : 'Einheiten'}`
+    statsEl.textContent = `${jahr} · ${inRange} ${einheitWort(inRange)}`
       + (streak > 0 ? ` · Serie ${streak} ${streak === 1 ? 'Woche' : 'Wochen'}` : '');
   }
 
