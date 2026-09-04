@@ -854,6 +854,12 @@ Die **Kennzahl** des Kalenders zaehlt im Laufkalender Laeufe statt Krafteinheite
 ---
 
 ## Gotchas
+- **`currentColor` in den Nav-Symbolen:** Die drei Punkte im Uebungen-Symbol sind gefuellte Kreise
+  mit `fill="currentColor"`, alle uebrigen Formen sind Striche mit `stroke`. Wer nur `stroke`
+  faerbt, laesst die Punkte die Textfarbe des Bodys erben — dunkel, im Transparenz-Modus also
+  schwarz auf farbigem Grund (gemeldet 04.09.2026). Alle vier Regeln (`.nav-btn svg`,
+  `.nav-btn.active svg` und ihre beiden Glas-Fassungen) setzen deshalb `color` MIT.
+
 - **Eine Einheit gehört zu genau EINEM Wochentag:** `wo.dayIdx` (0=Mo … 6=So) wird beim Start gesetzt, `woDayIdx(wo)` liest ihn (Rückfallebene `startTs`). NIEMALS den Wochentag über `weekPlan.findIndex(planDayId)` bestimmen — bei einem Trainingstag, der zweimal pro Woche im Plan steht, trifft das immer den ersten Treffer.
 - `activeOnSelected` in `renderWorkoutsScreen` prüft NUR `woDayIdx(active) === selectedWorkoutDayIdx` — bewusst nicht zusätzlich gegen `planDay`. Sonst verschwindet eine Einheit, die an einem Ruhetag läuft (Training verschoben), komplett aus dem Tab.
 - Freies Training hat `planDayId === null`; Anzeigepfade müssen darauf vorbereitet sein (`activeOnSelected` in `renderWorkoutsScreen`).

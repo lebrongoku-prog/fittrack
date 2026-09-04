@@ -446,9 +446,12 @@ body.theme-plans .hist-action-dd {
   flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
   cursor: pointer; padding: 4px 0; -webkit-tap-highlight-color: transparent; user-select: none;
 }
-.nav-btn svg { width: 24px; height: 24px; stroke: var(--text3); stroke-width: 1.8; fill: none; }
+/* `color` MUSS neben `stroke` stehen: Die drei Punkte im Uebungen-Symbol sind gefuellte
+   Kreise mit `fill="currentColor"`. Ohne eigene Farbe erben sie die Textfarbe des Bodys und
+   blieben dunkel — im Transparenz-Modus schwarz auf farbigem Grund (gemeldet 04.09.2026). */
+.nav-btn svg { width: 24px; height: 24px; stroke: var(--text3); color: var(--text3); stroke-width: 1.8; fill: none; }
 .nav-btn span { font-size: 10px; font-weight: 500; color: var(--text3); letter-spacing: 0.1px; }
-.nav-btn.active svg { stroke: var(--accent); }
+.nav-btn.active svg { stroke: var(--accent); color: var(--accent); }
 .nav-btn.active span { color: var(--accent); font-weight: 600; }
 
 /* ─── Page Header ─── */
@@ -1142,9 +1145,9 @@ html.glas #bottom-nav {
 /* Symbol und Beschriftung setzen ihre Farbe selbst — eine Farbe auf `.nav-btn` allein
    wuerde nicht durchschlagen. Der aktive Eintrag stuende sonst in der Akzentfarbe, also
    in der Farbe des Untergrunds. */
-html.glas .nav-btn svg  { stroke: rgba(255,255,255,.7); }
+html.glas .nav-btn svg  { stroke: rgba(255,255,255,.7); color: rgba(255,255,255,.7); }
 html.glas .nav-btn span { color: rgba(255,255,255,.7); }
-html.glas .nav-btn.active svg  { stroke: #fff; }
+html.glas .nav-btn.active svg  { stroke: #fff; color: #fff; }
 html.glas .nav-btn.active span { color: #fff; }
 
 /* Freistehende Knoepfe in den Detailansichten (nicht in einer Karte) — sonst bleiben sie
