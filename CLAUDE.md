@@ -297,8 +297,11 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
 - **Muskel-Landkarte:** `renderMuscleMap()` zeichnet zwei SVG-Silhouetten (`muscleMapSvg`, vorne/hinten) mit nach
   Volumenanteil abgestufter Deckkraft plus Zahlen-Legende. Seit 01.09.2026 stehen die Figuren LINKS und die
   Legende RECHTS daneben (`.mmap-body`, Flex-Zeile) — untenliegend machte sie die Karte deutlich hoeher als die
-  Volumenentwicklung. Die Figuren sind dafuer 72px statt 84px breit, sonst bleiben der Legende keine 130px und
-  „Beine"/„2,8 t" brechen um.
+  Volumenentwicklung. Die Figuren sind 84px breit und um 10px EINGERUECKT (`padding-left`) — das nimmt der Legende
+  Breite weg, wodurch Muskelname und Wert eng zusammenruecken (7px statt vorher rund 60px).
+  84px ist praktisch das Maximum: Groesser, und „Schultern" samt Wert bricht um.
+  Die Karte traegt `.muscle-card` (Flex-Spalte); `#muscle-bars` waechst in den durch die
+  min-height entstandenen Raum und sitzt darin senkrecht mittig — sonst bliebe unten ein Loch.
   `_gleicheHoeheStatsKarten()` am Ende von `renderStatsPage()` setzt im HOCHFORMAT die `min-height` der
   Muskelkarte auf die gemessene Hoehe der Volumenkarte (Leonard-Wunsch: gleich hoch). Gemessen statt fest
   verdrahtet, weil der Kopf der Volumenkarte je nach Breite ein- oder zweizeilig ist. Im Querformat wird nichts
