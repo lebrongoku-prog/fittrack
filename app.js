@@ -1346,7 +1346,8 @@ function runPlanStatus(p) {
 // Trainings-Tab), mit `plan` einen bestimmten — so entsteht die Liste im Plaene-Tab, in der
 // nur der laufende Plan Fortschritt und Wochentagsstreifen mit Haken zeigt und alle anderen
 // Statuschip und Laufzeit tragen (04.09.2026, eins zu eins wie beim Gymplan).
-function buildRunPlanCard(onTap, plan) {
+function buildRunPlanCard(onTap, plan, opts) {
+  opts = opts || {};
   const p = plan || runPlanAktiv();
   if (!p) {
     return `<div class="plan-card-v2 run-plan" onclick="${onTap || "setPlansView('runplans');wischeZuTab('plans')"}" style="cursor:pointer">
@@ -1370,7 +1371,13 @@ function buildRunPlanCard(onTap, plan) {
     if ((p.runDays || []).includes(i)) cls.push('training');
     if (gelaufenAmTag[i]) cls.push('done');
     if (laeuft && i === todayIdx) cls.push('today');
-    return `<div class="${cls.join(' ')}"><span class="ppv-wd">${label}</span></div>`;
+    if (opts.selectedIdx === i) cls.push('selected');
+    // Auf der Seite „Laufen" waehlt ein Tipp den Tag aus — genau wie beim Gymwochenplan
+    // (Leonard-Wunsch 04.09.2026). Ohne `dayOnTap` bleibt der Streifen reine Anzeige.
+    const tap = (laeuft && opts.dayOnTap)
+      ? ` onclick="event.stopPropagation();${opts.dayOnTap}(${i})" role="button" tabindex="0" aria-label="${label} öffnen"`
+      : '';
+    return `<div class="${cls.join(' ')}"${tap}><span class="ppv-wd">${label}</span></div>`;
   }).join('');
   // Woche N von M — gerechnet wie beim Trainingsplan, ab dem Montag der Startwoche.
   const wochen = runPlanWochen(p);
@@ -3640,12 +3647,66 @@ function fmtMin(v) {
 //   • Plaene-Tab, Seite „Laufplan"   → Laufplanverwaltung
 let _laufOffeneWochen = new Set();  // mehrere Wochen duerfen gleichzeitig offen sein
 
+// Ausgewaehlter Wochentag auf der Seite „Laufen". Vorbelegt mit HEUTE — dieselbe Bedienung
+// wie im Gymteil (`selectedWorkoutDayIdx`), nur fuer die Laufseite.
+let selectedRunDayIdx = null;
+function selectRunDay(idx) { selectedRunDayIdx = idx; renderLaufKalenderSeite(); }
+
+// Detailkarte zum gewaehlten Lauftag. Gebaut aus den Klassen der ausgeklappten
+// Uebungskarte (`.aex-v2`), damit sie auf der Nachbarseite „Gym" nicht wie ein Fremdkoerper
+// wirkt (Leonard-Wunsch 04.09.2026) — Kopf mit Scheibe und Name, darunter die Werte als
+// Tabelle und die Notiz rechts daneben.
+function buildLaufTagKarte(idx) {
+  const mo = new Date(); mo.setHours(0, 0, 0, 0);
+  mo.setDate(mo.getDate() - ((mo.getDay() + 6) % 7) + idx);
+  const key = _dayKeyOf(mo.getTime());
+  const gepl = runGeplanteTage()[key];
+  const u = gepl && gepl.einheit;
+  const lauf = runNachTag()[key];
+  const datum = mo.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  const werte = u
+    ? `<div class="aex-v2-table">
+         <div class="aex-v2-srow head lauf-tag-srow"><span>Strecke</span><span>Zeit</span><span>Zone</span></div>
+         <div class="aex-v2-srow lauf-tag-srow">
+           <span class="lauf-tag-wert">${u.km ? fmtKm(u.km) : '–'}</span>
+           <span class="lauf-tag-wert">${u.minutes ? fmtMin(u.minutes) : '–'}</span>
+           <span class="lauf-tag-wert">${u.zone || '–'}</span>
+         </div>
+       </div>`
+    : `<div class="aex-v2-table"><p class="lauf-tag-leer">${gepl ? 'Lauftag ohne Vorgabe.' : 'Für diesen Tag ist kein Lauf geplant.'}</p></div>`;
+  const notiz = u && u.note
+    ? `<div class="aex-v2-notes-col"><div class="aex-v2-notes"><div class="lauf-tag-notiz">${escapeHtml(u.note)}</div></div></div>`
+    : '';
+  const gelaufen = lauf
+    ? `<div class="aex-v2-actions">
+         <span class="lauf-tag-erledigt">Gelaufen: ${lauf.art === 'hiit' ? fmtMin(lauf.minutes) : `${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}`}</span>
+         <button class="btn btn-ghost btn-sm aex-v2-details" onclick="showRunDetail('${key}')">Details</button>
+       </div>`
+    : '';
+  return `<div class="aex-v2 lauf-tag-karte">
+    <div class="aex-v2-header">
+      <div class="aex-v2-num">${WOCHENTAGE_KURZ[idx]}</div>
+      <div class="aex-v2-info">
+        <div class="aex-v2-name">${gepl ? 'Geplanter Lauf' : 'Kein Lauf geplant'}</div>
+        <div class="aex-v2-last">${datum}${gepl ? ` · ${escapeHtml(gepl.plan.name || 'Laufplan')}` : ''}</div>
+      </div>
+    </div>
+    <div class="aex-v2-body">${werte}${notiz}</div>
+    ${gelaufen}
+  </div>`;
+}
+
 // ── Seite 1: Überblick über die gelaufenen Einheiten ───────────────
 function renderLaufKalenderSeite() {
   const el = document.getElementById('wo-view-laufen');
   if (!el) return;
-  // Zuoberst derselbe Laufwochenplan wie in der Uebersicht (Leonard-Wunsch 01.09.2026).
-  const wochenplan = `<div id="wo-runplan-card">${buildRunPlanCard()}</div>`;
+  // Zuoberst derselbe Laufwochenplan wie in der Uebersicht (Leonard-Wunsch 01.09.2026) —
+  // hier aber MIT Tagesauswahl, genau wie der Gymwochenplan auf der Nachbarseite.
+  if (selectedRunDayIdx === null) selectedRunDayIdx = (new Date().getDay() + 6) % 7;
+  const wochenplan = `<div id="wo-runplan-card">${buildRunPlanCard(
+    "setPlansView('runplans');wischeZuTab('plans')", null,
+    { selectedIdx: selectedRunDayIdx, dayOnTap: 'selectRunDay' })}</div>`;
   const laeufe = DB.getRuns();
   const stand = DB.getRunsStand();
 
@@ -3677,7 +3738,9 @@ function renderLaufKalenderSeite() {
     </div>
   </div>`;
 
-  el.innerHTML = wochenplan + woche;
+  // Der gewaehlte Tag steht UNTER „Diese Woche" (Leonard-Wunsch 04.09.2026).
+  const tagKarte = runPlanAktiv() ? `<div id="wo-lauftag-card">${buildLaufTagKarte(selectedRunDayIdx)}</div>` : '';
+  el.innerHTML = wochenplan + woche + tagKarte;
 }
 
 // Verbindung zur Tabelle „Workout Data". Steht seit dem 04.09.2026 in den EINSTELLUNGEN
@@ -4098,6 +4161,7 @@ function calendarInnerHTML(id) {
         <div class="cal-inner">
           <div class="cal-months" id="${id}-months"></div>
           <div class="cal-plannames" id="${id}-plannames"></div>
+          <div class="cal-planlanes cal-planlanes-oben" id="${id}-planlanes-oben"></div>
           <div class="cal-gridwrap">
             <div class="cal-grid" id="${id}-grid"></div>
           </div>
@@ -4173,6 +4237,10 @@ function renderTrainingCalendar(id, cardId) {
   const zeigtKraft = modus.kraft;
   const laeufeTag = zeigtLaeufe ? runNachTag() : {};
   const laufGeplant = zeigtLaeufe ? runGeplanteTage() : {};
+  // Wettkampftage der Laufplaene — das ganze Kaestchen wird hellgruen (Leonard-Wunsch
+  // 04.09.2026). Nur dort, wo der Kalender ueberhaupt Laeufe zeigt.
+  const wettkampfTage = {};
+  if (zeigtLaeufe) DB.getRunPlans().forEach(p => { if (p.raceDate) wettkampfTage[_dayKeyOf(p.raceDate)] = p; });
 
   let cells = '';
   let months = '';
@@ -4203,12 +4271,15 @@ function renderTrainingCalendar(id, cardId) {
       const laufGepl = !ausserhalb && laufGeplant[key];
       if (lauf) cls.push('run');
       else if (laufGepl) cls.push('run-planned');
+      const wettkampf = !ausserhalb && wettkampfTage[key];
+      if (wettkampf) cls.push('wettkampf');
       if (future) cls.push('future');
       if (isToday) cls.push('today');
       const kraftZustand = entry
         ? (plan.planned ? 'geplant und trainiert' : 'zusaetzlich trainiert')
         : (plan.planned ? (future ? 'geplant' : 'geplant, nicht trainiert') : 'Ruhetag');
-      const zustand = kraftZustand + (lauf ? ', gelaufen' : (laufGepl ? ', Lauf geplant' : ''));
+      const zustand = kraftZustand + (lauf ? ', gelaufen' : (laufGepl ? ', Lauf geplant' : ''))
+        + (wettkampf ? ', Wettkampftag' : '');
       cells += `<span class="${cls.join(' ')}"
                       data-key="${key}" onclick="showCalDay('${key}','${id}')"
                       role="button" tabindex="0"
@@ -4268,7 +4339,8 @@ function renderTrainingCalendar(id, cardId) {
   // nur, DASS ein Plan lief, nicht welcher, und zwei ueberlappende Rahmen lagen aufeinander.
   const namenEl = document.getElementById(id + '-plannames');
   const spurenEl = document.getElementById(id + '-planlanes');
-  if (namenEl && spurenEl) {
+  const spurenObenEl = document.getElementById(id + '-planlanes-oben');
+  if (namenEl && spurenEl && spurenObenEl) {
     // Spalte NICHT über Millisekunden-Division bestimmen: Zwischen Winter- und Sommerzeit
     // fehlt eine Stunde, wodurch ein Datum genau auf einer Wochengrenze in die Vorwoche
     // rutschte. Über ganze Tage gerundet stimmt es.
@@ -4310,20 +4382,29 @@ function renderTrainingCalendar(id, cardId) {
     namenEl.innerHTML = stuecke.map(st =>
       `<span class="cal-planname${klasse(st)}" style="${stil(st)};top:${st.spur * (NAME_H + NAME_GAP)}px"
              title="${escapeHtml(st.p.name || '')}">${escapeHtml(st.p.name || 'Plan')}</span>`).join('');
-    spurenEl.innerHTML = stuecke.map(st =>
+    // Derselbe Balken OBEN wie UNTEN (Leonard-Wunsch 04.09.2026): Er steht direkt unter dem
+    // Namen und noch einmal unter dem Raster — die beiden klammern den Zeitraum sichtbar ein.
+    const balken = stuecke.map(st =>
       `<span class="cal-planspur${klasse(st)}" style="${stil(st)};top:${st.spur * (SPUR_H + SPUR_GAP)}px"></span>`).join('');
+    spurenObenEl.innerHTML = balken;
+    spurenEl.innerHTML = balken;
 
     // Beide Zeilen sind absolut gefuellt und haetten sonst die Hoehe null. Die Namenszeile
     // schiebt ausserdem das Raster nach unten — die Wochentagsspalte liegt ABSOLUT ueber dem
     // Kalender und muss denselben Versatz mitrechnen, sonst steht „Mo" nicht mehr auf einer
     // Linie mit der ersten Rasterzeile. Deshalb `--cal-names-h` als gemeinsame Quelle.
     const anzahl = spuren.length;
-    const namenH = anzahl ? anzahl * NAME_H + (anzahl - 1) * NAME_GAP + 6 : 0;
-    namenEl.style.height = namenH ? (namenH - 6) + 'px' : '0';
-    namenEl.style.marginBottom = namenH ? '6px' : '0';
-    spurenEl.style.height = anzahl ? (anzahl * SPUR_H + (anzahl - 1) * SPUR_GAP) + 'px' : '0';
+    const hNamen = anzahl ? anzahl * NAME_H + (anzahl - 1) * NAME_GAP : 0;
+    const hBalken = anzahl ? anzahl * SPUR_H + (anzahl - 1) * SPUR_GAP : 0;
+    namenEl.style.height = hNamen + 'px';
+    namenEl.style.marginBottom = anzahl ? '3px' : '0';
+    spurenObenEl.style.height = hBalken + 'px';
+    spurenObenEl.style.marginBottom = anzahl ? '6px' : '0';
+    spurenEl.style.height = hBalken + 'px';
     spurenEl.style.marginTop = anzahl ? '7px' : '0';
-    if (card) card.style.setProperty('--cal-names-h', namenH + 'px');
+    // Alles, was UEBER dem Raster liegt, muss die absolut positionierte Wochentagsspalte
+    // mitrechnen — sonst steht „Mo" nicht mehr auf einer Linie mit der ersten Rasterzeile.
+    if (card) card.style.setProperty('--cal-names-h', (anzahl ? hNamen + 3 + hBalken + 6 : 0) + 'px');
   }
 
   // Beim ERSTEN Aufbau zur laufenden Woche scrollen (nicht ans Jahresende — der Dezember
@@ -4408,6 +4489,8 @@ function showCalDay(key, id) {
   // Der Lauf steht ZUUNTERST — nach allen Angaben zum Trainingstag (Leonard-Wunsch
   // 01.09.2026) und in derselben Schriftgroesse wie die uebrigen Fusszeilen.
   if (modus.lauf) {
+    const wk = DB.getRunPlans().find(p => p.raceDate && _dayKeyOf(p.raceDate) === key);
+    if (wk) txt += `<div class="cal-detail-run wettkampf">🏁 Wettkampf · ${escapeHtml(wk.name || 'Laufplan')}</div>`;
     const lauf = runNachTag()[key];
     const gepl = runGeplanteTage()[key];
     if (lauf) {

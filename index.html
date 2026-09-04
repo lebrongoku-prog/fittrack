@@ -671,25 +671,32 @@
     <div class="sheet-body">
       <div class="info-text">
         <p>Ein Kästchen ist ein Tag, eine Spalte eine Woche — von oben (Montag) nach unten (Sonntag).
-        Jedes Kästchen hat zwei Schichten: die <b>Fläche</b> sagt, ob laut Plan trainiert werden sollte,
-        der <b>Kern</b>, ob es tatsächlich stattgefunden hat.</p>
+        <b>Gym</b> ist ein dunkelgrünes Quadrat, <b>Laufen</b> ein hellgrüner Kreis. Nur umrandet heißt
+        geplant, ausgefüllt heißt absolviert. An einem Tag mit beidem siehst du beides.</p>
       </div>
       <div class="cal-legend cal-legend-modal">
-        <span><i class="k-planned"></i>geplant, nicht trainiert</span>
-        <span><i class="k-planned k-core"></i>geplant und trainiert</span>
-        <span><i class="k-core"></i>zusätzlich trainiert</span>
+        <span><i class="k-planned"></i>Gym geplant</span>
+        <span><i class="k-core"></i>Gym trainiert</span>
+        <span><i class="k-run-planned"></i>Lauf geplant</span>
+        <span><i class="k-run"></i>gelaufen</span>
+        <span><i class="k-race"></i>Wettkampftag</span>
         <span><i></i>Ruhetag</span>
       </div>
       <div class="info-text" style="margin-top:16px">
-        <p><b>Über und unter dem Raster</b> steht, welcher Plan wann lief: der Name oben, ein farbiger
-        Balken unten über genau denselben Wochen. Gym ist dunkelgrün, Laufen hellgrün — jede Sportart
-        hat ihre eigene Zeile, überlappende Pläne bekommen je eine weitere. Archivierte Pläne sind blasser.</p>
+        <p><b>Über und unter dem Raster</b> steht, welcher Plan wann lief: der Name oben, darunter und
+        unter dem Raster je ein farbiger Balken über genau denselben Wochen. Jede Sportart hat ihre
+        eigene Zeile, überlappende Pläne bekommen je eine weitere; archivierte Pläne sind blasser.</p>
+      </div>
+      <div class="cal-legend cal-legend-modal">
+        <span><i class="k-plan-gym"></i>Gymplan</span>
+        <span><i class="k-plan-lauf"></i>Laufplan</span>
+      </div>
+      <div class="info-text" style="margin-top:16px">
+        <p><b>Ein Tipp auf ein Kästchen</b> beschreibt den Tag unter dem Raster. Gab es an dem Tag eine
+        Trainingseinheit oder einen Lauf, öffnet ein Tipp auf die Zeile die vollen Details.</p>
 
-        <p><b>Ein Tipp auf ein Kästchen</b> beschreibt den Tag unter dem Raster: was geplant war, was du
-        trainiert hast, und wie weit der zugehörige Plan zu diesem Zeitpunkt erfüllt war.</p>
-
-        <p>Gezeigt wird immer das laufende Kalenderjahr. Tage, die zu keinem Plan gehören, bleiben ohne
-        Fläche — dort war schlicht nichts vorgesehen.</p>
+        <p>Gezeigt wird immer das laufende Kalenderjahr. Tage, an denen weder etwas geplant war noch
+        etwas stattgefunden hat, bleiben leer.</p>
       </div>
       <button class="btn btn-primary btn-full info-ok-btn" style="margin-top:4px" onclick="closeModal('modal-cal-info')">Verstanden</button>
     </div>

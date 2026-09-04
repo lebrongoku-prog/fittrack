@@ -2114,9 +2114,28 @@ html.wo-running #wo-week-card { display: none; }
   border-radius: 50%; background: #4ADE80;
 }
 .cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 1.4px #4ADE80; }
+/* Wettkampftag: das GANZE Kaestchen hellgruen — der auffaelligste Zustand im Kalender, weil
+   es der eine Tag ist, auf den ein Laufplan hinarbeitet (Leonard-Wunsch 04.09.2026). Steht vor
+   den Zustandsregeln fuer heute/ausgewaehlt, damit deren Rahmen weiter obenauf liegen. */
+.cal-day.wettkampf { background: #4ADE80; }
+/* Detailkarte zum gewaehlten Lauftag (Seite „Laufen"). Sie borgt sich die Klassen der
+   ausgeklappten Uebungskarte, damit beide Seiten des Trainings-Tabs gleich aussehen
+   (Leonard-Wunsch 04.09.2026). Angepasst ist nur, was die Laufwerte brauchen:
+   drei gleich breite Spalten statt Satz|Wdh|kg|Haken, und die Scheibe traegt den
+   Wochentag statt einer Nummer — in Hellgruen, der Farbe der Laufdomaene. */
+.lauf-tag-karte { margin-top: 12px; }
+.lauf-tag-karte .aex-v2-num { background: #4ADE80; font-size: 12px; }
+.lauf-tag-srow { grid-template-columns: 1fr 1fr 1fr; }
+.lauf-tag-wert { font-size: 15px; font-weight: 700; color: var(--text); text-align: center; }
+.lauf-tag-leer { margin: 2px 0 0; font-size: 13px; color: var(--text3); line-height: 1.45; }
+.lauf-tag-notiz { font-size: 12px; color: var(--text2); line-height: 1.45; white-space: pre-wrap; padding: 8px 10px; }
+/* „Gelaufen"-Zeile in der Aktionsleiste: Text links, der Details-Knopf traegt sein
+   `margin-left:auto` schon selbst. */
+.lauf-tag-erledigt { font-size: 13px; font-weight: 600; color: var(--text2); align-self: center; }
 /* Fusszeile zum Lauf: gleiche Groesse UND gleiche Schriftfarbe wie die Angaben zur
    Trainingseinheit darueber — sie erbt beides von `.cal-detail`. */
 .cal-detail-run { margin-top: 3px; }
+.cal-detail-run.wettkampf { color: var(--text); font-weight: 600; }
 /* Detailansicht eines Laufs (`#modal-run-detail`). Die Kacheln nutzen `.hd-stats` mit,
    brechen aber nach Bedarf um: Ein Intervalltraining hat weder Strecke noch Tempo, es
    bleiben also weniger als die drei Kacheln der Krafteinheit. */
@@ -2191,6 +2210,8 @@ html.wo-running #wo-week-card { display: none; }
   position: absolute; height: 5px; border-radius: 3px;
   background: var(--cal-plan-color);
 }
+/* Der Balken steht ZWEIMAL: unter dem Namen und unter dem Raster (Leonard-Wunsch
+   04.09.2026). Beide sind identisch gebaut, nur die Abstaende unterscheiden sich. */
 .cal-planname.lauf, .cal-planspur.lauf { color: #4ADE80; }
 .cal-planspur.lauf { background: #4ADE80; }
 /* Archivierte Plaene treten zurueck — sie sind Rueckblick, kein laufender Zeitraum. */
@@ -2230,8 +2251,25 @@ html.wo-running #wo-week-card { display: none; }
 .cal-legend-modal { gap: 10px 18px; margin: 14px 0 0; font-size: 12.5px; color: var(--text2); }
 .cal-legend > span { display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
 .cal-legend i { position: relative; flex: 0 0 13px; width: 13px; height: 13px; border-radius: 3px; display: inline-block; background: var(--border); }
-.cal-legend i.k-planned { background: #CDE7E1; }
-.cal-legend i.k-core::before { content: ''; position: absolute; inset: 3px; border-radius: 2px; background: #0F766E; }
+/* Die Muster der Legende bilden die Kaestchen nach — sie muessen mitwandern, wenn sich der
+   Kalender aendert. Massstab: 13px statt 21px, alle Insets entsprechend verkleinert.
+   `k-planned` = umrandetes Quadrat (geplanter Gymtag), `k-core` = gefuellt (trainiert),
+   `k-run` = Kreis (gelaufen), `k-run-planned` = leerer Kreis, `k-race` = ganze Flaeche. */
+.cal-legend i.k-planned::before {
+  content: ''; position: absolute; inset: 2px; border-radius: 1.5px;
+  box-shadow: inset 0 0 0 1.3px #0F766E;
+}
+.cal-legend i.k-core::before { content: ''; position: absolute; inset: 2px; border-radius: 1.5px; background: #0F766E; box-shadow: none; }
+.cal-legend i.k-run::after, .cal-legend i.k-run-planned::after {
+  content: ''; position: absolute; inset: 3.6px; border-radius: 50%; background: #4ADE80;
+}
+.cal-legend i.k-run-planned::after { background: transparent; box-shadow: inset 0 0 0 1.2px #4ADE80; }
+.cal-legend i.k-race { background: #4ADE80; }
+/* Die beiden Planspuren als Muster: ein kurzer Balken statt eines Kaestchens. */
+.cal-legend i.k-plan-gym, .cal-legend i.k-plan-lauf {
+  flex-basis: 20px; width: 20px; height: 5px; border-radius: 3px; background: #0F766E;
+}
+.cal-legend i.k-plan-lauf { background: #4ADE80; }
 
 /* PR list v2 (with numbered colored circles) */
 /* Wie `.muscle-bars-v2`: Die umgebende Karte polstert schon, seitlich daher 0. */

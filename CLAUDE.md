@@ -224,6 +224,9 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Sie liegen in der Drive-Sicherung (`manualDays`).
 - **Trainingskalender** (Übersicht, `#ov-cal-card`): `renderTrainingCalendar()` zeichnet 52 Wochen à 7 Kästchen (`.cal-day`).
   KEINE Volumen-Abstufung — zwei Schichten im gleich grossen Quadrat (`inset: 3.5px`):
+  `.wettkampf` faerbt das GANZE Kaestchen hellgruen — der Wettkampftag eines Laufplans, der
+  auffaelligste Zustand im Kalender (04.09.2026). Nur dort, wo der Kalender Laeufe zeigt; der
+  Gymkalender kennt ihn nicht. Er steht auch in der Tagesbeschreibung („🏁 Wettkampf · Planname").
   `.planned::before` = laut damaligem Plan vorgesehen, nur UMRANDET; `.done::before` =
   tatsächlich trainiert, GEFUELLT. Seit 04.09.2026 dieselbe Logik wie beim Lauf, wo der geplante
   Kreis leer und der gelaufene gefuellt ist (Leonard-Wunsch); vorher faerbte „geplant" das ganze
@@ -263,8 +266,10 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Der fruehere Rahmen um die Wochenspalten (`.cal-bands`/`.cal-band`, samt `--cal-band-over`) ist
   ERSATZLOS entfallen — er zeigte nur, DASS ein Plan lief, nicht welcher, und zwei ueberlappende
   Rahmen lagen fast aufeinander. Jetzt: `.cal-plannames` ueber dem Raster (Planname, 11px, fett)
-  und `.cal-planlanes` darunter (5px-Balken), beide auf GENAU denselben Wochenspalten — zusammen
-  klammern sie den Zeitraum ein, ohne die Kaestchen zu beruehren.
+  und ZWEIMAL `.cal-planlanes` mit 5px-Balken: einmal direkt unter dem Namen
+  (`.cal-planlanes-oben`, ueber dem Raster) und einmal darunter (04.09.2026 ergaenzt). Alle drei
+  Zeilen liegen auf GENAU denselben Wochenspalten — zusammen klammern sie den Zeitraum ein, ohne
+  die Kaestchen zu beruehren.
   SPUREN: Jede Sportart bekommt ihre eigene; ueberschneiden sich zwei Plaene DERSELBEN Sportart,
   oeffnet der zweite eine weitere (einfaches Intervall-Packing in `renderTrainingCalendar`).
   Name und Balken eines Plans stehen dadurch immer in derselben Spur uebereinander.
@@ -272,9 +277,10 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `opacity: .5`. Beides bleibt im Transparenz-Modus farbig.
   ACHTUNG WOCHENTAGSSPALTE: Die Namenszeile schiebt das Raster nach unten, `.cal-daylabels` liegt
   aber ABSOLUT ueber dem Kalender. `renderTrainingCalendar` setzt deshalb `--cal-names-h` auf der
-  KARTE (0px, wenn kein Plan im Bild ist), und der `top`-Wert der Spalte rechnet es mit. Ohne das
-  steht „Mo" nicht mehr auf einer Linie mit der ersten Rasterzeile — beim Aendern der Zeilenhoehen
-  (NAME_H/NAME_GAP im JS) hier mitziehen.
+  KARTE (0px, wenn kein Plan im Bild ist), und der `top`-Wert der Spalte rechnet es mit. Der Wert
+  ist die Summe aus Namenszeile, oberer Balkenzeile und beiden Abstaenden. Ohne das steht „Mo"
+  nicht mehr auf einer Linie mit der ersten Rasterzeile — beim Aendern der Zeilenhoehen
+  (NAME_H/NAME_GAP/SPUR_H/SPUR_GAP im JS) hier mitziehen.
   Beide Zeilen sind reine Positionsflaechen: Ihre Kinder sitzen absolut, deshalb setzt das JS auch
   ihre Hoehe — im Fluss haetten sie keine.
   (Zwischen dem 20.08. und dem 04.09.2026 gab es GAR KEINE Beschriftung — der Name stand nur in
@@ -746,6 +752,17 @@ Liste, mal die Detailseite. Das entscheidet `_laufNeuZeichnen()`; ein direkter A
   Liste bleibt durchsichtig, genau wie die Gymplan-Kacheln. Eine kurzzeitig gebaute
   Ueberschreibung (`html.glas … .lauf-plan.offen` mit `inherit` auf allen Farbtoken) ist mit dem
   Umzug auf die eigene Seite wieder entfallen, ebenso die Sonderregel fuer `.lp-tagwahl.an`.
+
+**Die Seite „Laufen" hat eine Tagesauswahl wie die Seite „Gym"** (04.09.2026, Leonard-Wunsch):
+Ein Tipp auf einen Wochentag im Laufwochenplan waehlt ihn aus (`selectRunDay`,
+`selectedRunDayIdx`, vorbelegt mit heute) — `buildRunPlanCard` nimmt dafuer `opts.selectedIdx`
+und `opts.dayOnTap` entgegen, genau wie `buildPlanCard`. Unter „Diese Woche" erscheint dann
+`buildLaufTagKarte(idx)`: Sie borgt sich die Klassen der AUSGEKLAPPTEN UEBUNGSKARTE (`.aex-v2`
+mit Kopf, Scheibe, Tabelle und Notizspalte), damit beide Seiten des Trainings-Tabs gleich
+aussehen. Angepasst ist nur, was die Laufwerte brauchen: drei gleich breite Spalten statt
+Satz|Wdh|kg|Haken (`.lauf-tag-srow`) und eine hellgruene Scheibe mit dem Wochentag statt einer
+Nummer. Wurde der Tag gelaufen, steht das in der Aktionsleiste mit einem Knopf zu
+`showRunDetail`.
 
 **Oberflaeche:** Seitenschalter `Laufkalender | Laufplanverwaltung` (`setLaufView`, `_laufSeite`).
 Auf- und Zuklappen einer Woche laeuft OHNE Neuaufbau (`toggleRunWoche` schaltet nur `display`) und
