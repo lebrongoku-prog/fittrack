@@ -249,9 +249,12 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   dicht hintereinander (`prerenderAllTabs` + `_applyTabState`) — die zweite Runde haette dann den Stand
   VOR dem ersten Positionieren festgehalten und das Raster wieder auf Null gezogen. Plan-Laufzeiten sind als Rahmen OHNE Füllung um die Wochenspalten gezeichnet
   (`.cal-bands`/`.cal-band`, `z-index:0`, Raster darüber mit `z-index:1`); archivierte Pläne sind blasser.
-  ALLE Zeitraeume werden gleich gezeichnet — gleiche Farbe, gleiche Staerke (1,2px), keine Abstufung
-  nach laufend/kommend/archiviert (Leonard-Wunsch 01.09.2026; die Klassen `.cal-band.current` und
-  `.cal-band.archived` sind damit entfallen). Welcher Plan zu einem Tag gehoert, sagt die Beschreibung
+  Welche Zeitraeume ein Kalender zeichnet, folgt seinem Modus (`_calModus`): Gymkalender nur
+  Trainingsplaene, Laufkalender nur Laufplaene, die Uebersicht im Modus „beide" beide Arten.
+  FARBE nach Art (Leonard-Wunsch 01.09.2026): Gym in `--cal-plan-color` (#0F766E, dasselbe
+  Dunkelgruen wie die trainierten Kerne), Lauf in #4ADE80 (`.cal-band-run`, dasselbe Hellgruen
+  wie die Laufkreise). Der Lauf-Rahmen hat 2px weniger Ueberstand, damit bei zeitlicher
+  Ueberschneidung beide sichtbar bleiben. Keine Abstufung nach laufend/kommend/archiviert. Welcher Plan zu einem Tag gehoert, sagt die Beschreibung
   unter dem Raster. Im Transparenz-Modus sind die Umrandungen weiss (55 %), sonst gruen.
   Eine Beschriftung mit dem Plannamen unter dem Raster gibt es NICHT mehr (entfernt 20.08.2026) — der Name steht
   beim Antippen eines Tages in der Beschreibung darunter, dort mit der Wochenzahl in Klammern (ohne Datumsspanne).

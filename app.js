@@ -3980,26 +3980,28 @@ function renderTrainingCalendar(id, cardId) {
     const rasterEnde = new Date(start.getTime());
     rasterEnde.setDate(rasterEnde.getDate() + wochen * 7);
     rasterEnde.setMilliseconds(-1);
-    const sichtbar = DB.getPlans()
-      .filter(p => p && p.startDate && p.startDate <= rasterEnde.getTime() && (p.endDate || Infinity) >= start.getTime())
-      .sort((a, b) => a.startDate - b.startDate);
+    // Die Umrandungen folgen dem Modus des Kalenders: Der Gymkalender zeigt nur
+    // Trainingsplaene, der Laufkalender nur Laufplaene, die Uebersicht im Modus „beide"
+    // beide Arten (Leonard-Wunsch 01.09.2026).
+    const imBild = (p) => p && p.startDate
+      && p.startDate <= rasterEnde.getTime() && (p.endDate || Infinity) >= start.getTime();
+    const zeitraeume = [];
+    if (modus.kraft) DB.getPlans().filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'gym' }));
+    if (modus.lauf)  DB.getRunPlans().filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'lauf' }));
+    zeitraeume.sort((a, b) => a.p.startDate - b.p.startDate);
 
     // Umrandung um die Wochenspalten des Zeitraums — ohne Füllung, damit die Kästchen
-    // ungestört bleiben. Farbe: --cal-plan-color in style.css. Eine Beschriftung mit dem
-    // Plannamen gibt es nicht mehr (Leonard-Wunsch 20.08.2026) — der Name steht beim
-    // Antippen eines Tages in der Beschreibung darunter.
+    // ungestört bleiben. Farbe je Art: Gym dunkelgruen wie die trainierten Kerne,
+    // Lauf hellgruen wie die Laufkreise. Eine Beschriftung mit dem Plannamen gibt es nicht
+    // (Leonard-Wunsch 20.08.2026) — der Name steht beim Antippen eines Tages darunter.
     let bands = '';
-    sichtbar.forEach((p) => {
+    zeitraeume.forEach(({ p, typ }) => {
       const von = Math.max(0, spalteFuer(p.startDate));
       const bis = Math.min(wochen - 1, spalteFuer(p.endDate || rasterEnde.getTime()));
       if (bis < von) return;
-      // Alle Zeitraeume werden GLEICH gezeichnet — gleiche Farbe, gleiche Staerke
-      // (Leonard-Wunsch 01.09.2026). Die frueheren Abstufungen fuer archivierte, laufende
-      // und kommende Plaene sind entfallen; welcher Plan zu einem Tag gehoert, sagt die
-      // Beschreibung unter dem Raster.
       const links = von * SPALTE - 2;
       const breite = (bis - von + 1) * SPALTE - 3 + 4;
-      bands += `<span class="cal-band" style="left:${links}px;width:${breite}px"></span>`;
+      bands += `<span class="cal-band${typ === 'lauf' ? ' cal-band-run' : ''}" style="left:${links}px;width:${breite}px"></span>`;
     });
     bandsEl.innerHTML = bands;
   }
@@ -4087,12 +4089,13 @@ function showCalDay(key, id) {
     const lauf = runNachTag()[key];
     const gepl = runGeplanteTage()[key];
     if (lauf) {
-      // Nur Strecke und Zeit (Leonard-Wunsch 01.09.2026) — Pace und Puls sind entfallen.
-      txt += `<div class="cal-detail-run">Lauf: ${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}</div>`;
+      // Nur Strecke und Zeit, ohne das Wort „Lauf" (Leonard-Wunsch 01.09.2026) —
+      // Pace und Puls sind ebenfalls entfallen.
+      txt += `<div class="cal-detail-run">${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}</div>`;
     } else if (gepl) {
       const u = gepl.einheit;
       const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null].filter(Boolean).join(' · ') : '';
-      txt += `<div class="cal-detail-run geplant">Lauf geplant${soll ? ': ' + soll : ''}</div>`;
+      txt += `<div class="cal-detail-run geplant">geplant${soll ? ': ' + soll : ''}</div>`;
     }
   }
   el.innerHTML = txt;

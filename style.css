@@ -2050,6 +2050,14 @@ html.wo-running #wo-week-card { display: none; }
   border: 1.2px solid var(--cal-plan-color); border-radius: 6px;
   box-sizing: border-box;
 }
+/* Laufplan-Zeitraum: dasselbe Rechteck, aber im Hellgruen der Laufkreise (der Gym-Zeitraum
+   traegt das Dunkelgruen der trainierten Kerne). Der Ueberstand ist 2px kleiner, damit im
+   Modus „beide" beide Rahmen sichtbar bleiben, wenn sich die Zeitraeume ueberschneiden. */
+.cal-band-run {
+  border-color: #4ADE80;
+  top: calc(-1 * var(--cal-band-over) + 2px);
+  bottom: calc(-1 * var(--cal-band-over) + 2px);
+}
 .cal-grid { position: relative; z-index: 1; }
 
 /* Polster sitzt auf der Detailzeile, nicht auf dem Fuss: Ohne ausgewaehlten Tag ist die
