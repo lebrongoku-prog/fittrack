@@ -232,7 +232,9 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   wie vor dem Umbau der Fusszeile. Ein zwischenzeitlich gebauter Inline-Ausklappblock wurde
   wieder entfernt (Leonard-Wunsch: das Einheiten-Fenster bleibt).
   Der Handler MUSS `event.stopPropagation()` rufen, sonst raeumt `initCalendarDeselect` die
-  Beschreibung im selben Klick weg. Nachgetragene Tage ohne Aufzeichnung und Ruhetage bleiben
+  Beschreibung im selben Klick weg.
+  Ein Tag OHNE abdeckenden Plan bekommt gar keine zweite Zeile — der fruehere Text „kein Training"
+  ist am 04.09.2026 entfallen (Leonard-Wunsch). „Ruhetag" bleibt, wo ein Plan den Tag abdeckt. Nachgetragene Tage ohne Aufzeichnung und Ruhetage bleiben
   gewoehnlicher Text — ohne Einheit gibt es nichts aufzuklappen.
   Die frueheren Zeilen zum Trainingsplan (Name, Laufzeit) und zur Erfuellungsquote sind ENTFALLEN
   (Leonard-Wunsch); `planErfuellung` lebt weiter, wird vom Kalender aber nicht mehr genutzt.
@@ -461,8 +463,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   (`/intervalltraining|hochintensiv|hiit/i`) erkennt sie, `runZeileLesen` laesst sie durch und setzt
   `art: 'hiit'` (sonst `'lauf'`). Im Kalender bekommen diese Tage denselben hellgruenen Kreis wie ein Lauf
   und zaehlen in die Kennzahl der Laeufe mit. Unterschiedlich ist nur die BESCHRIFTUNG, weil eine Strecke
-  fehlt: Fusszeile und „Letzte Laeufe" zeigen „Intervalltraining: 28min · max. 182 bpm" (Dauer aus
-  `Duration (min)`, Puls aus `Max HR`) statt Strecke, Zeit, Pace und Durchschnittspuls.
+  fehlt: Die Fusszeile zeigt „HIIT: 28min · max. 182 bpm" (Dauer aus `Duration (min)`, Puls aus
+  `Max HR`) statt Strecke und Zeit.
   ACHTUNG: `istLauf` allein reicht NICHT — „Hochintensives Intervalltraining" enthaelt keines seiner
   Stichwoerter und wurde vorher stillschweigend weggefiltert.
 - **Kennzahl des Kalenders nennt beide Sportarten** (04.09.2026): Zeigt der Kalender beide (Filter
@@ -620,6 +622,16 @@ in keinem davon — die Daten gehoeren der Tabelle und werden beim naechsten Abr
 dem Montag der Startwoche), kein Wochenmuster wie die Trainingsplaene — die Einheiten sind deshalb
 EINGEBETTET und nicht wie die Trainingstage geteilte Bausteine. Das Datum einer Einheit wird
 GERECHNET (`runEinheitDatum`), nicht gespeichert: Verschiebt man den Plan, wandert alles mit.
+
+**Die Verbindung zur Tabelle steht in den EINSTELLUNGEN**, oberhalb des Papierkorbs
+(Abschnitt „Laufdaten", `#run-source-card`, gefuellt von `renderRunSourceCard()`) — seit dem
+04.09.2026, vorher als Karte auf der Seite „Laufen" im Trainings-Tab. Es ist eine
+Einrichtungssache, keine Trainingsinformation (Leonard-Wunsch). Aufgefrischt wird sie in
+`renderMehr()` und an beiden Enden von `runLaeufeLaden`. Mit ihr wanderte NICHTS anderes:
+Die Seite „Laufen" zeigt jetzt nur noch Laufwochenplan und „Diese Woche"; die Karte
+„Letzte Laeufe" ist am selben Tag ersatzlos entfallen (mit ihr die CSS-Regeln
+`.lauf-liste`/`.lauf-row*`).
+`.mehr-card` bringt KEIN Polster mit — `#run-source-card .lauf-quelle` setzt die 14px selbst.
 
 **Oberflaeche:** Seitenschalter `Laufkalender | Laufplanverwaltung` (`setLaufView`, `_laufSeite`).
 Auf- und Zuklappen einer Woche laeuft OHNE Neuaufbau (`toggleRunWoche` schaltet nur `display`) und

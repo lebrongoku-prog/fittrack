@@ -1820,6 +1820,8 @@ html.wo-running #wo-week-card { display: none; }
 
 /* ─── Laufen (Tab 5) ─── */
 .lauf-quelle { display: flex; align-items: center; gap: 12px; }
+/* Die Karte steht in den Einstellungen; .mehr-card bringt kein Polster mit. */
+#run-source-card .lauf-quelle { padding: 14px; }
 .lauf-quelle-txt { flex: 1; min-width: 0; font-size: 13px; color: var(--text2); line-height: 1.45; }
 .lauf-dim { color: var(--text3); font-size: 12px; }
 .lauf-fehler { margin-top: 6px; color: var(--red); font-size: 12px; line-height: 1.4; }
@@ -1827,11 +1829,6 @@ html.wo-running #wo-week-card { display: none; }
 .lauf-kennz { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .lauf-kennz-v { font-size: 17px; font-weight: 700; color: var(--text); }
 .lauf-kennz-l { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
-.lauf-liste { display: flex; flex-direction: column; }
-.lauf-row { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; }
-.lauf-row + .lauf-row { border-top: 1px solid var(--border); }
-.lauf-row-tag { flex: 0 0 92px; font-size: 13px; font-weight: 600; color: var(--text); }
-.lauf-row-werte { flex: 1; min-width: 0; font-size: 12px; color: var(--text2); }
 .lauf-leer { font-size: 13px; color: var(--text3); text-align: center; padding: 10px 0; }
 /* Eingeklappte Plan-Karte: wie eine Listenzeile, aufgeklappt wird sie zum Formular. */
 .lauf-plan .ppv-meta { margin-top: 2px; }

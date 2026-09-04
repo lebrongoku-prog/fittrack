@@ -3449,7 +3449,7 @@ function runZeileLesen(kopf, zeile) {
 async function runLaeufeLaden({ interactive = false } = {}) {
   if (runLaden) return;
   runLaden = true; runFehler = '';
-  renderLaufVerwaltung();
+  renderLaufVerwaltung(); renderRunSourceCard();
   try {
     if (!runVerbunden()) await runRequestToken({ interactive });
     const kopfR = await fetch(
@@ -3481,7 +3481,7 @@ async function runLaeufeLaden({ interactive = false } = {}) {
       : roh;
   } finally {
     runLaden = false;
-    renderLaufVerwaltung();
+    renderLaufVerwaltung(); renderRunSourceCard();
     if (currentScreen === 'overview') renderOverview();
   }
 }
@@ -3569,23 +3569,6 @@ function renderLaufKalenderSeite() {
   const laeufe = DB.getRuns();
   const stand = DB.getRunsStand();
 
-  // Verbindungskarte: ohne Tabellenzugriff gibt es hier nichts zu zeigen.
-  const standTxt = stand
-    ? `Zuletzt gelesen: ${new Date(stand).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
-    : 'Noch nie gelesen';
-  const verbindung = `<div class="chart-card-v2">
-    <div class="chart-card-v2-head"><span class="chart-card-v2-title">Laufdaten</span></div>
-    <div class="lauf-quelle">
-      <div class="lauf-quelle-txt">
-        <strong>${laeufe.length} ${laeufe.length === 1 ? 'Lauf' : 'Läufe'}</strong> aus „Workout Data"<br>
-        <span class="lauf-dim">${escapeHtml(standTxt)}</span>
-        ${runFehler ? `<div class="lauf-fehler">${escapeHtml(runFehler)}</div>` : ''}
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="runLaeufeLaden({interactive:true})" ${runLaden ? 'disabled' : ''}>
-        ${runLaden ? 'Lese …' : (stand ? 'Aktualisieren' : 'Verbinden')}</button>
-    </div>
-  </div>`;
-
   // Diese Woche: Umfang gegen den Plan.
   const mo = new Date(); mo.setHours(0, 0, 0, 0);
   mo.setDate(mo.getDate() - ((mo.getDay() + 6) % 7));
@@ -3614,25 +3597,29 @@ function renderLaufKalenderSeite() {
     </div>
   </div>`;
 
-  // Letzte Läufe
-  const liste = laeufe.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 12);
-  const zeilen = liste.length ? liste.map(l => {
-    const [y, m, d] = l.date.split('-').map(Number);
-    const datum = new Date(y, m - 1, d).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' });
-    const werte = l.art === 'hiit'
-      ? ['Intervalltraining', fmtMin(l.minutes), l.maxHR ? `max. ${Math.round(l.maxHR)} bpm` : null].filter(Boolean).join(' · ')
-      : `${fmtKm(l.km)} · ${fmtMin(l.minutes)} · ${fmtPace(l.kmh)}${l.avgHR ? ` · ${Math.round(l.avgHR)} bpm` : ''}`;
-    return `<div class="lauf-row">
-      <div class="lauf-row-tag">${datum}</div>
-      <div class="lauf-row-werte">${werte}</div>
-    </div>`;
-  }).join('') : '<p class="lauf-leer">Noch keine Läufe gelesen.</p>';
-  const letzte = `<div class="chart-card-v2">
-    <div class="chart-card-v2-head"><span class="chart-card-v2-title">Letzte Läufe</span></div>
-    <div class="lauf-liste">${zeilen}</div>
-  </div>`;
+  el.innerHTML = wochenplan + woche;
+}
 
-  el.innerHTML = wochenplan + verbindung + woche + letzte;
+// Verbindung zur Tabelle „Workout Data". Steht seit dem 04.09.2026 in den EINSTELLUNGEN
+// (oberhalb des Papierkorbs), nicht mehr im Trainings-Tab — es ist eine Einrichtungssache,
+// keine Trainingsinformation (Leonard-Wunsch).
+function renderRunSourceCard() {
+  const el = document.getElementById('run-source-card');
+  if (!el) return;
+  const laeufe = DB.getRuns();
+  const stand = DB.getRunsStand();
+  const standTxt = stand
+    ? `Zuletzt gelesen: ${new Date(stand).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
+    : 'Noch nie gelesen';
+  el.innerHTML = `<div class="lauf-quelle">
+      <div class="lauf-quelle-txt">
+        <strong>${laeufe.length} ${laeufe.length === 1 ? 'Lauf' : 'Läufe'}</strong> aus „Workout Data"<br>
+        <span class="lauf-dim">${escapeHtml(standTxt)}</span>
+        ${runFehler ? `<div class="lauf-fehler">${escapeHtml(runFehler)}</div>` : ''}
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="runLaeufeLaden({interactive:true})" ${runLaden ? 'disabled' : ''}>
+        ${runLaden ? 'Lese …' : (stand ? 'Aktualisieren' : 'Verbinden')}</button>
+    </div>`;
 }
 
 // ── Seite 2: Laufplanverwaltung ────────────────────────────────────
@@ -4205,8 +4192,10 @@ function showCalDay(key, id) {
       const kommt = new Date(y, m-1, d).getTime() > heute.getTime();
       txt += `<div class="cal-detail-tag-txt">geplant: ${plan.name ? escapeHtml(plan.name) : 'Training'}`
            + (kommt ? '' : ' · nicht trainiert') + '</div>';
-    } else {
-      txt += `<div class="cal-detail-tag-txt">${plan.known ? 'Ruhetag' : 'kein Training'}</div>`;
+    } else if (plan.known) {
+      // Ohne abdeckenden Plan bleibt die Zeile WEG — „kein Training" sagte nichts aus
+      // (Leonard-Wunsch 04.09.2026).
+      txt += `<div class="cal-detail-tag-txt">Ruhetag</div>`;
     }
   }
 
@@ -4221,7 +4210,7 @@ function showCalDay(key, id) {
       const werte = lauf.art === 'hiit'
         ? [fmtMin(lauf.minutes), lauf.maxHR ? `max. ${Math.round(lauf.maxHR)} bpm` : null].filter(Boolean).join(' · ')
         : `${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}`;
-      const bez = lauf.art === 'hiit' ? 'Intervalltraining: ' : '';
+      const bez = lauf.art === 'hiit' ? 'HIIT: ' : '';
       txt += `<div class="cal-detail-run">${bez}${werte}</div>`;
     } else if (gepl) {
       const u = gepl.einheit;
@@ -4540,6 +4529,7 @@ function renderMehr() {
   // Einstellungen-Overlay: Cloud-Sync, Papierkorb, Daten & Sicherheit.
   // Trainingsplan-Daten/Wochenplan/Trainingstage sind in den Plan-Detail-Screen umgezogen.
   if (typeof renderDriveStatus === 'function') renderDriveStatus();
+  renderRunSourceCard();
   renderTrash();
 }
 
