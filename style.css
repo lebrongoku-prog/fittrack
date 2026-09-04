@@ -101,14 +101,6 @@ body.theme-plans {
   --gradient-from:      #78350F;
   --card-accent-border: rgba(245, 158, 11, 0.35);
 }
-body.theme-laufen {
-  --accent:             #8B5CF6;       /* violet-500 — eigene Domaene neben dem Krafttraining */
-  --accent-bg:          rgba(139, 92, 246, 0.12);
-  --accent-soft:        #EDE9FE;       /* violet-100 */
-  --accent-dark:        #5B21B6;       /* violet-800 */
-  --gradient-from:      #4C1D95;
-  --card-accent-border: rgba(139, 92, 246, 0.35);
-}
 body.theme-exercises {
   --accent:             #1E40AF;       /* blue-800 (Marineblau) */
   --accent-bg:          rgba(30, 64, 175, 0.12);
@@ -312,7 +304,6 @@ html.workout-active body.theme-workouts #screen-workouts { padding-bottom: calc(
 body.theme-overview .ph h1,
 body.theme-workouts .ph h1,
 body.theme-plans .ph h1,
-body.theme-laufen .ph h1,
 body.theme-exercises .ph h1  { color: #fff; }
 body.theme-overview .ph-sub,
 body.theme-workouts .ph-sub,
@@ -423,8 +414,7 @@ body.theme-plans .hist-action-dd {
 #screen-overview,
 #screen-workouts,
 #screen-exercises,
-#screen-plans,
-#screen-laufen    { background: transparent; }
+#screen-plans     { background: transparent; }
 #screen-mehr      { background: var(--bg); }
 /* Plan-Detail teilt Theme mit Plans (Amber). */
 #screen-plan-detail { background: linear-gradient(135deg, #78350F, #F59E0B); }
@@ -2551,8 +2541,10 @@ html.wo-running #wo-week-card { display: none; }
   /* ACHTUNG `.active`: Die Klasse steht FEST im Markup an `#screen-overview` und wandert NIE
      zu einem anderen Tab — `_applyTabState` fasst sie nicht an. `#screen-workouts.active`
      haette also nie gegriffen (Leonard-Meldung 01.09.2026). Hier deshalb `.screen`, das
-     immer passt und dieselbe Spezifitaet hat wie `.active` bei der Uebersicht. */
-  #screen-workouts.screen {
+     immer passt und dieselbe Spezifitaet hat wie `.active` bei der Uebersicht.
+     Seit dem Seitenschalter (Gym | Laufen) liegt das Grid an der Gym-HUELLE: Wochenplan und
+     Herocard sind keine direkten Kinder des Screens mehr. */
+  #wo-view-gym {
     display: grid;
     grid-template-columns: 1fr 1fr;
     column-gap: 0;
@@ -2562,29 +2554,28 @@ html.wo-running #wo-week-card { display: none; }
        darin weiter (siehe unten). */
     align-content: start;
   }
-  #screen-workouts.screen > #wo-week-card,
-  #screen-workouts.screen > #wo-session-card-wrap { display: flex; flex-direction: column; }
-  #screen-workouts.screen > #wo-week-card > *,
-  #screen-workouts.screen > #wo-session-card-wrap > * { flex: 1; }
+  #wo-view-gym > #wo-week-card,
+  #wo-view-gym > #wo-session-card-wrap { display: flex; flex-direction: column; }
+  #wo-view-gym > #wo-week-card > *,
+  #wo-view-gym > #wo-session-card-wrap > * { flex: 1; }
   /* Gestreckt bekaeme die Wochenplan-Karte sonst ein Loch unten — ihr Inhalt sitzt
      stattdessen senkrecht mittig. */
-  #screen-workouts.screen > #wo-week-card > .plan-card-v2 {
+  #wo-view-gym > #wo-week-card > .plan-card-v2 {
     display: flex; flex-direction: column; justify-content: center;
   }
-  #screen-workouts.screen > .ph,
-  #screen-workouts.screen > .ex-tab-v2-bar,
-  #screen-workouts.screen > #active-ex-list,
-  #screen-workouts.screen > #wo-add-ex-wrap { grid-column: 1 / -1; }
-  #screen-workouts.screen > #wo-week-card { grid-column: 1; }
-  #screen-workouts.screen > #wo-session-card-wrap { grid-column: 2; }
+  #wo-view-gym > .ex-tab-v2-bar,
+  #wo-view-gym > #active-ex-list,
+  #wo-view-gym > #wo-add-ex-wrap { grid-column: 1 / -1; }
+  #wo-view-gym > #wo-week-card { grid-column: 1; }
+  #wo-view-gym > #wo-session-card-wrap { grid-column: 2; }
   /* Waehrend einer laufenden Einheit ist die Wochenplan-Karte ausgeblendet — der Kopf der
      Einheit nimmt dann die ganze Breite, sonst bliebe die linke Spalte leer. */
-  html.wo-running #screen-workouts.screen > #wo-session-card-wrap { grid-column: 1 / -1; }
+  html.wo-running #wo-view-gym > #wo-session-card-wrap { grid-column: 1 / -1; }
   /* Das Ausblenden MUSS hier wiederholt werden: Die globale Regel `html.wo-running
      #wo-week-card { display:none }` hat nur EINE ID, die Grid-Regel darueber
-     (`#screen-workouts.screen > #wo-week-card`) hat ZWEI und gewinnt deshalb — die Karte
+     (`#wo-view-gym > #wo-week-card`) hat ZWEI und gewinnt deshalb — die Karte
      blieb im Querformat waehrend einer laufenden Einheit stehen (Leonard-Meldung 01.09.2026). */
-  html.wo-running #screen-workouts.screen > #wo-week-card { display: none; }
+  html.wo-running #wo-view-gym > #wo-week-card { display: none; }
 
   /* STATS — Volumenentwicklung und Volumen pro Muskelgruppe teilen sich die erste Zeile
      (Leonard-Wunsch 01.09.2026). Ohne `align-items` bleibt die Grid-Vorgabe `stretch`, und

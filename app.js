@@ -620,7 +620,7 @@ let currentScreen = 'overview';
 
 // Vier Haupt-Tabs. „Mehr" (Sicherung, Import/Export, Diagnose) ist kein Tab mehr, sondern
 // ein Overlay hinter dem Zahnrad in der Übersicht — es wird selten und nie im Training gebraucht.
-const TAB_ORDER = ['overview', 'workouts', 'exercises', 'plans', 'laufen'];
+const TAB_ORDER = ['overview', 'workouts', 'exercises', 'plans'];
 
 // Wenn JS gerade einen Scroll programmatisch ausloest, soll der Scroll-Listener
 // nicht zusaetzlich currentScreen/Theme/Renderer triggern (vermeidet Doppel-Render).
@@ -652,7 +652,6 @@ const THEME_GRADIENTS = {
   workouts:  'linear-gradient(135deg, #064E3B, #10B981)',
   plans:     'linear-gradient(135deg, #78350F, #F59E0B)',
   exercises: 'linear-gradient(135deg, #172554, #1E40AF)',
-  laufen:    'linear-gradient(135deg, #4C1D95, #8B5CF6)',   // Violett — eigene Domaene
   mehr:      'linear-gradient(135deg, #DBEAFE, #DBEAFE)',   // solid hellblau, kein sichtbarer Verlauf
 };
 // Swipe-gebundener Background-Uebergang.
@@ -747,7 +746,6 @@ function _applyTabState(name) {
   else if (name === 'workouts') renderWorkoutsScreen();
   else if (name === 'exercises') renderExercisesScreen();
   else if (name === 'plans') renderPlansScreen();
-  else if (name === 'laufen') renderLaufenScreen();
   else if (name === 'plan-detail') renderPlanDetail();
   else if (name === 'day-detail') renderLibDayDetail();
   else if (name === 'mehr') renderMehr();
@@ -1591,7 +1589,27 @@ function renderWorkoutWeekStrip() {
        </div>`;
 }
 
+// Trainings-Tab: „Gym" (Krafttraining) und „Laufen" (gelaufene Einheiten).
+let workoutsViewMode = 'gym';
+function setWorkoutsView(mode) {
+  workoutsViewMode = (mode === 'laufen') ? 'laufen' : 'gym';
+  renderWorkoutsScreen();
+}
+
 function renderWorkoutsScreen() {
+  const segG = document.getElementById('seg-wo-gym');
+  const segL = document.getElementById('seg-wo-lauf');
+  if (segG) segG.classList.toggle('active', workoutsViewMode === 'gym');
+  if (segL) segL.classList.toggle('active', workoutsViewMode === 'laufen');
+  const vG = document.getElementById('wo-view-gym');
+  const vL = document.getElementById('wo-view-laufen');
+  if (vG) vG.style.display = workoutsViewMode === 'gym' ? '' : 'none';
+  if (vL) vL.style.display = workoutsViewMode === 'laufen' ? '' : 'none';
+  if (workoutsViewMode === 'laufen') { renderLaufKalenderSeite(); return; }
+  _renderGymSeite();
+}
+
+function _renderGymSeite() {
   ensureSelectedDayIdx();
   // WICHTIG: Der Workouts-Tab zeigt IMMER den AKTIVEN Plan (per Datum) — niemals den Edit-Kontext
   // (editingPlanId) und niemals den DEFAULT_PLAN/DEFAULT_WEEKPLAN-Fallback von DB.getPlan/getWeekPlan.
@@ -3319,7 +3337,7 @@ function runZeileLesen(kopf, zeile) {
 async function runLaeufeLaden({ interactive = false } = {}) {
   if (runLaden) return;
   runLaden = true; runFehler = '';
-  renderLaufenScreen();
+  renderLaufVerwaltung();
   try {
     if (!runVerbunden()) await runRequestToken({ interactive });
     const kopfR = await fetch(
@@ -3351,7 +3369,7 @@ async function runLaeufeLaden({ interactive = false } = {}) {
       : roh;
   } finally {
     runLaden = false;
-    renderLaufenScreen();
+    renderLaufVerwaltung();
     if (currentScreen === 'overview') renderOverview();
   }
 }
@@ -3422,28 +3440,17 @@ function fmtMin(v) {
   return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}min` : `${m}min`;
 }
 
-// ── Oberflaeche: zwei Seiten ueber den Seitenschalter, wie in HCC ──
-let _laufSeite = 'kalender';        // 'kalender' | 'verwaltung'
+// ── Oberflaeche ────────────────────────────────────────────────────
+// Die Laufinhalte sind seit 01.09.2026 auf zwei bestehende Tabs verteilt (Leonard-Wunsch,
+// der eigene Tab „Laufen" ist entfallen):
+//   • Trainings-Tab, Seite „Laufen"  → Ueberblick ueber die gelaufenen Einheiten
+//   • Plaene-Tab, Seite „Laufplan"   → Laufplanverwaltung
 let _laufOffeneWochen = new Set();  // mehrere Wochen duerfen gleichzeitig offen sein
 let _laufOffenePlaene = new Set();
 
-function setLaufView(seite) { _laufSeite = seite; renderLaufenScreen(); }
-
-function renderLaufenScreen() {
-  const segK = document.getElementById('seg-lauf-kalender');
-  const segV = document.getElementById('seg-lauf-verwaltung');
-  if (segK) segK.classList.toggle('active', _laufSeite === 'kalender');
-  if (segV) segV.classList.toggle('active', _laufSeite === 'verwaltung');
-  const vK = document.getElementById('lauf-view-kalender');
-  const vV = document.getElementById('lauf-view-verwaltung');
-  if (vK) vK.style.display = _laufSeite === 'kalender' ? '' : 'none';
-  if (vV) vV.style.display = _laufSeite === 'verwaltung' ? '' : 'none';
-  if (_laufSeite === 'kalender') renderLaufKalenderSeite(); else renderLaufVerwaltung();
-}
-
 // ── Seite 1: Überblick über die gelaufenen Einheiten ───────────────
 function renderLaufKalenderSeite() {
-  const el = document.getElementById('lauf-view-kalender');
+  const el = document.getElementById('wo-view-laufen');
   if (!el) return;
   const laeufe = DB.getRuns();
   const stand = DB.getRunsStand();
@@ -3513,7 +3520,7 @@ function renderLaufKalenderSeite() {
 
 // ── Seite 2: Laufplanverwaltung ────────────────────────────────────
 function renderLaufVerwaltung() {
-  const el = document.getElementById('lauf-view-verwaltung');
+  const el = document.getElementById('runplans-list');
   if (!el) return;
   const plaene = DB.getRunPlans();
   const aktiv = plaene.filter(p => !p.archived).sort((a, b) => (a.startDate || 0) - (b.startDate || 0));
@@ -3657,8 +3664,8 @@ function deleteRunPlan(id) {
       DB.saveRunPlans(DB.getRunPlans().filter(x => x.id !== id));
       if (p) trashPut('runplan', p.name || 'Laufplan', p);
       _laufOffenePlaene.delete(id);
-    }, () => { renderLaufenScreen(); if (currentScreen === 'overview') renderOverview(); });
-    renderLaufenScreen();
+    }, () => { renderLaufVerwaltung(); if (currentScreen === 'overview') renderOverview(); });
+    renderLaufVerwaltung();
     if (currentScreen === 'overview') renderOverview();
   }, { danger: true, confirmLabel: 'Löschen' });
 }
@@ -3670,9 +3677,9 @@ function neuerLaufplan() {
               startDate: heute.getTime(), endDate: ende.getTime(),
               runDays: [1, 5, 6], archived: false, raceDate: null, units: [] };
   const ps = DB.getRunPlans(); ps.push(p); DB.saveRunPlans(ps);
-  _laufSeite = 'verwaltung';
+  plansViewMode = 'runplans';
   _laufOffenePlaene.add(p.id);
-  renderLaufenScreen();
+  renderPlansScreen();
 }
 
 // ─── Trainingskalender ─────────────────────────────────────────────
@@ -4765,12 +4772,13 @@ let editingLibDayId = null;     // aktuell im Tag-Detail bearbeiteter Bibliothek
 let libDaysArchiveExpanded = false;
 
 function setPlansView(mode) {
-  if (mode !== 'plans' && mode !== 'days') return;
+  if (mode !== 'plans' && mode !== 'days' && mode !== 'runplans') return;
   plansViewMode = mode;
   renderPlansScreen();
 }
 function onPlansAdd() {
   if (plansViewMode === 'days') createNewLibDay();
+  else if (plansViewMode === 'runplans') neuerLaufplan();
   else openPlanSourceModal();
 }
 
@@ -4948,24 +4956,26 @@ function copyExistingPlan(planId) {
 }
 // Rendert die im Plans-Tab aktive Unteransicht (Pläne ODER Trainingstage-Bibliothek).
 function renderPlansScreen() {
-  const segP = document.getElementById('seg-plans');
-  const segD = document.getElementById('seg-days');
-  if (segP) segP.classList.toggle('active', plansViewMode === 'plans');
-  if (segD) segD.classList.toggle('active', plansViewMode === 'days');
+  const seg = { plans: 'seg-plans', days: 'seg-days', runplans: 'seg-runplans' };
+  Object.keys(seg).forEach(k => {
+    const el = document.getElementById(seg[k]);
+    if (el) el.classList.toggle('active', plansViewMode === k);
+  });
   const plansList = document.getElementById('plans-list');
   const daysList = document.getElementById('libdays-list');
+  const runList = document.getElementById('runplans-list');
   const h1 = document.getElementById('plans-h1');
   const calCard = document.getElementById('plans-cal-card');
-  if (plansViewMode === 'days') {
-    if (plansList) plansList.style.display = 'none';
-    if (daysList) daysList.style.display = '';
-    if (calCard) calCard.style.display = 'none';   // gehoert zum Plan, nicht zur Tage-Bibliothek
-    if (h1) h1.textContent = 'Trainingstage';
-    renderLibDays();
-  } else {
-    if (plansList) plansList.style.display = '';
-    if (daysList) daysList.style.display = 'none';
-    if (calCard) { calCard.style.display = ''; renderTrainingCalendar('pcal', 'plans-cal-card'); }
+  const zeige = (el, an) => { if (el) el.style.display = an ? '' : 'none'; };
+  zeige(plansList, plansViewMode === 'plans');
+  zeige(daysList, plansViewMode === 'days');
+  zeige(runList, plansViewMode === 'runplans');
+  // Der Trainingskalender gehoert zum Trainingsplan — weder zur Tage-Bibliothek noch zum Laufplan.
+  zeige(calCard, plansViewMode === 'plans');
+  if (plansViewMode === 'days') { if (h1) h1.textContent = 'Trainingstage'; renderLibDays(); }
+  else if (plansViewMode === 'runplans') { if (h1) h1.textContent = 'Laufplan'; renderLaufVerwaltung(); }
+  else {
+    if (calCard) renderTrainingCalendar('pcal', 'plans-cal-card');
     if (h1) h1.textContent = 'Trainingsplan';
     renderPlans();
   }
@@ -7983,7 +7993,6 @@ function prerenderAllTabs() {
   try { renderWorkoutsScreen(); } catch (e) { console.warn('prerender workouts', e); }
   try { renderExercisesScreen(); } catch (e) { console.warn('prerender exercises', e); }
   try { renderPlansScreen(); }    catch (e) { console.warn('prerender plans', e); }
-  try { renderLaufenScreen(); }   catch (e) { console.warn('prerender laufen', e); }
   try { renderMehr(); }           catch (e) { console.warn('prerender mehr', e); }
 }
 

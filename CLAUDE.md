@@ -542,9 +542,20 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   die Sperre `_navTickingByTab` bleibt dann auf `true` haengen und JEDES weitere Scroll-Ereignis wird verworfen.
 - Übersicht hat eine Plan-Dashboard-Karte (`buildPlanCard`) + „Letzte Sessions" + Volumen-Chart (`renderVolumeChart`, Chart.js).
 
-## Laufen (Tab 5)
+## Laufen
 
 Uebernommen aus der App „Health Command Center" (01.09.2026, Leonard-Entscheidung).
+**KEIN eigener Tab** — der fuenfte Tab wurde am 01.09.2026 wieder entfernt und der Inhalt auf zwei
+bestehende Tabs verteilt (Leonard-Wunsch):
+- **Trainings-Tab**, Seitenschalter `Gym | Laufen` (`setWorkoutsView`, `workoutsViewMode`,
+  Huellen `#wo-view-gym` / `#wo-view-laufen`). Gym = das bisherige Krafttraining,
+  Laufen = der Ueberblick ueber die gelaufenen Einheiten (`renderLaufKalenderSeite`).
+- **Plaene-Tab**, DRITTE Seite `Laufplan` (`setPlansView('runplans')`, Liste `#runplans-list`,
+  `renderLaufVerwaltung`). Das „+" im Kopf legt dort einen Laufplan an (`onPlansAdd`).
+  Der Trainingskalender gehoert zur Seite „Trainingsplan" und ist auf den anderen beiden aus.
+ACHTUNG: Das Querformat-Grid des Trainings-Tabs haengt seit dem Seitenschalter an
+`#wo-view-gym`, NICHT mehr am Screen — Wochenplan und Herocard sind keine direkten Kinder
+des Screens mehr.
 **Zwei Quellen, streng getrennt:**
 - Die **gelaufenen Einheiten** kommen aus Leonards Google-Tabelle „Workout Data" (Ordner
   „health auto export", `RUN_SHEET_ID`). FitTrack **liest nur** und schreibt dort nie hinein.
