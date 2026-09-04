@@ -633,6 +633,36 @@ Die Seite „Laufen" zeigt jetzt nur noch Laufwochenplan und „Diese Woche"; di
 `.lauf-liste`/`.lauf-row*`).
 `.mehr-card` bringt KEIN Polster mit — `#run-source-card .lauf-quelle` setzt die 14px selbst.
 
+**„Jetzt synchronisieren" holt BEIDES** (04.09.2026): `driveManualSync` sichert erst nach Drive
+und ruft danach `runLaeufeLaden({interactive:false})` — aber NUR, wenn `DB.getRunsStand()` gesetzt
+ist. Ohne diese Bedingung spraenge mitten in der Drive-Sicherung ein zweites Google-Anmeldefenster
+auf (die Tabelle haengt an einem eigenen Token-Client). `interactive:false` heisst `prompt: ''`,
+also stille Verlaengerung — das setzt eine frueher erteilte Zustimmung voraus, genau der Fall, den
+`getRunsStand()` abfragt. Der automatische Sync (`markLocalChange`, `driveInit`) ruft die Tabelle
+BEWUSST nicht mit ab.
+
+**Aufbau der aufgeklappten Laufplan-Karte** (04.09.2026, an die Gymplan-Detailansicht angeglichen):
+`.lauf-plan.offen` hat `padding: 0` — die `.program-form-row`s bringen die 14px selbst mit, so wie
+`.mehr-card` im Plan-Detail. Vorher lagen zwei Polster uebereinander (Karte 14px + Zeile 14px):
+Die Eingabefelder waren 295px breit, die Wochenbloecke danebenliegend 323px und liefen bis an den
+Kartenrand. Kopf (`.ppv-head`) und Wochenbloecke (`.lp-woche`) tragen den Einzug jetzt selbst.
+Alles ist damit 323px breit, genau wie im Gymplan.
+- **Start | Ende | Wochen in EINER Zeile** (`.lp-3col`). Die Wochenzahl ist ABGELEITET
+  (`runPlanWochen`) und deshalb kein Eingabefeld, sondern `.lp-wochen-v` — sieht aus wie eines,
+  gleiche Hoehe. Der Abschnittstitel heisst nur noch „Lauftage" (die Wochenzahl stand vorher dort).
+- **Datumsfelder erben die Schrift nicht von selbst** — der Browser setzt `<input type="date">` auf
+  MONOSPACE. `.program-form-row input[type="date"] { font-family: inherit }` behebt das global
+  (Gymplan wie Laufplan) und ist Voraussetzung fuer die dreispaltige Zeile: „03.09.2026" misst in
+  Monospace 97px, in der App-Schrift 85px. Bei 131px Feldbreite abzueglich Polster und dem rund
+  17px breiten Kalendersymbol von Chrome ging es vorher um 1px nicht auf — sichtbar als
+  „03.09.202". Das seitliche Polster ist in dieser Zeile zusaetzlich auf 8px verkleinert.
+- **`.lp-einheit` hat feste, schmalere Felder** (60px statt mitwachsend) und `justify-content:
+  center`. Dadurch ist die Tagesspalte gegenueber den Formularfeldern darueber um 14px
+  eingerueckt (Leonard-Wunsch).
+- **Transparenz-Modus:** `.lp-tagwahl.an` faerbt sich mit `--accent` — das ist auf einer Glas-Karte
+  Weiss, die weisse Beschriftung verschwand darauf restlos. Eigene Glas-Regel: hellere Flaeche
+  (30 % Weiss), weisser Rand, weisse Schrift — dieselbe Loesung wie beim Seitenschalter.
+
 **Oberflaeche:** Seitenschalter `Laufkalender | Laufplanverwaltung` (`setLaufView`, `_laufSeite`).
 Auf- und Zuklappen einer Woche laeuft OHNE Neuaufbau (`toggleRunWoche` schaltet nur `display`) und
 die Einheiten sichern sich beim Verlassen des Feldes ohne Re-Render — sonst verlieren die

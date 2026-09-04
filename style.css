@@ -1140,6 +1140,13 @@ html.glas .screen:not(#screen-mehr) #day-add-ex-wrap .btn {
 }
 /* Das native Kalender-Symbol in Datumsfeldern ist schwarz gezeichnet. */
 html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+/* Gewaehlte Lauftage: `.lp-tagwahl.an` faerbt sich mit `--accent` — das ist auf einer
+   Glas-Karte Weiss, die weisse Beschriftung verschwand darauf restlos (Leonard-Meldung
+   04.09.2026). Stattdessen dieselbe Loesung wie beim Seitenschalter: hellere Flaeche,
+   weisser Rand, weisse Schrift. */
+html.glas .screen:not(#screen-mehr) .lp-tagwahl.an {
+  background: rgba(255,255,255,.30); border-color: rgba(255,255,255,.9); color: #fff;
+}
 /* Der Knopf selbst zeigt seinen Zustand. */
 #glas-btn[aria-pressed="true"] { background: rgba(255,255,255,.42); }
 
@@ -1851,8 +1858,12 @@ html.wo-running #wo-week-card { display: none; }
 .lp-woche-btn[aria-expanded="false"]::after { transform: rotate(-90deg); }
 /* Feste Spalten statt Umbruch: Auf iPhone-Breite rutschte die Zone sonst in eine zweite Zeile. */
 .lp-einheit {
-  display: grid; grid-template-columns: 50px minmax(0,1fr) 15px minmax(0,1fr) 21px 64px;
+  display: grid; grid-template-columns: 50px 60px 15px 60px 21px 64px;
   gap: 5px; align-items: center; padding: 4px 0;
+  /* Feste statt mitwachsender Felder, und die ganze Zeile mittig — dadurch ist die
+     Tagesspalte gegenueber den Formularfeldern darueber leicht eingerueckt
+     (Leonard-Wunsch 04.09.2026). Vorher fuellten die Felder die Zeile bis zum Rand. */
+  justify-content: center;
 }
 .lp-tag { display: flex; flex-direction: column; line-height: 1.15; }
 .lp-tag strong { font-size: 13px; color: var(--text); }
@@ -1876,10 +1887,28 @@ html.wo-running #wo-week-card { display: none; }
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .lp-tagwahl.an { background: var(--accent); border-color: var(--accent); color: #fff; }
-/* Start und Ende UNTEREINANDER: Nebeneinander bleiben je rund 157px, und das native
-   Datumsfeld schneidet dort die Jahreszahl ab — „03.09.20" liest sich wie 2020. */
-.lauf-plan .program-form-row-2col { flex-direction: column; gap: 0; }
-.lauf-plan .program-form-row-2col > div { min-width: 0; }
+/* Aufgeklappt traegt die KARTE kein eigenes Polster mehr — die Formularzeilen bringen es
+   selbst mit, genau wie in der Gymplan-Detailansicht (dort ist .mehr-card polsterlos).
+   Vorher lagen zwei Polster uebereinander: Die Eingabefelder waren 28px schmaler als die
+   Wochenbloecke, die bis an den Kartenrand liefen (Leonard-Meldung 04.09.2026). */
+.lauf-plan.offen { padding: 0; }
+.lauf-plan.offen > .ppv-head { padding: 14px 14px 0; }
+.lauf-plan.offen > .lp-woche { margin: 8px 14px 0; }
+/* Start | Ende | Wochen in einer Zeile. Die Wochenzahl wird aus Start und Ende
+   ABGELEITET und ist deshalb kein Eingabefeld, sieht aber aus wie eines.
+   Platzrechnung: 323px Zeile − 46px Wochen − 2×8px Abstand = 130px je Datumsfeld;
+   „03.09.2026" braucht darin 97px Text. Das seitliche Polster ist deshalb auf 8px
+   verkleinert — mit den urspruenglichen 12px bleibt kaum Reserve, und ein
+   abgeschnittenes „03.09.20" liest sich wie 2020. */
+.lauf-plan .lp-3col { flex-direction: row; gap: 8px; }
+.lauf-plan .lp-3col > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 0; }
+.lauf-plan .lp-3col > .lp-wochen { flex: 0 0 46px; }
+.lauf-plan .lp-3col input[type="date"] { padding-left: 8px; padding-right: 8px; }
+.lp-wochen-v {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 4px; font-size: 16px; font-weight: 600; color: var(--text);
+  text-align: center; line-height: 21px;
+}
 .lauf-plan .program-form-row input[type="date"] { width: 100%; min-width: 0; box-sizing: border-box; }
 
 /* ─── Trainingskalender ─── */
@@ -2367,6 +2396,11 @@ html.wo-running #wo-week-card { display: none; }
 /* color MUSS gesetzt sein: <input> erbt die Textfarbe nicht, sonst bleibt sie beim
    Browser-Schwarz — im Glas-Modus auf dem Schleier unlesbar. */
 .program-form-row input { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 15px; color: var(--text); }
+/* Datumsfelder erben die Schrift NICHT von selbst — der Browser setzt sie auf Monospace.
+   Das ist nicht nur ein Bruch gegenueber den uebrigen Feldern, es kostet auch Breite:
+   „03.09.2026" misst in Monospace 97px, in der App-Schrift 85px. Erst damit passen Start
+   und Ende im Laufplan neben die Wochenzahl (04.09.2026). */
+.program-form-row input[type="date"] { font-family: inherit; }
 .program-form-row input:focus { outline: none; border-color: var(--accent); }
 .program-form-row textarea, .program-form-textarea {
   background: var(--bg); border: 1px solid var(--border); border-radius: 8px;

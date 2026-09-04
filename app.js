@@ -3678,13 +3678,15 @@ function runPlanKarte(p) {
     <div class="ppv-head" onclick="toggleRunPlan('${p.id}')"><div class="ppv-name">${escapeHtml(p.name || 'Laufplan')}</div></div>
     <div class="program-form-row"><label>Name</label>
       <input type="text" value="${escapeHtml(p.name || '')}" onchange="setRunPlan('${p.id}','name',this.value)"></div>
-    <div class="program-form-row-2col">
-      <div class="program-form-row"><label>Start</label>
+    <div class="program-form-row lp-3col">
+      <div><label>Start</label>
         <input type="date" value="${p.startDate ? new Date(p.startDate).toISOString().slice(0,10) : ''}"
                onchange="setRunPlan('${p.id}','startDate',this.value)"></div>
-      <div class="program-form-row"><label>Ende</label>
+      <div><label>Ende</label>
         <input type="date" value="${p.endDate ? new Date(p.endDate).toISOString().slice(0,10) : ''}"
                onchange="setRunPlan('${p.id}','endDate',this.value)"></div>
+      <div class="lp-wochen"><label>Wochen</label>
+        <div class="lp-wochen-v">${p.startDate && p.endDate ? wochen : '–'}</div></div>
     </div>
     <div class="program-form-row"><label>Wettkampf (optional)</label>
       <input type="date" value="${p.raceDate ? new Date(p.raceDate).toISOString().slice(0,10) : ''}"
@@ -3692,7 +3694,7 @@ function runPlanKarte(p) {
     <div class="program-form-row"><label>Notizen</label>
       <textarea class="program-form-textarea" rows="2" placeholder="z. B. Ziel, Streckenprofil"
                 onchange="setRunPlan('${p.id}','notes',this.value)">${escapeHtml(p.notes || '')}</textarea></div>
-    <div class="program-form-row"><label>Lauftage (${wochen} Wochen)</label><div class="lp-tagwahl-reihe">${tageWahl}</div></div>
+    <div class="program-form-row"><label>Lauftage</label><div class="lp-tagwahl-reihe">${tageWahl}</div></div>
     ${wochenBlocks.join('')}
     <div class="program-form-row">
       <button class="btn btn-ghost btn-sm" onclick="setRunPlan('${p.id}','archived',${p.archived ? 'false' : 'true'})">
@@ -7750,6 +7752,13 @@ function driveDisconnect() {
 }
 async function driveManualSync() {
   await driveSync('manuell');
+  // Die absolvierten Laeufe stehen bewusst NICHT in der Drive-Sicherung — sie gehoeren der
+  // Tabelle „Workout Data". „Jetzt synchronisieren" holt sie deshalb zusaetzlich von dort
+  // (Leonard-Wunsch 04.09.2026), damit ein Knopf wirklich alles auf Stand bringt.
+  // NUR, wenn die Tabelle schon einmal gelesen wurde: sonst spraenge mitten in der
+  // Drive-Sicherung ein zweites Google-Anmeldefenster auf. `interactive:false` verlaengert
+  // still — die Zustimmung liegt ja bereits vor.
+  if (DB.getRunsStand()) await runLaeufeLaden({ interactive: false });
 }
 async function driveTestConnection() {
   try {
