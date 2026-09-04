@@ -1145,13 +1145,25 @@ html.glas .screen:not(#screen-mehr) #day-add-ex-wrap .btn {
 }
 /* Das native Kalender-Symbol in Datumsfeldern ist schwarz gezeichnet. */
 html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
-/* Gewaehlte Lauftage: `.lp-tagwahl.an` faerbt sich mit `--accent` — das ist auf einer
-   Glas-Karte Weiss, die weisse Beschriftung verschwand darauf restlos (Leonard-Meldung
-   04.09.2026). Stattdessen dieselbe Loesung wie beim Seitenschalter: hellere Flaeche,
-   weisser Rand, weisse Schrift. */
-html.glas .screen:not(#screen-mehr) .lp-tagwahl.an {
-  background: rgba(255,255,255,.30); border-color: rgba(255,255,255,.9); color: #fff;
+/* Die AUFGEKLAPPTE Laufplan-Karte bleibt WEISS — sie ist eine Detailansicht und verhaelt sich
+   damit wie die Detailansichten von Gymplan und Gymtagen (Leonard-Wunsch 04.09.2026). Die
+   stehen auf `.mehr-card`, und die fehlt in der Glas-Liste oben bewusst.
+   Eingeklappt bleibt die Karte Teil der Liste und wird weiter durchsichtig — genau wie die
+   Gymplan-KACHELN durchsichtig sind und erst ihre Detailansicht weiss wird.
+   `inherit` holt jedes Farbtoken vom Elternteil zurueck: Die Glas-Regel setzt sie nur auf der
+   KARTE, der umgebende Screen traegt noch die hellen Werte. Ein Aufzaehlen der Literale waere
+   eine zweite Palette, die beim naechsten Farbwechsel auseinanderliefe.
+   Damit entfaellt auch die fruehere Sonderregel fuer `.lp-tagwahl.an` (weiss auf weiss) — die
+   Lauftage stehen jetzt wieder auf hellem Grund und brauchen keine Glas-Fassung. */
+html.glas .screen:not(#screen-mehr) .lauf-plan.offen {
+  background: var(--card); box-shadow: var(--shadow); border-color: var(--border);
+  --text: inherit; --text2: inherit; --text3: inherit;
+  --card: inherit; --card2: inherit; --border: inherit; --bg: inherit;
+  --accent: inherit; --accent-dark: inherit; --accent-bg: inherit; --accent-soft: inherit;
 }
+/* Der Kartentitel ist in der Glas-Liste FEST auf Weiss gesetzt (nicht ueber ein Token) und
+   muss auf der weissen Karte zurueck auf die Textfarbe. */
+html.glas .screen:not(#screen-mehr) .lauf-plan.offen .ppv-name { color: var(--text); }
 /* Der Knopf selbst zeigt seinen Zustand. */
 #glas-btn[aria-pressed="true"] { background: rgba(255,255,255,.42); }
 
@@ -1920,8 +1932,13 @@ html.wo-running #wo-week-card { display: none; }
    verkleinert — mit den urspruenglichen 12px bleibt kaum Reserve, und ein
    abgeschnittenes „03.09.20" liest sich wie 2020. */
 .lauf-plan .lp-3col { flex-direction: row; gap: 8px; }
-.lauf-plan .lp-3col > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 0; }
-.lauf-plan .lp-3col > .lp-wochen { flex: 0 0 46px; }
+/* Start und Ende sind FEST 104px breit — 20 % schmaler als die 130px, die sie sich vorher
+   zu gleichen Teilen genommen haben (Leonard-Wunsch 04.09.2026). Der frei werdende Platz
+   faellt zwischen „Ende" und die Wochenzahl: `margin-left:auto` haelt sie am rechten Rand,
+   wo sie vorher schon stand, und Start bleibt buendig mit dem Namensfeld darueber. */
+.lauf-plan .lp-3col > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 0 0 104px; }
+.lauf-plan .lp-3col > .lp-wochen { flex: 0 0 46px; margin-left: auto; }
+.lauf-plan .lp-3col .lp-datum-txt { text-align: center; }
 .lauf-plan .lp-3col .lp-datum { padding-left: 8px; padding-right: 8px; }
 /* Datumsfeld und Wochenzahl sind gewoehnliche Kaesten — dieselbe Hoehe wie ein Textfeld
    (10px Polster + 19px Zeile + 1px Rand = 41px). Beim Datum liegt das native

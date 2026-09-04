@@ -647,6 +647,10 @@ Alles ist damit 323px breit, genau wie im Gymplan.
 - **Start | Ende | Wochen in EINER Zeile** (`.lp-3col`). Die Wochenzahl ist ABGELEITET
   (`runPlanWochen`) und deshalb kein Eingabefeld, sondern `.lp-wochen-v` — sieht aus wie eines,
   gleiche Hoehe. Der Abschnittstitel heisst nur noch „Lauftage" (die Wochenzahl stand vorher dort).
+  Start und Ende sind FEST 104px breit (04.09.2026, 20 % schmaler als die 130px, die sie sich
+  vorher zu gleichen Teilen genommen haben) und ihr Datum steht MITTIG. Der frei werdende Platz
+  faellt zwischen „Ende" und die Wochenzahl — `margin-left: auto` haelt die am rechten Rand, damit
+  die Zeile links wie rechts mit dem Namensfeld darueber abschliesst.
 - **Datum und Herzzone sind KEINE nativen Bedienelemente mehr** (04.09.2026). Sichtbar ist je ein
   gewoehnlicher Kasten (`.lp-datum` / `.lp-zone`), das native `<input type="date">` bzw. `<select>`
   liegt unsichtbar darueber (`opacity:0`, `position:absolute; inset:0`) — dasselbe Muster wie
@@ -674,9 +678,17 @@ Alles ist damit 323px breit, genau wie im Gymplan.
 - **`.lp-einheit` hat feste, schmalere Felder** (60px statt mitwachsend) und `justify-content:
   center`. Dadurch ist die Tagesspalte gegenueber den Formularfeldern darueber um 14px
   eingerueckt (Leonard-Wunsch).
-- **Transparenz-Modus:** `.lp-tagwahl.an` faerbt sich mit `--accent` — das ist auf einer Glas-Karte
-  Weiss, die weisse Beschriftung verschwand darauf restlos. Eigene Glas-Regel: hellere Flaeche
-  (30 % Weiss), weisser Rand, weisse Schrift — dieselbe Loesung wie beim Seitenschalter.
+- **Die aufgeklappte Karte nimmt den Transparenz-Modus NICHT an** (04.09.2026, Leonard-Wunsch):
+  Sie ist eine Detailansicht und bleibt weiss, genau wie die Detailansichten von Gymplan und
+  Gymtagen — die stehen auf `.mehr-card`, und die fehlt in der Glas-Liste bewusst.
+  EINGEKLAPPT bleibt die Karte durchsichtig: Sie ist dann Teil der Liste, so wie auch die
+  Gymplan-Kacheln durchsichtig sind und erst ihre Detailansicht weiss wird.
+  Umgesetzt als Ueberschreibung NACH der Glas-Liste (`html.glas … .lauf-plan.offen`), nicht als
+  `:not()` in der Liste selbst — das haette jede andere Karte mitgefaehrdet. Jedes Farbtoken steht
+  dort auf `inherit`: Die Glas-Regel setzt sie nur auf der KARTE, der umgebende Screen traegt noch
+  die hellen Werte. Ein Aufzaehlen der Literale waere eine zweite Palette. `.ppv-name` braucht eine
+  eigene Zeile, weil die Glas-Liste ihn FEST auf Weiss setzt statt ueber ein Token.
+  Damit ist die fruehere Sonderregel fuer `.lp-tagwahl.an` (weiss auf weiss) entfallen.
 
 **Oberflaeche:** Seitenschalter `Laufkalender | Laufplanverwaltung` (`setLaufView`, `_laufSeite`).
 Auf- und Zuklappen einer Woche laeuft OHNE Neuaufbau (`toggleRunWoche` schaltet nur `display`) und
