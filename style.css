@@ -1999,6 +1999,21 @@ html.wo-running #wo-week-card { display: none; }
    Trainingseinheit darueber — sie erbt beides von `.cal-detail`. */
 .cal-detail-run { margin-top: 3px; }
 .cal-detail-run.geplant { color: var(--text3); }
+/* Fusszeile: Datum in Zeile 1, Trainingstag in Zeile 2. Ist der Tag aufgezeichnet, ist die
+   zweite Zeile ein Ausklapp-Knopf mit den Eckdaten der Einheit darunter. */
+.cal-detail-datum { }
+.cal-detail-tag, .cal-detail-tag-txt { display: block; width: 100%; margin-top: 2px; }
+.cal-detail-tag {
+  border: none; background: none; padding: 0; text-align: left;
+  font: inherit; color: var(--text); font-weight: 600;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.cal-detail-tag:active { opacity: .6; }
+.cal-detail-tag .cal-detail-chev { transition: transform .15s ease; display: inline-block; }
+.cal-detail-tag[aria-expanded="true"] .cal-detail-chev { transform: rotate(180deg); }
+.cal-detail-einheit { margin-top: 4px; color: var(--text3); }
+.cal-detail-uebungen { margin-top: 2px; }
+
 /* Titel des Uebersichts-Kalenders ist ein Filter (Training | Laeufe | beides). Sieht aus
    wie die uebrigen Kartentitel, ist aber ein Knopf. */
 .cal-filter-btn {
@@ -2007,7 +2022,6 @@ html.wo-running #wo-week-card { display: none; }
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .cal-filter-btn:active { opacity: .6; }
-.cal-filter-zusatz { font-weight: 500; color: var(--text3); }
 .cal-day.future { opacity: .45; }
 /* Rand-Tage der ersten/letzten Woche, die noch ins Vor- bzw. Folgejahr fallen */
 .cal-day.outside { opacity: .25; pointer-events: none; }

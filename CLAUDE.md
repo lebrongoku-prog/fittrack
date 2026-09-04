@@ -217,14 +217,16 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   KEINE Volumen-Abstufung — zwei Schichten: Fläche (`.planned`) = laut damaligem Plan vorgesehen, Kern (`.done::before`) = tatsächlich trainiert.
   `_calPlanIndex()`/`_calPlanInfo()` rekonstruieren den Plan je Datum aus `startDate`/`endDate`/`weekPlan` ALLER Pläne (auch archivierter — die behalten ihren Wochenplan);
   ohne abdeckenden Plan wird keine Fläche gezeichnet, kommende Tage sind blass (`.future`). Antippen beschreibt den Tag in `#cal-detail`, inklusive der geplanten Einheit.
-  Wurde an dem Tag trainiert, ist die GANZE Beschreibungszeile die Schaltflaeche in die Einheit
-  (`.cal-detail-row`, seit 01.09.2026 — vorher der schmale Textlink „(zur Einheit)"). Der Pfeil „›"
-  steht im TEXTFLUSS direkt hinter dem Namen des Trainingstags, nicht rechtsbuendig; die Zeile ist
-  deshalb bewusst ein gewoehnlicher Block und kein Flex-Container — die volle Breite bleibt trotzdem
-  antippbar.
+  **Aufbau der Fusszeile (01.09.2026):** Zeile 1 nur Wochentag und Datum (`.cal-detail-datum`),
+  Zeile 2 der Trainingstag. Wurde an dem Tag aufgezeichnet, ist Zeile 2 ein AUSKLAPP-KNOPF
+  (`.cal-detail-tag`, `toggleCalDetail`) und blendet darunter die Eckdaten der Einheit ein —
+  Dauer, Volumen, Saetze und die Uebungen (`_calEinheitInfoHTML`). Immer nur EIN Tag offen;
+  ein Tipp auf einen anderen Tag klappt zu (`_calDetailOffen`).
   Der Handler MUSS `event.stopPropagation()` rufen, sonst raeumt `initCalendarDeselect` die
   Beschreibung im selben Klick weg. Nachgetragene Tage ohne Aufzeichnung und Ruhetage bleiben
-  gewoehnlicher Text — ohne Einheit gibt es nichts zu oeffnen.
+  gewoehnlicher Text — ohne Einheit gibt es nichts aufzuklappen.
+  Die frueheren Zeilen zum Trainingsplan (Name, Laufzeit) und zur Erfuellungsquote sind ENTFALLEN
+  (Leonard-Wunsch); `planErfuellung` lebt weiter, wird vom Kalender aber nicht mehr genutzt.
   Gehoert der Tag zu einem Plan, folgen zwei Zeilen: Planname mit Laufzeit und Wochenzahl (`planWochen` rechnet
   sie aus Start/Ende, falls `weeksTotal` fehlt) sowie der Stand (`planErfuellung`). Eine Hinweiszeile gibt es nicht mehr.
   Zeigt IMMER das laufende Kalenderjahr (1.1.–31.12.); Rand-Tage der ersten/letzten Woche tragen `.outside` (ausgegraut, nicht antippbar).
@@ -615,10 +617,10 @@ von `--cal-cell` oder dem Kern-Inset hier nachrechnen.
 Die Lauf-Zeile steht ZUUNTERST in der Tagesbeschreibung, nach dem Plan-Stand, und erbt Groesse
 UND Farbe von `.cal-detail` — sie sieht damit aus wie die Angaben zur Trainingseinheit darueber.
 Sie nennt nur Strecke und Zeit; Pace und Puls sind am 01.09.2026 entfallen (Leonard-Wunsch).
-**Der Titel „Trainingskalender" ist im Uebersichts-Kalender ein FILTER** (`toggleCalFilter`,
-`_calFilter`): beide → nur Training → nur Laeufe → beide. Er steuert sowohl die Marken im Raster
-als auch die Zeilen in der Tagesbeschreibung; der aktive Filter steht als Zusatz im Titel
-(„· nur Training"). Startet IMMER bei „beide" und wird BEWUSST nicht gespeichert — ein Filter,
+**Der Titel des Uebersichts-Kalenders ist ein FILTER** (`toggleCalFilter`, `_calFilter`):
+beide → nur Training → nur Laeufe → beide. Er steuert die Marken im Raster UND die Zeilen in der
+Tagesbeschreibung. Der Titel BENENNT den Zustand statt ihn anzuhaengen: „Trainingskalender" /
+„Gymkalender" / „Laufkalender" (`_CAL_FILTER_TITEL`). Startet IMMER bei „beide" und wird BEWUSST nicht gespeichert — ein Filter,
 der einen Neustart ueberlebt, laesst den Kalender spaeter unerklaerlich unvollstaendig wirken
 (dieselbe Ueberlegung wie beim Katalog-Filter). Im Plaene-Tab ist der Titel kein Knopf.
 

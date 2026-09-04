@@ -3774,7 +3774,8 @@ function _calPlanInfo(date, index) {
 // unerklaerlich unvollstaendig wirken. Dieselbe Ueberlegung wie beim Katalog-Filter.
 let _calFilter = 'beide';           // 'beide' | 'kraft' | 'lauf'
 const _CAL_FILTER_FOLGE = { beide: 'kraft', kraft: 'lauf', lauf: 'beide' };
-const _CAL_FILTER_ZUSATZ = { beide: '', kraft: ' · nur Training', lauf: ' · nur Läufe' };
+// Der Titel BENENNT den Filter, statt ihn als Zusatz anzuhaengen (Leonard-Wunsch 01.09.2026).
+const _CAL_FILTER_TITEL = { beide: 'Trainingskalender', kraft: 'Gymkalender', lauf: 'Laufkalender' };
 function toggleCalFilter() {
   _calFilter = _CAL_FILTER_FOLGE[_calFilter] || 'beide';
   renderTrainingCalendar('cal', 'ov-cal-card');
@@ -3785,9 +3786,8 @@ function calZeigtLauf()  { return _calFilter !== 'kraft'; }
 function calendarInnerHTML(id) {
   // Nur der Kalender der Uebersicht zeigt beide Sportarten — nur dort ist der Titel ein Filter.
   const titel = id === 'cal'
-    ? `<button class="chart-card-v2-title cal-filter-btn" onclick="toggleCalFilter()"
-               aria-label="Zwischen Training, Läufen und beidem umschalten">Trainingskalender<span
-               class="cal-filter-zusatz" id="cal-filter-zusatz"></span></button>`
+    ? `<button class="chart-card-v2-title cal-filter-btn" id="cal-filter-btn" onclick="toggleCalFilter()"
+               aria-label="Zwischen Training, Läufen und beidem umschalten">Trainingskalender</button>`
     : '<span class="chart-card-v2-title">Trainingskalender</span>';
   return `<div class="chart-card-v2-head">
       ${titel}
@@ -3931,8 +3931,8 @@ function renderTrainingCalendar(id, cardId) {
   const inRange = DB.getWorkouts().filter(w => new Date(w.startTs).getFullYear() === jahr).length
     + DB.getManualDays().filter(k => Number(k.slice(0, 4)) === jahr).length;
   const streak = getWeekStreak();
-  const zusatzEl = document.getElementById('cal-filter-zusatz');
-  if (id === 'cal' && zusatzEl) zusatzEl.textContent = _CAL_FILTER_ZUSATZ[_calFilter] || '';
+  const titelEl = document.getElementById('cal-filter-btn');
+  if (id === 'cal' && titelEl) titelEl.textContent = _CAL_FILTER_TITEL[_calFilter] || 'Trainingskalender';
   const statsEl = document.getElementById(id + '-stats');
   if (statsEl) {
     statsEl.textContent = `${jahr} · ${inRange} ${inRange === 1 ? 'Einheit' : 'Einheiten'}`
@@ -4018,12 +4018,38 @@ function renderTrainingCalendar(id, cardId) {
   });
 }
 
+// Welcher Tag hat seine Einheiten-Infos aufgeklappt? Nur einer gleichzeitig; ein Tipp auf
+// einen anderen Tag setzt zurueck.
+let _calDetailOffen = null;
+function toggleCalDetail(key, id) {
+  _calDetailOffen = (_calDetailOffen === key) ? null : key;
+  showCalDay(key, id);
+}
+
+// Eckdaten der Einheit unter dem Trainingstag: Dauer, Volumen, Saetze und die Uebungen.
+function _calEinheitInfoHTML(wo) {
+  if (!wo) return '';
+  const saetze = (wo.exercises || []).reduce((a, e) => a + (Array.isArray(e.sets) ? e.sets.length : 0), 0);
+  const kopf = [
+    wo.duration ? fmtDur(wo.duration) : null,
+    fmtVol(calcVolume(wo)),
+    `${saetze} ${saetze === 1 ? 'Satz' : 'Sätze'}`,
+  ].filter(Boolean).join(' · ');
+  const namen = (wo.exercises || []).map(e => escapeHtml(e.name || '')).filter(Boolean).join(', ');
+  return `<div class="cal-detail-einheit">
+    <div>${kopf}</div>
+    ${namen ? `<div class="cal-detail-uebungen">${namen}</div>` : ''}
+  </div>`;
+}
+
 // Tippen auf ein Kästchen: Tag in der Fußzeile beschreiben.
 function showCalDay(key, id) {
   id = id || 'cal';
   const el = document.getElementById(id + '-detail');
   if (!el) return;
   const entry = buildCalendarData()[key];
+  // Ein anderer Tag → die aufgeklappten Einheiten-Infos gehoeren nicht mehr dazu.
+  if (_calDetailOffen && _calDetailOffen !== key) _calDetailOffen = null;
   const [y, m, d] = key.split('-').map(Number);
   const dateStr = new Date(y, m-1, d).toLocaleDateString('de-DE', { weekday:'long', day:'numeric', month:'long' });
   const scope = document.getElementById(id + '-grid');
@@ -4037,42 +4063,34 @@ function showCalDay(key, id) {
   const plan = _calPlanInfo(new Date(y, m-1, d), _calPlanIndex());
   // Im Filter „nur Laeufe" bleibt vom Trainingsteil nur das Datum stehen.
   const kraft = id !== 'cal' || calZeigtKraft();
-  let txt;
-  if (!kraft) {
-    txt = `<strong>${dateStr}</strong>`;
-  } else if (entry) {
-    // An diesem Tag wurde trainiert → direkter Weg in die Detailansicht der Einheit.
-    // getWorkouts() ist neueste-zuerst; bei mehreren Einheiten am selben Tag oeffnet
-    // der Verweis die zuletzt begonnene.
-    const woIdx = DB.getWorkouts().findIndex(w => _dayKeyOf(w.startTs) === key);
-    let kopf = `<strong>${dateStr}</strong>: ${entry.names.join(', ')}`;
-    if (plan.known && !plan.planned) kopf += ' · zusätzlich trainiert';
-    // Die GANZE Zeile fuehrt in die Einheit, erkennbar am Pfeil rechts (Leonard-Entscheidung
-    // 01.09.2026, vorher der schmale Textlink „(zur Einheit)"). Nachgetragene Tage ohne
-    // Aufzeichnung haben keine Einheit — dort bleibt die Zeile gewoehnlicher Text.
-    // `stopPropagation` ist Pflicht: Sonst raeumt initCalendarDeselect die Beschreibung
-    // im selben Klick wieder weg.
-    txt = woIdx >= 0
-      ? `<div class="cal-detail-row" role="button" tabindex="0"
-              onclick="event.stopPropagation();showHistDetail(${woIdx})">${kopf}<span
-              class="cal-detail-chev">›</span></div>`
-      : kopf;
-  } else if (plan.planned) {
-    const heute = new Date(); heute.setHours(0,0,0,0);
-    const kommt = new Date(y, m-1, d).getTime() > heute.getTime();
-    txt = `<strong>${dateStr}</strong> · geplant: ${plan.name ? escapeHtml(plan.name) : 'Training'}`
-        + (kommt ? '' : ' · nicht trainiert');
-  } else {
-    txt = `<strong>${dateStr}</strong> · ${plan.known ? 'Ruhetag' : 'kein Training'}`;
-  }
-  // Zweite Zeile: der Plan selbst mit Laufzeit. Dritte Zeile: sein Stand bis hierher.
-  if (kraft && plan.plan) {
-    const wochen = planWochen(plan.plan);
-    const spanne = wochen ? ` (${wochen} Wochen)` : '';
-    txt += `<div class="cal-detail-plan">${escapeHtml(plan.plan.name)}${spanne}</div>`;
-    const q = planErfuellung(plan.plan);
-    if (q) {
-      txt += `<div class="cal-detail-plan">${q.absolviert} von ${q.geplant} geplanten Einheiten (${q.prozent}%)</div>`;
+  // Erste Zeile: nur Wochentag und Datum. Zweite Zeile: der Trainingstag — wurde an dem Tag
+  // aufgezeichnet, ist er ein Ausklapp-Knopf mit den Eckdaten der Einheit (Leonard-Wunsch
+  // 01.09.2026). Die frueheren Zeilen zum Trainingsplan und zur Erfuellungsquote sind entfallen.
+  let txt = `<div class="cal-detail-datum"><strong>${dateStr}</strong></div>`;
+  if (kraft) {
+    if (entry) {
+      // getWorkouts() ist neueste-zuerst; bei mehreren Einheiten am selben Tag zaehlt die
+      // zuletzt begonnene.
+      const woIdx = DB.getWorkouts().findIndex(w => _dayKeyOf(w.startTs) === key);
+      const name = entry.names.join(', ') + (plan.known && !plan.planned ? ' · zusätzlich' : '');
+      if (woIdx >= 0) {
+        const auf = _calDetailOffen === key;
+        // `stopPropagation` ist Pflicht: Sonst raeumt initCalendarDeselect die Beschreibung
+        // im selben Klick wieder weg.
+        txt += `<button type="button" class="cal-detail-tag" aria-expanded="${auf}"
+                        onclick="event.stopPropagation();toggleCalDetail('${key}','${id}')">${name}<span
+                        class="cal-detail-chev">▾</span></button>`;
+        if (auf) txt += _calEinheitInfoHTML(DB.getWorkouts()[woIdx]);
+      } else {
+        txt += `<div class="cal-detail-tag-txt">${name}</div>`;
+      }
+    } else if (plan.planned) {
+      const heute = new Date(); heute.setHours(0,0,0,0);
+      const kommt = new Date(y, m-1, d).getTime() > heute.getTime();
+      txt += `<div class="cal-detail-tag-txt">geplant: ${plan.name ? escapeHtml(plan.name) : 'Training'}`
+           + (kommt ? '' : ' · nicht trainiert') + '</div>';
+    } else {
+      txt += `<div class="cal-detail-tag-txt">${plan.known ? 'Ruhetag' : 'kein Training'}</div>`;
     }
   }
 
