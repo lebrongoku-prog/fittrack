@@ -306,6 +306,16 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   `--text` auf der Glas-Karte erreicht ihn gar nicht.
   Ein Tipp auf die Zeile öffnet über `showHistDetailForEx(exId, bestTs)` die Einheit, in der der Rekord AUFGESTELLT wurde (nicht die
   neueste mit dieser Übung) und hebt die Übung dort per `.hd-step-hl` farbig umrandet hervor.
+- **Querformat (ab 1024px):** Auch der TRAININGS-Tab ist ein 2-Spalten-Grid — Wochenplan links,
+  Herocard rechts in derselben Zeile, genau wie in der Uebersicht (Leonard-Wunsch 01.09.2026).
+  Kopfzeile, Uebungsliste und „Uebung hinzufuegen" spannen ueber beide Spalten. Waehrend einer
+  laufenden Einheit ist die Wochenplan-Karte ausgeblendet (`html.wo-running`) — der Kopf der Einheit
+  bekommt dann `grid-column: 1 / -1`, sonst bliebe die linke Spalte leer.
+  Die STATS-Seite (`#ex-view-stats`) ist ebenfalls ein 2-Spalten-Grid: Volumenentwicklung und Volumen
+  pro Muskelgruppe teilen sich die erste Zeile, alles Weitere spannt ueber beide. Dort ist
+  `align-items` BEWUSST nicht gesetzt — die Grid-Vorgabe `stretch` haelt die beiden Karten gleich hoch.
+  Die Zuordnung laeuft ueber `:nth-child`, nicht ueber die alten `lg-*`-Klassen (die wirken nur im
+  Uebersichts-Grid).
 - **Querformat (ab 1024px):** Uebersicht ist ein 2-Spalten-Grid — Wochenplan links, Herocard rechts in DERSELBEN
   Zeile (seit 20.08.2026, vorher spannte die Herocard ueber beide Spalten). `align-content: start` ist Pflicht,
   sonst verteilt das Grid die uebrige Bildschirmhoehe auf die Zeilen und zwischen den Karten klaffen ~100px.

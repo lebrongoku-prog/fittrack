@@ -2453,6 +2453,41 @@ html.wo-running #wo-week-card { display: none; }
   #screen-overview.active > .lg-col1 { grid-column: 1; }
   #screen-overview.active > .lg-col2 { grid-column: 2; }
 
+  /* TRAINING — Wochenplan und Herocard nebeneinander in EINER Zeile, genau wie in der
+     Uebersicht (Leonard-Wunsch 01.09.2026). Alles Weitere spannt ueber beide Spalten.
+     `align-content: start` ist wie in der Uebersicht Pflicht, sonst verteilt das Grid die
+     uebrige Bildschirmhoehe auf die Zeilen. */
+  #screen-workouts.active {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 0;
+    align-items: start;
+    align-content: start;
+  }
+  #screen-workouts.active > .ph,
+  #screen-workouts.active > .ex-tab-v2-bar,
+  #screen-workouts.active > #active-ex-list,
+  #screen-workouts.active > #wo-add-ex-wrap { grid-column: 1 / -1; }
+  #screen-workouts.active > #wo-week-card { grid-column: 1; }
+  #screen-workouts.active > #wo-session-card-wrap { grid-column: 2; }
+  /* Waehrend einer laufenden Einheit ist die Wochenplan-Karte ausgeblendet — der Kopf der
+     Einheit nimmt dann die ganze Breite, sonst bliebe die linke Spalte leer. */
+  html.wo-running #screen-workouts.active > #wo-session-card-wrap { grid-column: 1 / -1; }
+
+  /* STATS — Volumenentwicklung und Volumen pro Muskelgruppe teilen sich die erste Zeile
+     (Leonard-Wunsch 01.09.2026). Ohne `align-items` bleibt die Grid-Vorgabe `stretch`, und
+     beide Karten sind dadurch automatisch gleich hoch. Die uebrigen Karten darunter behalten
+     die volle Breite. */
+  #ex-view-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 0;
+    align-content: start;
+  }
+  #ex-view-stats > *:nth-child(1) { grid-column: 1; }
+  #ex-view-stats > *:nth-child(2) { grid-column: 2; }
+  #ex-view-stats > *:nth-child(n+3) { grid-column: 1 / -1; }
+
   /* WORKOUTS — Übungs-Liste 2-spaltig, SPALTENWEISE gefuellt (1-2-3-4 links, 5-6-7-8
      rechts) statt zeilenweise (1-3-5-7 links). Dafuer braucht das Grid die Zeilenzahl:
      `--ex-rows` wird beim Rendern als Inline-Variable gesetzt (ceil(Anzahl/2)) und ist
