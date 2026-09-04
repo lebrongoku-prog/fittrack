@@ -3675,8 +3675,11 @@ function buildLaufTagKarte(idx) {
          </div>
        </div>`
     : `<div class="aex-v2-table"><p class="lauf-tag-leer">${gepl ? 'Lauftag ohne Vorgabe.' : 'Für diesen Tag ist kein Lauf geplant.'}</p></div>`;
+  // Die Notiz steht auf einer EIGENEN Zeile unter Strecke, Zeit und Zone (Leonard-Wunsch
+  // 04.09.2026) — nicht in der rechten Spalte wie bei den Uebungskarten, wo sie neben einer
+  // mehrzeiligen Satztabelle steht. Hier ist die Tabelle nur eine Zeile hoch.
   const notiz = u && u.note
-    ? `<div class="aex-v2-notes-col"><div class="aex-v2-notes"><div class="lauf-tag-notiz">${escapeHtml(u.note)}</div></div></div>`
+    ? `<div class="lauf-tag-notiz">${escapeHtml(u.note)}</div>`
     : '';
   const gelaufen = lauf
     ? `<div class="aex-v2-actions">
@@ -3692,7 +3695,8 @@ function buildLaufTagKarte(idx) {
         <div class="aex-v2-last">${datum}${gepl ? ` · ${escapeHtml(gepl.plan.name || 'Laufplan')}` : ''}</div>
       </div>
     </div>
-    <div class="aex-v2-body">${werte}${notiz}</div>
+    <div class="aex-v2-body">${werte}</div>
+    ${notiz}
     ${gelaufen}
   </div>`;
 }
@@ -4379,9 +4383,13 @@ function renderTrainingCalendar(id, cardId) {
     const stil = (st) => `left:${st.von * SPALTE}px;width:${(st.bis - st.von + 1) * SPALTE - CAL_GAP}px`;
     const klasse = (st) => (st.typ === 'lauf' ? ' lauf' : '') + (st.p.archived ? ' archiviert' : '');
 
-    namenEl.innerHTML = stuecke.map(st =>
+    // Zeigt der Kalender BEIDE Sportarten, bleiben die Namen weg (Leonard-Wunsch 04.09.2026):
+    // Mit Gym- und Laufplaenen gleichzeitig standen bis zu vier Zeilen Text ueber dem Raster.
+    // In den Einzelansichten (Gymkalender, Laufkalender) erscheinen sie unveraendert.
+    const zeigtNamen = !(modus.kraft && modus.lauf);
+    namenEl.innerHTML = zeigtNamen ? stuecke.map(st =>
       `<span class="cal-planname${klasse(st)}" style="${stil(st)};top:${st.spur * (NAME_H + NAME_GAP)}px"
-             title="${escapeHtml(st.p.name || '')}">${escapeHtml(st.p.name || 'Plan')}</span>`).join('');
+             title="${escapeHtml(st.p.name || '')}">${escapeHtml(st.p.name || 'Plan')}</span>`).join('') : '';
     // Derselbe Balken OBEN wie UNTEN (Leonard-Wunsch 04.09.2026): Er steht direkt unter dem
     // Namen und noch einmal unter dem Raster — die beiden klammern den Zeitraum sichtbar ein.
     const balken = stuecke.map(st =>
@@ -4394,17 +4402,18 @@ function renderTrainingCalendar(id, cardId) {
     // Kalender und muss denselben Versatz mitrechnen, sonst steht „Mo" nicht mehr auf einer
     // Linie mit der ersten Rasterzeile. Deshalb `--cal-names-h` als gemeinsame Quelle.
     const anzahl = spuren.length;
-    const hNamen = anzahl ? anzahl * NAME_H + (anzahl - 1) * NAME_GAP : 0;
+    const hNamen = (anzahl && zeigtNamen) ? anzahl * NAME_H + (anzahl - 1) * NAME_GAP : 0;
     const hBalken = anzahl ? anzahl * SPUR_H + (anzahl - 1) * SPUR_GAP : 0;
     namenEl.style.height = hNamen + 'px';
-    namenEl.style.marginBottom = anzahl ? '3px' : '0';
+    namenEl.style.marginBottom = hNamen ? '3px' : '0';
     spurenObenEl.style.height = hBalken + 'px';
     spurenObenEl.style.marginBottom = anzahl ? '6px' : '0';
     spurenEl.style.height = hBalken + 'px';
     spurenEl.style.marginTop = anzahl ? '7px' : '0';
     // Alles, was UEBER dem Raster liegt, muss die absolut positionierte Wochentagsspalte
     // mitrechnen — sonst steht „Mo" nicht mehr auf einer Linie mit der ersten Rasterzeile.
-    if (card) card.style.setProperty('--cal-names-h', (anzahl ? hNamen + 3 + hBalken + 6 : 0) + 'px');
+    if (card) card.style.setProperty('--cal-names-h',
+      (anzahl ? (hNamen ? hNamen + 3 : 0) + hBalken + 6 : 0) + 'px');
   }
 
   // Beim ERSTEN Aufbau zur laufenden Woche scrollen (nicht ans Jahresende — der Dezember

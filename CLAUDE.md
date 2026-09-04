@@ -270,6 +270,11 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   (`.cal-planlanes-oben`, ueber dem Raster) und einmal darunter (04.09.2026 ergaenzt). Alle drei
   Zeilen liegen auf GENAU denselben Wochenspalten — zusammen klammern sie den Zeitraum ein, ohne
   die Kaestchen zu beruehren.
+  Im gemeinsamen Kalender (Filter „Trainingskalender", also `modus.kraft && modus.lauf`) bleiben
+  die NAMEN weg und nur die Balken stehen — mit Gym- und Laufplaenen gleichzeitig waeren es bis zu
+  vier Zeilen Text ueber dem Raster (Leonard-Wunsch 04.09.2026). In den Einzelansichten
+  (Gymkalender, Laufkalender, beide Plan-Tab-Seiten) erscheinen sie unveraendert. `--cal-names-h`
+  laesst die Namenszeile dann aus der Rechnung.
   SPUREN: Jede Sportart bekommt ihre eigene; ueberschneiden sich zwei Plaene DERSELBEN Sportart,
   oeffnet der zweite eine weitere (einfaches Intervall-Packing in `renderTrainingCalendar`).
   Name und Balken eines Plans stehen dadurch immer in derselben Spur uebereinander.
@@ -760,8 +765,9 @@ und `opts.dayOnTap` entgegen, genau wie `buildPlanCard`. Unter „Diese Woche" e
 `buildLaufTagKarte(idx)`: Sie borgt sich die Klassen der AUSGEKLAPPTEN UEBUNGSKARTE (`.aex-v2`
 mit Kopf, Scheibe, Tabelle und Notizspalte), damit beide Seiten des Trainings-Tabs gleich
 aussehen. Angepasst ist nur, was die Laufwerte brauchen: drei gleich breite Spalten statt
-Satz|Wdh|kg|Haken (`.lauf-tag-srow`) und eine hellgruene Scheibe mit dem Wochentag statt einer
-Nummer. Wurde der Tag gelaufen, steht das in der Aktionsleiste mit einem Knopf zu
+Satz|Wdh|kg|Haken (`.lauf-tag-srow`), eine hellgruene Scheibe mit dem Wochentag statt einer
+Nummer und die Notiz auf einer EIGENEN Zeile unter den Werten statt in der rechten Spalte —
+die Tabelle ist hier nur eine Zeile hoch, daneben saehe die Notiz verloren aus. Wurde der Tag gelaufen, steht das in der Aktionsleiste mit einem Knopf zu
 `showRunDetail`.
 
 **Oberflaeche:** Seitenschalter `Laufkalender | Laufplanverwaltung` (`setLaufView`, `_laufSeite`).

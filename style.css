@@ -1878,7 +1878,9 @@ html.wo-running #wo-week-card { display: none; }
   display: grid; grid-template-columns: 44px 44px 14px 44px 20px 46px 1fr;
   gap: 5px; align-items: center; padding: 4px 0;
 }
-.lp-tag { display: flex; flex-direction: column; line-height: 1.15; }
+/* Wochentag und Datum stehen MITTIG ueber ihrer Spalte (Leonard-Wunsch 04.09.2026) —
+   linksbuendig sassen die kurzen Kuerzel weit weg von den Feldern daneben. */
+.lp-tag { display: flex; flex-direction: column; line-height: 1.15; text-align: center; }
 .lp-tag strong { font-size: 13px; color: var(--text); }
 .lp-tag span { font-size: 10px; color: var(--text3); }
 /* km/min/Zone haben eine FESTE, gemeinsame Hoehe. Ohne die war die Zone 2px hoeher:
@@ -2128,7 +2130,13 @@ html.wo-running #wo-week-card { display: none; }
 .lauf-tag-srow { grid-template-columns: 1fr 1fr 1fr; }
 .lauf-tag-wert { font-size: 15px; font-weight: 700; color: var(--text); text-align: center; }
 .lauf-tag-leer { margin: 2px 0 0; font-size: 13px; color: var(--text3); line-height: 1.45; }
-.lauf-tag-notiz { font-size: 12px; color: var(--text2); line-height: 1.45; white-space: pre-wrap; padding: 8px 10px; }
+/* Eigene Zeile unter den Werten — Aussehen wie das Notizfeld der Uebungskarte
+   (`.aex-v2-notes`), aber ueber die volle Breite. */
+.lauf-tag-notiz {
+  margin: 0 14px 14px; padding: 8px 10px; border-radius: 10px;
+  background: var(--bg); border: 1px solid var(--border);
+  font-size: 12px; color: var(--text2); line-height: 1.45; white-space: pre-wrap;
+}
 /* „Gelaufen"-Zeile in der Aktionsleiste: Text links, der Details-Knopf traegt sein
    `margin-left:auto` schon selbst. */
 .lauf-tag-erledigt { font-size: 13px; font-weight: 600; color: var(--text2); align-self: center; }
