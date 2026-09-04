@@ -223,7 +223,13 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   In der Tagesbeschreibung stehen sie als „Training (ohne Aufzeichnung)" und ohne Verweis „zur Einheit".
   Sie liegen in der Drive-Sicherung (`manualDays`).
 - **Trainingskalender** (Übersicht, `#ov-cal-card`): `renderTrainingCalendar()` zeichnet 52 Wochen à 7 Kästchen (`.cal-day`).
-  KEINE Volumen-Abstufung — zwei Schichten: Fläche (`.planned`) = laut damaligem Plan vorgesehen, Kern (`.done::before`) = tatsächlich trainiert.
+  KEINE Volumen-Abstufung — zwei Schichten im gleich grossen Quadrat (`inset: 3.5px`):
+  `.planned::before` = laut damaligem Plan vorgesehen, nur UMRANDET; `.done::before` =
+  tatsächlich trainiert, GEFUELLT. Seit 04.09.2026 dieselbe Logik wie beim Lauf, wo der geplante
+  Kreis leer und der gelaufene gefuellt ist (Leonard-Wunsch); vorher faerbte „geplant" das ganze
+  Kaestchen hellgruen (`#CDE7E1`). `.done::before` steht SPAETER in der Datei und gewinnt damit
+  bei gleicher Spezifitaet — ein geplanter und absolvierter Tag ist gefuellt. Mit der Flaeche
+  entfiel auch die Glas-Sonderregel dafuer; die Umrandung bleibt im Transparenz-Modus dunkelgruen.
   `_calPlanIndex()`/`_calPlanInfo()` rekonstruieren den Plan je Datum aus `startDate`/`endDate`/`weekPlan` ALLER Pläne (auch archivierter — die behalten ihren Wochenplan);
   ohne abdeckenden Plan wird keine Fläche gezeichnet, kommende Tage sind blass (`.future`). Antippen beschreibt den Tag in `#cal-detail`, inklusive der geplanten Einheit.
   **Aufbau der Fusszeile (01.09.2026):** Zeile 1 nur Wochentag und Datum (`.cal-detail-datum`),
@@ -740,6 +746,13 @@ von `--cal-cell` oder dem Kern-Inset hier nachrechnen.
 Die Lauf-Zeile steht ZUUNTERST in der Tagesbeschreibung, nach dem Plan-Stand, und erbt Groesse
 UND Farbe von `.cal-detail` — sie sieht damit aus wie die Angaben zur Trainingseinheit darueber.
 Sie nennt nur Strecke und Zeit; Pace und Puls sind am 01.09.2026 entfallen (Leonard-Wunsch).
+Sie ist seit dem 04.09.2026 ein KNOPF wie der Trainingstag darueber und oeffnet
+`showRunDetail(key)` → `#modal-run-detail`: Kacheln (`.hd-stats`) mit Strecke, Dauer, Pace,
+Tempo, Ø- und Maximalpuls sowie Hoehenmetern, darunter Kategorie und — falls vorhanden — die
+geplante Einheit. Fehlende Werte bleiben WEG statt als „–" dazustehen; ein Intervalltraining hat
+weder Strecke noch Tempo, deshalb `grid-template-columns: repeat(auto-fit, …)` statt drei fester
+Spalten. `stopPropagation` im Handler ist Pflicht, sonst raeumt `initCalendarDeselect` die
+Beschreibung im selben Klick weg.
 **Welcher Kalender welche Sportart zeigt, entscheidet `_calModus(id)`:** Die Uebersicht (`cal`)
 folgt dem Filter im Titel, der Plan-Tab (`pcal`) der gewaehlten Seite — Gymplan zeigt den
 **Gymkalender** (nur Krafttraining), Laufplan den **Laufkalender** (nur Laeufe), Gymtage keinen.
@@ -765,9 +778,13 @@ demselben Ausklapp-Knopf (`.archiv-btn`, `runplansArchiveExpanded`/`toggleRunpla
 Steht ausserdem in der **Uebersicht** unter dem Gymwochenplan (`#ov-runplan-card`; im Querformat
 teilen sich beide eine Zeile, die Herocard rutscht darunter ueber die volle Breite) und im
 **Trainings-Tab auf der Seite „Laufen" zuoberst**.
-FARBE der Erledigt-Akzente (Kreis + Haken) UND des Fortschrittsbalkens (`.ppv-bar-fill`,
-seit 04.09.2026): Gym #0F766E (wie die trainierten Kalender-Kaestchen), Lauf #4ADE80 (wie die
-Laufkreise) — `.run-plan` als Modifikator. Der Balken folgt damit der SPORTART, nicht der
+FARBE der Wochentagskreise (geplant WIE erledigt), des Hakens und des Fortschrittsbalkens
+(`.ppv-bar-fill`, alles seit 04.09.2026): Gym #0F766E (wie die trainierten Kalender-Kaestchen),
+Lauf #4ADE80 (wie die Laufkreise) — `.run-plan` als Modifikator. Die Karte folgt damit der
+SPORTART statt der Tabfarbe; vorher stand bei „geplant" `var(--accent)`, in der Uebersicht also
+Cyan. Geplant und erledigt trennt der HAKEN (`.ppv-col.done .ppv-wd::before`) — den gab es schon
+vorher, weil im Trainings-Tab die Akzentfarbe selbst gruen war. Im Transparenz-Modus bleiben die
+Kreise weiss (bestehende Glas-Regel), wie auch der Fortschrittsbalken. Der Balken folgt damit der SPORTART, nicht der
 Tabfarbe, und sieht in Uebersicht, Trainings-Tab und Plaene-Tab gleich aus. Im Transparenz-Modus
 bleibt er WEISS — dafuer sorgt die bestehende Glas-Regel, die spaeter steht und gewinnt.
 Die **Kennzahl** des Kalenders zaehlt im Laufkalender Laeufe statt Krafteinheiten.
