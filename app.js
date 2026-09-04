@@ -3025,6 +3025,26 @@ function renderStatsPage() {
       ? prs.slice(0,10).map((pr, idx) => prHTML(pr, idx+1)).join('')
       : '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine PRs</p>';
   }
+
+  _gleicheHoeheStatsKarten();
+}
+
+// Im HOCHFORMAT stehen „Volumenentwicklung" und „Volumen pro Muskelgruppe" untereinander und
+// gleichen ihre Hoehe nicht von allein aus. Sie sollen gleich hoch sein (Leonard-Wunsch
+// 01.09.2026), also wird die Muskelkarte auf die GEMESSENE Hoehe der Volumenkarte gesetzt.
+// Gemessen statt fest verdrahtet, weil der Kopf der Volumenkarte je nach Breite ein- oder
+// zweizeilig ist (Zeitraum-Auswahl + Kg/Saetze) und damit die Hoehe schwankt.
+// Im Querformat macht das Grid die Angleichung selbst — dort wird nichts gesetzt.
+function _gleicheHoeheStatsKarten() {
+  const karten = document.querySelectorAll('#ex-view-stats > .chart-card-v2');
+  const vol = karten[0], mus = karten[1];
+  if (!vol || !mus) return;
+  const querformat = window.matchMedia && window.matchMedia('(min-width: 1024px)').matches;
+  if (querformat) { mus.style.minHeight = ''; return; }
+  mus.style.minHeight = '';
+  const h = vol.getBoundingClientRect().height;
+  // Hoehe 0 heisst: Die Seite ist gerade nicht sichtbar (Vorab-Rendern) — dann nichts setzen.
+  if (h > 0) mus.style.minHeight = Math.round(h) + 'px';
 }
 
 function renderVolumeChart(ws) {
@@ -3628,7 +3648,10 @@ function renderMuscleMap(vol, container) {
       <span class="mmap-legend-val">${v ? fmtVol(v) : '–'}</span>
     </div>`;
   }).join('');
-  container.innerHTML = muscleMapSvg(vol, maxVol) + `<div class="mmap-legend">${legend}</div>`;
+  // Figuren links, Legende rechts daneben (Leonard-Wunsch 01.09.2026) — vorher stand die
+  // Legende UNTER den Figuren, wodurch die Karte deutlich hoeher war als die
+  // Volumenentwicklung daneben.
+  container.innerHTML = `<div class="mmap-body">${muscleMapSvg(vol, maxVol)}<div class="mmap-legend">${legend}</div></div>`;
 }
 
 function getAllPRs() {

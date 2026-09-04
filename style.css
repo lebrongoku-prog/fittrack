@@ -1795,14 +1795,18 @@ html.wo-running #wo-week-card { display: none; }
 .np-actions { padding: 12px 14px 0; }
 
 /* ─── Muskel-Landkarte ─── */
-.mmap-figures { display: flex; justify-content: center; gap: 18px; padding: 6px 0 2px; }
+/* Figuren links, Legende rechts daneben — so ist die Karte so hoch wie die
+   Volumenentwicklung, statt durch die untenliegende Legende deutlich hoeher zu werden
+   (Leonard-Wunsch 01.09.2026). */
+.mmap-body { display: flex; align-items: flex-start; gap: 14px; }
+.mmap-figures { display: flex; justify-content: center; gap: 12px; padding: 6px 0 2px; flex-shrink: 0; }
 .mmap-fig { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-.mmap-svg { width: 84px; height: auto; }
+/* Etwas schmaler als frueher (84px): Sonst bleiben neben den beiden Figuren keine 130px
+   fuer die Legende, und „Beine" und „2,8 t" landen auf zwei Zeilen. */
+.mmap-svg { width: 72px; height: auto; }
 .mmap-cap { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: .3px; }
-.mmap-legend {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
-  gap: 2px 14px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border);
-}
+/* Eine Spalte neben den Figuren statt eines mehrspaltigen Rasters darunter. */
+.mmap-legend { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .mmap-legend-row { display: flex; align-items: center; gap: 7px; padding: 3px 0; }
 .mmap-legend-row.mmap-legend-off { opacity: .45; }
 .mmap-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }

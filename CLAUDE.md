@@ -294,7 +294,15 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Leonard-Wunsch). Mit ihm fiel `@keyframes wo-breathe`. `html.workout-active` bleibt — daran haengen die
   Laufanzeige-Pille und das zusaetzliche Polster der Tabs.
 - **Verlauf je Übung** (Übungen-Tab, aufgeklappte Karte): `getExerciseHistory` liefert pro Einheit `maxW` (schwerster Satz) UND `reps` (Summe aller Wiederholungen); `exHistPoints(exId, mode)` filtert daraus die Punkte des gewählten Modus (Einträge ohne Wert fallen raus — Körpergewichtsübungen haben kein Gewicht). Umschalter `.ex-chart-toggle` (Gewicht/Wdh.), Auswahl je Übung in `ft_ex_chart_modes` — bewusst ein eigener localStorage-Key statt eines Felds an der Übung, damit reine Anzeige-Einstellungen nicht in den Trainingsdaten und der Drive-Sicherung landen. `setExChartMode` frischt nur die betroffene Karte auf (ein Neuaufbau der Liste würde sie zuklappen). `.ex-chart-toggle` nutzt die Pillen-Optik von `.stats-mode-toggle` mit; die frühere `html.no-cardio`-Ausnahme ist mit dem Cardio-Ausbau entfallen.
-- **Muskel-Landkarte:** `renderMuscleMap()` zeichnet zwei SVG-Silhouetten (`muscleMapSvg`, vorne/hinten) mit nach Volumenanteil abgestufter Deckkraft plus Zahlen-Legende.
+- **Muskel-Landkarte:** `renderMuscleMap()` zeichnet zwei SVG-Silhouetten (`muscleMapSvg`, vorne/hinten) mit nach
+  Volumenanteil abgestufter Deckkraft plus Zahlen-Legende. Seit 01.09.2026 stehen die Figuren LINKS und die
+  Legende RECHTS daneben (`.mmap-body`, Flex-Zeile) — untenliegend machte sie die Karte deutlich hoeher als die
+  Volumenentwicklung. Die Figuren sind dafuer 72px statt 84px breit, sonst bleiben der Legende keine 130px und
+  „Beine"/„2,8 t" brechen um.
+  `_gleicheHoeheStatsKarten()` am Ende von `renderStatsPage()` setzt im HOCHFORMAT die `min-height` der
+  Muskelkarte auf die gemessene Hoehe der Volumenkarte (Leonard-Wunsch: gleich hoch). Gemessen statt fest
+  verdrahtet, weil der Kopf der Volumenkarte je nach Breite ein- oder zweizeilig ist. Im Querformat wird nichts
+  gesetzt — dort haelt das Grid die beiden ueber `stretch` von selbst gleich hoch.
 - **Löschen ist zweifach abgesichert:** (1) `withUndo(label, fn, afterRestore)` + `showUndoToast()` — sichert die Stores vorab, „Rückgängig" 6 s lang. (2) **Papierkorb** (`ft_trash`, `trashPut/trashRestore/trashDeleteForever/emptyTrash/purgeTrash`, Liste via `renderTrash()` im Einstellungen-Overlay): gelöschte Einheiten, Pläne, Trainingstage und Übungen liegen `TRASH_KEEP_DAYS` = 30 Tage dort. `_snapshotStores` sichert `ft_trash` mit, sonst läge ein Objekt nach „Rückgängig" doppelt vor.
 - **Auswertungen** (Volumenentwicklung, Volumen pro Muskelgruppe, Letzte Einheiten, PRs und Bestleistungen) liegen auf der Stats-Seite des Übungen-Tabs, NICHT mehr in der Übersicht. „Letzte Einheiten" (`renderRecentSessions`, Karte `#ov-recent-sessions-card`) ist am 20.08.2026 dorthin gewandert — die ID behielt ihr `ov-`Präfix.
   Reihenfolge auf der Stats-Seite: Volumenentwicklung, Volumen pro Muskelgruppe, PRs & Bestleistungen, Letzte Einheiten (01.09.2026). `renderStatsPage()` füllt sie. Der Trainingskalender wird dagegen von `renderOverview()` gerendert — er gehört zur Übersicht. ACHTUNG: Vor dem Umbau hing sein Aufruf in `renderHomeStats()`; wandert er wieder dorthin, bleibt die Kalenderkarte in der Übersicht leer.
