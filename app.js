@@ -4097,10 +4097,11 @@ function calendarInnerHTML(id) {
         <span class="cal-sticky-anchor" aria-hidden="true"></span>
         <div class="cal-inner">
           <div class="cal-months" id="${id}-months"></div>
+          <div class="cal-plannames" id="${id}-plannames"></div>
           <div class="cal-gridwrap">
-            <div class="cal-bands" id="${id}-bands"></div>
             <div class="cal-grid" id="${id}-grid"></div>
           </div>
+          <div class="cal-planlanes" id="${id}-planlanes"></div>
         </div>
       </div>
     </div>
@@ -4260,13 +4261,17 @@ function renderTrainingCalendar(id, cardId) {
   const zelle = parseFloat(wurzelStil.getPropertyValue('--cal-cell')) || 19;
   const SPALTE = zelle + CAL_GAP;
 
-  // Plan-Laufzeiten: je eine senkrechte Linie am Anfang und am Ende, der Name darunter.
-  // Bewusst KEIN gefuellter Balken — das Raster soll die Hauptsache bleiben.
-  const bandsEl = document.getElementById(id + '-bands');
-  if (bandsEl) {
+  // ── Plan-Laufzeiten (Variante A + D, Leonard-Entscheidung 04.09.2026) ────────────
+  // Statt eines Rahmens UM die Wochenspalten: der Planname in einer Zeile UEBER dem Raster
+  // und ein farbiger Balken direkt DARUNTER. Zusammen klammern die beiden den Zeitraum ein,
+  // ohne die Kaestchen zu beruehren. Der Rahmen (`.cal-band`) ist damit entfallen — er zeigte
+  // nur, DASS ein Plan lief, nicht welcher, und zwei ueberlappende Rahmen lagen aufeinander.
+  const namenEl = document.getElementById(id + '-plannames');
+  const spurenEl = document.getElementById(id + '-planlanes');
+  if (namenEl && spurenEl) {
     // Spalte NICHT über Millisekunden-Division bestimmen: Zwischen Winter- und Sommerzeit
     // fehlt eine Stunde, wodurch ein Datum genau auf einer Wochengrenze in die Vorwoche
-    // rutschte (die Startlinie stand eine Woche zu früh). Über ganze Tage gerundet stimmt es.
+    // rutschte. Über ganze Tage gerundet stimmt es.
     const spalteFuer = (ts) => {
       const d = new Date(ts); d.setHours(0, 0, 0, 0);
       return Math.floor(Math.round((d - start) / 86400000) / 7);
@@ -4274,30 +4279,51 @@ function renderTrainingCalendar(id, cardId) {
     const rasterEnde = new Date(start.getTime());
     rasterEnde.setDate(rasterEnde.getDate() + wochen * 7);
     rasterEnde.setMilliseconds(-1);
-    // Die Umrandungen folgen dem Modus des Kalenders: Der Gymkalender zeigt nur
-    // Trainingsplaene, der Laufkalender nur Laufplaene, die Uebersicht im Modus „beide"
-    // beide Arten (Leonard-Wunsch 01.09.2026).
+    // Welche Plaene der Kalender zeigt, folgt seinem Modus: Gymkalender nur Trainingsplaene,
+    // Laufkalender nur Laufplaene, die Uebersicht im Modus „beide" beide Arten.
     const imBild = (p) => p && p.startDate
       && p.startDate <= rasterEnde.getTime() && (p.endDate || Infinity) >= start.getTime();
     const zeitraeume = [];
     if (modus.kraft) DB.getPlans().filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'gym' }));
     if (modus.lauf)  DB.getRunPlans().filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'lauf' }));
-    zeitraeume.sort((a, b) => a.p.startDate - b.p.startDate);
+    zeitraeume.sort((a, b) => (a.typ === b.typ ? a.p.startDate - b.p.startDate : (a.typ === 'gym' ? -1 : 1)));
 
-    // Umrandung um die Wochenspalten des Zeitraums — ohne Füllung, damit die Kästchen
-    // ungestört bleiben. Farbe je Art: Gym dunkelgruen wie die trainierten Kerne,
-    // Lauf hellgruen wie die Laufkreise. Eine Beschriftung mit dem Plannamen gibt es nicht
-    // (Leonard-Wunsch 20.08.2026) — der Name steht beim Antippen eines Tages darunter.
-    let bands = '';
+    // Jede Sportart bekommt ihre eigene Spur, damit Gym und Lauf sich nie ueberlagern.
+    // Ueberschneiden sich ZWEI Plaene derselben Sportart, oeffnet der zweite eine weitere
+    // Spur — sonst stuenden zwei Namen uebereinander.
+    const spuren = [];   // je Eintrag: { typ, bis }
+    const stuecke = [];  // je Eintrag: { p, typ, von, bis, spur }
     zeitraeume.forEach(({ p, typ }) => {
       const von = Math.max(0, spalteFuer(p.startDate));
       const bis = Math.min(wochen - 1, spalteFuer(p.endDate || rasterEnde.getTime()));
       if (bis < von) return;
-      const links = von * SPALTE - 2;
-      const breite = (bis - von + 1) * SPALTE - 3 + 4;
-      bands += `<span class="cal-band${typ === 'lauf' ? ' cal-band-run' : ''}" style="left:${links}px;width:${breite}px"></span>`;
+      let nr = spuren.findIndex(sp => sp.typ === typ && sp.bis < von);
+      if (nr < 0) { nr = spuren.length; spuren.push({ typ, bis }); }
+      else spuren[nr].bis = bis;
+      stuecke.push({ p, typ, von, bis, spur: nr });
     });
-    bandsEl.innerHTML = bands;
+
+    const NAME_H = 15, NAME_GAP = 3, SPUR_H = 5, SPUR_GAP = 3;
+    const stil = (st) => `left:${st.von * SPALTE}px;width:${(st.bis - st.von + 1) * SPALTE - CAL_GAP}px`;
+    const klasse = (st) => (st.typ === 'lauf' ? ' lauf' : '') + (st.p.archived ? ' archiviert' : '');
+
+    namenEl.innerHTML = stuecke.map(st =>
+      `<span class="cal-planname${klasse(st)}" style="${stil(st)};top:${st.spur * (NAME_H + NAME_GAP)}px"
+             title="${escapeHtml(st.p.name || '')}">${escapeHtml(st.p.name || 'Plan')}</span>`).join('');
+    spurenEl.innerHTML = stuecke.map(st =>
+      `<span class="cal-planspur${klasse(st)}" style="${stil(st)};top:${st.spur * (SPUR_H + SPUR_GAP)}px"></span>`).join('');
+
+    // Beide Zeilen sind absolut gefuellt und haetten sonst die Hoehe null. Die Namenszeile
+    // schiebt ausserdem das Raster nach unten — die Wochentagsspalte liegt ABSOLUT ueber dem
+    // Kalender und muss denselben Versatz mitrechnen, sonst steht „Mo" nicht mehr auf einer
+    // Linie mit der ersten Rasterzeile. Deshalb `--cal-names-h` als gemeinsame Quelle.
+    const anzahl = spuren.length;
+    const namenH = anzahl ? anzahl * NAME_H + (anzahl - 1) * NAME_GAP + 6 : 0;
+    namenEl.style.height = namenH ? (namenH - 6) + 'px' : '0';
+    namenEl.style.marginBottom = namenH ? '6px' : '0';
+    spurenEl.style.height = anzahl ? (anzahl * SPUR_H + (anzahl - 1) * SPUR_GAP) + 'px' : '0';
+    spurenEl.style.marginTop = anzahl ? '7px' : '0';
+    if (card) card.style.setProperty('--cal-names-h', namenH + 'px');
   }
 
   // Beim ERSTEN Aufbau zur laufenden Woche scrollen (nicht ans Jahresende — der Dezember

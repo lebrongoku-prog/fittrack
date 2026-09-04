@@ -258,19 +258,27 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   ACHTUNG: Die aktuelle Position fuehrt ein Scroll-Listener in `_calScrollPos` nach; sie darf NICHT zu
   Beginn des Renderns als Momentaufnahme genommen werden. Beim App-Start laeuft der Renderer zweimal
   dicht hintereinander (`prerenderAllTabs` + `_applyTabState`) — die zweite Runde haette dann den Stand
-  VOR dem ersten Positionieren festgehalten und das Raster wieder auf Null gezogen. Plan-Laufzeiten sind als Rahmen OHNE Füllung um die Wochenspalten gezeichnet
-  (`.cal-bands`/`.cal-band`, `z-index:0`, Raster darüber mit `z-index:1`); archivierte Pläne sind blasser.
-  Welche Zeitraeume ein Kalender zeichnet, folgt seinem Modus (`_calModus`): Gymkalender nur
-  Trainingsplaene, Laufkalender nur Laufplaene, die Uebersicht im Modus „beide" beide Arten.
-  FARBE nach Art (Leonard-Wunsch 01.09.2026): Gym in `--cal-plan-color` (#0F766E, dasselbe
-  Dunkelgruen wie die trainierten Kerne), Lauf in #4ADE80 (`.cal-band-run`, dasselbe Hellgruen
-  wie die Laufkreise). Der Lauf-Rahmen hat 2px weniger Ueberstand, damit bei zeitlicher
-  Ueberschneidung beide sichtbar bleiben. Keine Abstufung nach laufend/kommend/archiviert. Welcher Plan zu einem Tag gehoert, sagt die Beschreibung
-  unter dem Raster. Die Umrandungen behalten ihre Farbe AUCH im Transparenz-Modus (04.09.2026, Leonard-Wunsch) —
-  die fruehere Glas-Regel `--cal-plan-color: rgba(255,255,255,.55)` auf `.cal-scroll` ist
-  entfallen. Sonst waeren Gym- und Laufplan dort nicht mehr auseinanderzuhalten.
-  Eine Beschriftung mit dem Plannamen unter dem Raster gibt es NICHT mehr (entfernt 20.08.2026) — der Name steht
-  beim Antippen eines Tages in der Beschreibung darunter, dort mit der Wochenzahl in Klammern (ohne Datumsspanne).
+  VOR dem ersten Positionieren festgehalten und das Raster wieder auf Null gezogen.
+- **Plan-Laufzeiten: Name OBEN, Balken UNTEN** (04.09.2026, Leonard-Entscheidung „Variante A+D").
+  Der fruehere Rahmen um die Wochenspalten (`.cal-bands`/`.cal-band`, samt `--cal-band-over`) ist
+  ERSATZLOS entfallen — er zeigte nur, DASS ein Plan lief, nicht welcher, und zwei ueberlappende
+  Rahmen lagen fast aufeinander. Jetzt: `.cal-plannames` ueber dem Raster (Planname, 11px, fett)
+  und `.cal-planlanes` darunter (5px-Balken), beide auf GENAU denselben Wochenspalten — zusammen
+  klammern sie den Zeitraum ein, ohne die Kaestchen zu beruehren.
+  SPUREN: Jede Sportart bekommt ihre eigene; ueberschneiden sich zwei Plaene DERSELBEN Sportart,
+  oeffnet der zweite eine weitere (einfaches Intervall-Packing in `renderTrainingCalendar`).
+  Name und Balken eines Plans stehen dadurch immer in derselben Spur uebereinander.
+  Farbe wie ueberall: Gym #0F766E (`--cal-plan-color`), Lauf #4ADE80; archivierte Plaene mit
+  `opacity: .5`. Beides bleibt im Transparenz-Modus farbig.
+  ACHTUNG WOCHENTAGSSPALTE: Die Namenszeile schiebt das Raster nach unten, `.cal-daylabels` liegt
+  aber ABSOLUT ueber dem Kalender. `renderTrainingCalendar` setzt deshalb `--cal-names-h` auf der
+  KARTE (0px, wenn kein Plan im Bild ist), und der `top`-Wert der Spalte rechnet es mit. Ohne das
+  steht „Mo" nicht mehr auf einer Linie mit der ersten Rasterzeile — beim Aendern der Zeilenhoehen
+  (NAME_H/NAME_GAP im JS) hier mitziehen.
+  Beide Zeilen sind reine Positionsflaechen: Ihre Kinder sitzen absolut, deshalb setzt das JS auch
+  ihre Hoehe — im Fluss haetten sie keine.
+  (Zwischen dem 20.08. und dem 04.09.2026 gab es GAR KEINE Beschriftung — der Name stand nur in
+  der Tagesbeschreibung. Genau das war Leonards Kritik: Man sah nicht, welcher Plan wann lief.)
   Beim Antippen eines Tages innerhalb eines Plans nennt eine zweite Zeile den Stand des Plans (`planErfuellung`): absolvierte Einheiten gegen
   bis dahin geplante Trainingstage samt Prozent. Bezug ist immer nur die Vergangenheit (laufender Plan: bis heute), Einheiten an nicht geplanten
   Tagen zählen mit — ein nachgeholtes Training soll die Quote nicht drücken (beides Leonard-Entscheidung). Rahmen und Beschriftung nutzen dieselbe Farbe

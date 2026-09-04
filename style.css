@@ -2031,7 +2031,10 @@ html.wo-running #wo-week-card { display: none; }
    statt einer gemessenen Schrifthoehe. */
 .cal-daylabels {
   position: absolute; left: var(--cal-pad-x);
-  top: calc(var(--cal-pad-y) + var(--cal-months-h) + var(--cal-months-gap));
+  /* `--cal-names-h` setzt renderTrainingCalendar je nach Zahl der Plan-Spuren (0, wenn kein
+     Plan im Bild ist). Ohne diesen Summanden stuende „Mo" nicht mehr auf einer Linie mit der
+     ersten Rasterzeile, sobald die Namenszeile darueber Platz braucht. */
+  top: calc(var(--cal-pad-y) + var(--cal-months-h) + var(--cal-months-gap) + var(--cal-names-h, 0px));
   width: var(--cal-label-w);
   display: flex; flex-direction: column; gap: var(--cal-gap);
 }
@@ -2065,10 +2068,9 @@ html.wo-running #wo-week-card { display: none; }
 /* Seitliches Polster des Kalenderbereichs — die Zeile mit Wochentagsspalte und Scroller
    sowie die Tagesbeschreibung darunter nutzen ihn, damit beide buendig stehen. */
 :root { --cal-pad-x: 1px; }
-/* Polster oben und unten im Scroller. Muss den Ueberstand der Plan-Umrandung aufnehmen
-   (`.cal-band` reicht --cal-band-over ueber das Raster hinaus); fehlt es, schneidet
-   `overflow-y: hidden` deren Kante ab. Die Wochentagsspalte rechnet es mit, um senkrecht
-   zum Raster zu passen. */
+/* Polster oben und unten im Scroller; die Wochentagsspalte rechnet es mit, um senkrecht zum
+   Raster zu passen. Frueher nahm es zusaetzlich den Ueberstand der Plan-Umrandung auf — die
+   gibt es seit dem 04.09.2026 nicht mehr (Name oben, Balken unten). */
 :root { --cal-pad-y: 5px; }
 /* Abstand zwischen der Wochentagsspalte und dem Scroller. */
 /* Abstand zwischen den Kaestchen. EINE Quelle fuer CSS UND JS: renderTrainingCalendar
@@ -2084,8 +2086,6 @@ html.wo-running #wo-week-card { display: none; }
 /* Breite der Wochentagsspalte. Sie steht ausserhalb des Scrollers — die Platzrechnung in
    renderTrainingCalendar misst den Scroller und muss sie deshalb NICHT mehr abziehen. */
 :root { --cal-label-w: 24px; }
-/* Ueberstand der Plan-Umrandung ueber das Raster (oben wie unten). */
-:root { --cal-band-over: 4px; }
 /* Feste Hoehe der Monatszeile. Feste Hoehe statt gemessener Schrifthoehe, weil die
    Wochentagsspalte ausserhalb des Scrollers denselben Wert als oberen Abstand nutzt —
    nur so liegen „Mo" und die erste Rasterzeile garantiert auf einer Linie. */
@@ -2175,22 +2175,26 @@ html.wo-running #wo-week-card { display: none; }
    absolut auf Positionen, die das JS in Vielfachen der Spaltenbreite (--cal-cell + 3px)
    rechnet. Der Versatz links entspricht den Tages-Labels. */
 .cal-gridwrap { position: relative; }
-/* Umrandung um die Wochenspalten eines Plan-Zeitraums — ohne Füllung, damit die Kästchen
-   (geplant/trainiert) unverändert lesbar bleiben. Liegt unter dem Raster. */
-.cal-bands { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
-.cal-band {
-  position: absolute; top: calc(-1 * var(--cal-band-over)); bottom: calc(-1 * var(--cal-band-over));
-  border: 1.2px solid var(--cal-plan-color); border-radius: 6px;
-  box-sizing: border-box;
+/* Plan-Laufzeiten: Name UEBER dem Raster, farbiger Balken DARUNTER (04.09.2026, loest die
+   fruehere Umrandung `.cal-band` ab). Beide Zeilen sind Positionsflaechen — ihre Kinder sitzen
+   absolut auf denselben Spalten wie das Raster, deshalb `position: relative` und eine vom JS
+   gesetzte Hoehe (ohne Kinder im Fluss waeren sie null hoch).
+   Die Farbe steckt in den Kindern, nicht in der Zeile: Gym traegt das Dunkelgruen der
+   trainierten Kerne, Lauf das Hellgruen der Laufkreise. */
+.cal-plannames, .cal-planlanes { position: relative; }
+.cal-planname {
+  position: absolute; height: 15px; line-height: 15px;
+  font-size: 11px; font-weight: 700; color: var(--cal-plan-color);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* Laufplan-Zeitraum: dasselbe Rechteck, aber im Hellgruen der Laufkreise (der Gym-Zeitraum
-   traegt das Dunkelgruen der trainierten Kerne). Der Ueberstand ist 2px kleiner, damit im
-   Modus „beide" beide Rahmen sichtbar bleiben, wenn sich die Zeitraeume ueberschneiden. */
-.cal-band-run {
-  border-color: #4ADE80;
-  top: calc(-1 * var(--cal-band-over) + 2px);
-  bottom: calc(-1 * var(--cal-band-over) + 2px);
+.cal-planspur {
+  position: absolute; height: 5px; border-radius: 3px;
+  background: var(--cal-plan-color);
 }
+.cal-planname.lauf, .cal-planspur.lauf { color: #4ADE80; }
+.cal-planspur.lauf { background: #4ADE80; }
+/* Archivierte Plaene treten zurueck — sie sind Rueckblick, kein laufender Zeitraum. */
+.cal-planname.archiviert, .cal-planspur.archiviert { opacity: .5; }
 .cal-grid { position: relative; z-index: 1; }
 
 /* Polster sitzt auf der Detailzeile, nicht auf dem Fuss: Ohne ausgewaehlten Tag ist die
