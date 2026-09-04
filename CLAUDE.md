@@ -270,13 +270,15 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   positionierten Bedienelementen immer mit `document.elementFromPoint` pruefen, wer an der Stelle wirklich liegt.
 - **Ruhetag-Herocard** (`buildRestHero`) wird von der Uebersicht UND vom Trainings-Tab genutzt (seit
   01.09.2026 — vorher hatte der Trainings-Tab mit `buildRestCard` eine eigene, flachere Karte).
-  Zweiter Parameter ist der Wochentagsname: Im Trainings-Tab kann ein anderer Tag als heute gewaehlt sein,
-  dann steht sein Name im Titel statt „Heute ist Ruhetag". „Freies Training starten" erscheint NUR fuer
-  heute — an einem anderen Wochentag waere der Knopf irrefuehrend, gestartet wird ohnehin eine Einheit von
-  heute. `buildRestCard` und die ganze `.session-card-v2`/`.scv2-*`-Familie sind damit entfallen —
+  Die Karte ist in beiden Tabs IDENTISCH (Leonard-Wunsch 01.09.2026) — gleiche Hoehe, gleiche Lage der
+  Hantel, und „Freies Training starten" steht immer da. Zweiter Parameter ist der Wochentagsname: Im
+  Trainings-Tab kann ein anderer Tag als heute gewaehlt sein, dann steht sein Name im Titel statt
+  „Heute ist Ruhetag". `buildRestCard` und die ganze `.session-card-v2`/`.scv2-*`-Familie sind damit entfallen —
   sie hatten danach keinen Aufrufer mehr.
-- **Ruhetag-Herocard** (`buildRestHero`, Uebersicht): `_ruhetagHeroAusrichten()` setzt am Ende von
-  `renderOverview()` ihre `min-height` auf die GEMESSENE Hoehe der Wochenplan-Karte darueber und
+- **Ruhetag-Herocard** (`buildRestHero`): `_ruhetagHeroAusrichten()` richtet BEIDE Vorkommen aus
+  (Uebersicht gegen `#ov-plan-card`, Trainings-Tab gegen `#wo-week-card`) — die eigentliche Arbeit macht
+  `_ruhetagHeroEinrichten(heroSel, planSel)`. Aufgerufen am Ende von `renderOverview()`, beim Zeichnen der
+  Ruhetag-Karte in `renderWorkoutsScreen()` und im Resize-Handler. Gesetzt wird die `min-height` auf die GEMESSENE Hoehe der Wochenplan-Karte darueber und
   verschiebt die Hantel per `transform: translateY(...)` auf die Mitte des Knopfes „Freies Training
   starten" (Leonard-Wunsch 01.09.2026). Gemessen statt fest verdrahtet, weil die Plan-Karte um die
   Serien-Zeile („N Wochen in Folge") waechst. Die Hantel MUSS per `transform` wandern, nicht per

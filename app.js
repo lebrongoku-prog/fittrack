@@ -886,13 +886,20 @@ function renderOverview() {
 // Die Hantel wird per `transform` verschoben, NICHT per Abstand: Ein transform veraendert das
 // Layout nicht und kann die Kartenhoehe deshalb nicht zurueckwirkend beeinflussen — sonst
 // haetten sich Hoehe und Versatz gegenseitig aufgeschaukelt.
+// Laeuft fuer BEIDE Tabs, damit die Ruhetag-Karte dort identisch aussieht: Uebersicht
+// (Wochenplan-Karte in `#ov-plan-card`) und Trainings-Tab (`#wo-week-card`).
 function _ruhetagHeroAusrichten() {
-  const hero = document.querySelector('#screen-overview .hero-v2.rest-mode');
+  _ruhetagHeroEinrichten('#screen-overview .hero-v2.rest-mode', '#ov-plan-card .plan-card-v2');
+  _ruhetagHeroEinrichten('#wo-session-card-wrap .hero-v2.rest-mode', '#wo-week-card .plan-card-v2');
+}
+
+function _ruhetagHeroEinrichten(heroSel, planSel) {
+  const hero = document.querySelector(heroSel);
   if (!hero) return;
   const art = hero.querySelector('.hero-v2-art');
   const btn = hero.querySelector('.free-wo-btn');
   if (art) art.style.transform = '';          // vor dem Messen zuruecksetzen, sonst summiert es sich
-  const plan = document.querySelector('#ov-plan-card .plan-card-v2');
+  const plan = document.querySelector(planSel);
   const planHoehe = plan ? plan.getBoundingClientRect().height : 0;
   // Hoehe 0 heisst: Der Tab ist gerade nicht sichtbar (Vorab-Rendern beim Start). Dann nichts
   // setzen — beim naechsten Rendern im sichtbaren Tab stimmen die Masse.
@@ -1456,15 +1463,16 @@ function freeWorkoutBtn() {
 // Ruhetag-Herocard. Wird von der Uebersicht (immer heute) UND vom Trainings-Tab genutzt —
 // dort kann ein anderer Wochentag gewaehlt sein, dessen Name dann im Titel steht
 // (Leonard-Wunsch 01.09.2026: im Trainings-Tab dieselbe Karte wie in der Uebersicht).
-// „Freies Training starten" nur fuer heute: An einem anderen Wochentag waere der Knopf
-// irrefuehrend, denn gestartet wird immer eine Einheit von heute.
+// Die Karte ist in BEIDEN Tabs identisch (Leonard-Wunsch 01.09.2026) — auch „Freies Training
+// starten" steht immer da. Gestartet wird ohnehin eine Einheit von heute, unabhaengig davon,
+// welcher Wochentag im Trainings-Tab gerade ausgewaehlt ist.
 function buildRestHero(isToday, dayName) {
   const titel = isToday ? 'Heute ist Ruhetag' : (dayName || 'Kein Training geplant');
   return `<div class="hero-v2 rest-mode">
     <div class="hero-v2-text" style="flex:1">
       <div class="hero-v2-label">RUHETAG</div>
       <div class="hero-v2-title">${titel}</div>
-      ${isToday ? freeWorkoutBtn() : ''}
+      ${freeWorkoutBtn()}
     </div>
     <div class="hero-v2-art">
       ${heroDumbbellSvg()}
@@ -1607,6 +1615,9 @@ function renderWorkoutsScreen() {
     wrap.innerHTML = buildSessionCard(null, planDay, selDay, true);
   } else {
     wrap.innerHTML = buildRestHero(!!(selDay && selDay.isToday), selDay ? dayFullName(selDay.dayKey) : '');
+    // Hoehe und Hantel wie in der Uebersicht ausrichten — die Karte soll dort und hier
+    // identisch aussehen.
+    _ruhetagHeroAusrichten();
   }
 
   // Tabs + cards
