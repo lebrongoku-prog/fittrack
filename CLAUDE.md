@@ -317,6 +317,10 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   `--text` auf der Glas-Karte erreicht ihn gar nicht.
   Ein Tipp auf die Zeile öffnet über `showHistDetailForEx(exId, bestTs)` die Einheit, in der der Rekord AUFGESTELLT wurde (nicht die
   neueste mit dieser Übung) und hebt die Übung dort per `.hd-step-hl` farbig umrandet hervor.
+- **ACHTUNG `.screen.active`:** Die Klasse steht FEST im Markup an `#screen-overview` und wandert NIE
+  zu einem anderen Tab — `_applyTabState` fasst sie nicht an, sie ist nur ein Marker. Ein Selektor wie
+  `#screen-workouts.active` greift deshalb NIE (Fehler vom 01.09.2026). Fuer andere Tabs `#screen-xy.screen`
+  nehmen: passt immer und hat dieselbe Spezifitaet.
 - **Querformat (ab 1024px):** Auch der TRAININGS-Tab ist ein 2-Spalten-Grid — Wochenplan links,
   Herocard rechts in derselben Zeile, genau wie in der Uebersicht (Leonard-Wunsch 01.09.2026).
   Kopfzeile, Uebungsliste und „Uebung hinzufuegen" spannen ueber beide Spalten. Waehrend einer
