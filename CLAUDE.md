@@ -563,6 +563,23 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   (Leonard-Wunsch 01.09.2026). Gilt in ALLEN Tabs, die diese Karte zeigen — sie ist bewusst ueberall dieselbe.
   TESTHINWEIS: In einer versteckten Browser-Ansicht (`visibilityState:'hidden'`) laeuft weder die weiche
   Scrollbewegung noch feuern ueberhaupt `scroll`-Ereignisse — der ganze Tab-Sync ist dort nicht pruefbar.
+- **Die Karte „Trainingsplan-Daten" ist wie „Laufplan-Daten" aufgebaut** (04.09.2026,
+  Leonard-Wunsch): Zeile 1 Name, Zeile 2 Start | Ende | Wochen (`.lp-datenzeile.sp3`,
+  `#prog-datenzeile`, von `renderPlanDetail()` gefuellt), Zeile 3 Notizen. Beide Karten tragen
+  `.plan-form-card`, damit sie sich dieselben Regeln teilen.
+  ACHTUNG, VERHALTENSAENDERUNG: Start und Ende sind jetzt UNABHAENGIG. Vorher schob ein neues
+  Startdatum das Enddatum mit, und die Gesamtdauer war ein eigenes Eingabefeld (`#prog-weeks`,
+  `onWeeksChange` — beide entfallen). Die Wochenzahl wird aus beiden Daten abgeleitet.
+  `weeksTotal` bleibt trotzdem GESPEICHERT, weil ein Dutzend Stellen es liest (Vorlagen,
+  Sicherung, `getActivePlan`); `_planDauerNachziehen` haelt es bei jeder Datumsaenderung auf
+  Stand. `_planProgramWeek` rechnet die Gesamtzahl jetzt ebenfalls aus Start und Ende — sonst
+  stand in der Karte „Woche 5 / 12", waehrend die Detailansicht „9 Wochen" nannte (Plaene ohne
+  `weeksTotal` fielen dort auf die 12 aus `getActivePlan` zurueck).
+  Die Datumsfelder nutzen dasselbe `lpDatumFeld`-Muster wie der Laufplan (sichtbarer Kasten,
+  unsichtbares `<input type="date"` darueber). Deren IDs `prog-start`/`prog-end` bleiben, damit
+  `onStartDateChange`/`onEndDateChange` unveraendert weiterlesen. Zeitzonen gehen auf: Der
+  Gymplan speichert UTC-Mitternacht, und in Mitteleuropa liefern die LOKALEN Datumsteile davon
+  denselben Kalendertag.
 - **Der heutige Wochentag wird in der Plan-Detailansicht NICHT hervorgehoben** (01.09.2026). Die Klasse
   `.wpe-row.today` steht weiter im Markup, hat aber keine Regeln mehr — dort wird ein Plan bearbeitet,
   das aktuelle Datum spielt keine Rolle und die eingefaerbte Zeile las sich wie eine Auswahl.
@@ -649,8 +666,9 @@ wurde auf Leonards Wunsch wieder entfernt — nicht erneut einbauen, ohne zu fra
 Leonard-Wunsch) — vorher klappte er in der Liste auf. Der Ablauf ist vom Gymplan kopiert:
 `openRunPlanDetail(id)` setzt `editingRunPlanId` und ruft `showScreen('runplan-detail')`,
 `closeRunPlanDetail()` fuehrt zurueck in den Plaene-Tab, der Zurueck-Pfeil oben links ist
-derselbe `.sheet-back-btn`. Die Liste zeigt nur noch Kacheln (`runPlanKarte`), ein neuer Plan
-landet direkt in seiner Detailseite. `_laufOffenePlaene` und `toggleRunPlan` sind entfallen.
+derselbe `.sheet-back-btn` und `initOverlayEdgeSwipe` gibt der Seite dieselbe Wischgeste vom
+linken Bildschirmrand. Ein neuer Plan landet direkt in seiner Detailseite.
+`_laufOffenePlaene`, `toggleRunPlan` und `runPlanKarte` sind entfallen.
 Die Abschnitte stehen auf `.mehr-card`, NICHT auf `.chart-card-v2` — `.mehr-card` fehlt in der
 Glas-Liste und bleibt deshalb auch im Transparenz-Modus weiss, genau wie das Gymplan-Detail
 (das war der Anlass). Damit ist auch die kurzzeitige Glas-Ausnahme fuer die aufgeklappte Karte
@@ -658,11 +676,12 @@ wieder weg.
 ACHTUNG: Nach einer Aenderung muss der SICHTBARE Bildschirm neu gezeichnet werden — mal die
 Liste, mal die Detailseite. Das entscheidet `_laufNeuZeichnen()`; ein direkter Aufruf von
 `renderLaufVerwaltung()` liesse die Detailseite veraltet stehen.
-- **Start | Ende | Wochen | Wettkampf in EINER Zeile** (`.lp-3col`, seit 04.09.2026 vier
-  Spalten). Die Wochenzahl ist ABGELEITET (`runPlanWochen`) und deshalb kein Eingabefeld, sondern
+- **Start | Ende | Wochen | Wettkampf in EINER Zeile** (`.lp-datenzeile.sp4`, seit 04.09.2026
+  vier Spalten; der GYMPLAN nutzt dieselbe Zeile mit `.sp3`, ohne Wettkampf). Die Wochenzahl ist ABGELEITET (`runPlanWochen`) und deshalb kein Eingabefeld, sondern
   `.lp-wochen-v` — sieht aus wie eines, gleiche Hoehe. Der Abschnittstitel heisst nur noch
   „Lauftage", das Wettkampffeld nur noch „Wettkampf" (fuer „(optional)" ist kein Platz).
-  Ein GRID (`1fr 1fr 46px 1fr`, gap 6px), weil die Breiten auf den Punkt aufgehen muessen:
+  Ein GRID (`.sp4` = `1fr 1fr 46px 1fr`, `.sp3` = `1fr 1fr 46px`, gap 6px), weil die Breiten bei
+  vier Spalten auf den Punkt aufgehen muessen:
   323px Zeile − 46px − 3×6px = 86,3px je Datumsfeld, abzueglich 2×3px Polster und 2×1px Rand
   bleiben 78,3px Text. „03.09.2026" misst bei 14px 75px, bei 15px schon 79,6px — deshalb sind
   Datum und Wochenzahl in dieser Zeile 14px. Das UNSICHTBARE Eingabefeld darunter bleibt bei
@@ -685,7 +704,7 @@ Liste, mal die Detailseite. Das entscheidet `_laufNeuZeichnen()`; ein direkter A
   schob das Datum ein weiteres Mal zurueck. `lpDatumFeld` liest deshalb die LOKALEN Datumsteile.
   Die Trainingsplaene sind nicht betroffen: `_msToDate`/`_dateToMs` rechnen beide in UTC und
   bleiben unter sich stimmig — beim Angleichen der beiden Seiten also nicht halb umstellen.
-- **Die Formularkarte hat KEINE Tipp-Animation** (04.09.2026): `.mehr-card.lauf-plan-form` setzt
+- **Die Formularkarte hat KEINE Tipp-Animation** (04.09.2026): `.mehr-card.plan-form-card` setzt
   `transition: none` und `:active { transform: none }` — jeder Tipp in ein Feld liess sie sonst
   zucken. Drei Klassen, damit `.mehr-card:active` verliert. Die KACHEL in der Liste behaelt die
   Animation, dort oeffnet der Tipp ja die Detailseite.
@@ -735,12 +754,17 @@ der einen Neustart ueberlebt, laesst den Kalender spaeter unerklaerlich unvollst
 ---
 
 ### Laufwochenplan
-`buildRunPlanCard()` ist das Gegenstueck zu `buildPlanCard` — gleiche Klassen, gleiche Masse,
-gleiche Bedienung, nur andere Quelle (Lauftage statt Trainingstage, gelaufene Einheiten statt
-Krafteinheiten). BEWUSST eine eigene Funktion: Die beiden Datenmodelle haben ausser der Woche
-nichts gemeinsam. Steht in der **Uebersicht** unter dem Gymwochenplan (`#ov-runplan-card`; im
-Querformat teilen sich beide eine Zeile, die Herocard rutscht darunter ueber die volle Breite)
-und im **Trainings-Tab auf der Seite „Laufen" zuoberst**.
+`buildRunPlanCard(onTap, plan)` ist das Gegenstueck zu `buildPlanCard` — gleiche Klassen,
+gleiche Masse, gleiche Bedienung, nur andere Quelle (Lauftage statt Trainingstage, gelaufene
+Einheiten statt Krafteinheiten). BEWUSST eine eigene Funktion: Die beiden Datenmodelle haben
+ausser der Woche nichts gemeinsam. Ohne `plan` zeichnet sie den LAUFENDEN Plan, mit `plan` einen
+bestimmten — daraus besteht seit dem 04.09.2026 die ganze Liste auf der Seite „Laufplan",
+aufgebaut wie `renderPlans()` beim Gymplan: Nur der laufende Plan zeigt Fortschrittsbalken und
+Haken, alle uebrigen tragen Statuschip (`runPlanStatus`) und Laufzeit. Das Archiv haengt hinter
+demselben Ausklapp-Knopf (`.archiv-btn`, `runplansArchiveExpanded`/`toggleRunplansArchive`).
+Steht ausserdem in der **Uebersicht** unter dem Gymwochenplan (`#ov-runplan-card`; im Querformat
+teilen sich beide eine Zeile, die Herocard rutscht darunter ueber die volle Breite) und im
+**Trainings-Tab auf der Seite „Laufen" zuoberst**.
 FARBE der Erledigt-Akzente (Kreis + Haken) UND des Fortschrittsbalkens (`.ppv-bar-fill`,
 seit 04.09.2026): Gym #0F766E (wie die trainierten Kalender-Kaestchen), Lauf #4ADE80 (wie die
 Laufkreise) — `.run-plan` als Modifikator. Der Balken folgt damit der SPORTART, nicht der

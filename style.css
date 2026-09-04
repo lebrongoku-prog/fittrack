@@ -640,10 +640,10 @@ body.theme-plans .hist-action-dd {
 /* AUSNAHME aufgeklappter Laufplan: Die Karte IST hier das Bearbeitungsformular. Jeder Tipp
    in ein Feld liess die ganze Karte zucken (Leonard-Meldung 04.09.2026). Eingeklappt bleibt
    sie eine gewoehnliche Karte und behaelt die Animation — dort oeffnet der Tipp sie ja. */
-/* Das Laufplan-Formular ist eine Bearbeitungsflaeche: Jeder Tipp in ein Feld liess die Karte
-   sonst zucken (Leonard-Meldung 04.09.2026). Drei Klassen, damit `.mehr-card:active` verliert. */
-.mehr-card.lauf-plan-form { transition: none; }
-.mehr-card.lauf-plan-form:active { transform: none; }
+/* Die Plan-Formulare sind Bearbeitungsflaechen: Jeder Tipp in ein Feld liess die Karte sonst
+   zucken (Leonard-Meldung 04.09.2026). Drei Klassen, damit `.mehr-card:active` verliert. */
+.mehr-card.plan-form-card { transition: none; }
+.mehr-card.plan-form-card:active { transform: none; }
 .ppv-head { display: flex; align-items: flex-start; gap: 8px; }
 .ppv-name { flex: 1; min-width: 0; font-size: 16px; font-weight: 700; color: var(--text); }
 .plan-status-past .ppv-name, .plan-status-archived .ppv-name { color: var(--text2); }
@@ -1849,8 +1849,6 @@ html.wo-running #wo-week-card { display: none; }
 .lauf-kennz-l { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
 .lauf-leer { font-size: 13px; color: var(--text3); text-align: center; padding: 10px 0; }
 /* Eingeklappte Plan-Karte: wie eine Listenzeile, aufgeklappt wird sie zum Formular. */
-.lauf-plan .ppv-meta { margin-top: 2px; }
-.lauf-plan { cursor: pointer; }
 /* Wochenbloecke: Der Kopf nutzt den transparenten Ausklapp-Knopf, der Inhalt bleibt IMMER
    im DOM und wird nur ein-/ausgeblendet — ein Neuaufbau naehme den Kopffeldern darueber
    die noch nicht gespeicherten Eingaben. */
@@ -1919,22 +1917,27 @@ html.wo-running #wo-week-card { display: none; }
 /* Die Wochenbloecke stehen auf der Detailseite in einer eigenen Karte und tragen deren
    Polster selbst — `.mehr-card` bringt keines mit. */
 .lp-wochen-karte { padding: 6px 14px 14px; }
-/* VIER Spalten in EINER Zeile: Start, Ende, Wochen, Wettkampf (Leonard-Wunsch 04.09.2026).
-   Ein Grid statt Flex, weil die Breiten hier auf den Punkt aufgehen muessen.
+/* Datumszeile der Plan-Formulare. `.sp3` = Start | Ende | Wochen (Gymplan),
+   `.sp4` = zusaetzlich Wettkampf (Laufplan). Beide Detailansichten sind seit dem
+   04.09.2026 gleich aufgebaut (Leonard-Wunsch).
+   Ein Grid statt Flex, weil die Breiten bei vier Spalten auf den Punkt aufgehen muessen.
    Platzrechnung fuer 375px Bildschirm: 323px Zeile − 46px Wochen − 3×6px Abstand = 259px,
-   also 86,3px je Datumsfeld. Abzueglich 2×3px Polster und 2×1px Rand bleiben 79,7px fuer den
+   also 86,3px je Datumsfeld. Abzueglich 2×3px Polster und 2×1px Rand bleiben 78,3px fuer den
    Text; „03.09.2026" misst bei 14px 75px. Bei 15px waeren es 79,6px — es ginge sich um
-   0,1px aus, deshalb hier 14px. Das UNSICHTBARE Eingabefeld darunter bleibt bei 16px, sonst
-   zoomt iOS beim Fokussieren hinein.
-   Die Beschriftungen laufen hier auf 11px statt 12px: „Wochen" misst sonst 47px und passt in
-   keine Spalte, die schmal genug ist, damit die drei Datumsfelder noch aufgehen — sichtbar als
+   1,3px nicht aus, deshalb hier 14px. Das UNSICHTBARE Eingabefeld darunter bleibt bei 16px,
+   sonst zoomt iOS beim Fokussieren hinein. `.sp3` haette Platz fuer 15px, nutzt aber
+   dieselben Werte — die beiden Karten sollen gleich aussehen.
+   Die Beschriftungen laufen auf 11px statt 12px: „Wochen" misst sonst 47px und passt in keine
+   Spalte, die schmal genug ist, damit die Datumsfelder noch aufgehen — sichtbar als
    „WochenWettkampf" ohne Luecke. */
-.lauf-plan-form .lp-3col { display: grid; grid-template-columns: 1fr 1fr 46px 1fr; gap: 6px; }
-.lauf-plan-form .lp-3col > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.lauf-plan-form .lp-3col > div > label { font-size: 11px; }
-.lauf-plan-form .lp-3col .lp-datum-txt,
-.lauf-plan-form .lp-3col .lp-wochen-v { font-size: 14px; text-align: center; }
-.lauf-plan-form .lp-3col .lp-datum { padding-left: 3px; padding-right: 3px; }
+.plan-form-card .lp-datenzeile { display: grid; gap: 6px; }
+.plan-form-card .lp-datenzeile.sp3 { grid-template-columns: 1fr 1fr 46px; }
+.plan-form-card .lp-datenzeile.sp4 { grid-template-columns: 1fr 1fr 46px 1fr; }
+.plan-form-card .lp-datenzeile > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.plan-form-card .lp-datenzeile > div > label { font-size: 11px; }
+.plan-form-card .lp-datenzeile .lp-datum-txt,
+.plan-form-card .lp-datenzeile .lp-wochen-v { font-size: 14px; text-align: center; }
+.plan-form-card .lp-datenzeile .lp-datum { padding-left: 3px; padding-right: 3px; }
 /* Datumsfeld und Wochenzahl sind gewoehnliche Kaesten — dieselbe Hoehe wie ein Textfeld
    (10px Polster + 19px Zeile + 1px Rand = 41px). Beim Datum liegt das native
    `<input type="date">` unsichtbar darueber: Seine Masse bestimmt sonst der Browser, auf

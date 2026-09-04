@@ -446,7 +446,10 @@ function _planProgramWeek(p) {
   const monStart = new Date(start); monStart.setHours(0,0,0,0);
   monStart.setDate(monStart.getDate() - ((monStart.getDay()+6)%7));
   const week = Math.floor((Date.now() - monStart.getTime()) / (7*24*3600*1000)) + 1;
-  const total = p.weeksTotal || 12;
+  // Dieselbe Quelle wie die Detailansicht: aus Start und Ende gerechnet, mit `weeksTotal`
+  // nur als Rueckfallebene. Sonst stand in der Karte „Woche 5 / 12", waehrend die
+  // Detailansicht „9 Wochen" nannte (04.09.2026).
+  const total = _weeksBetween(p.startDate, p.endDate) || p.weeksTotal || 12;
   return { num: Math.min(Math.max(week,1), total), total };
 }
 
@@ -1331,42 +1334,66 @@ function runWochenStatus() {
   return { done: gelaufen.length, planned: p ? (p.runDays || []).length : 0, mo, gelaufen };
 }
 
-function buildRunPlanCard(onTap) {
-  const p = runPlanAktiv();
+function runPlanStatus(p) {
+  if (p.archived) return 'archived';
+  const now = Date.now();
+  if (p.startDate > now) return 'future';
+  if (p.endDate < now) return 'past';
+  return 'active';
+}
+
+// Gegenstueck zu `buildPlanCard`. Ohne `plan` zeichnet sie den LAUFENDEN Plan (Uebersicht und
+// Trainings-Tab), mit `plan` einen bestimmten — so entsteht die Liste im Plaene-Tab, in der
+// nur der laufende Plan Fortschritt und Wochentagsstreifen mit Haken zeigt und alle anderen
+// Statuschip und Laufzeit tragen (04.09.2026, eins zu eins wie beim Gymplan).
+function buildRunPlanCard(onTap, plan) {
+  const p = plan || runPlanAktiv();
   if (!p) {
     return `<div class="plan-card-v2 run-plan" onclick="${onTap || "setPlansView('runplans');wischeZuTab('plans')"}" style="cursor:pointer">
       <div class="ppv-name" style="color:var(--text2)">Kein aktiver Laufplan</div>
       <div class="ppv-meta">Tippe, um einen Laufplan anzulegen.</div>
     </div>`;
   }
+  const status = runPlanStatus(p);
+  const laeuft = status === 'active';
   const todayIdx = (new Date().getDay() + 6) % 7;
-  const st = runWochenStatus();
+  // Die Haken gelten der LAUFENDEN Woche — bei einem beendeten oder kuenftigen Plan waeren
+  // sie sinnlos (dieselbe Regel wie bei `buildPlanCard`).
+  const st = laeuft ? runWochenStatus() : null;
   const gelaufenAmTag = {};
-  st.gelaufen.forEach(l => {
+  if (st) st.gelaufen.forEach(l => {
     const [y, m, d] = l.date.split('-').map(Number);
     gelaufenAmTag[(new Date(y, m - 1, d).getDay() + 6) % 7] = true;
   });
   const strip = WOCHENTAGE_KURZ.map((label, i) => {
-    const geplant = (p.runDays || []).includes(i);
     const cls = ['ppv-col'];
-    if (geplant) cls.push('training');
+    if ((p.runDays || []).includes(i)) cls.push('training');
     if (gelaufenAmTag[i]) cls.push('done');
-    if (i === todayIdx) cls.push('today');
+    if (laeuft && i === todayIdx) cls.push('today');
     return `<div class="${cls.join(' ')}"><span class="ppv-wd">${label}</span></div>`;
   }).join('');
   // Woche N von M — gerechnet wie beim Trainingsplan, ab dem Montag der Startwoche.
   const wochen = runPlanWochen(p);
-  const monStart = new Date(p.startDate); monStart.setHours(0, 0, 0, 0);
-  monStart.setDate(monStart.getDate() - ((monStart.getDay() + 6) % 7));
-  const num = Math.min(Math.max(Math.floor((Date.now() - monStart.getTime()) / (7 * 864e5)) + 1, 1), wochen || 1);
-  const pct = Math.round(num / (wochen || 1) * 100);
-  return `<div class="plan-card-v2 run-plan active" onclick="${onTap || "setPlansView('runplans');wischeZuTab('plans')"}">
-    <div class="ppv-head"><div class="ppv-name">${escapeHtml(p.name || 'Laufplan')}</div></div>
-    <div class="ppv-progress">
+  let progress = '';
+  if (laeuft) {
+    const monStart = new Date(p.startDate); monStart.setHours(0, 0, 0, 0);
+    monStart.setDate(monStart.getDate() - ((monStart.getDay() + 6) % 7));
+    const num = Math.min(Math.max(Math.floor((Date.now() - monStart.getTime()) / (7 * 864e5)) + 1, 1), wochen || 1);
+    const pct = Math.round(num / (wochen || 1) * 100);
+    progress = `<div class="ppv-progress">
       <span class="ppv-wk">Woche ${num} / ${wochen}</span>
       <div class="ppv-bar"><div class="ppv-bar-fill" style="width:${Math.min(100, pct)}%"></div></div>
       <span class="ppv-adh">${st.done}/${st.planned} diese Woche</span>
+    </div>`;
+  }
+  return `<div class="plan-card-v2 run-plan plan-status-${status}${laeuft ? ' active' : ''}"
+       onclick="${onTap || "setPlansView('runplans');wischeZuTab('plans')"}">
+    <div class="ppv-head">
+      <div class="ppv-name">${escapeHtml(p.name || 'Laufplan')}</div>
+      ${laeuft ? '' : `<span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>`}
     </div>
+    ${laeuft ? '' : `<div class="ppv-meta">${fmtDateRange(p.startDate, p.endDate)}${wochen ? ` · ${wochen} Wochen` : ''}</div>`}
+    ${progress}
     <div class="ppv-strip">${strip}</div>
   </div>`;
 }
@@ -3602,18 +3629,39 @@ function renderRunSourceCard() {
 }
 
 // ── Seite 2: Laufplanverwaltung ────────────────────────────────────
+let runplansArchiveExpanded = false;  // Ausklappzustand der Archiv-Sektion
+function toggleRunplansArchive() {
+  runplansArchiveExpanded = !runplansArchiveExpanded;
+  renderLaufVerwaltung();
+}
+
+// Aufbau eins zu eins wie `renderPlans()` fuer den Gymplan (04.09.2026, Leonard-Wunsch):
+// Jeder Plan ist dieselbe Karte; nur der LAUFENDE zeigt Fortschritt und Haken, die uebrigen
+// Statuschip und Laufzeit. Das Archiv haengt hinter demselben Ausklapp-Knopf.
 function renderLaufVerwaltung() {
   const el = document.getElementById('runplans-list');
   if (!el) return;
   const plaene = DB.getRunPlans();
-  const aktiv = plaene.filter(p => !p.archived).sort((a, b) => (a.startDate || 0) - (b.startDate || 0));
+  const offen = plaene.filter(p => !p.archived).sort((a, b) => (a.startDate || 0) - (b.startDate || 0));
   const archiv = plaene.filter(p => p.archived).sort((a, b) => (b.startDate || 0) - (a.startDate || 0));
+
   if (!plaene.length) {
-    el.innerHTML = `<div class="chart-card-v2"><p class="lauf-leer">Noch kein Laufplan. Oben rechts auf „+" tippen.</p></div>`;
+    el.innerHTML = `<div class="plan-day-empty" style="margin:24px 14px">Noch kein Laufplan — tippe auf das + oben rechts, um deinen ersten Plan anzulegen.</div>`;
     return;
   }
-  el.innerHTML = aktiv.map(runPlanKarte).join('')
-    + (archiv.length ? `<div class="mehr-section-title" style="margin-top:6px">Archiviert</div>` + archiv.map(runPlanKarte).join('') : '');
+  const zeile = (p) => buildRunPlanCard(`openRunPlanDetail('${p.id}')`, p);
+
+  let html = offen.map(zeile).join('');
+  if (archiv.length) {
+    const auf = runplansArchiveExpanded;
+    html += `<button type="button" class="weitere-btn archiv-btn" aria-expanded="${auf}"
+            onclick="toggleRunplansArchive()">
+      <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
+      <span class="archiv-label">Archivierte Pläne${auf ? ` <span class="count">(${archiv.length})</span>` : ''}</span>
+    </button>`;
+    if (auf) html += archiv.map(zeile).join('');
+  }
+  el.innerHTML = html;
 }
 
 // Datumsfeld: sichtbar ist ein gewoehnlicher Kasten, das native `<input type="date">` liegt
@@ -3622,7 +3670,7 @@ function renderLaufVerwaltung() {
 // ueber den Kartenrand hinaus (Leonard-Meldung 04.09.2026). So bestimmt allein das CSS die
 // Breite, das Antippen oeffnet unveraendert den nativen Datumswaehler. Dasselbe Muster wie
 // beim Wochenplan im Plan-Detail (`.wpe-select`).
-function lpDatumFeld(ts, onChange) {
+function lpDatumFeld(ts, onChange, id) {
   // ACHTUNG Zeitzone: `setRunPlan` speichert LOKALE Mitternacht (`… + 'T00:00:00'`).
   // Mit `toISOString()` gelesen ist das in Mitteleuropa 22:00 des VORTAGS — das Feld zeigte
   // dadurch einen Tag zu frueh an, und jedes erneute Speichern schob das Datum ein weiteres
@@ -3634,18 +3682,7 @@ function lpDatumFeld(ts, onChange) {
   const iso = d ? `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}` : '';
   const txt = d ? `${p2(d.getDate())}.${p2(d.getMonth() + 1)}.${d.getFullYear()}` : '–';
   return `<div class="lp-datum${ts ? '' : ' leer'}"><span class="lp-datum-txt">${txt}</span>
-    <input type="date" class="lp-datum-inp" value="${iso}" onchange="${onChange}"></div>`;
-}
-
-function runPlanKarte(p) {
-  const wochen = runPlanWochen(p);
-  const lauftage = (p.runDays || []).map(i => WOCHENTAGE_KURZ[i]).join(', ') || '—';
-  const zeitraum = (p.startDate && p.endDate)
-    ? `${new Date(p.startDate).toLocaleDateString('de-DE')} – ${new Date(p.endDate).toLocaleDateString('de-DE')}` : '—';
-  return `<div class="chart-card-v2 lauf-plan${p.archived ? ' plan-status-archived' : ''}" onclick="openRunPlanDetail('${p.id}')">
-    <div class="ppv-head"><div class="ppv-name">${escapeHtml(p.name || 'Laufplan')}</div></div>
-    <div class="ppv-meta">${zeitraum} · ${wochen} Wochen · ${lauftage}${p.raceDate ? ` · 🏁 ${new Date(p.raceDate).toLocaleDateString('de-DE')}` : ''}</div>
-  </div>`;
+    <input type="date" class="lp-datum-inp"${id ? ` id="${id}"` : ''} value="${iso}" onchange="${onChange}"></div>`;
 }
 
 // ── Laufplan-Detail: eigene Seite, kein Aufklappen mehr ────────────
@@ -3700,10 +3737,10 @@ function renderRunPlanDetail() {
   document.getElementById('runplan-detail-body').innerHTML = `
     <div class="mehr-section">
       <div class="mehr-section-title">Laufplan-Daten</div>
-      <div class="mehr-card lauf-plan-form">
+      <div class="mehr-card plan-form-card">
         <div class="program-form-row"><label>Name</label>
           <input type="text" value="${escapeHtml(p.name || '')}" onchange="setRunPlan('${p.id}','name',this.value)"></div>
-        <div class="program-form-row lp-3col">
+        <div class="program-form-row lp-datenzeile sp4">
           <div><label>Start</label>
             ${lpDatumFeld(p.startDate, `setRunPlan('${p.id}','startDate',this.value)`)}</div>
           <div><label>Ende</label>
@@ -3722,7 +3759,7 @@ function renderRunPlanDetail() {
 
     <div class="mehr-section">
       <div class="mehr-section-title">Einheiten</div>
-      <div class="mehr-card lauf-plan-form lp-wochen-karte">${wochenBlocks.join('')}</div>
+      <div class="mehr-card plan-form-card lp-wochen-karte">${wochenBlocks.join('')}</div>
     </div>
 
     <div class="mehr-section">
@@ -4765,9 +4802,16 @@ function renderPlanDetail() {
   document.getElementById('prog-name').value = plan.name || '';
   const progNotesEl = document.getElementById('prog-notes');
   if (progNotesEl) progNotesEl.value = plan.notes || '';
-  document.getElementById('prog-weeks').value = plan.weeksTotal || 12;
-  document.getElementById('prog-start').value = _msToDate(plan.startDate);
-  document.getElementById('prog-end').value   = _msToDate(plan.endDate);
+  // Start | Ende | Wochen in EINER Zeile, gebaut wie im Laufplan-Detail (04.09.2026,
+  // Leonard-Wunsch). Die Wochenzahl ist ABGELEITET und deshalb kein Eingabefeld mehr; das
+  // fruehere `#prog-weeks` und `onWeeksChange` sind entfallen. Die unsichtbaren Datumsfelder
+  // behalten ihre IDs, damit `onStartDateChange`/`onEndDateChange` unveraendert weiterlesen.
+  const wochenZahl = _weeksBetween(plan.startDate, plan.endDate);
+  document.getElementById('prog-datenzeile').innerHTML = `
+    <div><label>Start</label>${lpDatumFeld(plan.startDate, 'onStartDateChange()', 'prog-start')}</div>
+    <div><label>Ende</label>${lpDatumFeld(plan.endDate, 'onEndDateChange()', 'prog-end')}</div>
+    <div class="lp-wochen"><label>Wochen</label>
+      <div class="lp-wochen-v">${wochenZahl || '–'}</div></div>`;
 
   // Weekplan dropdowns
   const wp = plan.weekPlan || JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
@@ -5557,43 +5601,38 @@ function _applyDelEdit(ctx) {
   if (ctx === 'planday-ex') _renderAfterPlanEdit();
 }
 
-// User changed Gesamtdauer → recompute Enddatum
-function onWeeksChange() {
-  const p = DB.getProgram();
-  const weeks = Math.max(1, parseInt(document.getElementById('prog-weeks').value) || 1);
-  p.weeksTotal = weeks;
-  if (!p.startDate) p.startDate = Date.now();
-  p.endDate = p.startDate + weeks * 7*24*3600*1000;
-  DB.saveProgram(p);
-  document.getElementById('prog-end').value = _msToDate(p.endDate);
-  showToast('Trainingsplan aktualisiert');
-  _renderAfterPlanEdit();
+// Start und Ende sind seit dem 04.09.2026 UNABHAENGIG voneinander — die Gesamtdauer wird aus
+// beiden abgeleitet (Leonard-Wunsch, wie im Laufplan). Vorher schob ein neues Startdatum das
+// Enddatum mit, und die Wochenzahl war ein eigenes Eingabefeld.
+// `weeksTotal` bleibt GESPEICHERT, obwohl es rechnerisch redundant ist: Ein Dutzend Stellen
+// lesen es (`_planProgramWeek`, Vorlagen, Sicherung). Es wird hier bei jeder Datumsaenderung
+// nachgezogen, damit „Woche 5 / 12" nie den Datumsangaben widerspricht.
+function _planDauerNachziehen(p) {
+  if (p.startDate && p.endDate) p.weeksTotal = _weeksBetween(p.startDate, p.endDate);
 }
 
-// User changed Startdatum → keep weeks fixed, recompute Enddatum
 function onStartDateChange() {
   const p = DB.getProgram();
   const start = _dateToMs(document.getElementById('prog-start').value);
   if (!start) return;
+  if (p.endDate && start >= p.endDate) { showToast('Startdatum muss vor dem Enddatum liegen'); _renderAfterPlanEdit(); return; }
   p.startDate = start;
-  p.endDate = start + (p.weeksTotal||12) * 7*24*3600*1000;
+  if (!p.endDate) p.endDate = start + (p.weeksTotal || 12) * 7*24*3600*1000;
+  _planDauerNachziehen(p);
   DB.saveProgram(p);
-  document.getElementById('prog-end').value = _msToDate(p.endDate);
   showToast('Trainingsplan aktualisiert');
   _renderAfterPlanEdit();
 }
 
-// User changed Enddatum → recompute Gesamtdauer
 function onEndDateChange() {
   const p = DB.getProgram();
   const end = _dateToMs(document.getElementById('prog-end').value);
   if (!end) return;
   if (!p.startDate) p.startDate = Date.now();
-  if (end <= p.startDate) { showToast('Enddatum muss nach Startdatum sein'); document.getElementById('prog-end').value = _msToDate(p.endDate); return; }
+  if (end <= p.startDate) { showToast('Enddatum muss nach Startdatum sein'); _renderAfterPlanEdit(); return; }
   p.endDate = end;
-  p.weeksTotal = _weeksBetween(p.startDate, end);
+  _planDauerNachziehen(p);
   DB.saveProgram(p);
-  document.getElementById('prog-weeks').value = p.weeksTotal;
   showToast('Trainingsplan aktualisiert');
   _renderAfterPlanEdit();
 }
@@ -8258,6 +8297,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Edge-Swipe-Back im Plan-Detail (vom linken Bildschirmrand mit Finger nach rechts ziehen)
   initOverlayEdgeSwipe('screen-plan-detail', closePlanDetail);
   initOverlayEdgeSwipe('screen-day-detail', closeLibDayDetail);
+  initOverlayEdgeSwipe('screen-runplan-detail', closeRunPlanDetail);
   initOverlayEdgeSwipe('screen-mehr', closeMehr);
 });
 
