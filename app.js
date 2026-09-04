@@ -718,13 +718,21 @@ function updateThemeColorMeta() {
   metaEl.setAttribute('content', dark || accent || '#0a2a6b');
 }
 
+// Screens, die als Vollbild-Overlay UEBER dem Tab-Container liegen (Name → Element-ID).
+const OVERLAY_SCREENS = {
+  'plan-detail':    'screen-plan-detail',
+  'day-detail':     'screen-day-detail',
+  'runplan-detail': 'screen-runplan-detail',
+  'mehr':           'screen-mehr',
+};
+
 function _applyTabState(name) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   const navEl = document.getElementById('nav-'+name);
   if (navEl) navEl.classList.add('active');
 
   // Body-Theme: plan-detail UND day-detail teilen sich Theme + Akzentfarbe mit der Plans-Liste (Amber).
-  const themeName = (name === 'plan-detail' || name === 'day-detail') ? 'plans' : name;
+  const themeName = (name === 'plan-detail' || name === 'day-detail' || name === 'runplan-detail') ? 'plans' : name;
   document.body.className = 'theme-' + themeName;
   // _applyTabState wird bei Tableisten-Klick + initialem App-Start aufgerufen —
   // dort ist KEIN Crossfade gewuenscht (sofortiger Wechsel). Beim Swipe-Snap
@@ -737,6 +745,7 @@ function _applyTabState(name) {
   // getWeekPlan, Übungen-nach-Plan) weiter den editierten Plan statt des aktiven (z.B. nach
   // „Plan bearbeiten → Bottom-Nav Workouts" würde sonst der editierte Zukunftsplan erscheinen).
   if (name !== 'plan-detail') editingPlanId = null;
+  if (name !== 'runplan-detail') editingRunPlanId = null;
 
   // Kopfzeile der laufenden Einheit gehoert zum Trainings-Tab: Zustand beim Verlassen
   // zuruecksetzen, damit sie beim Zurueckkehren nicht faelschlich sofort wieder steht.
@@ -748,6 +757,7 @@ function _applyTabState(name) {
   else if (name === 'plans') renderPlansScreen();
   else if (name === 'plan-detail') renderPlanDetail();
   else if (name === 'day-detail') renderLibDayDetail();
+  else if (name === 'runplan-detail') renderRunPlanDetail();
   else if (name === 'mehr') renderMehr();
 
   ensureTimerActive();
@@ -758,48 +768,18 @@ function _applyTabState(name) {
 }
 
 function showScreen(name) {
-  // Plan-Detail, Trainingstag-Detail UND Einstellungen sind Vollbild-Overlays UEBER dem Tab-Container.
-  const planDetailEl = document.getElementById('screen-plan-detail');
-  const dayDetailEl = document.getElementById('screen-day-detail');
-  const mehrEl = document.getElementById('screen-mehr');
+  // Vollbild-Overlays UEBER dem Tab-Container. Als Tabelle statt als Kette von Zweigen —
+  // mit dem Laufplan-Detail waere es der vierte gleichlautende Block gewesen (04.09.2026).
   const tabContainer = document.getElementById('tab-container');
-
-  if (name === 'mehr') {
-    currentScreen = 'mehr';
-    if (planDetailEl) planDetailEl.classList.remove('active');
-    if (dayDetailEl) dayDetailEl.classList.remove('active');
-    if (mehrEl) { mehrEl.classList.add('active'); mehrEl.scrollTop = 0; }
-    _applyTabState('mehr');
+  const overlayEls = Object.values(OVERLAY_SCREENS).map(id => document.getElementById(id)).filter(Boolean);
+  overlayEls.forEach(el => el.classList.remove('active'));
+  if (OVERLAY_SCREENS[name]) {
+    currentScreen = name;
+    const el = document.getElementById(OVERLAY_SCREENS[name]);
+    if (el) { el.classList.add('active'); el.scrollTop = 0; }  // oben starten, nicht die alte Position zeigen
+    _applyTabState(name);
     return;
   }
-  if (mehrEl && mehrEl.classList.contains('active')) mehrEl.classList.remove('active');
-
-  if (name === 'plan-detail') {
-    currentScreen = 'plan-detail';
-    if (mehrEl) mehrEl.classList.remove('active');
-    if (dayDetailEl) dayDetailEl.classList.remove('active');
-    if (planDetailEl) {
-      planDetailEl.classList.add('active');
-      planDetailEl.scrollTop = 0;   // oben starten, nicht alte Scroll-Position zeigen
-    }
-    _applyTabState('plan-detail');
-    return;
-  }
-  if (name === 'day-detail') {
-    currentScreen = 'day-detail';
-    if (mehrEl) mehrEl.classList.remove('active');
-    if (planDetailEl) planDetailEl.classList.remove('active');
-    if (dayDetailEl) {
-      dayDetailEl.classList.add('active');
-      dayDetailEl.scrollTop = 0;
-    }
-    _applyTabState('day-detail');
-    return;
-  }
-
-  // Wechsel von einem Overlay zurueck zu einem normalen Tab → beide Overlays schliessen
-  if (planDetailEl && planDetailEl.classList.contains('active')) planDetailEl.classList.remove('active');
-  if (dayDetailEl && dayDetailEl.classList.contains('active')) dayDetailEl.classList.remove('active');
 
   // Wenn der Ziel-Tab nicht in der TAB_ORDER ist, ignorieren
   if (!TAB_ORDER.includes(name)) return;
@@ -3558,7 +3538,6 @@ function fmtMin(v) {
 //   • Trainings-Tab, Seite „Laufen"  → Ueberblick ueber die gelaufenen Einheiten
 //   • Plaene-Tab, Seite „Laufplan"   → Laufplanverwaltung
 let _laufOffeneWochen = new Set();  // mehrere Wochen duerfen gleichzeitig offen sein
-let _laufOffenePlaene = new Set();
 
 // ── Seite 1: Überblick über die gelaufenen Einheiten ───────────────
 function renderLaufKalenderSeite() {
@@ -3659,18 +3638,40 @@ function lpDatumFeld(ts, onChange) {
 }
 
 function runPlanKarte(p) {
-  const offen = _laufOffenePlaene.has(p.id);
   const wochen = runPlanWochen(p);
   const lauftage = (p.runDays || []).map(i => WOCHENTAGE_KURZ[i]).join(', ') || '—';
   const zeitraum = (p.startDate && p.endDate)
     ? `${new Date(p.startDate).toLocaleDateString('de-DE')} – ${new Date(p.endDate).toLocaleDateString('de-DE')}` : '—';
-  if (!offen) {
-    return `<div class="chart-card-v2 lauf-plan${p.archived ? ' plan-status-archived' : ''}" onclick="toggleRunPlan('${p.id}')">
-      <div class="ppv-head"><div class="ppv-name">${escapeHtml(p.name || 'Laufplan')}</div></div>
-      <div class="ppv-meta">${zeitraum} · ${wochen} Wochen · ${lauftage}${p.raceDate ? ` · 🏁 ${new Date(p.raceDate).toLocaleDateString('de-DE')}` : ''}</div>
-    </div>`;
-  }
-  // Aufgeklappt: Kopffelder + Woche fuer Woche die Lauftage
+  return `<div class="chart-card-v2 lauf-plan${p.archived ? ' plan-status-archived' : ''}" onclick="openRunPlanDetail('${p.id}')">
+    <div class="ppv-head"><div class="ppv-name">${escapeHtml(p.name || 'Laufplan')}</div></div>
+    <div class="ppv-meta">${zeitraum} · ${wochen} Wochen · ${lauftage}${p.raceDate ? ` · 🏁 ${new Date(p.raceDate).toLocaleDateString('de-DE')}` : ''}</div>
+  </div>`;
+}
+
+// ── Laufplan-Detail: eigene Seite, kein Aufklappen mehr ────────────
+// Aufbau und Bedienung sind dem Trainingsplan-Detail nachempfunden (04.09.2026,
+// Leonard-Wunsch): Vollbild-Overlay, Zurueck-Knopf oben links, Abschnitte auf `.mehr-card`.
+// Dass die Abschnitte auf `.mehr-card` stehen statt auf `.chart-card-v2` ist KEIN Zufall —
+// `.mehr-card` fehlt in der Glas-Liste und bleibt deshalb auch im Transparenz-Modus weiss,
+// genau wie das Gymplan-Detail.
+let editingRunPlanId = null;
+
+function openRunPlanDetail(id) { editingRunPlanId = id; showScreen('runplan-detail'); }
+function closeRunPlanDetail() { editingRunPlanId = null; showScreen('plans'); }
+
+function renderRunPlanDetail() {
+  const p = DB.getRunPlans().find(x => x.id === editingRunPlanId);
+  if (!p) { showScreen('plans'); return; }
+  const wochen = runPlanWochen(p);
+  const zeitraum = (p.startDate && p.endDate) ? fmtDateRange(p.startDate, p.endDate) : '—';
+  document.getElementById('runplan-detail-title').textContent = p.name || 'Laufplan';
+  document.getElementById('runplan-detail-subline').innerHTML =
+    `${zeitraum} · ${wochen} ${wochen === 1 ? 'Woche' : 'Wochen'}`
+    + (p.archived ? ` <span class="plan-status-chip plan-status-chip-archived" style="margin-left:8px">Archiviert</span>` : '');
+
+  const tageWahl = WOCHENTAGE_KURZ.map((n, i) =>
+    `<button type="button" class="lp-tagwahl${(p.runDays || []).includes(i) ? ' an' : ''}" onclick="toggleRunDay('${p.id}',${i})">${n}</button>`).join('');
+
   const wochenBlocks = [];
   for (let w = 1; w <= wochen; w++) {
     const auf = _laufOffeneWochen.has(p.id + ':' + w);
@@ -3695,47 +3696,78 @@ function runPlanKarte(p) {
       <div class="lp-woche-body"${auf ? '' : ' style="display:none"'}>${tage || '<p class="lauf-leer">Keine Lauftage gewählt.</p>'}</div>
     </div>`);
   }
-  const tageWahl = WOCHENTAGE_KURZ.map((n, i) =>
-    `<button type="button" class="lp-tagwahl${(p.runDays || []).includes(i) ? ' an' : ''}" onclick="toggleRunDay('${p.id}',${i})">${n}</button>`).join('');
-  return `<div class="chart-card-v2 lauf-plan offen${p.archived ? ' plan-status-archived' : ''}">
-    <div class="ppv-head" onclick="toggleRunPlan('${p.id}')"><div class="ppv-name">${escapeHtml(p.name || 'Laufplan')}</div></div>
-    <div class="program-form-row"><label>Name</label>
-      <input type="text" value="${escapeHtml(p.name || '')}" onchange="setRunPlan('${p.id}','name',this.value)"></div>
-    <div class="program-form-row lp-3col">
-      <div><label>Start</label>
-        ${lpDatumFeld(p.startDate, `setRunPlan('${p.id}','startDate',this.value)`)}</div>
-      <div><label>Ende</label>
-        ${lpDatumFeld(p.endDate, `setRunPlan('${p.id}','endDate',this.value)`)}</div>
-      <div class="lp-wochen"><label>Wochen</label>
-        <div class="lp-wochen-v">${p.startDate && p.endDate ? wochen : '–'}</div></div>
+
+  document.getElementById('runplan-detail-body').innerHTML = `
+    <div class="mehr-section">
+      <div class="mehr-section-title">Laufplan-Daten</div>
+      <div class="mehr-card lauf-plan-form">
+        <div class="program-form-row"><label>Name</label>
+          <input type="text" value="${escapeHtml(p.name || '')}" onchange="setRunPlan('${p.id}','name',this.value)"></div>
+        <div class="program-form-row lp-3col">
+          <div><label>Start</label>
+            ${lpDatumFeld(p.startDate, `setRunPlan('${p.id}','startDate',this.value)`)}</div>
+          <div><label>Ende</label>
+            ${lpDatumFeld(p.endDate, `setRunPlan('${p.id}','endDate',this.value)`)}</div>
+          <div class="lp-wochen"><label>Wochen</label>
+            <div class="lp-wochen-v">${p.startDate && p.endDate ? wochen : '–'}</div></div>
+          <div><label>Wettkampf</label>
+            ${lpDatumFeld(p.raceDate, `setRunPlan('${p.id}','raceDate',this.value)`)}</div>
+        </div>
+        <div class="program-form-row"><label>Notizen</label>
+          <textarea class="program-form-textarea" rows="2" placeholder="z. B. Ziel, Streckenprofil"
+                    onchange="setRunPlan('${p.id}','notes',this.value)">${escapeHtml(p.notes || '')}</textarea></div>
+        <div class="program-form-row"><label>Lauftage</label><div class="lp-tagwahl-reihe">${tageWahl}</div></div>
+      </div>
     </div>
-    <div class="program-form-row"><label>Wettkampf (optional)</label>
-      ${lpDatumFeld(p.raceDate, `setRunPlan('${p.id}','raceDate',this.value)`)}</div>
-    <div class="program-form-row"><label>Notizen</label>
-      <textarea class="program-form-textarea" rows="2" placeholder="z. B. Ziel, Streckenprofil"
-                onchange="setRunPlan('${p.id}','notes',this.value)">${escapeHtml(p.notes || '')}</textarea></div>
-    <div class="program-form-row"><label>Lauftage</label><div class="lp-tagwahl-reihe">${tageWahl}</div></div>
-    ${wochenBlocks.join('')}
-    <div class="program-form-row">
-      <button class="btn btn-ghost btn-sm" onclick="setRunPlan('${p.id}','archived',${p.archived ? 'false' : 'true'})">
-        ${p.archived ? 'Aus dem Archiv holen' : 'Plan archivieren'}</button>
-      <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteRunPlan('${p.id}')">Plan löschen</button>
+
+    <div class="mehr-section">
+      <div class="mehr-section-title">Einheiten</div>
+      <div class="mehr-card lauf-plan-form lp-wochen-karte">${wochenBlocks.join('')}</div>
     </div>
-  </div>`;
+
+    <div class="mehr-section">
+      <div class="mehr-section-title">Aktionen</div>
+      <div class="mehr-card">
+        <div class="mehr-row" onclick="setRunPlan('${p.id}','archived',${p.archived ? 'false' : 'true'})" style="cursor:pointer">
+          <div class="mehr-row-icon" style="background:var(--accent-bg)">📦</div>
+          <div class="mehr-row-info">
+            <div class="mehr-row-label">${p.archived ? 'Aus dem Archiv holen' : 'Plan archivieren'}</div>
+            <div class="mehr-row-sub">Versteckt den Plan aus der Hauptliste, bleibt aber zugänglich</div>
+          </div>
+          <div class="mehr-row-action">›</div>
+        </div>
+        <div class="divider"></div>
+        <div class="mehr-row" onclick="deleteRunPlan('${p.id}')" style="cursor:pointer">
+          <div class="mehr-row-icon" style="background:var(--red-bg)">🗑</div>
+          <div class="mehr-row-info">
+            <div class="mehr-row-label" style="color:var(--red,#d33)">Plan löschen</div>
+            <div class="mehr-row-sub">Alle geplanten Einheiten dieses Plans gehen verloren</div>
+          </div>
+          <div class="mehr-row-action">›</div>
+        </div>
+      </div>
+    </div>`;
 }
 
-function toggleRunPlan(id) { _laufOffenePlaene.has(id) ? _laufOffenePlaene.delete(id) : _laufOffenePlaene.add(id); renderLaufVerwaltung(); }
 // Auf- und Zuklappen einer Woche laeuft OHNE Neuaufbau: Ein Re-Render naehme den Kopffeldern
 // (Name, Datum) die noch nicht gespeicherten Eingaben und den Fokus.
 function toggleRunWoche(id, w) {
   const k = id + ':' + w;
   _laufOffeneWochen.has(k) ? _laufOffeneWochen.delete(k) : _laufOffeneWochen.add(k);
   const btn = document.querySelector(`.lp-woche-btn[onclick*="'${id}',${w})"]`);
-  if (!btn) return renderLaufVerwaltung();
+  if (!btn) return _laufNeuZeichnen();
   const body = btn.nextElementSibling;
   const auf = _laufOffeneWochen.has(k);
   btn.setAttribute('aria-expanded', auf ? 'true' : 'false');
   if (body) body.style.display = auf ? '' : 'none';
+}
+
+// Nach einer Aenderung muss der SICHTBARE Bildschirm neu gezeichnet werden — seit dem
+// Umbau auf eine eigene Detailseite ist das mal die Liste, mal die Detailseite.
+function _laufNeuZeichnen() {
+  if (currentScreen === 'runplan-detail') renderRunPlanDetail();
+  else renderLaufVerwaltung();
+  if (currentScreen === 'overview') renderOverview();
 }
 
 function _runPlanAendern(id, fn) {
@@ -3754,8 +3786,8 @@ function setRunPlan(id, feld, wert) {
     else if (feld === 'archived') p.archived = (wert === true || wert === 'true');
     else p[feld] = wert;
   });
-  if (!stillSpeichern) renderLaufVerwaltung();
-  if (currentScreen === 'overview') renderOverview();
+  if (!stillSpeichern) _laufNeuZeichnen();
+  else if (currentScreen === 'overview') renderOverview();
 }
 
 function toggleRunDay(id, di) {
@@ -3764,8 +3796,7 @@ function toggleRunDay(id, di) {
     const i = p.runDays.indexOf(di);
     if (i >= 0) p.runDays.splice(i, 1); else { p.runDays.push(di); p.runDays.sort((a, b) => a - b); }
   });
-  renderLaufVerwaltung();
-  if (currentScreen === 'overview') renderOverview();
+  _laufNeuZeichnen();
 }
 
 // Einheiten sichern sich beim Verlassen des Feldes und OHNE Neuaufbau — sonst verliert man
@@ -3800,9 +3831,10 @@ function deleteRunPlan(id) {
     withUndo('Laufplan gelöscht', () => {
       DB.saveRunPlans(DB.getRunPlans().filter(x => x.id !== id));
       if (p) trashPut('runplan', p.name || 'Laufplan', p);
-      _laufOffenePlaene.delete(id);
     }, () => { renderLaufVerwaltung(); if (currentScreen === 'overview') renderOverview(); });
-    renderLaufVerwaltung();
+    // Der geloeschte Plan hat keine Detailseite mehr — zurueck zur Liste.
+    if (currentScreen === 'runplan-detail') closeRunPlanDetail();
+    else renderLaufVerwaltung();
     if (currentScreen === 'overview') renderOverview();
   }, { danger: true, confirmLabel: 'Löschen' });
 }
@@ -3815,8 +3847,8 @@ function neuerLaufplan() {
               runDays: [1, 5, 6], archived: false, raceDate: null, units: [] };
   const ps = DB.getRunPlans(); ps.push(p); DB.saveRunPlans(ps);
   plansViewMode = 'runplans';
-  _laufOffenePlaene.add(p.id);
   renderPlansScreen();
+  openRunPlanDetail(p.id);
 }
 
 // ─── Trainingskalender ─────────────────────────────────────────────

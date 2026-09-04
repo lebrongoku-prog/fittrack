@@ -257,7 +257,9 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Dunkelgruen wie die trainierten Kerne), Lauf in #4ADE80 (`.cal-band-run`, dasselbe Hellgruen
   wie die Laufkreise). Der Lauf-Rahmen hat 2px weniger Ueberstand, damit bei zeitlicher
   Ueberschneidung beide sichtbar bleiben. Keine Abstufung nach laufend/kommend/archiviert. Welcher Plan zu einem Tag gehoert, sagt die Beschreibung
-  unter dem Raster. Im Transparenz-Modus sind die Umrandungen weiss (55 %), sonst gruen.
+  unter dem Raster. Die Umrandungen behalten ihre Farbe AUCH im Transparenz-Modus (04.09.2026, Leonard-Wunsch) —
+  die fruehere Glas-Regel `--cal-plan-color: rgba(255,255,255,.55)` auf `.cal-scroll` ist
+  entfallen. Sonst waeren Gym- und Laufplan dort nicht mehr auseinanderzuhalten.
   Eine Beschriftung mit dem Plannamen unter dem Raster gibt es NICHT mehr (entfernt 20.08.2026) — der Name steht
   beim Antippen eines Tages in der Beschreibung darunter, dort mit der Wochenzahl in Klammern (ohne Datumsspanne).
   Beim Antippen eines Tages innerhalb eines Plans nennt eine zweite Zeile den Stand des Plans (`planErfuellung`): absolvierte Einheiten gegen
@@ -353,6 +355,11 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `--text` auf der Glas-Karte erreicht ihn gar nicht.
   Ein Tipp auf die Zeile öffnet über `showHistDetailForEx(exId, bestTs)` die Einheit, in der der Rekord AUFGESTELLT wurde (nicht die
   neueste mit dieser Übung) und hebt die Übung dort per `.hd-step-hl` farbig umrandet hervor.
+- **Vollbild-Overlays laufen ueber eine TABELLE, nicht ueber Zweige** (`OVERLAY_SCREENS`,
+  Name → Element-ID; 04.09.2026). Vier Stueck: `plan-detail`, `day-detail`, `runplan-detail`,
+  `mehr`. `showScreen` raeumt erst alle ab, setzt dann das gefragte auf `.active` und ruft
+  `_applyTabState`. Wer ein weiteres Overlay ergaenzt, traegt es dort ein UND prueft die drei
+  Stellen in `_applyTabState`: Theme-Zuordnung, Zuruecksetzen des Edit-Kontexts und Renderer.
 - **ACHTUNG `.screen.active`:** Die Klasse steht FEST im Markup an `#screen-overview` und wandert NIE
   zu einem anderen Tab — `_applyTabState` fasst sie nicht an, sie ist nur ein Marker. Ein Selektor wie
   `#screen-workouts.active` greift deshalb NIE (Fehler vom 01.09.2026). Fuer andere Tabs `#screen-xy.screen`
@@ -638,19 +645,29 @@ synchronisieren" sichert nur nach Drive, `markLocalChange`/`driveInit` ebenso. D
 allein ueber „Aktualisieren" in der Laufdaten-Karte gelesen. Eine Kopplung war kurz eingebaut und
 wurde auf Leonards Wunsch wieder entfernt — nicht erneut einbauen, ohne zu fragen.
 
-**Aufbau der aufgeklappten Laufplan-Karte** (04.09.2026, an die Gymplan-Detailansicht angeglichen):
-`.lauf-plan.offen` hat `padding: 0` — die `.program-form-row`s bringen die 14px selbst mit, so wie
-`.mehr-card` im Plan-Detail. Vorher lagen zwei Polster uebereinander (Karte 14px + Zeile 14px):
-Die Eingabefelder waren 295px breit, die Wochenbloecke danebenliegend 323px und liefen bis an den
-Kartenrand. Kopf (`.ppv-head`) und Wochenbloecke (`.lp-woche`) tragen den Einzug jetzt selbst.
-Alles ist damit 323px breit, genau wie im Gymplan.
-- **Start | Ende | Wochen in EINER Zeile** (`.lp-3col`). Die Wochenzahl ist ABGELEITET
-  (`runPlanWochen`) und deshalb kein Eingabefeld, sondern `.lp-wochen-v` — sieht aus wie eines,
-  gleiche Hoehe. Der Abschnittstitel heisst nur noch „Lauftage" (die Wochenzahl stand vorher dort).
-  Start und Ende sind FEST 104px breit (04.09.2026, 20 % schmaler als die 130px, die sie sich
-  vorher zu gleichen Teilen genommen haben) und ihr Datum steht MITTIG. Der frei werdende Platz
-  faellt zwischen „Ende" und die Wochenzahl — `margin-left: auto` haelt die am rechten Rand, damit
-  die Zeile links wie rechts mit dem Namensfeld darueber abschliesst.
+**Der Laufplan wird auf einer EIGENEN SEITE bearbeitet** (`#screen-runplan-detail`, 04.09.2026,
+Leonard-Wunsch) — vorher klappte er in der Liste auf. Der Ablauf ist vom Gymplan kopiert:
+`openRunPlanDetail(id)` setzt `editingRunPlanId` und ruft `showScreen('runplan-detail')`,
+`closeRunPlanDetail()` fuehrt zurueck in den Plaene-Tab, der Zurueck-Pfeil oben links ist
+derselbe `.sheet-back-btn`. Die Liste zeigt nur noch Kacheln (`runPlanKarte`), ein neuer Plan
+landet direkt in seiner Detailseite. `_laufOffenePlaene` und `toggleRunPlan` sind entfallen.
+Die Abschnitte stehen auf `.mehr-card`, NICHT auf `.chart-card-v2` — `.mehr-card` fehlt in der
+Glas-Liste und bleibt deshalb auch im Transparenz-Modus weiss, genau wie das Gymplan-Detail
+(das war der Anlass). Damit ist auch die kurzzeitige Glas-Ausnahme fuer die aufgeklappte Karte
+wieder weg.
+ACHTUNG: Nach einer Aenderung muss der SICHTBARE Bildschirm neu gezeichnet werden — mal die
+Liste, mal die Detailseite. Das entscheidet `_laufNeuZeichnen()`; ein direkter Aufruf von
+`renderLaufVerwaltung()` liesse die Detailseite veraltet stehen.
+- **Start | Ende | Wochen | Wettkampf in EINER Zeile** (`.lp-3col`, seit 04.09.2026 vier
+  Spalten). Die Wochenzahl ist ABGELEITET (`runPlanWochen`) und deshalb kein Eingabefeld, sondern
+  `.lp-wochen-v` — sieht aus wie eines, gleiche Hoehe. Der Abschnittstitel heisst nur noch
+  „Lauftage", das Wettkampffeld nur noch „Wettkampf" (fuer „(optional)" ist kein Platz).
+  Ein GRID (`1fr 1fr 46px 1fr`, gap 6px), weil die Breiten auf den Punkt aufgehen muessen:
+  323px Zeile − 46px − 3×6px = 86,3px je Datumsfeld, abzueglich 2×3px Polster und 2×1px Rand
+  bleiben 78,3px Text. „03.09.2026" misst bei 14px 75px, bei 15px schon 79,6px — deshalb sind
+  Datum und Wochenzahl in dieser Zeile 14px. Das UNSICHTBARE Eingabefeld darunter bleibt bei
+  16px, sonst zoomt iOS hinein. Die Beschriftungen laufen auf 11px: „Wochen" misst bei 12px 47px
+  und stiess ohne Luecke an „Wettkampf".
 - **Datum und Herzzone sind KEINE nativen Bedienelemente mehr** (04.09.2026). Sichtbar ist je ein
   gewoehnlicher Kasten (`.lp-datum` / `.lp-zone`), das native `<input type="date">` bzw. `<select>`
   liegt unsichtbar darueber (`opacity:0`, `position:absolute; inset:0`) — dasselbe Muster wie
@@ -668,27 +685,20 @@ Alles ist damit 323px breit, genau wie im Gymplan.
   schob das Datum ein weiteres Mal zurueck. `lpDatumFeld` liest deshalb die LOKALEN Datumsteile.
   Die Trainingsplaene sind nicht betroffen: `_msToDate`/`_dateToMs` rechnen beide in UTC und
   bleiben unter sich stimmig — beim Angleichen der beiden Seiten also nicht halb umstellen.
-- **Die aufgeklappte Karte hat KEINE Tipp-Animation** (04.09.2026): `.lauf-plan.offen` setzt
-  `transition: none` und `:active { transform: none }`. Die Karte IST hier das
-  Bearbeitungsformular — jeder Tipp in ein Feld liess sie zucken. Eingeklappt behaelt sie die
-  Animation, dort oeffnet der Tipp sie ja. Spezifitaet reicht (3 Klassen gegen
-  `.chart-card-v2:active` mit 2).
+- **Die Formularkarte hat KEINE Tipp-Animation** (04.09.2026): `.mehr-card.lauf-plan-form` setzt
+  `transition: none` und `:active { transform: none }` — jeder Tipp in ein Feld liess sie sonst
+  zucken. Drei Klassen, damit `.mehr-card:active` verliert. Die KACHEL in der Liste behaelt die
+  Animation, dort oeffnet der Tipp ja die Detailseite.
 - **km, min und Zone haben eine feste gemeinsame Hoehe** (38px, `box-sizing: border-box`). Ohne die
   war die Zone 2px hoeher: Ein `<select>` rechnet seine Zeilenhoehe anders als ein `<input>`.
 - **`.lp-einheit` hat feste, schmalere Felder** (60px statt mitwachsend) und `justify-content:
   center`. Dadurch ist die Tagesspalte gegenueber den Formularfeldern darueber um 14px
   eingerueckt (Leonard-Wunsch).
-- **Die aufgeklappte Karte nimmt den Transparenz-Modus NICHT an** (04.09.2026, Leonard-Wunsch):
-  Sie ist eine Detailansicht und bleibt weiss, genau wie die Detailansichten von Gymplan und
-  Gymtagen — die stehen auf `.mehr-card`, und die fehlt in der Glas-Liste bewusst.
-  EINGEKLAPPT bleibt die Karte durchsichtig: Sie ist dann Teil der Liste, so wie auch die
-  Gymplan-Kacheln durchsichtig sind und erst ihre Detailansicht weiss wird.
-  Umgesetzt als Ueberschreibung NACH der Glas-Liste (`html.glas … .lauf-plan.offen`), nicht als
-  `:not()` in der Liste selbst — das haette jede andere Karte mitgefaehrdet. Jedes Farbtoken steht
-  dort auf `inherit`: Die Glas-Regel setzt sie nur auf der KARTE, der umgebende Screen traegt noch
-  die hellen Werte. Ein Aufzaehlen der Literale waere eine zweite Palette. `.ppv-name` braucht eine
-  eigene Zeile, weil die Glas-Liste ihn FEST auf Weiss setzt statt ueber ein Token.
-  Damit ist die fruehere Sonderregel fuer `.lp-tagwahl.an` (weiss auf weiss) entfallen.
+- **Die Detailseite nimmt den Transparenz-Modus NICHT an** (04.09.2026, Leonard-Wunsch) — das
+  ergibt sich von selbst daraus, dass ihre Abschnitte auf `.mehr-card` stehen. Die KACHEL in der
+  Liste bleibt durchsichtig, genau wie die Gymplan-Kacheln. Eine kurzzeitig gebaute
+  Ueberschreibung (`html.glas … .lauf-plan.offen` mit `inherit` auf allen Farbtoken) ist mit dem
+  Umzug auf die eigene Seite wieder entfallen, ebenso die Sonderregel fuer `.lp-tagwahl.an`.
 
 **Oberflaeche:** Seitenschalter `Laufkalender | Laufplanverwaltung` (`setLaufView`, `_laufSeite`).
 Auf- und Zuklappen einer Woche laeuft OHNE Neuaufbau (`toggleRunWoche` schaltet nur `display`) und
@@ -731,8 +741,11 @@ Krafteinheiten). BEWUSST eine eigene Funktion: Die beiden Datenmodelle haben aus
 nichts gemeinsam. Steht in der **Uebersicht** unter dem Gymwochenplan (`#ov-runplan-card`; im
 Querformat teilen sich beide eine Zeile, die Herocard rutscht darunter ueber die volle Breite)
 und im **Trainings-Tab auf der Seite „Laufen" zuoberst**.
-FARBE der Erledigt-Akzente (Kreis + Haken): Gym #0F766E (wie die trainierten Kalender-Kaestchen),
-Lauf #4ADE80 (wie die Laufkreise) — `.run-plan` als Modifikator.
+FARBE der Erledigt-Akzente (Kreis + Haken) UND des Fortschrittsbalkens (`.ppv-bar-fill`,
+seit 04.09.2026): Gym #0F766E (wie die trainierten Kalender-Kaestchen), Lauf #4ADE80 (wie die
+Laufkreise) — `.run-plan` als Modifikator. Der Balken folgt damit der SPORTART, nicht der
+Tabfarbe, und sieht in Uebersicht, Trainings-Tab und Plaene-Tab gleich aus. Im Transparenz-Modus
+bleibt er WEISS — dafuer sorgt die bestehende Glas-Regel, die spaeter steht und gewinnt.
 Die **Kennzahl** des Kalenders zaehlt im Laufkalender Laeufe statt Krafteinheiten.
 
 ### Herocard deckt beide Plaene ab

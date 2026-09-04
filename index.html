@@ -356,6 +356,21 @@
     </div>
   </div><!-- /day-detail-overlay -->
 
+  <!-- Laufplan-Detail: Vollbild-Overlay wie das Trainingsplan-Detail (04.09.2026, Leonard-Wunsch).
+       Vorher klappte der Plan in der Liste auf. Inhalt kommt von renderRunPlanDetail(). -->
+  <div id="screen-runplan-detail" class="screen plan-detail-overlay">
+    <div class="ph plan-detail-ph">
+      <button class="sheet-back-btn" onclick="closeRunPlanDetail()" aria-label="Zurück zur Liste">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="ph-left">
+        <h1 id="runplan-detail-title">Laufplan</h1>
+        <div class="ph-sub" id="runplan-detail-subline"></div>
+      </div>
+    </div>
+    <div id="runplan-detail-body"></div>
+  </div><!-- /runplan-detail-overlay -->
+
   <!-- OVERLAY: EINSTELLUNGEN (frueher der Tab "Mehr") -->
   <!-- ══ SCREEN: MEHR ══ -->
   <div id="screen-mehr" class="screen plan-detail-overlay">
