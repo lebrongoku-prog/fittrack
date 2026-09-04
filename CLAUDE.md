@@ -569,8 +569,11 @@ ACHTUNG, zwei Stellen, die den Abruf sonst STILL blockieren (beide am 01.09.2026
    Cache-first-Zweig: Der Zugangs-Schluessel im Kopf landete im Zwischenspeicher und die
    Laufdaten waeren eingefroren.
 
-**Datenmodell Laufplan:** `{ id, name, startDate, endDate, runDays:[0..6], archived, raceDate,
-units:[{week, dayIdx, km, minutes, zone}] }`. Ein Laufplan ist ein DATIERTER Ablauf (Woche 1..N ab
+**Datenmodell Laufplan:** `{ id, name, notes, startDate, endDate, runDays:[0..6], archived,
+raceDate, units:[{week, dayIdx, km, minutes, zone}] }`. Notizen speichern sich STILL (ohne
+Re-Render) — sonst verliert das Feld beim Tippen den Fokus.
+ACHTUNG: Der Bestaetigungsdialog heisst `confirmAction`, NICHT `confirmDialog` — ein Aufruf unter
+dem falschen Namen scheitert still, das Loeschen tat monatelang nichts (gefunden 01.09.2026). Ein Laufplan ist ein DATIERTER Ablauf (Woche 1..N ab
 dem Montag der Startwoche), kein Wochenmuster wie die Trainingsplaene — die Einheiten sind deshalb
 EINGEBETTET und nicht wie die Trainingstage geteilte Bausteine. Das Datum einer Einheit wird
 GERECHNET (`runEinheitDatum`), nicht gespeichert: Verschiebt man den Plan, wandert alles mit.
@@ -585,7 +588,9 @@ steht er auf einer weissen Karte.
 **Gemeinsamer Kalender:** Nur der Kalender in der UEBERSICHT (`id === 'cal'`) zeigt zusaetzlich
 die Laeufe — der im Plaene-Tab bleibt vorerst reines Krafttraining. DREI Schichten im selben
 Kaestchen: Flaeche (laut Plan vorgesehen) · gruener Kern `::before` (Kraft absolviert) ·
-kleines Quadrat `::after` mittig in der Tabfarbe (`var(--accent)`, gelaufen; geplant = nur Kontur).
+kleiner KREIS `::after` mittig im festen Violett des Laufen-Tabs (#8B5CF6; geplant = nur Kontur).
+Bewusst nicht `var(--accent)`: Der Lauf gehoert zu seiner eigenen Domaene und soll in jedem
+Kalender gleich aussehen, auch wenn die Karte spaeter in einem anders eingefaerbten Tab steht.
 An einem Tag mit beidem bleibt so beides sichtbar.
 GROESSENVERHAELTNIS (Leonard-Vorgabe 01.09.2026): Das Lauf-Quadrat verhaelt sich zum Kern wie der
 Kern zum ganzen Kaestchen. Kaestchen 21px, Kern 14px (inset 3,5) → 14 x 14/21 = 9,33px, also

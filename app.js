@@ -3535,7 +3535,7 @@ function runPlanKarte(p) {
   if (!offen) {
     return `<div class="chart-card-v2 lauf-plan${p.archived ? ' plan-status-archived' : ''}" onclick="toggleRunPlan('${p.id}')">
       <div class="ppv-head"><div class="ppv-name">${escapeHtml(p.name || 'Laufplan')}</div></div>
-      <div class="ppv-meta">${zeitraum} · ${wochen} Wochen · ${lauftage}</div>
+      <div class="ppv-meta">${zeitraum} · ${wochen} Wochen · ${lauftage}${p.raceDate ? ` · 🏁 ${new Date(p.raceDate).toLocaleDateString('de-DE')}` : ''}</div>
     </div>`;
   }
   // Aufgeklappt: Kopffelder + Woche fuer Woche die Lauftage
@@ -3575,6 +3575,12 @@ function runPlanKarte(p) {
         <input type="date" value="${p.endDate ? new Date(p.endDate).toISOString().slice(0,10) : ''}"
                onchange="setRunPlan('${p.id}','endDate',this.value)"></div>
     </div>
+    <div class="program-form-row"><label>Wettkampf (optional)</label>
+      <input type="date" value="${p.raceDate ? new Date(p.raceDate).toISOString().slice(0,10) : ''}"
+             onchange="setRunPlan('${p.id}','raceDate',this.value)"></div>
+    <div class="program-form-row"><label>Notizen</label>
+      <textarea class="program-form-textarea" rows="2" placeholder="z. B. Ziel, Streckenprofil"
+                onchange="setRunPlan('${p.id}','notes',this.value)">${escapeHtml(p.notes || '')}</textarea></div>
     <div class="program-form-row"><label>Lauftage (${wochen} Wochen)</label><div class="lp-tagwahl-reihe">${tageWahl}</div></div>
     ${wochenBlocks.join('')}
     <div class="program-form-row">
@@ -3608,12 +3614,14 @@ function _runPlanAendern(id, fn) {
 }
 
 function setRunPlan(id, feld, wert) {
+  // Notizen sichern sich still: Ein Neuaufbau naehme dem Feld den Fokus mitten im Tippen.
+  const stillSpeichern = feld === 'notes';
   _runPlanAendern(id, p => {
-    if (feld === 'startDate' || feld === 'endDate') p[feld] = wert ? new Date(wert + 'T00:00:00').getTime() : null;
+    if (feld === 'startDate' || feld === 'endDate' || feld === 'raceDate') p[feld] = wert ? new Date(wert + 'T00:00:00').getTime() : null;
     else if (feld === 'archived') p.archived = (wert === true || wert === 'true');
     else p[feld] = wert;
   });
-  renderLaufVerwaltung();
+  if (!stillSpeichern) renderLaufVerwaltung();
   if (currentScreen === 'overview') renderOverview();
 }
 
@@ -3642,7 +3650,7 @@ function setRunUnit(id, woche, dayIdx, feld, wert) {
 
 function deleteRunPlan(id) {
   const p = DB.getRunPlans().find(x => x.id === id);
-  confirmDialog('Laufplan löschen?', `„${(p && p.name) || 'Laufplan'}" wird entfernt.`, () => {
+  confirmAction('Laufplan löschen?', `„${(p && p.name) || 'Laufplan'}" wird entfernt.`, () => {
     DB.saveRunPlans(DB.getRunPlans().filter(x => x.id !== id));
     _laufOffenePlaene.delete(id);
     renderLaufVerwaltung();
