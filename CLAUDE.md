@@ -187,6 +187,13 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
 - **Laufende Einheit:** `toggleSetDone(ei, si)` hakt einen einzelnen Satz ab (Feld `sets[].done`), hakt die Übung automatisch ab, wenn alle Sätze stehen, und startet die **Satzpause** (`startRestTimer`, Leiste `#rest-bar`) — aber NUR, wenn danach noch ein Satz der Übung offen ist. Nach dem letzten Satz läuft keine Pause mehr (eine ggf. laufende wird gestoppt): dort folgt der Übungswechsel, keine weitere Wiederholung. Die Pause startet IMMER bei 1:30 (`REST_DEFAULT_SEC`); `adjustRest(±30)` und `resetRest()` wirken nur auf die laufende Pause und werden NICHT als Vorgabe gemerkt. Kopf ist im aktiven Zustand kompakt (`.hero-v2.active-mode`), der Wochenplan ist ausgeblendet (`html.wo-running`), beim Scrollen erscheint `#wo-sticky-bar` — aber NUR im Trainings-Tab: Der Riegel
   (`body.theme-workouts #wo-sticky-bar.show`) liegt im CSS, damit sie beim Tabwechsel sofort verschwindet und nicht
   erst beim naechsten Scroll- oder Sekundentakt; `_applyTabState` raeumt zusaetzlich die `.show`-Klasse ab. `ensureActiveExpanded()` hält die nächste unerledigte Übung offen (`_aexUserClosedAll` respektiert bewusstes Zuklappen).
+- **Textauswahl auf Schalt-Texten unterbinden.** `.seg-btn`, `.cal-filter-btn` und
+  `.cal-detail-tag` tragen `user-select: none`. Ohne das loest ein Tipp auf iOS die Textauswahl
+  aus — sichtbar als kurze Striche unter einzelnen Buchstaben (gemeldet 01.09.2026). Dasselbe
+  Verhalten wie beim Zahlenblock; in Chrome NICHT reproduzierbar.
+- **`.seg-toggle` hat KEINEN `backdrop-filter` mehr.** Der Weichzeichner zeichnete auf iOS eine
+  dunkle Linie an der Oberkante, sobald sich der Inhalt dahinter aenderte (Seitenwechsel im
+  Plaene-Tab, gemeldet 01.09.2026). Die 22-%-Weissflaeche allein genuegt.
 - **Kein Zoom:** `viewport` in index.html trägt `maximum-scale=1.0, user-scalable=no` (greift in der installierten PWA), zusätzlich erzwingt die letzte Regel in style.css `input, select, textarea { font-size: 16px !important }` — unter 16px zoomt iOS beim Fokussieren automatisch hinein. Beim Anheben einer Schriftgröße in einem Eingabefeld also nie unter 16px gehen.
 - **Zahlenblock:** Der ganze Block (`#modal-numpad .sheet` und alle Teile) hat `user-select: none`. Ohne das loesten
   zwei schnelle Tipps auf eine Zifferntaste auf iOS die Textauswahl aus — sichtbar als senkrechter Strich
@@ -218,10 +225,10 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   `_calPlanIndex()`/`_calPlanInfo()` rekonstruieren den Plan je Datum aus `startDate`/`endDate`/`weekPlan` ALLER Pläne (auch archivierter — die behalten ihren Wochenplan);
   ohne abdeckenden Plan wird keine Fläche gezeichnet, kommende Tage sind blass (`.future`). Antippen beschreibt den Tag in `#cal-detail`, inklusive der geplanten Einheit.
   **Aufbau der Fusszeile (01.09.2026):** Zeile 1 nur Wochentag und Datum (`.cal-detail-datum`),
-  Zeile 2 der Trainingstag. Wurde an dem Tag aufgezeichnet, ist Zeile 2 ein AUSKLAPP-KNOPF
-  (`.cal-detail-tag`, `toggleCalDetail`) und blendet darunter die Eckdaten der Einheit ein —
-  Dauer, Volumen, Saetze und die Uebungen (`_calEinheitInfoHTML`). Immer nur EIN Tag offen;
-  ein Tipp auf einen anderen Tag klappt zu (`_calDetailOffen`).
+  Zeile 2 der Trainingstag. Wurde an dem Tag aufgezeichnet, ist Zeile 2 ein KNOPF
+  (`.cal-detail-tag`) und oeffnet die bestehende Detailansicht `#modal-hist-detail` —
+  wie vor dem Umbau der Fusszeile. Ein zwischenzeitlich gebauter Inline-Ausklappblock wurde
+  wieder entfernt (Leonard-Wunsch: das Einheiten-Fenster bleibt).
   Der Handler MUSS `event.stopPropagation()` rufen, sonst raeumt `initCalendarDeselect` die
   Beschreibung im selben Klick weg. Nachgetragene Tage ohne Aufzeichnung und Ruhetage bleiben
   gewoehnlicher Text — ohne Einheit gibt es nichts aufzuklappen.

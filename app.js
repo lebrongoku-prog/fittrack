@@ -4018,38 +4018,12 @@ function renderTrainingCalendar(id, cardId) {
   });
 }
 
-// Welcher Tag hat seine Einheiten-Infos aufgeklappt? Nur einer gleichzeitig; ein Tipp auf
-// einen anderen Tag setzt zurueck.
-let _calDetailOffen = null;
-function toggleCalDetail(key, id) {
-  _calDetailOffen = (_calDetailOffen === key) ? null : key;
-  showCalDay(key, id);
-}
-
-// Eckdaten der Einheit unter dem Trainingstag: Dauer, Volumen, Saetze und die Uebungen.
-function _calEinheitInfoHTML(wo) {
-  if (!wo) return '';
-  const saetze = (wo.exercises || []).reduce((a, e) => a + (Array.isArray(e.sets) ? e.sets.length : 0), 0);
-  const kopf = [
-    wo.duration ? fmtDur(wo.duration) : null,
-    fmtVol(calcVolume(wo)),
-    `${saetze} ${saetze === 1 ? 'Satz' : 'Sätze'}`,
-  ].filter(Boolean).join(' · ');
-  const namen = (wo.exercises || []).map(e => escapeHtml(e.name || '')).filter(Boolean).join(', ');
-  return `<div class="cal-detail-einheit">
-    <div>${kopf}</div>
-    ${namen ? `<div class="cal-detail-uebungen">${namen}</div>` : ''}
-  </div>`;
-}
-
 // Tippen auf ein Kästchen: Tag in der Fußzeile beschreiben.
 function showCalDay(key, id) {
   id = id || 'cal';
   const el = document.getElementById(id + '-detail');
   if (!el) return;
   const entry = buildCalendarData()[key];
-  // Ein anderer Tag → die aufgeklappten Einheiten-Infos gehoeren nicht mehr dazu.
-  if (_calDetailOffen && _calDetailOffen !== key) _calDetailOffen = null;
   const [y, m, d] = key.split('-').map(Number);
   const dateStr = new Date(y, m-1, d).toLocaleDateString('de-DE', { weekday:'long', day:'numeric', month:'long' });
   const scope = document.getElementById(id + '-grid');
@@ -4074,13 +4048,12 @@ function showCalDay(key, id) {
       const woIdx = DB.getWorkouts().findIndex(w => _dayKeyOf(w.startTs) === key);
       const name = entry.names.join(', ') + (plan.known && !plan.planned ? ' · zusätzlich' : '');
       if (woIdx >= 0) {
-        const auf = _calDetailOffen === key;
-        // `stopPropagation` ist Pflicht: Sonst raeumt initCalendarDeselect die Beschreibung
-        // im selben Klick wieder weg.
-        txt += `<button type="button" class="cal-detail-tag" aria-expanded="${auf}"
-                        onclick="event.stopPropagation();toggleCalDetail('${key}','${id}')">${name}<span
+        // Oeffnet die bestehende Detailansicht der Einheit (`#modal-hist-detail`) — genau wie
+        // vor dem Umbau der Fusszeile (Leonard-Wunsch 01.09.2026). `stopPropagation` ist
+        // Pflicht: Sonst raeumt initCalendarDeselect die Beschreibung im selben Klick weg.
+        txt += `<button type="button" class="cal-detail-tag"
+                        onclick="event.stopPropagation();showHistDetail(${woIdx})">${name}<span
                         class="cal-detail-chev">▾</span></button>`;
-        if (auf) txt += _calEinheitInfoHTML(DB.getWorkouts()[woIdx]);
       } else {
         txt += `<div class="cal-detail-tag-txt">${name}</div>`;
       }

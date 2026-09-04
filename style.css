@@ -2001,18 +2001,15 @@ html.wo-running #wo-week-card { display: none; }
 .cal-detail-run.geplant { color: var(--text3); }
 /* Fusszeile: Datum in Zeile 1, Trainingstag in Zeile 2. Ist der Tag aufgezeichnet, ist die
    zweite Zeile ein Ausklapp-Knopf mit den Eckdaten der Einheit darunter. */
-.cal-detail-datum { }
 .cal-detail-tag, .cal-detail-tag-txt { display: block; width: 100%; margin-top: 2px; }
 .cal-detail-tag {
   border: none; background: none; padding: 0; text-align: left;
   font: inherit; color: var(--text); font-weight: 600;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
 }
 .cal-detail-tag:active { opacity: .6; }
-.cal-detail-tag .cal-detail-chev { transition: transform .15s ease; display: inline-block; }
-.cal-detail-tag[aria-expanded="true"] .cal-detail-chev { transform: rotate(180deg); }
-.cal-detail-einheit { margin-top: 4px; color: var(--text3); }
-.cal-detail-uebungen { margin-top: 2px; }
+.cal-detail-tag .cal-detail-chev { display: inline-block; }
 
 /* Titel des Uebersichts-Kalenders ist ein Filter (Training | Laeufe | beides). Sieht aus
    wie die uebrigen Kartentitel, ist aber ein Knopf. */
@@ -2020,6 +2017,8 @@ html.wo-running #wo-week-card { display: none; }
   border: none; background: none; padding: 0; margin: 0;
   font: inherit; font-size: 16px; font-weight: 700; color: inherit; text-align: left;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
+  /* Siehe `.seg-btn`: verhindert die Auswahl-Striche unter einzelnen Buchstaben. */
+  -webkit-user-select: none; user-select: none;
 }
 .cal-filter-btn:active { opacity: .6; }
 .cal-day.future { opacity: .45; }
@@ -2350,11 +2349,18 @@ html.wo-running #wo-week-card { display: none; }
 .day-addto-sub { font-size: 12px; color: var(--text3); padding: 10px 16px 4px; line-height: 1.4; }
 
 /* Segment-Toggle (Trainingsplan ↔ Trainingstage) im Plans-Tab */
+/* KEIN `backdrop-filter` mehr: Auf iOS zeichnete der Weichzeichner an der Oberkante des
+   Schalters eine dunkle Linie, sobald sich der Inhalt dahinter aenderte (Seitenwechsel
+   Trainingsplan → Laufplan, gemeldet 01.09.2026). Die 22-%-Weissflaeche allein genuegt. */
 .seg-toggle { display: flex; gap: 4px; margin: 0 14px 12px; background: rgba(255,255,255,0.22);
-  border-radius: 12px; padding: 4px; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  border-radius: 12px; padding: 4px; }
+/* `user-select: none` ist Pflicht: Ohne das loest ein Tipp auf iOS die Textauswahl aus —
+   sichtbar als kurze Striche unter einzelnen Buchstaben. Dasselbe Verhalten wie beim
+   Zahlenblock (siehe dort). */
 .seg-btn { flex: 1; border: none; background: transparent; color: #fff; font-size: 13px; font-weight: 600;
   padding: 9px 6px; border-radius: 9px; cursor: pointer; -webkit-tap-highlight-color: transparent;
-  font-family: inherit; transition: background 0.15s, color 0.15s; }
+  font-family: inherit; transition: background 0.15s, color 0.15s;
+  -webkit-user-select: none; user-select: none; }
 .seg-btn.active { background: #fff; color: var(--accent-dark); box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
 .program-form-row-2col { display: flex; gap: 10px; }
 .program-form-row-2col > div { flex: 1; display: flex; flex-direction: column; gap: 6px; }
