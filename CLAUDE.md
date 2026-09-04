@@ -164,6 +164,13 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Nummernscheibe steht. Der Kopf bleibt oben ausgerichtet (`align-items:flex-start`) — sonst wanderte die
   Scheibe beim Aufklappen.
 - **Übungs-Karten** `.aex-v2` (Vorschau, laufende Einheit, Bibliothek-Tag-Detail) — Pro-Satz-Tabelle als ZEILEN pro Satz (`.aex-v2-srow`: Satz | Wdh. | kg | **Haken**). Notizfeld `.aex-v2-notes` rechts daneben, unter 460px darunter. `.aex-v2-cmp` zeigt Bestleistung + Differenz zur letzten Einheit; **zugeklappt bleibt die Karte ruhig**: `.aex-cmp-pr` ist dann ausgeblendet, eine Notiz-Vorschau gibt es nicht (Leonard-Wunsch).
+- **Herocard an einem Trainingstag ist bewusst kompakt** (`.hero-v2.col-layout`, 01.09.2026): Abstand zum
+  Knopf 8px (vorher 14px) und Hantel 48px (vorher 72px). Die Hantel bestimmte als hoechstes Element die
+  Hoehe des oberen Blocks; der Text darin wurde mittig zentriert, wodurch ueber dem Titel Leerraum entstand.
+  Jetzt steht der Text oben an und die Hantel mittig daneben. Ziel war die Hoehe der Wochenplan-Karte:
+  im Querformat erreicht (129 gegen 128), im Hochformat bleiben 17px Unterschied — dort passen Uebungen,
+  Saetze und Dauer nicht in eine Zeile, und die zweite Zeile kostet genau diese 17px.
+  Die Ruhetag-Karte (`.rest-mode`) ist davon NICHT betroffen, ihre Hantel bleibt 80px.
 - **Herocard der Vorschau** zeigt Uebungen, Saetze und — sobald mindestens eine Einheit dieses Trainingstags
   abgeschlossen ist — deren mittlere Dauer (`avgDauerFuerTag(planDayId)`, Einheiten ohne `duration` zaehlen nicht mit).
   Die Dauer steht seit 01.09.2026 in DERSELBEN Zeile wie Uebungen und Saetze (Leonard-Wunsch — spart in der

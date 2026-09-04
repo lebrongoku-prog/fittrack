@@ -1310,12 +1310,19 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 
 /* Column layout: Vorschau and Aktiv share matching natural heights
    (top row dominated by dumbbell, bottom row buttons with same vertical padding). */
+/* Kompakt gehalten, damit die Karte an einem Trainingstag moeglichst genauso hoch ist wie
+   die Wochenplan-Karte (Leonard-Wunsch 01.09.2026). Zwei Stellschrauben:
+   1. Der Abstand zum Knopf war 14px und ist jetzt 8px.
+   2. Die Hantel war 72px hoch und bestimmte damit die Hoehe des oberen Blocks — der Text
+      darin ist deutlich flacher und wurde darin mittig zentriert, was ueber dem Titel
+      zusaetzlichen Leerraum ergab. Sie ist jetzt 52px, und der Text steht oben an. */
 .hero-v2.col-layout {
-  flex-direction: column; gap: 14px;
+  flex-direction: column; gap: 8px;
   justify-content: space-between;
 }
-.hero-v2.col-layout .hero-v2-top { display: flex; gap: 12px; align-items: stretch; width: 100%; }
-.hero-v2.col-layout .hero-v2-text { flex: 1; min-width: 0; }
+.hero-v2.col-layout .hero-v2-top { display: flex; gap: 12px; align-items: flex-start; width: 100%; }
+.hero-v2.col-layout .hero-v2-text { flex: 1; min-width: 0; justify-content: flex-start; }
+.hero-v2.col-layout .hero-v2-art { width: 48px; align-self: center; }
 .hero-v2.col-layout .hero-v2-text .hero-v2-meta { margin-bottom: 0; }
 .hero-v2.col-layout .hero-v2-bottom { width: 100%; }
 
