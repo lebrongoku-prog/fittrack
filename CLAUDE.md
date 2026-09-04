@@ -350,6 +350,10 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Kopfzeile, Uebungsliste und „Uebung hinzufuegen" spannen ueber beide Spalten. Waehrend einer
   laufenden Einheit ist die Wochenplan-Karte ausgeblendet (`html.wo-running`) — der Kopf der Einheit
   bekommt dann `grid-column: 1 / -1`, sonst bliebe die linke Spalte leer.
+  ACHTUNG: Das Ausblenden muss IM Media-Query wiederholt werden. Die globale Regel
+  `html.wo-running #wo-week-card { display:none }` hat nur eine ID, die Grid-Regel
+  `#screen-workouts.screen > #wo-week-card` hat zwei und gewinnt sonst — die Karte blieb im
+  Querformat waehrend der Einheit stehen (Leonard-Meldung 01.09.2026).
   Die STATS-Seite (`#ex-view-stats`) ist ebenfalls ein 2-Spalten-Grid: Volumenentwicklung und Volumen
   pro Muskelgruppe teilen sich die erste Zeile, alles Weitere spannt ueber beide. Dort ist
   `align-items` BEWUSST nicht gesetzt — die Grid-Vorgabe `stretch` haelt die beiden Karten gleich hoch.

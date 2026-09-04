@@ -2485,6 +2485,11 @@ html.wo-running #wo-week-card { display: none; }
   /* Waehrend einer laufenden Einheit ist die Wochenplan-Karte ausgeblendet — der Kopf der
      Einheit nimmt dann die ganze Breite, sonst bliebe die linke Spalte leer. */
   html.wo-running #screen-workouts.screen > #wo-session-card-wrap { grid-column: 1 / -1; }
+  /* Das Ausblenden MUSS hier wiederholt werden: Die globale Regel `html.wo-running
+     #wo-week-card { display:none }` hat nur EINE ID, die Grid-Regel darueber
+     (`#screen-workouts.screen > #wo-week-card`) hat ZWEI und gewinnt deshalb — die Karte
+     blieb im Querformat waehrend einer laufenden Einheit stehen (Leonard-Meldung 01.09.2026). */
+  html.wo-running #screen-workouts.screen > #wo-week-card { display: none; }
 
   /* STATS — Volumenentwicklung und Volumen pro Muskelgruppe teilen sich die erste Zeile
      (Leonard-Wunsch 01.09.2026). Ohne `align-items` bleibt die Grid-Vorgabe `stretch`, und
