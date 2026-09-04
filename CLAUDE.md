@@ -542,6 +542,46 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   die Sperre `_navTickingByTab` bleibt dann auf `true` haengen und JEDES weitere Scroll-Ereignis wird verworfen.
 - Übersicht hat eine Plan-Dashboard-Karte (`buildPlanCard`) + „Letzte Sessions" + Volumen-Chart (`renderVolumeChart`, Chart.js).
 
+## Laufen (Tab 5)
+
+Uebernommen aus der App „Health Command Center" (01.09.2026, Leonard-Entscheidung).
+**Zwei Quellen, streng getrennt:**
+- Die **gelaufenen Einheiten** kommen aus Leonards Google-Tabelle „Workout Data" (Ordner
+  „health auto export", `RUN_SHEET_ID`). FitTrack **liest nur** und schreibt dort nie hinein.
+  BEWUSST nur diese eine Datei — HCC zieht die Pace zusaetzlich aus einem zweiten Health-Blatt,
+  hier reicht die Spalte `Speed (km/h)` derselben Zeile. Die Spalten werden ueber die KOPFZEILE
+  gesucht, nicht ueber feste Positionen: Health Auto Export haengt neue Spalten hinten an.
+  Gelesene Laeufe liegen in `ft_runs_cache` (mit Zeitstempel), damit der Tab offline etwas zeigt;
+  sie sind BEWUSST NICHT in der Drive-Sicherung — die Daten gehoeren der Tabelle.
+- Die **Laufplaene** liegen lokal in `ft_runplans` wie alle FitTrack-Daten und sind in der
+  Drive-Sicherung (`runPlans`).
+
+**Eigener OAuth-Bereich, eigener Token-Client** (`RUN_SCOPE` = `spreadsheets.readonly`,
+`runRequestToken`). Bewusst getrennt vom Drive-Zugang: Haengte man den Tabellen-Bereich an den
+bestehenden Client, verlangte Google fuer die Sicherung eine neue Zustimmung — und solange der
+Bereich im Google-Projekt nicht freigeschaltet ist, waere die Drive-Sicherung mit kaputt.
+VORAUSSETZUNG: Der Bereich muss im Google-Cloud-Projekt von FitTrack freigeschaltet sein.
+
+**Datenmodell Laufplan:** `{ id, name, startDate, endDate, runDays:[0..6], archived, raceDate,
+units:[{week, dayIdx, km, minutes, zone}] }`. Ein Laufplan ist ein DATIERTER Ablauf (Woche 1..N ab
+dem Montag der Startwoche), kein Wochenmuster wie die Trainingsplaene — die Einheiten sind deshalb
+EINGEBETTET und nicht wie die Trainingstage geteilte Bausteine. Das Datum einer Einheit wird
+GERECHNET (`runEinheitDatum`), nicht gespeichert: Verschiebt man den Plan, wandert alles mit.
+
+**Oberflaeche:** Seitenschalter `Laufkalender | Laufplanverwaltung` (`setLaufView`, `_laufSeite`).
+Auf- und Zuklappen einer Woche laeuft OHNE Neuaufbau (`toggleRunWoche` schaltet nur `display`) und
+die Einheiten sichern sich beim Verlassen des Feldes ohne Re-Render — sonst verlieren die
+Kopffelder darueber (Name, Datum) ihre noch nicht gespeicherten Eingaben und den Fokus.
+Der Wochenkopf ist NICHT `.weitere-btn`: Der setzt weisse Schrift auf farbigem Grund voraus, hier
+steht er auf einer weissen Karte.
+
+**Gemeinsamer Kalender:** Nur der Kalender in der UEBERSICHT (`id === 'cal'`) zeigt zusaetzlich
+die Laeufe — der im Plaene-Tab bleibt vorerst reines Krafttraining. Ein Lauf ist eine dritte
+Schicht (`.cal-day.run`, violette Ecke; geplant = Ring), bewusst kein weiterer Kernzustand:
+sonst waere an einem Tag mit beidem nicht mehr erkennbar, dass auch Kraft trainiert wurde.
+
+---
+
 ## Google-Drive-Sync
 - **Token-Anfragen müssen IMMER enden.** `driveRequestToken` hat `error_callback` + 45-s-Timeout (`DRIVE_TOKEN_TIMEOUT_MS`), weil Google Identity Services in der installierten PWA gelegentlich weder `callback` noch `error_callback` aufruft. Ohne das blieb die Promise offen, `driveSync` erreichte sein `finally` nie, `driveSyncInFlight` blieb `true` — die Sicherung „lief" endlos und jeder weitere Versuch wurde abgewiesen, bis die App neu gestartet wurde. Beim Ändern dieses Codes die Zeitgrenze NICHT entfernen.
 - `driveSync` erkennt zusätzlich hängende Läufe (`driveSyncStartedAt` + `DRIVE_SYNC_STUCK_MS` = 2 min) und lässt danach einen neuen Sync zu.

@@ -370,6 +370,21 @@ const DB = {
   getManualDays() { const s = localStorage.getItem('ft_manual_days'); return s ? JSON.parse(s) : []; },
   saveManualDays(v) { localStorage.setItem('ft_manual_days', JSON.stringify(v)); markLocalChange(); },
 
+  // ── Laufen ──────────────────────────────────────────────────────
+  // Laufplaene liegen LOKAL wie alle FitTrack-Daten (Drive-Sicherung inklusive). Aus der
+  // Google-Tabelle kommen ausschliesslich die tatsaechlich gelaufenen Einheiten — FitTrack
+  // liest sie nur und schreibt nichts hinein.
+  getRunPlans() { const s = localStorage.getItem('ft_runplans'); return s ? JSON.parse(s) : []; },
+  saveRunPlans(v) { localStorage.setItem('ft_runplans', JSON.stringify(v)); markLocalChange(); },
+  // Zwischenspeicher der gelesenen Laeufe: FitTrack ist offline-faehig, der Lauf-Tab soll
+  // also auch ohne Netz etwas zeigen. BEWUSST nicht in der Drive-Sicherung — die Daten
+  // gehoeren der Tabelle, nicht FitTrack.
+  getRuns() { const s = localStorage.getItem('ft_runs_cache'); return s ? (JSON.parse(s).runs || []) : []; },
+  getRunsStand() { const s = localStorage.getItem('ft_runs_cache'); return s ? (JSON.parse(s).fetchedAt || 0) : 0; },
+  saveRuns(runs) {
+    localStorage.setItem('ft_runs_cache', JSON.stringify({ fetchedAt: Date.now(), runs }));
+  },
+
   getWorkouts() { const s = localStorage.getItem('ft_workouts'); return s ? JSON.parse(s) : []; },
   saveWorkouts(v) { localStorage.setItem('ft_workouts', JSON.stringify(v)); markLocalChange(); },
   addWorkout(w) { const ws = this.getWorkouts(); ws.unshift(w); this.saveWorkouts(ws); },
@@ -605,7 +620,7 @@ let currentScreen = 'overview';
 
 // Vier Haupt-Tabs. „Mehr" (Sicherung, Import/Export, Diagnose) ist kein Tab mehr, sondern
 // ein Overlay hinter dem Zahnrad in der Übersicht — es wird selten und nie im Training gebraucht.
-const TAB_ORDER = ['overview', 'workouts', 'exercises', 'plans'];
+const TAB_ORDER = ['overview', 'workouts', 'exercises', 'plans', 'laufen'];
 
 // Wenn JS gerade einen Scroll programmatisch ausloest, soll der Scroll-Listener
 // nicht zusaetzlich currentScreen/Theme/Renderer triggern (vermeidet Doppel-Render).
@@ -637,6 +652,7 @@ const THEME_GRADIENTS = {
   workouts:  'linear-gradient(135deg, #064E3B, #10B981)',
   plans:     'linear-gradient(135deg, #78350F, #F59E0B)',
   exercises: 'linear-gradient(135deg, #172554, #1E40AF)',
+  laufen:    'linear-gradient(135deg, #4C1D95, #8B5CF6)',   // Violett — eigene Domaene
   mehr:      'linear-gradient(135deg, #DBEAFE, #DBEAFE)',   // solid hellblau, kein sichtbarer Verlauf
 };
 // Swipe-gebundener Background-Uebergang.
@@ -731,6 +747,7 @@ function _applyTabState(name) {
   else if (name === 'workouts') renderWorkoutsScreen();
   else if (name === 'exercises') renderExercisesScreen();
   else if (name === 'plans') renderPlansScreen();
+  else if (name === 'laufen') renderLaufenScreen();
   else if (name === 'plan-detail') renderPlanDetail();
   else if (name === 'day-detail') renderLibDayDetail();
   else if (name === 'mehr') renderMehr();
@@ -3217,6 +3234,427 @@ function renderVolumeChart(ws) {
   });
 }
 
+// ═══════════════════════════════════════════════════════════════════
+//  LAUFEN — Tab 5
+//  Zwei Quellen, klar getrennt:
+//   • Die GELAUFENEN Einheiten kommen aus Leonards Google-Tabelle „Workout Data"
+//     (Ordner „health auto export"). FitTrack liest sie nur — geschrieben wird dort nie.
+//     Bewusst NUR diese eine Datei: HCC zieht die Pace zusaetzlich aus einem zweiten
+//     Health-Blatt, hier reicht die Geschwindigkeit aus derselben Zeile.
+//   • Die LAUFPLAENE liegen lokal wie alle FitTrack-Daten (ft_runplans) und wandern in
+//     die Drive-Sicherung mit.
+// ═══════════════════════════════════════════════════════════════════
+const RUN_SHEET_ID = '1YJ3ke8Z2jS1KdJlKOnukUStMgvqqppnktAb8UVHDdgk';
+// Eigener Berechtigungsbereich und eigener Token-Client. BEWUSST getrennt vom Drive-Zugang:
+// Wuerde der Tabellen-Bereich an den bestehenden Client gehaengt, verlangte Google fuer die
+// Sicherung eine neue Zustimmung — und solange der Bereich im Google-Projekt nicht
+// freigeschaltet ist, waere die Drive-Sicherung mit kaputt.
+const RUN_SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+const RUN_TOKEN_KEY = 'ft_run_token_exp';
+
+const WOCHENTAGE_KURZ = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+const HERZZONEN = ['', 'Z1', 'Z2', 'Z3', 'Z4', 'Z5'];
+
+let runTokenClient = null, runToken = null, runTokenExp = 0;
+let runLaden = false, runFehler = '';
+
+// Erkennt eine Laufeinheit an der Typ-Spalte — dieselbe Regel wie in HCC.
+function istLauf(typ) { return /lauf|ausf(ü|ue)hren|run|jog/i.test(String(typ || '')); }
+
+function runVerbunden() { return !!runToken && Date.now() < runTokenExp; }
+
+function runInit() {
+  if (runTokenClient || typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) return;
+  runTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: DRIVE_CLIENT_ID, scope: RUN_SCOPE, callback: () => {},
+  });
+  try { runTokenExp = Number(sessionStorage.getItem(RUN_TOKEN_KEY) || 0); } catch (_) {}
+}
+
+// Wie driveRequestToken: MUSS immer enden. Google Identity ruft in der installierten PWA
+// gelegentlich weder callback noch error_callback auf — ohne Zeitgrenze bliebe das
+// Versprechen offen und der Ladezustand haengen.
+function runRequestToken({ interactive = true } = {}) {
+  return new Promise((resolve, reject) => {
+    runInit();
+    if (!runTokenClient) return reject(new Error('Google ist noch nicht geladen'));
+    let fertig = false;
+    const ende = (fn, arg) => { if (fertig) return; fertig = true; clearTimeout(t); fn(arg); };
+    const t = setTimeout(() => ende(reject, new Error('Zeitüberschreitung bei der Google-Anmeldung')), DRIVE_TOKEN_TIMEOUT_MS);
+    runTokenClient.callback = (r) => {
+      if (r.error) return ende(reject, new Error(`Zugriff verweigert (${r.error})`));
+      runToken = r.access_token;
+      runTokenExp = Date.now() + (Number(r.expires_in || 3600) - 60) * 1000;
+      try { sessionStorage.setItem(RUN_TOKEN_KEY, String(runTokenExp)); } catch (_) {}
+      ende(resolve, runToken);
+    };
+    runTokenClient.error_callback = (e) => ende(reject, new Error(`Google-Anmeldung nicht möglich (${(e && (e.type || e.message)) || 'unbekannt'})`));
+    runTokenClient.requestAccessToken({ prompt: interactive ? 'consent' : '' });
+  });
+}
+
+// Eine Zeile der Tabelle → Laufeinheit. Die Spalten werden ueber die KOPFZEILE gesucht,
+// nicht ueber feste Positionen: Health Auto Export haengt neue Spalten hinten an, feste
+// Indizes waeren beim naechsten Export falsch.
+function runZeileLesen(kopf, zeile) {
+  const idx = (name) => kopf.findIndex(h => String(h).trim().toLowerCase() === name.toLowerCase());
+  const val = (name) => { const i = idx(name); return i >= 0 ? zeile[i] : undefined; };
+  const zahl = (name) => { const v = parseFloat(String(val(name) ?? '').replace(',', '.')); return isFinite(v) ? v : null; };
+  const datumRoh = String(val('Date') ?? '').trim();
+  if (!datumRoh) return null;
+  const d = new Date(datumRoh);
+  if (isNaN(d)) return null;
+  const typ = String(val('Type') ?? '').trim();
+  if (!istLauf(typ)) return null;
+  const p = (n) => String(n).padStart(2, '0');
+  return {
+    date: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`,
+    typ, minutes: zahl('Duration (min)'), km: zahl('Distance (km)'),
+    avgHR: zahl('Avg HR'), maxHR: zahl('Max HR'),
+    kmh: zahl('Speed (km/h)'), elevM: zahl('Elevation (m)'),
+  };
+}
+
+// Laeufe aus der Tabelle holen und zwischenspeichern.
+async function runLaeufeLaden({ interactive = false } = {}) {
+  if (runLaden) return;
+  runLaden = true; runFehler = '';
+  renderLaufenScreen();
+  try {
+    if (!runVerbunden()) await runRequestToken({ interactive });
+    const kopfR = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${RUN_SHEET_ID}?fields=sheets.properties.title`,
+      { headers: { Authorization: 'Bearer ' + runToken } });
+    if (!kopfR.ok) throw new Error(kopfR.status === 403
+      ? 'Kein Zugriff auf die Tabelle — ist der Bereich „spreadsheets.readonly" im Google-Projekt freigeschaltet?'
+      : `Tabelle nicht lesbar (${kopfR.status})`);
+    const meta = await kopfR.json();
+    const blatt = ((meta.sheets || [])[0] || {}).properties?.title;
+    if (!blatt) throw new Error('Die Tabelle enthält kein Blatt');
+    const r = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${RUN_SHEET_ID}/values/${encodeURIComponent(`'${blatt.replace(/'/g, "''")}'!A1:ZZ`)}`,
+      { headers: { Authorization: 'Bearer ' + runToken } });
+    if (!r.ok) throw new Error(`Tabelle nicht lesbar (${r.status})`);
+    const werte = (await r.json()).values || [];
+    if (werte.length < 2) throw new Error('Die Tabelle enthält keine Zeilen');
+    const kopf = werte[0];
+    const laeufe = werte.slice(1).map(z => runZeileLesen(kopf, z)).filter(Boolean);
+    DB.saveRuns(laeufe);
+  } catch (e) {
+    runFehler = e.message || String(e);
+  } finally {
+    runLaden = false;
+    renderLaufenScreen();
+    if (currentScreen === 'overview') renderOverview();
+  }
+}
+
+// ── Laufplaene ─────────────────────────────────────────────────────
+// Ein Plan ist ein DATIERTER Ablauf (Woche 1..N ab dem Startdatum), kein Wochenmuster wie
+// die Trainingsplaene. Die Einheiten sind deshalb EINGEBETTET und nicht — wie die
+// Trainingstage — geteilte Bausteine: „Woche 2, Dienstag, 8 km" gehoert zu genau einem Plan.
+function runPlanWochen(plan) {
+  if (!plan || !plan.startDate || !plan.endDate) return 0;
+  const a = new Date(plan.startDate); a.setHours(0, 0, 0, 0);
+  a.setDate(a.getDate() - ((a.getDay() + 6) % 7));          // Montag der Startwoche
+  const b = new Date(plan.endDate); b.setHours(0, 0, 0, 0);
+  return Math.max(1, Math.ceil((Math.round((b - a) / 86400000) + 1) / 7));
+}
+
+// Datum einer Planeinheit. Wird GERECHNET, nicht gespeichert — verschiebt man den Plan,
+// wandern alle Einheiten von selbst mit.
+function runEinheitDatum(plan, woche, dayIdx) {
+  const a = new Date(plan.startDate); a.setHours(0, 0, 0, 0);
+  a.setDate(a.getDate() - ((a.getDay() + 6) % 7));
+  a.setDate(a.getDate() + (woche - 1) * 7 + dayIdx);
+  return a;
+}
+
+function runPlanAktiv() {
+  const jetzt = Date.now();
+  return DB.getRunPlans().find(p => !p.archived && p.startDate <= jetzt && (p.endDate || Infinity) >= jetzt) || null;
+}
+
+function runEinheit(plan, woche, dayIdx) {
+  return (plan.units || []).find(u => u.week === woche && u.dayIdx === dayIdx) || null;
+}
+
+// Alle geplanten Lauftage als Datumsschluessel → Einheit (fuer den Kalender).
+function runGeplanteTage() {
+  const map = {};
+  DB.getRunPlans().forEach(p => {
+    if (!p.startDate) return;
+    const wochen = runPlanWochen(p);
+    for (let w = 1; w <= wochen; w++) {
+      (p.runDays || []).forEach(di => {
+        const d = runEinheitDatum(p, w, di);
+        map[_dayKeyOf(d.getTime())] = { plan: p, einheit: runEinheit(p, w, di) };
+      });
+    }
+  });
+  return map;
+}
+
+// Gelaufene Einheiten als Datumsschluessel → Lauf.
+function runNachTag() {
+  const map = {};
+  DB.getRuns().forEach(l => { map[l.date] = l; });
+  return map;
+}
+
+function fmtPace(kmh) {
+  if (!kmh || kmh <= 0) return '–';
+  const secProKm = 3600 / kmh;
+  const m = Math.floor(secProKm / 60), s = Math.round(secProKm % 60);
+  return `${m}:${String(s).padStart(2, '0')} /km`;
+}
+function fmtKm(v) { return v == null ? '–' : (Math.round(v * 10) / 10).toFixed(1).replace(/\.0$/, '') + ' km'; }
+function fmtMin(v) {
+  if (v == null) return '–';
+  const m = Math.round(v);
+  return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}min` : `${m}min`;
+}
+
+// ── Oberflaeche: zwei Seiten ueber den Seitenschalter, wie in HCC ──
+let _laufSeite = 'kalender';        // 'kalender' | 'verwaltung'
+let _laufOffeneWochen = new Set();  // mehrere Wochen duerfen gleichzeitig offen sein
+let _laufOffenePlaene = new Set();
+
+function setLaufView(seite) { _laufSeite = seite; renderLaufenScreen(); }
+
+function renderLaufenScreen() {
+  const segK = document.getElementById('seg-lauf-kalender');
+  const segV = document.getElementById('seg-lauf-verwaltung');
+  if (segK) segK.classList.toggle('active', _laufSeite === 'kalender');
+  if (segV) segV.classList.toggle('active', _laufSeite === 'verwaltung');
+  const vK = document.getElementById('lauf-view-kalender');
+  const vV = document.getElementById('lauf-view-verwaltung');
+  if (vK) vK.style.display = _laufSeite === 'kalender' ? '' : 'none';
+  if (vV) vV.style.display = _laufSeite === 'verwaltung' ? '' : 'none';
+  if (_laufSeite === 'kalender') renderLaufKalenderSeite(); else renderLaufVerwaltung();
+}
+
+// ── Seite 1: Überblick über die gelaufenen Einheiten ───────────────
+function renderLaufKalenderSeite() {
+  const el = document.getElementById('lauf-view-kalender');
+  if (!el) return;
+  const laeufe = DB.getRuns();
+  const stand = DB.getRunsStand();
+
+  // Verbindungskarte: ohne Tabellenzugriff gibt es hier nichts zu zeigen.
+  const standTxt = stand
+    ? `Zuletzt gelesen: ${new Date(stand).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
+    : 'Noch nie gelesen';
+  const verbindung = `<div class="chart-card-v2">
+    <div class="chart-card-v2-head"><span class="chart-card-v2-title">Laufdaten</span></div>
+    <div class="lauf-quelle">
+      <div class="lauf-quelle-txt">
+        <strong>${laeufe.length} ${laeufe.length === 1 ? 'Lauf' : 'Läufe'}</strong> aus „Workout Data"<br>
+        <span class="lauf-dim">${escapeHtml(standTxt)}</span>
+        ${runFehler ? `<div class="lauf-fehler">${escapeHtml(runFehler)}</div>` : ''}
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="runLaeufeLaden({interactive:true})" ${runLaden ? 'disabled' : ''}>
+        ${runLaden ? 'Lese …' : (stand ? 'Aktualisieren' : 'Verbinden')}</button>
+    </div>
+  </div>`;
+
+  // Diese Woche: Umfang gegen den Plan.
+  const mo = new Date(); mo.setHours(0, 0, 0, 0);
+  mo.setDate(mo.getDate() - ((mo.getDay() + 6) % 7));
+  const so = new Date(mo); so.setDate(so.getDate() + 6); so.setHours(23, 59, 59, 999);
+  const inWoche = laeufe.filter(l => { const [y, m, d] = l.date.split('-').map(Number);
+    const t = new Date(y, m - 1, d).getTime(); return t >= mo.getTime() && t <= so.getTime(); });
+  const kmWoche = inWoche.reduce((a, l) => a + (l.km || 0), 0);
+  const minWoche = inWoche.reduce((a, l) => a + (l.minutes || 0), 0);
+
+  const plan = runPlanAktiv();
+  let sollKm = 0;
+  if (plan) {
+    const geplant = runGeplanteTage();
+    Object.keys(geplant).forEach(k => {
+      const [y, m, d] = k.split('-').map(Number);
+      const t = new Date(y, m - 1, d).getTime();
+      if (t >= mo.getTime() && t <= so.getTime() && geplant[k].einheit) sollKm += Number(geplant[k].einheit.km) || 0;
+    });
+  }
+  const woche = `<div class="chart-card-v2">
+    <div class="chart-card-v2-head"><span class="chart-card-v2-title">Diese Woche</span></div>
+    <div class="lauf-woche">
+      <div class="lauf-kennz"><span class="lauf-kennz-v">${fmtKm(kmWoche)}</span><span class="lauf-kennz-l">gelaufen</span></div>
+      <div class="lauf-kennz"><span class="lauf-kennz-v">${fmtMin(minWoche)}</span><span class="lauf-kennz-l">Zeit</span></div>
+      <div class="lauf-kennz"><span class="lauf-kennz-v">${sollKm ? fmtKm(sollKm) : '–'}</span><span class="lauf-kennz-l">geplant</span></div>
+    </div>
+  </div>`;
+
+  // Letzte Läufe
+  const liste = laeufe.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 12);
+  const zeilen = liste.length ? liste.map(l => {
+    const [y, m, d] = l.date.split('-').map(Number);
+    const datum = new Date(y, m - 1, d).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' });
+    return `<div class="lauf-row">
+      <div class="lauf-row-tag">${datum}</div>
+      <div class="lauf-row-werte">${fmtKm(l.km)} · ${fmtMin(l.minutes)} · ${fmtPace(l.kmh)}${l.avgHR ? ` · ${Math.round(l.avgHR)} bpm` : ''}</div>
+    </div>`;
+  }).join('') : '<p class="lauf-leer">Noch keine Läufe gelesen.</p>';
+  const letzte = `<div class="chart-card-v2">
+    <div class="chart-card-v2-head"><span class="chart-card-v2-title">Letzte Läufe</span></div>
+    <div class="lauf-liste">${zeilen}</div>
+  </div>`;
+
+  el.innerHTML = verbindung + woche + letzte;
+}
+
+// ── Seite 2: Laufplanverwaltung ────────────────────────────────────
+function renderLaufVerwaltung() {
+  const el = document.getElementById('lauf-view-verwaltung');
+  if (!el) return;
+  const plaene = DB.getRunPlans();
+  const aktiv = plaene.filter(p => !p.archived).sort((a, b) => (a.startDate || 0) - (b.startDate || 0));
+  const archiv = plaene.filter(p => p.archived).sort((a, b) => (b.startDate || 0) - (a.startDate || 0));
+  if (!plaene.length) {
+    el.innerHTML = `<div class="chart-card-v2"><p class="lauf-leer">Noch kein Laufplan. Oben rechts auf „+" tippen.</p></div>`;
+    return;
+  }
+  el.innerHTML = aktiv.map(runPlanKarte).join('')
+    + (archiv.length ? `<div class="mehr-section-title" style="margin-top:6px">Archiviert</div>` + archiv.map(runPlanKarte).join('') : '');
+}
+
+function runPlanKarte(p) {
+  const offen = _laufOffenePlaene.has(p.id);
+  const wochen = runPlanWochen(p);
+  const lauftage = (p.runDays || []).map(i => WOCHENTAGE_KURZ[i]).join(', ') || '—';
+  const zeitraum = (p.startDate && p.endDate)
+    ? `${new Date(p.startDate).toLocaleDateString('de-DE')} – ${new Date(p.endDate).toLocaleDateString('de-DE')}` : '—';
+  if (!offen) {
+    return `<div class="chart-card-v2 lauf-plan${p.archived ? ' plan-status-archived' : ''}" onclick="toggleRunPlan('${p.id}')">
+      <div class="ppv-head"><div class="ppv-name">${escapeHtml(p.name || 'Laufplan')}</div></div>
+      <div class="ppv-meta">${zeitraum} · ${wochen} Wochen · ${lauftage}</div>
+    </div>`;
+  }
+  // Aufgeklappt: Kopffelder + Woche fuer Woche die Lauftage
+  const wochenBlocks = [];
+  for (let w = 1; w <= wochen; w++) {
+    const auf = _laufOffeneWochen.has(p.id + ':' + w);
+    const tage = (p.runDays || []).map(di => {
+      const u = runEinheit(p, w, di) || {};
+      const d = runEinheitDatum(p, w, di);
+      return `<div class="lp-einheit">
+        <div class="lp-tag"><strong>${WOCHENTAGE_KURZ[di]}</strong><span>${d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span></div>
+        <input class="lp-feld" type="text" inputmode="decimal" value="${u.km ?? ''}" placeholder="—"
+               onchange="setRunUnit('${p.id}',${w},${di},'km',this.value)"><span class="lp-eh">km</span>
+        <input class="lp-feld" type="text" value="${u.minutes ?? ''}" placeholder="—"
+               onchange="setRunUnit('${p.id}',${w},${di},'minutes',this.value)"><span class="lp-eh">min</span>
+        <select class="lp-zone" onchange="setRunUnit('${p.id}',${w},${di},'zone',this.value)">
+          ${HERZZONEN.map(z => `<option value="${z}"${(u.zone || '') === z ? ' selected' : ''}>${z || 'Zone'}</option>`).join('')}
+        </select>
+      </div>`;
+    }).join('');
+    wochenBlocks.push(`<div class="lp-woche">
+      <button type="button" class="lp-woche-btn" aria-expanded="${auf}" onclick="toggleRunWoche('${p.id}',${w})">Woche ${w}</button>
+      <div class="lp-woche-body"${auf ? '' : ' style="display:none"'}>${tage || '<p class="lauf-leer">Keine Lauftage gewählt.</p>'}</div>
+    </div>`);
+  }
+  const tageWahl = WOCHENTAGE_KURZ.map((n, i) =>
+    `<button type="button" class="lp-tagwahl${(p.runDays || []).includes(i) ? ' an' : ''}" onclick="toggleRunDay('${p.id}',${i})">${n}</button>`).join('');
+  return `<div class="chart-card-v2 lauf-plan offen${p.archived ? ' plan-status-archived' : ''}">
+    <div class="ppv-head" onclick="toggleRunPlan('${p.id}')"><div class="ppv-name">${escapeHtml(p.name || 'Laufplan')}</div></div>
+    <div class="program-form-row"><label>Name</label>
+      <input type="text" value="${escapeHtml(p.name || '')}" onchange="setRunPlan('${p.id}','name',this.value)"></div>
+    <div class="program-form-row-2col">
+      <div class="program-form-row"><label>Start</label>
+        <input type="date" value="${p.startDate ? new Date(p.startDate).toISOString().slice(0,10) : ''}"
+               onchange="setRunPlan('${p.id}','startDate',this.value)"></div>
+      <div class="program-form-row"><label>Ende</label>
+        <input type="date" value="${p.endDate ? new Date(p.endDate).toISOString().slice(0,10) : ''}"
+               onchange="setRunPlan('${p.id}','endDate',this.value)"></div>
+    </div>
+    <div class="program-form-row"><label>Lauftage (${wochen} Wochen)</label><div class="lp-tagwahl-reihe">${tageWahl}</div></div>
+    ${wochenBlocks.join('')}
+    <div class="program-form-row">
+      <button class="btn btn-ghost btn-sm" onclick="setRunPlan('${p.id}','archived',${p.archived ? 'false' : 'true'})">
+        ${p.archived ? 'Aus dem Archiv holen' : 'Plan archivieren'}</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteRunPlan('${p.id}')">Plan löschen</button>
+    </div>
+  </div>`;
+}
+
+function toggleRunPlan(id) { _laufOffenePlaene.has(id) ? _laufOffenePlaene.delete(id) : _laufOffenePlaene.add(id); renderLaufVerwaltung(); }
+// Auf- und Zuklappen einer Woche laeuft OHNE Neuaufbau: Ein Re-Render naehme den Kopffeldern
+// (Name, Datum) die noch nicht gespeicherten Eingaben und den Fokus.
+function toggleRunWoche(id, w) {
+  const k = id + ':' + w;
+  _laufOffeneWochen.has(k) ? _laufOffeneWochen.delete(k) : _laufOffeneWochen.add(k);
+  const btn = document.querySelector(`.lp-woche-btn[onclick*="'${id}',${w})"]`);
+  if (!btn) return renderLaufVerwaltung();
+  const body = btn.nextElementSibling;
+  const auf = _laufOffeneWochen.has(k);
+  btn.setAttribute('aria-expanded', auf ? 'true' : 'false');
+  if (body) body.style.display = auf ? '' : 'none';
+}
+
+function _runPlanAendern(id, fn) {
+  const ps = DB.getRunPlans();
+  const p = ps.find(x => x.id === id);
+  if (!p) return;
+  fn(p);
+  DB.saveRunPlans(ps);
+}
+
+function setRunPlan(id, feld, wert) {
+  _runPlanAendern(id, p => {
+    if (feld === 'startDate' || feld === 'endDate') p[feld] = wert ? new Date(wert + 'T00:00:00').getTime() : null;
+    else if (feld === 'archived') p.archived = (wert === true || wert === 'true');
+    else p[feld] = wert;
+  });
+  renderLaufVerwaltung();
+  if (currentScreen === 'overview') renderOverview();
+}
+
+function toggleRunDay(id, di) {
+  _runPlanAendern(id, p => {
+    p.runDays = p.runDays || [];
+    const i = p.runDays.indexOf(di);
+    if (i >= 0) p.runDays.splice(i, 1); else { p.runDays.push(di); p.runDays.sort((a, b) => a - b); }
+  });
+  renderLaufVerwaltung();
+  if (currentScreen === 'overview') renderOverview();
+}
+
+// Einheiten sichern sich beim Verlassen des Feldes und OHNE Neuaufbau — sonst verliert man
+// beim Weitertippen den Fokus und halb getippte Werte.
+function setRunUnit(id, woche, dayIdx, feld, wert) {
+  _runPlanAendern(id, p => {
+    p.units = p.units || [];
+    let u = p.units.find(x => x.week === woche && x.dayIdx === dayIdx);
+    if (!u) { u = { week: woche, dayIdx }; p.units.push(u); }
+    if (feld === 'zone') u.zone = wert;
+    else { const v = parseFloat(String(wert).replace(',', '.')); u[feld] = isFinite(v) ? v : null; }
+  });
+  if (currentScreen === 'overview') renderOverview();
+}
+
+function deleteRunPlan(id) {
+  const p = DB.getRunPlans().find(x => x.id === id);
+  confirmDialog('Laufplan löschen?', `„${(p && p.name) || 'Laufplan'}" wird entfernt.`, () => {
+    DB.saveRunPlans(DB.getRunPlans().filter(x => x.id !== id));
+    _laufOffenePlaene.delete(id);
+    renderLaufVerwaltung();
+    if (currentScreen === 'overview') renderOverview();
+  }, { danger: true, confirmLabel: 'Löschen' });
+}
+
+function neuerLaufplan() {
+  const heute = new Date(); heute.setHours(0, 0, 0, 0);
+  const ende = new Date(heute); ende.setDate(ende.getDate() + 8 * 7 - 1);
+  const p = { id: 'rp' + Date.now(), name: 'Neuer Laufplan', notes: '',
+              startDate: heute.getTime(), endDate: ende.getTime(),
+              runDays: [1, 5, 6], archived: false, raceDate: null, units: [] };
+  const ps = DB.getRunPlans(); ps.push(p); DB.saveRunPlans(ps);
+  _laufSeite = 'verwaltung';
+  _laufOffenePlaene.add(p.id);
+  renderLaufenScreen();
+}
+
 // ─── Trainingskalender ─────────────────────────────────────────────
 // Ein Kästchen pro Tag der letzten 52 Wochen, eingefärbt nach Tagesvolumen.
 // Zeigt Regelmäßigkeit und Lücken auf einen Blick — das sieht man in keinem Diagramm.
@@ -3386,6 +3824,11 @@ function renderTrainingCalendar(id, cardId) {
 
   // Plan-Zeitraeume einmal vorbereiten (statt pro Tag aufzuloesen).
   const planIndex = _calPlanIndex();
+  // Gemeinsamer Kalender: Die Laeufe kommen NUR in der Uebersicht dazu (Leonard-Entscheidung
+  // 01.09.2026 — der Kalender im Plaene-Tab bleibt vorerst reines Krafttraining).
+  const zeigtLaeufe = id === 'cal';
+  const laeufeTag = zeigtLaeufe ? runNachTag() : {};
+  const laufGeplant = zeigtLaeufe ? runGeplanteTage() : {};
 
   let cells = '';
   let months = '';
@@ -3412,11 +3855,16 @@ function renderTrainingCalendar(id, cardId) {
       if (ausserhalb) cls.push('outside');
       if (plan.planned && !ausserhalb) cls.push('planned');
       if (entry && !ausserhalb) cls.push('done');
+      const lauf = !ausserhalb && laeufeTag[key];
+      const laufGepl = !ausserhalb && laufGeplant[key];
+      if (lauf) cls.push('run');
+      else if (laufGepl) cls.push('run-planned');
       if (future) cls.push('future');
       if (isToday) cls.push('today');
-      const zustand = entry
+      const kraftZustand = entry
         ? (plan.planned ? 'geplant und trainiert' : 'zusaetzlich trainiert')
         : (plan.planned ? (future ? 'geplant' : 'geplant, nicht trainiert') : 'Ruhetag');
+      const zustand = kraftZustand + (lauf ? ', gelaufen' : (laufGepl ? ', Lauf geplant' : ''));
       cells += `<span class="${cls.join(' ')}"
                       data-key="${key}" onclick="showCalDay('${key}','${id}')"
                       role="button" tabindex="0"
@@ -3564,6 +4012,21 @@ function showCalDay(key, id) {
   } else {
     txt = `<strong>${dateStr}</strong> · ${plan.known ? 'Ruhetag' : 'kein Training'}`;
   }
+  // Lauf desselben Tages ergaenzen — geleistet, sonst geplant.
+  if (id === 'cal') {
+    const lauf = runNachTag()[key];
+    const gepl = runGeplanteTage()[key];
+    if (lauf) {
+      const teile = [fmtKm(lauf.km), fmtMin(lauf.minutes)];
+      if (lauf.kmh) teile.push(fmtPace(lauf.kmh));
+      txt += `<div class="cal-detail-run">Lauf: ${teile.join(' · ')}</div>`;
+    } else if (gepl) {
+      const u = gepl.einheit;
+      const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null].filter(Boolean).join(' · ') : '';
+      txt += `<div class="cal-detail-run geplant">Lauf geplant${soll ? ': ' + soll : ''}</div>`;
+    }
+  }
+
   // Zweite Zeile: der Plan selbst mit Laufzeit. Dritte Zeile: sein Stand bis hierher.
   if (plan.plan) {
     const wochen = planWochen(plan.plan);
@@ -6860,6 +7323,7 @@ function collectLocalData() {
     workouts: DB.getWorkouts(),
     trainingDays: DB.getTrainingDays(),   // v4: planunabhängige Trainingstage-Bibliothek
     manualDays: DB.getManualDays(),       // v4: nachgetragene Tage ohne Aufzeichnung
+    runPlans: DB.getRunPlans(),           // v4: Laufplaene (die Laeufe selbst stehen in der Tabelle)
   };
 }
 
@@ -6901,6 +7365,7 @@ function driveApplyCloudData(data) {
   // (ältere Backups ohne dieses Feld lassen die lokale Bibliothek unangetastet).
   if (Array.isArray(data.trainingDays)) localStorage.setItem('ft_trainingdays', JSON.stringify(data.trainingDays));
   if (Array.isArray(data.manualDays)) localStorage.setItem('ft_manual_days', JSON.stringify(data.manualDays));
+  if (Array.isArray(data.runPlans)) localStorage.setItem('ft_runplans', JSON.stringify(data.runPlans));
   // Legacy-Keys bei v1-Migration sauber halten (sonst würde migrateToMultiPlan beim nächsten App-Start nochmal greifen)
   if (Array.isArray(data.plan)) {
     localStorage.removeItem('ft_program');
@@ -7491,6 +7956,7 @@ function prerenderAllTabs() {
   try { renderWorkoutsScreen(); } catch (e) { console.warn('prerender workouts', e); }
   try { renderExercisesScreen(); } catch (e) { console.warn('prerender exercises', e); }
   try { renderPlansScreen(); }    catch (e) { console.warn('prerender plans', e); }
+  try { renderLaufenScreen(); }   catch (e) { console.warn('prerender laufen', e); }
   try { renderMehr(); }           catch (e) { console.warn('prerender mehr', e); }
 }
 
