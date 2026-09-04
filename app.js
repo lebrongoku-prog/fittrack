@@ -3648,12 +3648,17 @@ function setRunUnit(id, woche, dayIdx, feld, wert) {
   if (currentScreen === 'overview') renderOverview();
 }
 
+// Loeschen ist zweifach abgesichert wie bei den Trainingsplaenen: „Rueckgaengig" fuer 6
+// Sekunden UND 30 Tage Papierkorb. Ein Laufplan steckt schnell in mehreren Wochen Arbeit.
 function deleteRunPlan(id) {
   const p = DB.getRunPlans().find(x => x.id === id);
   confirmAction('Laufplan löschen?', `„${(p && p.name) || 'Laufplan'}" wird entfernt.`, () => {
-    DB.saveRunPlans(DB.getRunPlans().filter(x => x.id !== id));
-    _laufOffenePlaene.delete(id);
-    renderLaufVerwaltung();
+    withUndo('Laufplan gelöscht', () => {
+      DB.saveRunPlans(DB.getRunPlans().filter(x => x.id !== id));
+      if (p) trashPut('runplan', p.name || 'Laufplan', p);
+      _laufOffenePlaene.delete(id);
+    }, () => { renderLaufenScreen(); if (currentScreen === 'overview') renderOverview(); });
+    renderLaufenScreen();
     if (currentScreen === 'overview') renderOverview();
   }, { danger: true, confirmLabel: 'Löschen' });
 }
@@ -6904,7 +6909,7 @@ function runUndo() {
 // Zweite Sicherung neben „Rückgängig": Die Einblendung fängt den Fehlgriff ab, der
 // Papierkorb die Fehlentscheidung von vorgestern. Gelöschtes bleibt 30 Tage liegen.
 const TRASH_KEEP_DAYS = 30;
-const TRASH_LABELS = { workout: 'Einheit', plan: 'Plan', day: 'Trainingstag', exercise: 'Übung' };
+const TRASH_LABELS = { workout: 'Einheit', plan: 'Plan', day: 'Trainingstag', exercise: 'Übung', runplan: 'Laufplan' };
 
 function trashPut(type, label, payload) {
   const trash = DB.getTrash();
@@ -6946,6 +6951,9 @@ function trashRestore(id) {
   } else if (entry.type === 'exercise') {
     const es = DB.getExercises();
     if (!es.some(e => e.id === item.id)) { es.push(item); DB.saveExercises(es); }
+  } else if (entry.type === 'runplan') {
+    const rs = DB.getRunPlans();
+    if (!rs.some(r => r.id === item.id)) { rs.push(item); DB.saveRunPlans(rs); }
   }
 
   trash.splice(idx, 1);
@@ -7041,6 +7049,7 @@ function _snapshotStores() {
     days: JSON.parse(JSON.stringify(DB.getTrainingDays())),
     exercises: JSON.parse(JSON.stringify(DB.getExercises())),
     workouts: JSON.parse(JSON.stringify(DB.getWorkouts())),
+    runPlans: JSON.parse(JSON.stringify(DB.getRunPlans())),
     // Papierkorb mitsichern: sonst bliebe nach einem „Rückgängig" der Eintrag dort liegen
     // und dasselbe Objekt existierte zweimal.
     trash: JSON.parse(JSON.stringify(DB.getTrash())),
@@ -7051,6 +7060,7 @@ function _restoreStores(snap) {
   DB.saveTrainingDays(snap.days);
   DB.saveExercises(snap.exercises);
   DB.saveWorkouts(snap.workouts);
+  DB.saveRunPlans(snap.runPlans || []);
   DB.saveTrash(snap.trash || []);
 }
 function withUndo(label, fn, afterRestore) {

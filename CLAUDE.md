@@ -573,7 +573,12 @@ ACHTUNG, zwei Stellen, die den Abruf sonst STILL blockieren (beide am 01.09.2026
 raceDate, units:[{week, dayIdx, km, minutes, zone}] }`. Notizen speichern sich STILL (ohne
 Re-Render) — sonst verliert das Feld beim Tippen den Fokus.
 ACHTUNG: Der Bestaetigungsdialog heisst `confirmAction`, NICHT `confirmDialog` — ein Aufruf unter
-dem falschen Namen scheitert still, das Loeschen tat monatelang nichts (gefunden 01.09.2026). Ein Laufplan ist ein DATIERTER Ablauf (Woche 1..N ab
+dem falschen Namen scheitert still, das Loeschen tat monatelang nichts (gefunden 01.09.2026).
+**Sicherung und Loeschschutz wie bei den Trainingsplaenen:** `ft_runplans` steckt in
+`collectLocalData()`/`driveApplyCloudData` (Feld `runPlans`), in `_snapshotStores`/`_restoreStores`
+(„Rueckgaengig") und im Papierkorb (`trashPut('runplan', …)`, Label in `TRASH_LABELS`, eigener
+Zweig in `trashRestore`). Der Zwischenspeicher der gelesenen Laeufe (`ft_runs_cache`) ist BEWUSST
+in keinem davon — die Daten gehoeren der Tabelle und werden beim naechsten Abruf neu geholt. Ein Laufplan ist ein DATIERTER Ablauf (Woche 1..N ab
 dem Montag der Startwoche), kein Wochenmuster wie die Trainingsplaene — die Einheiten sind deshalb
 EINGEBETTET und nicht wie die Trainingstage geteilte Bausteine. Das Datum einer Einheit wird
 GERECHNET (`runEinheitDatum`), nicht gespeichert: Verschiebt man den Plan, wandert alles mit.
