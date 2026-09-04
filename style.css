@@ -604,7 +604,6 @@ body.theme-plans .hist-action-dd {
 /* ── Plan-Dashboard-Karte (Trainingsplan-Tab Vorschau) ── */
 /* Ruhetag-Karte: heller Verlauf. Bewusst als Klasse und NICHT inline — inline haette
    der Glas-Modus nicht ueberschreiben koennen. */
-.session-card-v2.rest-card { background: linear-gradient(135deg, #f5f7fa 0%, #fafbfc 100%); }
 
 .plan-card-v2 {
   margin: 0 12px 12px; background: var(--card); border-radius: 18px;
@@ -614,11 +613,11 @@ body.theme-plans .hist-action-dd {
 /* Tipp-Rueckmeldung fuer ALLE Karten (Leonard-Wunsch 28.08.2026) — dieselbe dezente
    Stauchung wie bei der Wochenplan-Karte. `transition` NUR auf transform, damit die
    Farbwechsel der Karten (z. B. erledigte Uebung) unveraendert bleiben. */
-.card, .plan-section-card, .chart-card-v2, .session-card-v2, .hero-v2, .aex-v2,
+.card, .plan-section-card, .chart-card-v2, .hero-v2, .aex-v2,
 .ex-list, .plan-card-v2, .plan-list-row, .mehr-card {
   transition: transform .1s ease;
 }
-.card:active, .plan-section-card:active, .chart-card-v2:active, .session-card-v2:active,
+.card:active, .plan-section-card:active, .chart-card-v2:active,
 .hero-v2:active, .aex-v2:active, .ex-list:active, .plan-card-v2:active,
 .plan-list-row:active, .mehr-card:active { transform: scale(0.995); }
 /* AUSNAHME Kalenderkarten: Sie enthalten einen eigenen waagerechten Scrollbereich. Ein
@@ -985,7 +984,6 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 html.glas .screen:not(#screen-mehr) .card,
 html.glas .screen:not(#screen-mehr) .plan-section-card,
 html.glas .screen:not(#screen-mehr) .chart-card-v2,
-html.glas .screen:not(#screen-mehr) .session-card-v2,
 html.glas .screen:not(#screen-mehr) .hero-v2,
 html.glas .screen:not(#screen-mehr) .aex-v2,
 html.glas .screen:not(#screen-mehr) .ex-list {
@@ -1112,7 +1110,6 @@ html.glas .screen:not(#screen-mehr) .plan-list-row .plan-list-name { color: #fff
 
 /* Die Ruhetag-Karte traegt ihren hellen Verlauf ueber die Klasse (frueher inline gesetzt,
    was jede Regel geschlagen haette) — hier wird er durch den Schleier ersetzt. */
-html.glas .screen:not(#screen-mehr) .session-card-v2.rest-card { background: rgba(255,255,255,.12); }
 
 /* Tableiste ebenfalls durchsichtig. */
 html.glas #bottom-nav {
@@ -1217,7 +1214,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 /* ─── Responsive ─── */
 @media (min-width: 560px) {
   .card, .mehr-section,
-  .hero-v2, .plan-section-card, .session-card-v2, .chart-card-v2, .aex-v2,
+  .hero-v2, .plan-section-card, .chart-card-v2, .aex-v2,
   .ex-group
     { max-width: 520px; margin-left: auto; margin-right: auto; }  /* Ausnahme Trainingskalender: je breiter, desto mehr Wochen ohne Scrollen sichtbar.
      Im Querformat (844–932px) blieb er sonst auf 520px stehen. */
@@ -1275,7 +1272,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   /* KEINE Kontur (Leonard-Wunsch 01.09.2026) — im Glas-Modus zeichnete sie eine weisse
      Linie um die Karte. Abgegrenzt wird sie allein ueber den Schatten. Die gleichnamige
-     Kontur der Ruhetag-Karte (`.session-card-v2`) ist aus demselben Grund ebenfalls weg. */
+     Abgegrenzt wird allein ueber den Schatten. */
 }
 /* Der Textblock steht mittig zur Hantel. Vorher war er oben ausgerichtet und der Rest
    der Icon-Hoehe blieb als Leerraum ueber dem Knopf stehen — besonders sichtbar, seit die
@@ -1283,17 +1280,24 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 .hero-v2-text { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .hero-v2-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
 /* Alle Kartentitel gleich gross wie „Trainingskalender" (16px, Leonard-Wunsch 01.09.2026):
-   .chart-card-v2-title, .plan-section-head h3, .ppv-name, .scv2-title und dieser hier. */
+   .chart-card-v2-title, .plan-section-head h3, .ppv-name und dieser hier. */
 .hero-v2-title { font-size: 16px; font-weight: 800; line-height: 1.15; margin-bottom: 8px; letter-spacing: -0.4px; color: var(--text); }
 .hero-v2-meta { font-size: 13px; color: var(--text2); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .hero-v2-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text3); }
-/* Die mittlere Dauer steht auf einer eigenen Zeile: zusammen mit Uebungen und Saetzen
-   passt sie auf iPhone-Breite nicht in eine Zeile (46px zu wenig), und ein umbrechender
-   Trennpunkt bliebe am Zeilenende haengen. Deshalb bewusst ohne Punkt davor. */
+/* Die mittlere Dauer steht in DERSELBEN Zeile wie Uebungen und Saetze (Leonard-Wunsch
+   01.09.2026) — das spart in der Herocard eine Zeile, damit sie im Querformat genauso hoch
+   ist wie die Wochenplan-Karte daneben.
+   Der Trennpunkt liegt INNERHALB der Angabe, nicht davor: So wandert er beim Umbruch mit in
+   die naechste Zeile, statt allein am Zeilenende haengenzubleiben. */
 .hero-v2-meta-avg {
-  flex-basis: 100%; margin-top: 2px;
   display: inline-flex; gap: 5px; align-items: center;
 }
+/* Auf iPhone-Breite passen die drei Angaben nicht in eine Zeile — die Dauer rutscht dort
+   also doch in die zweite. Dann waere ein fuehrender Trennpunkt sinnlos, deshalb ist er
+   unterhalb des Querformats ausgeblendet. Im Querformat, wo alles in eine Zeile passt,
+   trennt er wie zwischen Uebungen und Saetzen. */
+.hero-v2-meta-avg .dot { display: none; }
+@media (min-width: 1024px) { .hero-v2-meta-avg .dot { display: block; } }
 .hero-v2-meta svg { width: 14px; height: 14px; stroke: var(--text2); fill: none; stroke-width: 1.8; }
 .hero-v2-btn { align-self: flex-start; padding: 13px 22px; border-radius: 12px; background: var(--gradient); color: #fff; border: none; font-size: 15px; font-weight: 700; display: inline-flex; gap: 8px; align-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
 .hero-v2-btn svg { fill: #fff !important; }
@@ -1432,33 +1436,7 @@ html.wo-running #wo-week-card { display: none; }
 ═══════════════════════════════════ */
 
 /* Session card (Workouts active/preview) – white card on themed gradient bg */
-/* Ruhetag-Karte im Trainings-Tab (einzige Verwendung von .session-card-v2). KEINE Kontur
-   — wie die Herocards: im Glas-Modus zog sie eine weisse Linie um die Karte
-   (Leonard-Wunsch 01.09.2026). Abgegrenzt wird allein ueber den Schatten. */
-.session-card-v2 {
-  margin: 10px 12px; border-radius: 18px;
-  background: var(--card);
-  box-shadow: var(--shadow-md);
-  padding: 14px;
-  position: relative; overflow: hidden;
-}
-.scv2-pill {
-  display: inline-block; padding: 5px 12px; border-radius: 20px;
-  background: var(--accent-bg); border: 1.5px solid var(--accent);
-  color: var(--accent); font-size: 10px; font-weight: 700;
-  letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;
-}
-.scv2-row { display: flex; gap: 14px; align-items: flex-start; }
-.scv2-title { font-size: 16px; font-weight: 800; line-height: 1.2; margin-bottom: 6px; letter-spacing: -0.3px; color: var(--text); }
-.scv2-meta { font-size: 13px; color: var(--text2); display: flex; gap: 6px; align-items: center; }
-.scv2-meta svg { width: 13px; height: 13px; stroke: var(--text2); fill: none; stroke-width: 1.8; }
-.scv2-icon-circle {
-  width: 60px; height: 60px; border-radius: 50%;
-  background: var(--accent-bg); border: 1.5px solid var(--card-accent-border);
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  color: var(--accent);
-}
-.scv2-icon-circle svg { width: 30px; height: 30px; stroke: var(--accent) !important; }/* Exercise tab cards (replaces ex-tab pills) */
+/* Exercise tab cards (replaces ex-tab pills) */
 .ex-tab-v2-bar { display: flex; gap: 10px; padding: 0 12px 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .ex-tab-v2-bar::-webkit-scrollbar { display: none; }
 /* Vorschau-Modus: die Tableiste ist leer (innerHTML='') → kollabieren, damit der
@@ -2423,7 +2401,7 @@ html.wo-running #wo-week-card { display: none; }
   /* WICHTIG: Override der älteren Tablet-Regel ab 560px, die Karten auf max-width:520px
      centriert hatte. Ab 1024px sollen Karten die volle (Grid-)Zellenbreite nutzen. */
   .card, .mehr-section,
-  .hero-v2, .plan-section-card, .session-card-v2, .chart-card-v2, .aex-v2,
+  .hero-v2, .plan-section-card, .chart-card-v2, .aex-v2,
   .ex-group {
     max-width: none;
     margin-left: 14px;
@@ -2476,8 +2454,20 @@ html.wo-running #wo-week-card { display: none; }
     display: grid;
     grid-template-columns: 1fr 1fr;
     column-gap: 0;
-    align-items: start;
+    /* KEIN `align-items: start` (anders als in der Uebersicht): Die Grid-Vorgabe `stretch`
+       macht Wochenplan-Karte und Herocard gleich hoch — an einem Ruhetag wie an einem
+       Trainingstag (Leonard-Wunsch 01.09.2026). Die Wrapper geben die Hoehe an die Karte
+       darin weiter (siehe unten). */
     align-content: start;
+  }
+  #screen-workouts.screen > #wo-week-card,
+  #screen-workouts.screen > #wo-session-card-wrap { display: flex; flex-direction: column; }
+  #screen-workouts.screen > #wo-week-card > *,
+  #screen-workouts.screen > #wo-session-card-wrap > * { flex: 1; }
+  /* Gestreckt bekaeme die Wochenplan-Karte sonst ein Loch unten — ihr Inhalt sitzt
+     stattdessen senkrecht mittig. */
+  #screen-workouts.screen > #wo-week-card > .plan-card-v2 {
+    display: flex; flex-direction: column; justify-content: center;
   }
   #screen-workouts.screen > .ph,
   #screen-workouts.screen > .ex-tab-v2-bar,

@@ -166,8 +166,12 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
 - **Übungs-Karten** `.aex-v2` (Vorschau, laufende Einheit, Bibliothek-Tag-Detail) — Pro-Satz-Tabelle als ZEILEN pro Satz (`.aex-v2-srow`: Satz | Wdh. | kg | **Haken**). Notizfeld `.aex-v2-notes` rechts daneben, unter 460px darunter. `.aex-v2-cmp` zeigt Bestleistung + Differenz zur letzten Einheit; **zugeklappt bleibt die Karte ruhig**: `.aex-cmp-pr` ist dann ausgeblendet, eine Notiz-Vorschau gibt es nicht (Leonard-Wunsch).
 - **Herocard der Vorschau** zeigt Uebungen, Saetze und — sobald mindestens eine Einheit dieses Trainingstags
   abgeschlossen ist — deren mittlere Dauer (`avgDauerFuerTag(planDayId)`, Einheiten ohne `duration` zaehlen nicht mit).
-  Die Dauer steht per `.hero-v2-meta-avg` (`flex-basis:100%`) BEWUSST auf einer eigenen Zeile und ohne Trennpunkt:
-  Zu dritt passen die Angaben auf iPhone-Breite nicht in eine Zeile, und beim Umbruch bliebe sonst ein Punkt haengen.
+  Die Dauer steht seit 01.09.2026 in DERSELBEN Zeile wie Uebungen und Saetze (Leonard-Wunsch — spart in der
+  Herocard eine Zeile, damit sie im Querformat so hoch ist wie die Wochenplan-Karte daneben). Auf iPhone-Breite
+  passen die drei Angaben nicht nebeneinander, dort bricht die Dauer weiterhin um — jetzt aber von selbst statt
+  per `flex-basis:100%`. Der Trennpunkt liegt INNERHALB von `.hero-v2-meta-avg` (wandert beim Umbruch mit, statt
+  am Zeilenende haengenzubleiben) und ist unterhalb von 1024px ausgeblendet, weil er als erstes Zeichen einer
+  umgebrochenen Zeile sinnlos waere.
   Die Hoehe der Karte bestimmt die Hantel (`.hero-v2-art`, 72px) — die zweite Zeile kostet daher nichts.
 - **Hero der laufenden Einheit** hat nur noch zwei Knoepfe: Pausieren und Beenden, beide `flex:1` in einer Zeile.
   „Naechste Uebung" wurde am 20.08.2026 entfernt — mit ihm fielen `heroActionContinue`, `scrollToNextExercise`,
@@ -264,6 +268,13 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Umschalten springen. Beides zusammen geht nicht — die Achse liegt tiefer als der Zeilenanfang.
   TESTHINWEIS: `btn.click()` umgeht die Trefferpruefung und haette das nicht gezeigt — bei absolut
   positionierten Bedienelementen immer mit `document.elementFromPoint` pruefen, wer an der Stelle wirklich liegt.
+- **Ruhetag-Herocard** (`buildRestHero`) wird von der Uebersicht UND vom Trainings-Tab genutzt (seit
+  01.09.2026 — vorher hatte der Trainings-Tab mit `buildRestCard` eine eigene, flachere Karte).
+  Zweiter Parameter ist der Wochentagsname: Im Trainings-Tab kann ein anderer Tag als heute gewaehlt sein,
+  dann steht sein Name im Titel statt „Heute ist Ruhetag". „Freies Training starten" erscheint NUR fuer
+  heute — an einem anderen Wochentag waere der Knopf irrefuehrend, gestartet wird ohnehin eine Einheit von
+  heute. `buildRestCard` und die ganze `.session-card-v2`/`.scv2-*`-Familie sind damit entfallen —
+  sie hatten danach keinen Aufrufer mehr.
 - **Ruhetag-Herocard** (`buildRestHero`, Uebersicht): `_ruhetagHeroAusrichten()` setzt am Ende von
   `renderOverview()` ihre `min-height` auf die GEMESSENE Hoehe der Wochenplan-Karte darueber und
   verschiebt die Hantel per `transform: translateY(...)` auf die Mitte des Knopfes „Freies Training
@@ -323,6 +334,10 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   nehmen: passt immer und hat dieselbe Spezifitaet.
 - **Querformat (ab 1024px):** Auch der TRAININGS-Tab ist ein 2-Spalten-Grid — Wochenplan links,
   Herocard rechts in derselben Zeile, genau wie in der Uebersicht (Leonard-Wunsch 01.09.2026).
+  Dort ist `align-items` ABSICHTLICH nicht auf `start` gesetzt (anders als in der Uebersicht): Die
+  Grid-Vorgabe `stretch` haelt beide Karten gleich hoch, an Ruhe- wie an Trainingstagen. Damit die Hoehe
+  bis zur Karte durchreicht, sind die Wrapper (`#wo-week-card`, `#wo-session-card-wrap`) Flex-Spalten mit
+  `flex:1` am Kind; der Inhalt der Wochenplan-Karte sitzt dabei senkrecht mittig, sonst bliebe unten ein Loch.
   Kopfzeile, Uebungsliste und „Uebung hinzufuegen" spannen ueber beide Spalten. Waehrend einer
   laufenden Einheit ist die Wochenplan-Karte ausgeblendet (`html.wo-running`) — der Kopf der Einheit
   bekommt dann `grid-column: 1 / -1`, sonst bliebe die linke Spalte leer.
@@ -438,9 +453,8 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   Die Wochenplan-Karte (`.plan-card-v2`) hat denselben Eckenradius wie die uebrigen grossen Karten
   (18px statt frueher 14px). 14px behalten bewusst die Listen-Karten: `.ex-list`, `.mehr-card`,
   `.aex-v2`, `.plan-list-row`.
-- **Herocards haben KEINE Kontur** (01.09.2026) — im Glas-Modus zog sie eine weisse Linie um die Karte.
-  Abgegrenzt wird allein ueber den Schatten. Gilt fuer `.hero-v2` UND `.session-card-v2` (deren einzige
-  Verwendung die Ruhetag-Karte im Trainings-Tab ist).
+- **Herocards (`.hero-v2`) haben KEINE Kontur** (01.09.2026) — im Glas-Modus zog sie eine weisse Linie
+  um die Karte. Abgegrenzt wird allein ueber den Schatten.
 - **Alle vier TAB-Kopfzeilen sind gleich hoch** (`--ph-h`, 64px als `min-height` auf
   `.ph:not(.plan-detail-ph):not(.ph-with-back)`, 01.09.2026). Ohne das richtete sich jede nach ihrem
   Inhalt — Uebersicht 64px, Uebungen/Plaene 60px, Training 54,5px — und die erste Karte bzw. der

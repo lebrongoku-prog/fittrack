@@ -1363,6 +1363,7 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
           <svg viewBox="0 0 24 24"><polyline points="12 2 22 8 12 14 2 8 12 2"/><polyline points="2 12 12 18 22 12"/><polyline points="2 16 12 22 22 16"/></svg>
           ${totalSets} Sätze</span>
         ${avgDauer ? `<span class="hero-v2-meta-avg">
+          <span class="dot"></span>
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
           Ø ${fmtDur(avgDauer)}</span>` : ''}
       </div>`;
@@ -1452,33 +1453,22 @@ function freeWorkoutBtn() {
   return `<button class="btn btn-ghost btn-full free-wo-btn" onclick="startFreeWorkout()">+ Freies Training starten</button>`;
 }
 
-function buildRestHero(isToday) {
+// Ruhetag-Herocard. Wird von der Uebersicht (immer heute) UND vom Trainings-Tab genutzt —
+// dort kann ein anderer Wochentag gewaehlt sein, dessen Name dann im Titel steht
+// (Leonard-Wunsch 01.09.2026: im Trainings-Tab dieselbe Karte wie in der Uebersicht).
+// „Freies Training starten" nur fuer heute: An einem anderen Wochentag waere der Knopf
+// irrefuehrend, denn gestartet wird immer eine Einheit von heute.
+function buildRestHero(isToday, dayName) {
+  const titel = isToday ? 'Heute ist Ruhetag' : (dayName || 'Kein Training geplant');
   return `<div class="hero-v2 rest-mode">
     <div class="hero-v2-text" style="flex:1">
       <div class="hero-v2-label">RUHETAG</div>
-      <div class="hero-v2-title">${isToday ? 'Heute ist Ruhetag' : 'Kein Training geplant'}</div>
-      ${freeWorkoutBtn()}
+      <div class="hero-v2-title">${titel}</div>
+      ${isToday ? freeWorkoutBtn() : ''}
     </div>
     <div class="hero-v2-art">
       ${heroDumbbellSvg()}
     </div>
-  </div>`;
-}
-
-function buildRestCard(selDay) {
-  const isToday = !!(selDay && selDay.isToday);
-  return `<div class="session-card-v2 rest-card">
-    <div class="scv2-pill" style="border-color:var(--text3);color:var(--text2)">RUHETAG</div>
-    <div class="scv2-row">
-      <div style="flex:1">
-        <div class="scv2-title">${dayFullName(selDay.dayKey)}</div>
-        <div class="scv2-meta"><span>An diesem Tag ist kein Training geplant.</span></div>
-      </div>
-      <div class="scv2-icon-circle" style="border-color:var(--border)">
-        <svg viewBox="0 0 24 24" style="stroke:var(--text3);fill:none;stroke-width:1.8;width:30px;height:30px"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-      </div>
-    </div>
-    ${isToday ? freeWorkoutBtn() : ''}
   </div>`;
 }
 
@@ -1616,7 +1606,7 @@ function renderWorkoutsScreen() {
   } else if (planDay) {
     wrap.innerHTML = buildSessionCard(null, planDay, selDay, true);
   } else {
-    wrap.innerHTML = buildRestCard(selDay);
+    wrap.innerHTML = buildRestHero(!!(selDay && selDay.isToday), selDay ? dayFullName(selDay.dayKey) : '');
   }
 
   // Tabs + cards
@@ -5144,7 +5134,6 @@ function getPlanDaysUsingExercise(exId) {
   return active.trainingDays.filter(d => d.exercises.some(e => e.exId === exId));
 }
 
-
 // Bestleistung + letzte Ausfuehrung. Gemeinsamer Baustein von Uebungskatalog und
 // Detail-Modal, damit beide nicht auseinanderlaufen.
 function exStatsHTML(exId) {
@@ -7392,7 +7381,7 @@ function initCalendarResize() {
 // soll dabei nicht zucken. Waehrend der Beruehrung bekommt sie `.keine-tipp-anim`; das CSS
 // setzt ihr `transform: none`. Bewusst ueber pointerdown/-up statt `:has(canvas:active)`:
 // Ob Safari einem <canvas> ueberhaupt `:active` gibt, haengt an Details der Trefferpruefung.
-const TIPP_ANIM_KARTEN = '.card, .plan-section-card, .chart-card-v2, .session-card-v2, ' +
+const TIPP_ANIM_KARTEN = '.card, .plan-section-card, .chart-card-v2, ' +
   '.hero-v2, .aex-v2, .ex-list, .plan-card-v2, .plan-list-row, .mehr-card';
 function _initKeineTippAnimationAufDiagramm() {
   let aktiv = null;
