@@ -3523,11 +3523,20 @@ function showCalDay(key, id) {
     // getWorkouts() ist neueste-zuerst; bei mehreren Einheiten am selben Tag oeffnet
     // der Verweis die zuletzt begonnene.
     const woIdx = DB.getWorkouts().findIndex(w => _dayKeyOf(w.startTs) === key);
-    const link = woIdx >= 0
-      ? ` <a class="cal-detail-link" onclick="event.stopPropagation();showHistDetail(${woIdx})">(zur Einheit)</a>`
-      : '';
-    txt = `<strong>${dateStr}</strong>: ${entry.names.join(', ')}${link}`;
-    if (plan.known && !plan.planned) txt += ' · zusätzlich trainiert';
+    let kopf = `<strong>${dateStr}</strong>: ${entry.names.join(', ')}`;
+    if (plan.known && !plan.planned) kopf += ' · zusätzlich trainiert';
+    // Die GANZE Zeile fuehrt in die Einheit, erkennbar am Pfeil rechts (Leonard-Entscheidung
+    // 01.09.2026, vorher der schmale Textlink „(zur Einheit)"). Nachgetragene Tage ohne
+    // Aufzeichnung haben keine Einheit — dort bleibt die Zeile gewoehnlicher Text.
+    // `stopPropagation` ist Pflicht: Sonst raeumt initCalendarDeselect die Beschreibung
+    // im selben Klick wieder weg.
+    txt = woIdx >= 0
+      ? `<div class="cal-detail-row" role="button" tabindex="0"
+              onclick="event.stopPropagation();showHistDetail(${woIdx})">
+           <span class="cal-detail-main">${kopf}</span>
+           <span class="cal-detail-chev">›</span>
+         </div>`
+      : kopf;
   } else if (plan.planned) {
     const heute = new Date(); heute.setHours(0,0,0,0);
     const kommt = new Date(y, m-1, d).getTime() > heute.getTime();

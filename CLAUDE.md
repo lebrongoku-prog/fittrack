@@ -206,8 +206,11 @@ Nav-Labels: Übersicht · Training · Übungen · Pläne.
   KEINE Volumen-Abstufung — zwei Schichten: Fläche (`.planned`) = laut damaligem Plan vorgesehen, Kern (`.done::before`) = tatsächlich trainiert.
   `_calPlanIndex()`/`_calPlanInfo()` rekonstruieren den Plan je Datum aus `startDate`/`endDate`/`weekPlan` ALLER Pläne (auch archivierter — die behalten ihren Wochenplan);
   ohne abdeckenden Plan wird keine Fläche gezeichnet, kommende Tage sind blass (`.future`). Antippen beschreibt den Tag in `#cal-detail`, inklusive der geplanten Einheit.
-  Wurde an dem Tag trainiert, fuehrt `.cal-detail-link` („zur Einheit") in die Detailansicht — der Handler MUSS
-  `event.stopPropagation()` rufen, sonst raeumt `initCalendarDeselect` die Beschreibung im selben Klick weg.
+  Wurde an dem Tag trainiert, ist die GANZE Beschreibungszeile die Schaltflaeche in die Einheit
+  (`.cal-detail-row` mit „›" rechts, seit 01.09.2026 — vorher der schmale Textlink „(zur Einheit)").
+  Der Handler MUSS `event.stopPropagation()` rufen, sonst raeumt `initCalendarDeselect` die
+  Beschreibung im selben Klick weg. Nachgetragene Tage ohne Aufzeichnung und Ruhetage bleiben
+  gewoehnlicher Text — ohne Einheit gibt es nichts zu oeffnen.
   Gehoert der Tag zu einem Plan, folgen zwei Zeilen: Planname mit Laufzeit und Wochenzahl (`planWochen` rechnet
   sie aus Start/Ende, falls `weeksTotal` fehlt) sowie der Stand (`planErfuellung`). Eine Hinweiszeile gibt es nicht mehr.
   Zeigt IMMER das laufende Kalenderjahr (1.1.–31.12.); Rand-Tage der ersten/letzten Woche tragen `.outside` (ausgegraut, nicht antippbar).

@@ -1933,7 +1933,16 @@ html.wo-running #wo-week-card { display: none; }
 .cal-detail strong { color: var(--text); font-weight: 600; }
 .cal-detail-plan { margin-top: 3px; font-size: 16px; color: var(--text3); }
 /* „(zur Einheit)" — der einzige antippbare Teil der Beschreibung. */
-.cal-detail-link { color: var(--accent); font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+/* Die ganze Beschreibungszeile ist die Schaltflaeche in die Einheit — dasselbe Muster wie
+   bei den PR-Zeilen und den Trainingstag-Zeilen. Der frueher hier stehende Textlink
+   „(zur Einheit)" war schwer zu treffen. */
+.cal-detail-row {
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.cal-detail-row .cal-detail-main { flex: 1; min-width: 0; }
+.cal-detail-row:active { opacity: .6; }
+.cal-detail-chev { color: var(--accent); font-size: 20px; line-height: 1; flex-shrink: 0; font-weight: 600; }
 /* Jede Legenden-Angabe ist ein eigener Flex-Block, sonst klebt der Text am Symbol und
    sitzt vertikal daneben. */
 /* Kopfzeile rechts: Kennzahl und das „i" fuer die Lesehilfe stehen zusammen. */
