@@ -552,14 +552,13 @@ body.theme-plans .hist-action-dd {
   font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
   background: #D1FAE5; color: #059669;
   border-radius: 6px;
-}.plan-day-collapse-arrow {
-  display: inline-flex;
-  width: 20px; height: 20px;
-  align-items: center; justify-content: center;
-  color: var(--text2); font-size: 16px; font-weight: 700;
-  line-height: 1;
 }
 .plan-day-collapse-label { flex: 1; }
+/* Pfeil ganz rechts, hinter der Anzahl — dieselbe Reihenfolge wie im Archiv-Knopf des
+   Plaene-Tabs. Der frueher fuehrende `.plan-day-collapse-arrow` ist entfallen. */
+.plans-list-archive-header .aex-v2-chev { width: 20px; height: 20px; color: inherit; }
+.plans-list-archive-header .aex-v2-chev svg { width: 17px; height: 17px; }
+.plans-list-archive-header.expanded .aex-v2-chev { transform: rotate(180deg); }
 .plan-day-collapse-count {
   font-size: 11px; font-weight: 700;
   color: var(--text3);
@@ -975,7 +974,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 /* Pfeil und Beschriftung stehen zusammen mittig im Knopf (Leonard-Wunsch 01.09.2026):
    beide im Fluss, die Zentrierung macht `justify-content:center` aus `.weitere-btn`.
    Vorher lag der Pfeil absolut am linken Rand — daher hier kein `position`/`translateY` mehr. */
-.archiv-btn[aria-expanded="false"] .aex-v2-chev { transform: rotate(-90deg); }
+.archiv-btn[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
 /* 12px statt 8px — um die Haelfte groesser (Leonard-Wunsch 01.09.2026). */
 .ex-group-btn .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--mc, var(--accent)); flex-shrink: 0; }
 /* Name und Anzahl bilden EIN Flex-Kind: Sonst trennt sie der 12px-Abstand des Knopfes,
@@ -1060,6 +1059,10 @@ html.glas .screen:not(#screen-mehr) .aex-v2.done .aex-v2-notes-area::placeholder
 }
 /* Kalender-Kaestchen: Die hellen Grautoene verschwinden auf dem Schleier. */
 html.glas .screen:not(#screen-mehr) .cal-day { background: rgba(255,255,255,.16); }
+/* Die hellrote Woche muss auch auf dem Schleier zu sehen sein (Leonard-Meldung 05.09.2026) —
+   die Regel darueber faerbt sonst JEDES Kaestchen weiss. Kraeftiger als im hellen Modus,
+   sonst geht das Rot im Farbverlauf dahinter unter. */
+html.glas .screen:not(#screen-mehr) .cal-day.leer-woche { background: rgba(248,113,113,.55); }
 /* Plan-Umrandungen im Transparenz-Modus: Das Gruen verschwindet auf dem Schleier, also
    Weiss. Damit trotzdem erkennbar bleibt, welcher Plan gerade laeuft, wird abgestuft —
    der laufende Plan bekommt eine kraeftige, durchgezogene Linie, die uebrigen (archiviert
@@ -1888,8 +1891,10 @@ html.wo-running #wo-week-card { display: none; }
   font: inherit; font-size: 14px; font-weight: 700;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.lp-woche-btn::after { content: '▾'; font-size: 13px; color: var(--text3); transition: transform .15s ease; }
-.lp-woche-btn[aria-expanded="false"]::after { transform: rotate(-90deg); }
+/* Kein eigenes Zeichen mehr — der Pfeil kommt als SVG aus dem JS, wie ueberall sonst. */
+.lp-woche-btn[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
+.lp-woche-btn .aex-v2-chev { width: 18px; height: 18px; }
+.lp-woche-btn .aex-v2-chev svg { width: 16px; height: 16px; }
 /* Feste Spalten statt Umbruch: Auf iPhone-Breite rutschte die Zone sonst in eine zweite Zeile. */
 /* Sieben Spalten: Tag · km · „km" · min · „min" · Zone · Notiz. Die Notiz nimmt den Rest
    (04.09.2026) — dadurch fuellt die Zeile jetzt die volle Breite und der fruehere Einzug der
@@ -2380,12 +2385,9 @@ html.wo-running #wo-week-card { display: none; }
 }
 .ex-group-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mc, var(--accent)); }
 .ex-group-title .count { color: rgba(255,255,255,0.65); font-weight: 600; }
-.ex-group-title .ex-group-arrow {
-  margin-left: auto; font-size: 16px; font-weight: 700; line-height: 1;
-  color: rgba(255,255,255,0.78);
-  display: inline-flex; width: 20px; height: 20px;
-  align-items: center; justify-content: center;
-}
+.ex-group-title .aex-v2-chev { margin-left: auto; width: 20px; height: 20px; color: rgba(255,255,255,0.78); }
+.ex-group-title .aex-v2-chev svg { width: 17px; height: 17px; }
+.sheet-ex-group:not(.collapsed) .ex-group-title .aex-v2-chev { transform: rotate(180deg); }
 /* Eingeklappter Zustand: Übungs-Liste ausblenden */
 .ex-group.collapsed .ex-list { display: none; }
 
@@ -2397,7 +2399,7 @@ html.wo-running #wo-week-card { display: none; }
   margin: 4px 4px 6px;
 }
 .sheet-ex-group .ex-group-title .count { color: var(--text3); }
-.sheet-ex-group .ex-group-title .ex-group-arrow { color: var(--text3); }
+.sheet-ex-group .ex-group-title .aex-v2-chev { color: var(--text3); }
 .sheet-ex-group.collapsed .sheet-ex-group-list { display: none; }
 /* Die Items selbst (.sheet-item) behalten ihre bestehende Styling-Logik
    mit Border-Bottom — :last-child entfernt die Border am Ende jeder Gruppe automatisch. */
@@ -2415,6 +2417,10 @@ html.wo-running #wo-week-card { display: none; }
 }
 .ex-item-stripe { width: 4px; align-self: stretch; border-radius: 2px; background: var(--mc, var(--accent)); flex-shrink: 0; }
 .ex-item-name { flex: 1; font-size: 15px; font-weight: 500; color: var(--text); }
+/* Der Pfeil steht ganz rechts; 20px statt 32px, damit die Zeile ihre 44px behaelt. */
+.ex-item-head > .aex-v2-chev { margin-left: auto; width: 20px; height: 20px; }
+.ex-item-head > .aex-v2-chev svg { width: 17px; height: 17px; }
+.ex-item.open > .ex-item-head > .aex-v2-chev { transform: rotate(180deg); }
 .ex-item-plan-tag {
   font-size: 11px; padding: 2px 7px; border-radius: 10px;
   background: var(--green-bg); color: var(--green); font-weight: 600;
@@ -2707,7 +2713,10 @@ html.wo-running #wo-week-card { display: none; }
   -webkit-tap-highlight-color: transparent;
 }
 .drive-row-label { flex: 1; font-size: 14px; font-weight: 600; color: var(--text); }
-.drive-row-toggle { font-size: 14px; color: var(--text3); }
+.drive-row-toggle { font-size: 14px; color: var(--text3); display: flex; align-items: center; }
+.drive-row-toggle .aex-v2-chev { width: 20px; height: 20px; color: inherit; }
+.drive-row-toggle .aex-v2-chev svg { width: 17px; height: 17px; }
+.drive-row[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
 
 /* Debug-Grid */
 .drive-debug-grid {
@@ -2950,8 +2959,9 @@ html.wo-running #wo-week-card { display: none; }
   text-transform: inherit; letter-spacing: inherit;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.ex-chart-chev { display: inline-block; transition: transform .15s ease; font-size: 15px; line-height: 1; }
-.ex-chart-block.collapsed .ex-chart-chev { transform: rotate(-90deg); }
+.ex-chart-collapse .aex-v2-chev { width: 18px; height: 18px; color: inherit; }
+.ex-chart-collapse .aex-v2-chev svg { width: 16px; height: 16px; }
+.ex-chart-block:not(.collapsed) .ex-chart-collapse .aex-v2-chev { transform: rotate(180deg); }
 .ex-chart-block.collapsed .ex-chart-body { display: none; }
 /* Zugeklappt bleibt nur die Ueberschrift stehen — der Gewicht/Wdh.-Umschalter gehoert zum
    Diagramm und haette ohne es keine sichtbare Wirkung. Er bleibt im Markup (nur versteckt),

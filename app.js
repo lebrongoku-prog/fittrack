@@ -1956,18 +1956,19 @@ function renderActiveWorkout() {
   document.getElementById('active-ex-list').innerHTML = wo.exercises.map((ex, ei) => {
     const col = colorForExercise(ex);
     const last = getLastExData(ex.exId || ex.id);
-    const lastStr = last ? `Zuletzt: ${last.sets.length}×${last.sets[0]?.reps||'?'} @ ${last.maxWeight} kg` : '';
+    const lastRoh = last ? `Zuletzt: ${last.sets.length}×${last.sets[0]?.reps||'?'} @ ${last.maxWeight} kg` : '';
     // Einordnung der heutigen Eingaben: Bestleistung der Übung und — sobald das heutige
     // Höchstgewicht über der letzten Einheit liegt — die Differenz dazu. Progressive
     // Steigerung ist der Zweck des Tagebuchs; das Rechnen dafür gehört nicht in den Kopf.
     const prW = getExercisePR(ex.exId || ex.id);
     const todayMax = Math.max(0, ...(ex.sets || []).map(s => parseFloat(s.weight) || 0));
     const diffToLast = (last && todayMax > 0) ? +(todayMax - last.maxWeight).toFixed(1) : 0;
-    const cmpParts = [];
-    if (prW) cmpParts.push(`<span class="aex-cmp-pr">Best ${prW} kg</span>`);
-    if (diffToLast > 0) cmpParts.push(`<span class="aex-cmp-up">+${diffToLast} kg zur letzten Einheit</span>`);
-    else if (diffToLast < 0) cmpParts.push(`<span class="aex-cmp-down">${diffToLast} kg zur letzten Einheit</span>`);
-    const cmpStr = cmpParts.length ? `<div class="aex-v2-cmp">${cmpParts.join('')}</div>` : '';
+    // Die Differenz gehoert zur ZULETZT-Zeile — sie vergleicht ja mit genau dieser Einheit
+    // (Leonard-Wunsch 05.09.2026). „Best" steht allein auf der Zeile darunter.
+    const diffStr = diffToLast > 0
+      ? `<span class="aex-cmp-up">+${diffToLast} kg</span>`
+      : (diffToLast < 0 ? `<span class="aex-cmp-down">${diffToLast} kg</span>` : '');
+    const cmpStr = prW ? `<div class="aex-v2-cmp"><span class="aex-cmp-pr">Best ${prW} kg</span></div>` : '';
     // Pro-Satz-Tabelle als ZEILEN: je Satz eine Zeile (Wdh | kg | Haken); erledigte Sätze sind
     // gesperrt/markiert. Der Haken ist im Training die wichtigste Interaktion — er beantwortet
     // „welcher Satz kommt jetzt?" und startet die Satzpause.
@@ -2000,7 +2001,7 @@ function renderActiveWorkout() {
         <div class="aex-v2-num">${ei+1}</div>
         <div class="aex-v2-info">
           <div class="aex-v2-name">${ex.name}</div>
-          ${lastStr ? `<div class="aex-v2-last">${lastStr}</div>` : ''}
+          ${lastRoh ? `<div class="aex-v2-last">${lastRoh}${diffStr ? ` ${diffStr}` : ''}</div>` : ''}
           ${cmpStr}
         </div>
         <label class="aex-v2-done ${ex.done?'checked':''}" title="Ganze Übung als erledigt markieren">
@@ -2256,6 +2257,16 @@ function toggleSetDone(ei, si) {
   const nowDone = !ex.sets[si].done;
   ex.sets[si].done = nowDone;
 
+  // Wer einen Satz abhakt, trainiert wieder — eine laufende Pause endet damit von selbst
+  // (Leonard-Wunsch 05.09.2026). Nur beim Abhaken, nicht beim Zuruecknehmen: Ein irrtuemlich
+  // gesetzter Haken soll die Uhr nicht ungewollt starten.
+  const pauseBeendet = nowDone && wo.paused;
+  if (pauseBeendet) {
+    wo.pausedTotal = (wo.pausedTotal || 0) + (Date.now() - (wo.pausedAt || Date.now()));
+    wo.pausedAt = null;
+    wo.paused = false;
+  }
+
   const allDone = ex.sets.length > 0 && ex.sets.every(s => s.done);
   ex.done = allDone;
   if (allDone) ex.skipped = false;
@@ -2275,6 +2286,9 @@ function toggleSetDone(ei, si) {
   }
 
   DB.saveActive(wo);
+  // ACHTUNG Reihenfolge: `ensureTimerActive` liest den Zustand aus dem Speicher — erst nach
+  // `saveActive` aufrufen, sonst sieht es die Einheit noch als pausiert.
+  if (pauseBeendet) { ensureTimerActive(); updateTimerDisplay(); showToast('Einheit fortgesetzt'); }
   renderWorkoutsScreen();
 
   // Satzpause läuft nur ZWISCHEN Sätzen einer Übung. Nach dem letzten Satz gibt es nichts
@@ -2881,7 +2895,7 @@ function renderAddExList(q) {
         <span class="dot"></span>
         ${meta.name}
         <span class="count">(${items.length})</span>
-        <span class="ex-group-arrow">${isCollapsed ? '▸' : '▾'}</span>
+        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
       </div>
       <div class="sheet-ex-group-list">${itemsHTML}</div>
     </div>`;
@@ -3875,7 +3889,7 @@ function renderRunPlanDetail() {
       </div>`;
     }).join('');
     wochenBlocks.push(`<div class="lp-woche">
-      <button type="button" class="lp-woche-btn" aria-expanded="${auf}" onclick="toggleRunWoche('${p.id}',${w})">Woche ${w}</button>
+      <button type="button" class="lp-woche-btn" aria-expanded="${auf}" onclick="toggleRunWoche('${p.id}',${w})">Woche ${w}<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
       <div class="lp-woche-body"${auf ? '' : ' style="display:none"'}>${tage || '<p class="lauf-leer">Keine Lauftage gewählt.</p>'}</div>
     </div>`);
   }
@@ -4249,32 +4263,23 @@ function renderTrainingCalendar(id, cardId) {
   if (zeigtLaeufe) DB.getRunPlans().forEach(p => { if (p.raceDate) wettkampfTage[_dayKeyOf(p.raceDate)] = p; });
 
   // Eine Woche OHNE Training bekommt hellrote Kaestchen (Leonard-Wunsch 05.09.2026).
-  // Zwei Einschraenkungen, sonst faerbt sich das halbe Jahr rot:
-  //   • nur ABGELAUFENE Wochen — eine laufende oder kommende Woche ist noch nichts versaeumt;
-  //   • nur Wochen, in denen ueberhaupt ein Plan lief. Ohne Plan gab es nichts zu verpassen,
-  //     und die Zeit vor dem ersten Plan stuende sonst komplett in Rot.
+  // Es zaehlt allein, ob in der Woche etwas stattgefunden hat — auf einen laufenden Plan kommt
+  // es NICHT an (am 05.09.2026 ausdruecklich so gewuenscht; eine erste Fassung hatte Wochen
+  // ohne Plan ausgenommen). Einzige Bedingung bleibt, dass die Woche VORBEI ist: In einer
+  // laufenden oder kommenden Woche ist noch nichts versaeumt.
   // Was als „Training" zaehlt, folgt dem Modus des Kalenders: im Gymkalender die Krafteinheiten
   // (inklusive der nachgetragenen Tage), im Laufkalender die Laeufe, im gemeinsamen beides.
-  const planIdxLauf = zeigtLaeufe ? DB.getRunPlans() : [];
   const wocheOhneTraining = (weekStart) => {
     const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
     if (weekEnd.getTime() >= today.getTime()) return false;
-    let planLief = false, etwasGetan = false;
     for (let d = 0; d < 7; d++) {
       const tag = new Date(weekStart); tag.setDate(weekStart.getDate() + d);
       if (tag.getFullYear() !== jahr) continue;
       const k = _dayKeyOf(tag.getTime());
-      if (zeigtKraft) {
-        if (_calPlanInfo(tag, planIndex).known) planLief = true;
-        if (byDay[k]) etwasGetan = true;
-      }
-      if (zeigtLaeufe) {
-        if (planIdxLauf.some(pl => pl.startDate && pl.endDate
-            && tag.getTime() >= pl.startDate && tag.getTime() <= pl.endDate)) planLief = true;
-        if (laeufeTag[k]) etwasGetan = true;
-      }
+      if (zeigtKraft && byDay[k]) return false;
+      if (zeigtLaeufe && laeufeTag[k]) return false;
     }
-    return planLief && !etwasGetan;
+    return true;
   };
 
   let cells = '';
@@ -5525,9 +5530,9 @@ function renderLibDays() {
     if (archived.length) {
       const expanded = libDaysArchiveExpanded;
       html += `<div class="plans-list-archive-header${expanded ? ' expanded' : ''}" onclick="toggleLibDaysArchive()">
-        <span class="plan-day-collapse-arrow">${expanded ? '▾' : '▸'}</span>
         <span class="plan-day-collapse-label">Archivierte Trainingstage</span>
         <span class="plan-day-collapse-count">${archived.length}</span>
+        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
       </div>`;
       if (expanded) html += archived.map(renderRow).join('');
     }
@@ -6174,7 +6179,7 @@ function exChartHTML(exId, canvasId, opts) {
   const enough = exHistPoints(exId, mode).length >= 2;
   // Einklappbare Variante (Einheiten-Detailansicht): die Ueberschrift wird zur Schaltflaeche.
   const kopf = opts.collapsible
-    ? `<button class="ex-chart-collapse" onclick="toggleChartBlock(this)"><span class="ex-chart-chev">▾</span>Entwicklung</button>`
+    ? `<button class="ex-chart-collapse" onclick="toggleChartBlock(this)">Entwicklung<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>`
     : '<span>Entwicklung</span>';
   return `<div class="ex-chart-block">
     <div class="ex-item-body-label ex-chart-head">
@@ -6233,6 +6238,7 @@ function buildExItemHTML(ex, context) {
       <div class="ex-item-name">${ex.name}</div>
       ${noteIndicator}
       ${planTag}
+      <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
     </div>
     <div class="ex-item-body">
       ${statsBlock}
@@ -8109,7 +8115,10 @@ function toggleDriveDebug() {
   const el = document.getElementById('drive-debug');
   const open = el.style.display !== 'none';
   el.style.display = open ? 'none' : 'block';
-  document.getElementById('drive-debug-state').textContent = open ? '▸' : '▾';
+  // Der Pfeil ist dasselbe SVG wie ueberall; gedreht wird ueber `aria-expanded` am Zeilenknopf.
+  // ACHTUNG: `open` haelt den Zustand VOR dem Umschalten fest — der neue ist also `!open`.
+  const zeile = document.getElementById('drive-debug-state').closest('.drive-row');
+  if (zeile) zeile.setAttribute('aria-expanded', open ? 'false' : 'true');
   if (!open) renderDriveDebug();
 }
 

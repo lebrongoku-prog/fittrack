@@ -158,12 +158,26 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
      dem Erledigt-Kaestchen).
   2. Zugeklappt zeigt er nach UNTEN.
   3. Aufgeklappt dreht er sich um 180 Grad — das Menue oeffnet nach unten, der Pfeil zeigt dorthin.
-  Im Einsatz: Uebungskarten (`.aex-v2`, beide Fassungen), Muskelgruppen-Knopf (`.ex-group-btn`) und
-  Archiv-Knopf (`.archiv-btn`). Der Zustand kommt bei den KARTEN aus `.collapsed` (Klasse an der
-  Karte), bei den KNOEPFEN aus `aria-expanded` — deshalb zwei Drehregeln fuer dieselbe Sache.
+  Am 05.09.2026 auf ALLE neun Ausklapp-Stellen der App ausgeweitet — es gibt seither keine
+  Textpfeile („▸/▾") mehr, die frueheren Sonderklassen `.ex-group-arrow`, `.plan-day-collapse-arrow`
+  und `.ex-chart-chev` sind entfallen:
+  Uebungskarten (`.aex-v2`, beide Fassungen) · Muskelgruppen im Katalog (`.ex-group-btn`) ·
+  Uebungszeilen im Katalog (`.ex-item-head`) · Archiv der Plaene (`.archiv-btn`) · Archiv der
+  Gymtage (`.plans-list-archive-header`) · Muskelgruppen im Uebung-hinzufuegen-Dialog
+  (`.ex-group-title`) · Wochenbloecke im Laufplan (`.lp-woche-btn`) · „Entwicklung" in der
+  Einheiten-Detailansicht (`.ex-chart-collapse`) · „Debug-Info" in den Einstellungen
+  (`.drive-row`).
+  Der Zustand kommt je nach Stelle aus einer KLASSE (`.collapsed`, `.open`, `.expanded`) oder aus
+  `aria-expanded` — daher mehrere Drehregeln fuer dieselbe Sache. Beim Archiv-Knopf und den
+  Laufplan-Wochen war die Drehung frueher −90 Grad; seit dem 05.09.2026 sind es ueberall 180.
   Die Kastengroesse variiert bewusst, weil sie die Zeilenhoehe bestimmt: 32px in den Karten,
-  20px im Muskelgruppen-Knopf (sonst waere er hoeher als 44px), 14px im Archiv-Knopf.
+  20px in den Knoepfen mit 44px-Zeile, 18px bei den Laufplan-Wochen, 14px im Archiv-Knopf.
   Auf- und zugeklappt wird weiterhin per Tipp auf den ganzen Kopf, nicht nur auf den Pfeil.
+  BUG, der dabei auffiel: `toggleDriveDebug` haelt in `open` den Zustand VOR dem Umschalten fest —
+  der neue ist `!open`. Die erste Fassung setzte `aria-expanded` deshalb verkehrt herum.
+  TESTHINWEIS: Die Debug-Zeile liegt in `#drive-connected`, das ohne Drive-Verbindung
+  `display:none` ist. Darin liefert `getComputedStyle` keine brauchbaren Werte — zum Messen den
+  Block einblenden UND `transition: none` setzen, sonst misst man die laufende Animation.
 - **Uebungskarten (`.aex-v2`) haben KEINEN sichtbaren Drag-Griff mehr** (die drei Striche `≡`,
   entfernt 01.09.2026). Das Sortieren haengt jetzt am ganzen Kartenkopf: `.aex-v2-header` traegt
   `onpointerdown`/`onpointerup` und schaltet `draggable` der Karte. Der Klick zum Auf-/Zuklappen
@@ -177,7 +191,10 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   hoechste Element der Zeile, oben ausgerichtet sassen Name und Scheibe dadurch 4px ueber der
   Kartenmitte. AUFGEKLAPPT bleibt es bei `flex-start` — sonst wanderte die Scheibe beim Aufklappen
   mit den neuen Textzeilen nach unten.
-- **Übungs-Karten** `.aex-v2` (Vorschau, laufende Einheit, Bibliothek-Tag-Detail) — Pro-Satz-Tabelle als ZEILEN pro Satz (`.aex-v2-srow`: Satz | Wdh. | kg | **Haken**). Notizfeld `.aex-v2-notes` rechts daneben, unter 460px darunter. `.aex-v2-cmp` zeigt Bestleistung + Differenz zur letzten Einheit; **zugeklappt bleibt die Karte ruhig**: `.aex-cmp-pr` ist dann ausgeblendet, eine Notiz-Vorschau gibt es nicht (Leonard-Wunsch).
+- **Übungs-Karten** `.aex-v2` (Vorschau, laufende Einheit, Bibliothek-Tag-Detail) — Pro-Satz-Tabelle als ZEILEN pro Satz (`.aex-v2-srow`: Satz | Wdh. | kg | **Haken**). Notizfeld `.aex-v2-notes` rechts daneben, unter 460px darunter. Die DIFFERENZ zur letzten Einheit haengt seit dem
+  05.09.2026 an der „Zuletzt"-Zeile (sie vergleicht ja mit genau dieser Einheit) und ist dort auf
+  „+2 kg" gekuerzt — „zur letzten Einheit" waere neben „Zuletzt:" doppelt gemoppelt und die Zeile
+  auf iPhone-Breite zu lang. In `.aex-v2-cmp` steht nur noch die Bestleistung; **zugeklappt bleibt die Karte ruhig**: `.aex-cmp-pr` ist dann ausgeblendet, eine Notiz-Vorschau gibt es nicht (Leonard-Wunsch).
 - **Herocard an einem Trainingstag ist bewusst kompakt** (`.hero-v2.col-layout`, 01.09.2026): Abstand zum
   Knopf 8px (vorher 14px) und Hantel 48px (vorher 72px). Die Hantel bestimmte als hoechstes Element die
   Hoehe des oberen Blocks; der Text darin wurde mittig zentriert, wodurch ueber dem Titel Leerraum entstand.
@@ -198,7 +215,11 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   „Naechste Uebung" wurde am 20.08.2026 entfernt — mit ihm fielen `heroActionContinue`, `scrollToNextExercise`,
   `scrollToEx`, die Option `continueOnClick` und die Klassen `.hero-v2-btn-next` / `.two-buttons` weg.
   `expandNextExercise` bleibt: es klappt nach jedem abgehakten Satz weiter (kein Scroll mehr).
-- **Laufende Einheit:** `toggleSetDone(ei, si)` hakt einen einzelnen Satz ab (Feld `sets[].done`), hakt die Übung automatisch ab, wenn alle Sätze stehen, und startet die **Satzpause** (`startRestTimer`, Leiste `#rest-bar`) — aber NUR, wenn danach noch ein Satz der Übung offen ist. Nach dem letzten Satz läuft keine Pause mehr (eine ggf. laufende wird gestoppt): dort folgt der Übungswechsel, keine weitere Wiederholung. Die Pause startet IMMER bei 1:30 (`REST_DEFAULT_SEC`); `adjustRest(±30)` und `resetRest()` wirken nur auf die laufende Pause und werden NICHT als Vorgabe gemerkt. Kopf ist im aktiven Zustand kompakt (`.hero-v2.active-mode`), der Wochenplan ist ausgeblendet (`html.wo-running`), beim Scrollen erscheint `#wo-sticky-bar` — aber NUR im Trainings-Tab: Der Riegel
+- **Laufende Einheit:** `toggleSetDone(ei, si)` hakt einen einzelnen Satz ab (Feld `sets[].done`),
+  setzt eine PAUSIERTE Einheit automatisch fort (05.09.2026 — wer abhakt, trainiert wieder; nur beim
+  Setzen des Hakens, nicht beim Zuruecknehmen, sonst startete ein Fehlklick die Uhr).
+  ACHTUNG Reihenfolge: `ensureTimerActive` liest den Zustand aus dem Speicher, es muss also NACH
+  `DB.saveActive` laufen. Es hakt die Übung automatisch ab, wenn alle Sätze stehen, und startet die **Satzpause** (`startRestTimer`, Leiste `#rest-bar`) — aber NUR, wenn danach noch ein Satz der Übung offen ist. Nach dem letzten Satz läuft keine Pause mehr (eine ggf. laufende wird gestoppt): dort folgt der Übungswechsel, keine weitere Wiederholung. Die Pause startet IMMER bei 1:30 (`REST_DEFAULT_SEC`); `adjustRest(±30)` und `resetRest()` wirken nur auf die laufende Pause und werden NICHT als Vorgabe gemerkt. Kopf ist im aktiven Zustand kompakt (`.hero-v2.active-mode`), der Wochenplan ist ausgeblendet (`html.wo-running`), beim Scrollen erscheint `#wo-sticky-bar` — aber NUR im Trainings-Tab: Der Riegel
   (`body.theme-workouts #wo-sticky-bar.show`) liegt im CSS, damit sie beim Tabwechsel sofort verschwindet und nicht
   erst beim naechsten Scroll- oder Sekundentakt; `_applyTabState` raeumt zusaetzlich die `.show`-Klasse ab. `ensureActiveExpanded()` hält die nächste unerledigte Übung offen (`_aexUserClosedAll` respektiert bewusstes Zuklappen).
 - **Textauswahl auf Schalt-Texten unterbinden.** `.seg-btn`, `.cal-filter-btn` und
@@ -237,9 +258,12 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 - **Trainingskalender** (Übersicht, `#ov-cal-card`): `renderTrainingCalendar()` zeichnet 52 Wochen à 7 Kästchen (`.cal-day`).
   KEINE Volumen-Abstufung — zwei Schichten im gleich grossen Quadrat (`inset: 3.5px`):
   `.leer-woche` faerbt die Kaestchen einer Woche OHNE Training hellrot (`#FECACA`, 05.09.2026).
-  Zwei Einschraenkungen, sonst faerbt sich das halbe Jahr: nur ABGELAUFENE Wochen (eine laufende
-  Woche ist noch nichts versaeumt) und nur Wochen, in denen ueberhaupt ein Plan lief — vor dem
-  ersten Plan gab es nichts zu verpassen. Was als Training zaehlt, folgt dem Modus des Kalenders:
+  EINZIGE Einschraenkung: nur ABGELAUFENE Wochen — in einer laufenden Woche ist noch nichts
+  versaeumt. Ob ein Plan lief, spielt AUSDRUECKLICH keine Rolle (eine erste Fassung hatte Wochen
+  ohne Plan ausgenommen, das wurde noch am selben Tag zurueckgenommen).
+  Im Transparenz-Modus braucht es eine eigene Regel — `html.glas … .cal-day` faerbt sonst jedes
+  Kaestchen weiss und das Rot verschwaende. Dort ist es kraeftiger (55 % statt Vollton), sonst
+  geht es im Farbverlauf dahinter unter. Was als Training zaehlt, folgt dem Modus des Kalenders:
   Gymkalender = Krafteinheiten samt nachgetragener Tage, Laufkalender = Laeufe, gemeinsam = beides.
   Die Regel steht VOR den Zustandsregeln, die Marken zeichnen sich also darauf.
   `.wettkampf` faerbt das GANZE Kaestchen hellgruen — der Wettkampftag eines Laufplans, der
