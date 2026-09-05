@@ -370,150 +370,163 @@
       <div class="ph-left"><h1>Einstellungen</h1></div>
     </div>
 
-    <div class="mehr-section lg-col1">
-      <div class="mehr-section-title">Cloud-Sync (Google Drive)</div>
-      <div class="mehr-card" id="drive-card">
-        <!-- Disconnected state -->
-        <div id="drive-disconnected">
-          <div class="drive-status drive-status-off">
-            <div class="drive-status-dot"></div>
-            <div class="drive-status-text">
-              <div class="drive-status-label">Nicht verbunden</div>
-              <div class="drive-status-sub">Verknüpfe Google Drive, um deine Daten zu sichern</div>
+    <!-- Zwei Spalten im Querformat. WRAPPER statt eines Grids direkt auf dem Screen:
+         In einem gemeinsamen Grid teilen sich linke und rechte Karte eine ZEILE, deren
+         Hoehe die hoehere von beiden bestimmt — unter der kurzen „Laufdaten"-Karte klaffte
+         dadurch eine Luecke bis zur Unterkante von Cloud-Sync (Leonard-Meldung 05.09.2026).
+         Mit je einem Behaelter pro Spalte stapeln die Karten in ihrer Spalte dicht.
+         Im Hochformat sind beide gewoehnliche Bloecke, die Reihenfolge bleibt also. -->
+    <div class="mehr-spalten">
+     <div class="mehr-spalte">
+      <div class="mehr-section">
+        <div class="mehr-section-title">Cloud-Sync (Google Drive)</div>
+        <div class="mehr-card" id="drive-card">
+          <!-- Disconnected state -->
+          <div id="drive-disconnected">
+            <div class="drive-status drive-status-off">
+              <div class="drive-status-dot"></div>
+              <div class="drive-status-text">
+                <div class="drive-status-label">Nicht verbunden</div>
+                <div class="drive-status-sub">Verknüpfe Google Drive, um deine Daten zu sichern</div>
+              </div>
             </div>
-          </div>
-          <button class="btn btn-primary btn-full" style="margin-top:14px" onclick="driveConnect()">
-            <span style="display:inline-flex;align-items:center;gap:8px;justify-content:center">
-              <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#fff"><path d="M7.71 3.5L1.15 15l3.42 6 6.56-11.5zm14.14 11.5L15.29 3.5h-6.86l6.56 11.5zm-3.42 0H8.57l-3.42 6h13.7z"/></svg>
-              Mit Google Drive verbinden
-            </span>
-          </button>
-        </div>
-        <!-- Connected state -->
-        <div id="drive-connected" style="display:none">
-          <div class="drive-status drive-status-on">
-            <div class="drive-status-dot"></div>
-            <div class="drive-status-text">
-              <div class="drive-status-label">Verbunden</div>
-              <div class="drive-status-sub" id="drive-status-sub">Letzter Sync: noch nie</div>
-            </div>
-            <div class="drive-sync-indicator" id="drive-sync-indicator"></div>
-          </div>
-          <div class="drive-actions">
-            <button class="btn btn-outline btn-full" onclick="driveManualSync()" id="drive-sync-btn">
+            <button class="btn btn-primary btn-full" style="margin-top:14px" onclick="driveConnect()">
               <span style="display:inline-flex;align-items:center;gap:8px;justify-content:center">
-                <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                Jetzt synchronisieren
+                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#fff"><path d="M7.71 3.5L1.15 15l3.42 6 6.56-11.5zm14.14 11.5L15.29 3.5h-6.86l6.56 11.5zm-3.42 0H8.57l-3.42 6h13.7z"/></svg>
+                Mit Google Drive verbinden
               </span>
             </button>
-            <button class="btn btn-outline btn-full" onclick="driveTestConnection()">
-              Verbindung testen
+          </div>
+          <!-- Connected state -->
+          <div id="drive-connected" style="display:none">
+            <div class="drive-status drive-status-on">
+              <div class="drive-status-dot"></div>
+              <div class="drive-status-text">
+                <div class="drive-status-label">Verbunden</div>
+                <div class="drive-status-sub" id="drive-status-sub">Letzter Sync: noch nie</div>
+              </div>
+              <div class="drive-sync-indicator" id="drive-sync-indicator"></div>
+            </div>
+            <div class="drive-actions">
+              <button class="btn btn-outline btn-full" onclick="driveManualSync()" id="drive-sync-btn">
+                <span style="display:inline-flex;align-items:center;gap:8px;justify-content:center">
+                  <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                  Jetzt synchronisieren
+                </span>
+              </button>
+              <button class="btn btn-outline btn-full" onclick="driveTestConnection()">
+                Verbindung testen
+              </button>
+            </div>
+            <div class="divider" style="margin:14px 0"></div>
+            <div class="drive-row" onclick="toggleDriveDebug()" style="cursor:pointer" aria-expanded="false">
+              <div class="drive-row-label">Debug-Info anzeigen</div>
+              <div class="drive-row-toggle"><span id="drive-debug-state" class="aex-v2-chev"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+            </div>
+            <div id="drive-debug" style="display:none">
+              <div class="drive-debug-grid" id="drive-debug-grid"></div>
+            </div>
+            <div class="divider" style="margin:14px 0"></div>
+            <div class="drive-log-head">
+              <span>Sync-Log</span>
+              <a onclick="clearDriveLog()" style="font-size:12px;color:var(--text3);cursor:pointer">Leeren</a>
+            </div>
+            <div class="drive-log" id="drive-log"></div>
+            <div class="divider" style="margin:14px 0"></div>
+            <button class="btn btn-ghost btn-full" onclick="driveDisconnect()" style="color:var(--red,#d33)">
+              Verbindung trennen
             </button>
           </div>
-          <div class="divider" style="margin:14px 0"></div>
-          <div class="drive-row" onclick="toggleDriveDebug()" style="cursor:pointer" aria-expanded="false">
-            <div class="drive-row-label">Debug-Info anzeigen</div>
-            <div class="drive-row-toggle"><span id="drive-debug-state" class="aex-v2-chev"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></div>
-          </div>
-          <div id="drive-debug" style="display:none">
-            <div class="drive-debug-grid" id="drive-debug-grid"></div>
-          </div>
-          <div class="divider" style="margin:14px 0"></div>
-          <div class="drive-log-head">
-            <span>Sync-Log</span>
-            <a onclick="clearDriveLog()" style="font-size:12px;color:var(--text3);cursor:pointer">Leeren</a>
-          </div>
-          <div class="drive-log" id="drive-log"></div>
-          <div class="divider" style="margin:14px 0"></div>
-          <button class="btn btn-ghost btn-full" onclick="driveDisconnect()" style="color:var(--red,#d33)">
-            Verbindung trennen
-          </button>
         </div>
       </div>
-    </div>
 
-    <!-- Laufdaten: Verbindung zur Google-Tabelle „Workout Data". Stand am 04.09.2026 aus dem
-         Trainings-Tab hierher gezogen (Leonard-Wunsch) — Inhalt kommt von renderRunSourceCard(). -->
-    <div class="mehr-section lg-col2">
-      <div class="mehr-section-title">Laufdaten</div>
-      <div class="mehr-card" id="run-source-card"></div>
-    </div>
+     </div>
+     <div class="mehr-spalte">
+      <!-- Laufdaten: Verbindung zur Google-Tabelle „Workout Data". Stand am 04.09.2026 aus dem
+           Trainings-Tab hierher gezogen (Leonard-Wunsch) — Inhalt kommt von renderRunSourceCard(). -->
+      <div class="mehr-section">
+        <div class="mehr-section-title">Laufdaten</div>
+        <div class="mehr-card" id="run-source-card"></div>
+      </div>
 
-    <!-- Welcher Stand läuft gerade? Beantwortet die wiederkehrende Frage, ob ein Update
-         schon angekommen ist — die PWA aktualisiert sich sonst erst beim zweiten Start. -->
-    <div class="mehr-section lg-col2">
-      <div class="mehr-section-title">App-Version</div>
-      <div class="mehr-card">
-        <div class="mehr-row">
-          <div class="mehr-row-icon" style="background:var(--accent-bg)">📦</div>
-          <div class="mehr-row-info">
-            <div class="mehr-row-label">Installierte Version</div>
-            <div class="mehr-row-sub" id="app-version">wird geprüft…</div>
+      <!-- Welcher Stand läuft gerade? Beantwortet die wiederkehrende Frage, ob ein Update
+           schon angekommen ist — die PWA aktualisiert sich sonst erst beim zweiten Start. -->
+      <div class="mehr-section">
+        <div class="mehr-section-title">App-Version</div>
+        <div class="mehr-card">
+          <div class="mehr-row">
+            <div class="mehr-row-icon" style="background:var(--accent-bg)">📦</div>
+            <div class="mehr-row-info">
+              <div class="mehr-row-label">Installierte Version</div>
+              <div class="mehr-row-sub" id="app-version">wird geprüft…</div>
+            </div>
           </div>
-        </div>
-        <div class="mehr-row" onclick="updateJetzt()" style="cursor:pointer">
-          <div class="mehr-row-icon" style="background:var(--green-bg)">🔄</div>
-          <div class="mehr-row-info">
-            <div class="mehr-row-label">Jetzt aktualisieren</div>
-            <div class="mehr-row-sub">Holt den neuesten Stand sofort — ohne zweimal neu zu starten</div>
+          <div class="mehr-row" onclick="updateJetzt()" style="cursor:pointer">
+            <div class="mehr-row-icon" style="background:var(--green-bg)">🔄</div>
+            <div class="mehr-row-info">
+              <div class="mehr-row-label">Jetzt aktualisieren</div>
+              <div class="mehr-row-sub">Holt den neuesten Stand sofort — ohne zweimal neu zu starten</div>
+            </div>
+            <div class="mehr-row-action">›</div>
           </div>
-          <div class="mehr-row-action">›</div>
         </div>
       </div>
-    </div>
 
-    <!-- Papierkorb: Gelöschtes bleibt 30 Tage hier und lässt sich zurückholen.
-         Inhalt kommt von renderTrash(). -->
-    <div class="mehr-section lg-col2">
-      <div class="mehr-section-title del-sec-head">
-        <span>Papierkorb</span>
-        <span id="trash-head-action"></span>
+      <!-- Papierkorb: Gelöschtes bleibt 30 Tage hier und lässt sich zurückholen.
+           Inhalt kommt von renderTrash(). -->
+      <div class="mehr-section">
+        <div class="mehr-section-title del-sec-head">
+          <span>Papierkorb</span>
+          <span id="trash-head-action"></span>
+        </div>
+        <div class="mehr-card" id="trash-card"></div>
       </div>
-      <div class="mehr-card" id="trash-card"></div>
-    </div>
 
-    <div class="mehr-section lg-col2">
-      <div class="mehr-section-title">Daten &amp; Sicherheit</div>
-      <div class="mehr-card">
-        <div class="mehr-row" onclick="exportData()" style="cursor:pointer">
-          <div class="mehr-row-icon" style="background:var(--accent-bg)">⬇️</div>
-          <div class="mehr-row-info">
-            <div class="mehr-row-label">Daten exportieren</div>
-            <div class="mehr-row-sub">Backup als .json herunterladen</div>
+      <div class="mehr-section">
+        <div class="mehr-section-title">Daten &amp; Sicherheit</div>
+        <div class="mehr-card">
+          <div class="mehr-row" onclick="exportData()" style="cursor:pointer">
+            <div class="mehr-row-icon" style="background:var(--accent-bg)">⬇️</div>
+            <div class="mehr-row-info">
+              <div class="mehr-row-label">Daten exportieren</div>
+              <div class="mehr-row-sub">Backup als .json herunterladen</div>
+            </div>
+            <div class="mehr-row-action">›</div>
           </div>
-          <div class="mehr-row-action">›</div>
-        </div>
-        <div class="divider"></div>
-        <div class="mehr-row" onclick="document.getElementById('import-input').click()" style="cursor:pointer">
-          <div class="mehr-row-icon" style="background:var(--green-bg)">⬆️</div>
-          <div class="mehr-row-info">
-            <div class="mehr-row-label">Daten importieren</div>
-            <div class="mehr-row-sub">Backup wiederherstellen</div>
+          <div class="divider"></div>
+          <div class="mehr-row" onclick="document.getElementById('import-input').click()" style="cursor:pointer">
+            <div class="mehr-row-icon" style="background:var(--green-bg)">⬆️</div>
+            <div class="mehr-row-info">
+              <div class="mehr-row-label">Daten importieren</div>
+              <div class="mehr-row-sub">Backup wiederherstellen</div>
+            </div>
+            <div class="mehr-row-action">›</div>
           </div>
-          <div class="mehr-row-action">›</div>
-        </div>
-        <input type="file" id="import-input" accept=".json" style="display:none" onchange="importData(event)">
-        <div class="divider"></div>
-        <div class="mehr-row" onclick="document.getElementById('plan-import-input').click()" style="cursor:pointer">
-          <div class="mehr-row-icon" style="background:#e8eaff">📋</div>
-          <div class="mehr-row-info">
-            <div class="mehr-row-label">Trainingsplan importieren</div>
-            <div class="mehr-row-sub">Plan-JSON einlesen (Trainingstage + Übungen)</div>
+          <input type="file" id="import-input" accept=".json" style="display:none" onchange="importData(event)">
+          <div class="divider"></div>
+          <div class="mehr-row" onclick="document.getElementById('plan-import-input').click()" style="cursor:pointer">
+            <div class="mehr-row-icon" style="background:#e8eaff">📋</div>
+            <div class="mehr-row-info">
+              <div class="mehr-row-label">Trainingsplan importieren</div>
+              <div class="mehr-row-sub">Plan-JSON einlesen (Trainingstage + Übungen)</div>
+            </div>
+            <div class="mehr-row-action">›</div>
           </div>
-          <div class="mehr-row-action">›</div>
-        </div>
-        <input type="file" id="plan-import-input" accept=".json" style="display:none" onchange="importTrainingPlan(event)">
-        <div class="divider"></div>
-        <div class="mehr-row" onclick="document.getElementById('exercises-import-input').click()" style="cursor:pointer">
-          <div class="mehr-row-icon" style="background:#e0f7f3">🏋️</div>
-          <div class="mehr-row-info">
-            <div class="mehr-row-label">Übungen importieren</div>
-            <div class="mehr-row-sub">Übungen-JSON in die Library laden</div>
+          <input type="file" id="plan-import-input" accept=".json" style="display:none" onchange="importTrainingPlan(event)">
+          <div class="divider"></div>
+          <div class="mehr-row" onclick="document.getElementById('exercises-import-input').click()" style="cursor:pointer">
+            <div class="mehr-row-icon" style="background:#e0f7f3">🏋️</div>
+            <div class="mehr-row-info">
+              <div class="mehr-row-label">Übungen importieren</div>
+              <div class="mehr-row-sub">Übungen-JSON in die Library laden</div>
+            </div>
+            <div class="mehr-row-action">›</div>
           </div>
-          <div class="mehr-row-action">›</div>
+          <input type="file" id="exercises-import-input" accept=".json" style="display:none" onchange="importExercises(event)">
         </div>
-        <input type="file" id="exercises-import-input" accept=".json" style="display:none" onchange="importExercises(event)">
       </div>
+
+     </div>
     </div>
 
   </div><!-- /mehr -->

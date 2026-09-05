@@ -2875,22 +2875,19 @@ html.wo-running #wo-week-card { display: none; }
   /* Plan-Detail nutzt das gleiche Theme wie Plans-Liste (Amber). Die mehr-section-Logik mit
      dem Auto-Flow-dense-Grid für lg-col1/lg-col2 ist hier nicht nötig — alles flow-block. */
 
-  /* MEHR — explizites Grid mit lg-col1/lg-col2-Klassen.
-     `grid-auto-flow: dense` ist hier essentiell: Ohne diese Flag würden die drei
-     col1-Sektionen (Trainingsplan/Wochenplan/Trainingstage) zuerst untereinander in
-     Spalte 1 stapeln und Cloud-Sync würde erst weit unten in Spalte 2 beginnen, weil
-     das Standard-Sparse-Placement den Cursor nicht zurückspringen lässt. */
-  #screen-mehr.active {
+  /* MEHR — zwei Spalten ueber je einen BEHAELTER (`.mehr-spalte`), nicht ueber ein Grid
+     direkt auf dem Screen. In einem gemeinsamen Grid liegen linke und rechte Karte in
+     DERSELBEN Zeile, deren Hoehe die hoehere von beiden bestimmt: Unter der kurzen
+     „Laufdaten"-Karte klaffte dadurch eine Luecke bis zur Unterkante von Cloud-Sync, und die
+     folgenden Karten begannen erst darunter (Leonard-Meldung 05.09.2026). Jede Spalte stapelt
+     jetzt fuer sich. `align-items: start` verhindert, dass die kuerzere Spalte mitwaechst. */
+  .mehr-spalten {
     display: grid;
     grid-template-columns: 1fr 1fr;
     column-gap: 0;
     align-items: start;
-    align-content: start;
-    grid-auto-flow: dense;
   }
-  #screen-mehr.active > .ph { grid-column: 1 / -1; }
-  #screen-mehr.active > .lg-col1 { grid-column: 1; }
-  #screen-mehr.active > .lg-col2 { grid-column: 2; }
+  .mehr-spalte { min-width: 0; }
 }
 
 /* Conflict-Modal: side-by-side */

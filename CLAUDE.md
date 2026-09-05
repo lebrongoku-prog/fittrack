@@ -619,9 +619,15 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   den Knoepfen und der Titel rutschte nach oben.
 - **Reihenfolge in den Einstellungen** (05.09.2026, Leonard-Vorgabe): Cloud-Sync · Laufdaten ·
   App-Version · Papierkorb · Daten & Sicherheit. Im QUERFORMAT steht Cloud-Sync allein in der
-  linken Spalte (`lg-col1`), die vier uebrigen stapeln rechts (`lg-col2`) — dieselbe Reihenfolge
-  wie im Hochformat. Das Grid braucht `grid-auto-flow: dense`, sonst begaenne die rechte Spalte
-  erst unterhalb der linken.
+  linken Spalte, die vier uebrigen stapeln rechts — dieselbe Reihenfolge wie im Hochformat.
+  Die Spalten sind je ein BEHAELTER (`.mehr-spalte` in `.mehr-spalten`), KEIN gemeinsames Grid
+  auf dem Screen. Im gemeinsamen Grid lagen linke und rechte Karte in derselben ZEILE, deren
+  Hoehe die hoehere von beiden bestimmt: Unter der kurzen „Laufdaten"-Karte klaffte eine Luecke
+  bis zur Unterkante von Cloud-Sync, und die drei folgenden Karten begannen erst darunter
+  (Leonard-Meldung 05.09.2026). Mit eigenen Behaeltern stapelt jede Spalte fuer sich.
+  Im Hochformat sind beide gewoehnliche Bloecke — die Reihenfolge im Markup ist damit auch die
+  Reihenfolge auf dem Bildschirm. Die Klassen `lg-col1`/`lg-col2` gelten seither NUR noch im
+  Uebersichts-Grid.
 - **Übersicht:** Sicherungs-Status als Chip im Kopf neben dem Titel (`renderBackupLine` → `#ov-backup-line` in `.ph-right`, Klasse `.backup-chip`; kurze Texte wegen des knappen Platzes, ausführliche Fassung im `title`-Attribut), Hinweis vor Plan-Ende (`renderPlanEndNotice` + `extendActivePlan`), Wochenserie (`getWeekStreak` → `.ppv-streak`), Einstieg ins freie Training (`startFreeWorkout`, Einheit ohne `planDayId`).
 - **Ende der Satzpause** meldet sich dreifach: Vibration, Ton und sichtbare Meldung „Pause vorbei" (5 s, `.done`).
   Grund fuer den Aufwand: `navigator.vibrate` gibt es auf dem iPhone NICHT (Safari unterstuetzt die Vibration-API auf
