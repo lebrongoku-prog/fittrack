@@ -119,13 +119,19 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `font:inherit` MUSS vor den Schrift-Angaben stehen, sonst gewinnt die Browser-Standardschrift fuer `<button>`.
   Es MUSS ein `<button>` sein: `initScrollHideNav` nimmt echte Bedienelemente von der „Tableiste wieder
   einblenden"-Erkennung aus — ein `<div>` wuerde die Nav bei jedem Tipp zurueckholen.
-  `.archiv-btn` ist in Breite, Hoehe und Schriftgroesse identisch mit „+ Uebung zum Trainingstag
-  hinzufuegen" (01.09.2026): `width: calc(100% - 96px)` mit 48px Rand bildet dessen Behaelter-Polster
-  nach, und sein Pfeil laeuft auf 14px statt 32px — mit der Original-Box waere der Knopf 51px statt
-  33,7px hoch. Die Breitenangabe ist noetig, weil ein `<button>` bei `width:auto` auf seinen Inhalt
-  schrumpft, auch als Block-Element.
-  NICHT umgestellt (bewusst, weil nicht beauftragt): das Archiv der Trainingstage (`.plans-list-archive-header`)
-  und die Gruppenkoepfe im Uebung-hinzufuegen-Dialog (`.ex-group-title`).
+  Der Archiv-Knopf ist am 05.09.2026 aus `.weitere-btn` ausgeschieden — siehe „Archiv-Knopf"
+  weiter unten.
+- **Archiv-Knopf: EINE Bauform fuer alle drei Listen** (`.plans-list-archive-header`,
+  vereinheitlicht 05.09.2026 nach dem Vorbild des Gymtage-Archivs). Weisse Karte mit Schatten,
+  Beschriftung links (`.plan-day-collapse-label`), Anzahl als Pille (`.plan-day-collapse-count`)
+  und Ausklapp-Pfeil rechts. Im Einsatz auf drei Seiten mit je eigener Beschriftung:
+  „Archivierte Gympläne" (Gymplan) · „Archivierte Gymtage" (Gymtage) · „Archivierte Laufpläne"
+  (Laufplan). Alle drei sind `<button>` und brauchen deshalb `width: calc(100% - 28px)` — bei
+  `width:auto` schrumpft ein Button auf seinen Inhalt, auch als Block-Element; die 28px sind die
+  beiden 14px-Raender. Vorher war es auf zwei Seiten ein `.weitere-btn.archiv-btn` (transparent,
+  Pfeil links neben der Beschriftung, mittig) und nur im Gymtage-Archiv die weisse Karte.
+  Der Zustand steht als KLASSE `.expanded` UND als `aria-expanded` am Knopf — die Drehregel
+  fragt beides ab, damit sie unabhaengig vom Aufrufer greift.
 - **Alle Kartentitel sind 16px** (01.09.2026, Vorbild „Trainingskalender"): `.chart-card-v2-title`,
   `.plan-section-head h3`, `.ppv-name`, `.scv2-title`, `.hero-v2-title` (auch in `rest-mode` und
   `active-mode` — deren eigene Groessenangaben sind entfallen). `.mehr-section-title` ist KEIN
@@ -162,8 +168,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Textpfeile („▸/▾") mehr, die frueheren Sonderklassen `.ex-group-arrow`, `.plan-day-collapse-arrow`
   und `.ex-chart-chev` sind entfallen:
   Uebungskarten (`.aex-v2`, beide Fassungen) · Muskelgruppen im Katalog (`.ex-group-btn`) ·
-  Uebungszeilen im Katalog (`.ex-item-head`) · Archiv der Plaene (`.archiv-btn`) · Archiv der
-  Gymtage (`.plans-list-archive-header`) · Muskelgruppen im Uebung-hinzufuegen-Dialog
+  Uebungszeilen im Katalog (`.ex-item-head`) · alle drei Archiv-Knoepfe
+  (`.plans-list-archive-header`) · Muskelgruppen im Uebung-hinzufuegen-Dialog
   (`.ex-group-title`) · Wochenbloecke im Laufplan (`.lp-woche-btn`) · „Entwicklung" in der
   Einheiten-Detailansicht (`.ex-chart-collapse`) · „Debug-Info" in den Einstellungen
   (`.drive-row`).
@@ -591,6 +597,11 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   ACHTUNG: Die Unterzeilen (`.ph-sub`) sind in allen vier Tabs per Inline-Style ausgeblendet und
   werden nie eingeblendet (das JS setzt nur ihren Text). Wuerde eine sichtbar, waere SIE buendig mit
   den Knoepfen und der Titel rutschte nach oben.
+- **Reihenfolge in den Einstellungen** (05.09.2026, Leonard-Vorgabe): Cloud-Sync · Laufdaten ·
+  App-Version · Papierkorb · Daten & Sicherheit. Im QUERFORMAT steht Cloud-Sync allein in der
+  linken Spalte (`lg-col1`), die vier uebrigen stapeln rechts (`lg-col2`) — dieselbe Reihenfolge
+  wie im Hochformat. Das Grid braucht `grid-auto-flow: dense`, sonst begaenne die rechte Spalte
+  erst unterhalb der linken.
 - **Übersicht:** Sicherungs-Status als Chip im Kopf neben dem Titel (`renderBackupLine` → `#ov-backup-line` in `.ph-right`, Klasse `.backup-chip`; kurze Texte wegen des knappen Platzes, ausführliche Fassung im `title`-Attribut), Hinweis vor Plan-Ende (`renderPlanEndNotice` + `extendActivePlan`), Wochenserie (`getWeekStreak` → `.ppv-streak`), Einstieg ins freie Training (`startFreeWorkout`, Einheit ohne `planDayId`).
 - **Ende der Satzpause** meldet sich dreifach: Vibration, Ton und sichtbare Meldung „Pause vorbei" (5 s, `.done`).
   Grund fuer den Aufwand: `navigator.vibrate` gibt es auf dem iPhone NICHT (Safari unterstuetzt die Vibration-API auf

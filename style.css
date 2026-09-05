@@ -558,7 +558,8 @@ body.theme-plans .hist-action-dd {
    Plaene-Tabs. Der frueher fuehrende `.plan-day-collapse-arrow` ist entfallen. */
 .plans-list-archive-header .aex-v2-chev { width: 20px; height: 20px; color: inherit; }
 .plans-list-archive-header .aex-v2-chev svg { width: 17px; height: 17px; }
-.plans-list-archive-header.expanded .aex-v2-chev { transform: rotate(180deg); }
+.plans-list-archive-header.expanded .aex-v2-chev,
+.plans-list-archive-header[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
 .plan-day-collapse-count {
   font-size: 11px; font-weight: 700;
   color: var(--text3);
@@ -636,8 +637,8 @@ body.theme-plans .hist-action-dd {
 /* Die ausklappbaren Muskelgruppen-Koepfe im Katalog reagieren wie eine Karte
    (Leonard-Wunsch 01.09.2026). Nur dieser eine `.weitere-btn` — die anderen beiden
    („Uebung hinzufuegen", „Archivierte Plaene") bleiben unveraendert. */
-.ex-group-btn, .archiv-btn { transition: transform .1s ease; }
-.ex-group-btn:active, .archiv-btn:active { transform: scale(0.995); }
+.ex-group-btn, .plans-list-archive-header { transition: transform .1s ease; }
+.ex-group-btn:active, .plans-list-archive-header:active { transform: scale(0.995); }
 #ov-cal-card, #plans-cal-card { transition: none; }
 /* AUSNAHME aufgeklappter Laufplan: Die Karte IST hier das Bearbeitungsformular. Jeder Tipp
    in ein Feld liess die ganze Karte zucken (Leonard-Meldung 04.09.2026). Eingeklappt bleibt
@@ -710,8 +711,12 @@ body.theme-plans .hist-action-dd {
 .plan-status-past { opacity: 0.85; }
 .plan-status-archived { opacity: 0.7; }
 
-/* Archivierte-Pläne kollabierbarer Header */
+/* Archiv-Knopf — EINE Bauform fuer alle drei Listen (Gympläne, Gymtage, Laufpläne;
+   vereinheitlicht 05.09.2026). Weisse Karte, Beschriftung links, Anzahl und Ausklapp-Pfeil
+   rechts. Ein `<button>` braucht die Breitenangabe: bei `width:auto` schrumpft er auf seinen
+   Inhalt, auch als Block-Element. Der fruehere `.weitere-btn.archiv-btn` ist entfallen. */
 .plans-list-archive-header {
+  width: calc(100% - 28px); border: none; font-family: inherit; text-align: left;
   margin: 16px 14px 8px;
   background: var(--card);
   border-radius: 12px;
@@ -964,42 +969,12 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   justify-content: flex-start; font-size: 16px; min-height: var(--ex-row-h);
   padding-left: 14px; padding-right: 14px; gap: 12px;
 }
-/* Der Muskelgruppen-Knopf traegt KEINEN Pfeil mehr (Leonard-Wunsch 01.09.2026) — der
-   Zustand ist an der aufgeklappten Liste darunter ohnehin zu sehen. Der Archiv-Knopf
-   behaelt seinen: EXAKT derselbe wie in den Uebungskarten des TRAININGS-Tabs, dieselbe
-   Klasse `.aex-v2-chev` mit demselben SVG, damit Form, Groesse und Drehung nicht
-   auseinanderlaufen koennen. Einzige Anpassung: Die Farbe kommt vom Knopf, der auf
-   farbigem Grund steht. Gedreht wird ueber aria-expanded statt ueber `.collapsed`. */
-.archiv-btn .aex-v2-chev { color: inherit; }
-/* Pfeil und Beschriftung stehen zusammen mittig im Knopf (Leonard-Wunsch 01.09.2026):
-   beide im Fluss, die Zentrierung macht `justify-content:center` aus `.weitere-btn`.
-   Vorher lag der Pfeil absolut am linken Rand — daher hier kein `position`/`translateY` mehr. */
-.archiv-btn[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
 /* 12px statt 8px — um die Haelfte groesser (Leonard-Wunsch 01.09.2026). */
 .ex-group-btn .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--mc, var(--accent)); flex-shrink: 0; }
 /* Name und Anzahl bilden EIN Flex-Kind: Sonst trennt sie der 12px-Abstand des Knopfes,
    statt eines gewoehnlichen Leerzeichens (Leonard-Meldung 01.09.2026). */
 .ex-group-btn .ex-group-name { min-width: 0; }
 .ex-group-btn .count { opacity: .7; font-weight: 600; }
-.archiv-btn .count { opacity: .7; font-weight: 600; }
-/* „Archivierte Plaene" steht direkt im Screen, braucht also eigene Seitenabstaende.
-   Breite explizit rechnen: <button> schrumpft bei `width:auto` auf den Inhalt, auch als
-   Block-Element — volle Breite kaeme so nicht zustande. */
-/* Gleiche Breite und Hoehe wie „+ Uebung zum Trainingstag hinzufuegen" (Leonard-Wunsch
-   01.09.2026). Dessen Behaelter hat 48px seitliches Polster — dieselbe Einrueckung stellt
-   `calc(100% - 96px)` mit 48px Rand her. Die Schriftgroesse ist bei beiden die .79rem aus
-   `.weitere-btn`. Ein `<button>` schrumpft bei `width:auto` auf seinen Inhalt, auch als
-   Block-Element — die Breitenangabe ist also noetig. */
-.weitere-btn.archiv-btn {
-  /* Unten 12px wie der Abstand zwischen zwei Karten — mit 8px klebte die erste
-     archivierte Karte am Knopf (Leonard-Meldung 01.09.2026). */
-  width: calc(100% - 96px); margin: 16px 48px 12px;
-}
-/* Der Pfeil traegt in den Uebungskarten eine 32px-Box und wuerde den Knopf sonst auf 51px
-   aufblasen; hier bestimmt die Textzeile die Hoehe. 14px ist knapp darunter, der Knopf ist
-   damit exakt so hoch wie der Hinzufuegen-Knopf. */
-.archiv-btn .aex-v2-chev { width: 14px; height: 14px; }
-.archiv-btn .aex-v2-chev svg { width: 14px; height: 14px; }
 
 /* ─── Glas-Modus ────────────────────────────────────────────────────────────────
    Schaltet alle Karten auf denselben 12-%-Weiss-Schleier wie `.weitere-btn`.

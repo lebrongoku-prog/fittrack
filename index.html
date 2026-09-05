@@ -434,19 +434,9 @@
 
     <!-- Laufdaten: Verbindung zur Google-Tabelle „Workout Data". Stand am 04.09.2026 aus dem
          Trainings-Tab hierher gezogen (Leonard-Wunsch) — Inhalt kommt von renderRunSourceCard(). -->
-    <div class="mehr-section">
+    <div class="mehr-section lg-col2">
       <div class="mehr-section-title">Laufdaten</div>
       <div class="mehr-card" id="run-source-card"></div>
-    </div>
-
-    <!-- Papierkorb: Gelöschtes bleibt 30 Tage hier und lässt sich zurückholen.
-         Inhalt kommt von renderTrash(). -->
-    <div class="mehr-section">
-      <div class="mehr-section-title del-sec-head">
-        <span>Papierkorb</span>
-        <span id="trash-head-action"></span>
-      </div>
-      <div class="mehr-card" id="trash-card"></div>
     </div>
 
     <!-- Welcher Stand läuft gerade? Beantwortet die wiederkehrende Frage, ob ein Update
@@ -470,6 +460,16 @@
           <div class="mehr-row-action">›</div>
         </div>
       </div>
+    </div>
+
+    <!-- Papierkorb: Gelöschtes bleibt 30 Tage hier und lässt sich zurückholen.
+         Inhalt kommt von renderTrash(). -->
+    <div class="mehr-section lg-col2">
+      <div class="mehr-section-title del-sec-head">
+        <span>Papierkorb</span>
+        <span id="trash-head-action"></span>
+      </div>
+      <div class="mehr-card" id="trash-card"></div>
     </div>
 
     <div class="mehr-section lg-col2">

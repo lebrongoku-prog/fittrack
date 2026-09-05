@@ -3811,10 +3811,11 @@ function renderLaufVerwaltung() {
   let html = offen.map(zeile).join('');
   if (archiv.length) {
     const auf = runplansArchiveExpanded;
-    html += `<button type="button" class="weitere-btn archiv-btn" aria-expanded="${auf}"
-            onclick="toggleRunplansArchive()">
+    html += `<button type="button" class="plans-list-archive-header${auf ? ' expanded' : ''}"
+                     aria-expanded="${auf}" onclick="toggleRunplansArchive()">
+      <span class="plan-day-collapse-label">Archivierte Laufpläne</span>
+      <span class="plan-day-collapse-count">${archiv.length}</span>
       <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
-      <span class="archiv-label">Archivierte Pläne${auf ? ` <span class="count">(${archiv.length})</span>` : ''}</span>
     </button>`;
     if (auf) html += archiv.map(zeile).join('');
   }
@@ -5016,10 +5017,14 @@ function renderPlans() {
     html += active.map(renderRow).join('');
     if (archived.length) {
       const expanded = plansArchiveExpanded;
-      html += `<button type="button" class="weitere-btn archiv-btn" aria-expanded="${expanded}"
-              onclick="togglePlansArchive()">
+      // Gleicher Knopf wie im Archiv der Gymtage (Leonard-Wunsch 05.09.2026) — weisse Karte,
+      // Beschriftung links, Anzahl und Pfeil rechts. Der fruehere `.weitere-btn.archiv-btn` ist
+      // damit ueberall abgeloest.
+      html += `<button type="button" class="plans-list-archive-header${expanded ? ' expanded' : ''}"
+                       aria-expanded="${expanded}" onclick="togglePlansArchive()">
+        <span class="plan-day-collapse-label">Archivierte Gympläne</span>
+        <span class="plan-day-collapse-count">${archived.length}</span>
         <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
-        <span class="archiv-label">Archivierte Pläne${expanded ? ` <span class="count">(${archived.length})</span>` : ''}</span>
       </button>`;
       if (expanded) html += archived.map(renderRow).join('');
     }
@@ -5529,11 +5534,12 @@ function renderLibDays() {
     html += active.map(renderRow).join('');
     if (archived.length) {
       const expanded = libDaysArchiveExpanded;
-      html += `<div class="plans-list-archive-header${expanded ? ' expanded' : ''}" onclick="toggleLibDaysArchive()">
-        <span class="plan-day-collapse-label">Archivierte Trainingstage</span>
+      html += `<button type="button" class="plans-list-archive-header${expanded ? ' expanded' : ''}"
+                       aria-expanded="${expanded}" onclick="toggleLibDaysArchive()">
+        <span class="plan-day-collapse-label">Archivierte Gymtage</span>
         <span class="plan-day-collapse-count">${archived.length}</span>
         <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
-      </div>`;
+      </button>`;
       if (expanded) html += archived.map(renderRow).join('');
     }
   }
