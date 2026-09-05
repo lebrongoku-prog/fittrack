@@ -1543,8 +1543,15 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
       elsewhereActive.planDayId === planDay.id &&
       (selDay ? woDayIdx(elsewhereActive) === selDay.idx : true)
     );
+    // Der Hinweis war eine Sackgasse: reiner Text, ohne Weg zur laufenden Einheit
+    // (Leonard-Meldung 05.09.2026). Jetzt fuehrt ein Knopf auf deren Wochentag zurueck.
+    const laufIdx = elsewhereActive ? woDayIdx(elsewhereActive) : -1;
     const bottomHTML = blockedByOther
-      ? `<div class="hero-v2-running-notice">Es läuft gerade eine andere Einheit. Bitte zuerst beenden.</div>`
+      ? `<div class="hero-v2-running-notice">
+           <span>Es läuft gerade eine andere Einheit.</span>
+           ${laufIdx >= 0 ? `<button type="button" class="hero-v2-btn stretch"
+                    onclick="jumpToWorkoutDay(${laufIdx})">Zur laufenden Einheit</button>` : ''}
+         </div>`
       : `<button class="hero-v2-btn stretch" onclick="${previewOnClick}">
            <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
            Einheit starten
@@ -1685,6 +1692,18 @@ function wischeZuTab(name) {
   container.scrollTo({ left: idx * container.clientWidth, behavior: 'smooth' });
 }
 
+// Von ueberall her zurueck zur laufenden Einheit: Tab, Seite UND Wochentag stellen sich
+// gemeinsam auf sie ein. `showScreen('workouts')` allein genuegt NICHT — es liesse einen zuvor
+// gewaehlten fremden Tag stehen und die Einheit bliebe unsichtbar (Leonard-Meldung 05.09.2026).
+function oeffneLaufendeEinheit() {
+  const wo = DB.getActive();
+  if (!wo) return showScreen('workouts');
+  const idx = woDayIdx(wo);
+  if (idx >= 0) selectedWorkoutDayIdx = idx;
+  workoutsViewMode = 'gym';
+  showScreen('workouts');
+}
+
 function jumpToWorkoutDay(idx) {
   selectedWorkoutDayIdx = idx;
   // Erst zeichnen, dann wischen: Der Trainings-Tab liegt bereits (ausserhalb des Bildes)
@@ -1715,6 +1734,9 @@ let workoutsViewMode = 'gym';
 function setWorkoutsView(mode) {
   workoutsViewMode = (mode === 'laufen') ? 'laufen' : 'gym';
   renderWorkoutsScreen();
+  // `wo-running` haengt an der gewaehlten Seite — ohne diesen Aufruf zoege die Klasse erst
+  // beim naechsten Sekundentakt nach, und der Wochenplan blitzte kurz falsch auf.
+  syncWorkoutActiveUI();
 }
 
 function renderWorkoutsScreen() {
@@ -2777,8 +2799,15 @@ function syncWorkoutActiveUI() {
   const wo = DB.getActive();
   const active = !!wo;
   document.documentElement.classList.toggle('workout-active', active);
-  // Läuft eine Einheit, blendet der Workouts-Tab den Wochenplan aus (Platz für die Sätze).
-  document.documentElement.classList.toggle('wo-running', active && currentScreen === 'workouts');
+  // `wo-running` heisst seit dem 05.09.2026: Die laufende Einheit ist GERADE ZU SEHEN.
+  // Vorher genuegte „eine Einheit laeuft und wir sind im Trainings-Tab" — dadurch blieb der
+  // Wochenplan auch dann ausgeblendet, wenn ein FREMDER Tag gewaehlt war, und die schwebende
+  // Pille war ebenfalls weg. Die Einheit war damit aus dem Tab heraus nicht mehr erreichbar
+  // (Leonard-Meldung 05.09.2026). An der Klasse haengen: das Ausblenden des Wochenplans, das
+  // Querformat-Grid und — neu — das Ausblenden der Pille.
+  const einheitSichtbar = active && currentScreen === 'workouts'
+    && workoutsViewMode === 'gym' && woDayIdx(wo) === selectedWorkoutDayIdx;
+  document.documentElement.classList.toggle('wo-running', !!einheitSichtbar);
   const barTimer = document.getElementById('wab-timer');
   if (active && barTimer) _woTimerRender(barTimer);
   const barSets = document.getElementById('wab-sets');

@@ -183,8 +183,11 @@ body.theme-mehr #statusbar-scrim { opacity: 1; }
   transition: opacity 0.25s ease, transform 0.25s ease;
 }
 html.workout-active #workout-active-bar { display: flex; }
-/* Auf dem Workouts-Tab ist der aktive Block ohnehin sichtbar → Pille dort ausblenden. */
-html.workout-active body.theme-workouts #workout-active-bar { display: none; }
+/* Auf dem Workouts-Tab ist der aktive Block sichtbar → Pille dort ausblenden. ABER nur,
+   wenn er es wirklich ist: `wo-running` heisst seit dem 05.09.2026 „die laufende Einheit steht
+   gerade auf dem Bildschirm". Auf einem fremden Wochentag oder der Seite „Laufen" bleibt die
+   Pille jetzt stehen — sonst gaebe es dort keinen Weg zurueck (Leonard-Meldung 05.09.2026). */
+html.workout-active.wo-running body.theme-workouts #workout-active-bar { display: none; }
 /* Mit der Bottom-Nav-Auto-Hide mitwandern (Klasse via initScrollHideNav gespiegelt):
    Die Nav gleitet weg, die Pille rueckt um deren Hoehe nach — NICHT zusaetzlich um die
    10px Abstand, sonst klebte sie auf Geraeten ohne Home-Indikator am Bildschirmrand. */
@@ -1348,6 +1351,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
   padding: 12px 14px; border-radius: 10px;
   background: var(--card2); color: var(--text2);
   font-size: 13px; font-weight: 500; text-align: center; line-height: 1.4;
+  display: flex; flex-direction: column; gap: 10px; align-items: stretch;
 }
 
 /* Inline progress bar (used inside hero-v2-text in active mode) */

@@ -225,9 +225,29 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   setzt eine PAUSIERTE Einheit automatisch fort (05.09.2026 — wer abhakt, trainiert wieder; nur beim
   Setzen des Hakens, nicht beim Zuruecknehmen, sonst startete ein Fehlklick die Uhr).
   ACHTUNG Reihenfolge: `ensureTimerActive` liest den Zustand aus dem Speicher, es muss also NACH
-  `DB.saveActive` laufen. Es hakt die Übung automatisch ab, wenn alle Sätze stehen, und startet die **Satzpause** (`startRestTimer`, Leiste `#rest-bar`) — aber NUR, wenn danach noch ein Satz der Übung offen ist. Nach dem letzten Satz läuft keine Pause mehr (eine ggf. laufende wird gestoppt): dort folgt der Übungswechsel, keine weitere Wiederholung. Die Pause startet IMMER bei 1:30 (`REST_DEFAULT_SEC`); `adjustRest(±30)` und `resetRest()` wirken nur auf die laufende Pause und werden NICHT als Vorgabe gemerkt. Kopf ist im aktiven Zustand kompakt (`.hero-v2.active-mode`), der Wochenplan ist ausgeblendet (`html.wo-running`), beim Scrollen erscheint `#wo-sticky-bar` — aber NUR im Trainings-Tab: Der Riegel
+  `DB.saveActive` laufen. Es hakt die Übung automatisch ab, wenn alle Sätze stehen, und startet die **Satzpause** (`startRestTimer`, Leiste `#rest-bar`) — aber NUR, wenn danach noch ein Satz der Übung offen ist. Nach dem letzten Satz läuft keine Pause mehr (eine ggf. laufende wird gestoppt): dort folgt der Übungswechsel, keine weitere Wiederholung. Die Pause startet IMMER bei 1:30 (`REST_DEFAULT_SEC`); `adjustRest(±30)` und `resetRest()` wirken nur auf die laufende Pause und werden NICHT als Vorgabe gemerkt. Kopf ist im aktiven Zustand kompakt (`.hero-v2.active-mode`), der Wochenplan ist ausgeblendet (`html.wo-running`, siehe unten), beim Scrollen erscheint `#wo-sticky-bar` — aber NUR im Trainings-Tab: Der Riegel
   (`body.theme-workouts #wo-sticky-bar.show`) liegt im CSS, damit sie beim Tabwechsel sofort verschwindet und nicht
   erst beim naechsten Scroll- oder Sekundentakt; `_applyTabState` raeumt zusaetzlich die `.show`-Klasse ab. `ensureActiveExpanded()` hält die nächste unerledigte Übung offen (`_aexUserClosedAll` respektiert bewusstes Zuklappen).
+- **`html.wo-running` heisst: die laufende Einheit steht GERADE auf dem Bildschirm**
+  (praezisiert 05.09.2026). Die Klasse verlangt vier Dinge zugleich: Es laeuft eine Einheit,
+  der Trainings-Tab ist offen, die Seite „Gym" ist gewaehlt UND
+  `woDayIdx(wo) === selectedWorkoutDayIdx`. Vorher genuegten die ersten beiden.
+  An ihr haengen: das Ausblenden der Wochenplan-Karte, das Querformat-Grid des Trainings-Tabs
+  und das Ausblenden der schwebenden Pille.
+  VORGESCHICHTE (Leonard-Meldung 05.09.2026): Tippte man waehrend einer laufenden Einheit im
+  Plan-Tab auf einen anderen Wochentag, landete man im Trainings-Tab auf DIESEM Tag — die
+  Einheit war weg, die Wochenplan-Karte ausgeblendet und die Pille ebenfalls. Aus dem Tab
+  heraus gab es keinen Weg zurueck; nur ueber die Wochenplan-Karte eines anderen Tabs.
+  Drei Wege fuehren jetzt zurueck: die wieder sichtbare Wochenplan-Karte, der Knopf „Zur
+  laufenden Einheit" im Hinweis der Vorschau (`.hero-v2-running-notice`, vorher reiner Text)
+  und die Pille. Alle drei nutzen `oeffneLaufendeEinheit()` bzw. `jumpToWorkoutDay` — ein
+  blosses `showScreen('workouts')` genuegt NICHT, es liesse den fremden Tag stehen.
+  `setWorkoutsView` ruft `syncWorkoutActiveUI()` selbst nach, sonst zoege die Klasse beim
+  Seitenwechsel Gym|Laufen erst beim naechsten Sekundentakt nach.
+  NICHT angefasst: Die Sticky-Leiste beim Scrollen erscheint weiterhin, sobald eine Einheit
+  laeuft und man im Trainings-Tab scrollt — auch auf einem fremden Tag. Sie ist keine
+  Sackgasse (ihr „Beenden" funktioniert dort), zeigt aber Titel und Uhr der laufenden Einheit
+  ueber einer fremden Vorschau.
 - **Textauswahl auf Schalt-Texten unterbinden.** `.seg-btn`, `.cal-filter-btn` und
   `.cal-detail-tag` tragen `user-select: none`. Ohne das loest ein Tipp auf iOS die Textauswahl
   aus — sichtbar als kurze Striche unter einzelnen Buchstaben (gemeldet 01.09.2026). Dasselbe
