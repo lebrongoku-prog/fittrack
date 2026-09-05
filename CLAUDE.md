@@ -151,10 +151,19 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Groesse der `.ex-item-chev` nachgebaut: immer „▾", 14px, per `[aria-expanded="true"]` um 180 Grad
   gedreht (die frueher im JS getauschten Zeichen „▸/▾" sind weg). Die Farbe bleibt weiss —
   der Knopf steht auf farbigem Grund. `.archiv-btn` behaelt den alten Pfeil.
-- **Uebungskarten (`.aex-v2`) haben KEINEN Ausklapp-Pfeil mehr** (01.09.2026): Auf- und zugeklappt
-  wird weiterhin per Tipp auf den Kartenkopf (`toggleAexCollapse` haengt am `.aex-v2-header`).
-  Die Klasse `.aex-v2-chev` samt `AEX_CHEV_SVG` lebt nur noch im Archiv-Knopf des Plaene-Tabs weiter,
-  der sie von hier uebernommen hat — es ist der einzige Ausklapp-Pfeil, den die App noch zeigt.
+- **EIN Ausklapp-Pfeil fuer die ganze App** (`.aex-v2-chev` + `AEX_CHEV_SVG`). Am 01.09.2026 aus
+  Uebungskarten und Muskelgruppen ENTFERNT, am 05.09.2026 auf Leonards Wunsch wieder eingefuehrt —
+  diesmal mit festen Regeln, die ueberall gelten:
+  1. Er steht GANZ RECHTS im Kopf bzw. Knopf (in den Uebungskarten des aktiven Modus also hinter
+     dem Erledigt-Kaestchen).
+  2. Zugeklappt zeigt er nach UNTEN.
+  3. Aufgeklappt dreht er sich um 180 Grad — das Menue oeffnet nach unten, der Pfeil zeigt dorthin.
+  Im Einsatz: Uebungskarten (`.aex-v2`, beide Fassungen), Muskelgruppen-Knopf (`.ex-group-btn`) und
+  Archiv-Knopf (`.archiv-btn`). Der Zustand kommt bei den KARTEN aus `.collapsed` (Klasse an der
+  Karte), bei den KNOEPFEN aus `aria-expanded` — deshalb zwei Drehregeln fuer dieselbe Sache.
+  Die Kastengroesse variiert bewusst, weil sie die Zeilenhoehe bestimmt: 32px in den Karten,
+  20px im Muskelgruppen-Knopf (sonst waere er hoeher als 44px), 14px im Archiv-Knopf.
+  Auf- und zugeklappt wird weiterhin per Tipp auf den ganzen Kopf, nicht nur auf den Pfeil.
 - **Uebungskarten (`.aex-v2`) haben KEINEN sichtbaren Drag-Griff mehr** (die drei Striche `≡`,
   entfernt 01.09.2026). Das Sortieren haengt jetzt am ganzen Kartenkopf: `.aex-v2-header` traegt
   `onpointerdown`/`onpointerup` und schaltet `draggable` der Karte. Der Klick zum Auf-/Zuklappen
@@ -163,8 +172,11 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 - **Trainingstag-Namen** = kräftiger Text mit 3px-Balken links (`.pd-name`, KEINE Flächenfarbe) via Helper `pd(name)`. Sonderfall `.ex-group-title .pd-name`: im Übungen-Tab stehen die Gruppentitel auf dem farbigen Tab-Hintergrund → dort hell; im Add-Übung-Modal (`.sheet-ex-group`) wieder dunkel.
 - **Zugeklappte Uebungskarte** zeigt nur den Namen: `.aex-v2-last` und `.aex-cmp-pr` sind ausgeblendet, und
   `.aex-v2-info` bekommt `min-height:32px` mit zentriertem Inhalt, damit der Name auf einer Linie mit der
-  Nummernscheibe steht. Der Kopf bleibt oben ausgerichtet (`align-items:flex-start`) — sonst wanderte die
-  Scheibe beim Aufklappen.
+  Nummernscheibe steht. ZUGEKLAPPT richtet der Kopf mittig aus (`.aex-v2.collapsed .aex-v2-header
+  { align-items: center }`, 05.09.2026): Im aktiven Modus ist das Erledigt-Kaestchen mit 40px das
+  hoechste Element der Zeile, oben ausgerichtet sassen Name und Scheibe dadurch 4px ueber der
+  Kartenmitte. AUFGEKLAPPT bleibt es bei `flex-start` — sonst wanderte die Scheibe beim Aufklappen
+  mit den neuen Textzeilen nach unten.
 - **Übungs-Karten** `.aex-v2` (Vorschau, laufende Einheit, Bibliothek-Tag-Detail) — Pro-Satz-Tabelle als ZEILEN pro Satz (`.aex-v2-srow`: Satz | Wdh. | kg | **Haken**). Notizfeld `.aex-v2-notes` rechts daneben, unter 460px darunter. `.aex-v2-cmp` zeigt Bestleistung + Differenz zur letzten Einheit; **zugeklappt bleibt die Karte ruhig**: `.aex-cmp-pr` ist dann ausgeblendet, eine Notiz-Vorschau gibt es nicht (Leonard-Wunsch).
 - **Herocard an einem Trainingstag ist bewusst kompakt** (`.hero-v2.col-layout`, 01.09.2026): Abstand zum
   Knopf 8px (vorher 14px) und Hantel 48px (vorher 72px). Die Hantel bestimmte als hoechstes Element die
@@ -224,6 +236,12 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Sie liegen in der Drive-Sicherung (`manualDays`).
 - **Trainingskalender** (Übersicht, `#ov-cal-card`): `renderTrainingCalendar()` zeichnet 52 Wochen à 7 Kästchen (`.cal-day`).
   KEINE Volumen-Abstufung — zwei Schichten im gleich grossen Quadrat (`inset: 3.5px`):
+  `.leer-woche` faerbt die Kaestchen einer Woche OHNE Training hellrot (`#FECACA`, 05.09.2026).
+  Zwei Einschraenkungen, sonst faerbt sich das halbe Jahr: nur ABGELAUFENE Wochen (eine laufende
+  Woche ist noch nichts versaeumt) und nur Wochen, in denen ueberhaupt ein Plan lief — vor dem
+  ersten Plan gab es nichts zu verpassen. Was als Training zaehlt, folgt dem Modus des Kalenders:
+  Gymkalender = Krafteinheiten samt nachgetragener Tage, Laufkalender = Laeufe, gemeinsam = beides.
+  Die Regel steht VOR den Zustandsregeln, die Marken zeichnen sich also darauf.
   `.wettkampf` faerbt das GANZE Kaestchen hellgruen — der Wettkampftag eines Laufplans, der
   auffaelligste Zustand im Kalender (04.09.2026). Nur dort, wo der Kalender Laeufe zeigt; der
   Gymkalender kennt ihn nicht. Er steht auch in der Tagesbeschreibung („🏁 Wettkampf · Planname").

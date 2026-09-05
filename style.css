@@ -1334,7 +1334,9 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
   display: flex; align-items: center; gap: 8px; width: 100%;
   margin-top: 8px; font-size: 13px; color: var(--text2);
 }
-.hero-v2-lauf.erledigt { color: #0F766E; font-weight: 600; }
+/* Hellgruen wie das Laufsymbol daneben und die Laufkreise im Kalender — das Dunkelgruen
+   gehoert zum Krafttraining (Leonard-Wunsch 05.09.2026). */
+.hero-v2-lauf.erledigt { color: #4ADE80; font-weight: 600; }
 .hero-v2-lauf-ic { width: 20px; height: 20px; flex-shrink: 0; display: block; }
 .hero-v2-lauf-ic svg { width: 100%; height: 100%; color: #4ADE80; }
 .hero-v2-btn svg { fill: #fff !important; }
@@ -1529,9 +1531,12 @@ html.wo-running #wo-week-card { display: none; }
 /* Höhe = Höhe der Nummernscheibe rechts daneben. Der Kopf richtet oben aus
    (align-items: flex-start), deshalb liegen die Mitten nur bei gleicher Höhe
    auf einer Linie. */
-/* Die Uebungskarten tragen seit dem 01.09.2026 KEINEN Pfeil mehr (Leonard-Wunsch) — auf-
-   und zugeklappt wird weiter per Tipp auf den Kartenkopf. Die Klasse lebt nur noch im
-   Archiv-Knopf des Plaene-Tabs weiter, der sie von hier uebernommen hat. */
+/* EIN Pfeil fuer alle Ausklapp-Koepfe der App (05.09.2026 wieder eingefuehrt, nachdem er am
+   01.09.2026 aus Uebungskarten und Muskelgruppen entfernt worden war). Regeln, die ueberall
+   gelten: Er steht GANZ RECHTS, zeigt zugeklappt nach UNTEN und dreht sich aufgeklappt um
+   180 Grad — das Menue klappt nach unten auf, der Pfeil zeigt also dorthin, wo etwas passiert.
+   Dieselbe Klasse und dasselbe SVG ueberall, damit Form, Groesse und Drehung nicht
+   auseinanderlaufen. */
 .aex-v2-chev {
   width: 32px; height: 32px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
@@ -1539,6 +1544,15 @@ html.wo-running #wo-week-card { display: none; }
   transition: transform 0.18s ease;
 }
 .aex-v2-chev svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 2.4; }
+/* Aufgeklappt gedreht. Die Uebungskarten fuehren den Zustand ueber `.collapsed` (Klasse an der
+   KARTE), die Knoepfe ueber `aria-expanded` — deshalb zwei Regeln fuer dieselbe Drehung. */
+.aex-v2:not(.collapsed) > .aex-v2-header > .aex-v2-chev { transform: rotate(180deg); }
+.ex-group-btn[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
+/* Der Pfeil sitzt ganz rechts; im Muskelgruppen-Knopf schiebt ihn `margin-left:auto` dorthin,
+   weil dessen Inhalt sonst mittig steht. Sein 32px-Kasten wuerde den Knopf ausserdem ueber die
+   44px-Zeilenhoehe treiben — deshalb hier 20px, wie beim Archiv-Knopf mit 14px. */
+.ex-group-btn .aex-v2-chev { margin-left: auto; width: 20px; height: 20px; color: inherit; }
+.ex-group-btn .aex-v2-chev svg { width: 17px; height: 17px; }
 /* Zugeklappte Karte: Satz-Tabelle, Notizfeld und Aktionsleiste ausblenden — der Kopf bleibt. */
 .aex-v2.collapsed .aex-v2-body,
 .aex-v2.collapsed .aex-v2-actions { display: none; }
@@ -1568,6 +1582,11 @@ html.wo-running #wo-week-card { display: none; }
 .aex-v2.collapsed .aex-v2-info {
   min-height: 32px; display: flex; flex-direction: column; justify-content: center;
 }
+/* Zugeklappt richtet der Kopf MITTIG aus. Im aktiven Modus ist das Erledigt-Kaestchen mit
+   40px das hoechste Element der Zeile — oben ausgerichtet sassen Name und Nummernscheibe
+   dadurch 4px ueber der Kartenmitte (Leonard-Meldung 05.09.2026). Aufgeklappt bleibt es bei
+   `flex-start`, sonst wandert die Scheibe beim Aufklappen mit den neuen Textzeilen nach unten. */
+.aex-v2.collapsed .aex-v2-header { align-items: center; }
 .aex-v2-last { font-size: 12px; color: var(--text3); margin-top: 1px; }
 
 .aex-v2-body { display: flex; gap: 12px; padding: 0 14px 14px; }
@@ -2122,6 +2141,10 @@ html.wo-running #wo-week-card { display: none; }
 /* Wettkampftag: das GANZE Kaestchen hellgruen — der auffaelligste Zustand im Kalender, weil
    es der eine Tag ist, auf den ein Laufplan hinarbeitet (Leonard-Wunsch 04.09.2026). Steht vor
    den Zustandsregeln fuer heute/ausgewaehlt, damit deren Rahmen weiter obenauf liegen. */
+/* Woche ohne Training: hellrote Flaeche (Leonard-Wunsch 05.09.2026). Steht VOR den
+   Zustandsregeln fuer Wettkampf, geplant und trainiert — die zeichnen ihre Marken darauf.
+   Nur abgelaufene Wochen mit laufendem Plan bekommen sie, das entscheidet das JS. */
+.cal-day.leer-woche { background: #FECACA; }
 .cal-day.wettkampf { background: #4ADE80; }
 /* Detailkarte zum gewaehlten Lauftag (Seite „Laufen"). Sie borgt sich die Klassen der
    ausgeklappten Uebungskarte, damit beide Seiten des Trainings-Tabs gleich aussehen

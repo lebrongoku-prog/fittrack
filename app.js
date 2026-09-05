@@ -1849,6 +1849,7 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
           <div class="aex-v2-name">${ex.name}</div>
           ${lastStr ? `<div class="aex-v2-last">${lastStr}</div>` : ''}
         </div>
+        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
       </div>
       <div class="aex-v2-body">
         <div class="aex-v2-table">
@@ -2006,6 +2007,7 @@ function renderActiveWorkout() {
           <input type="checkbox" aria-label="Ganze Übung als erledigt markieren" ${ex.done?'checked':''} onchange="toggleExDone(${ei},this.checked)">
           <div class="aex-v2-done-box"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
         </label>
+        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
       </div>
       <div class="aex-v2-body">
         <div class="aex-v2-table">
@@ -4246,11 +4248,41 @@ function renderTrainingCalendar(id, cardId) {
   const wettkampfTage = {};
   if (zeigtLaeufe) DB.getRunPlans().forEach(p => { if (p.raceDate) wettkampfTage[_dayKeyOf(p.raceDate)] = p; });
 
+  // Eine Woche OHNE Training bekommt hellrote Kaestchen (Leonard-Wunsch 05.09.2026).
+  // Zwei Einschraenkungen, sonst faerbt sich das halbe Jahr rot:
+  //   • nur ABGELAUFENE Wochen — eine laufende oder kommende Woche ist noch nichts versaeumt;
+  //   • nur Wochen, in denen ueberhaupt ein Plan lief. Ohne Plan gab es nichts zu verpassen,
+  //     und die Zeit vor dem ersten Plan stuende sonst komplett in Rot.
+  // Was als „Training" zaehlt, folgt dem Modus des Kalenders: im Gymkalender die Krafteinheiten
+  // (inklusive der nachgetragenen Tage), im Laufkalender die Laeufe, im gemeinsamen beides.
+  const planIdxLauf = zeigtLaeufe ? DB.getRunPlans() : [];
+  const wocheOhneTraining = (weekStart) => {
+    const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
+    if (weekEnd.getTime() >= today.getTime()) return false;
+    let planLief = false, etwasGetan = false;
+    for (let d = 0; d < 7; d++) {
+      const tag = new Date(weekStart); tag.setDate(weekStart.getDate() + d);
+      if (tag.getFullYear() !== jahr) continue;
+      const k = _dayKeyOf(tag.getTime());
+      if (zeigtKraft) {
+        if (_calPlanInfo(tag, planIndex).known) planLief = true;
+        if (byDay[k]) etwasGetan = true;
+      }
+      if (zeigtLaeufe) {
+        if (planIdxLauf.some(pl => pl.startDate && pl.endDate
+            && tag.getTime() >= pl.startDate && tag.getTime() <= pl.endDate)) planLief = true;
+        if (laeufeTag[k]) etwasGetan = true;
+      }
+    }
+    return planLief && !etwasGetan;
+  };
+
   let cells = '';
   let months = '';
   let lastMonth = -1;
   for (let w = 0; w < wochen; w++) {
     const weekStart = new Date(start); weekStart.setDate(start.getDate() + w * 7);
+    const leereWoche = wocheOhneTraining(weekStart);
     // Monatsbeschriftung, sobald eine Woche einen neuen Monat beginnt
     const m = weekStart.getMonth();
     const showLabel = m !== lastMonth && weekStart.getDate() <= 7;
@@ -4269,6 +4301,7 @@ function renderTrainingCalendar(id, cardId) {
       const plan = _calPlanInfo(day, planIndex);
       const cls = ['cal-day'];
       if (ausserhalb) cls.push('outside');
+      else if (leereWoche) cls.push('leer-woche');
       if (zeigtKraft && plan.planned && !ausserhalb) cls.push('planned');
       if (zeigtKraft && entry && !ausserhalb) cls.push('done');
       const lauf = !ausserhalb && laeufeTag[key];
@@ -4283,7 +4316,7 @@ function renderTrainingCalendar(id, cardId) {
         ? (plan.planned ? 'geplant und trainiert' : 'zusaetzlich trainiert')
         : (plan.planned ? (future ? 'geplant' : 'geplant, nicht trainiert') : 'Ruhetag');
       const zustand = kraftZustand + (lauf ? ', gelaufen' : (laufGepl ? ', Lauf geplant' : ''))
-        + (wettkampf ? ', Wettkampftag' : '');
+        + (wettkampf ? ', Wettkampftag' : '') + (leereWoche && !ausserhalb ? ', Woche ohne Training' : '');
       cells += `<span class="${cls.join(' ')}"
                       data-key="${key}" onclick="showCalDay('${key}','${id}')"
                       role="button" tabindex="0"
@@ -6449,6 +6482,7 @@ function renderExercisesByMuscle() {
               onclick="toggleExGroup('muscle:${m}')">
         <span class="dot"></span>
         <span class="ex-group-name">${meta.name}${isCollapsed ? '' : ` <span class="count">(${items.length})</span>`}</span>
+        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
       </button>
       <div class="ex-list">${itemsHTML}</div>
     </div>`;
