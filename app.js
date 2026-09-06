@@ -887,15 +887,15 @@ function renderOverview() {
   // ─ Aktiver Plan als Dashboard-Karte (ersetzt „Trainingswoche"-Karte + separaten Wochenplan-Strip) ─
   // Die ganze Karte ist EIN Ziel und fuehrt auf die Plan-Seite IHRER Sportart (Leonard-Wunsch
   // 06.09.2026): Gymwochenplan -> Seite „Gymplan", Laufwochenplan -> Seite „Laufplan". Ob man
-  // einen Wochentag oder den Balken trifft, macht keinen Unterschied mehr — dafuer sorgt
-  // `tageInert`. Vorher sprang ein Tipp auf einen Wochentag in den Trainings-Tab, und die
-  // Karte selbst landete auf der zuletzt gewaehlten Plan-Seite statt auf der passenden.
+  // einen Wochentag oder den Balken trifft, macht keinen Unterschied — dafuer genuegt es, kein
+  // `dayOnTap` zu setzen. Vorher sprang ein Tipp auf einen Wochentag in den Trainings-Tab, und
+  // die Karte selbst landete auf der zuletzt gewaehlten Plan-Seite statt auf der passenden.
   const zurPlanSeite = (seite) => `setPlansView('${seite}');wischeZuTab('plans')`;
   const planCardEl = document.getElementById('ov-plan-card');
   if (planCardEl) {
     planCardEl.innerHTML = active
       ? buildPlanCard(active, zurPlanSeite('plans'), /*hideToday*/ false, /*hideStatus*/ true,
-                      /*hideMeta*/ true, { tageInert: true })
+                      /*hideMeta*/ true)
       : `<div class="plan-card-v2" onclick="${zurPlanSeite('plans')}" style="cursor:pointer">
            <div class="ppv-name" style="color:var(--text2)">Kein aktiver Trainingsplan</div>
            <div class="ppv-meta">Tippe, um einen Plan anzulegen oder zu aktivieren.</div>
@@ -4928,8 +4928,8 @@ function fmtDateRange(start, end) {
 // Dashboard-Karte eines Plans (Trainingsplan-Liste UND Übersicht-Tab). Reine Vorschau —
 // Tippen öffnet den Plan-Detail. Fortschritt/Adhärenz nur beim aktiven Plan (laufende Woche).
 // opts.selectedIdx  = Wochentag, der als ausgewaehlt markiert wird (Trainings-Tab)
-// opts.dayOnTap      = Funktionsname fuer den Tipp auf einen Wochentag
-// opts.tageInert     = Wochentage sind reine Anzeige, der Tipp faellt auf die KARTE durch
+// opts.dayOnTap      = Funktionsname fuer den Tipp auf einen Wochentag. OHNE ihn sind die
+//                      Wochentage reine Anzeige und der Tipp faellt auf die KARTE durch.
 function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
   opts = opts || {};
   const todayIdx = (new Date().getDay()+6) % 7;
@@ -4951,15 +4951,17 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
     if (done) cls.push('done');
     if (today) cls.push('today');
     if (opts.selectedIdx === i) cls.push('selected');
-    // Beim aktiven Plan springt ein Tipp auf einen Wochentag in den Trainings-Tab auf genau
-    // diesen Tag. Im Trainings-Tab waehlt der Tipp den Tag AUS (man ist schon dort).
-    // `tageInert` nimmt den Wochentagen ihren eigenen Tipp: Der Klick faellt dann auf die
-    // Karte durch, die ganze Kachel ist EIN Ziel. So haelt es die UEBERSICHT seit dem
-    // 06.09.2026 (Leonard-Wunsch) — dort soll es keinen Unterschied machen, ob man einen
-    // Wochentag oder den Balken trifft; beides fuehrt auf die Plan-Seite dieser Sportart.
-    const tapFn = opts.dayOnTap || 'jumpToWorkoutDay';
-    const tap = (isCurrent && !opts.tageInert)
-      ? ` onclick="event.stopPropagation();${tapFn}(${i})" role="button" tabindex="0" aria-label="${w.label} öffnen"`
+    // Ein Wochentag bekommt seinen EIGENEN Tipp nur, wenn der Aufrufer einen nennt
+    // (`opts.dayOnTap`) — genau wie bei `buildRunPlanCard`. Ohne Angabe faellt der Klick auf
+    // die Karte durch, die ganze Kachel ist damit EIN Ziel.
+    // Seit dem 06.09.2026 nennt ihn nur noch der Trainings-Tab (`selectWorkoutDay`); dort
+    // waehlt der Tipp den Tag aus, weil man schon auf der Seite ist, die ihn zeigt.
+    // Uebersicht und Plaene-Tab lassen ihn weg (beides Leonard-Wunsch): In der Uebersicht
+    // fuehrt jede Stelle der Karte auf die Plan-Seite dieser Sportart, im Plaene-Tab oeffnet
+    // jede Stelle die Detailansicht. Vorher sprang der Wochentag dort in den Trainings-Tab —
+    // zwei Ziele in einer Kachel, und im Plaene-Tab ein Wisch in einen fremden Tab.
+    const tap = (isCurrent && opts.dayOnTap)
+      ? ` onclick="event.stopPropagation();${opts.dayOnTap}(${i})" role="button" tabindex="0" aria-label="${w.label} öffnen"`
       : '';
     return `<div class="${cls.join(' ')}"${tap}><span class="ppv-wd">${w.label}</span></div>`;
   }).join('');
@@ -5010,6 +5012,11 @@ function renderPlans() {
   // untereinander nicht mehr auseinanderzuhalten (Leonard-Entscheidung 20.08.2026).
   // Der Tipp bleibt unterschiedlich: hier fuehrt er in die Bearbeitung (Standard-onTap),
   // in der Uebersicht auf diesen Tab.
+  // Die GANZE Karte ist EIN Ziel (06.09.2026, Leonard-Wunsch): Auch ein Tipp auf einen
+  // Wochentag oeffnet die Detailansicht, statt in den Trainings-Tab zu wischen. Man ist hier
+  // zum Bearbeiten des Plans, nicht zum Trainieren — und ein Wisch in einen fremden Tab war
+  // aus einer Liste heraus, in der jede andere Stelle die Bearbeitung oeffnet, ueberraschend.
+  // Kein `dayOnTap` zu setzen genuegt dafuer.
   const renderRow = (p) => planStatus(p) === 'active'
     ? buildPlanCard(p, null, /*hideToday*/ false, /*hideStatus*/ true, /*hideMeta*/ true)
     : buildPlanCard(p, null, /*hideToday*/ true);

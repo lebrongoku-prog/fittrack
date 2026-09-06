@@ -725,21 +725,31 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 - **Erledigt-Box der Uebungskarte** (`.aex-v2-done-box`) ist 40x40 wie die Satz-Haken (`.aex-v2-setcheck`) — gleiche Groesse,
   gleicher Radius, gleiches Icon; beide werden mit feuchten Haenden getroffen.
 - **Wochenplan** ist in ALLEN DREI Tabs dieselbe Karte (`buildPlanCard`): Uebersicht, Trainings-Tab (`#wo-week-card`,
-  gefuellt von `renderWorkoutWeekStrip`) und Plaene-Tab. Nur zwei Dinge unterscheiden sich, beide ueber `opts`:
-  Im Trainings-Tab waehlt ein Tipp den Tag AUS (`opts.dayOnTap: 'selectWorkoutDay'`) und der gewaehlte Tag wird
-  markiert (`opts.selectedIdx` → `.ppv-col.selected`) — die Auswahl steuert dort, welcher Tag darunter erscheint.
-  Im Plaene-Tab springt der Tipp per `jumpToWorkoutDay` in den Trainings-Tab.
-  **In der UEBERSICHT ist die ganze Karte EIN Ziel** (06.09.2026, Leonard-Wunsch): Ob man einen
-  Wochentag, den Balken oder den Plannamen trifft, macht keinen Unterschied — beides fuehrt auf
-  die Plan-Seite DIESER Sportart, Gymwochenplan auf „Gymplan", Laufwochenplan auf „Laufplan"
-  (`setPlansView(seite);wischeZuTab('plans')`). Dafuer sorgt `opts.tageInert`: Es laesst den
-  Wochentagen ihren eigenen `onclick` weg, der Tipp faellt auf die Karte durch. Vorher sprang
-  ein Tipp auf einen Wochentag in den Trainings-Tab, und die Karte selbst landete auf der
-  ZULETZT gewaehlten Plan-Seite statt auf der passenden — zwei Ziele in einer Kachel.
-  Der Laufwochenplan verhielt sich schon vorher so: `buildRunPlanCard` haengt den Tipp nur bei
-  gesetztem `opts.dayOnTap` an, und die Uebersicht setzt es nicht.
-  ACHTUNG: `tageInert` gilt NUR fuer die Uebersicht. Trainings- und Plaene-Tab brauchen ihre
-  Wochentags-Tipps weiterhin.
+  gefuellt von `renderWorkoutWeekStrip`) und Plaene-Tab. Unterschiedlich ist nur, was ein Tipp
+  ausloest — gesteuert ueber `opts`.
+  **Ein Wochentag hat NUR dann einen eigenen Tipp, wenn der Aufrufer einen nennt**
+  (`opts.dayOnTap`; vereinheitlicht 06.09.2026 — vorher fiel die Funktion ohne Angabe auf
+  `jumpToWorkoutDay` zurueck). Genau dieselbe Regel gilt in `buildRunPlanCard`; die beiden
+  Karten verhalten sich damit gleich. Ohne Angabe faellt der Klick auf die KARTE durch, die
+  ganze Kachel ist EIN Ziel. Das ist der Normalfall — nur eine von drei Stellen setzt `dayOnTap`:
+
+  | Ort | Tipp auf die Karte | Tipp auf einen Wochentag |
+  |---|---|---|
+  | Uebersicht, Gym | Plan-Tab, Seite „Gymplan" | wie Karte |
+  | Uebersicht, Lauf | Plan-Tab, Seite „Laufplan" | wie Karte |
+  | Trainings-Tab | Plan-Tab | waehlt den Tag AUS (`selectWorkoutDay` / `selectRunDay`) |
+  | Plaene-Tab | Detailansicht des Plans | wie Karte |
+
+  Im Trainings-Tab wird der gewaehlte Tag zusaetzlich markiert (`opts.selectedIdx` →
+  `.ppv-col.selected`) — die Auswahl steuert dort, welcher Tag darunter erscheint. Nur deshalb
+  braucht diese eine Stelle den eigenen Tipp: Man ist schon auf der Seite, die den Tag zeigt.
+  BEIDE Aenderungen gehen auf Leonard zurueck (06.09.2026). In der Uebersicht sprang ein Tipp
+  auf einen Wochentag vorher in den Trainings-Tab, waehrend die Karte selbst auf der ZULETZT
+  gewaehlten Plan-Seite landete — zwei Ziele in einer Kachel, und keines davon vorhersehbar.
+  Im Plaene-Tab wischte der Wochentag in einen FREMDEN Tab, obwohl jede andere Stelle der
+  Liste die Bearbeitung oeffnet.
+  Die Uebersicht setzt ausserdem die Zielseite selbst (`setPlansView(seite);wischeZuTab('plans')`),
+  sonst landete man auf der zuletzt offenen Plan-Seite statt auf der zur Sportart passenden.
   Der frueher eigene Streifen (`buildWpCol`/`buildWpInfo`/`renderNext7Strip`/`selectOverviewDay`, Klassen `.wp-*`)
   wurde am 20.08.2026 entfernt — er hatte danach keinen Aufrufer mehr. ACHTUNG beim Aufraeumen: Die Regel fuer den
   Erledigt-Haken war eine Selektorliste (`.ppv-col.done …, .wp-col.done …`) — dort durfte nur der tote Teil weg.
