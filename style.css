@@ -2569,6 +2569,28 @@ html.wo-running #wo-week-card { display: none; }
   text-transform: uppercase; color: var(--text3);
   background: var(--card2); border-radius: 999px; padding: 5px 12px; }
 .wk-kuenftig .wk-name { color: var(--text2); }
+/* Zwei Zwischenzustaende, wenn zu einem VERGANGENEN Wettkampf noch kein Lauf vorliegt
+   (Leonard-Entscheidung „Variante D", 06.09.2026).
+   `.wk-wartet` = die ersten Tage danach, ruhig: Hinweis und Abruf-Knopf in einer Zeile.
+   `.wk-fehlt`  = Notausgang nach einer Woche, auffaellig in Rot — hier stimmt etwas nicht. */
+.wk-wartet { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.wk-wartet .wk-leer { flex: 1; min-width: 120px; }
+.wk-fehlt { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: var(--red-bg); border-radius: 12px; padding: 12px 14px; }
+.wk-fehlt-txt { flex: 1; min-width: 150px; font-size: 13px; line-height: 1.4; color: var(--text2); }
+.wk-fehlt-txt strong { display: block; color: var(--red); font-size: 13px; }
+.wk-hol-btn { flex-shrink: 0; background: var(--card2); color: var(--text); border: none; }
+.wk-fehlt .wk-hol-btn { background: #fff; color: var(--red); }
+/* Im Transparenz-Modus liegt die Karte auf dem Farbverlauf: Das zarte Rot verschwaende, und
+   die Schrift darauf waere zu dunkel. Kraeftiger und mit weisser Schrift. */
+html.glas .screen:not(#screen-mehr) .wk-fehlt { background: rgba(220,38,38,.42); }
+html.glas .screen:not(#screen-mehr) .wk-fehlt-txt { color: rgba(255,255,255,.9); }
+html.glas .screen:not(#screen-mehr) .wk-fehlt-txt strong { color: #fff; }
+/* Nur der Knopf IM roten Block wird rot — der neutrale Knopf der Kulanzphase soll nicht
+   nach Alarm aussehen (sonst faerbte die Regel beide gleich ein). */
+html.glas .screen:not(#screen-mehr) .wk-fehlt .wk-hol-btn { background: rgba(255,255,255,.9); color: var(--red); }
+html.glas .screen:not(#screen-mehr) .wk-wartet .wk-hol-btn { background: rgba(255,255,255,.18); color: #fff; }
+html.glas .screen:not(#screen-mehr) .wk-wartet .wk-leer { color: rgba(255,255,255,.8); }
 /* Im Transparenz-Modus liegt die Karte auf dem Farbverlauf: Das Datum wuerde in Grau
    verschwinden, die Kachelflaechen ebenfalls. `.hd-stat b` ist bereits von der bestehenden
    Glas-Regel erfasst, die Beschriftung darunter nicht. */

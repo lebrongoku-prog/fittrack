@@ -1062,8 +1062,27 @@ Die WERTE kommen aus `runNachTag()[date]`, also aus der Tabelle — nicht aus `f
 Liegt zu dem Tag kein Lauf vor (Daten noch nicht abgerufen, oder der Lauf fehlt in der
 Tabelle), steht statt der Kacheln ein Hinweis. Fehlende EINZELwerte fallen einfach weg,
 statt als „–" dazustehen; das Raster fuellt die Luecke.
-Ein Termin in der ZUKUNFT bekommt keine Ergebniskarte, sondern die Pille „Steht noch an"
-(`.wk-anstehend`, die Karte selbst gedaempft ueber `.wk-kuenftig`) — Werte gibt es ja noch keine.
+**VIER Zustaende einer Karte** (Leonard-Entscheidung 06.09.2026, „Variante D": automatisch
+mit Notausgang). Entschieden wird allein aus dem Datum und der Frage, ob an dem Tag ein Lauf
+in der Tabelle steht — es gibt KEIN Feld „absolviert", nichts abzuhaken, nichts zu vergessen:
+  1. Lauf vorhanden → Ergebniskarte mit den sechs Kacheln. Sie entsteht von SELBST, sobald der
+     Lauf da ist; das ist der Normalweg.
+  2. Datum kuenftig → Pille „Steht noch an" (`.wk-anstehend`, Karte gedaempft via
+     `.wk-kuenftig`). KEIN Abruf-Knopf — es gibt nichts zu holen.
+  3. Datum vorbei, hoechstens `WK_KULANZ_TAGE` (7) her → „Noch keine Laufdaten" plus
+     Abruf-Knopf (`.wk-wartet`), ruhig gehalten. Normalfall direkt nach dem Rennen: FitTrack
+     liest die Tabelle nur auf Anforderung.
+  4. Datum ueber 7 Tage her → NOTAUSGANG „Werte fehlen" in Rot (`.wk-fehlt`, Karte `.wk-offen`)
+     mit Tagesangabe und Abruf-Knopf. So lange sollte es nicht dauern; hier stimmt etwas nicht
+     (Lauf nie aufgezeichnet, andere Kategorie in der Tabelle, Termin verschoben).
+  Die Kulanzfrist ist bewusst grosszuegig — eine Woche ohne App soll keine Warnung ausloesen.
+Der Abruf-Knopf ruft `runLaeufeLaden({interactive:true})`, dieselbe Funktion wie
+„Aktualisieren" in den Einstellungen, und MUSS `event.stopPropagation()` rufen: Sonst oeffnet
+sein Tipp zugleich den Bearbeiten-Dialog der Karte darunter.
+`runLaeufeLaden` frischt am Ende auch DIESE Seite auf (`plansViewMode === 'races'`) — sonst
+bliebe sie nach dem eigenen „Laufdaten holen" unveraendert stehen.
+Im Transparenz-Modus ist die Glas-Regel fuer den Knopf auf `.wk-fehlt .wk-hol-btn` eingeengt:
+Ungefiltert faerbte sie auch den ruhigen Knopf der Kulanzphase rot.
 **Eintragen und Bearbeiten:** Das „+" oben rechts oeffnet `openRaceDialog()` (`#modal-race`,
 Name + Datum); ein Tipp auf eine Karte oeffnet denselben Dialog gefuellt, dort steht auch
 „Löschen" (Sicherheitsfrage + `withUndo`). Ohne den Bearbeiten-Weg gaebe es keine Moeglichkeit,

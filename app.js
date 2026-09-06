@@ -3487,6 +3487,10 @@ async function runLaeufeLaden({ interactive = false } = {}) {
     // den neuen Stand zeigen, nicht nur die Einstellungen (06.09.2026).
     if (currentScreen === 'overview') renderOverview();
     else if (currentScreen === 'workouts') renderWorkoutsScreen();
+    // Die Wettkampfseite lebt von genau diesen Daten: Erst mit dem Abruf wird aus einem
+    // eingetragenen Termin eine Karte mit Werten. Ohne das bliebe sie nach dem eigenen
+    // „Laufdaten holen" unveraendert stehen (06.09.2026).
+    else if (currentScreen === 'plans' && plansViewMode === 'races') renderWettkaempfe();
   }
 }
 
@@ -5615,11 +5619,23 @@ function wettkampfKarte(r, lauf) {
   const [y, m, d] = r.date.split('-').map(Number);
   const datum = new Date(y, m - 1, d).toLocaleDateString('de-DE',
     { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  // Ein Termin in der ZUKUNFT hat noch keine Werte und bekommt deshalb keine Ergebniskarte,
-  // sondern nur den Hinweis „Steht noch an" (Leonard-Wunsch 06.09.2026). Durch die
-  // aufsteigende Sortierung stehen diese Karten am Ende der Seite.
+  // Aus einem Termin wird eine Ergebniskarte, SOBALD an dem Tag ein Lauf in der Tabelle steht
+  // — ohne Zutun (Leonard-Entscheidung 06.09.2026, „Variante D"). Zwei Zwischenzustaende
+  // fangen die Faelle ab, in denen noch nichts da ist:
+  //   kuenftig            → „Steht noch an", kein Knopf. Es gibt nichts zu holen.
+  //   vorbei, < 8 Tage    → „Noch keine Laufdaten" samt Abruf-Knopf. Normalfall direkt nach
+  //                          dem Rennen: Health Auto Export hat vielleicht schon geschrieben,
+  //                          FitTrack liest aber nur auf Anforderung.
+  //   vorbei, >= 8 Tage   → NOTAUSGANG „Werte fehlen", auffaellig. So lange sollte es nicht
+  //                          dauern; hier stimmt etwas nicht (Lauf nie aufgezeichnet, andere
+  //                          Kategorie in der Tabelle, Termin verschoben).
+  // Die Grenze ist bewusst grosszuegig — eine Woche Urlaub ohne App soll keine Warnung ausloesen.
+  const WK_KULANZ_TAGE = 7;
   const heute = new Date(); heute.setHours(0, 0, 0, 0);
-  const kuenftig = new Date(y, m - 1, d) > heute;
+  const tag = new Date(y, m - 1, d);
+  const kuenftig = tag > heute;
+  const tageHer = Math.round((heute - tag) / 86400000);
+  const ueberfaellig = !kuenftig && tageHer > WK_KULANZ_TAGE;
 
   // Dieselben Kacheln wie in der Laufdetailansicht (`.hd-stats`), damit ein Wettkampf nicht
   // anders aussieht als jeder andere Lauf. Fehlende Werte bleiben WEG statt als „–"
@@ -5633,17 +5649,29 @@ function wettkampfKarte(r, lauf) {
     lauf.elevM   != null ? { wert: `${Math.round(lauf.elevM)} m`, label: 'Höhenmeter' } : null,
   ].filter(Boolean) : [];
 
+  // Der Abruf-Knopf ruft dieselbe Funktion wie „Aktualisieren" in den Einstellungen. Er MUSS
+  // `stopPropagation` rufen, sonst oeffnet der Tipp zugleich den Bearbeiten-Dialog der Karte.
+  const holKnopf = `<button class="btn btn-sm wk-hol-btn" onclick="event.stopPropagation();runLaeufeLaden({interactive:true})">`
+    + `Laufdaten holen</button>`;
+
   const koerper = kacheln.length
     ? `<div class="hd-stats wk-stats">`
       + kacheln.map(k => `<div class="hd-stat"><b>${k.wert}</b><span>${k.label}</span></div>`).join('')
       + `</div>`
     : kuenftig
       ? `<div class="wk-leer wk-anstehend">Steht noch an</div>`
-      : `<div class="wk-leer">Zu diesem Tag liegt kein Lauf in der Tabelle. Hole die Laufdaten in den Einstellungen.</div>`;
+      : ueberfaellig
+        ? `<div class="wk-fehlt">
+             <div class="wk-fehlt-txt"><strong>Werte fehlen</strong>
+               Zu diesem Tag steht kein Lauf in der Tabelle — seit ${tageHer} Tagen.</div>
+             ${holKnopf}
+           </div>`
+        : `<div class="wk-wartet"><span class="wk-leer">Noch keine Laufdaten.</span>${holKnopf}</div>`;
 
   // Ein Tipp oeffnet denselben Dialog wie das „+", nur mit gefuellten Feldern — sonst gaebe es
   // keinen Weg, einen Vertipper zu berichtigen oder einen Termin wieder zu entfernen.
-  return `<div class="chart-card-v2 wk-card${kuenftig ? ' wk-kuenftig' : ''}"
+  const zustand = kuenftig ? ' wk-kuenftig' : (!kacheln.length && ueberfaellig ? ' wk-offen' : '');
+  return `<div class="chart-card-v2 wk-card${zustand}"
        onclick="openRaceDialog('${r.date}')">
     <div class="wk-kopf">
       <div class="chart-card-v2-title wk-name">${PPV_ICON_LAEUFER}${escapeHtml(r.name || 'Wettkampf')}</div>
