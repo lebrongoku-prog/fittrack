@@ -2130,6 +2130,30 @@ html.wo-running #wo-week-card { display: none; }
    gewaenne sonst allein durch die Reihenfolge.
    Im Transparenz-Modus bleibt der Titel WEISS — Dunkelgruen waere auf dem Schleier kaum
    lesbar, und die Glas-Regel steht noch weiter hinten. */
+/* Titel und Jahr stehen zusammen links, die Kennzahl bleibt rechts. `.chart-card-v2-head`
+   verteilt seine Kinder auf beide Raender — ohne diese Klammer rutschte das Jahr mit. */
+.cal-head-left { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+/* Das Jahr sieht aus wie ein Teil des Titels, ist aber ein Auswahlfeld: sichtbarer Text plus
+   Pfeil, darueber ein unsichtbares `<select>` (dasselbe Muster wie `.wpe-select` und
+   `.lp-zone`). Ein sichtbares `<select>` braechte eigene Browser-Masse mit.
+   Im Plan-Tab (`.cal-jahr-fix`) ist es nur Text. */
+.cal-jahr {
+  position: relative; display: inline-flex; align-items: center; gap: 3px;
+  font-size: 16px; font-weight: 700; color: var(--text3);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
+}
+.cal-jahr-fix { cursor: default; }
+.cal-jahr .aex-v2-chev { width: 14px; height: 14px; color: inherit; }
+.cal-jahr .aex-v2-chev svg { width: 13px; height: 13px; }
+.cal-jahr-fix .aex-v2-chev { display: none; }
+/* 16px am unsichtbaren Feld verhindert den iOS-Zoom beim Fokussieren. */
+.cal-jahr-sel {
+  /* Groesser als der sichtbare Text: 58x19px waeren als Trefferflaeche zu knapp. Nach oben
+     bleibt es bei 10px, damit das Feld nicht in die Kartenkante darueber ragt. */
+  position: absolute; inset: -10px -8px; width: auto; height: auto; opacity: 0; font-size: 16px;
+  -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer;
+}
 .cal-titel-gym  { color: #0F766E; }
 .cal-titel-lauf { color: #4ADE80; }
 .cal-filter-btn:active { opacity: .6; }

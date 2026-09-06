@@ -334,7 +334,21 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   (Leonard-Wunsch); `planErfuellung` lebt weiter, wird vom Kalender aber nicht mehr genutzt.
   Gehoert der Tag zu einem Plan, folgen zwei Zeilen: Planname mit Laufzeit und Wochenzahl (`planWochen` rechnet
   sie aus Start/Ende, falls `weeksTotal` fehlt) sowie der Stand (`planErfuellung`). Eine Hinweiszeile gibt es nicht mehr.
-  Zeigt IMMER das laufende Kalenderjahr (1.1.–31.12.); Rand-Tage der ersten/letzten Woche tragen `.outside` (ausgegraut, nicht antippbar).
+  **Das JAHR ist waehlbar** (06.09.2026, `_calJahr`, `setCalJahr`, `calJahre`): Es steht als
+  Auswahlfeld direkt HINTER dem Kartentitel („Trainingskalender 2026 ⌄") und ist damit aus der
+  Kennzahl oben rechts verschwunden, die frueher mit „2026 · …" begann. Sichtbar sind Text und
+  Pfeil, darueber liegt ein unsichtbares `<select>` (dasselbe Muster wie `.wpe-select` und
+  `.lp-zone`) — 74x39px Trefferflaeche statt der 58x19px des blossen Textes.
+  Zur Auswahl stehen alle Jahre, zu denen es Einheiten, nachgetragene Tage oder Laeufe gibt,
+  plus das laufende — sonst koennte man in ein garantiert leeres Jahr springen.
+  Die Auswahl gilt NUR fuer den Kalender der UEBERSICHT und dort fuer alle drei Filterzustaende;
+  der Plan-Tab zeigt weiter fest das laufende Jahr (dort ist das Feld nur Text, `.cal-jahr-fix`).
+  BEWUSST nicht gespeichert — dieselbe Ueberlegung wie beim Sportart-Filter.
+  Zwei Dinge haengen am gewaehlten Jahr: Die WOCHENSERIE erscheint nur im laufenden Jahr (sie
+  beschreibt den Stand von heute), und die Scrollposition springt in einem vergangenen Jahr an
+  den Jahresanfang statt zur „aktuellen Woche", die es dort nicht gibt. `setCalJahr` setzt dafuer
+  `_calPositioniert['cal']` zurueck — sonst bliebe die Spalte des alten Jahres stehen.
+  Rand-Tage der ersten/letzten Woche tragen `.outside` (ausgegraut, nicht antippbar).
   Beim ERSTEN Rendern wird zur laufenden Woche gescrollt, danach bleibt die Position des Nutzers stehen
   (`_calPositioniert` und `_calScrollPos` je Kalender). Ohne das sprang das Raster bei jedem Tabwechsel
   zurueck, weil `_applyTabState` den Renderer erneut aufruft (Leonard-Meldung 01.09.2026).

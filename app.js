@@ -4101,8 +4101,14 @@ function calendarInnerHTML(id) {
     ? `<button class="chart-card-v2-title cal-filter-btn" id="cal-filter-btn" onclick="toggleCalFilter()"
                aria-label="Zwischen Training, Läufen und beidem umschalten">Trainingskalender</button>`
     : `<span class="chart-card-v2-title" id="${id}-titel">Trainingskalender</span>`;
+  // Das Jahr steht direkt hinter dem Titel; in der Uebersicht mit unsichtbarem <select>
+  // darueber (dasselbe Muster wie `.wpe-select` und `.lp-zone` — die Masse bestimmt das CSS,
+  // nicht der Browser).
+  const jahrFeld = id === 'cal'
+    ? `<span class="cal-jahr" id="${id}-jahr"></span>`
+    : `<span class="cal-jahr cal-jahr-fix" id="${id}-jahr"></span>`;
   return `<div class="chart-card-v2-head">
-      ${titel}
+      <span class="cal-head-left">${titel}${jahrFeld}</span>
       <span class="cal-head-right">
         <span class="cal-stats" id="${id}-stats"></span>
         <button class="info-btn" onclick="openModal('modal-cal-info')" aria-label="Was bedeuten die Farben?">i</button>
@@ -4137,6 +4143,32 @@ function calendarInnerHTML(id) {
 const _calPositioniert = {};
 const _calScrollPos = {};
 
+// Angezeigtes Kalenderjahr. Gilt NUR fuer den Kalender der Uebersicht und dort fuer alle drei
+// Filterzustaende (Leonard-Wunsch 06.09.2026); der Plan-Tab zeigt immer das laufende Jahr.
+// BEWUSST nicht gespeichert — wie der Sportart-Filter: Ein Jahr, das einen Neustart ueberlebt,
+// laesst den Kalender spaeter unerklaerlich leer wirken.
+let _calJahr = new Date().getFullYear();
+
+// Welche Jahre stehen zur Auswahl? Alles, wozu es Daten gibt, plus das laufende Jahr — sonst
+// koennte man in ein leeres Jahr springen und faende dort nichts.
+function calJahre() {
+  const jahre = new Set([new Date().getFullYear()]);
+  DB.getWorkouts().forEach(w => jahre.add(new Date(w.startTs).getFullYear()));
+  DB.getManualDays().forEach(k => jahre.add(Number(k.slice(0, 4))));
+  DB.getRuns().forEach(l => jahre.add(Number(l.date.slice(0, 4))));
+  return [...jahre].filter(j => j > 2000).sort((a, b) => b - a);
+}
+
+function setCalJahr(jahr) {
+  const neu = Number(jahr);
+  if (!neu || neu === _calJahr) return;
+  _calJahr = neu;
+  // Beim Jahreswechsel neu positionieren: Die gemerkte Spalte gehoert zum alten Jahr.
+  _calPositioniert['cal'] = false;
+  _calScrollPos['cal'] = 0;
+  renderTrainingCalendar('cal');
+}
+
 function renderTrainingCalendar(id, cardId) {
   id = id || 'cal';
   cardId = cardId || 'ov-cal-card';
@@ -4149,7 +4181,9 @@ function renderTrainingCalendar(id, cardId) {
   // Immer das ganze Kalenderjahr: 1. Januar bis 31. Dezember. Das Raster beginnt am Montag
   // der Woche, in der der 1. Januar liegt, damit die Wochentagszeilen durchgehend stimmen.
   const today = new Date(); today.setHours(0,0,0,0);
-  const jahr = today.getFullYear();
+  // Der Kalender der Uebersicht folgt der Jahresauswahl, der im Plan-Tab immer dem heutigen Jahr.
+  const jahr = (id === 'cal') ? _calJahr : today.getFullYear();
+  const istLaufendesJahr = jahr === today.getFullYear();
   const jan1 = new Date(jahr, 0, 1);
   const dez31 = new Date(jahr, 11, 31);
   const start = new Date(jan1);
@@ -4262,7 +4296,8 @@ function renderTrainingCalendar(id, cardId) {
   // (Leonard-Wunsch 06.09.2026): Gymkalender = Serie der Krafteinheiten, Laufkalender = Serie
   // der Laeufe. Im gemeinsamen Trainingskalender stuenden zwei Serien nebeneinander, ohne dass
   // erkennbar waere, welche welche ist — dort bleibt sie weg.
-  const streak = (modus.kraft && modus.lauf) ? 0
+  // Die Serie beschreibt den STAND VON HEUTE — in einem vergangenen Jahr waere sie irrefuehrend.
+  const streak = (!istLaufendesJahr || (modus.kraft && modus.lauf)) ? 0
     : (modus.kraft ? getWeekStreak() : getRunWeekStreak());
   const titelEl = document.getElementById(id === 'cal' ? 'cal-filter-btn' : id + '-titel');
   if (titelEl) {
@@ -4274,9 +4309,24 @@ function renderTrainingCalendar(id, cardId) {
     titelEl.classList.toggle('cal-titel-gym', modus.kraft && !modus.lauf);
     titelEl.classList.toggle('cal-titel-lauf', modus.lauf && !modus.kraft);
   }
+  // Das Jahr steht seit dem 06.09.2026 NEBEN dem Titel statt vorn in der Kennzahl
+  // (Leonard-Wunsch). In der Uebersicht ist es ein Auswahlfeld, im Plan-Tab nur Text.
+  const jahrEl = document.getElementById(id + '-jahr');
+  if (jahrEl) {
+    if (id === 'cal') {
+      const jahre = calJahre();
+      jahrEl.innerHTML = `<span class="cal-jahr-txt">${jahr}</span>
+        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
+        <select class="cal-jahr-sel" aria-label="Kalenderjahr wählen" onchange="setCalJahr(this.value)">
+          ${jahre.map(j => `<option value="${j}"${j === jahr ? ' selected' : ''}>${j}</option>`).join('')}
+        </select>`;
+    } else {
+      jahrEl.textContent = jahr;
+    }
+  }
   const statsEl = document.getElementById(id + '-stats');
   if (statsEl) {
-    statsEl.textContent = `${jahr} · ${inRange} ${einheitWort(inRange)}${zusatzLauf}`
+    statsEl.textContent = `${inRange} ${einheitWort(inRange)}${zusatzLauf}`
       + (streak > 0 ? ` · Serie ${streak} ${streak === 1 ? 'Woche' : 'Wochen'}` : '');
   }
 
@@ -4389,8 +4439,12 @@ function renderTrainingCalendar(id, cardId) {
   if (scroller) requestAnimationFrame(() => {
     if (_calPositioniert[id]) { scroller.scrollLeft = _calScrollPos[id] || 0; return; }
     if (!scroller.clientWidth) return;   // im unsichtbaren Tab nicht messbar — spaeter erneut
+    // Im laufenden Jahr zur aktuellen Woche, in einem vergangenen an den Jahresanfang — dort
+    // gibt es kein „heute", auf das sich der Blick richten koennte.
     const heuteSpalte = Math.floor(Math.round((today - start) / 86400000) / 7);
-    const ziel = Math.max(0, heuteSpalte * SPALTE - scroller.clientWidth * 0.7);
+    const ziel = istLaufendesJahr
+      ? Math.max(0, heuteSpalte * SPALTE - scroller.clientWidth * 0.7)
+      : 0;
     scroller.scrollLeft = ziel;
     _calScrollPos[id] = ziel;
     _calPositioniert[id] = true;
