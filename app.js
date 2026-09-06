@@ -370,6 +370,12 @@ const DB = {
   getManualDays() { const s = localStorage.getItem('ft_manual_days'); return s ? JSON.parse(s) : []; },
   saveManualDays(v) { localStorage.setItem('ft_manual_days', JSON.stringify(v)); markLocalChange(); },
 
+  // EIGENSTAENDIGE Wettkampftage: nur ein Datum ('YYYY-MM-DD'), ohne zugehoerigen Laufplan.
+  // Das Gegenstueck zu `plan.raceDate` — noetig fuer Wettkaempfe aus Jahren, in denen es noch
+  // gar keine Laufplaene gab (Leonard-Liste 06.09.2026, 2024 bis 2026).
+  getRaces() { const s = localStorage.getItem('ft_races'); return s ? JSON.parse(s) : []; },
+  saveRaces(v) { localStorage.setItem('ft_races', JSON.stringify(v)); markLocalChange(); },
+
   // ── Laufen ──────────────────────────────────────────────────────
   // Laufplaene liegen LOKAL wie alle FitTrack-Daten (Drive-Sicherung inklusive). Aus der
   // Google-Tabelle kommen ausschliesslich die tatsaechlich gelaufenen Einheiten — FitTrack
@@ -4039,6 +4045,21 @@ function migrateImportManualDays() {
   localStorage.setItem('ft_manual_days_imported', '1');
 }
 
+// Leonards Wettkaempfe (Liste vom 06.09.2026). Sie liegen in Jahren, fuer die es keine
+// Laufplaene gibt — an ein `plan.raceDate` waeren sie also gar nicht zu haengen. Deshalb
+// eigenstaendig in `ft_races`. Laeuft genau einmal (Merker ft_races_imported) und ergaenzt
+// nur, was noch fehlt; dieselbe Bauart wie MANUELLE_TAGE_IMPORT.
+const WETTKAMPF_IMPORT = [
+  '2024-04-21', '2024-09-01', '2025-04-13', '2025-10-26', '2026-05-02',
+];
+function migrateImportRaces() {
+  if (localStorage.getItem('ft_races_imported') === '1') return;
+  const menge = new Set(DB.getRaces());
+  WETTKAMPF_IMPORT.forEach(d => menge.add(d));
+  localStorage.setItem('ft_races', JSON.stringify([...menge].sort().reverse()));
+  localStorage.setItem('ft_races_imported', '1');
+}
+
 function buildCalendarData() {
   const byDay = {};
   DB.getWorkouts().forEach(w => {
@@ -4174,6 +4195,7 @@ function calJahre() {
   DB.getWorkouts().forEach(w => jahre.add(new Date(w.startTs).getFullYear()));
   DB.getManualDays().forEach(k => jahre.add(Number(k.slice(0, 4))));
   DB.getRuns().forEach(l => jahre.add(Number(l.date.slice(0, 4))));
+  DB.getRaces().forEach(k => jahre.add(Number(k.slice(0, 4))));
   return [...jahre].filter(j => j > 2000).sort((a, b) => b - a);
 }
 
@@ -4218,10 +4240,15 @@ function renderTrainingCalendar(id, cardId) {
   const zeigtKraft = modus.kraft;
   const laeufeTag = zeigtLaeufe ? runNachTag() : {};
   const laufGeplant = zeigtLaeufe ? runGeplanteTage() : {};
-  // Wettkampftage der Laufplaene — das ganze Kaestchen wird hellgruen (Leonard-Wunsch
-  // 04.09.2026). Nur dort, wo der Kalender ueberhaupt Laeufe zeigt.
+  // Wettkampftage — das ganze Kaestchen wird hellgruen (Leonard-Wunsch 04.09.2026). Nur dort,
+  // wo der Kalender ueberhaupt Laeufe zeigt. ZWEI Quellen: die eigenstaendige Liste `ft_races`
+  // und das `raceDate` eines Laufplans. Die Plaene kommen ZULETZT, damit ihr Name den Vorrang
+  // hat, wenn ein Datum in beiden steht (`true` heisst nur „Wettkampf, ohne Plan").
   const wettkampfTage = {};
-  if (zeigtLaeufe) DB.getRunPlans().forEach(p => { if (p.raceDate) wettkampfTage[_dayKeyOf(p.raceDate)] = p; });
+  if (zeigtLaeufe) {
+    DB.getRaces().forEach(k => { wettkampfTage[k] = true; });
+    DB.getRunPlans().forEach(p => { if (p.raceDate) wettkampfTage[_dayKeyOf(p.raceDate)] = p; });
+  }
 
   // Eine Woche OHNE Training bekommt hellrote Kaestchen (Leonard-Wunsch 05.09.2026).
   // Es zaehlt allein, ob in der Woche etwas stattgefunden hat — auf einen laufenden Plan kommt
@@ -4529,8 +4556,11 @@ function showCalDay(key, id) {
   let laufHTML = '';
   let wkHTML = '';
   if (modus.lauf) {
+    // Ein Wettkampf AUS EINEM PLAN nennt dessen Namen; ein eigenstaendiger (`ft_races`) hat
+    // keinen, dort steht nur „Wettkampf". Der Plan hat Vorrang, falls beides auf denselben Tag faellt.
     const wk = DB.getRunPlans().find(p => p.raceDate && _dayKeyOf(p.raceDate) === key);
     if (wk) wkHTML = `<div class="cal-detail-run wettkampf">🏁 Wettkampf · ${escapeHtml(wk.name || 'Laufplan')}</div>`;
+    else if (DB.getRaces().includes(key)) wkHTML = `<div class="cal-detail-run wettkampf">🏁 Wettkampf</div>`;
     const lauf = runNachTag()[key];
     const gepl = runGeplanteTage()[key];
     if (lauf) {
@@ -7597,6 +7627,7 @@ function _snapshotStores() {
     exercises: JSON.parse(JSON.stringify(DB.getExercises())),
     workouts: JSON.parse(JSON.stringify(DB.getWorkouts())),
     runPlans: JSON.parse(JSON.stringify(DB.getRunPlans())),
+    races: JSON.parse(JSON.stringify(DB.getRaces())),
     // Papierkorb mitsichern: sonst bliebe nach einem „Rückgängig" der Eintrag dort liegen
     // und dasselbe Objekt existierte zweimal.
     trash: JSON.parse(JSON.stringify(DB.getTrash())),
@@ -7608,6 +7639,7 @@ function _restoreStores(snap) {
   DB.saveExercises(snap.exercises);
   DB.saveWorkouts(snap.workouts);
   DB.saveRunPlans(snap.runPlans || []);
+  DB.saveRaces(snap.races || []);
   DB.saveTrash(snap.trash || []);
 }
 function withUndo(label, fn, afterRestore) {
@@ -7897,6 +7929,7 @@ function collectLocalData() {
     workouts: DB.getWorkouts(),
     trainingDays: DB.getTrainingDays(),   // v4: planunabhängige Trainingstage-Bibliothek
     manualDays: DB.getManualDays(),       // v4: nachgetragene Tage ohne Aufzeichnung
+    races: DB.getRaces(),                 // v4: eigenstaendige Wettkampftage ohne Laufplan
     runPlans: DB.getRunPlans(),           // v4: Laufplaene (die Laeufe selbst stehen in der Tabelle)
   };
 }
@@ -7939,6 +7972,7 @@ function driveApplyCloudData(data) {
   // (ältere Backups ohne dieses Feld lassen die lokale Bibliothek unangetastet).
   if (Array.isArray(data.trainingDays)) localStorage.setItem('ft_trainingdays', JSON.stringify(data.trainingDays));
   if (Array.isArray(data.manualDays)) localStorage.setItem('ft_manual_days', JSON.stringify(data.manualDays));
+  if (Array.isArray(data.races)) localStorage.setItem('ft_races', JSON.stringify(data.races));
   if (Array.isArray(data.runPlans)) localStorage.setItem('ft_runplans', JSON.stringify(data.runPlans));
   // Legacy-Keys bei v1-Migration sauber halten (sonst würde migrateToMultiPlan beim nächsten App-Start nochmal greifen)
   if (Array.isArray(data.plan)) {
@@ -8542,6 +8576,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initAudioUnlock();
   migrateRemoveCardio();
   migrateImportManualDays();
+  migrateImportRaces();
   migrateToMultiPlan();
   // Tag-Modell v2: eingebettete Plan-Tage in geteilte Bibliothek-Referenzen überführen (einmalig)
   migrateDayModelV2();

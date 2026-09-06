@@ -297,9 +297,22 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   geht es im Farbverlauf dahinter unter. Was als Training zaehlt, folgt dem Modus des Kalenders:
   Gymkalender = Krafteinheiten samt nachgetragener Tage, Laufkalender = Laeufe, gemeinsam = beides.
   Die Regel steht VOR den Zustandsregeln, die Marken zeichnen sich also darauf.
-  `.wettkampf` faerbt das GANZE Kaestchen hellgruen — der Wettkampftag eines Laufplans, der
-  auffaelligste Zustand im Kalender (04.09.2026). Nur dort, wo der Kalender Laeufe zeigt; der
-  Gymkalender kennt ihn nicht. Er steht auch in der Tagesbeschreibung („🏁 Wettkampf · Planname").
+  `.wettkampf` faerbt das GANZE Kaestchen hellgruen — der auffaelligste Zustand im Kalender
+  (04.09.2026). Nur dort, wo der Kalender Laeufe zeigt; der Gymkalender kennt ihn nicht.
+  ZWEI QUELLEN (06.09.2026): das `raceDate` eines Laufplans UND die eigenstaendige Liste
+  `ft_races` (`DB.getRaces`/`saveRaces`, Datumsstrings 'YYYY-MM-DD' wie `ft_manual_days`).
+  Die Liste war noetig, weil Leonards Wettkaempfe aus Jahren stammen, in denen es noch gar
+  keine Laufplaene gab — an ein `plan.raceDate` waeren sie nicht zu haengen, und fuenf
+  Schein-Plaene anzulegen haette die Laufplan-Liste verschmutzt.
+  `migrateImportRaces()` hat am 06.09.2026 einmalig Leonards fuenf Termine eingetragen
+  (Merker `ft_races_imported`, Konstante `WETTKAMPF_IMPORT`) — dieselbe Bauart wie
+  `migrateImportManualDays`. Eine Oberflaeche zum Pflegen gibt es BEWUSST nicht, genau wie
+  bei den nachgetragenen Tagen; weitere Termine kommen ueber denselben Weg dazu.
+  Beim Zusammenbauen der Marken kommen die PLAENE ZULETZT, damit ihr Name gewinnt, wenn ein
+  Datum in beiden steht. In der Tagesbeschreibung steht deshalb „🏁 Wettkampf · Planname"
+  beim Plan-Wettkampf und nur „🏁 Wettkampf" beim eigenstaendigen.
+  `ft_races` haengt in der Drive-Sicherung (Feld `races`), in `_snapshotStores`/`_restoreStores`
+  („Rueckgaengig") und in `calJahre()` — ein Jahr mit Wettkampf soll waehlbar sein.
   `.planned::before` = laut damaligem Plan vorgesehen, nur UMRANDET; `.done::before` =
   tatsächlich trainiert, GEFUELLT. Seit 04.09.2026 dieselbe Logik wie beim Lauf, wo der geplante
   Kreis leer und der gelaufene gefuellt ist (Leonard-Wunsch); vorher faerbte „geplant" das ganze
