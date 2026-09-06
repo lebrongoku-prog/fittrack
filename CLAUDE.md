@@ -98,6 +98,11 @@ Drei Begriffe, konsequent durchgehalten — nicht mischen:
 **Plan** (der Zeitraum) · **Trainingstag** (die wiederverwendbare Vorlage) · **Einheit** (eine absolvierte Trainingseinheit).
 „Session" und „Workout" kommen in der UI NICHT mehr vor (Bezeichner im Code heißen weiter `workout`/`wo`).
 Nav-Labels: Übersicht · Training · Übungen · Plan.
+Das Wort **„Ruhetag" kommt in der UI NICHT mehr vor** (06.09.2026, Leonard-Wunsch): Ein Tag ohne
+Krafttraining heisst „Kein Gym" bzw. „Kein Gym geplant", einer ohne Lauf „Kein Lauf" bzw.
+„Kein Lauf geplant". Die kurze Form steht dort, wo der Platz knapp ist (Herocard, Wochenplaner),
+die lange in Beschreibungen (Kalender-Fusszeile). Im CODE heissen Variablen und Kommentare
+weiter „Ruhetag" — das ist der eingebuergerte Begriff fuer den Zustand.
 Seiten im Plan-Tab: **Gymplan** · **Gymtage** · **Laufplan** (umbenannt 01.09.2026).
 Seiten im Trainings-Tab: **Gym** · **Laufen**.
 
@@ -950,9 +955,12 @@ Leonard-Vorgabe:
   Eigene, vereinfachte Zeichnung (`HERO_ICON_HANTEL`) — `heroDumbbellSvg()` ist fuer 72px
   gebaut und bei 14px nur noch ein grauer Fleck.
 - **Farbe nach Sportart, Verlauf wie gehabt** (06.09.2026): Gym
-  `linear-gradient(135deg, #0B4F49, #0F766E)`, Lauf `linear-gradient(135deg, #15803D, #4ADE80)`,
-  beide mit WEISSER Schrift. Der erste Versuch (#22C55E→#4ADE80, dunkle Schrift) hatte einen
-  kaum sichtbaren Verlauf — die beiden Stops lagen zu nah beieinander. Vorher trug der Gym-Knopf die
+  `linear-gradient(135deg, #0B4F49, #14B8A6)`, Lauf `linear-gradient(135deg, #15803D, #4ADE80)`,
+  beide mit WEISSER Schrift und demselben deutlichen Hell-Dunkel-Sprung. Zwei Zwischenstaende
+  waren zu flau und wurden verworfen: #22C55E→#4ADE80 beim Lauf und #0B4F49→#0F766E beim Gym.
+  „Pausieren" bleibt GRAU (#475569) — es ist kein Start, sondern ein Zwischenhalt; „Beenden"
+  rot. Beide Regeln muessen HINTER der Gym-Farbregel stehen, gleiche Spezifitaet.
+  Vorher trug der Gym-Knopf die
   TABFARBE (`--gradient`). ACHTUNG Spezifitaet: Die Laufregel braucht ebenfalls zwei Klassen
   (`.hero-heute .hero-v2-btn-lauf`), sonst gewinnt die Gym-Regel.
 - **Die Beschriftung sitzt mittig zwischen Titel und Knopf**: Der Titel hat
@@ -966,7 +974,12 @@ Leonard-Vorgabe:
   Querformat spannt sie ueber beide Spalten, darunter teilen sich Gym- und Laufwochenplan die
   naechste Zeile.
 - **Die Wochenplan-Karten tragen das Sportsymbol vor dem Titel** (`.ppv-name-ic`, `1em` = die
-  16px des Titels): Hantel in #0F766E, Laeufer in #4ADE80.
+  16px des Titels): Hantel beim Gym, Laeufer beim Lauf. Farbe `inherit` — sie folgen dem TITEL
+  (Leonard-Wunsch 06.09.2026, vorher in den Sportartfarben) und sind damit im Transparenz-Modus
+  automatisch weiss.
+- `opts.runIdx` waehlt den TAG der Laufspalte: Auf der Seite „Laufen" folgt die Karte dem im
+  Wochenplan gewaehlten Wochentag, genau wie die Gymkarte auf der Nachbarseite
+  (Leonard-Wunsch 06.09.2026). Ohne Angabe gilt heute.
 - `opts.sport`: 'beide' (Uebersicht) · 'gym' (Trainings-Tab, Seite Gym) · 'lauf' (Seite Laufen,
   Karte `#wo-lauf-hero` direkt unter dem Wochenplan). Bei einer Sportart wird die Spalte zur
   vollen Breite (`.hero-heute-spalten.einzeln`).

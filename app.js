@@ -1444,7 +1444,7 @@ function buildSessionCard(active, planDay, selDay, opts) {
     <div class="hero-v2-progress-bar-thin"><div class="hero-v2-progress-fill-thin" style="width:${pct}%"></div></div>
     <div class="hero-heute-spalten${hatUebungen ? '' : ' einzeln'}">
       ${hatUebungen ? `<div class="hero-heute-spalte">
-        <button class="hero-v2-btn" onclick="togglePauseWorkout()">${pauseIcon}${pauseLabel}</button>
+        <button class="hero-v2-btn hero-v2-btn-pause" onclick="togglePauseWorkout()">${pauseIcon}${pauseLabel}</button>
       </div>` : ''}
       <div class="hero-heute-spalte">
         <button class="hero-v2-btn hero-v2-btn-danger" onclick="confirmFinish()">${HERO_ICON_STOP}Beenden</button>
@@ -1486,19 +1486,23 @@ function buildHeuteHero(planDay, selDay, opts) {
       knopf = `<button class="hero-v2-btn" onclick="startFreeWorkout()">${HERO_ICON_HANTEL}Freies Training starten</button>`;
     }
     spalten.push(`<div class="hero-heute-spalte">
-      <div class="hero-heute-einheit">${planDay ? escapeHtml(planDay.name) : 'Ruhetag'}</div>
+      <div class="hero-heute-einheit">${planDay ? escapeHtml(planDay.name) : 'Kein Gym'}</div>
       ${knopf}
     </div>`);
   }
 
   if (sport !== 'gym') {
     // Ueber dem Laufknopf steht das ZIEL des Tages — km und Zeit, ohne Zone
-    // (Leonard-Vorgabe 06.09.2026).
-    const gepl = runGeplanteTage()[_dayKeyOf(Date.now())];
+    // (Leonard-Vorgabe 06.09.2026). Welcher Tag gemeint ist, sagt `opts.runIdx`: Auf der Seite
+    // „Laufen" folgt die Karte dem im Wochenplan gewaehlten Tag, genau wie die Gymkarte auf der
+    // Nachbarseite (Leonard-Wunsch 06.09.2026). Ohne Angabe gilt heute.
+    const tagD = new Date(); tagD.setHours(0, 0, 0, 0);
+    if (opts.runIdx != null) tagD.setDate(tagD.getDate() - ((tagD.getDay() + 6) % 7) + opts.runIdx);
+    const gepl = runGeplanteTage()[_dayKeyOf(tagD.getTime())];
     const u = gepl && gepl.einheit;
     const ziel = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null].filter(Boolean).join(' · ') : '';
     spalten.push(`<div class="hero-heute-spalte">
-      <div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf geplant')}</div>
+      <div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf')}</div>
       <button class="hero-v2-btn hero-v2-btn-lauf" onclick="runLaeufeLaden({interactive:true})"
               ${runLaden ? 'disabled' : ''}>
         ${HERO_ICON_LAEUFER}${runLaden ? 'Lese …' : 'Lauf abgeschlossen'}
@@ -3634,7 +3638,7 @@ function buildLaufTagKarte(idx) {
            <span class="lauf-tag-wert">${u.zone || '–'}</span>
          </div>
        </div>`
-    : `<div class="aex-v2-table"><p class="lauf-tag-leer">${gepl ? 'Lauftag ohne Vorgabe.' : 'Für diesen Tag ist kein Lauf geplant.'}</p></div>`;
+    : `<div class="aex-v2-table"><p class="lauf-tag-leer">${gepl ? 'Lauftag ohne Vorgabe.' : 'Kein Lauf geplant.'}</p></div>`;
   // Die Notiz steht auf einer EIGENEN Zeile unter Strecke, Zeit und Zone (Leonard-Wunsch
   // 04.09.2026) — nicht in der rechten Spalte wie bei den Uebungskarten, wo sie neben einer
   // mehrzeiligen Satztabelle steht. Hier ist die Tabelle nur eine Zeile hoch.
@@ -3673,7 +3677,8 @@ function renderLaufKalenderSeite() {
     { selectedIdx: selectedRunDayIdx, dayOnTap: 'selectRunDay' })}</div>`;
   // Herocard direkt unter dem Wochenplan — dieselbe Stelle wie im Gymteil
   // (Leonard-Wunsch 06.09.2026).
-  const hero = `<div id="wo-lauf-hero">${buildHeuteHero(null, null, { sport: 'lauf' })}</div>`;
+  const hero = `<div id="wo-lauf-hero">${buildHeuteHero(null, null,
+    { sport: 'lauf', runIdx: selectedRunDayIdx })}</div>`;
   const laeufe = DB.getRuns();
   const stand = DB.getRunsStand();
 
@@ -4267,7 +4272,7 @@ function renderTrainingCalendar(id, cardId) {
       if (isToday) cls.push('today');
       const kraftZustand = entry
         ? (plan.planned ? 'geplant und trainiert' : 'zusaetzlich trainiert')
-        : (plan.planned ? (future ? 'geplant' : 'geplant, nicht trainiert') : 'Ruhetag');
+        : (plan.planned ? (future ? 'geplant' : 'geplant, nicht trainiert') : 'kein Gym geplant');
       const zustand = kraftZustand + (lauf ? ', gelaufen' : (laufGepl ? ', Lauf geplant' : ''))
         + (wettkampf ? ', Wettkampftag' : '') + (leereWoche && !ausserhalb ? ', Woche ohne Training' : '');
       cells += `<span class="${cls.join(' ')}"
@@ -4490,7 +4495,7 @@ function showCalDay(key, id) {
     } else if (plan.known) {
       // Ohne abdeckenden Plan bleibt die Zeile WEG — „kein Training" sagte nichts aus
       // (Leonard-Wunsch 04.09.2026).
-      txt += `<div class="cal-detail-tag-txt">Ruhetag</div>`;
+      txt += `<div class="cal-detail-tag-txt">Kein Gym geplant</div>`;
     }
   }
 
@@ -5026,12 +5031,12 @@ function renderPlanDetail() {
   // natives Dropdown (overlaid <select>) zum Zuweisen eines Trainingstags bzw. Ruhetag.
   document.getElementById('mehr-weekplan').innerHTML = `<div class="wpe-list">` + wp.map((d, i) => {
     const assigned = d.planDayId ? trainingDays.find(td => td.id === d.planDayId) : null;
-    const options = `<option value="" ${!d.planDayId ? 'selected' : ''}>Ruhetag</option>` +
+    const options = `<option value="" ${!d.planDayId ? 'selected' : ''}>Kein Gym</option>` +
       trainingDays.map(td => `<option value="${td.id}" ${d.planDayId === td.id ? 'selected' : ''}>${escapeHtml(td.name)}</option>`).join('');
     const cls = 'wpe-row' + (i === todayIdx ? ' today' : '') + (assigned ? ' training' : '');
     return `<div class="${cls}">
       <span class="wpe-day">${d.label}</span>
-      ${assigned ? `<span class="pd-name wpe-name">${escapeHtml(assigned.name)}</span>` : `<span class="wpe-rest">Ruhetag</span>`}
+      ${assigned ? `<span class="pd-name wpe-name">${escapeHtml(assigned.name)}</span>` : `<span class="wpe-rest">Kein Gym</span>`}
       <span class="wpe-chev">›</span>
       <select class="wpe-select" onchange="saveWeekPlanDay(${i}, this.value)" aria-label="Trainingstag für ${d.label}">${options}</select>
     </div>`;
