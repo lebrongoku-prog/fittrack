@@ -30,11 +30,6 @@
   inherits: true;
   initial-value: #0a2a6b;
 }
-@property --card-accent-border {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: rgba(0, 102, 255, 0.35);
-}
 
 :root {
   /* UI base (shared across all tabs) */
@@ -59,7 +54,6 @@
   --accent-dark:          #0048d0;
   --gradient-from:        #0a2a6b;
   --gradient:             linear-gradient(135deg, var(--gradient-from), var(--accent));
-  --card-accent-border:   rgba(0, 102, 255, 0.35);
 
   /* Einheitlicher Kartenschatten — derselbe Wert wie bei .weitere-btn
      (Leonard-Wunsch 28.08.2026). Vorher waren es zwei unterschiedlich starke Schatten. */
@@ -83,7 +77,6 @@ body.theme-overview {
   --accent-soft:        #CFFAFE;       /* cyan-100 */
   --accent-dark:        #0C4A6E;
   --gradient-from:      #0C4A6E;
-  --card-accent-border: rgba(6, 182, 212, 0.35);
 }
 body.theme-workouts {
   --accent:             #10B981;
@@ -91,7 +84,6 @@ body.theme-workouts {
   --accent-soft:        #D1FAE5;       /* emerald-100 */
   --accent-dark:        #059669;
   --gradient-from:      #064E3B;
-  --card-accent-border: rgba(5, 150, 105, 0.35);
 }
 body.theme-plans {
   --accent:             #F59E0B;
@@ -99,7 +91,6 @@ body.theme-plans {
   --accent-soft:        #FEF3C7;       /* amber-100 */
   --accent-dark:        #78350F;
   --gradient-from:      #78350F;
-  --card-accent-border: rgba(245, 158, 11, 0.35);
 }
 body.theme-exercises {
   --accent:             #1E40AF;       /* blue-800 (Marineblau) */
@@ -107,7 +98,6 @@ body.theme-exercises {
   --accent-soft:        #DBEAFE;       /* blue-100 */
   --accent-dark:        #1E3A8A;       /* blue-900 */
   --gradient-from:      #172554;
-  --card-accent-border: rgba(30, 64, 175, 0.35);
 }
 /* body.theme-mehr keeps the default (blue) */
 /* Nur html bekommt den var(--bg)-Background — body bleibt transparent, damit die
@@ -2188,17 +2178,6 @@ html.wo-running #wo-week-card { display: none; }
    (Frueher stand hier dauerhaft ein Hinweistext, der den Raum gefuellt hat.) */
 .cal-detail:empty { display: none; }
 .cal-detail strong { color: var(--text); font-weight: 600; }
-.cal-detail-plan { margin-top: 3px; font-size: 16px; color: var(--text3); }
-/* „(zur Einheit)" — der einzige antippbare Teil der Beschreibung. */
-/* Die ganze Beschreibungszeile ist die Schaltflaeche in die Einheit — dasselbe Muster wie
-   bei den PR-Zeilen und den Trainingstag-Zeilen. Der frueher hier stehende Textlink
-   „(zur Einheit)" war schwer zu treffen.
-   BEWUSST ein gewoehnlicher Block und kein Flex: Der Pfeil steht damit im Textfluss direkt
-   hinter dem Namen des Trainingstags (Leonard-Wunsch 01.09.2026) statt rechtsbuendig am
-   Kartenrand — und folgt ihm auch, wenn die Zeile umbricht. Die Trefferflaeche bleibt
-   trotzdem die volle Breite, weil der Block sie einnimmt. */
-.cal-detail-row { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.cal-detail-row:active { opacity: .6; }
 .cal-detail-chev { color: var(--accent); font-weight: 700; margin-left: 5px; }
 /* Jede Legenden-Angabe ist ein eigener Flex-Block, sonst klebt der Text am Symbol und
    sitzt vertikal daneben. */
@@ -2521,8 +2500,6 @@ html.wo-running #wo-week-card { display: none; }
   font-family: inherit; transition: background 0.15s, color 0.15s;
   -webkit-user-select: none; user-select: none; }
 .seg-btn.active { background: #fff; color: var(--accent-dark); box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
-.program-form-row-2col { display: flex; gap: 10px; }
-.program-form-row-2col > div { flex: 1; display: flex; flex-direction: column; gap: 6px; }
 .plan-day-actions { display: flex; gap: 6px; margin-left: auto; }
 .plan-day-actions button { border: none; background: var(--bg); color: var(--text3); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
 .plan-day-actions button.del { color: var(--red); background: var(--red-bg); }/* Plan-Day-Edit-Modal: Drag-Feedback an den .ex-item-Zeilen (neues Muskelfarben-Layout) */

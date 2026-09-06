@@ -1044,6 +1044,20 @@ Einheit, nicht die Tagesuebersicht.
   1 Jahr = pro Monat. Frueher immer Kalenderwochen mit Label "WNN" und hart auf 8 Punkte gekappt —
   dadurch zeigte "Letztes Jahr" nur zwei Monate. `autoSkip` ist im Wochen-Modus AUS, weil dort
   Labels absichtlich leer sind; sonst an. X-Achse aufsteigend (aelteste links).
+- Aufraeum-Stand (06.09.2026, zweiter Durchgang): Vollstaendige Suche nach Leichen in JS UND
+  CSS. Gefunden und entfernt: fuenf Funktionen ohne Aufrufer — `avgDauerFuerTag` (die mittlere
+  Dauer stand nur in der alten Vorschau-Herocard), `calZeigtKraft`/`calZeigtLauf` (durch
+  `_calModus` abgeloest), `planErfuellung` (stand seit dem Fusszeilen-Umbau nirgends mehr) und
+  `manuelleTageIm`, das erst durch das Entfernen von `planErfuellung` frei wurde.
+  ACHTUNG: Solche Ketten loesen sich erst nacheinander auf — nach dem Loeschen NOCHMAL suchen,
+  bis nichts mehr uebrig bleibt. Dazu fuenf CSS-Regeln (`.cal-detail-plan`, `.cal-detail-row`
+  samt `:active`, `.program-form-row-2col` und dessen `> div`) und die Variable
+  `--card-accent-border` mitsamt ihrer `@property`-Deklaration und den fuenf Theme-Zuweisungen —
+  sie wurde nirgends per `var()` gelesen.
+  NICHT angetastet: 17 ID-Attribute ohne Verweis (`drive-card`, `wo-seg`, `plans-seg`,
+  `pr-card-title` …). Sie sind blosse Anker im Markup, kosten nichts, und `nav-overview` &
+  Geschwister werden zur Laufzeit als `'nav-' + name` zusammengesetzt — eine reine Textsuche
+  haelt sie faelschlich fuer tot.
 - Aufraeum-Stand (06.09.2026): Nach dem Umbau der Herocards 113 Zeilen totes CSS entfernt —
   `hero-v2-text`, `-label`, `-title`, `-title-row`, `-meta`, `-meta-avg`, `-top`, `-bottom`,
   `-art`, `-button-row`, `-running-notice`, `-progress-bar`/`-fill` (die `-thin`-Varianten

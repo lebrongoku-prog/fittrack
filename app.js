@@ -1403,14 +1403,6 @@ function heroRunnerSvg() {
 // der alten Herocard. Im Knopf steht jetzt `HANTEL_SVG`, eine fuer 14px gebaute Zeichnung.
 
 
-// Mittlere Dauer der bisher absolvierten Einheiten dieses Trainingstags. Vor der ersten
-// Einheit gibt es nichts zu mitteln — dann null, und die Herocard laesst die Angabe weg.
-function avgDauerFuerTag(planDayId) {
-  if (!planDayId) return null;
-  const ws = DB.getWorkouts().filter(w => w.planDayId === planDayId && w.duration > 0);
-  if (!ws.length) return null;
-  return Math.round(ws.reduce((summe, w) => summe + w.duration, 0) / ws.length);
-}
 
 // Karte der LAUFENDEN Einheit. Seit dem 06.09.2026 gibt es hier keinen Vorschau-Modus mehr —
 // Vorschau und Ruhetag laufen ueber `buildHeuteHero`. Bewusst OHNE Laufteil: Waehrend eines
@@ -4031,15 +4023,6 @@ function migrateImportManualDays() {
   localStorage.setItem('ft_manual_days_imported', '1');
 }
 
-// Zaehlt die nachgetragenen Tage in einem Zeitraum (Zeitstempel, beide Grenzen inklusive).
-function manuelleTageIm(vonTs, bisTs) {
-  return DB.getManualDays().filter(k => {
-    const [y, m, d] = k.split('-').map(Number);
-    const t = new Date(y, m - 1, d).getTime();
-    return t >= vonTs && t <= bisTs;
-  }).length;
-}
-
 function buildCalendarData() {
   const byDay = {};
   DB.getWorkouts().forEach(w => {
@@ -4111,8 +4094,6 @@ function _calModus(id) {
   return { kraft: _calFilter !== 'lauf', lauf: _calFilter !== 'kraft',
            titel: _CAL_FILTER_TITEL[_calFilter] || 'Trainingskalender' };
 }
-function calZeigtKraft() { return _calFilter !== 'lauf'; }
-function calZeigtLauf()  { return _calFilter !== 'kraft'; }
 
 function calendarInnerHTML(id) {
   // Nur der Kalender der Uebersicht zeigt beide Sportarten — nur dort ist der Titel ein Filter.
@@ -4147,32 +4128,6 @@ function calendarInnerHTML(id) {
     </div>`;
 }
 
-// Wie viel vom Plan ist bislang erfüllt? Verglichen werden ABSOLVIERTE EINHEITEN im
-// Zeitraum gegen die bis dahin GEPLANTEN Trainingstage. Bezug ist immer nur die
-// Vergangenheit (bei laufenden Plänen bis heute) — sonst läge die Quote zwangsläufig
-// niedrig, solange der Plan noch läuft. Einheiten an nicht geplanten Tagen zählen mit,
-// damit ein nachgeholtes Training die Quote nicht drückt (beides Leonard-Entscheidung).
-function planErfuellung(plan) {
-  if (!plan || !plan.startDate) return null;
-  const heute = new Date(); heute.setHours(23, 59, 59, 999);
-  const bis = Math.min(plan.endDate || heute.getTime(), heute.getTime());
-  if (bis < plan.startDate) return null;
-
-  const wp = (plan.weekPlan && plan.weekPlan.length) ? plan.weekPlan : DEFAULT_WEEKPLAN;
-  let geplant = 0;
-  const d = new Date(plan.startDate); d.setHours(0, 0, 0, 0);
-  while (d.getTime() <= bis) {
-    const e = wp[(d.getDay() + 6) % 7];
-    if (e && e.planDayId) geplant++;
-    d.setDate(d.getDate() + 1);
-  }
-  // Nachgetragene Tage zaehlen mit — sonst widerspraeche der Stand den gruenen Kaestchen,
-  // die im selben Kalender daneben stehen.
-  const absolviert = DB.getWorkouts().filter(w => w.startTs >= plan.startDate && w.startTs <= bis).length
-    + manuelleTageIm(plan.startDate, bis);
-  if (!geplant) return null;
-  return { geplant, absolviert, prozent: Math.round(absolviert / geplant * 100) };
-}
 
 // Je Kalender (cal | pcal): Wurde er schon einmal auf die laufende Woche gesetzt, und wo
 // steht er gerade? `_calScrollPos` fuehrt ein Scroll-Listener nach — BEWUSST nicht als
