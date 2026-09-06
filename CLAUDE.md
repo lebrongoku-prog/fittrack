@@ -737,12 +737,24 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   |---|---|---|
   | Uebersicht, Gym | Plan-Tab, Seite „Gymplan" | wie Karte |
   | Uebersicht, Lauf | Plan-Tab, Seite „Laufplan" | wie Karte |
-  | Trainings-Tab | Plan-Tab | waehlt den Tag AUS (`selectWorkoutDay` / `selectRunDay`) |
+  | Trainings-Tab | **nichts** | waehlt den Tag AUS (`selectWorkoutDay` / `selectRunDay`) |
   | Plaene-Tab | Detailansicht des Plans | wie Karte |
 
   Im Trainings-Tab wird der gewaehlte Tag zusaetzlich markiert (`opts.selectedIdx` →
   `.ppv-col.selected`) — die Auswahl steuert dort, welcher Tag darunter erscheint. Nur deshalb
   braucht diese eine Stelle den eigenen Tipp: Man ist schon auf der Seite, die den Tag zeigt.
+  **Die Karte selbst ist dort STUMM** (`onTap: false`, 06.09.2026, Leonard-Wunsch): Sie ist
+  hier der Tagesumschalter, ein Tipp auf den Balken soll nicht in den Plan-Tab wischen.
+  `onTap === false` ist der einzige Weg, den Karten-Tipp ganz wegzulassen — `null` und
+  Weglassen bedeuten „Standardziel". Beide Kartenbauer kennen die Regel.
+  Eine stumme Karte bekommt die Klasse `.karte-inert`, die ihr Zeigefinger UND Tipp-Animation
+  nimmt (`cursor: default`, `:active { transform: none }`, zwei Klassen — schlaegt die
+  Sammelregel fuer alle Karten). Ohne das staucht sich die Karte bei jedem Tipp daneben,
+  obwohl nichts geschieht; das liest sich wie ein kaputter Knopf. Ihre WOCHENTAGE behalten
+  den Zeigefinger ueber `.karte-inert .ppv-col[role="button"]`.
+  AUSNAHME: Die LEERE Karte („Kein aktiver Laufplan / Trainingsplan") bleibt immer antippbar,
+  auch bei `onTap: false` — sie ist eine Aufforderung zum Anlegen, stumm gestellt gaebe es
+  von dort keinen Weg weiter.
   BEIDE Aenderungen gehen auf Leonard zurueck (06.09.2026). In der Uebersicht sprang ein Tipp
   auf einen Wochentag vorher in den Trainings-Tab, waehrend die Karte selbst auf der ZULETZT
   gewaehlten Plan-Seite landete — zwei Ziele in einer Kachel, und keines davon vorhersehbar.

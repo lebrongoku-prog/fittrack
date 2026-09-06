@@ -1330,6 +1330,9 @@ function buildRunPlanCard(onTap, plan, opts) {
   opts = opts || {};
   const p = plan || runPlanAktiv();
   if (!p) {
+    // Die LEERE Karte bleibt immer antippbar — auch bei `onTap === false` (`false || …` faellt
+    // auf das Standardziel zurueck). Sie ist eine Aufforderung („Tippe, um …"); stumm gestellt
+    // stuende der Nutzer ohne Weg zum Anlegen da.
     return `<div class="plan-card-v2 run-plan" onclick="${onTap || "setPlansView('runplans');wischeZuTab('plans')"}" style="cursor:pointer">
       <div class="ppv-name" style="color:var(--text2)">Kein aktiver Laufplan</div>
       <div class="ppv-meta">Tippe, um einen Laufplan anzulegen.</div>
@@ -1373,8 +1376,11 @@ function buildRunPlanCard(onTap, plan, opts) {
       <span class="ppv-adh">${st.done}/${st.planned} diese Woche</span>
     </div>`;
   }
-  return `<div class="plan-card-v2 run-plan plan-status-${status}${laeuft ? ' active' : ''}"
-       onclick="${onTap || "setPlansView('runplans');wischeZuTab('plans')"}">
+  // `onTap === false` = stumme Karte, siehe `buildPlanCard`.
+  const inert = onTap === false;
+  const kartenTipp = inert ? ''
+    : ` onclick="${onTap || "setPlansView('runplans');wischeZuTab('plans')"}"`;
+  return `<div class="plan-card-v2 run-plan plan-status-${status}${laeuft ? ' active' : ''}${inert ? ' karte-inert' : ''}"${kartenTipp}>
     <div class="ppv-head">
       <div class="ppv-name">${PPV_ICON_LAEUFER}${escapeHtml(p.name || 'Laufplan')}</div>
       ${laeuft ? '' : `<span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>`}
@@ -1633,8 +1639,10 @@ function renderWorkoutWeekStrip() {
   const root = document.getElementById('wo-week-card');
   if (!root) return;
   const plan = getActivePlan();
+  // Die Karte selbst tut hier NICHTS (`onTap: false`, Leonard-Wunsch 06.09.2026): Auf dieser
+  // Seite ist sie der Tagesumschalter, ein Tipp daneben soll nicht in den Plan-Tab wischen.
   root.innerHTML = plan
-    ? buildPlanCard(plan, "wischeZuTab('plans')", /*hideToday*/ false, /*hideStatus*/ true, /*hideMeta*/ true,
+    ? buildPlanCard(plan, /*onTap*/ false, /*hideToday*/ false, /*hideStatus*/ true, /*hideMeta*/ true,
                     { selectedIdx: selectedWorkoutDayIdx, dayOnTap: 'selectWorkoutDay' })
     : `<div class="plan-card-v2" onclick="showScreen('plans')" style="cursor:pointer">
          <div class="ppv-name" style="color:var(--text2)">Kein aktiver Trainingsplan</div>
@@ -3671,8 +3679,9 @@ function renderLaufKalenderSeite() {
   // Zuoberst derselbe Laufwochenplan wie in der Uebersicht (Leonard-Wunsch 01.09.2026) —
   // hier aber MIT Tagesauswahl, genau wie der Gymwochenplan auf der Nachbarseite.
   if (selectedRunDayIdx === null) selectedRunDayIdx = (new Date().getDay() + 6) % 7;
+  // Karte stumm (`onTap: false`) wie auf der Nachbarseite „Gym" — sie waehlt hier nur den Tag.
   const wochenplan = `<div id="wo-runplan-card">${buildRunPlanCard(
-    "setPlansView('runplans');wischeZuTab('plans')", null,
+    /*onTap*/ false, null,
     { selectedIdx: selectedRunDayIdx, dayOnTap: 'selectRunDay' })}</div>`;
   // Herocard direkt unter dem Wochenplan — dieselbe Stelle wie im Gymteil
   // (Leonard-Wunsch 06.09.2026).
@@ -4930,6 +4939,9 @@ function fmtDateRange(start, end) {
 // opts.selectedIdx  = Wochentag, der als ausgewaehlt markiert wird (Trainings-Tab)
 // opts.dayOnTap      = Funktionsname fuer den Tipp auf einen Wochentag. OHNE ihn sind die
 //                      Wochentage reine Anzeige und der Tipp faellt auf die KARTE durch.
+// onTap === false    = die KARTE selbst tut nichts (`null`/weggelassen = Standardziel).
+//                      Sie verliert dann auch Zeigefinger und Tipp-Animation, sonst
+//                      antwortete sie sichtbar auf einen Tipp, der nichts bewirkt.
 function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
   opts = opts || {};
   const todayIdx = (new Date().getDay()+6) % 7;
@@ -4976,7 +4988,12 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
       <span class="ppv-adh">${ws.done}/${ws.planned} diese Woche</span>
     </div>`;
   }
-  return `<div class="plan-card-v2 plan-status-${status}${isCurrent ? ' active' : ''}" onclick="${onTap || `openPlanDetail('${p.id}')`}">
+  // `onTap === false` = die Karte ist stumm (Trainings-Tab, Leonard-Wunsch 06.09.2026): Dort
+  // steuert die Karte nur die Tagesauswahl, ein Tipp daneben soll NICHT in den Plan-Tab
+  // wischen. `karte-inert` nimmt ihr dafuer Zeigefinger und Stauchung.
+  const inert = onTap === false;
+  const kartenTipp = inert ? '' : ` onclick="${onTap || `openPlanDetail('${p.id}')`}"`;
+  return `<div class="plan-card-v2 plan-status-${status}${isCurrent ? ' active' : ''}${inert ? ' karte-inert' : ''}"${kartenTipp}>
     <div class="ppv-head">
       <div class="ppv-name">${PPV_ICON_HANTEL}${escapeHtml(p.name)}</div>
       ${hideStatus ? '' : `<span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>`}
