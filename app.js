@@ -500,6 +500,39 @@ function getWeekStatus() {
   return { done, planned };
 }
 
+// Wochenserie fuer die LAUFPLAENE — dasselbe Prinzip wie `getWeekStreak` beim Gymplan, nur
+// zaehlt es Laeufe gegen die Zahl der geplanten Lauftage (06.09.2026). Eigene Funktion, weil
+// die beiden Datenmodelle ausser der Woche nichts gemeinsam haben.
+function getRunWeekStreak() {
+  const plan = runPlanAktiv();
+  if (!plan) return 0;
+  const geplant = (plan.runDays || []).length;
+  if (!geplant) return 0;
+  const laeufe = DB.getRuns();
+  if (!laeufe.length) return 0;
+
+  const heute = new Date(); heute.setHours(0, 0, 0, 0);
+  const mon = new Date(heute); mon.setDate(mon.getDate() - ((heute.getDay() + 6) % 7));
+  const zaehleAb = (start) => {
+    const ende = new Date(start); ende.setDate(start.getDate() + 6);
+    return laeufe.filter(l => {
+      const [y, m, d] = l.date.split('-').map(Number);
+      const t = new Date(y, m - 1, d).getTime();
+      return t >= start.getTime() && t <= ende.getTime();
+    }).length;
+  };
+
+  let serie = 0;
+  if (zaehleAb(mon) >= geplant) serie++;         // laufende Woche nur, wenn schon voll
+  for (let i = 1; i <= 52; i++) {
+    const start = new Date(mon); start.setDate(mon.getDate() - 7 * i);
+    if (start.getTime() < (plan.startDate || 0)) break;
+    if (zaehleAb(start) >= geplant) serie++;
+    else break;
+  }
+  return serie;
+}
+
 // Wie viele Wochen in Folge wurde das Wochenpensum erreicht? Die laufende Woche zählt nur
 // mit, wenn sie schon voll ist — sonst würde die Serie mitten in der Woche „abreißen".
 // Gezählt wird ab der letzten abgeschlossenen Woche rückwärts.
@@ -866,7 +899,6 @@ function renderOverview() {
   }
 
   // ─ Hinweis auf das Plan-Ende + Sicherungs-Status ─
-  renderPlanEndNotice(active);
   renderBackupLine();
 
   // ─ Trainingskalender (ganzes Kalenderjahr) ─
@@ -912,35 +944,8 @@ function _ruhetagHeroEinrichten(heroSel, planSel) {
   art.style.transform = versatz ? `translateY(${versatz}px)` : '';
 }
 
-// Läuft der aktive Plan bald aus, rechtzeitig darauf hinweisen. Ohne diesen Hinweis fällt die
-// Übersicht am Tag nach dem Enddatum ohne Vorwarnung auf „Kein aktiver Trainingsplan" zurück.
-function renderPlanEndNotice(activePlan) {
-  const el = document.getElementById('ov-plan-end-notice');
-  if (!el) return;
-  if (!activePlan || !activePlan.endDate) { el.innerHTML = ''; el.className = ''; return; }
-  const daysLeft = Math.ceil((activePlan.endDate - Date.now()) / 86400000);
-  if (daysLeft < 0 || daysLeft > 7) { el.innerHTML = ''; el.className = ''; return; }
-  const when = daysLeft === 0 ? 'heute' : (daysLeft === 1 ? 'morgen' : `in ${daysLeft} Tagen`);
-  el.className = 'plan-end-notice';
-  el.innerHTML = `
-    <div class="pen-text"><strong>Dein Plan endet ${when}.</strong> Verlängere ihn oder lege einen neuen an.</div>
-    <div class="pen-actions">
-      <button class="btn btn-ghost btn-sm" onclick="extendActivePlan(4)">4 Wochen dran</button>
-      <button class="btn btn-ghost btn-sm" onclick="showScreen('plans')">Pläne öffnen</button>
-    </div>`;
-}
-
-// Aktiven Plan um n Wochen verlängern (Enddatum + Gesamtdauer).
-function extendActivePlan(weeks) {
-  const plans = DB.getPlans();
-  const p = _findActivePlanIn(plans);
-  if (!p) { showToast('Kein aktiver Plan'); return; }
-  p.endDate = (p.endDate || Date.now()) + weeks * 7 * 24 * 3600 * 1000;
-  p.weeksTotal = (p.weeksTotal || 0) + weeks;
-  DB.savePlans(plans);
-  renderOverview();
-  showToast(`Plan um ${weeks} Wochen verlängert`);
-}
+// Der Hinweis „Dein Plan endet in N Tagen" samt `extendActivePlan` ist am 06.09.2026
+// ersatzlos entfallen (Leonard-Wunsch) — mit ihm die Karte `#ov-plan-end-notice`.
 
 // Zeile „zuletzt gesichert" auf der Übersicht. Ohne eingerichtete Sicherung liegen alle
 // Daten nur im Browser-Speicher dieses Geräts — das soll sichtbar sein, bevor es weh tut.
@@ -1408,24 +1413,42 @@ function buildRunPlanCard(onTap, plan, opts) {
 // Heutiger Lauf als Zeile fuer die Herocard — so deckt EINE Karte beide Plaene ab
 // (Leonard-Wunsch 01.09.2026). Gibt es fuer heute weder einen gelaufenen noch einen
 // geplanten Lauf, bleibt die Zeile weg.
+// Angaben zum heutigen Lauf. Frueher war das die ganze Laufhaelfte der Herocard — seit dem
+// 06.09.2026 ist es nur noch die Infozeile, den Knopf liefert `heroLaufBtn()`. Grund: Mit
+// einer einzigen Textzeile gegen einen vollen Knopf ging das Laufen neben dem Gymteil unter
+// (Leonard-Meldung). Beide Sportarten haben jetzt Info UND Knopf.
 function heroLaufZeile() {
   const key = _dayKeyOf(Date.now());
   const lauf = runNachTag()[key];
   const gepl = runGeplanteTage()[key];
-  if (!lauf && !gepl) return '';
   let txt;
   if (lauf) {
-    txt = `Gelaufen: ${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}`;
-  } else {
+    txt = lauf.art === 'hiit'
+      ? `HIIT: ${fmtMin(lauf.minutes)}${lauf.maxHR ? ` · max. ${Math.round(lauf.maxHR)} bpm` : ''}`
+      : `Gelaufen: ${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}`;
+  } else if (gepl) {
     const u = gepl.einheit;
     const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null]
       .filter(Boolean).join(' · ') : '';
     txt = 'Lauf heute' + (soll ? ': ' + soll : '');
+  } else {
+    txt = 'Heute kein Lauf geplant';
   }
   return `<div class="hero-v2-lauf${lauf ? ' erledigt' : ''}">
     <span class="hero-v2-lauf-ic">${heroRunnerSvg()}</span>
     <span>${txt}</span>
   </div>`;
+}
+
+// „Lauf abgeschlossen" liest die Tabelle „Workout Data" neu ein — dieselbe Funktion wie
+// „Aktualisieren" in den Einstellungen (Leonard-Wunsch 06.09.2026). FitTrack fuehrt keine
+// Laeufe selbst, der Knopf kann also nichts anderes tun als nachzuschauen, was Health Auto
+// Export inzwischen geschrieben hat.
+function heroLaufBtn() {
+  return `<button class="hero-v2-btn hero-v2-btn-lauf" onclick="runLaeufeLaden({interactive:true})"
+                  ${runLaden ? 'disabled' : ''}>
+    ${runLaden ? 'Lese …' : 'Lauf abgeschlossen'}
+  </button>`;
 }
 
 // Laufsymbol fuer die Herocard — Gegenstueck zu `heroDumbbellSvg`, nach Leonards Vorlage
@@ -1531,7 +1554,12 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
     </div>
   </div>`;
 
-  const laufZeile = heroLaufZeile();
+  // Welche Sportarten die Karte abdeckt: 'beide' (Uebersicht), 'gym' (Trainings-Tab, Seite
+  // Gym) oder 'lauf'. Der Trainings-Tab zeigt je Seite nur die passende Haelfte
+  // (Leonard-Wunsch 06.09.2026).
+  const sport = opts.sport || 'beide';
+  const zeigtLauf = sport !== 'gym';
+  const laufZeile = zeigtLauf ? heroLaufZeile() : '';
 
   if (isPreview) {
     const previewOnClick = opts.previewOnClick || `startWorkout('${planDay.id}')`;
@@ -1552,15 +1580,20 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
            ${laufIdx >= 0 ? `<button type="button" class="hero-v2-btn stretch"
                     onclick="jumpToWorkoutDay(${laufIdx})">Zur laufenden Einheit</button>` : ''}
          </div>`
-      : `<button class="hero-v2-btn stretch" onclick="${previewOnClick}">
+      : `<button class="hero-v2-btn" onclick="${previewOnClick}">
            <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
            Einheit starten
          </button>`;
+    // Gym- und Laufknopf teilen sich eine Zeile zu gleichen Teilen. Steht nur einer da,
+    // fuellt er sie allein — `flex:1` in `.hero-v2-button-row` erledigt beides.
+    const knopfReihe = blockedByOther
+      ? bottomHTML + (zeigtLauf ? `<div class="hero-v2-button-row">${heroLaufBtn()}</div>` : '')
+      : `<div class="hero-v2-button-row">${bottomHTML}${zeigtLauf ? heroLaufBtn() : ''}</div>`;
     return `<div class="hero-v2 col-layout">
       ${topRow}
       ${laufZeile}
       <div class="hero-v2-bottom">
-        ${bottomHTML}
+        ${knopfReihe}
       </div>
     </div>`;
   }
@@ -1608,17 +1641,39 @@ function freeWorkoutBtn() {
 // Die Karte ist in BEIDEN Tabs identisch (Leonard-Wunsch 01.09.2026) — auch „Freies Training
 // starten" steht immer da. Gestartet wird ohnehin eine Einheit von heute, unabhaengig davon,
 // welcher Wochentag im Trainings-Tab gerade ausgewaehlt ist.
-function buildRestHero(isToday, dayName) {
+function buildRestHero(isToday, dayName, sport) {
+  const zeigtLauf = (sport || 'beide') !== 'gym';
   const titel = isToday ? 'Heute ist Ruhetag' : (dayName || 'Kein Training geplant');
+  const gym = freeWorkoutBtn();
   return `<div class="hero-v2 rest-mode">
     <div class="hero-v2-text" style="flex:1">
       <div class="hero-v2-label">RUHETAG</div>
       <div class="hero-v2-title">${titel}</div>
-      ${heroLaufZeile()}
-      ${freeWorkoutBtn()}
+      ${zeigtLauf ? heroLaufZeile() : ''}
+      ${(gym || zeigtLauf) ? `<div class="hero-v2-button-row">${gym}${zeigtLauf ? heroLaufBtn() : ''}</div>` : ''}
     </div>
     <div class="hero-v2-art">
       ${heroDumbbellSvg()}
+    </div>
+  </div>`;
+}
+
+// Herocard der Seite „Laufen". Sie hat kein Gym-Gegenstueck, ist also eine eigene, schlanke
+// Karte statt einer weiteren Betriebsart von `buildSessionCard` (Leonard-Wunsch 06.09.2026).
+function buildLaufHero() {
+  const key = _dayKeyOf(Date.now());
+  const lauf = runNachTag()[key];
+  const gepl = runGeplanteTage()[key];
+  const titel = lauf ? 'Heute gelaufen' : (gepl ? 'Heute steht ein Lauf an' : 'Heute kein Lauf geplant');
+  return `<div class="hero-v2 rest-mode hero-v2-lauf-card">
+    <div class="hero-v2-text" style="flex:1">
+      <div class="hero-v2-label">LAUFEN</div>
+      <div class="hero-v2-title">${titel}</div>
+      ${heroLaufZeile()}
+      <div class="hero-v2-button-row">${heroLaufBtn()}</div>
+    </div>
+    <div class="hero-v2-art hero-v2-lauf-art">
+      ${heroRunnerSvg()}
     </div>
   </div>`;
 }
@@ -1788,11 +1843,12 @@ function _renderGymSeite() {
   // Session card
   const wrap = document.getElementById('wo-session-card-wrap');
   if (activeOnSelected) {
-    wrap.innerHTML = buildSessionCard(active, planDay, selDay, false);
+    wrap.innerHTML = buildSessionCard(active, planDay, selDay, false, { sport: 'gym' });
   } else if (planDay) {
-    wrap.innerHTML = buildSessionCard(null, planDay, selDay, true);
+    wrap.innerHTML = buildSessionCard(null, planDay, selDay, true, { sport: 'gym' });
   } else {
-    wrap.innerHTML = buildRestHero(!!(selDay && selDay.isToday), selDay ? dayFullName(selDay.dayKey) : '');
+    // Seite „Gym" — die Laufhaelfte steht drueben auf der Seite „Laufen".
+    wrap.innerHTML = buildRestHero(!!(selDay && selDay.isToday), selDay ? dayFullName(selDay.dayKey) : '', 'gym');
     // Hoehe und Hantel wie in der Uebersicht ausrichten — die Karte soll dort und hier
     // identisch aussehen.
     _ruhetagHeroAusrichten();
@@ -3509,6 +3565,8 @@ async function runLaeufeLaden({ interactive = false } = {}) {
   if (runLaden) return;
   runLaden = true; runFehler = '';
   renderLaufVerwaltung(); renderRunSourceCard();
+  if (currentScreen === 'overview') renderOverview();
+  else if (currentScreen === 'workouts') renderWorkoutsScreen();
   try {
     if (!runVerbunden()) await runRequestToken({ interactive });
     const kopfR = await fetch(
@@ -3541,7 +3599,10 @@ async function runLaeufeLaden({ interactive = false } = {}) {
   } finally {
     runLaden = false;
     renderLaufVerwaltung(); renderRunSourceCard();
+    // Die Knoepfe „Lauf abgeschlossen" stehen in den Herocards beider Tabs — beide muessen
+    // den neuen Stand zeigen, nicht nur die Einstellungen (06.09.2026).
     if (currentScreen === 'overview') renderOverview();
+    else if (currentScreen === 'workouts') renderWorkoutsScreen();
   }
 }
 
@@ -3756,6 +3817,9 @@ function renderLaufKalenderSeite() {
   const wochenplan = `<div id="wo-runplan-card">${buildRunPlanCard(
     "setPlansView('runplans');wischeZuTab('plans')", null,
     { selectedIdx: selectedRunDayIdx, dayOnTap: 'selectRunDay' })}</div>`;
+  // Herocard direkt unter dem Wochenplan — dieselbe Stelle wie im Gymteil
+  // (Leonard-Wunsch 06.09.2026).
+  const hero = `<div id="wo-lauf-hero">${buildLaufHero()}</div>`;
   const laeufe = DB.getRuns();
   const stand = DB.getRunsStand();
 
@@ -3789,7 +3853,7 @@ function renderLaufKalenderSeite() {
 
   // Der gewaehlte Tag steht UNTER „Diese Woche" (Leonard-Wunsch 04.09.2026).
   const tagKarte = runPlanAktiv() ? `<div id="wo-lauftag-card">${buildLaufTagKarte(selectedRunDayIdx)}</div>` : '';
-  el.innerHTML = wochenplan + woche + tagKarte;
+  el.innerHTML = wochenplan + hero + woche + tagKarte;
 }
 
 // Verbindung zur Tabelle „Workout Data". Steht seit dem 04.09.2026 in den EINSTELLUNGEN
@@ -4380,7 +4444,12 @@ function renderTrainingCalendar(id, cardId) {
   const laeufeImJahr = DB.getRuns().filter(l => Number(l.date.slice(0, 4)) === jahr).length;
   const zusatzLauf = (modus.kraft && modus.lauf)
     ? ` · ${laeufeImJahr} ${laeufeImJahr === 1 ? 'Lauf' : 'Läufe'}` : '';
-  const streak = getWeekStreak();
+  // Die Serie gehoert zu GENAU EINER Sportart und steht deshalb nur in deren Kalender
+  // (Leonard-Wunsch 06.09.2026): Gymkalender = Serie der Krafteinheiten, Laufkalender = Serie
+  // der Laeufe. Im gemeinsamen Trainingskalender stuenden zwei Serien nebeneinander, ohne dass
+  // erkennbar waere, welche welche ist — dort bleibt sie weg.
+  const streak = (modus.kraft && modus.lauf) ? 0
+    : (modus.kraft ? getWeekStreak() : getRunWeekStreak());
   const titelEl = document.getElementById(id === 'cal' ? 'cal-filter-btn' : id + '-titel');
   if (titelEl) titelEl.textContent = modus.titel;
   const statsEl = document.getElementById(id + '-stats');
@@ -4991,13 +5060,11 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
     const pw = _planProgramWeek(p);
     const ws = getWeekStatus();
     const pct = Math.round(pw.num / (pw.total || 1) * 100);
-    const streak = getWeekStreak();
     progress = `<div class="ppv-progress">
       <span class="ppv-wk">Woche ${pw.num} / ${pw.total}</span>
       <div class="ppv-bar"><div class="ppv-bar-fill" style="width:${Math.min(100,pct)}%"></div></div>
       <span class="ppv-adh">${ws.done}/${ws.planned} diese Woche</span>
-    </div>
-    ${streak >= 2 ? `<div class="ppv-streak">${streak} Wochen in Folge vollständig</div>` : ''}`;
+    </div>`;
   }
   return `<div class="plan-card-v2 plan-status-${status}${isCurrent ? ' active' : ''}" onclick="${onTap || `openPlanDetail('${p.id}')`}">
     <div class="ppv-head">

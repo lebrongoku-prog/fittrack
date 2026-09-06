@@ -1066,7 +1066,6 @@ html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-wk    { color: rgba(255,2
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-adh   { color: #fff; }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-bar      { background: rgba(255,255,255,.25); }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-bar-fill { background: #fff; }
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-streak   { color: #fff; }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-wd       { color: rgba(255,255,255,.75); }
 /* Geplante Tage weiss gefuellt: Die Akzentfarbe liegt zu nah am Tab-Hintergrund. */
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.training .ppv-wd { background: rgba(255,255,255,.92); color: var(--accent-dark); }
@@ -1183,18 +1182,6 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 .ex-chart-wrap { height: 150px; margin: 2px 0 12px; }
 .ex-chart-empty { font-size: 12px; color: var(--text3); line-height: 1.4; margin-bottom: 12px; }
 
-/* Hinweis auf das nahende Plan-Ende */
-.plan-end-notice {
-  margin: 0 14px 14px; padding: 12px 14px;
-  background: var(--card); border-radius: 12px; box-shadow: var(--shadow);
-  border-left: 3px solid var(--accent); border-top-left-radius: 0; border-bottom-left-radius: 0;
-}
-.plan-end-notice .pen-text { font-size: 13px; color: var(--text2); line-height: 1.45; }
-.plan-end-notice .pen-text strong { color: var(--text); }
-.plan-end-notice .pen-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-
-/* Wochenserie in der Plan-Karte */
-.ppv-streak { margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--green); }
 
 /* Einstieg ins freie Training */
 .free-wo-btn { margin-top: 12px; }
@@ -1318,6 +1305,18 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 /* Hellgruen wie das Laufsymbol daneben und die Laufkreise im Kalender — das Dunkelgruen
    gehoert zum Krafttraining (Leonard-Wunsch 05.09.2026). */
 .hero-v2-lauf.erledigt { color: #4ADE80; font-weight: 600; }
+/* „Lauf abgeschlossen" — gleicher Knopf wie „Einheit starten", nur im Hellgruen der
+   Laufdomaene statt im Tab-Verlauf (Leonard-Wunsch 06.09.2026: beide Sportarten gleich
+   behandelt, jede mit eigenem Knopf). Die dunkle Schrift, weil Hellgruen zu hell fuer
+   Weiss ist. */
+.hero-v2-btn-lauf { background: #4ADE80; color: #0B3B22; }
+.hero-v2-btn-lauf:disabled { opacity: .6; }
+/* Der Ruhetag-Knopf „Freies Training starten" ist ein `.btn`, kein `.hero-v2-btn` — in der
+   gemeinsamen Knopfzeile braucht er dieselbe Breitenverteilung. */
+.hero-v2-button-row .free-wo-btn { flex: 1; margin: 0; width: auto; }
+/* Die Karte der Seite „Laufen": derselbe Aufbau wie die Ruhetag-Karte, nur mit dem
+   Laufsymbol statt der Hantel. */
+.hero-v2-lauf-art svg { width: 100%; height: 100%; color: #4ADE80; }
 .hero-v2-lauf-ic { width: 20px; height: 20px; flex-shrink: 0; display: block; }
 .hero-v2-lauf-ic svg { width: 100%; height: 100%; color: #4ADE80; }
 .hero-v2-btn svg { fill: #fff !important; }
@@ -2774,12 +2773,7 @@ html.wo-running #wo-week-card { display: none; }
      Herocard rutscht dadurch in die naechste Zeile ueber die volle Breite. */
   #screen-overview.active > #ov-runplan-card { grid-column: 2; }
   #screen-overview.active > #ov-hero-wrap { grid-column: 1 / -1; }
-  /* Der Plan-Ende-Hinweis ist meistens leer, belegte als Grid-Element aber trotzdem eine
-     Zelle in Spalte 2 — dadurch rutschte „Letzte Einheiten" eine Zeile nach unten und stand
-     versetzt neben der Plan-Karte. Leer = raus aus dem Grid, sonst unter die Plan-Karte. */
-  #screen-overview.active > #ov-plan-end-notice:empty { display: none; }
-  #screen-overview.active > #ov-plan-card,
-  #screen-overview.active > #ov-plan-end-notice { grid-column: 1; }
+  #screen-overview.active > #ov-plan-card { grid-column: 1; }
   /* Im Hochformat steht der Kalender direkt über „Letzte Einheiten" (DOM-Reihenfolge).
      Im Zwei-Spalten-Layout würde er die beiden Kacheln auseinanderreißen — dort rutscht
      er per order hinter sie, ohne dass das Markup doppelt vorgehalten werden muss.

@@ -628,7 +628,15 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Im Hochformat sind beide gewoehnliche Bloecke — die Reihenfolge im Markup ist damit auch die
   Reihenfolge auf dem Bildschirm. Die Klassen `lg-col1`/`lg-col2` gelten seither NUR noch im
   Uebersichts-Grid.
-- **Übersicht:** Sicherungs-Status als Chip im Kopf neben dem Titel (`renderBackupLine` → `#ov-backup-line` in `.ph-right`, Klasse `.backup-chip`; kurze Texte wegen des knappen Platzes, ausführliche Fassung im `title`-Attribut), Hinweis vor Plan-Ende (`renderPlanEndNotice` + `extendActivePlan`), Wochenserie (`getWeekStreak` → `.ppv-streak`), Einstieg ins freie Training (`startFreeWorkout`, Einheit ohne `planDayId`).
+- **Übersicht:** Sicherungs-Status als Chip im Kopf neben dem Titel (`renderBackupLine` → `#ov-backup-line` in `.ph-right`, Klasse `.backup-chip`; kurze Texte wegen des knappen Platzes, ausführliche Fassung im `title`-Attribut), Einstieg ins freie Training (`startFreeWorkout`, Einheit ohne `planDayId`).
+- **ENTFERNT am 06.09.2026 (Leonard-Wunsch, ersatzlos):** der Hinweis „Dein Plan endet in N Tagen"
+  (`renderPlanEndNotice`, `extendActivePlan`, `#ov-plan-end-notice`, `.plan-end-notice`) und die
+  Zeile „N Wochen in Folge vollstaendig" in der Wochenplan-Karte (`.ppv-streak`).
+- **Die Wochenserie steht im KALENDER der jeweiligen Sportart** (06.09.2026): Gymkalender zeigt
+  `getWeekStreak()` (Krafteinheiten gegen die geplanten Trainingstage), Laufkalender
+  `getRunWeekStreak()` (Laeufe gegen die Lauftage des aktiven Laufplans — neu, gleiches Prinzip,
+  eigene Funktion, weil die Datenmodelle nichts teilen). Im gemeinsamen Trainingskalender bleibt
+  sie WEG: Dort stuenden zwei Serien nebeneinander, ohne dass erkennbar waere, welche welche ist.
 - **Ende der Satzpause** meldet sich dreifach: Vibration, Ton und sichtbare Meldung „Pause vorbei" (5 s, `.done`).
   Grund fuer den Aufwand: `navigator.vibrate` gibt es auf dem iPhone NICHT (Safari unterstuetzt die Vibration-API auf
   keiner Plattform), und der Ton schweigt bei aktivem Klingelschalter. Der Ton ist ein Zweiklang aus dem WebAudio-
@@ -913,11 +921,26 @@ Tabfarbe, und sieht in Uebersicht, Trainings-Tab und Plaene-Tab gleich aus. Im T
 bleibt er WEISS — dafuer sorgt die bestehende Glas-Regel, die spaeter steht und gewinnt.
 Die **Kennzahl** des Kalenders zaehlt im Laufkalender Laeufe statt Krafteinheiten.
 
-### Herocard deckt beide Plaene ab
-`heroLaufZeile()` haengt in Trainings- UND Ruhetag-Herocard eine Zeile zum heutigen Lauf an
-(„Gelaufen: 8 km · 45min" bzw. „Lauf heute: …"). Ohne Lauf heute bleibt sie weg. Das Symbol
-`heroRunnerSvg()` traegt BEWUSST keine Farbe im SVG — der Aufrufer setzt sie per `color`
-(Hellgruen); das Hantel-Symbol dagegen folgt mit `var(--accent)` der Tabfarbe.
+### Herocard: beide Sportarten gleichwertig
+In der UEBERSICHT deckt eine Karte Gym UND Laufen ab, beide mit eigenem Knopf in EINER Zeile
+(`.hero-v2-button-row`): „Einheit starten" (bzw. „+ Freies Training starten" am Ruhetag) und
+„Lauf abgeschlossen". Bis zum 06.09.2026 hatte das Laufen nur eine Textzeile gegen einen vollen
+Knopf und ging daneben unter (Leonard-Meldung).
+„Lauf abgeschlossen" ruft `runLaeufeLaden({interactive:true})` — dieselbe Funktion wie
+„Aktualisieren" in den Einstellungen. FitTrack fuehrt keine Laeufe selbst; der Knopf kann nur
+nachschauen, was Health Auto Export inzwischen in die Tabelle geschrieben hat.
+`runLaeufeLaden` frischt deshalb auch den Trainings-Tab auf, nicht nur Uebersicht und
+Einstellungen — der Knopf steht ja in beiden Tabs.
+WELCHE HAELFTE erscheint, steuert `opts.sport` ('beide' | 'gym' | 'lauf'; `buildRestHero` nimmt
+es als dritten Parameter): Die Uebersicht zeigt beide, der Trainings-Tab je Seite nur die
+passende. Die Seite „Laufen" hat dafuer eine EIGENE Karte (`buildLaufHero`, `#wo-lauf-hero`,
+direkt unter dem Wochenplan) statt einer weiteren Betriebsart von `buildSessionCard` — sie hat
+kein Gym-Gegenstueck, ein gemeinsamer Bau waere nur Ballast.
+`heroLaufZeile()` ist seither NUR noch die Infozeile; ohne Lauf und ohne Plan steht dort
+„Heute kein Lauf geplant" statt gar nichts (vorher verschwand die Zeile — mit dem Knopf
+daneben saehe das luecken haft aus). Das Symbol `heroRunnerSvg()` traegt BEWUSST keine Farbe im
+SVG — der Aufrufer setzt sie per `color` (Hellgruen); das Hantel-Symbol dagegen folgt mit
+`var(--accent)` der Tabfarbe.
 
 ---
 
