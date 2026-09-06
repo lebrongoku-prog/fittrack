@@ -950,8 +950,9 @@ Leonard-Vorgabe:
   Eigene, vereinfachte Zeichnung (`HERO_ICON_HANTEL`) — `heroDumbbellSvg()` ist fuer 72px
   gebaut und bei 14px nur noch ein grauer Fleck.
 - **Farbe nach Sportart, Verlauf wie gehabt** (06.09.2026): Gym
-  `linear-gradient(135deg, #0B4F49, #0F766E)`, Lauf `linear-gradient(135deg, #22C55E, #4ADE80)`
-  mit dunkler Schrift (Hellgruen ist zu hell fuer Weiss). Vorher trug der Gym-Knopf die
+  `linear-gradient(135deg, #0B4F49, #0F766E)`, Lauf `linear-gradient(135deg, #15803D, #4ADE80)`,
+  beide mit WEISSER Schrift. Der erste Versuch (#22C55E→#4ADE80, dunkle Schrift) hatte einen
+  kaum sichtbaren Verlauf — die beiden Stops lagen zu nah beieinander. Vorher trug der Gym-Knopf die
   TABFARBE (`--gradient`). ACHTUNG Spezifitaet: Die Laufregel braucht ebenfalls zwei Klassen
   (`.hero-heute .hero-v2-btn-lauf`), sonst gewinnt die Gym-Regel.
 - **Die Beschriftung sitzt mittig zwischen Titel und Knopf**: Der Titel hat
@@ -961,6 +962,11 @@ Leonard-Vorgabe:
   eines halben Knopfes bleiben nach Polster, Symbol und Abstand nur 114px. `flex:1` haelt beide
   Knoepfe trotzdem gleich hoch. Kleiner setzen waere die Alternative gewesen — dann stuende der
   wichtigste Knopf der Uebersicht in 12px da.
+- **Die Karte steht in der Uebersicht ZUOBERST** (06.09.2026), ueber den Wochenplaenen; im
+  Querformat spannt sie ueber beide Spalten, darunter teilen sich Gym- und Laufwochenplan die
+  naechste Zeile.
+- **Die Wochenplan-Karten tragen das Sportsymbol vor dem Titel** (`.ppv-name-ic`, `1em` = die
+  16px des Titels): Hantel in #0F766E, Laeufer in #4ADE80.
 - `opts.sport`: 'beide' (Uebersicht) · 'gym' (Trainings-Tab, Seite Gym) · 'lauf' (Seite Laufen,
   Karte `#wo-lauf-hero` direkt unter dem Wochenplan). Bei einer Sportart wird die Spalte zur
   vollen Breite (`.hero-heute-spalten.einzeln`).
@@ -972,12 +978,18 @@ Leonard-Vorgabe:
 nachschauen, was Health Auto Export inzwischen in die Tabelle geschrieben hat. `runLaeufeLaden`
 frischt deshalb auch den Trainings-Tab auf, nicht nur Uebersicht und Einstellungen.
 
-**Die LAUFENDE Einheit behaelt ihre eigene Karte** (`buildSessionCard`, `.active-mode`): Uhr,
-Fortschrittsbalken, Pausieren und Beenden. Dort ist die Karte der Bedienstand DIESER Einheit,
-nicht die Tagesuebersicht — deshalb auch bewusst ohne Laufteil. Mit dem Umbau ist ihr
-Vorschau-Zweig (`isPreview`, `metaPreview`) und die Ausrichtung der Ruhetag-Karte an der
-Wochenplan-Karte (`_ruhetagHeroAusrichten`/`_ruhetagHeroEinrichten`) entfallen — die neue Karte
-hat kein Symbol mehr, das auf einen Knopf auszurichten waere.
+**Die LAUFENDE Einheit hat dieselbe Bauform** (`buildSessionCard`, `.hero-heute.hero-aktiv`,
+angeglichen 06.09.2026): Titel = Name des TRAININGSTAGS, Uhr rechts in derselben Zeile,
+darunter der Fortschrittsbalken und dann die Knoepfe „Pausieren"/„Fortsetzen" und „Beenden" —
+volle Breite, 14px zum Rand, 14px dazwischen, Symbol in Textgroesse. Ueber den Knoepfen steht
+KEIN Text; wo die Karte „Heute" ihre Beschriftungen hat, liegt hier der Balken.
+Weggefallen sind dabei: Etikett „LAUFENDE EINHEIT", die Zeile „N von M Uebungen abgeschlossen",
+die grosse Hantel-Grafik (`heroDumbbellSvg`), der Vorschau-Zweig (`isPreview`, `metaPreview`)
+und die Ausrichtung der Ruhetag-Karte (`_ruhetagHeroAusrichten`/`_ruhetagHeroEinrichten`).
+„Beenden" bleibt ROT — es ist die Abbruchaktion. Seine Regel MUSS hinter der Gym-Farbregel
+stehen, beide haben zwei Klassen und es entscheidet die Reihenfolge.
+Bewusst weiterhin OHNE Laufteil: Waehrend eines Trainings ist die Karte der Bedienstand DIESER
+Einheit, nicht die Tagesuebersicht.
 
 ---
 

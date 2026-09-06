@@ -651,7 +651,14 @@ body.theme-plans .hist-action-dd {
 .mehr-card.plan-form-card { transition: none; }
 .mehr-card.plan-form-card:active { transform: none; }
 .ppv-head { display: flex; align-items: flex-start; gap: 8px; }
-.ppv-name { flex: 1; min-width: 0; font-size: 16px; font-weight: 700; color: var(--text); }
+.ppv-name { flex: 1; min-width: 0; font-size: 16px; font-weight: 700; color: var(--text);
+  display: flex; align-items: center; gap: 8px; }
+/* Symbol der Sportart vor dem Titel (Leonard-Wunsch 06.09.2026), in TITELgroesse: `1em`
+   bindet es an die 16px des Namens. Es darf nicht schrumpfen, wenn der Name lang wird. */
+.ppv-name-ic { width: 1em; height: 1em; flex-shrink: 0; display: inline-flex; }
+.ppv-name-ic svg { width: 100%; height: 100%; }
+.plan-card-v2 .ppv-name-ic { color: #0F766E; }
+.plan-card-v2.run-plan .ppv-name-ic { color: #4ADE80; }
 .plan-status-past .ppv-name, .plan-status-archived .ppv-name { color: var(--text2); }
 .ppv-meta { font-size: 12px; color: var(--text3); margin-top: 4px; }
 .ppv-progress { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
@@ -1304,6 +1311,12 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    uebrigen Knopfzeilen. */
 .hero-heute { display: block; padding: 14px; }
 .hero-heute-titel { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+/* Laufende Einheit: Trainingstag links, Uhr rechts in derselben Zeile. */
+.hero-aktiv-titel { display: flex; align-items: baseline; gap: 10px; }
+.hero-aktiv-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Der Fortschrittsbalken steht da, wo in der Karte „Heute" die Beschriftungen stehen — also
+   mit demselben Abstand zu den Knoepfen darunter. */
+.hero-aktiv .hero-v2-progress-bar-thin { margin-bottom: 10px; }
 .hero-heute-spalten { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .hero-heute-spalten.einzeln { grid-template-columns: 1fr; }
 /* Abstand oben (Titel: `margin-bottom: 10px`) und unten GLEICH gross — damit sitzt die
@@ -1336,7 +1349,12 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    dunkler Stop 135 Grad in den helleren Ton. */
 .hero-heute .hero-v2-btn { background: linear-gradient(135deg, #0B4F49, #0F766E); }
 /* Muss ebenfalls zwei Klassen tragen, sonst gewinnt die Gym-Regel darueber. */
-.hero-heute .hero-v2-btn-lauf { background: linear-gradient(135deg, #22C55E, #4ADE80); color: #0B3B22; }
+/* Der Verlauf muss SICHTBAR sein (Leonard-Meldung 06.09.2026) — #22C55E→#4ADE80 lagen zu
+   nah beieinander. Jetzt derselbe Kontrast wie beim Gym-Knopf, weisse Schrift wie dort. */
+.hero-heute .hero-v2-btn-lauf { background: linear-gradient(135deg, #15803D, #4ADE80); color: #fff; }
+/* „Beenden" bleibt rot: Es ist die Abbruchaktion und soll sich vom Weiterlaufen abheben.
+   MUSS hinter der Gym-Regel stehen — gleiche Spezifitaet, es entscheidet die Reihenfolge. */
+.hero-heute .hero-v2-btn-danger { background: linear-gradient(135deg, #B91C1C, var(--red)); color: #fff; }
 .hero-v2-btn-lauf .hero-btn-ic svg { fill: none; stroke: currentColor; }
 .hero-v2-btn:disabled { opacity: .55; }
 /* Die alten Knopfsymbole sind gefuellte Formen (Play, Stop). Die neuen in `.hero-btn-ic`
@@ -2783,16 +2801,12 @@ html.wo-running #wo-week-card { display: none; }
     align-content: start;
   }
   #screen-overview.active > .ph { grid-column: 1 / -1; }
-  /* Wochenplan und Herocard teilen sich die erste Zeile zu gleichen Teilen — die Herocard
-     spannte vorher ueber beide Spalten (Leonard-Wunsch 20.08.2026). Spalte folgt der
-     DOM-Reihenfolge: Wochenplan links, Herocard rechts. */
-  #screen-overview.active > #ov-hero-wrap { grid-column: 2; }
-  /* Gym- und Laufwochenplan teilen sich eine Zeile (Leonard-Wunsch 01.09.2026): Der
-     Gymplan liegt bereits in Spalte 1, der Laufplan kommt daneben in Spalte 2. Die
-     Herocard rutscht dadurch in die naechste Zeile ueber die volle Breite. */
-  #screen-overview.active > #ov-runplan-card { grid-column: 2; }
+  /* Die Herocard steht seit dem 06.09.2026 ZUOBERST und spannt ueber beide Spalten —
+     ihre beiden Knoepfe teilen sich die Breite dann genauso wie im Hochformat.
+     Darunter teilen sich Gym- und Laufwochenplan eine Zeile (Leonard-Wunsch 01.09.2026). */
   #screen-overview.active > #ov-hero-wrap { grid-column: 1 / -1; }
   #screen-overview.active > #ov-plan-card { grid-column: 1; }
+  #screen-overview.active > #ov-runplan-card { grid-column: 2; }
   /* Im Hochformat steht der Kalender direkt über „Letzte Einheiten" (DOM-Reihenfolge).
      Im Zwei-Spalten-Layout würde er die beiden Kacheln auseinanderreißen — dort rutscht
      er per order hinter sie, ohne dass das Markup doppelt vorgehalten werden muss.

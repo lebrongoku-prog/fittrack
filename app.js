@@ -1369,7 +1369,7 @@ function buildRunPlanCard(onTap, plan, opts) {
   return `<div class="plan-card-v2 run-plan plan-status-${status}${laeuft ? ' active' : ''}"
        onclick="${onTap || "setPlansView('runplans');wischeZuTab('plans')"}">
     <div class="ppv-head">
-      <div class="ppv-name">${escapeHtml(p.name || 'Laufplan')}</div>
+      <div class="ppv-name">${PPV_ICON_LAEUFER}${escapeHtml(p.name || 'Laufplan')}</div>
       ${laeuft ? '' : `<span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>`}
     </div>
     ${laeuft ? '' : `<div class="ppv-meta">${fmtDateRange(p.startDate, p.endDate)}${wochen ? ` · ${wochen} Wochen` : ''}</div>`}
@@ -1399,18 +1399,9 @@ function heroRunnerSvg() {
   </svg>`;
 }
 
-function heroDumbbellSvg() {
-  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="color:var(--accent)">
-    <rect x="36" y="55" width="48" height="10" rx="3" fill="currentColor" opacity="0.95"/>
-    <rect x="18" y="38" width="22" height="44" rx="5" fill="currentColor"/>
-    <rect x="20" y="40" width="6" height="40" rx="3" fill="#fff" opacity="0.4"/>
-    <rect x="10" y="44" width="12" height="32" rx="4" fill="currentColor" opacity="0.8" style="filter:brightness(0.7)"/>
-    <rect x="80" y="38" width="22" height="44" rx="5" fill="currentColor"/>
-    <rect x="82" y="40" width="6" height="40" rx="3" fill="#fff" opacity="0.4"/>
-    <rect x="98" y="44" width="12" height="32" rx="4" fill="currentColor" opacity="0.8" style="filter:brightness(0.7)"/>
-    <rect x="38" y="56" width="44" height="2" rx="1" fill="#fff" opacity="0.4"/>
-  </svg>`;
-}
+// `heroDumbbellSvg()` ist am 06.09.2026 entfallen — die grosse Hantel-Grafik gab es nur in
+// der alten Herocard. Im Knopf steht jetzt `HANTEL_SVG`, eine fuer 14px gebaute Zeichnung.
+
 
 // Mittlere Dauer der bisher absolvierten Einheiten dieses Trainingstags. Vor der ersten
 // Einheit gibt es nichts zu mitteln — dann null, und die Herocard laesst die Angabe weg.
@@ -1426,74 +1417,37 @@ function avgDauerFuerTag(planDayId) {
 // Trainings ist die Karte der Bedienstand dieser Einheit, nicht die Tagesuebersicht.
 function buildSessionCard(active, planDay, selDay, opts) {
   opts = opts || {};
-  const totalSets = active
-    ? active.exercises.reduce((a,e) => a + (Array.isArray(e.sets) ? e.sets.length : 0), 0)
-    : (planDay
-        ? planDay.exercises.reduce((a,e) => a + (e.targetSets || 0), 0)
-        : 0);
-  const exCount = active ? active.exercises.length : (planDay ? planDay.exercises.length : 0);
-  const doneEx = active ? active.exercises.filter(e=>e.done).length : 0;
   const processedEx = active ? active.exercises.filter(e=>e.done || e.skipped).length : 0;
   // Ohne Trainingstag (freies Training) den Namen der Einheit anhängen statt nur den Wochentag.
   const titleSuffix = planDay ? escapeHtml(planDay.name) : (active && active.planDayName ? escapeHtml(active.planDayName) : '');
-  const title = `${dayFullName(selDay.dayKey)}${titleSuffix ? ': ' + titleSuffix : ''}`;
-  // Die Vorschau traegt kein Etikett mehr — „Vorschau" / „Naechste Einheit" sagte nichts,
-  // was der Titel nicht schon zeigt (Leonard-Wunsch 20.08.2026). Die laufende Einheit behaelt es.
-  const label = opts.label || 'LAUFENDE EINHEIT';
+  // Titel ist der TRAININGSTAG (Leonard-Wunsch 06.09.2026) — nicht mehr „Wochentag: Tag" mit
+  // dem Etikett „LAUFENDE EINHEIT" darueber. Dass die Einheit laeuft, sagt die Uhr daneben.
+  const titel = titleSuffix || dayFullName(selDay.dayKey);
   const pct = active && active.exercises.length
     ? (processedEx / active.exercises.length * 100) : 0;
-  const timerBlock = active
-    ? `<div class="hero-v2-timer">${fmtTimer(Math.floor(getElapsedMs(active)/1000))}</div>`
-    : '';
-
-  // Meta: Fortschrittszeile plus duenner Balken
-  const metaActive = `<div class="hero-v2-meta">
-    <span>${doneEx} von ${active ? active.exercises.length : exCount} Übungen abgeschlossen</span>
-  </div>
-  <div class="hero-v2-progress-bar-thin"><div class="hero-v2-progress-fill-thin" style="width:${pct}%"></div></div>`;
-
-  // Titelzeile mit Uhr rechts
-  const titleBlock = `<div class="hero-v2-title-row">
-    <div class="hero-v2-title">${title}</div>
-    ${timerBlock}
-  </div>`;
-
-  const topRow = `<div class="hero-v2-top">
-    <div class="hero-v2-text">
-      ${label ? `<div class="hero-v2-label">${label}</div>` : ''}
-      ${titleBlock}
-      ${metaActive}
-    </div>
-    <div class="hero-v2-art">
-      <div class="glow"></div>
-      ${heroDumbbellSvg()}
-    </div>
-  </div>`;
 
   const paused = !!(active && active.paused);
   const pauseLabel = paused ? 'Fortsetzen' : 'Pausieren';
-  const pauseIcon = paused
-    ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>'
-    : '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+  const pauseIcon = paused ? HERO_ICON_PLAY : HERO_ICON_PAUSE;
+  // Pause-Knopf hat nur Sinn, wenn ueberhaupt eine Kraft-Uebung im Workout steckt.
+  const hatUebungen = !!(active && active.exercises.length);
 
-  // Pause-Button hat nur Sinn, wenn ueberhaupt eine Kraft-Uebung im Workout steckt
-  const hasStrengthEx = !!(active && active.exercises.length);
-  const pauseBtn = hasStrengthEx
-    ? `<button class="hero-v2-btn-pause" onclick="togglePauseWorkout()" aria-label="${pauseLabel}">
-          ${pauseIcon}
-          ${pauseLabel}
-        </button>`
-    : '';
-
-  return `<div class="hero-v2 col-layout active-mode">
-    ${topRow}
-    <div class="hero-v2-bottom">
-      <div class="hero-v2-button-row">
-        ${pauseBtn}
-        <button class="hero-v2-btn-danger" onclick="confirmFinish()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>
-          Beenden
-        </button>
+  // Gleicher Aufbau wie die Karte „Heute": Titel links, darunter die Knoepfe ueber die volle
+  // Breite mit 14px zum Rand und 14px dazwischen. Wo dort die Beschriftungen stehen, steht
+  // hier der Fortschrittsbalken — Text ueber den Knoepfen gibt es keinen mehr
+  // (Leonard-Wunsch 06.09.2026). Hantel-Grafik und Etikett sind mit dem Umbau entfallen.
+  return `<div class="hero-v2 hero-heute hero-aktiv">
+    <div class="hero-heute-titel hero-aktiv-titel">
+      <span class="hero-aktiv-name">${titel}</span>
+      <span class="hero-v2-timer">${fmtTimer(Math.floor(getElapsedMs(active)/1000))}</span>
+    </div>
+    <div class="hero-v2-progress-bar-thin"><div class="hero-v2-progress-fill-thin" style="width:${pct}%"></div></div>
+    <div class="hero-heute-spalten${hatUebungen ? '' : ' einzeln'}">
+      ${hatUebungen ? `<div class="hero-heute-spalte">
+        <button class="hero-v2-btn" onclick="togglePauseWorkout()">${pauseIcon}${pauseLabel}</button>
+      </div>` : ''}
+      <div class="hero-heute-spalte">
+        <button class="hero-v2-btn hero-v2-btn-danger" onclick="confirmFinish()">${HERO_ICON_STOP}Beenden</button>
       </div>
     </div>
   </div>`;
@@ -1547,7 +1501,7 @@ function buildHeuteHero(planDay, selDay, opts) {
       <div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf geplant')}</div>
       <button class="hero-v2-btn hero-v2-btn-lauf" onclick="runLaeufeLaden({interactive:true})"
               ${runLaden ? 'disabled' : ''}>
-        <span class="hero-btn-ic">${heroRunnerSvg()}</span>${runLaden ? 'Lese …' : 'Lauf abgeschlossen'}
+        ${HERO_ICON_LAEUFER}${runLaden ? 'Lese …' : 'Lauf abgeschlossen'}
       </button>
     </div>`);
   }
@@ -1561,9 +1515,19 @@ function buildHeuteHero(planDay, selDay, opts) {
 // Symbole im Knopf, in Textgroesse. Als Konstanten, damit alle Knoepfe dasselbe nutzen.
 // Die HANTEL loest am 06.09.2026 das Play-Dreieck ab (Leonard-Wunsch): Sie benennt die
 // Sportart statt der Aktion und ist damit das Gegenstueck zum Laeufer im Nachbarknopf.
-// Eigene, vereinfachte Zeichnung — `heroDumbbellSvg()` ist fuer 72px gebaut und wuerde bei
-// 14px zu einem grauen Fleck.
-const HERO_ICON_HANTEL = '<span class="hero-btn-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6.5 9v6M3.5 10.5v3M17.5 9v6M20.5 10.5v3M8 12h8"/></svg></span>';
+// Eigene, vereinfachte Zeichnung: Die fruehere grosse Hantel war fuer 72px gebaut und waere
+// bei 14px zu einem grauen Fleck geworden.
+const HANTEL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6.5 9v6M3.5 10.5v3M17.5 9v6M20.5 10.5v3M8 12h8"/></svg>';
+const HERO_ICON_HANTEL  = `<span class="hero-btn-ic">${HANTEL_SVG}</span>`;
+const HERO_ICON_LAEUFER = `<span class="hero-btn-ic">${heroRunnerSvg()}</span>`;
+const HERO_ICON_PLAY  = '<span class="hero-btn-ic"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5,3 19,12 5,21"/></svg></span>';
+const HERO_ICON_PAUSE = '<span class="hero-btn-ic"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></span>';
+const HERO_ICON_STOP  = '<span class="hero-btn-ic"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></span>';
+// Dieselben Symbole vor dem Titel der Wochenplan-Karten (Leonard-Wunsch 06.09.2026) — sie
+// sagen auf einen Blick, welche Sportart die Karte zeigt. Eigene Klasse, weil sie dort der
+// TITELgroesse folgen (16px) statt der Knopfschrift.
+const PPV_ICON_HANTEL  = `<span class="ppv-name-ic">${HANTEL_SVG}</span>`;
+const PPV_ICON_LAEUFER = `<span class="ppv-name-ic">${heroRunnerSvg()}</span>`;
 
 
 // `buildRestHero` und `buildLaufHero` sind am 06.09.2026 entfallen — die Herocard „Heute"
@@ -4966,7 +4930,7 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
   }
   return `<div class="plan-card-v2 plan-status-${status}${isCurrent ? ' active' : ''}" onclick="${onTap || `openPlanDetail('${p.id}')`}">
     <div class="ppv-head">
-      <div class="ppv-name">${escapeHtml(p.name)}</div>
+      <div class="ppv-name">${PPV_ICON_HANTEL}${escapeHtml(p.name)}</div>
       ${hideStatus ? '' : `<span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>`}
     </div>
     ${hideMeta ? '' : `<div class="ppv-meta">${fmtDateRange(p.startDate, p.endDate)}${planWochen(p) ? ` · ${planWochen(p)} Wochen` : ''}</div>`}
