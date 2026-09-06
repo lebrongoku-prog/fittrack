@@ -1184,7 +1184,6 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 
 
 /* Einstieg ins freie Training */
-.free-wo-btn { margin-top: 12px; }
 
 /* Sicherungs-Hinweis auf der Übersicht */
 /* Sicherungs-Status im Kopf der Übersicht, links neben dem Zahnrad. Sitzt auf dem
@@ -1297,28 +1296,42 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 @media (min-width: 1024px) { .hero-v2-meta-avg .dot { display: block; } }
 .hero-v2-meta svg { width: 14px; height: 14px; stroke: var(--text2); fill: none; stroke-width: 1.8; }
 .hero-v2-btn { align-self: flex-start; padding: 13px 22px; border-radius: 12px; background: var(--gradient); color: #fff; border: none; font-size: 15px; font-weight: 700; display: inline-flex; gap: 8px; align-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
-/* Heutiger Lauf in der Herocard — eine Karte deckt damit Gym und Laufen ab. */
-.hero-v2-lauf {
-  display: flex; align-items: center; gap: 8px; width: 100%;
-  margin-top: 8px; font-size: 13px; color: var(--text2);
+/* ─── Herocard „Heute" (06.09.2026, Leonard-Vorgabe) ───────────────────────────────
+   Titel „Heute" an derselben Stelle wie jeder andere Kartentitel, darunter je Sportart eine
+   Spalte aus mittiger Beschriftung und Knopf. Kein Ober-/Untertitel, kein Symbol.
+   Die Knoepfe fuellen die Karte: Ihr Abstand zum Kartenrand ist das Kartenpolster (14px), und
+   der Abstand ZWISCHEN ihnen ist derselbe Wert — deshalb `gap: 14px` und nicht die 6px der
+   uebrigen Knopfzeilen. */
+.hero-heute { display: block; padding: 14px; }
+.hero-heute-titel { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+.hero-heute-spalten { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.hero-heute-spalten.einzeln { grid-template-columns: 1fr; }
+.hero-heute-spalte { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+/* Die Einheit steht MITTIG ueber ihrem Knopf und wird gekuerzt statt umzubrechen — sonst
+   stuenden die beiden Knoepfe auf verschiedenen Hoehen. */
+.hero-heute-einheit {
+  text-align: center; font-size: 13px; font-weight: 600; color: var(--text3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* Hellgruen wie das Laufsymbol daneben und die Laufkreise im Kalender — das Dunkelgruen
-   gehoert zum Krafttraining (Leonard-Wunsch 05.09.2026). */
-.hero-v2-lauf.erledigt { color: #4ADE80; font-weight: 600; }
+/* Die Beschriftung darf UMBRECHEN: „Lauf abgeschlossen" braucht bei 14px 135px Text, in den
+   155px eines halben Knopfes bleiben nach Polster, Symbol und Abstand aber nur 114px. Kleiner
+   setzen waere die Alternative gewesen — dann stuende der wichtigste Knopf der Uebersicht in
+   12px da. Beide Knoepfe sind ueber `flex:1` in der Spalte gleich hoch, egal ob ein- oder
+   zweizeilig. */
+.hero-heute .hero-v2-btn {
+  width: 100%; align-self: auto; justify-content: center;
+  padding: 12px 8px; font-size: 14px; gap: 7px; line-height: 1.25;
+  min-width: 0; text-align: center; flex: 1;
+}
+/* Symbol in TEXTGROESSE vor der Beschriftung (Leonard-Vorgabe). `1em` bindet es an die
+   Schriftgroesse des Knopfes — aendert die sich, waechst das Symbol mit. */
+.hero-btn-ic { width: 1em; height: 1em; flex-shrink: 0; display: inline-flex; }
+.hero-btn-ic svg { width: 100%; height: 100%; fill: currentColor; }
 /* „Lauf abgeschlossen" — gleicher Knopf wie „Einheit starten", nur im Hellgruen der
-   Laufdomaene statt im Tab-Verlauf (Leonard-Wunsch 06.09.2026: beide Sportarten gleich
-   behandelt, jede mit eigenem Knopf). Die dunkle Schrift, weil Hellgruen zu hell fuer
-   Weiss ist. */
+   Laufdomaene statt im Tab-Verlauf. Dunkle Schrift, weil Hellgruen zu hell fuer Weiss ist. */
 .hero-v2-btn-lauf { background: #4ADE80; color: #0B3B22; }
-.hero-v2-btn-lauf:disabled { opacity: .6; }
-/* Der Ruhetag-Knopf „Freies Training starten" ist ein `.btn`, kein `.hero-v2-btn` — in der
-   gemeinsamen Knopfzeile braucht er dieselbe Breitenverteilung. */
-.hero-v2-button-row .free-wo-btn { flex: 1; margin: 0; width: auto; }
-/* Die Karte der Seite „Laufen": derselbe Aufbau wie die Ruhetag-Karte, nur mit dem
-   Laufsymbol statt der Hantel. */
-.hero-v2-lauf-art svg { width: 100%; height: 100%; color: #4ADE80; }
-.hero-v2-lauf-ic { width: 20px; height: 20px; flex-shrink: 0; display: block; }
-.hero-v2-lauf-ic svg { width: 100%; height: 100%; color: #4ADE80; }
+.hero-v2-btn-lauf .hero-btn-ic svg { fill: currentColor !important; stroke: currentColor; }
+.hero-v2-btn:disabled { opacity: .55; }
 .hero-v2-btn svg { fill: #fff !important; }
 .hero-v2-btn:active { transform: scale(.97); }
 /* Wide button variant (used in Workouts hero): volle Breite bis zur rechten Kante
@@ -1361,19 +1374,6 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 .hero-v2.active-mode { background: var(--accent-soft); }
 
 /* Rest-day hero (Übersicht when today is a rest day) – compact, dumbbell dimmed */
-.hero-v2.rest-mode {
-  flex-direction: row; gap: 12px; align-items: center;
-  min-height: 0; padding: 14px;
-}
-.hero-v2.rest-mode .hero-v2-text .hero-v2-label { color: var(--text3); margin-bottom: 6px; }
-.hero-v2.rest-mode .hero-v2-text .hero-v2-title { margin-bottom: 0; color: var(--text); }
-/* Hoehe und die senkrechte Lage der Hantel setzt `_ruhetagHeroAusrichten()` im JS:
-   Die Karte soll so hoch sein wie die Wochenplan-Karte darueber, und deren Hoehe schwankt
-   (die Serien-Zeile „N Wochen in Folge" ist nicht immer da). Die Hantel wird per
-   `transform` verschoben — das veraendert das Layout nicht und kann die Kartenhoehe
-   deshalb nicht zurueckwirkend beeinflussen. */
-.hero-v2.rest-mode .hero-v2-art { width: 80px; opacity: 0.35; }
-.hero-v2.rest-mode .hero-v2-art svg { width: 100%; height: auto; }
 
 /* Title row: title left + prominent timer right.
    align-items: flex-start so the title's top position stays stable

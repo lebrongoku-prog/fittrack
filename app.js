@@ -873,17 +873,14 @@ function renderOverview() {
   const wrap = document.getElementById('ov-hero-wrap');
   if (activeWo) {
     const heroDay = plan.find(d => d.id === activeWo.planDayId);
-    wrap.innerHTML = buildSessionCard(activeWo, heroDay, todayEntry, false, {
-      label: 'LAUFENDE EINHEIT',
-    });
-  } else if (todayEntry.planDay && !todayEntry.dayDone) {
-    wrap.innerHTML = buildSessionCard(null, todayEntry.planDay, todayEntry, true, {
-      label: 'NÄCHSTE EINHEIT',
-      previewOnClick: `requestStartFromOverview('${todayEntry.planDay.id}')`,
-    });
+    wrap.innerHTML = buildSessionCard(activeWo, heroDay, todayEntry, { label: 'LAUFENDE EINHEIT' });
   } else {
-    // Today is rest day (or already done) → compact Ruhetag hero
-    wrap.innerHTML = buildRestHero(true);
+    // Vorschau UND Ruhetag laufen ueber dieselbe Karte — der Unterschied steckt nur in der
+    // Beschriftung ueber dem Knopf (Trainingstag bzw. „Ruhetag").
+    const tag = (todayEntry.planDay && !todayEntry.dayDone) ? todayEntry.planDay : null;
+    wrap.innerHTML = buildHeuteHero(tag, todayEntry, {
+      previewOnClick: tag ? `requestStartFromOverview('${tag.id}')` : null,
+    });
   }
   ensureTimerActive();
 
@@ -909,40 +906,11 @@ function renderOverview() {
   const runCard = document.getElementById('ov-runplan-card');
   if (runCard) runCard.innerHTML = buildRunPlanCard();
 
-  _ruhetagHeroAusrichten();
 }
 
-// Ruhetag-Herocard: genauso hoch wie die Wochenplan-Karte darueber, und die Hantel auf
-// einer Linie mit der Mitte des Knopfes „Freies Training starten" (Leonard-Wunsch 01.09.2026).
-// GEMESSEN statt fest verdrahtet: Die Plan-Karte waechst um die Serien-Zeile („N Wochen in
-// Folge"), ihre Hoehe ist also nicht konstant.
-// Die Hantel wird per `transform` verschoben, NICHT per Abstand: Ein transform veraendert das
-// Layout nicht und kann die Kartenhoehe deshalb nicht zurueckwirkend beeinflussen — sonst
-// haetten sich Hoehe und Versatz gegenseitig aufgeschaukelt.
-// Laeuft fuer BEIDE Tabs, damit die Ruhetag-Karte dort identisch aussieht: Uebersicht
-// (Wochenplan-Karte in `#ov-plan-card`) und Trainings-Tab (`#wo-week-card`).
-function _ruhetagHeroAusrichten() {
-  _ruhetagHeroEinrichten('#screen-overview .hero-v2.rest-mode', '#ov-plan-card .plan-card-v2');
-  _ruhetagHeroEinrichten('#wo-session-card-wrap .hero-v2.rest-mode', '#wo-week-card .plan-card-v2');
-}
-
-function _ruhetagHeroEinrichten(heroSel, planSel) {
-  const hero = document.querySelector(heroSel);
-  if (!hero) return;
-  const art = hero.querySelector('.hero-v2-art');
-  const btn = hero.querySelector('.free-wo-btn');
-  if (art) art.style.transform = '';          // vor dem Messen zuruecksetzen, sonst summiert es sich
-  const plan = document.querySelector(planSel);
-  const planHoehe = plan ? plan.getBoundingClientRect().height : 0;
-  // Hoehe 0 heisst: Der Tab ist gerade nicht sichtbar (Vorab-Rendern beim Start). Dann nichts
-  // setzen — beim naechsten Rendern im sichtbaren Tab stimmen die Masse.
-  hero.style.minHeight = planHoehe > 0 ? Math.round(planHoehe) + 'px' : '';
-  if (!art || !btn) return;
-  const a = art.getBoundingClientRect(), b = btn.getBoundingClientRect();
-  if (!a.height || !b.height) return;
-  const versatz = Math.round((b.top + b.height / 2) - (a.top + a.height / 2));
-  art.style.transform = versatz ? `translateY(${versatz}px)` : '';
-}
+// Die Ausrichtung der Ruhetag-Karte an der Wochenplan-Karte (`_ruhetagHeroAusrichten` /
+// `_ruhetagHeroEinrichten`) ist am 06.09.2026 mit der Ruhetag-Karte selbst entfallen: Die
+// Herocard „Heute" hat kein Symbol mehr, das auf einen Knopf auszurichten waere.
 
 // Der Hinweis „Dein Plan endet in N Tagen" samt `extendActivePlan` ist am 06.09.2026
 // ersatzlos entfallen (Leonard-Wunsch) — mit ihm die Karte `#ov-plan-end-notice`.
@@ -1410,46 +1378,7 @@ function buildRunPlanCard(onTap, plan, opts) {
   </div>`;
 }
 
-// Heutiger Lauf als Zeile fuer die Herocard — so deckt EINE Karte beide Plaene ab
-// (Leonard-Wunsch 01.09.2026). Gibt es fuer heute weder einen gelaufenen noch einen
-// geplanten Lauf, bleibt die Zeile weg.
-// Angaben zum heutigen Lauf. Frueher war das die ganze Laufhaelfte der Herocard — seit dem
-// 06.09.2026 ist es nur noch die Infozeile, den Knopf liefert `heroLaufBtn()`. Grund: Mit
-// einer einzigen Textzeile gegen einen vollen Knopf ging das Laufen neben dem Gymteil unter
-// (Leonard-Meldung). Beide Sportarten haben jetzt Info UND Knopf.
-function heroLaufZeile() {
-  const key = _dayKeyOf(Date.now());
-  const lauf = runNachTag()[key];
-  const gepl = runGeplanteTage()[key];
-  let txt;
-  if (lauf) {
-    txt = lauf.art === 'hiit'
-      ? `HIIT: ${fmtMin(lauf.minutes)}${lauf.maxHR ? ` · max. ${Math.round(lauf.maxHR)} bpm` : ''}`
-      : `Gelaufen: ${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}`;
-  } else if (gepl) {
-    const u = gepl.einheit;
-    const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null]
-      .filter(Boolean).join(' · ') : '';
-    txt = 'Lauf heute' + (soll ? ': ' + soll : '');
-  } else {
-    txt = 'Heute kein Lauf geplant';
-  }
-  return `<div class="hero-v2-lauf${lauf ? ' erledigt' : ''}">
-    <span class="hero-v2-lauf-ic">${heroRunnerSvg()}</span>
-    <span>${txt}</span>
-  </div>`;
-}
 
-// „Lauf abgeschlossen" liest die Tabelle „Workout Data" neu ein — dieselbe Funktion wie
-// „Aktualisieren" in den Einstellungen (Leonard-Wunsch 06.09.2026). FitTrack fuehrt keine
-// Laeufe selbst, der Knopf kann also nichts anderes tun als nachzuschauen, was Health Auto
-// Export inzwischen geschrieben hat.
-function heroLaufBtn() {
-  return `<button class="hero-v2-btn hero-v2-btn-lauf" onclick="runLaeufeLaden({interactive:true})"
-                  ${runLaden ? 'disabled' : ''}>
-    ${runLaden ? 'Lese …' : 'Lauf abgeschlossen'}
-  </button>`;
-}
 
 // Laufsymbol fuer die Herocard — Gegenstueck zu `heroDumbbellSvg`, nach Leonards Vorlage
 // (Strichfigur im Laufschritt mit drei Tempolinien).
@@ -1492,7 +1421,10 @@ function avgDauerFuerTag(planDayId) {
   return Math.round(ws.reduce((summe, w) => summe + w.duration, 0) / ws.length);
 }
 
-function buildSessionCard(active, planDay, selDay, isPreview, opts) {
+// Karte der LAUFENDEN Einheit. Seit dem 06.09.2026 gibt es hier keinen Vorschau-Modus mehr —
+// Vorschau und Ruhetag laufen ueber `buildHeuteHero`. Bewusst OHNE Laufteil: Waehrend eines
+// Trainings ist die Karte der Bedienstand dieser Einheit, nicht die Tagesuebersicht.
+function buildSessionCard(active, planDay, selDay, opts) {
   opts = opts || {};
   const totalSets = active
     ? active.exercises.reduce((a,e) => a + (Array.isArray(e.sets) ? e.sets.length : 0), 0)
@@ -1507,36 +1439,20 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
   const title = `${dayFullName(selDay.dayKey)}${titleSuffix ? ': ' + titleSuffix : ''}`;
   // Die Vorschau traegt kein Etikett mehr — „Vorschau" / „Naechste Einheit" sagte nichts,
   // was der Titel nicht schon zeigt (Leonard-Wunsch 20.08.2026). Die laufende Einheit behaelt es.
-  const label = isPreview ? '' : (opts.label || 'LAUFENDE EINHEIT');
-  const meta = `${exCount} Übungen • ${totalSets} Sätze`;
-  const pct = !isPreview && active && active.exercises.length
+  const label = opts.label || 'LAUFENDE EINHEIT';
+  const pct = active && active.exercises.length
     ? (processedEx / active.exercises.length * 100) : 0;
-  const timerBlock = (!isPreview && active)
+  const timerBlock = active
     ? `<div class="hero-v2-timer">${fmtTimer(Math.floor(getElapsedMs(active)/1000))}</div>`
     : '';
 
-  const avgDauer = planDay ? avgDauerFuerTag(planDay.id) : null;
-  const metaPreview = `<div class="hero-v2-meta">
-        <span style="display:inline-flex;gap:5px;align-items:center">
-          <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
-          ${exCount} Übungen</span>
-        <span class="dot"></span>
-        <span style="display:inline-flex;gap:5px;align-items:center">
-          <svg viewBox="0 0 24 24"><polyline points="12 2 22 8 12 14 2 8 12 2"/><polyline points="2 12 12 18 22 12"/><polyline points="2 16 12 22 22 16"/></svg>
-          ${totalSets} Sätze</span>
-        ${avgDauer ? `<span class="hero-v2-meta-avg">
-          <span class="dot"></span>
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
-          Ø ${fmtDur(avgDauer)}</span>` : ''}
-      </div>`;
-
-  // Active-mode meta is more compact: progress label + thin bar replace the meta row
+  // Meta: Fortschrittszeile plus duenner Balken
   const metaActive = `<div class="hero-v2-meta">
     <span>${doneEx} von ${active ? active.exercises.length : exCount} Übungen abgeschlossen</span>
   </div>
   <div class="hero-v2-progress-bar-thin"><div class="hero-v2-progress-fill-thin" style="width:${pct}%"></div></div>`;
 
-  // Title-row in both modes so the title's top position stays stable
+  // Titelzeile mit Uhr rechts
   const titleBlock = `<div class="hero-v2-title-row">
     <div class="hero-v2-title">${title}</div>
     ${timerBlock}
@@ -1546,7 +1462,7 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
     <div class="hero-v2-text">
       ${label ? `<div class="hero-v2-label">${label}</div>` : ''}
       ${titleBlock}
-      ${isPreview ? metaPreview : metaActive}
+      ${metaActive}
     </div>
     <div class="hero-v2-art">
       <div class="glow"></div>
@@ -1554,51 +1470,6 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
     </div>
   </div>`;
 
-  // Welche Sportarten die Karte abdeckt: 'beide' (Uebersicht), 'gym' (Trainings-Tab, Seite
-  // Gym) oder 'lauf'. Der Trainings-Tab zeigt je Seite nur die passende Haelfte
-  // (Leonard-Wunsch 06.09.2026).
-  const sport = opts.sport || 'beide';
-  const zeigtLauf = sport !== 'gym';
-  const laufZeile = zeigtLauf ? heroLaufZeile() : '';
-
-  if (isPreview) {
-    const previewOnClick = opts.previewOnClick || `startWorkout('${planDay.id}')`;
-    // Wenn an einem anderen Tag bereits ein Workout aktiv ist, soll der Start-Button hier verschwinden.
-    // Läuft irgendwo eine Einheit, die nicht genau diese hier ist (gleicher Trainingstag UND
-    // gleicher Wochentag), darf hier kein zweiter Start angeboten werden.
-    const elsewhereActive = DB.getActive();
-    const blockedByOther = !!elsewhereActive && !(
-      elsewhereActive.planDayId === planDay.id &&
-      (selDay ? woDayIdx(elsewhereActive) === selDay.idx : true)
-    );
-    // Der Hinweis war eine Sackgasse: reiner Text, ohne Weg zur laufenden Einheit
-    // (Leonard-Meldung 05.09.2026). Jetzt fuehrt ein Knopf auf deren Wochentag zurueck.
-    const laufIdx = elsewhereActive ? woDayIdx(elsewhereActive) : -1;
-    const bottomHTML = blockedByOther
-      ? `<div class="hero-v2-running-notice">
-           <span>Es läuft gerade eine andere Einheit.</span>
-           ${laufIdx >= 0 ? `<button type="button" class="hero-v2-btn stretch"
-                    onclick="jumpToWorkoutDay(${laufIdx})">Zur laufenden Einheit</button>` : ''}
-         </div>`
-      : `<button class="hero-v2-btn" onclick="${previewOnClick}">
-           <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
-           Einheit starten
-         </button>`;
-    // Gym- und Laufknopf teilen sich eine Zeile zu gleichen Teilen. Steht nur einer da,
-    // fuellt er sie allein — `flex:1` in `.hero-v2-button-row` erledigt beides.
-    const knopfReihe = blockedByOther
-      ? bottomHTML + (zeigtLauf ? `<div class="hero-v2-button-row">${heroLaufBtn()}</div>` : '')
-      : `<div class="hero-v2-button-row">${bottomHTML}${zeigtLauf ? heroLaufBtn() : ''}</div>`;
-    return `<div class="hero-v2 col-layout">
-      ${topRow}
-      ${laufZeile}
-      <div class="hero-v2-bottom">
-        ${knopfReihe}
-      </div>
-    </div>`;
-  }
-
-  // Active mode — same outer structure as preview; bottom is only the button row
   const paused = !!(active && active.paused);
   const pauseLabel = paused ? 'Fortsetzen' : 'Pausieren';
   const pauseIcon = paused
@@ -1628,55 +1499,71 @@ function buildSessionCard(active, planDay, selDay, isPreview, opts) {
   </div>`;
 }
 
-// Einstieg ins freie Training — sichtbar an Ruhetagen und wenn gar kein Plan aktiv ist.
-// Ohne ihn führt jeder Weg ins Training über einen Trainingstag im Wochenplan.
-function freeWorkoutBtn() {
-  if (DB.getActive()) return '';
-  return `<button class="btn btn-ghost btn-full free-wo-btn" onclick="startFreeWorkout()">+ Freies Training starten</button>`;
-}
+// Herocard „Heute" (06.09.2026, Leonard-Vorgabe). Sie loest die frueheren Vorschau- und
+// Ruhetag-Karten ab und behandelt Gym und Laufen als zwei gleichwertige Spalten:
+// Titel „Heute" an derselben Stelle wie jeder andere Kartentitel, darunter je Sportart eine
+// mittige Beschriftung mit der Einheit und darunter ein Knopf. Kein Ober- oder Untertitel und
+// kein Symbol mehr — die Karte sagt in zwei Zeilen, was heute ansteht und was man tun kann.
+// Die LAUFENDE Einheit hat weiter ihre eigene Karte (`buildSessionCard` im aktiven Modus):
+// Dort gehoeren Uhr, Fortschritt und „Pausieren/Beenden" hin, nicht „Heute".
+//
+// `sport`: 'beide' (Uebersicht) · 'gym' (Trainings-Tab, Seite Gym) · 'lauf' (Seite Laufen).
+function buildHeuteHero(planDay, selDay, opts) {
+  opts = opts || {};
+  const sport = opts.sport || 'beide';
+  const spalten = [];
 
-// Ruhetag-Herocard. Wird von der Uebersicht (immer heute) UND vom Trainings-Tab genutzt —
-// dort kann ein anderer Wochentag gewaehlt sein, dessen Name dann im Titel steht
-// (Leonard-Wunsch 01.09.2026: im Trainings-Tab dieselbe Karte wie in der Uebersicht).
-// Die Karte ist in BEIDEN Tabs identisch (Leonard-Wunsch 01.09.2026) — auch „Freies Training
-// starten" steht immer da. Gestartet wird ohnehin eine Einheit von heute, unabhaengig davon,
-// welcher Wochentag im Trainings-Tab gerade ausgewaehlt ist.
-function buildRestHero(isToday, dayName, sport) {
-  const zeigtLauf = (sport || 'beide') !== 'gym';
-  const titel = isToday ? 'Heute ist Ruhetag' : (dayName || 'Kein Training geplant');
-  const gym = freeWorkoutBtn();
-  return `<div class="hero-v2 rest-mode">
-    <div class="hero-v2-text" style="flex:1">
-      <div class="hero-v2-label">RUHETAG</div>
-      <div class="hero-v2-title">${titel}</div>
-      ${zeigtLauf ? heroLaufZeile() : ''}
-      ${(gym || zeigtLauf) ? `<div class="hero-v2-button-row">${gym}${zeigtLauf ? heroLaufBtn() : ''}</div>` : ''}
-    </div>
-    <div class="hero-v2-art">
-      ${heroDumbbellSvg()}
-    </div>
+  if (sport !== 'lauf') {
+    // Laeuft anderswo bereits eine Einheit, fuehrt der Knopf dorthin statt eine zweite zu starten.
+    const anderswo = DB.getActive();
+    const blockiert = !!anderswo && !(planDay && anderswo.planDayId === planDay.id
+      && (selDay ? woDayIdx(anderswo) === selDay.idx : true));
+    const laufIdx = anderswo ? woDayIdx(anderswo) : -1;
+    let knopf;
+    if (blockiert) {
+      knopf = laufIdx >= 0
+        ? `<button class="hero-v2-btn" onclick="jumpToWorkoutDay(${laufIdx})">
+             ${HERO_ICON_PLAY}Zur laufenden Einheit</button>`
+        : `<button class="hero-v2-btn" disabled>${HERO_ICON_PLAY}Einheit läuft</button>`;
+    } else if (planDay) {
+      const start = opts.previewOnClick || `startWorkout('${planDay.id}')`;
+      knopf = `<button class="hero-v2-btn" onclick="${start}">${HERO_ICON_PLAY}Einheit starten</button>`;
+    } else {
+      knopf = `<button class="hero-v2-btn" onclick="startFreeWorkout()">${HERO_ICON_PLAY}Freies Training starten</button>`;
+    }
+    spalten.push(`<div class="hero-heute-spalte">
+      <div class="hero-heute-einheit">${planDay ? escapeHtml(planDay.name) : 'Ruhetag'}</div>
+      ${knopf}
+    </div>`);
+  }
+
+  if (sport !== 'gym') {
+    // Ueber dem Laufknopf steht das ZIEL des Tages — km und Zeit, ohne Zone
+    // (Leonard-Vorgabe 06.09.2026).
+    const gepl = runGeplanteTage()[_dayKeyOf(Date.now())];
+    const u = gepl && gepl.einheit;
+    const ziel = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null].filter(Boolean).join(' · ') : '';
+    spalten.push(`<div class="hero-heute-spalte">
+      <div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf geplant')}</div>
+      <button class="hero-v2-btn hero-v2-btn-lauf" onclick="runLaeufeLaden({interactive:true})"
+              ${runLaden ? 'disabled' : ''}>
+        <span class="hero-btn-ic">${heroRunnerSvg()}</span>${runLaden ? 'Lese …' : 'Lauf abgeschlossen'}
+      </button>
+    </div>`);
+  }
+
+  return `<div class="hero-v2 hero-heute">
+    <div class="hero-heute-titel">Heute</div>
+    <div class="hero-heute-spalten${spalten.length === 1 ? ' einzeln' : ''}">${spalten.join('')}</div>
   </div>`;
 }
 
-// Herocard der Seite „Laufen". Sie hat kein Gym-Gegenstueck, ist also eine eigene, schlanke
-// Karte statt einer weiteren Betriebsart von `buildSessionCard` (Leonard-Wunsch 06.09.2026).
-function buildLaufHero() {
-  const key = _dayKeyOf(Date.now());
-  const lauf = runNachTag()[key];
-  const gepl = runGeplanteTage()[key];
-  const titel = lauf ? 'Heute gelaufen' : (gepl ? 'Heute steht ein Lauf an' : 'Heute kein Lauf geplant');
-  return `<div class="hero-v2 rest-mode hero-v2-lauf-card">
-    <div class="hero-v2-text" style="flex:1">
-      <div class="hero-v2-label">LAUFEN</div>
-      <div class="hero-v2-title">${titel}</div>
-      ${heroLaufZeile()}
-      <div class="hero-v2-button-row">${heroLaufBtn()}</div>
-    </div>
-    <div class="hero-v2-art hero-v2-lauf-art">
-      ${heroRunnerSvg()}
-    </div>
-  </div>`;
-}
+// Symbol im Knopf, in Textgroesse. Als Konstante, damit beide Knoepfe dasselbe nutzen.
+const HERO_ICON_PLAY = '<span class="hero-btn-ic"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5,3 19,12 5,21"/></svg></span>';
+
+
+// `buildRestHero` und `buildLaufHero` sind am 06.09.2026 entfallen — die Herocard „Heute"
+// (`buildHeuteHero`) deckt Vorschau, Ruhetag und die Seite „Laufen" gemeinsam ab.
 
 // Freies Training: Einheit ohne Trainingstag, Übungen werden unterwegs hinzugefügt.
 function startFreeWorkout() {
@@ -1843,16 +1730,15 @@ function _renderGymSeite() {
   // Session card
   const wrap = document.getElementById('wo-session-card-wrap');
   if (activeOnSelected) {
-    wrap.innerHTML = buildSessionCard(active, planDay, selDay, false, { sport: 'gym' });
+    wrap.innerHTML = buildSessionCard(active, planDay, selDay);
   } else if (planDay) {
-    wrap.innerHTML = buildSessionCard(null, planDay, selDay, true, { sport: 'gym' });
+    wrap.innerHTML = buildHeuteHero(planDay, selDay, { sport: 'gym' });
   } else {
     // Seite „Gym" — die Laufhaelfte steht drueben auf der Seite „Laufen".
-    wrap.innerHTML = buildRestHero(!!(selDay && selDay.isToday), selDay ? dayFullName(selDay.dayKey) : '', 'gym');
+    wrap.innerHTML = buildHeuteHero(null, selDay, { sport: 'gym' });
     // Hoehe und Hantel wie in der Uebersicht ausrichten — die Karte soll dort und hier
     // identisch aussehen.
-    _ruhetagHeroAusrichten();
-  }
+    }
 
   // Tabs + cards
   const addWrap = document.getElementById('wo-add-ex-wrap');
@@ -3819,7 +3705,7 @@ function renderLaufKalenderSeite() {
     { selectedIdx: selectedRunDayIdx, dayOnTap: 'selectRunDay' })}</div>`;
   // Herocard direkt unter dem Wochenplan — dieselbe Stelle wie im Gymteil
   // (Leonard-Wunsch 06.09.2026).
-  const hero = `<div id="wo-lauf-hero">${buildLaufHero()}</div>`;
+  const hero = `<div id="wo-lauf-hero">${buildHeuteHero(null, null, { sport: 'lauf' })}</div>`;
   const laeufe = DB.getRuns();
   const stand = DB.getRunsStand();
 
@@ -8489,7 +8375,6 @@ function initCalendarResize() {
     _calResizeTimer = setTimeout(() => {
       _calResizeTimer = null;
       if (document.getElementById('cal-grid')) renderTrainingCalendar('cal', 'ov-cal-card');
-      _ruhetagHeroAusrichten();   // Plan-Karte ist im Querformat anders hoch
       const pc = document.getElementById('plans-cal-card');
       if (pc && pc.style.display !== 'none' && document.getElementById('pcal-grid')) {
         renderTrainingCalendar('pcal', 'plans-cal-card');

@@ -921,26 +921,42 @@ Tabfarbe, und sieht in Uebersicht, Trainings-Tab und Plaene-Tab gleich aus. Im T
 bleibt er WEISS — dafuer sorgt die bestehende Glas-Regel, die spaeter steht und gewinnt.
 Die **Kennzahl** des Kalenders zaehlt im Laufkalender Laeufe statt Krafteinheiten.
 
-### Herocard: beide Sportarten gleichwertig
-In der UEBERSICHT deckt eine Karte Gym UND Laufen ab, beide mit eigenem Knopf in EINER Zeile
-(`.hero-v2-button-row`): „Einheit starten" (bzw. „+ Freies Training starten" am Ruhetag) und
-„Lauf abgeschlossen". Bis zum 06.09.2026 hatte das Laufen nur eine Textzeile gegen einen vollen
-Knopf und ging daneben unter (Leonard-Meldung).
+### Herocard „Heute"
+`buildHeuteHero(planDay, selDay, opts)` ersetzt seit dem 06.09.2026 die frueheren Vorschau- und
+Ruhetag-Karten UND die eigene Karte der Seite „Laufen" (`buildRestHero`, `buildLaufHero`,
+`heroLaufZeile`, `heroLaufBtn`, `freeWorkoutBtn` sind alle entfallen). Aufbau nach
+Leonard-Vorgabe:
+- **Titel ist immer „Heute"** — kein Obertitel (das fruehere `RUHETAG` / `NAECHSTE EINHEIT`)
+  und kein Untertitel (Wochentag, Uebungen/Saetze, Ø-Dauer). Er steht an derselben Stelle wie
+  jeder andere Kartentitel: 16px, 14px vom Rand, 10px Abstand nach unten.
+- **Je Sportart eine Spalte** aus mittiger Beschriftung und Knopf. Gym: Name des Trainingstags
+  bzw. „Ruhetag". Lauf: das ZIEL des Tages, km und Zeit OHNE Zone.
+- **Die Knoepfe fuellen die Karte.** Abstand zum Kartenrand = Kartenpolster = 14px, und der
+  Abstand ZWISCHEN ihnen ist derselbe Wert (`gap: 14px`, nicht die 6px der uebrigen
+  Knopfzeilen).
+- **Symbol vor dem Text, in Textgroesse** (`.hero-btn-ic`, `1em`): Play-Dreieck beim Gym,
+  Laeufer beim Lauf.
+- Die Beschriftung darf UMBRECHEN: „Lauf abgeschlossen" braucht bei 14px 135px, in den 155px
+  eines halben Knopfes bleiben nach Polster, Symbol und Abstand nur 114px. `flex:1` haelt beide
+  Knoepfe trotzdem gleich hoch. Kleiner setzen waere die Alternative gewesen — dann stuende der
+  wichtigste Knopf der Uebersicht in 12px da.
+- `opts.sport`: 'beide' (Uebersicht) · 'gym' (Trainings-Tab, Seite Gym) · 'lauf' (Seite Laufen,
+  Karte `#wo-lauf-hero` direkt unter dem Wochenplan). Bei einer Sportart wird die Spalte zur
+  vollen Breite (`.hero-heute-spalten.einzeln`).
+- Laeuft anderswo bereits eine Einheit, fuehrt der Gym-Knopf dorthin („Zur laufenden Einheit")
+  statt eine zweite zu starten.
+
 „Lauf abgeschlossen" ruft `runLaeufeLaden({interactive:true})` — dieselbe Funktion wie
 „Aktualisieren" in den Einstellungen. FitTrack fuehrt keine Laeufe selbst; der Knopf kann nur
-nachschauen, was Health Auto Export inzwischen in die Tabelle geschrieben hat.
-`runLaeufeLaden` frischt deshalb auch den Trainings-Tab auf, nicht nur Uebersicht und
-Einstellungen — der Knopf steht ja in beiden Tabs.
-WELCHE HAELFTE erscheint, steuert `opts.sport` ('beide' | 'gym' | 'lauf'; `buildRestHero` nimmt
-es als dritten Parameter): Die Uebersicht zeigt beide, der Trainings-Tab je Seite nur die
-passende. Die Seite „Laufen" hat dafuer eine EIGENE Karte (`buildLaufHero`, `#wo-lauf-hero`,
-direkt unter dem Wochenplan) statt einer weiteren Betriebsart von `buildSessionCard` — sie hat
-kein Gym-Gegenstueck, ein gemeinsamer Bau waere nur Ballast.
-`heroLaufZeile()` ist seither NUR noch die Infozeile; ohne Lauf und ohne Plan steht dort
-„Heute kein Lauf geplant" statt gar nichts (vorher verschwand die Zeile — mit dem Knopf
-daneben saehe das luecken haft aus). Das Symbol `heroRunnerSvg()` traegt BEWUSST keine Farbe im
-SVG — der Aufrufer setzt sie per `color` (Hellgruen); das Hantel-Symbol dagegen folgt mit
-`var(--accent)` der Tabfarbe.
+nachschauen, was Health Auto Export inzwischen in die Tabelle geschrieben hat. `runLaeufeLaden`
+frischt deshalb auch den Trainings-Tab auf, nicht nur Uebersicht und Einstellungen.
+
+**Die LAUFENDE Einheit behaelt ihre eigene Karte** (`buildSessionCard`, `.active-mode`): Uhr,
+Fortschrittsbalken, Pausieren und Beenden. Dort ist die Karte der Bedienstand DIESER Einheit,
+nicht die Tagesuebersicht — deshalb auch bewusst ohne Laufteil. Mit dem Umbau ist ihr
+Vorschau-Zweig (`isPreview`, `metaPreview`) und die Ausrichtung der Ruhetag-Karte an der
+Wochenplan-Karte (`_ruhetagHeroAusrichten`/`_ruhetagHeroEinrichten`) entfallen — die neue Karte
+hat kein Symbol mehr, das auf einen Knopf auszurichten waere.
 
 ---
 
