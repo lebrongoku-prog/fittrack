@@ -1044,6 +1044,19 @@ Einheit, nicht die Tagesuebersicht.
   1 Jahr = pro Monat. Frueher immer Kalenderwochen mit Label "WNN" und hart auf 8 Punkte gekappt —
   dadurch zeigte "Letztes Jahr" nur zwei Monate. `autoSkip` ist im Wochen-Modus AUS, weil dort
   Labels absichtlich leer sind; sonst an. X-Achse aufsteigend (aelteste links).
+- Aufraeum-Stand (06.09.2026): Nach dem Umbau der Herocards 113 Zeilen totes CSS entfernt —
+  `hero-v2-text`, `-label`, `-title`, `-title-row`, `-meta`, `-meta-avg`, `-top`, `-bottom`,
+  `-art`, `-button-row`, `-running-notice`, `-progress-bar`/`-fill` (die `-thin`-Varianten
+  LEBEN weiter), `.col-layout`, `.active-mode` und `.hero-v2-btn.stretch`.
+  Zwei GEMISCHTE Selektorlisten im Glas-Block (`… .chart-card-v2-title, … .hero-v2-title, …`
+  und `… .hero-v2-label, … .ppv-adh, …`) haben nur ihren toten Eintrag verloren — genau der
+  Fall, vor dem der Workflow-Abschnitt warnt.
+  ACHTUNG bei so einem Durchgang: Ein rein maschineller Regex-Durchlauf hinterlaesst
+  `}/* Kommentar */` ohne Zeilenumbruch, leere `@media`-Bloecke und Kommentare ohne die Regel,
+  die sie erklaeren. Besser die Bloecke SAMT ihrer Kommentare als ganze Textstuecke ersetzen
+  und den Diff durchsehen — hier waren es am Ende 113 geloeschte und 1 eingefuegte Zeile.
+  Stehen geblieben (unveraendert, nicht Teil dieses Umbaus): der leere Block
+  `.plan-day-row.active { }`.
 - Aufraeum-Stand (01.09.2026): Nach dem Umbau der Ausklapp-Pfeile und der Plan-Umrandungen wurden
   `.ex-item-chev` (2 Regeln) und eine ungenutzte Variable in der Band-Schleife entfernt. Zusaetzlich
   fielen 11 alte Klassennamen aus gemischten Selektorlisten der beiden Responsive-Bloecke:
