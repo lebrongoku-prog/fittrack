@@ -111,7 +111,11 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 
 ## UI-Konventionen
 
-- **Tabs (4):** `overview` (Übersicht), `workouts` (Nav-Label „Training"), `exercises` (Übungen), `plans` (Nav-Label „Pläne"). Die Tabs `exercises` und `plans` haben je zwei Seiten über einen `.seg-toggle`: Übungen = Katalog | Stats (`setExercisesView`/`renderExercisesScreen`, Container `#ex-view-list`/`#ex-view-stats`), Pläne = Trainingsplan | Trainingstage (`setPlansView`/`renderPlansScreen`). Vollbild-Overlays: `plan-detail`, `day-detail` und **`mehr`** (Einstellungen — kein Tab mehr, erreichbar über das Zahnrad `.ph-gear` in der Übersicht, zurück via `closeMehr()`). Steuerung über `showScreen(name)` + `_applyTabState(name)`.
+- **Tabs (4):** `overview` (Übersicht), `workouts` (Nav-Label „Training"), `exercises` (Übungen), `plans` (Nav-Label „Pläne"). Beide haben Unterseiten über einen `.seg-toggle`: Übungen = Katalog | Stats (`setExercisesView`/`renderExercisesScreen`, Container `#ex-view-list`/`#ex-view-stats`), Pläne = VIER Seiten (`setPlansView`/`renderPlansScreen`).
+  **Die vier Plan-Seiten stehen in EINER Tabelle** (`PLANS_SEITEN`, 06.09.2026 — vorher drei Zweige nebeneinander): Schluessel → Knopf-Id, Titel, Listen-Id und Sportsymbol. `renderPlansScreen` laeuft nur noch darueber, `setPlansView` prueft dagegen. Wer eine fuenfte Seite ergaenzt, traegt sie dort ein und legt Knopf plus Liste im Markup an; alles Weitere folgt.
+  Der Kalender gehoert nur zu `plans` und `runplans`; `days` und `races` haben keinen.
+  **Das Sportsymbol steht im SEITENSCHALTER, nicht im Tab-Titel** (Leonard-Wunsch 06.09.2026 — die erste Fassung hatte es am `<h1>`): Hantel bei Gymplan und Gymtage, Laeufer bei Laufplan und Wettkaempfe, ueber dieselbe `.ppv-name-ic` (1em) wie die Wochenplan-Karten. Symbol UND Beschriftung setzt `renderPlansScreen` aus `PLANS_SEITEN` — die Knoepfe im Markup sind deshalb LEER.
+  Bei VIER Knoepfen traegt der Umschalter `.seg-vier` (11.5px statt 13px, engeres Polster): Auf 375px bleiben je Knopf rund 82px, und „Wettkämpfe" braucht mit Symbol und Abstand schon 82px. Die Knoepfe sind dadurch NICHT gleich breit (79/79/79/89) — ein Flex-Kind schrumpft nicht unter seinen Inhalt, und ein `min-width: 0` haette „Wettkämpfe" abgeschnitten. Es geht knapp auf; eine fuenfte Seite passt in diese Leiste NICHT mehr. Vollbild-Overlays: `plan-detail`, `day-detail` und **`mehr`** (Einstellungen — kein Tab mehr, erreichbar über das Zahnrad `.ph-gear` in der Übersicht, zurück via `closeMehr()`). Steuerung über `showScreen(name)` + `_applyTabState(name)`.
 - **Kopf des Übungen-Tabs:** Die Knopfleiste rechts (`.ph-actions` / `#ex-head-actions`) wird auf der Stats-Seite per
   `visibility:hidden` unsichtbar geschaltet, NICHT ausgeblendet — sonst schrumpft der Kopf um ihre Höhe (36px gegen 30,5px Titel)
   und der Seitenwechsler springt beim Seitenwechsel nach oben. Unterzeilen (`.ph-sub`) hat dieser Tab keine mehr.
@@ -1044,7 +1048,12 @@ Die **Kennzahl** des Kalenders zaehlt im Laufkalender Laeufe statt Krafteinheite
 
 ### Seite „Wettkämpfe" (Plan-Tab)
 `renderWettkaempfe()` fuellt `#races-list` mit je einer Karte pro Eintrag aus `ft_races`,
-neueste zuerst (die Sortierung liefert schon `DB.getRaces()`).
+AUFSTEIGEND — aeltester zuerst, anstehende Termine am Ende (Leonard-Wunsch 06.09.2026; die
+Sortierung liefert schon `DB.getRaces()`, anders als jede andere Liste der App).
+Im QUERFORMAT stehen zwei Karten nebeneinander (`#races-list` als 2-Spalten-Grid ab 1024px,
+`column-gap: 0` und die 14px der Karten — dieselbe Machart wie die uebrigen Querformat-Grids).
+`align-items: start` ist Pflicht: Eine Karte ohne Werte ist flacher, `stretch` zoege sie sonst
+auf die Hoehe der Nachbarin.
 Aufbau einer Karte (`wettkampfKarte`): Kopf mit Laeufer-Symbol, Name und ausgeschriebenem
 Datum, darunter die Werte in denselben Kacheln wie die Laufdetailansicht (`.hd-stats`) —
 Strecke, Zeit, Pace, Ø Puls, Max Puls, Hoehenmeter. BEWUSST kein eigenes Kacheldesign: Ein
@@ -1053,9 +1062,19 @@ Die WERTE kommen aus `runNachTag()[date]`, also aus der Tabelle — nicht aus `f
 Liegt zu dem Tag kein Lauf vor (Daten noch nicht abgerufen, oder der Lauf fehlt in der
 Tabelle), steht statt der Kacheln ein Hinweis. Fehlende EINZELwerte fallen einfach weg,
 statt als „–" dazustehen; das Raster fuellt die Luecke.
-Die Karte ist reine Anzeige und traegt `.karte-inert` — sonst antwortete sie sichtbar auf
-einen Tipp, der nichts bewirkt. `.karte-inert` gilt seit dem 06.09.2026 fuer JEDE Karte,
-nicht mehr nur fuer `.plan-card-v2`.
+Ein Termin in der ZUKUNFT bekommt keine Ergebniskarte, sondern die Pille „Steht noch an"
+(`.wk-anstehend`, die Karte selbst gedaempft ueber `.wk-kuenftig`) — Werte gibt es ja noch keine.
+**Eintragen und Bearbeiten:** Das „+" oben rechts oeffnet `openRaceDialog()` (`#modal-race`,
+Name + Datum); ein Tipp auf eine Karte oeffnet denselben Dialog gefuellt, dort steht auch
+„Löschen" (Sicherheitsfrage + `withUndo`). Ohne den Bearbeiten-Weg gaebe es keine Moeglichkeit,
+einen Vertipper zu berichtigen — ein Hinzufuegen-Knopf ohne Korrekturweg ist eine Falle.
+Der SCHLUESSEL ist das DATUM: `saveRaceFromDialog` wirft sowohl den alten Eintrag
+(`_raceEditDate`) als auch einen etwaigen Eintrag am neuen Datum weg, bevor es schreibt —
+sonst laege nach dem Verschieben eines Termins ein Duplikat vor.
+`_wettkampfNeuZeichnen()` frischt nach jeder Aenderung die Liste UND beide Kalender auf; ein
+neuer Termin waere sonst erst nach einem Tabwechsel im Raster zu sehen.
+Die Karten tragen deshalb NICHT mehr `.karte-inert` (sie sind antippbar). Die Klasse selbst
+gilt seit dem 06.09.2026 fuer JEDE Karte, nicht mehr nur fuer `.plan-card-v2`.
 Im Transparenz-Modus brauchen Datum, Hinweistext und die Kachelflaechen eigene Regeln —
 `.hd-stat b` war schon erfasst, die Beschriftung darunter nicht.
 

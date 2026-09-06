@@ -2539,6 +2539,14 @@ html.wo-running #wo-week-card { display: none; }
    schmaleres seitliches Polster bringen es auf 78px. Nur dieser Umschalter ist betroffen,
    die dreiteiligen behalten ihre 13px. */
 .seg-vier .seg-btn { font-size: 12px; padding-left: 2px; padding-right: 2px; }
+/* Sportsymbol VOR der Beschriftung, genauso gross wie sie (Leonard-Wunsch 06.09.2026 —
+   vorher stand es am Tab-Titel). Der Knopf wird dadurch zur Flex-Zeile; ohne `min-width: 0`
+   am Text koennte der lange „Wettkämpfe" den Knopf aufblaehen statt zu kuerzen. */
+.seg-btn { display: flex; align-items: center; justify-content: center; gap: 5px; }
+.seg-btn .seg-txt { min-width: 0; }
+/* Bei vier Knoepfen kostet das Symbol Platz: „Wettkämpfe" misst mit Symbol und Abstand
+   12+5+66 = 83px und passt nicht in die 82px je Knopf. 11.5px bringt den Text auf 58px. */
+.seg-vier .seg-btn { font-size: 11.5px; gap: 4px; }
 
 /* ── Seite „Wettkämpfe" (Plan-Tab, 06.09.2026) ──────────────────────────────
    Je Wettkampf EINE Karte: Kopf mit Laeufer-Symbol, Name und Datum, darunter die Werte des
@@ -2555,6 +2563,12 @@ html.wo-running #wo-week-card { display: none; }
    die 6 Werte in zwei Zeilen zu drei — genau das Raster der Laufdetailansicht. */
 .wk-datum { font-size: 12px; font-weight: 600; color: var(--text3); margin-top: 3px; }
 .wk-leer { font-size: 13px; color: var(--text3); line-height: 1.45; }
+/* Ein Termin in der Zukunft hat noch keine Werte: gedaempfte Karte, „Steht noch an" als
+   Pille statt Kacheln. Sie steht durch die aufsteigende Sortierung am Ende der Seite. */
+.wk-anstehend { display: inline-block; font-weight: 700; font-size: 12px; letter-spacing: .03em;
+  text-transform: uppercase; color: var(--text3);
+  background: var(--card2); border-radius: 999px; padding: 5px 12px; }
+.wk-kuenftig .wk-name { color: var(--text2); }
 /* Im Transparenz-Modus liegt die Karte auf dem Farbverlauf: Das Datum wuerde in Grau
    verschwinden, die Kachelflaechen ebenfalls. `.hd-stat b` ist bereits von der bestehenden
    Glas-Regel erfasst, die Beschriftung darunter nicht. */
@@ -2562,11 +2576,9 @@ html.glas .screen:not(#screen-mehr) .wk-datum,
 html.glas .screen:not(#screen-mehr) .wk-leer { color: rgba(255,255,255,.8); }
 html.glas .screen:not(#screen-mehr) .wk-card .hd-stat { background: rgba(255,255,255,.14); }
 html.glas .screen:not(#screen-mehr) .wk-card .hd-stat span { color: rgba(255,255,255,.75); }
+html.glas .screen:not(#screen-mehr) .wk-anstehend { background: rgba(255,255,255,.14); color: rgba(255,255,255,.85); }
+html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,255,.85); }
 
-/* Seitentitel im Plan-Tab tragen das Sportsymbol vor dem Text, genauso gross wie er
-   (Leonard-Wunsch 06.09.2026, Vorbild: die Wochenplan-Karten). `#plans-h1` ist ein <h1> und
-   damit ein Block — ohne inline-flex saesse das Symbol auf der Grundlinie statt mittig. */
-#plans-h1 { display: inline-flex; align-items: center; gap: 8px; }
 .plan-day-actions { display: flex; gap: 6px; margin-left: auto; }
 .plan-day-actions button { border: none; background: var(--bg); color: var(--text3); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
 .plan-day-actions button.del { color: var(--red); background: var(--red-bg); }/* Plan-Day-Edit-Modal: Drag-Feedback an den .ex-item-Zeilen (neues Muskelfarben-Layout) */
@@ -2742,6 +2754,18 @@ html.glas .screen:not(#screen-mehr) .wk-card .hd-stat span { color: rgba(255,255
     margin-right: 14px;
   }
   .ex-tab-v2-bar { padding-left: 14px; }
+
+  /* Wettkampfkarten stehen NEBENEINANDER (Leonard-Wunsch 06.09.2026). Wie in den uebrigen
+     Querformat-Grids behalten die Karten ihre eigenen 14px und der `column-gap` bleibt 0 —
+     zwischen zwei Spalten stehen damit 28px, aussen 14px, genau wie in der Uebersicht.
+     `align-items: start` ist noetig, weil eine Karte ohne Werte („Steht noch an") flacher ist
+     als eine mit sechs Kacheln; ohne das zoege `stretch` sie auf dieselbe Hoehe. */
+  #races-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 0;
+    align-items: start;
+  }
 
   /* ÜBERSICHT — Hero volle Breite, darunter 2-Spalten */
   #screen-overview.active {

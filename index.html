@@ -223,10 +223,10 @@
       </div>
     </div>
     <div class="seg-toggle seg-vier" id="plans-seg">
-      <button class="seg-btn active" id="seg-plans" onclick="setPlansView('plans')">Gymplan</button>
-      <button class="seg-btn" id="seg-days" onclick="setPlansView('days')">Gymtage</button>
-      <button class="seg-btn" id="seg-runplans" onclick="setPlansView('runplans')">Laufplan</button>
-      <button class="seg-btn" id="seg-races" onclick="setPlansView('races')">Wettkämpfe</button>
+      <button class="seg-btn active" id="seg-plans" onclick="setPlansView('plans')"></button>
+      <button class="seg-btn" id="seg-days" onclick="setPlansView('days')"></button>
+      <button class="seg-btn" id="seg-runplans" onclick="setPlansView('runplans')"></button>
+      <button class="seg-btn" id="seg-races" onclick="setPlansView('races')"></button>
     </div>
     <!-- Derselbe Trainingskalender wie in der Übersicht (zweite Instanz, Präfix "pcal") -->
     <div class="chart-card-v2" id="plans-cal-card"></div>
@@ -892,6 +892,32 @@
 
 <!-- Notiz zu EINER geplanten Laufeinheit. Eigenes Fenster, weil die Zeile im Laufplan nur
      eine Vorschau zeigt (sie muss einzeilig bleiben) — geschrieben wird hier mit Platz. -->
+<!-- Wettkampf eintragen oder bearbeiten (Plan-Tab, Seite „Wettkämpfe"). Ein kuenftiger
+     Termin erscheint sofort im Laufkalender; die WERTE kommen spaeter aus der Tabelle. -->
+<div id="modal-race" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="race-dialog-title">Wettkampf eintragen</div>
+    <div class="sheet-body">
+      <div class="program-form-row">
+        <label for="race-name">Name</label>
+        <input type="text" id="race-name" placeholder="z. B. Luzern Marathon 2027" autocomplete="off">
+      </div>
+      <div class="program-form-row">
+        <label for="race-datum">Datum</label>
+        <input type="date" id="race-datum">
+      </div>
+      <p class="race-hinweis">Der Termin erscheint sofort im Laufkalender. Strecke, Zeit und Puls
+         holt FitTrack nach dem Lauf aus deiner Tabelle „Workout Data".</p>
+      <div class="run-note-actions">
+        <button class="btn btn-ghost" id="race-del-btn" onclick="deleteRaceFromDialog()">Löschen</button>
+        <button class="btn btn-ghost" onclick="closeModal('modal-race')">Abbrechen</button>
+        <button class="btn btn-primary" onclick="saveRaceFromDialog()">Speichern</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="modal-run-note" class="overlay hidden">
   <div class="sheet">
     <div class="sheet-handle"></div>

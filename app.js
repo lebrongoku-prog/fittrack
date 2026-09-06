@@ -377,13 +377,15 @@ const DB = {
   // Lauf, der an dem Tag in der Tabelle steht. Hier liegt nur, WELCHER Tag ein Wettkampf war
   // und wie er hiess.
   // Der Getter hebt Altbestand aus der ersten Fassung (reine Datumsstrings) auf Objekte und
-  // sortiert neueste zuerst — jede Liste der App ist so herum aufgebaut.
+  // sortiert AUFSTEIGEND — aeltester Wettkampf zuerst (Leonard-Wunsch 06.09.2026). Damit
+  // liest sich die Seite wie eine Laufbahn und die anstehenden Termine stehen am Ende.
+  // Andere Listen der App sind neueste-zuerst; hier ist es bewusst umgekehrt.
   getRaces() {
     const s = localStorage.getItem('ft_races');
     const arr = s ? JSON.parse(s) : [];
     return arr.map(r => (typeof r === 'string' ? { date: r, name: '' } : r))
               .filter(r => r && r.date)
-              .sort((a, b) => b.date.localeCompare(a.date));
+              .sort((a, b) => a.date.localeCompare(b.date));
   },
   saveRaces(v) { localStorage.setItem('ft_races', JSON.stringify(v)); markLocalChange(); },
 
@@ -5372,8 +5374,8 @@ function setPlansView(mode) {
   renderPlansScreen();
 }
 function onPlansAdd() {
-  if (plansViewMode === 'races') return;   // Wettkaempfe haben keine Eingabemaske, der Knopf ist dort aus
-  if (plansViewMode === 'days') createNewLibDay();
+  if (plansViewMode === 'races') openRaceDialog();
+  else if (plansViewMode === 'days') createNewLibDay();
   else if (plansViewMode === 'runplans') neuerLaufplan();
   else openPlanSourceModal();
 }
@@ -5551,9 +5553,10 @@ function copyExistingPlan(planId) {
   openPlanDetail(np.id);
 }
 // Rendert die im Plans-Tab aktive Unteransicht (Pläne ODER Trainingstage-Bibliothek).
-// Titel und Sportsymbol je Seite. Das Symbol steht VOR dem Titel und ist genauso gross wie er
-// (`.ppv-name-ic`, 1em) — dieselbe Bauform wie in den Wochenplan-Karten (Leonard-Wunsch
-// 06.09.2026). Gym bekommt die Hantel, alles rund ums Laufen den Laeufer.
+// Titel und Sportsymbol je Seite. Das Symbol steht im SEITENSCHALTER vor der Beschriftung,
+// NICHT im Tab-Titel (Leonard-Wunsch 06.09.2026 — erste Fassung hatte es am `<h1>`).
+// Es ist genauso gross wie die Knopfschrift (`.ppv-name-ic`, 1em), dieselbe Bauform wie in
+// den Wochenplan-Karten. Gym bekommt die Hantel, alles rund ums Laufen den Laeufer.
 const PLANS_SEITEN = {
   plans:    { btn: 'seg-plans',    titel: 'Gymplan',    liste: 'plans-list',    icon: 'hantel'  },
   days:     { btn: 'seg-days',     titel: 'Gymtage',    liste: 'libdays-list',  icon: 'hantel'  },
@@ -5566,25 +5569,25 @@ function renderPlansScreen() {
   Object.keys(PLANS_SEITEN).forEach(k => {
     const s = PLANS_SEITEN[k];
     const btn = document.getElementById(s.btn);
-    if (btn) btn.classList.toggle('active', plansViewMode === k);
+    if (btn) {
+      btn.classList.toggle('active', plansViewMode === k);
+      // Symbol + Beschriftung stehen nur hier, damit die Zuordnung an EINER Stelle liegt
+      // (die Knoepfe im Markup tragen deshalb keinen Text).
+      const soll = (s.icon === 'hantel' ? PPV_ICON_HANTEL : PPV_ICON_LAEUFER)
+        + `<span class="seg-txt">${escapeHtml(s.titel)}</span>`;
+      if (btn.innerHTML !== soll) btn.innerHTML = soll;
+    }
     zeige(document.getElementById(s.liste), plansViewMode === k);
   });
   const seite = PLANS_SEITEN[plansViewMode] || PLANS_SEITEN.plans;
   const h1 = document.getElementById('plans-h1');
-  if (h1) h1.innerHTML = (seite.icon === 'hantel' ? PPV_ICON_HANTEL : PPV_ICON_LAEUFER)
-    + escapeHtml(seite.titel);
+  if (h1) h1.textContent = seite.titel;
   // Der Kalender gehoert zu den beiden PLAN-Seiten: Gymplan zeigt ihn mit den
   // Trainingseinheiten, Laufplan mit den Laufeinheiten. Gymtage und Wettkaempfe haben keinen —
   // dort ist die Liste selbst der Inhalt.
   const calCard = document.getElementById('plans-cal-card');
   const mitKalender = plansViewMode === 'plans' || plansViewMode === 'runplans';
   zeige(calCard, mitKalender);
-  // Das „+" legt auf den Wettkaempfen nichts an (es gibt keine Eingabemaske dafuer). BEWUSST
-  // `visibility` statt `display`: Ausgeblendet schrumpfte der Kopf um seine Hoehe und der
-  // Seitenwechsler darunter spraenge beim Seitenwechsel nach oben — derselbe Fall wie im
-  // Uebungen-Tab.
-  const addBtn = document.getElementById('plans-add-btn');
-  if (addBtn) addBtn.style.visibility = plansViewMode === 'races' ? 'hidden' : '';
   if (mitKalender && calCard) renderTrainingCalendar('pcal', 'plans-cal-card');
   if (plansViewMode === 'days') renderLibDays();
   else if (plansViewMode === 'runplans') renderLaufVerwaltung();
@@ -5599,9 +5602,9 @@ function renderPlansScreen() {
 function renderWettkaempfe() {
   const el = document.getElementById('races-list');
   if (!el) return;
-  const rennen = DB.getRaces();          // neueste zuerst, sortiert der Getter
+  const rennen = DB.getRaces();          // aufsteigend, sortiert der Getter
   if (!rennen.length) {
-    el.innerHTML = `<div class="plan-day-empty" style="margin:24px 14px">Noch keine Wettkämpfe hinterlegt.</div>`;
+    el.innerHTML = `<div class="plan-day-empty" style="margin:24px 14px">Noch keine Wettkämpfe hinterlegt — tippe auf das + oben rechts.</div>`;
     return;
   }
   const laeufe = runNachTag();
@@ -5612,6 +5615,12 @@ function wettkampfKarte(r, lauf) {
   const [y, m, d] = r.date.split('-').map(Number);
   const datum = new Date(y, m - 1, d).toLocaleDateString('de-DE',
     { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  // Ein Termin in der ZUKUNFT hat noch keine Werte und bekommt deshalb keine Ergebniskarte,
+  // sondern nur den Hinweis „Steht noch an" (Leonard-Wunsch 06.09.2026). Durch die
+  // aufsteigende Sortierung stehen diese Karten am Ende der Seite.
+  const heute = new Date(); heute.setHours(0, 0, 0, 0);
+  const kuenftig = new Date(y, m - 1, d) > heute;
+
   // Dieselben Kacheln wie in der Laufdetailansicht (`.hd-stats`), damit ein Wettkampf nicht
   // anders aussieht als jeder andere Lauf. Fehlende Werte bleiben WEG statt als „–"
   // dazustehen; das Raster fuellt die Luecke von selbst auf.
@@ -5628,15 +5637,71 @@ function wettkampfKarte(r, lauf) {
     ? `<div class="hd-stats wk-stats">`
       + kacheln.map(k => `<div class="hd-stat"><b>${k.wert}</b><span>${k.label}</span></div>`).join('')
       + `</div>`
-    : `<div class="wk-leer">Zu diesem Tag liegt kein Lauf in der Tabelle. Hole die Laufdaten in den Einstellungen.</div>`;
+    : kuenftig
+      ? `<div class="wk-leer wk-anstehend">Steht noch an</div>`
+      : `<div class="wk-leer">Zu diesem Tag liegt kein Lauf in der Tabelle. Hole die Laufdaten in den Einstellungen.</div>`;
 
-  return `<div class="chart-card-v2 wk-card karte-inert">
+  // Ein Tipp oeffnet denselben Dialog wie das „+", nur mit gefuellten Feldern — sonst gaebe es
+  // keinen Weg, einen Vertipper zu berichtigen oder einen Termin wieder zu entfernen.
+  return `<div class="chart-card-v2 wk-card${kuenftig ? ' wk-kuenftig' : ''}"
+       onclick="openRaceDialog('${r.date}')">
     <div class="wk-kopf">
       <div class="chart-card-v2-title wk-name">${PPV_ICON_LAEUFER}${escapeHtml(r.name || 'Wettkampf')}</div>
       <div class="wk-datum">${datum}</div>
     </div>
     ${koerper}
   </div>`;
+}
+
+// ── Wettkampf eintragen / bearbeiten ───────────────────────────────
+// `_raceEditDate` merkt, WELCHER Eintrag bearbeitet wird (null = neuer). Das Datum ist der
+// Schluessel: Pro Tag gibt es hoechstens einen Wettkampf.
+let _raceEditDate = null;
+function openRaceDialog(date) {
+  _raceEditDate = date || null;
+  const vorhanden = date ? DB.getRaces().find(r => r.date === date) : null;
+  document.getElementById('race-dialog-title').textContent =
+    vorhanden ? 'Wettkampf bearbeiten' : 'Wettkampf eintragen';
+  document.getElementById('race-name').value = vorhanden ? (vorhanden.name || '') : '';
+  document.getElementById('race-datum').value = vorhanden ? vorhanden.date : '';
+  // „Löschen" gibt es nur beim Bearbeiten. `visibility` statt `display`, damit die Knopfzeile
+  // in beiden Faellen gleich breit bleibt und „Speichern" nicht springt.
+  document.getElementById('race-del-btn').style.visibility = vorhanden ? '' : 'hidden';
+  openModal('modal-race');
+}
+
+function saveRaceFromDialog() {
+  const name = document.getElementById('race-name').value.trim();
+  const datum = document.getElementById('race-datum').value;   // 'YYYY-MM-DD', schon lokal
+  if (!datum) { showToast('Bitte ein Datum wählen'); return; }
+  const liste = DB.getRaces().filter(r => r.date !== _raceEditDate && r.date !== datum);
+  liste.push({ date: datum, name: name || 'Wettkampf' });
+  DB.saveRaces(liste);
+  _raceEditDate = null;
+  closeModal('modal-race');
+  _wettkampfNeuZeichnen();
+}
+
+function deleteRaceFromDialog() {
+  const datum = _raceEditDate;
+  if (!datum) return;
+  const r = DB.getRaces().find(x => x.date === datum);
+  confirmAction('Wettkampf löschen?', `„${(r && r.name) || 'Wettkampf'}" wird aus dem Kalender entfernt.`, () => {
+    withUndo('Wettkampf gelöscht', () => {
+      DB.saveRaces(DB.getRaces().filter(x => x.date !== datum));
+    }, _wettkampfNeuZeichnen);
+    _raceEditDate = null;
+    closeModal('modal-race');
+    _wettkampfNeuZeichnen();
+  }, { danger: true, confirmLabel: 'Löschen' });
+}
+
+// Nach jeder Aenderung: die Liste UND jeden Kalender, der den Tag zeigen koennte.
+function _wettkampfNeuZeichnen() {
+  renderWettkaempfe();
+  if (document.getElementById('cal-grid')) renderTrainingCalendar('cal', 'ov-cal-card');
+  if (document.getElementById('pcal-grid') && (plansViewMode === 'plans' || plansViewMode === 'runplans'))
+    renderTrainingCalendar('pcal', 'plans-cal-card');
 }
 
 function toggleLibDaysArchive() { libDaysArchiveExpanded = !libDaysArchiveExpanded; renderLibDays(); }
