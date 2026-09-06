@@ -5557,15 +5557,14 @@ function copyExistingPlan(planId) {
   openPlanDetail(np.id);
 }
 // Rendert die im Plans-Tab aktive Unteransicht (Pläne ODER Trainingstage-Bibliothek).
-// Titel und Sportsymbol je Seite. Das Symbol steht im SEITENSCHALTER vor der Beschriftung,
-// NICHT im Tab-Titel (Leonard-Wunsch 06.09.2026 — erste Fassung hatte es am `<h1>`).
-// Es ist genauso gross wie die Knopfschrift (`.ppv-name-ic`, 1em), dieselbe Bauform wie in
-// den Wochenplan-Karten. Gym bekommt die Hantel, alles rund ums Laufen den Laeufer.
+// Die vier Seiten des Plan-Tabs: Knopf-Id, Beschriftung und die Liste, die dazugehoert.
+// Sportsymbole standen hier kurzzeitig (erst am Tab-Titel, dann im Seitenschalter) und sind
+// am 06.09.2026 auf Leonards Wunsch wieder entfallen — der Schalter traegt nur Text.
 const PLANS_SEITEN = {
-  plans:    { btn: 'seg-plans',    titel: 'Gymplan',    liste: 'plans-list',    icon: 'hantel'  },
-  days:     { btn: 'seg-days',     titel: 'Gymtage',    liste: 'libdays-list',  icon: 'hantel'  },
-  runplans: { btn: 'seg-runplans', titel: 'Laufplan',   liste: 'runplans-list', icon: 'laeufer' },
-  races:    { btn: 'seg-races',    titel: 'Wettkämpfe', liste: 'races-list',    icon: 'laeufer' },
+  plans:    { btn: 'seg-plans',    titel: 'Gymplan',    liste: 'plans-list'    },
+  days:     { btn: 'seg-days',     titel: 'Gymtage',    liste: 'libdays-list'  },
+  runplans: { btn: 'seg-runplans', titel: 'Laufplan',   liste: 'runplans-list' },
+  races:    { btn: 'seg-races',    titel: 'Wettkämpfe', liste: 'races-list'    },
 };
 
 function renderPlansScreen() {
@@ -5575,11 +5574,9 @@ function renderPlansScreen() {
     const btn = document.getElementById(s.btn);
     if (btn) {
       btn.classList.toggle('active', plansViewMode === k);
-      // Symbol + Beschriftung stehen nur hier, damit die Zuordnung an EINER Stelle liegt
-      // (die Knoepfe im Markup tragen deshalb keinen Text).
-      const soll = (s.icon === 'hantel' ? PPV_ICON_HANTEL : PPV_ICON_LAEUFER)
-        + `<span class="seg-txt">${escapeHtml(s.titel)}</span>`;
-      if (btn.innerHTML !== soll) btn.innerHTML = soll;
+      // Die Beschriftung steht nur hier, damit sie an EINER Stelle liegt (die Knoepfe im
+      // Markup sind deshalb leer).
+      if (btn.textContent !== s.titel) btn.textContent = s.titel;
     }
     zeige(document.getElementById(s.liste), plansViewMode === k);
   });
@@ -5674,7 +5671,7 @@ function wettkampfKarte(r, lauf) {
   return `<div class="chart-card-v2 wk-card${zustand}"
        onclick="openRaceDialog('${r.date}')">
     <div class="wk-kopf">
-      <div class="chart-card-v2-title wk-name">${PPV_ICON_LAEUFER}${escapeHtml(r.name || 'Wettkampf')}</div>
+      <div class="chart-card-v2-title wk-name">${escapeHtml(r.name || 'Wettkampf')}</div>
       <div class="wk-datum">${datum}</div>
     </div>
     ${koerper}

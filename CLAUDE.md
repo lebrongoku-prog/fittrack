@@ -114,8 +114,9 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 - **Tabs (4):** `overview` (Übersicht), `workouts` (Nav-Label „Training"), `exercises` (Übungen), `plans` (Nav-Label „Pläne"). Beide haben Unterseiten über einen `.seg-toggle`: Übungen = Katalog | Stats (`setExercisesView`/`renderExercisesScreen`, Container `#ex-view-list`/`#ex-view-stats`), Pläne = VIER Seiten (`setPlansView`/`renderPlansScreen`).
   **Die vier Plan-Seiten stehen in EINER Tabelle** (`PLANS_SEITEN`, 06.09.2026 — vorher drei Zweige nebeneinander): Schluessel → Knopf-Id, Titel, Listen-Id und Sportsymbol. `renderPlansScreen` laeuft nur noch darueber, `setPlansView` prueft dagegen. Wer eine fuenfte Seite ergaenzt, traegt sie dort ein und legt Knopf plus Liste im Markup an; alles Weitere folgt.
   Der Kalender gehoert nur zu `plans` und `runplans`; `days` und `races` haben keinen.
-  **Das Sportsymbol steht im SEITENSCHALTER, nicht im Tab-Titel** (Leonard-Wunsch 06.09.2026 — die erste Fassung hatte es am `<h1>`): Hantel bei Gymplan und Gymtage, Laeufer bei Laufplan und Wettkaempfe, ueber dieselbe `.ppv-name-ic` (1em) wie die Wochenplan-Karten. Symbol UND Beschriftung setzt `renderPlansScreen` aus `PLANS_SEITEN` — die Knoepfe im Markup sind deshalb LEER.
-  Bei VIER Knoepfen traegt der Umschalter `.seg-vier` (11.5px statt 13px, engeres Polster): Auf 375px bleiben je Knopf rund 82px, und „Wettkämpfe" braucht mit Symbol und Abstand schon 82px. Die Knoepfe sind dadurch NICHT gleich breit (79/79/79/89) — ein Flex-Kind schrumpft nicht unter seinen Inhalt, und ein `min-width: 0` haette „Wettkämpfe" abgeschnitten. Es geht knapp auf; eine fuenfte Seite passt in diese Leiste NICHT mehr. Vollbild-Overlays: `plan-detail`, `day-detail` und **`mehr`** (Einstellungen — kein Tab mehr, erreichbar über das Zahnrad `.ph-gear` in der Übersicht, zurück via `closeMehr()`). Steuerung über `showScreen(name)` + `_applyTabState(name)`.
+  Die BESCHRIFTUNG setzt `renderPlansScreen` aus `PLANS_SEITEN` — die Knoepfe im Markup sind deshalb LEER.
+  Bei VIER Knoepfen traegt der Umschalter `.seg-vier` (12px statt 13px, engeres Polster): Auf 375px bleiben je Knopf 82px, und „Wettkämpfe" braucht bei 13px 84px. So sind alle vier gleich breit und einzeilig. Eine FUENFTE Seite passt in diese Leiste nicht mehr.
+  **KEINE Sportsymbole im Seitenschalter** (06.09.2026): Sie standen einen halben Tag lang erst am Tab-Titel, dann im Schalter, und sind auf Leonards Wunsch wieder entfallen. Mit Symbol brauchte „Wettkämpfe" 12+4+66 = 82px, der Schalter musste auf 11.5px und die Knoepfe waren nicht mehr gleich breit (79/79/79/89) — ein Flex-Kind schrumpft nicht unter seinen Inhalt. Wer sie erneut einbauen will, handelt sich genau das wieder ein. `.ppv-name-ic` LEBT weiter: Die Wochenplan-Karten tragen ihre Symbole unveraendert. Vollbild-Overlays: `plan-detail`, `day-detail` und **`mehr`** (Einstellungen — kein Tab mehr, erreichbar über das Zahnrad `.ph-gear` in der Übersicht, zurück via `closeMehr()`). Steuerung über `showScreen(name)` + `_applyTabState(name)`.
 - **Kopf des Übungen-Tabs:** Die Knopfleiste rechts (`.ph-actions` / `#ex-head-actions`) wird auf der Stats-Seite per
   `visibility:hidden` unsichtbar geschaltet, NICHT ausgeblendet — sonst schrumpft der Kopf um ihre Höhe (36px gegen 30,5px Titel)
   und der Seitenwechsler springt beim Seitenwechsel nach oben. Unterzeilen (`.ph-sub`) hat dieser Tab keine mehr.
@@ -1054,8 +1055,10 @@ Im QUERFORMAT stehen zwei Karten nebeneinander (`#races-list` als 2-Spalten-Grid
 `column-gap: 0` und die 14px der Karten — dieselbe Machart wie die uebrigen Querformat-Grids).
 `align-items: start` ist Pflicht: Eine Karte ohne Werte ist flacher, `stretch` zoege sie sonst
 auf die Hoehe der Nachbarin.
-Aufbau einer Karte (`wettkampfKarte`): Kopf mit Laeufer-Symbol, Name und ausgeschriebenem
-Datum, darunter die Werte in denselben Kacheln wie die Laufdetailansicht (`.hd-stats`) —
+Aufbau einer Karte (`wettkampfKarte`): Kopf mit Name und ausgeschriebenem Datum (OHNE
+Sportsymbol — es war kurzzeitig da und ist am 06.09.2026 wieder entfallen, wie im
+Seitenschalter), darunter die Werte in denselben Kacheln wie die Laufdetailansicht
+(`.hd-stats`) —
 Strecke, Zeit, Pace, Ø Puls, Max Puls, Hoehenmeter. BEWUSST kein eigenes Kacheldesign: Ein
 Wettkampf ist ein Lauf und soll auch so aussehen.
 Die WERTE kommen aus `runNachTag()[date]`, also aus der Tabelle — nicht aus `ft_races`.

@@ -2539,14 +2539,7 @@ html.wo-running #wo-week-card { display: none; }
    schmaleres seitliches Polster bringen es auf 78px. Nur dieser Umschalter ist betroffen,
    die dreiteiligen behalten ihre 13px. */
 .seg-vier .seg-btn { font-size: 12px; padding-left: 2px; padding-right: 2px; }
-/* Sportsymbol VOR der Beschriftung, genauso gross wie sie (Leonard-Wunsch 06.09.2026 —
-   vorher stand es am Tab-Titel). Der Knopf wird dadurch zur Flex-Zeile; ohne `min-width: 0`
-   am Text koennte der lange „Wettkämpfe" den Knopf aufblaehen statt zu kuerzen. */
-.seg-btn { display: flex; align-items: center; justify-content: center; gap: 5px; }
-.seg-btn .seg-txt { min-width: 0; }
-/* Bei vier Knoepfen kostet das Symbol Platz: „Wettkämpfe" misst mit Symbol und Abstand
-   12+5+66 = 83px und passt nicht in die 82px je Knopf. 11.5px bringt den Text auf 58px. */
-.seg-vier .seg-btn { font-size: 11.5px; gap: 4px; }
+
 
 /* ── Seite „Wettkämpfe" (Plan-Tab, 06.09.2026) ──────────────────────────────
    Je Wettkampf EINE Karte: Kopf mit Laeufer-Symbol, Name und Datum, darunter die Werte des
@@ -2555,7 +2548,6 @@ html.wo-running #wo-week-card { display: none; }
    Die Karte ist reine Anzeige und traegt deshalb `.karte-inert` (kein Zeigefinger, keine
    Tipp-Animation) — sonst antwortete sie sichtbar auf einen Tipp, der nichts bewirkt. */
 .wk-kopf { margin-bottom: 12px; }
-.wk-name { display: flex; align-items: center; gap: 8px; }
 /* Die Kacheln bringen ihren eigenen unteren Abstand mit (16px fuer den Zeitstrahl im Modal);
    als letztes Element der Karte waere das ein Loch. */
 .wk-card .wk-stats { margin-bottom: 0; }
