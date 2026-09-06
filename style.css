@@ -1044,6 +1044,13 @@ html.glas .screen:not(#screen-mehr) .cal-day { background: rgba(255,255,255,.16)
    die Regel darueber faerbt sonst JEDES Kaestchen weiss. Kraeftiger als im hellen Modus,
    sonst geht das Rot im Farbverlauf dahinter unter. */
 html.glas .screen:not(#screen-mehr) .cal-day.leer-woche { background: rgba(248,113,113,.55); }
+/* Und ebenso der Wettkampftag (Leonard-Meldung 06.09.2026): Er hatte als einziger Zustand
+   KEINE Glas-Regel, die allgemeine `.cal-day`-Regel darueber faerbte ihn deshalb weiss wie
+   jedes andere Kaestchen — im Transparenz-Modus war er unsichtbar. Steht NACH der roten
+   Woche, damit ein Wettkampf in einer trainingsfreien Woche als Wettkampf erscheint (genau
+   wie im hellen Modus, wo `.wettkampf` ebenfalls spaeter kommt).
+   Dieselbe Deckkraft wie das Rot: Voll deckend uebertoente das Gruen die Marken darin. */
+html.glas .screen:not(#screen-mehr) .cal-day.wettkampf { background: rgba(74,222,128,.55); }
 /* Plan-Umrandungen im Transparenz-Modus: Das Gruen verschwindet auf dem Schleier, also
    Weiss. Damit trotzdem erkennbar bleibt, welcher Plan gerade laeuft, wird abgestuft —
    der laufende Plan bekommt eine kraeftige, durchgezogene Linie, die uebrigen (archiviert

@@ -305,6 +305,14 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Die Regel steht VOR den Zustandsregeln, die Marken zeichnen sich also darauf.
   `.wettkampf` faerbt das GANZE Kaestchen hellgruen — der auffaelligste Zustand im Kalender
   (04.09.2026). Nur dort, wo der Kalender Laeufe zeigt; der Gymkalender kennt ihn nicht.
+  Im Transparenz-Modus braucht er eine EIGENE Regel (`rgba(74,222,128,.55)`, ergaenzt
+  06.09.2026 nach Leonards Meldung): Er war der einzige Zustand ohne eine solche, und die
+  allgemeine Regel `html.glas … .cal-day` faerbte ihn deshalb weiss wie jedes andere
+  Kaestchen — der Wettkampf war dort unsichtbar. Sie steht NACH der roten Woche, damit ein
+  Wettkampf in einer trainingsfreien Woche als Wettkampf erscheint (im hellen Modus stehen
+  die beiden Regeln in derselben Reihenfolge). Dieselbe Deckkraft wie das Rot: Voll deckend
+  uebertoente das Gruen die Marken darin. Gilt fuer BEIDE Kalender, die Regel haengt an
+  `.cal-day`.
   ZWEI QUELLEN (06.09.2026): das `raceDate` eines Laufplans UND die eigenstaendige Liste
   `ft_races` (`DB.getRaces`/`saveRaces`, Datumsstrings 'YYYY-MM-DD' wie `ft_manual_days`).
   Die Liste war noetig, weil Leonards Wettkaempfe aus Jahren stammen, in denen es noch gar
