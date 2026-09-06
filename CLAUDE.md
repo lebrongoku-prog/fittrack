@@ -103,7 +103,8 @@ Krafttraining heisst „Kein Gym" bzw. „Kein Gym geplant", einer ohne Lauf „
 „Kein Lauf geplant". Die kurze Form steht dort, wo der Platz knapp ist (Herocard, Wochenplaner),
 die lange in Beschreibungen (Kalender-Fusszeile). Im CODE heissen Variablen und Kommentare
 weiter „Ruhetag" — das ist der eingebuergerte Begriff fuer den Zustand.
-Seiten im Plan-Tab: **Gymplan** · **Gymtage** · **Laufplan** (umbenannt 01.09.2026).
+Seiten im Plan-Tab: **Gymplan** · **Gymtage** · **Laufplan** (umbenannt 01.09.2026) ·
+**Wettkämpfe** (neu 06.09.2026).
 Seiten im Trainings-Tab: **Gym** · **Laufen**.
 
 ---
@@ -304,10 +305,18 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Die Liste war noetig, weil Leonards Wettkaempfe aus Jahren stammen, in denen es noch gar
   keine Laufplaene gab — an ein `plan.raceDate` waeren sie nicht zu haengen, und fuenf
   Schein-Plaene anzulegen haette die Laufplan-Liste verschmutzt.
-  `migrateImportRaces()` hat am 06.09.2026 einmalig Leonards fuenf Termine eingetragen
-  (Merker `ft_races_imported`, Konstante `WETTKAMPF_IMPORT`) — dieselbe Bauart wie
-  `migrateImportManualDays`. Eine Oberflaeche zum Pflegen gibt es BEWUSST nicht, genau wie
-  bei den nachgetragenen Tagen; weitere Termine kommen ueber denselben Weg dazu.
+  Ein Eintrag ist `{ date: 'YYYY-MM-DD', name }`. Die WERTE eines Wettkampfs stehen NICHT
+  darin — sie kommen aus dem Lauf, der an dem Tag in der Tabelle steht. `ft_races` haelt nur,
+  WELCHER Tag ein Wettkampf war und wie er hiess.
+  `migrateImportRaces()` hat Leonards fuenf Termine eingetragen (Konstante `WETTKAMPF_IMPORT`,
+  dieselbe Bauart wie `migrateImportManualDays`). Sie traegt ZWEI Merker: Die erste Fassung
+  (v288) kannte nur Daten ohne Namen und setzte `ft_races_imported`; die Namen kamen einen Tag
+  spaeter dazu und brauchten deshalb einen zweiten Durchlauf unter `ft_races_imported_v2`.
+  Ein selbst vergebener Name bleibt dabei stehen, ueberschrieben wird nur ein leerer.
+  Der GETTER hebt Altbestand (reine Datumsstrings) auf Objekte und sortiert neueste zuerst —
+  Aufrufer duerfen sich darauf verlassen.
+  Eine Oberflaeche zum Pflegen gibt es BEWUSST nicht, genau wie bei den nachgetragenen Tagen;
+  weitere Termine kommen ueber denselben Weg dazu.
   Beim Zusammenbauen der Marken kommen die PLAENE ZULETZT, damit ihr Name gewinnt, wenn ein
   Datum in beiden steht. In der Tagesbeschreibung steht deshalb „🏁 Wettkampf · Planname"
   beim Plan-Wettkampf und nur „🏁 Wettkampf" beim eigenstaendigen.
@@ -1032,6 +1041,23 @@ Kreise weiss (bestehende Glas-Regel), wie auch der Fortschrittsbalken. Der Balke
 Tabfarbe, und sieht in Uebersicht, Trainings-Tab und Plaene-Tab gleich aus. Im Transparenz-Modus
 bleibt er WEISS — dafuer sorgt die bestehende Glas-Regel, die spaeter steht und gewinnt.
 Die **Kennzahl** des Kalenders zaehlt im Laufkalender Laeufe statt Krafteinheiten.
+
+### Seite „Wettkämpfe" (Plan-Tab)
+`renderWettkaempfe()` fuellt `#races-list` mit je einer Karte pro Eintrag aus `ft_races`,
+neueste zuerst (die Sortierung liefert schon `DB.getRaces()`).
+Aufbau einer Karte (`wettkampfKarte`): Kopf mit Laeufer-Symbol, Name und ausgeschriebenem
+Datum, darunter die Werte in denselben Kacheln wie die Laufdetailansicht (`.hd-stats`) —
+Strecke, Zeit, Pace, Ø Puls, Max Puls, Hoehenmeter. BEWUSST kein eigenes Kacheldesign: Ein
+Wettkampf ist ein Lauf und soll auch so aussehen.
+Die WERTE kommen aus `runNachTag()[date]`, also aus der Tabelle — nicht aus `ft_races`.
+Liegt zu dem Tag kein Lauf vor (Daten noch nicht abgerufen, oder der Lauf fehlt in der
+Tabelle), steht statt der Kacheln ein Hinweis. Fehlende EINZELwerte fallen einfach weg,
+statt als „–" dazustehen; das Raster fuellt die Luecke.
+Die Karte ist reine Anzeige und traegt `.karte-inert` — sonst antwortete sie sichtbar auf
+einen Tipp, der nichts bewirkt. `.karte-inert` gilt seit dem 06.09.2026 fuer JEDE Karte,
+nicht mehr nur fuer `.plan-card-v2`.
+Im Transparenz-Modus brauchen Datum, Hinweistext und die Kachelflaechen eigene Regeln —
+`.hd-stat b` war schon erfasst, die Beschriftung darunter nicht.
 
 ### Herocard „Heute"
 `buildHeuteHero(planDay, selDay, opts)` ersetzt seit dem 06.09.2026 die frueheren Vorschau- und

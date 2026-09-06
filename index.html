@@ -222,16 +222,18 @@
         <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </div>
     </div>
-    <div class="seg-toggle" id="plans-seg">
+    <div class="seg-toggle seg-vier" id="plans-seg">
       <button class="seg-btn active" id="seg-plans" onclick="setPlansView('plans')">Gymplan</button>
       <button class="seg-btn" id="seg-days" onclick="setPlansView('days')">Gymtage</button>
       <button class="seg-btn" id="seg-runplans" onclick="setPlansView('runplans')">Laufplan</button>
+      <button class="seg-btn" id="seg-races" onclick="setPlansView('races')">Wettkämpfe</button>
     </div>
     <!-- Derselbe Trainingskalender wie in der Übersicht (zweite Instanz, Präfix "pcal") -->
     <div class="chart-card-v2" id="plans-cal-card"></div>
     <div id="plans-list"></div>
     <div id="libdays-list" style="display:none"></div>
     <div id="runplans-list" style="display:none"></div>
+    <div id="races-list" style="display:none"></div>
   </div>
 
 

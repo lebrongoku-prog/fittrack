@@ -370,10 +370,21 @@ const DB = {
   getManualDays() { const s = localStorage.getItem('ft_manual_days'); return s ? JSON.parse(s) : []; },
   saveManualDays(v) { localStorage.setItem('ft_manual_days', JSON.stringify(v)); markLocalChange(); },
 
-  // EIGENSTAENDIGE Wettkampftage: nur ein Datum ('YYYY-MM-DD'), ohne zugehoerigen Laufplan.
+  // EIGENSTAENDIGE Wettkaempfe: `{ date: 'YYYY-MM-DD', name }`, ohne zugehoerigen Laufplan.
   // Das Gegenstueck zu `plan.raceDate` — noetig fuer Wettkaempfe aus Jahren, in denen es noch
   // gar keine Laufplaene gab (Leonard-Liste 06.09.2026, 2024 bis 2026).
-  getRaces() { const s = localStorage.getItem('ft_races'); return s ? JSON.parse(s) : []; },
+  // Die WERTE des Wettkampfs (Strecke, Zeit, Puls …) stehen NICHT hier: Sie kommen aus dem
+  // Lauf, der an dem Tag in der Tabelle steht. Hier liegt nur, WELCHER Tag ein Wettkampf war
+  // und wie er hiess.
+  // Der Getter hebt Altbestand aus der ersten Fassung (reine Datumsstrings) auf Objekte und
+  // sortiert neueste zuerst — jede Liste der App ist so herum aufgebaut.
+  getRaces() {
+    const s = localStorage.getItem('ft_races');
+    const arr = s ? JSON.parse(s) : [];
+    return arr.map(r => (typeof r === 'string' ? { date: r, name: '' } : r))
+              .filter(r => r && r.date)
+              .sort((a, b) => b.date.localeCompare(a.date));
+  },
   saveRaces(v) { localStorage.setItem('ft_races', JSON.stringify(v)); markLocalChange(); },
 
   // ── Laufen ──────────────────────────────────────────────────────
@@ -4050,14 +4061,28 @@ function migrateImportManualDays() {
 // eigenstaendig in `ft_races`. Laeuft genau einmal (Merker ft_races_imported) und ergaenzt
 // nur, was noch fehlt; dieselbe Bauart wie MANUELLE_TAGE_IMPORT.
 const WETTKAMPF_IMPORT = [
-  '2024-04-21', '2024-09-01', '2025-04-13', '2025-10-26', '2026-05-02',
+  { date: '2024-04-21', name: 'Zurich 10km' },
+  { date: '2024-09-01', name: 'Sempacherseelauf 2024' },
+  { date: '2025-04-13', name: 'Zurich Marathon 2025' },
+  { date: '2025-10-26', name: 'Luzern Marathon 2025' },
+  { date: '2026-05-02', name: 'Sempacherseelauf 2026' },
 ];
+// ZWEITER Merker: Die erste Fassung (v288) hat nur die Daten ohne Namen eingetragen und
+// `ft_races_imported` gesetzt. Wer die schon geladen hatte, braucht die Namen nachgereicht —
+// deshalb laeuft der Import unter einem neuen Merker ein zweites Mal. Ein selbst vergebener
+// Name bleibt dabei stehen, ueberschrieben wird nur ein leerer.
 function migrateImportRaces() {
-  if (localStorage.getItem('ft_races_imported') === '1') return;
-  const menge = new Set(DB.getRaces());
-  WETTKAMPF_IMPORT.forEach(d => menge.add(d));
-  localStorage.setItem('ft_races', JSON.stringify([...menge].sort().reverse()));
+  if (localStorage.getItem('ft_races_imported_v2') === '1') return;
+  const nachDatum = {};
+  DB.getRaces().forEach(r => { nachDatum[r.date] = r; });
+  WETTKAMPF_IMPORT.forEach(w => {
+    const alt = nachDatum[w.date];
+    nachDatum[w.date] = { date: w.date, name: (alt && alt.name) || w.name };
+  });
+  const liste = Object.values(nachDatum).sort((a, b) => b.date.localeCompare(a.date));
+  localStorage.setItem('ft_races', JSON.stringify(liste));
   localStorage.setItem('ft_races_imported', '1');
+  localStorage.setItem('ft_races_imported_v2', '1');
 }
 
 function buildCalendarData() {
@@ -4124,6 +4149,8 @@ function toggleCalFilter() {
 // Plaene-Tab der gewaehlten Seite: Gymplan → Krafttraining, Laufplan → Laeufe.
 function _calModus(id) {
   if (id === 'pcal') {
+    // Nur zwei der vier Seiten zeigen ueberhaupt einen Kalender (Gymtage und Wettkaempfe
+    // nicht) — fuer die uebrigen ist der Wert gleichgueltig.
     return plansViewMode === 'runplans'
       ? { kraft: false, lauf: true,  titel: 'Laufkalender' }
       : { kraft: true,  lauf: false, titel: 'Gymkalender' };
@@ -4195,7 +4222,7 @@ function calJahre() {
   DB.getWorkouts().forEach(w => jahre.add(new Date(w.startTs).getFullYear()));
   DB.getManualDays().forEach(k => jahre.add(Number(k.slice(0, 4))));
   DB.getRuns().forEach(l => jahre.add(Number(l.date.slice(0, 4))));
-  DB.getRaces().forEach(k => jahre.add(Number(k.slice(0, 4))));
+  DB.getRaces().forEach(r => jahre.add(Number(r.date.slice(0, 4))));
   return [...jahre].filter(j => j > 2000).sort((a, b) => b - a);
 }
 
@@ -4246,7 +4273,7 @@ function renderTrainingCalendar(id, cardId) {
   // hat, wenn ein Datum in beiden steht (`true` heisst nur „Wettkampf, ohne Plan").
   const wettkampfTage = {};
   if (zeigtLaeufe) {
-    DB.getRaces().forEach(k => { wettkampfTage[k] = true; });
+    DB.getRaces().forEach(r => { wettkampfTage[r.date] = r; });
     DB.getRunPlans().forEach(p => { if (p.raceDate) wettkampfTage[_dayKeyOf(p.raceDate)] = p; });
   }
 
@@ -4560,7 +4587,10 @@ function showCalDay(key, id) {
     // keinen, dort steht nur „Wettkampf". Der Plan hat Vorrang, falls beides auf denselben Tag faellt.
     const wk = DB.getRunPlans().find(p => p.raceDate && _dayKeyOf(p.raceDate) === key);
     if (wk) wkHTML = `<div class="cal-detail-run wettkampf">🏁 Wettkampf · ${escapeHtml(wk.name || 'Laufplan')}</div>`;
-    else if (DB.getRaces().includes(key)) wkHTML = `<div class="cal-detail-run wettkampf">🏁 Wettkampf</div>`;
+    else {
+      const eigen = DB.getRaces().find(r => r.date === key);
+      if (eigen) wkHTML = `<div class="cal-detail-run wettkampf">🏁 Wettkampf${eigen.name ? ' · ' + escapeHtml(eigen.name) : ''}</div>`;
+    }
     const lauf = runNachTag()[key];
     const gepl = runGeplanteTage()[key];
     if (lauf) {
@@ -5332,16 +5362,17 @@ function savePlanNotes() {
 // ═══════════════════════════════════════════════
 // TRAININGSTAGE-BIBLIOTHEK (planunabhaengige Tage)
 // ═══════════════════════════════════════════════
-let plansViewMode = 'plans';   // 'plans' | 'days' — aktive Unteransicht im Trainingsplan-Tab
+let plansViewMode = 'plans';   // Schluessel aus PLANS_SEITEN — aktive Seite im Plan-Tab
 let editingLibDayId = null;     // aktuell im Tag-Detail bearbeiteter Bibliotheks-Tag
 let libDaysArchiveExpanded = false;
 
 function setPlansView(mode) {
-  if (mode !== 'plans' && mode !== 'days' && mode !== 'runplans') return;
+  if (!PLANS_SEITEN[mode]) return;
   plansViewMode = mode;
   renderPlansScreen();
 }
 function onPlansAdd() {
+  if (plansViewMode === 'races') return;   // Wettkaempfe haben keine Eingabemaske, der Knopf ist dort aus
   if (plansViewMode === 'days') createNewLibDay();
   else if (plansViewMode === 'runplans') neuerLaufplan();
   else openPlanSourceModal();
@@ -5520,34 +5551,92 @@ function copyExistingPlan(planId) {
   openPlanDetail(np.id);
 }
 // Rendert die im Plans-Tab aktive Unteransicht (Pläne ODER Trainingstage-Bibliothek).
+// Titel und Sportsymbol je Seite. Das Symbol steht VOR dem Titel und ist genauso gross wie er
+// (`.ppv-name-ic`, 1em) — dieselbe Bauform wie in den Wochenplan-Karten (Leonard-Wunsch
+// 06.09.2026). Gym bekommt die Hantel, alles rund ums Laufen den Laeufer.
+const PLANS_SEITEN = {
+  plans:    { btn: 'seg-plans',    titel: 'Gymplan',    liste: 'plans-list',    icon: 'hantel'  },
+  days:     { btn: 'seg-days',     titel: 'Gymtage',    liste: 'libdays-list',  icon: 'hantel'  },
+  runplans: { btn: 'seg-runplans', titel: 'Laufplan',   liste: 'runplans-list', icon: 'laeufer' },
+  races:    { btn: 'seg-races',    titel: 'Wettkämpfe', liste: 'races-list',    icon: 'laeufer' },
+};
+
 function renderPlansScreen() {
-  const seg = { plans: 'seg-plans', days: 'seg-days', runplans: 'seg-runplans' };
-  Object.keys(seg).forEach(k => {
-    const el = document.getElementById(seg[k]);
-    if (el) el.classList.toggle('active', plansViewMode === k);
-  });
-  const plansList = document.getElementById('plans-list');
-  const daysList = document.getElementById('libdays-list');
-  const runList = document.getElementById('runplans-list');
-  const h1 = document.getElementById('plans-h1');
-  const calCard = document.getElementById('plans-cal-card');
   const zeige = (el, an) => { if (el) el.style.display = an ? '' : 'none'; };
-  zeige(plansList, plansViewMode === 'plans');
-  zeige(daysList, plansViewMode === 'days');
-  zeige(runList, plansViewMode === 'runplans');
+  Object.keys(PLANS_SEITEN).forEach(k => {
+    const s = PLANS_SEITEN[k];
+    const btn = document.getElementById(s.btn);
+    if (btn) btn.classList.toggle('active', plansViewMode === k);
+    zeige(document.getElementById(s.liste), plansViewMode === k);
+  });
+  const seite = PLANS_SEITEN[plansViewMode] || PLANS_SEITEN.plans;
+  const h1 = document.getElementById('plans-h1');
+  if (h1) h1.innerHTML = (seite.icon === 'hantel' ? PPV_ICON_HANTEL : PPV_ICON_LAEUFER)
+    + escapeHtml(seite.titel);
   // Der Kalender gehoert zu den beiden PLAN-Seiten: Gymplan zeigt ihn mit den
-  // Trainingseinheiten, Laufplan mit den Laufeinheiten. Die Tage-Bibliothek hat keinen.
-  zeige(calCard, plansViewMode !== 'days');
-  if (plansViewMode === 'days') { if (h1) h1.textContent = 'Gymtage'; renderLibDays(); }
-  else if (plansViewMode === 'runplans') {
-    if (h1) h1.textContent = 'Laufplan';
-    if (calCard) renderTrainingCalendar('pcal', 'plans-cal-card');
-    renderLaufVerwaltung();
-  } else {
-    if (calCard) renderTrainingCalendar('pcal', 'plans-cal-card');
-    if (h1) h1.textContent = 'Gymplan';
-    renderPlans();
+  // Trainingseinheiten, Laufplan mit den Laufeinheiten. Gymtage und Wettkaempfe haben keinen —
+  // dort ist die Liste selbst der Inhalt.
+  const calCard = document.getElementById('plans-cal-card');
+  const mitKalender = plansViewMode === 'plans' || plansViewMode === 'runplans';
+  zeige(calCard, mitKalender);
+  // Das „+" legt auf den Wettkaempfen nichts an (es gibt keine Eingabemaske dafuer). BEWUSST
+  // `visibility` statt `display`: Ausgeblendet schrumpfte der Kopf um seine Hoehe und der
+  // Seitenwechsler darunter spraenge beim Seitenwechsel nach oben — derselbe Fall wie im
+  // Uebungen-Tab.
+  const addBtn = document.getElementById('plans-add-btn');
+  if (addBtn) addBtn.style.visibility = plansViewMode === 'races' ? 'hidden' : '';
+  if (mitKalender && calCard) renderTrainingCalendar('pcal', 'plans-cal-card');
+  if (plansViewMode === 'days') renderLibDays();
+  else if (plansViewMode === 'runplans') renderLaufVerwaltung();
+  else if (plansViewMode === 'races') renderWettkaempfe();
+  else renderPlans();
+}
+
+// ── Seite „Wettkaempfe" ────────────────────────────────────────────
+// Je Wettkampf eine Karte. Die WERTE stammen aus dem Lauf, der an dem Tag in der Tabelle
+// steht (`ft_races` haelt nur Datum und Name) — deshalb kann eine Karte auch ohne Werte
+// dastehen, etwa wenn die Laufdaten noch nicht abgerufen wurden.
+function renderWettkaempfe() {
+  const el = document.getElementById('races-list');
+  if (!el) return;
+  const rennen = DB.getRaces();          // neueste zuerst, sortiert der Getter
+  if (!rennen.length) {
+    el.innerHTML = `<div class="plan-day-empty" style="margin:24px 14px">Noch keine Wettkämpfe hinterlegt.</div>`;
+    return;
   }
+  const laeufe = runNachTag();
+  el.innerHTML = rennen.map(r => wettkampfKarte(r, laeufe[r.date])).join('');
+}
+
+function wettkampfKarte(r, lauf) {
+  const [y, m, d] = r.date.split('-').map(Number);
+  const datum = new Date(y, m - 1, d).toLocaleDateString('de-DE',
+    { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  // Dieselben Kacheln wie in der Laufdetailansicht (`.hd-stats`), damit ein Wettkampf nicht
+  // anders aussieht als jeder andere Lauf. Fehlende Werte bleiben WEG statt als „–"
+  // dazustehen; das Raster fuellt die Luecke von selbst auf.
+  const kacheln = lauf ? [
+    lauf.km      != null ? { wert: fmtKm(lauf.km),                label: 'Strecke' } : null,
+    lauf.minutes != null ? { wert: fmtMin(lauf.minutes),          label: 'Zeit' } : null,
+    lauf.kmh             ? { wert: fmtPace(lauf.kmh),             label: 'Pace' } : null,
+    lauf.avgHR   != null ? { wert: `${Math.round(lauf.avgHR)}`,   label: 'Ø Puls' } : null,
+    lauf.maxHR   != null ? { wert: `${Math.round(lauf.maxHR)}`,   label: 'Max Puls' } : null,
+    lauf.elevM   != null ? { wert: `${Math.round(lauf.elevM)} m`, label: 'Höhenmeter' } : null,
+  ].filter(Boolean) : [];
+
+  const koerper = kacheln.length
+    ? `<div class="hd-stats wk-stats">`
+      + kacheln.map(k => `<div class="hd-stat"><b>${k.wert}</b><span>${k.label}</span></div>`).join('')
+      + `</div>`
+    : `<div class="wk-leer">Zu diesem Tag liegt kein Lauf in der Tabelle. Hole die Laufdaten in den Einstellungen.</div>`;
+
+  return `<div class="chart-card-v2 wk-card karte-inert">
+    <div class="wk-kopf">
+      <div class="chart-card-v2-title wk-name">${PPV_ICON_LAEUFER}${escapeHtml(r.name || 'Wettkampf')}</div>
+      <div class="wk-datum">${datum}</div>
+    </div>
+    ${koerper}
+  </div>`;
 }
 
 function toggleLibDaysArchive() { libDaysArchiveExpanded = !libDaysArchiveExpanded; renderLibDays(); }
