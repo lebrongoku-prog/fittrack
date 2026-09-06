@@ -311,7 +311,16 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   das Verhaeltnis her (Leonard-Meldung 04.09.2026); beim Aendern der Insets nachrechnen.
   `_calPlanIndex()`/`_calPlanInfo()` rekonstruieren den Plan je Datum aus `startDate`/`endDate`/`weekPlan` ALLER Pläne (auch archivierter — die behalten ihren Wochenplan);
   ohne abdeckenden Plan wird keine Fläche gezeichnet, kommende Tage sind blass (`.future`). Antippen beschreibt den Tag in `#cal-detail`, inklusive der geplanten Einheit.
-  **Aufbau der Fusszeile (01.09.2026):** Zeile 1 nur Wochentag und Datum (`.cal-detail-datum`),
+  **Aufbau der Fusszeile:** Zeile 1 nur Wochentag und Datum (`.cal-detail-datum`), darunter
+  ZWEI SPALTEN (`.cal-detail-spalten`, 06.09.2026 — vorher standen Gym und Lauf untereinander):
+  links das Gym in DUNKELGRUEN, rechts der Lauf in HELLGRUEN. Die Farbe benennt die Sportart,
+  Text und Knopf sind unveraendert; der Pfeil-Knopf erbt die Farbe. Zeigt der Kalender nur eine
+  Sportart, steht deren Spalte allein ueber die volle Breite (`repeat(auto-fit, minmax(0,1fr))`).
+  Steht in einer Spalte nichts an, nennt sie den Grund — aber NUR innerhalb des jeweiligen
+  Plans: „Kein Gym geplant" bei `plan.known`, „Kein Lauf geplant" bei `_laufplanDeckt(key)`
+  (das Gegenstueck fuer die Laufplaene, 06.09.2026 ergaenzt). Ohne abdeckenden Plan bleibt die
+  Spalte leer — sonst stuende das halbe Jahr „Kein …" da. Der Wettkampf-Hinweis steht ueber den
+  Spalten, er gehoert zu keiner von beiden.
   Zeile 2 der Trainingstag. Wurde an dem Tag aufgezeichnet, ist Zeile 2 ein KNOPF
   (`.cal-detail-tag`) und oeffnet die bestehende Detailansicht `#modal-hist-detail` —
   wie vor dem Umbau der Fusszeile. Ein zwischenzeitlich gebauter Inline-Ausklappblock wurde
@@ -922,7 +931,9 @@ Haken, alle uebrigen tragen Statuschip (`runPlanStatus`) und Laufzeit. Das Archi
 demselben Ausklapp-Knopf (`.archiv-btn`, `runplansArchiveExpanded`/`toggleRunplansArchive`).
 Steht ausserdem in der **Uebersicht** unter dem Gymwochenplan (`#ov-runplan-card`; im Querformat
 teilen sich beide eine Zeile, die Herocard rutscht darunter ueber die volle Breite) und im
-**Trainings-Tab auf der Seite „Laufen" zuoberst**.
+**Trainings-Tab auf der Seite „Laufen" zuoberst**. Im QUERFORMAT teilen sich dort Wochenplan
+und Herocard eine Zeile — dieselbe Aufteilung wie auf der Seite „Gym" (`#wo-view-laufen` als
+Grid, 06.09.2026); „Diese Woche" und die Tageskarte spannen darunter ueber beide Spalten.
 FARBE der Wochentagskreise (geplant WIE erledigt), des Hakens und des Fortschrittsbalkens
 (`.ppv-bar-fill`, alles seit 04.09.2026): Gym #0F766E (wie die trainierten Kalender-Kaestchen),
 Lauf #4ADE80 (wie die Laufkreise) — `.run-plan` als Modifikator. Die Karte folgt damit der
