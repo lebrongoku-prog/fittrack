@@ -4539,12 +4539,15 @@ function showCalDay(key, id) {
     }
   }
 
-  const spalten = (gymHTML || laufHTML)
-    ? `<div class="cal-detail-spalten">
-         ${modus.kraft ? `<div class="cal-detail-spalte gym">${gymHTML}</div>` : ''}
-         ${modus.lauf  ? `<div class="cal-detail-spalte lauf">${laufHTML}</div>` : ''}
-       </div>`
-    : '';
+  // Eine LEERE Spalte wird gar nicht erst gezeichnet (Leonard-Wunsch 06.09.2026): Sonst hielte
+  // sie ihren Platz und die Laufinfo stuende rechts, obwohl links nichts steht — ein Tag mit
+  // Lauf, aber ohne Gym sah dadurch aus, als fehle etwas. Bleibt nur eine Spalte uebrig, nimmt
+  // sie die volle Breite und beginnt damit wieder links.
+  const spaltenHTML = [
+    (modus.kraft && gymHTML) ? `<div class="cal-detail-spalte gym">${gymHTML}</div>` : '',
+    (modus.lauf && laufHTML) ? `<div class="cal-detail-spalte lauf">${laufHTML}</div>` : '',
+  ].filter(Boolean);
+  const spalten = spaltenHTML.length ? `<div class="cal-detail-spalten">${spaltenHTML.join('')}</div>` : '';
 
   el.innerHTML = `<div class="cal-detail-datum"><strong>${dateStr}</strong></div>${wkHTML}${spalten}`;
 }

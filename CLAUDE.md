@@ -321,6 +321,12 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   (das Gegenstueck fuer die Laufplaene, 06.09.2026 ergaenzt). Ohne abdeckenden Plan bleibt die
   Spalte leer — sonst stuende das halbe Jahr „Kein …" da. Der Wettkampf-Hinweis steht ueber den
   Spalten, er gehoert zu keiner von beiden.
+  **Eine LEERE Spalte wird gar nicht erst gezeichnet** (06.09.2026, Leonard-Wunsch): Ein leeres
+  `<div>` haelt im Grid seinen Platz, die Laufinfo stuende dann RECHTS, obwohl links nichts steht
+  — ein Tag mit Lauf, aber ohne Gym sah dadurch aus, als fehle etwas. `showCalDay` filtert die
+  Spalten deshalb vor dem Zusammensetzen (`.filter(Boolean)`); bleibt nur eine uebrig, nimmt sie
+  ueber `auto-fit` die volle Breite und beginnt damit wieder links. Bleibt keine, entfaellt auch
+  der Behaelter `.cal-detail-spalten`.
   Zeile 2 der Trainingstag. Wurde an dem Tag aufgezeichnet, ist Zeile 2 ein KNOPF
   (`.cal-detail-tag`) und oeffnet die bestehende Detailansicht `#modal-hist-detail` —
   wie vor dem Umbau der Fusszeile. Ein zwischenzeitlich gebauter Inline-Ausklappblock wurde
@@ -634,6 +640,18 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Die Wochenplan-Karte (`.plan-card-v2`) hat denselben Eckenradius wie die uebrigen grossen Karten
   (18px statt frueher 14px). 14px behalten bewusst die Listen-Karten: `.ex-list`, `.mehr-card`,
   `.aex-v2`, `.plan-list-row`.
+  **Im QUERFORMAT (ab 1024px) steht der seitliche Rand in EINER Regel** — der Selektorliste mit
+  `max-width: none; margin-left/right: 14px`. Jede Karte, die dort in einer Spalte steht, MUSS
+  darin aufgefuehrt sein; fehlt sie, faellt sie auf das 12px-Polster ihres Grids zurueck und steht
+  2px weiter aussen als ihre Nachbarin. Genau so war `.plan-card-v2` durchgerutscht
+  (Leonard-Meldung 06.09.2026). Im Hochformat faellt so etwas NICHT auf, weil dort nie zwei Karten
+  nebeneinander liegen — beim Ergaenzen einer neuen Karte also im Querformat gegenmessen.
+- **Abstaende ZWISCHEN Karten im Querformat: Margins kollabieren im Grid NICHT** (06.09.2026).
+  Im Hochformat verschmelzen der untere Abstand der oberen und der obere Abstand der unteren Karte
+  zu einem einzigen Zwischenraum, im Grid addieren sie sich. Auf der Seite „Laufen" standen so
+  24px zwischen `.chart-card-v2` und `.lauf-tag-karte`, waehrend alle anderen Paare 12px hatten.
+  REGEL: Der senkrechte Abstand kommt IMMER von der Karte DARUEBER (`margin-bottom`), eine Karte
+  setzt sich keinen eigenen `margin-top` (`.lauf-tag-karte { margin-top: 0 }`).
 - **Herocards (`.hero-v2`) haben KEINE Kontur** (01.09.2026) — im Glas-Modus zog sie eine weisse Linie
   um die Karte. Abgegrenzt wird allein ueber den Schatten.
 - **Alle vier TAB-Kopfzeilen sind gleich hoch** (`--ph-h`, 64px als `min-height` auf

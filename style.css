@@ -2049,7 +2049,11 @@ html.wo-running #wo-week-card { display: none; }
    (Leonard-Wunsch 04.09.2026). Angepasst ist nur, was die Laufwerte brauchen:
    drei gleich breite Spalten statt Satz|Wdh|kg|Haken, und die Scheibe traegt den
    Wochentag statt einer Nummer — in Hellgruen, der Farbe der Laufdomaene. */
-.lauf-tag-karte { margin-top: 12px; }
+/* KEIN eigener oberer Abstand: Im Hochformat kollabiert er mit dem unteren Abstand der Karte
+   darueber zu einem einzigen 12px-Zwischenraum, im Querformat-GRID aber NICHT — dort addierten
+   sich beide zu 24px, waehrend alle anderen Karten 12px auseinanderstanden
+   (Leonard-Meldung 06.09.2026). Der Abstand kommt jetzt allein von der Karte darueber. */
+.lauf-tag-karte { margin-top: 0; }
 .lauf-tag-karte .aex-v2-num { background: #4ADE80; font-size: 12px; }
 .lauf-tag-srow { grid-template-columns: 1fr 1fr 1fr; }
 .lauf-tag-wert { font-size: 15px; font-weight: 700; color: var(--text); text-align: center; }
@@ -2688,8 +2692,11 @@ html.wo-running #wo-week-card { display: none; }
 @media (min-width: 1024px) {
   /* WICHTIG: Override der älteren Tablet-Regel ab 560px, die Karten auf max-width:520px
      centriert hatte. Ab 1024px sollen Karten die volle (Grid-)Zellenbreite nutzen. */
+  /* ALLE Karten mit demselben Abstand zum Bildschirmrand: 14px. `.plan-card-v2` fehlte hier
+     und stand deshalb 2px weiter aussen als ihre Nachbarn (Leonard-Meldung 06.09.2026) —
+     im Hochformat faellt das nicht auf, weil dort keine zwei Karten nebeneinander liegen. */
   .card, .mehr-section,
-  .hero-v2, .plan-section-card, .chart-card-v2, .aex-v2,
+  .hero-v2, .plan-section-card, .chart-card-v2, .aex-v2, .plan-card-v2, .plan-list-row,
   .ex-group {
     max-width: none;
     margin-left: 14px;
