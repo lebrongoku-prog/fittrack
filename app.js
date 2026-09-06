@@ -4101,12 +4101,10 @@ function calendarInnerHTML(id) {
     ? `<button class="chart-card-v2-title cal-filter-btn" id="cal-filter-btn" onclick="toggleCalFilter()"
                aria-label="Zwischen Training, Läufen und beidem umschalten">Trainingskalender</button>`
     : `<span class="chart-card-v2-title" id="${id}-titel">Trainingskalender</span>`;
-  // Das Jahr steht direkt hinter dem Titel; in der Uebersicht mit unsichtbarem <select>
-  // darueber (dasselbe Muster wie `.wpe-select` und `.lp-zone` — die Masse bestimmt das CSS,
-  // nicht der Browser).
-  const jahrFeld = id === 'cal'
-    ? `<span class="cal-jahr" id="${id}-jahr"></span>`
-    : `<span class="cal-jahr cal-jahr-fix" id="${id}-jahr"></span>`;
+  // Das Jahr steht direkt hinter dem Titel, mit unsichtbarem <select> darueber (dasselbe
+  // Muster wie `.wpe-select` und `.lp-zone` — die Masse bestimmt das CSS, nicht der Browser).
+  // Seit dem 06.09.2026 in BEIDEN Kalendern waehlbar (Leonard-Wunsch), vorher nur in der Uebersicht.
+  const jahrFeld = `<span class="cal-jahr" id="${id}-jahr"></span>`;
   return `<div class="chart-card-v2-head">
       <span class="cal-head-left">${titel}${jahrFeld}</span>
       <span class="cal-head-right">
@@ -4143,11 +4141,15 @@ function calendarInnerHTML(id) {
 const _calPositioniert = {};
 const _calScrollPos = {};
 
-// Angezeigtes Kalenderjahr. Gilt NUR fuer den Kalender der Uebersicht und dort fuer alle drei
-// Filterzustaende (Leonard-Wunsch 06.09.2026); der Plan-Tab zeigt immer das laufende Jahr.
+// Angezeigtes Kalenderjahr, JE KALENDER (Leonard-Wunsch 06.09.2026 — vorher nur in der
+// Uebersicht waehlbar). Beide Kalender fuehren ihr eigenes Jahr, genau wie ihre Scrollposition:
+// Ein Sprung nach 2024 im Plan-Tab soll die Uebersicht nicht mitziehen. Innerhalb EINES
+// Kalenders gilt das Jahr fuer alle Zustaende — in der Uebersicht fuer alle drei Filter, im
+// Plan-Tab fuer Gymplan und Laufplan gemeinsam.
 // BEWUSST nicht gespeichert — wie der Sportart-Filter: Ein Jahr, das einen Neustart ueberlebt,
 // laesst den Kalender spaeter unerklaerlich leer wirken.
-let _calJahr = new Date().getFullYear();
+const _calJahre = {};
+function calJahr(id) { return _calJahre[id] || new Date().getFullYear(); }
 
 // Welche Jahre stehen zur Auswahl? Alles, wozu es Daten gibt, plus das laufende Jahr — sonst
 // koennte man in ein leeres Jahr springen und faende dort nichts.
@@ -4159,14 +4161,15 @@ function calJahre() {
   return [...jahre].filter(j => j > 2000).sort((a, b) => b - a);
 }
 
-function setCalJahr(jahr) {
+function setCalJahr(jahr, id) {
+  id = id || 'cal';
   const neu = Number(jahr);
-  if (!neu || neu === _calJahr) return;
-  _calJahr = neu;
+  if (!neu || neu === calJahr(id)) return;
+  _calJahre[id] = neu;
   // Beim Jahreswechsel neu positionieren: Die gemerkte Spalte gehoert zum alten Jahr.
-  _calPositioniert['cal'] = false;
-  _calScrollPos['cal'] = 0;
-  renderTrainingCalendar('cal');
+  _calPositioniert[id] = false;
+  _calScrollPos[id] = 0;
+  renderTrainingCalendar(id, id === 'cal' ? 'ov-cal-card' : 'plans-cal-card');
 }
 
 function renderTrainingCalendar(id, cardId) {
@@ -4181,8 +4184,8 @@ function renderTrainingCalendar(id, cardId) {
   // Immer das ganze Kalenderjahr: 1. Januar bis 31. Dezember. Das Raster beginnt am Montag
   // der Woche, in der der 1. Januar liegt, damit die Wochentagszeilen durchgehend stimmen.
   const today = new Date(); today.setHours(0,0,0,0);
-  // Der Kalender der Uebersicht folgt der Jahresauswahl, der im Plan-Tab immer dem heutigen Jahr.
-  const jahr = (id === 'cal') ? _calJahr : today.getFullYear();
+  // Beide Kalender folgen ihrer eigenen Jahresauswahl (Leonard-Wunsch 06.09.2026).
+  const jahr = calJahr(id);
   const istLaufendesJahr = jahr === today.getFullYear();
   const jan1 = new Date(jahr, 0, 1);
   const dez31 = new Date(jahr, 11, 31);
@@ -4310,19 +4313,16 @@ function renderTrainingCalendar(id, cardId) {
     titelEl.classList.toggle('cal-titel-lauf', modus.lauf && !modus.kraft);
   }
   // Das Jahr steht seit dem 06.09.2026 NEBEN dem Titel statt vorn in der Kennzahl
-  // (Leonard-Wunsch). In der Uebersicht ist es ein Auswahlfeld, im Plan-Tab nur Text.
+  // (Leonard-Wunsch) und ist in BEIDEN Kalendern ein Auswahlfeld — der Plan-Tab zeigte
+  // zunaechst nur Text, seit dem 06.09.2026 kommt man auch dort in vergangene Jahre.
   const jahrEl = document.getElementById(id + '-jahr');
   if (jahrEl) {
-    if (id === 'cal') {
-      const jahre = calJahre();
-      jahrEl.innerHTML = `<span class="cal-jahr-txt">${jahr}</span>
-        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
-        <select class="cal-jahr-sel" aria-label="Kalenderjahr wählen" onchange="setCalJahr(this.value)">
-          ${jahre.map(j => `<option value="${j}"${j === jahr ? ' selected' : ''}>${j}</option>`).join('')}
-        </select>`;
-    } else {
-      jahrEl.textContent = jahr;
-    }
+    const jahre = calJahre();
+    jahrEl.innerHTML = `<span class="cal-jahr-txt">${jahr}</span>
+      <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
+      <select class="cal-jahr-sel" aria-label="Kalenderjahr wählen" onchange="setCalJahr(this.value, '${id}')">
+        ${jahre.map(j => `<option value="${j}"${j === jahr ? ' selected' : ''}>${j}</option>`).join('')}
+      </select>`;
   }
   const statsEl = document.getElementById(id + '-stats');
   if (statsEl) {

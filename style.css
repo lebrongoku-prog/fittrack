@@ -2140,17 +2140,16 @@ html.wo-running #wo-week-card { display: none; }
 /* Das Jahr sieht aus wie ein Teil des Titels, ist aber ein Auswahlfeld: sichtbarer Text plus
    Pfeil, darueber ein unsichtbares `<select>` (dasselbe Muster wie `.wpe-select` und
    `.lp-zone`). Ein sichtbares `<select>` braechte eigene Browser-Masse mit.
-   Im Plan-Tab (`.cal-jahr-fix`) ist es nur Text. */
+   Gilt fuer BEIDE Kalender — die Nur-Text-Fassung des Plan-Tabs (`.cal-jahr-fix`) ist am
+   06.09.2026 entfallen, seither ist das Jahr auch dort waehlbar. */
 .cal-jahr {
   position: relative; display: inline-flex; align-items: center; gap: 3px;
   font-size: 16px; font-weight: 700; color: var(--text3);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none; user-select: none;
 }
-.cal-jahr-fix { cursor: default; }
 .cal-jahr .aex-v2-chev { width: 14px; height: 14px; color: inherit; }
 .cal-jahr .aex-v2-chev svg { width: 13px; height: 13px; }
-.cal-jahr-fix .aex-v2-chev { display: none; }
 /* 16px am unsichtbaren Feld verhindert den iOS-Zoom beim Fokussieren. */
 .cal-jahr-sel {
   /* Groesser als der sichtbare Text: 58x19px waeren als Trefferflaeche zu knapp. Nach oben
