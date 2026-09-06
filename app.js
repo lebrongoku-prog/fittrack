@@ -1523,13 +1523,13 @@ function buildHeuteHero(planDay, selDay, opts) {
     if (blockiert) {
       knopf = laufIdx >= 0
         ? `<button class="hero-v2-btn" onclick="jumpToWorkoutDay(${laufIdx})">
-             ${HERO_ICON_PLAY}Zur laufenden Einheit</button>`
-        : `<button class="hero-v2-btn" disabled>${HERO_ICON_PLAY}Einheit läuft</button>`;
+             ${HERO_ICON_HANTEL}Zur laufenden Einheit</button>`
+        : `<button class="hero-v2-btn" disabled>${HERO_ICON_HANTEL}Einheit läuft</button>`;
     } else if (planDay) {
       const start = opts.previewOnClick || `startWorkout('${planDay.id}')`;
-      knopf = `<button class="hero-v2-btn" onclick="${start}">${HERO_ICON_PLAY}Einheit starten</button>`;
+      knopf = `<button class="hero-v2-btn" onclick="${start}">${HERO_ICON_HANTEL}Einheit starten</button>`;
     } else {
-      knopf = `<button class="hero-v2-btn" onclick="startFreeWorkout()">${HERO_ICON_PLAY}Freies Training starten</button>`;
+      knopf = `<button class="hero-v2-btn" onclick="startFreeWorkout()">${HERO_ICON_HANTEL}Freies Training starten</button>`;
     }
     spalten.push(`<div class="hero-heute-spalte">
       <div class="hero-heute-einheit">${planDay ? escapeHtml(planDay.name) : 'Ruhetag'}</div>
@@ -1558,8 +1558,12 @@ function buildHeuteHero(planDay, selDay, opts) {
   </div>`;
 }
 
-// Symbol im Knopf, in Textgroesse. Als Konstante, damit beide Knoepfe dasselbe nutzen.
-const HERO_ICON_PLAY = '<span class="hero-btn-ic"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5,3 19,12 5,21"/></svg></span>';
+// Symbole im Knopf, in Textgroesse. Als Konstanten, damit alle Knoepfe dasselbe nutzen.
+// Die HANTEL loest am 06.09.2026 das Play-Dreieck ab (Leonard-Wunsch): Sie benennt die
+// Sportart statt der Aktion und ist damit das Gegenstueck zum Laeufer im Nachbarknopf.
+// Eigene, vereinfachte Zeichnung — `heroDumbbellSvg()` ist fuer 72px gebaut und wuerde bei
+// 14px zu einem grauen Fleck.
+const HERO_ICON_HANTEL = '<span class="hero-btn-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6.5 9v6M3.5 10.5v3M17.5 9v6M20.5 10.5v3M8 12h8"/></svg></span>';
 
 
 // `buildRestHero` und `buildLaufHero` sind am 06.09.2026 entfallen — die Herocard „Heute"
@@ -4337,7 +4341,15 @@ function renderTrainingCalendar(id, cardId) {
   const streak = (modus.kraft && modus.lauf) ? 0
     : (modus.kraft ? getWeekStreak() : getRunWeekStreak());
   const titelEl = document.getElementById(id === 'cal' ? 'cal-filter-btn' : id + '-titel');
-  if (titelEl) titelEl.textContent = modus.titel;
+  if (titelEl) {
+    titelEl.textContent = modus.titel;
+    // Der Titel traegt die Farbe der Sportart, die der Kalender zeigt (Leonard-Wunsch
+    // 06.09.2026): Gym dunkelgruen, Lauf hellgruen, beide zusammen in der normalen Textfarbe.
+    // Als KLASSE, nicht als Inline-Farbe — sonst schlaege sie die Glas-Regel, die den Titel
+    // im Transparenz-Modus weiss setzt.
+    titelEl.classList.toggle('cal-titel-gym', modus.kraft && !modus.lauf);
+    titelEl.classList.toggle('cal-titel-lauf', modus.lauf && !modus.kraft);
+  }
   const statsEl = document.getElementById(id + '-stats');
   if (statsEl) {
     statsEl.textContent = `${jahr} · ${inRange} ${einheitWort(inRange)}${zusatzLauf}`

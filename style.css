@@ -1306,7 +1306,10 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 .hero-heute-titel { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
 .hero-heute-spalten { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .hero-heute-spalten.einzeln { grid-template-columns: 1fr; }
-.hero-heute-spalte { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+/* Abstand oben (Titel: `margin-bottom: 10px`) und unten GLEICH gross — damit sitzt die
+   Beschriftung mittig zwischen Titel und Knopf (Leonard-Wunsch 06.09.2026); mit den
+   vorherigen 6px klebte sie am Knopf. */
+.hero-heute-spalte { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 /* Die Einheit steht MITTIG ueber ihrem Knopf und wird gekuerzt statt umzubrechen — sonst
    stuenden die beiden Knoepfe auf verschiedenen Hoehen. */
 .hero-heute-einheit {
@@ -1327,12 +1330,19 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    Schriftgroesse des Knopfes — aendert die sich, waechst das Symbol mit. */
 .hero-btn-ic { width: 1em; height: 1em; flex-shrink: 0; display: inline-flex; }
 .hero-btn-ic svg { width: 100%; height: 100%; fill: currentColor; }
-/* „Lauf abgeschlossen" — gleicher Knopf wie „Einheit starten", nur im Hellgruen der
-   Laufdomaene statt im Tab-Verlauf. Dunkle Schrift, weil Hellgruen zu hell fuer Weiss ist. */
-.hero-v2-btn-lauf { background: #4ADE80; color: #0B3B22; }
-.hero-v2-btn-lauf .hero-btn-ic svg { fill: currentColor !important; stroke: currentColor; }
+/* Die Knoepfe tragen die Farbe der SPORTART statt der Tabfarbe (Leonard-Wunsch 06.09.2026) —
+   dieselben Toene wie ueberall sonst: Gym #0F766E, Lauf #4ADE80. Den Verlauf behalten beide;
+   er kommt aus `--gradient` (dunkler Stop → Akzent) und ist hier je Sportart nachgebaut:
+   dunkler Stop 135 Grad in den helleren Ton. */
+.hero-heute .hero-v2-btn { background: linear-gradient(135deg, #0B4F49, #0F766E); }
+/* Muss ebenfalls zwei Klassen tragen, sonst gewinnt die Gym-Regel darueber. */
+.hero-heute .hero-v2-btn-lauf { background: linear-gradient(135deg, #22C55E, #4ADE80); color: #0B3B22; }
+.hero-v2-btn-lauf .hero-btn-ic svg { fill: none; stroke: currentColor; }
 .hero-v2-btn:disabled { opacity: .55; }
-.hero-v2-btn svg { fill: #fff !important; }
+/* Die alten Knopfsymbole sind gefuellte Formen (Play, Stop). Die neuen in `.hero-btn-ic`
+   sind STRICHZEICHNUNGEN — sie duerfen nicht mitgefuellt werden, sonst wird die Hantel zum
+   schwarzen Klumpen. */
+.hero-v2-btn > svg { fill: #fff !important; }
 .hero-v2-btn:active { transform: scale(.97); }
 /* Wide button variant (used in Workouts hero): volle Breite bis zur rechten Kante
    (deckungsgleich mit der Beenden-Button-Reihe im Aktiv-Modus, da beide width:100%
@@ -2199,6 +2209,15 @@ html.wo-running #wo-week-card { display: none; }
   /* Siehe `.seg-btn`: verhindert die Auswahl-Striche unter einzelnen Buchstaben. */
   -webkit-user-select: none; user-select: none;
 }
+/* Farbe des Kalendertitels nach angezeigter Sportart (Leonard-Wunsch 06.09.2026):
+   Gymkalender dunkelgruen, Laufkalender hellgruen, „Trainingskalender" in der normalen
+   Textfarbe. Gilt fuer beide Kalender — der im Plan-Tab zeigt dieselben zwei Zustaende.
+   MUSS hinter `.cal-filter-btn` stehen: Dessen `color: inherit` hat dieselbe Spezifitaet und
+   gewaenne sonst allein durch die Reihenfolge.
+   Im Transparenz-Modus bleibt der Titel WEISS — Dunkelgruen waere auf dem Schleier kaum
+   lesbar, und die Glas-Regel steht noch weiter hinten. */
+.cal-titel-gym  { color: #0F766E; }
+.cal-titel-lauf { color: #4ADE80; }
 .cal-filter-btn:active { opacity: .6; }
 .cal-day.future { opacity: .45; }
 /* Rand-Tage der ersten/letzten Woche, die noch ins Vor- bzw. Folgejahr fallen */

@@ -574,6 +574,14 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   „Trainingskalender"), steht dort „2026 · 25 Einheiten · 3 Laeufe". In den Einzelansichten bleibt es bei
   einer Zahl (Gymkalender: Einheiten, Laufkalender: Laeufe). Die Zahl der Laeufe wird IMMER gerechnet,
   angehaengt aber nur bei `modus.kraft && modus.lauf`.
+- **Der Kalendertitel traegt die Farbe der angezeigten Sportart** (06.09.2026):
+  Gymkalender #0F766E, Laufkalender #4ADE80, „Trainingskalender" (beide) in der normalen
+  Textfarbe. Gesetzt wird eine KLASSE (`.cal-titel-gym` / `.cal-titel-lauf`) in
+  `renderTrainingCalendar`, keine Inline-Farbe — die schluege sonst die Glas-Regel, die den
+  Titel im Transparenz-Modus weiss setzt (dort bleibt er bewusst weiss, Dunkelgruen waere auf
+  dem Schleier kaum lesbar). Die CSS-Regeln MUESSEN hinter `.cal-filter-btn` stehen: Dessen
+  `color: inherit` hat dieselbe Spezifitaet und gewaenne sonst allein durch die Reihenfolge.
+  Gilt fuer beide Kalender, auch den im Plan-Tab.
 - **Lesehilfe im Trainingskalender:** `.info-btn` neben der Kennzahl oben rechts (`.cal-head-right` fasst beide
   zusammen) oeffnet `#modal-cal-info`. Die Farb-Legende steht NUR dort, nicht mehr in der Karte — dadurch ist die
   Karte rund 100px flacher. Das Polster des Fussbereichs sitzt auf `.cal-detail`, damit die Karte ohne ausgewaehlten
@@ -934,8 +942,21 @@ Leonard-Vorgabe:
 - **Die Knoepfe fuellen die Karte.** Abstand zum Kartenrand = Kartenpolster = 14px, und der
   Abstand ZWISCHEN ihnen ist derselbe Wert (`gap: 14px`, nicht die 6px der uebrigen
   Knopfzeilen).
-- **Symbol vor dem Text, in Textgroesse** (`.hero-btn-ic`, `1em`): Play-Dreieck beim Gym,
-  Laeufer beim Lauf.
+- **Symbol vor dem Text, in Textgroesse** (`.hero-btn-ic`, `1em`): HANTEL beim Gym (seit
+  06.09.2026, vorher ein Play-Dreieck — die Hantel benennt die Sportart statt der Aktion und
+  ist damit das Gegenstueck zum Laeufer), Laeufer beim Lauf. Beide sind STRICHZEICHNUNGEN;
+  die alte Regel `.hero-v2-btn svg { fill: #fff !important }` musste deshalb auf
+  `> svg` eingeengt werden, sonst wird die Hantel zum schwarzen Klumpen.
+  Eigene, vereinfachte Zeichnung (`HERO_ICON_HANTEL`) — `heroDumbbellSvg()` ist fuer 72px
+  gebaut und bei 14px nur noch ein grauer Fleck.
+- **Farbe nach Sportart, Verlauf wie gehabt** (06.09.2026): Gym
+  `linear-gradient(135deg, #0B4F49, #0F766E)`, Lauf `linear-gradient(135deg, #22C55E, #4ADE80)`
+  mit dunkler Schrift (Hellgruen ist zu hell fuer Weiss). Vorher trug der Gym-Knopf die
+  TABFARBE (`--gradient`). ACHTUNG Spezifitaet: Die Laufregel braucht ebenfalls zwei Klassen
+  (`.hero-heute .hero-v2-btn-lauf`), sonst gewinnt die Gym-Regel.
+- **Die Beschriftung sitzt mittig zwischen Titel und Knopf**: Der Titel hat
+  `margin-bottom: 10px`, die Spalte deshalb `gap: 10px` — mit den vorherigen 6px klebte sie
+  am Knopf.
 - Die Beschriftung darf UMBRECHEN: „Lauf abgeschlossen" braucht bei 14px 135px, in den 155px
   eines halben Knopfes bleiben nach Polster, Symbol und Abstand nur 114px. `flex:1` haelt beide
   Knoepfe trotzdem gleich hoch. Kleiner setzen waere die Alternative gewesen — dann stuende der
