@@ -4466,44 +4466,46 @@ function showCalDay(key, id) {
   // Im Lauf-Modus bleibt vom Trainingsteil nur das Datum stehen.
   const modus = _calModus(id);
   const kraft = modus.kraft;
-  // Erste Zeile: nur Wochentag und Datum. Zweite Zeile: der Trainingstag — wurde an dem Tag
-  // aufgezeichnet, ist er ein Ausklapp-Knopf mit den Eckdaten der Einheit (Leonard-Wunsch
-  // 01.09.2026). Die frueheren Zeilen zum Trainingsplan und zur Erfuellungsquote sind entfallen.
-  let txt = `<div class="cal-detail-datum"><strong>${dateStr}</strong></div>`;
-  if (kraft) {
+  // Zeile 1: Wochentag und Datum. Darunter ZWEI SPALTEN — links Gym, rechts Laufen
+  // (Leonard-Wunsch 06.09.2026; vorher standen sie untereinander). Jede Spalte nennt entweder
+  // die absolvierte Einheit (als Knopf zur Detailansicht) oder was fuer den Tag geplant war.
+  // Zeigt der Kalender nur eine Sportart, bleibt die andere Spalte weg.
+  const heute0 = new Date(); heute0.setHours(0, 0, 0, 0);
+  const kommt = new Date(y, m-1, d).getTime() > heute0.getTime();
+
+  // ── Spalte Gym ───────────────────────────────────────────────────
+  let gymHTML = '';
+  if (modus.kraft) {
     if (entry) {
       // getWorkouts() ist neueste-zuerst; bei mehreren Einheiten am selben Tag zaehlt die
       // zuletzt begonnene.
       const woIdx = DB.getWorkouts().findIndex(w => _dayKeyOf(w.startTs) === key);
       const name = entry.names.join(', ') + (plan.known && !plan.planned ? ' · zusätzlich' : '');
-      if (woIdx >= 0) {
-        // Oeffnet die bestehende Detailansicht der Einheit (`#modal-hist-detail`) — genau wie
-        // vor dem Umbau der Fusszeile (Leonard-Wunsch 01.09.2026). `stopPropagation` ist
-        // Pflicht: Sonst raeumt initCalendarDeselect die Beschreibung im selben Klick weg.
-        txt += `<button type="button" class="cal-detail-tag"
-                        onclick="event.stopPropagation();showHistDetail(${woIdx})"><span
-                        class="cal-detail-tagname">${name}</span><span
-                        class="cal-detail-chev">▾</span></button>`;
-      } else {
-        txt += `<div class="cal-detail-tag-txt">${name}</div>`;
-      }
+      // Oeffnet die bestehende Detailansicht der Einheit (`#modal-hist-detail`).
+      // `stopPropagation` ist Pflicht: Sonst raeumt initCalendarDeselect die Beschreibung im
+      // selben Klick weg.
+      gymHTML = woIdx >= 0
+        ? `<button type="button" class="cal-detail-tag"
+                   onclick="event.stopPropagation();showHistDetail(${woIdx})"><span
+                   class="cal-detail-tagname">${name}</span><span
+                   class="cal-detail-chev">▾</span></button>`
+        : `<div class="cal-detail-tag-txt">${name}</div>`;
     } else if (plan.planned) {
-      const heute = new Date(); heute.setHours(0,0,0,0);
-      const kommt = new Date(y, m-1, d).getTime() > heute.getTime();
-      txt += `<div class="cal-detail-tag-txt">geplant: ${plan.name ? escapeHtml(plan.name) : 'Training'}`
-           + (kommt ? '' : ' · nicht trainiert') + '</div>';
+      gymHTML = `<div class="cal-detail-tag-txt">geplant: ${plan.name ? escapeHtml(plan.name) : 'Training'}`
+              + (kommt ? '' : ' · nicht trainiert') + '</div>';
     } else if (plan.known) {
-      // Ohne abdeckenden Plan bleibt die Zeile WEG — „kein Training" sagte nichts aus
-      // (Leonard-Wunsch 04.09.2026).
-      txt += `<div class="cal-detail-tag-txt">Kein Gym geplant</div>`;
+      // Nur INNERHALB eines Plans — ohne abdeckenden Plan bleibt die Spalte leer, „kein
+      // Training" sagte nichts aus (Leonard-Wunsch 04.09.2026).
+      gymHTML = `<div class="cal-detail-tag-txt">Kein Gym geplant</div>`;
     }
   }
 
-  // Der Lauf steht ZUUNTERST — nach allen Angaben zum Trainingstag (Leonard-Wunsch
-  // 01.09.2026) und in derselben Schriftgroesse wie die uebrigen Fusszeilen.
+  // ── Spalte Laufen ────────────────────────────────────────────────
+  let laufHTML = '';
+  let wkHTML = '';
   if (modus.lauf) {
     const wk = DB.getRunPlans().find(p => p.raceDate && _dayKeyOf(p.raceDate) === key);
-    if (wk) txt += `<div class="cal-detail-run wettkampf">🏁 Wettkampf · ${escapeHtml(wk.name || 'Laufplan')}</div>`;
+    if (wk) wkHTML = `<div class="cal-detail-run wettkampf">🏁 Wettkampf · ${escapeHtml(wk.name || 'Laufplan')}</div>`;
     const lauf = runNachTag()[key];
     const gepl = runGeplanteTage()[key];
     if (lauf) {
@@ -4513,20 +4515,37 @@ function showCalDay(key, id) {
         ? [fmtMin(lauf.minutes), lauf.maxHR ? `max. ${Math.round(lauf.maxHR)} bpm` : null].filter(Boolean).join(' · ')
         : `${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}`;
       const bez = lauf.art === 'hiit' ? 'HIIT: ' : '';
-      // Wie beim Trainingstag ein KNOPF, der die Detailansicht oeffnet (Leonard-Wunsch
-      // 04.09.2026). `stopPropagation` ist Pflicht — sonst raeumt initCalendarDeselect die
-      // Beschreibung im selben Klick weg.
-      txt += `<button type="button" class="cal-detail-tag cal-detail-run"
-                      onclick="event.stopPropagation();showRunDetail('${key}')"><span
-                      class="cal-detail-tagname">${bez}${werte}</span><span
-                      class="cal-detail-chev">▾</span></button>`;
+      laufHTML = `<button type="button" class="cal-detail-tag"
+                          onclick="event.stopPropagation();showRunDetail('${key}')"><span
+                          class="cal-detail-tagname">${bez}${werte}</span><span
+                          class="cal-detail-chev">▾</span></button>`;
     } else if (gepl) {
       const u = gepl.einheit;
       const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null].filter(Boolean).join(' · ') : '';
-      txt += `<div class="cal-detail-run geplant">geplant${soll ? ': ' + soll : ''}</div>`;
+      laufHTML = `<div class="cal-detail-tag-txt">geplant${soll ? ': ' + soll : ''}</div>`;
+    } else if (_laufplanDeckt(key)) {
+      // Gegenstueck zu „Kein Gym geplant": nur INNERHALB eines Laufplans (Leonard-Wunsch
+      // 06.09.2026).
+      laufHTML = `<div class="cal-detail-tag-txt">Kein Lauf geplant</div>`;
     }
   }
-  el.innerHTML = txt;
+
+  const spalten = (gymHTML || laufHTML)
+    ? `<div class="cal-detail-spalten">
+         ${modus.kraft ? `<div class="cal-detail-spalte gym">${gymHTML}</div>` : ''}
+         ${modus.lauf  ? `<div class="cal-detail-spalte lauf">${laufHTML}</div>` : ''}
+       </div>`
+    : '';
+
+  el.innerHTML = `<div class="cal-detail-datum"><strong>${dateStr}</strong></div>${wkHTML}${spalten}`;
+}
+
+// Liegt der Tag in der Laufzeit eines Laufplans? Gegenstueck zu `plan.known` beim Gymplan —
+// nur dort steht „Kein Lauf geplant", sonst bliebe die Spalte das halbe Jahr ueber gefuellt.
+function _laufplanDeckt(key) {
+  const [y, m, d] = key.split('-').map(Number);
+  const t = new Date(y, m - 1, d).getTime();
+  return DB.getRunPlans().some(p => p.startDate && p.endDate && t >= p.startDate && t <= p.endDate);
 }
 
 // Muskel-Landkarte: zwei Silhouetten (vorne/hinten), deren Regionen nach Volumenanteil

@@ -2188,6 +2188,15 @@ html.wo-running #wo-week-card { display: none; }
 .lauf-tag-erledigt { font-size: 13px; font-weight: 600; color: var(--text2); align-self: center; }
 /* Fusszeile zum Lauf: gleiche Groesse UND gleiche Schriftfarbe wie die Angaben zur
    Trainingseinheit darueber — sie erbt beides von `.cal-detail`. */
+/* Fusszeile in ZWEI Spalten: links Gym, rechts Laufen (Leonard-Wunsch 06.09.2026).
+   Zeigt der Kalender nur eine Sportart, steht deren Spalte allein und nimmt die volle
+   Breite — deshalb `1fr` je vorhandener Spalte statt fester Aufteilung.
+   Die Schriftfarbe benennt die Sportart: dunkelgruen fuer Gym, hellgruen fuer Laufen. Text
+   und Knopf bleiben sonst unveraendert — der Pfeil-Knopf erbt die Farbe ueber `inherit`. */
+.cal-detail-spalten { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px 14px; margin-top: 2px; }
+.cal-detail-spalte { min-width: 0; }
+.cal-detail-spalte.gym  { color: #0F766E; }
+.cal-detail-spalte.lauf { color: #4ADE80; }
 .cal-detail-run { margin-top: 3px; }
 .cal-detail-run.wettkampf { color: var(--text); font-weight: 600; }
 /* Detailansicht eines Laufs (`#modal-run-detail`). Die Kacheln nutzen `.hd-stats` mit,
@@ -2870,6 +2879,28 @@ html.wo-running #wo-week-card { display: none; }
      (`#wo-view-gym > #wo-week-card`) hat ZWEI und gewinnt deshalb — die Karte
      blieb im Querformat waehrend einer laufenden Einheit stehen (Leonard-Meldung 01.09.2026). */
   html.wo-running #wo-view-gym > #wo-week-card { display: none; }
+
+  /* LAUFEN — dieselbe Aufteilung wie auf der Seite „Gym": Wochenplan links, Herocard rechts
+     in EINER Zeile (Leonard-Wunsch 06.09.2026). „Diese Woche" und die Tageskarte spannen
+     darunter ueber beide Spalten. Wie drueben KEIN `align-items: start` — `stretch` haelt
+     die beiden Karten gleich hoch; die Wrapper reichen die Hoehe an die Karte darin weiter. */
+  #wo-view-laufen {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 0;
+    align-content: start;
+  }
+  #wo-view-laufen > #wo-runplan-card,
+  #wo-view-laufen > #wo-lauf-hero { display: flex; flex-direction: column; }
+  #wo-view-laufen > #wo-runplan-card > *,
+  #wo-view-laufen > #wo-lauf-hero > * { flex: 1; }
+  #wo-view-laufen > #wo-runplan-card > .plan-card-v2 {
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  #wo-view-laufen > #wo-runplan-card { grid-column: 1; }
+  #wo-view-laufen > #wo-lauf-hero { grid-column: 2; }
+  #wo-view-laufen > .chart-card-v2,
+  #wo-view-laufen > #wo-lauftag-card { grid-column: 1 / -1; }
 
   /* STATS — Volumenentwicklung und Volumen pro Muskelgruppe teilen sich die erste Zeile
      (Leonard-Wunsch 01.09.2026). Ohne `align-items` bleibt die Grid-Vorgabe `stretch`, und
