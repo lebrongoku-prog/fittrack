@@ -885,11 +885,18 @@ function renderOverview() {
   ensureTimerActive();
 
   // ─ Aktiver Plan als Dashboard-Karte (ersetzt „Trainingswoche"-Karte + separaten Wochenplan-Strip) ─
+  // Die ganze Karte ist EIN Ziel und fuehrt auf die Plan-Seite IHRER Sportart (Leonard-Wunsch
+  // 06.09.2026): Gymwochenplan -> Seite „Gymplan", Laufwochenplan -> Seite „Laufplan". Ob man
+  // einen Wochentag oder den Balken trifft, macht keinen Unterschied mehr — dafuer sorgt
+  // `tageInert`. Vorher sprang ein Tipp auf einen Wochentag in den Trainings-Tab, und die
+  // Karte selbst landete auf der zuletzt gewaehlten Plan-Seite statt auf der passenden.
+  const zurPlanSeite = (seite) => `setPlansView('${seite}');wischeZuTab('plans')`;
   const planCardEl = document.getElementById('ov-plan-card');
   if (planCardEl) {
     planCardEl.innerHTML = active
-      ? buildPlanCard(active, "wischeZuTab('plans')", /*hideToday*/ false, /*hideStatus*/ true, /*hideMeta*/ true)
-      : `<div class="plan-card-v2" onclick="showScreen('plans')" style="cursor:pointer">
+      ? buildPlanCard(active, zurPlanSeite('plans'), /*hideToday*/ false, /*hideStatus*/ true,
+                      /*hideMeta*/ true, { tageInert: true })
+      : `<div class="plan-card-v2" onclick="${zurPlanSeite('plans')}" style="cursor:pointer">
            <div class="ppv-name" style="color:var(--text2)">Kein aktiver Trainingsplan</div>
            <div class="ppv-meta">Tippe, um einen Plan anzulegen oder zu aktivieren.</div>
          </div>`;
@@ -4922,6 +4929,7 @@ function fmtDateRange(start, end) {
 // Tippen öffnet den Plan-Detail. Fortschritt/Adhärenz nur beim aktiven Plan (laufende Woche).
 // opts.selectedIdx  = Wochentag, der als ausgewaehlt markiert wird (Trainings-Tab)
 // opts.dayOnTap      = Funktionsname fuer den Tipp auf einen Wochentag
+// opts.tageInert     = Wochentage sind reine Anzeige, der Tipp faellt auf die KARTE durch
 function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
   opts = opts || {};
   const todayIdx = (new Date().getDay()+6) % 7;
@@ -4944,11 +4952,13 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
     if (today) cls.push('today');
     if (opts.selectedIdx === i) cls.push('selected');
     // Beim aktiven Plan springt ein Tipp auf einen Wochentag in den Trainings-Tab auf genau
-    // diesen Tag — sonst wäre der Streifen auf der Übersicht reine Anzeige.
-    // Im Trainings-Tab waehlt der Tipp den Tag AUS (man ist schon dort); ueberall sonst
-    // springt er in den Trainings-Tab auf diesen Tag.
+    // diesen Tag. Im Trainings-Tab waehlt der Tipp den Tag AUS (man ist schon dort).
+    // `tageInert` nimmt den Wochentagen ihren eigenen Tipp: Der Klick faellt dann auf die
+    // Karte durch, die ganze Kachel ist EIN Ziel. So haelt es die UEBERSICHT seit dem
+    // 06.09.2026 (Leonard-Wunsch) — dort soll es keinen Unterschied machen, ob man einen
+    // Wochentag oder den Balken trifft; beides fuehrt auf die Plan-Seite dieser Sportart.
     const tapFn = opts.dayOnTap || 'jumpToWorkoutDay';
-    const tap = isCurrent
+    const tap = (isCurrent && !opts.tageInert)
       ? ` onclick="event.stopPropagation();${tapFn}(${i})" role="button" tabindex="0" aria-label="${w.label} öffnen"`
       : '';
     return `<div class="${cls.join(' ')}"${tap}><span class="ppv-wd">${w.label}</span></div>`;

@@ -728,7 +728,18 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   gefuellt von `renderWorkoutWeekStrip`) und Plaene-Tab. Nur zwei Dinge unterscheiden sich, beide ueber `opts`:
   Im Trainings-Tab waehlt ein Tipp den Tag AUS (`opts.dayOnTap: 'selectWorkoutDay'`) und der gewaehlte Tag wird
   markiert (`opts.selectedIdx` → `.ppv-col.selected`) — die Auswahl steuert dort, welcher Tag darunter erscheint.
-  Sonst springt der Tipp per `jumpToWorkoutDay` in den Trainings-Tab.
+  Im Plaene-Tab springt der Tipp per `jumpToWorkoutDay` in den Trainings-Tab.
+  **In der UEBERSICHT ist die ganze Karte EIN Ziel** (06.09.2026, Leonard-Wunsch): Ob man einen
+  Wochentag, den Balken oder den Plannamen trifft, macht keinen Unterschied — beides fuehrt auf
+  die Plan-Seite DIESER Sportart, Gymwochenplan auf „Gymplan", Laufwochenplan auf „Laufplan"
+  (`setPlansView(seite);wischeZuTab('plans')`). Dafuer sorgt `opts.tageInert`: Es laesst den
+  Wochentagen ihren eigenen `onclick` weg, der Tipp faellt auf die Karte durch. Vorher sprang
+  ein Tipp auf einen Wochentag in den Trainings-Tab, und die Karte selbst landete auf der
+  ZULETZT gewaehlten Plan-Seite statt auf der passenden — zwei Ziele in einer Kachel.
+  Der Laufwochenplan verhielt sich schon vorher so: `buildRunPlanCard` haengt den Tipp nur bei
+  gesetztem `opts.dayOnTap` an, und die Uebersicht setzt es nicht.
+  ACHTUNG: `tageInert` gilt NUR fuer die Uebersicht. Trainings- und Plaene-Tab brauchen ihre
+  Wochentags-Tipps weiterhin.
   Der frueher eigene Streifen (`buildWpCol`/`buildWpInfo`/`renderNext7Strip`/`selectOverviewDay`, Klassen `.wp-*`)
   wurde am 20.08.2026 entfernt — er hatte danach keinen Aufrufer mehr. ACHTUNG beim Aufraeumen: Die Regel fuer den
   Erledigt-Haken war eine Selektorliste (`.ppv-col.done …, .wp-col.done …`) — dort durfte nur der tote Teil weg.
