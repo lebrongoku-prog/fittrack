@@ -1163,8 +1163,16 @@ In den EINZELZUSTAENDEN zeichnen `buildPlanCard`/`buildRunPlanCard` unveraendert
 und tauschen dafuer den Plannamen gegen den Filterknopf. Auch die LEEREN Karten („Kein aktiver
 Trainingsplan/Laufplan") tragen ihn, sonst steckte man ohne Plan in dem Zustand fest.
 Der GEMEINSAME Zustand (`buildWochenKombi`) hat eine eigene Bauform: eine Wochentagszeile,
-darunter zwei Reihen Kreise (Gym #0F766E, Lauf #4ADE80), je mit Sportsymbol davor. Senkrecht
-liest man ab, was an einem Tag ansteht. Statt zweier Fortschrittsbloecke nur die Woche je
+darunter zwei Reihen Marken, je mit Sportsymbol davor. Senkrecht liest man ab, was an einem Tag
+ansteht.
+**Die Marken sind DIESELBEN wie im Trainingskalender** (Leonard-Wunsch 07.09.2026): Gym ein
+abgerundetes QUADRAT, Lauf ein KREIS — geplant nur UMRANDET, absolviert GEFUELLT, Farben
+#0F766E und #4ADE80. Wer den Kalender liest, liest damit auch diese Karte ohne Umlernen.
+Der frueher hier verwendete Erledigt-Haken ist entfallen: Die Fuellung sagt das schon.
+STRICHSTAERKE 3,3px — im Kalender sind es 2,1px am 14px-Quadrat und 1,4px am 9,34px-Kreis,
+beides 15% des Durchmessers. Hier sind BEIDE Marken 22px gross, dieselben 15% ergeben also
+denselben Wert (2,1 × 22/14 = 1,4 × 22/9,34 = 3,3). Beim Aendern der Markengroesse nachrechnen.
+Der Heute-Ring folgt der FORM der Reihe, sonst laege ein Kreis um ein Quadrat. Statt zweier Fortschrittsbloecke nur die Woche je
 Sportart plus „0/3 · 1/3" im Kopf — beide Zahlenpaare tragen die Farbe IHRER Reihe, sonst
 waere nicht erkennbar, welche zu welcher Sportart gehoert.
 JEDE REIHE ist ihr eigenes Tipp-Ziel (Gym → Seite „Gymplan", Lauf → Seite „Laufplan") — sie ist
@@ -1176,9 +1184,10 @@ FALLE Rasterausrichtung: Beschriftungszeile und beide Reihen liegen auf demselbe
 als Tipp-Flaeche — die Beschriftung braucht dieselben Werte, sonst sind die INHALTSBOXEN
 verschieden breit, sobald die Breite gekappt ist, und die Wochentage driften gegen ihre Kreise
 (im Querformat gemessen bis 11px).
-QUERFORMAT: Die Karte spannt ueber beide Spalten wie die Herocard, das Wochenraster aber NICHT
-(`max-width: 480px`) — ueber die volle Breite standen die sieben Kreise 136px auseinander und
-die Zeile las sich nicht mehr als Woche.
+QUERFORMAT: Die Karte spannt ueber beide Spalten wie die Herocard, das Wochenraster nutzt die
+VOLLE Breite. Eine erste Fassung kappte es bei 480px (die Marken stehen sonst weit
+auseinander); Leonard hat das am 07.09.2026 zurueckgenommen — die Breite soll ausgenutzt
+werden, die Wochentagsbeschriftung darueber haelt die Zeile lesbar.
 TRANSPARENZ-MODUS: Die Sportfarben bleiben, nur der LEERE Kreis wird weiss. Die Glas-Regel muss
 dafuer auf `:not(.training):not(.done)` eingeengt sein — ungefiltert schlaegt sie (id-Selektor
 im `:not()`) jede Sportfarbe, und geplant sah aus wie leer.

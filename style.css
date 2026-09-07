@@ -1538,33 +1538,39 @@ html.wo-running #wo-week-card { display: none; }
 .ppv-k-ic svg { width: 100%; height: 100%; }
 .ppv-k-reihe.gym  .ppv-k-ic { color: #0F766E; }
 .ppv-k-reihe.lauf .ppv-k-ic { color: #22A05B; }
-/* Der Kreis: leer = nichts geplant, gefuellt = geplant, Haken = erledigt. Kleiner als die
-   30px der Einzelkarten — hier stehen ZWEI Reihen uebereinander. */
+/* DIESELBEN ZEICHEN WIE IM TRAININGSKALENDER (Leonard-Wunsch 07.09.2026) — wer den Kalender
+   liest, liest damit auch diese Karte ohne Umlernen:
+     Gym  = abgerundetes QUADRAT (`.cal-day.done::before`), Lauf = KREIS (`.cal-day.run::after`)
+     geplant   = nur UMRANDUNG · absolviert = GEFUELLT
+   Der frueher hier verwendete Erledigt-Haken ist damit entfallen: Die Fuellung sagt das schon,
+   genau wie im Kalender.
+   STRICHSTAERKE 3,3px: Im Kalender sind es 2,1px am 14px-Quadrat und 1,4px am 9,34px-Kreis —
+   beides 15% des Durchmessers. Hier sind BEIDE Marken 22px gross, dieselben 15% ergeben also
+   fuer beide denselben Wert (2,1 × 22/14 = 1,4 × 22/9,34 = 3,3). Beim Aendern der Markengroesse
+   nachrechnen. */
 .ppv-k-col { display: flex; justify-content: center; min-width: 0; }
 .ppv-k-dot {
   position: relative;
-  width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%;
+  width: 22px; height: 22px; box-sizing: border-box;
   background: var(--card2);
 }
-.ppv-k-reihe.gym  .training .ppv-k-dot, .ppv-k-reihe.gym  .done .ppv-k-dot { background: #0F766E; }
-.ppv-k-reihe.lauf .training .ppv-k-dot, .ppv-k-reihe.lauf .done .ppv-k-dot { background: #4ADE80; }
-/* Heute: Ring um den Kreis — sichtbar auch an einem Tag ohne Training. */
+.ppv-k-reihe.gym  .ppv-k-dot { border-radius: 4px; }   /* Quadrat: 2,5px × 22/14 ≈ 4 */
+.ppv-k-reihe.lauf .ppv-k-dot { border-radius: 50%; }
+/* geplant, aber noch nicht absolviert → nur Umrandung */
+.ppv-k-reihe.gym  .training:not(.done) .ppv-k-dot { background: transparent; box-shadow: inset 0 0 0 3.3px #0F766E; }
+.ppv-k-reihe.lauf .training:not(.done) .ppv-k-dot { background: transparent; box-shadow: inset 0 0 0 3.3px #4ADE80; }
+/* absolviert → gefuellt. Gilt AUCH an einem nicht geplanten Tag (nachgeholtes Training). */
+.ppv-k-reihe.gym  .done .ppv-k-dot { background: #0F766E; box-shadow: none; }
+.ppv-k-reihe.lauf .done .ppv-k-dot { background: #4ADE80; box-shadow: none; }
+/* Heute: Ring um die Marke — sichtbar auch an einem Tag ohne Training. Er folgt der FORM
+   der Reihe, sonst laege ein Kreis um ein Quadrat. */
 .ppv-k-col.today .ppv-k-dot::after {
-  content: ''; position: absolute; inset: -3px;
-  border-radius: 50%; border: 2px solid var(--accent);
+  content: ''; position: absolute; inset: -4px; border: 2px solid var(--accent);
 }
+.ppv-k-reihe.gym  .today .ppv-k-dot::after { border-radius: 7px; }
+.ppv-k-reihe.lauf .today .ppv-k-dot::after { border-radius: 50%; }
 .ppv-k-reihe.gym  .today.training .ppv-k-dot::after { border-color: #0F766E; }
 .ppv-k-reihe.lauf .today.training .ppv-k-dot::after { border-color: #4ADE80; }
-/* Erledigt-Haken wie in den Einzelkarten — er unterscheidet „geplant" von „gemacht". */
-.ppv-k-col.done .ppv-k-dot::before {
-  content: '✓';
-  position: absolute; top: -3px; right: -4px; z-index: 1;
-  width: 13px; height: 13px; border-radius: 50%;
-  background: #fff; color: #0F766E;
-  font-size: 8px; font-weight: 900; line-height: 13px; text-align: center;
-  box-shadow: 0 0 0 1.5px #0F766E;
-}
-.ppv-k-reihe.lauf .done .ppv-k-dot::before { color: #4ADE80; box-shadow: 0 0 0 1.5px #4ADE80; }
 /* Statt zweier Fortschrittsbloecke nur die Woche je Sportart — die beiden Plaene stehen in
    verschiedenen Wochen und liessen sich nicht zu einer Zahl verrechnen. */
 .ppv-k-wochen { display: flex; gap: 10px; margin-top: 4px; font-size: 12px; font-weight: 600; }
@@ -3032,10 +3038,10 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
      Spalten — wie die Herocard darueber (07.09.2026, vorher lagen hier zwei Karten
      nebeneinander, je eine Sportart pro Spalte). */
   #screen-overview.active > #ov-week-card { grid-column: 1 / -1; }
-  /* Das Wochenraster waechst dabei NICHT mit: Ueber die volle Breite standen die sieben
-     Kreise 136px auseinander und die Zeile las sich nicht mehr als Woche. 480px entspricht
-     etwa der Hochformat-Breite — die Reihen bleiben linksbuendig unter dem Titel. */
-  #ov-week-card .ppv-k-labels, #ov-week-card .ppv-k-reihe { max-width: 480px; }
+  /* Das Wochenraster nutzt die VOLLE Breite (Leonard-Wunsch 07.09.2026). Eine erste Fassung
+     kappte es bei 480px, weil die Marken sonst weit auseinanderstehen — Leonard will die
+     Breite ausgenutzt sehen, die Zeile bleibt durch die Wochentagsbeschriftung darueber
+     lesbar. */
   /* Im Hochformat steht der Kalender direkt über „Letzte Einheiten" (DOM-Reihenfolge).
      Im Zwei-Spalten-Layout würde er die beiden Kacheln auseinanderreißen — dort rutscht
      er per order hinter sie, ohne dass das Markup doppelt vorgehalten werden muss.
