@@ -1163,16 +1163,11 @@ In den EINZELZUSTAENDEN zeichnen `buildPlanCard`/`buildRunPlanCard` unveraendert
 und tauschen dafuer den Plannamen gegen den Filterknopf. Auch die LEEREN Karten („Kein aktiver
 Trainingsplan/Laufplan") tragen ihn, sonst steckte man ohne Plan in dem Zustand fest.
 Der GEMEINSAME Zustand (`buildWochenKombi`) hat eine eigene Bauform: eine Wochentagszeile,
-darunter zwei Reihen Marken, je mit Sportsymbol davor. Senkrecht liest man ab, was an einem Tag
-ansteht.
-**Die Marken sind DIESELBEN wie im Trainingskalender** (Leonard-Wunsch 07.09.2026): Gym ein
-abgerundetes QUADRAT, Lauf ein KREIS — geplant nur UMRANDET, absolviert GEFUELLT, Farben
-#0F766E und #4ADE80. Wer den Kalender liest, liest damit auch diese Karte ohne Umlernen.
-Der frueher hier verwendete Erledigt-Haken ist entfallen: Die Fuellung sagt das schon.
-STRICHSTAERKE 3,3px — im Kalender sind es 2,1px am 14px-Quadrat und 1,4px am 9,34px-Kreis,
-beides 15% des Durchmessers. Hier sind BEIDE Marken 22px gross, dieselben 15% ergeben also
-denselben Wert (2,1 × 22/14 = 1,4 × 22/9,34 = 3,3). Beim Aendern der Markengroesse nachrechnen.
-Der Heute-Ring folgt der FORM der Reihe, sonst laege ein Kreis um ein Quadrat. Statt zweier Fortschrittsbloecke nur die Woche je
+darunter zwei Reihen KREISE (Gym #0F766E, Lauf #4ADE80), je mit Sportsymbol davor. Senkrecht
+liest man ab, was an einem Tag ansteht. Gefuellt = geplant, Haken oben rechts = absolviert.
+VERWORFEN (07.09.2026, am selben Tag eingebaut und zurueckgenommen): die Zeichen des
+Trainingskalenders — Quadrat fuers Gym, Kreis fuer den Lauf, geplant nur umrandet, absolviert
+gefuellt, dafuer ohne Haken. Nicht erneut einbauen, ohne zu fragen. Statt zweier Fortschrittsbloecke nur die Woche je
 Sportart plus „0/3 · 1/3" im Kopf — beide Zahlenpaare tragen die Farbe IHRER Reihe, sonst
 waere nicht erkennbar, welche zu welcher Sportart gehoert.
 JEDE REIHE ist ihr eigenes Tipp-Ziel (Gym → Seite „Gymplan", Lauf → Seite „Laufplan") — sie ist
