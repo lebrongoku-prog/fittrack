@@ -1486,6 +1486,24 @@ function buildSessionCard(active, planDay, selDay, opts) {
 // Dort gehoeren Uhr, Fortschritt und „Pausieren/Beenden" hin, nicht „Heute".
 //
 // `sport`: 'beide' (Uebersicht) · 'gym' (Trainings-Tab, Seite Gym) · 'lauf' (Seite Laufen).
+// Umfang eines Trainingstags fuer die zweite Zeile der Gym-Herocard: Uebungen, Saetze und —
+// sobald mindestens eine Einheit dieses Tags abgeschlossen ist — deren mittlere Dauer.
+// Die Dauer stand frueher schon einmal in der Vorschau-Herocard (`avgDauerFuerTag`) und ist
+// mit deren Umbau am 06.09.2026 entfallen; hier kommt sie zurueck.
+// Einheiten OHNE `duration` zaehlen nicht mit — sonst zoege eine abgebrochene Aufzeichnung
+// den Schnitt nach unten.
+function gymTagUmfang(planDay) {
+  const ex = planDay.exercises || [];
+  if (!ex.length) return '';
+  const saetze = ex.reduce((a, e) => a + peSets(e).length, 0);
+  const dauern = DB.getWorkouts()
+    .filter(w => w.planDayId === planDay.id && w.duration)
+    .map(w => w.duration);
+  const teile = [`${ex.length} ${ex.length === 1 ? 'Übung' : 'Übungen'}`, `${saetze} Sätze`];
+  if (dauern.length) teile.push('Ø ' + fmtDur(Math.round(dauern.reduce((a, b) => a + b, 0) / dauern.length)));
+  return teile.join(' · ');
+}
+
 function buildHeuteHero(planDay, selDay, opts) {
   opts = opts || {};
   const sport = opts.sport || 'beide';
@@ -1507,10 +1525,20 @@ function buildHeuteHero(planDay, selDay, opts) {
       const start = opts.previewOnClick || `startWorkout('${planDay.id}')`;
       knopf = `<button class="hero-v2-btn" onclick="${start}">${HERO_ICON_HANTEL}Einheit starten</button>`;
     } else {
-      knopf = `<button class="hero-v2-btn" onclick="startFreeWorkout()">${HERO_ICON_HANTEL}Freies Training starten</button>`;
+      // KEIN Gym geplant: grauer Knopf ohne Verlauf (Leonard-Wunsch 07.09.2026). Die
+      // Sportfarbe ist ein Versprechen — sie gehoert dem Tag, an dem etwas ansteht.
+      // Bedienbar bleibt er trotzdem, freies Training geht immer.
+      knopf = `<button class="hero-v2-btn hero-v2-btn-grau" onclick="startFreeWorkout()">${HERO_ICON_HANTEL}Freies Training starten</button>`;
     }
+    // Zweite Zeile unter dem Namen: Umfang des Tages (Leonard-Wunsch 07.09.2026). Sie steht
+    // NUR auf der Seite „Gym" im Trainings-Tab (`opts.sport === 'gym'`) — in der Uebersicht
+    // teilen sich zwei Sportarten die Breite, dort ist dafuer kein Platz.
+    const meta = (opts.sport === 'gym' && planDay) ? gymTagUmfang(planDay) : '';
     spalten.push(`<div class="hero-heute-spalte">
-      <div class="hero-heute-einheit">${planDay ? escapeHtml(planDay.name) : 'Kein Gym'}</div>
+      <div class="hero-heute-kopf">
+        <div class="hero-heute-einheit">${planDay ? escapeHtml(planDay.name) : 'Kein Gym'}</div>
+        ${meta ? `<div class="hero-heute-meta">${meta}</div>` : ''}
+      </div>
       ${knopf}
     </div>`);
   }
@@ -1525,16 +1553,21 @@ function buildHeuteHero(planDay, selDay, opts) {
     const gepl = runGeplanteTage()[_dayKeyOf(tagD.getTime())];
     const u = gepl && gepl.einheit;
     const ziel = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null].filter(Boolean).join(' · ') : '';
+    // Kein Lauf geplant → grauer Knopf ohne Verlauf, dieselbe Regel wie beim Gym.
     spalten.push(`<div class="hero-heute-spalte">
       <div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf')}</div>
-      <button class="hero-v2-btn hero-v2-btn-lauf" onclick="runLaeufeLaden({interactive:true})"
+      <button class="hero-v2-btn hero-v2-btn-lauf${gepl ? '' : ' hero-v2-btn-grau'}"
+              onclick="runLaeufeLaden({interactive:true})"
               ${runLaden ? 'disabled' : ''}>
         ${HERO_ICON_LAEUFER}${runLaden ? 'Lese …' : 'Lauf abgeschlossen'}
       </button>
     </div>`);
   }
 
-  return `<div class="hero-v2 hero-heute">
+  // `hero-mit-meta` schaltet die enger gesetzte Fassung frei — sie holt genau den Platz
+  // wieder herein, den die Zusatzzeile kostet (siehe CSS). Nur wo die Zeile wirklich steht.
+  const hatMeta = spalten.some(sp => sp.includes('hero-heute-meta'));
+  return `<div class="hero-v2 hero-heute${hatMeta ? ' hero-mit-meta' : ''}">
     <div class="hero-heute-titel">Heute</div>
     <div class="hero-heute-spalten${spalten.length === 1 ? ' einzeln' : ''}">${spalten.join('')}</div>
   </div>`;
@@ -5747,19 +5780,23 @@ function renderLibDays() {
   if (subEl) subEl.textContent = days.length
     ? `${active.length} Trainingstag${active.length===1?'':'e'}${archived.length ? ` • ${archived.length} archiviert` : ''}`
     : 'Noch keine Trainingstage erstellt';
+  // KOMPAKTE Kachel, drei pro Zeile (Leonard-Wunsch 07.09.2026). Auf 375px bleiben je Kachel
+  // rund 109px, davon 81px Text — dafuer ist der bisherige Aufbau (Name, Meta, Chip und Pfeil
+  // nebeneinander) zu breit. Deshalb:
+  //   · Uebungen und Saetze stehen UNTEREINANDER statt durch „•" getrennt. Nebeneinander
+  //     braechen sie ohnehin um, aber an einer beliebigen Stelle.
+  //   · Der Pfeil „›" faellt weg — er kostet Breite und sagt nichts, was die Kachel nicht
+  //     schon durch ihre Antippbarkeit zeigt.
+  //   · „Im aktuellen Plan" wird zum PUNKT oben rechts (`.pld-dot`): Der Text misst bei 11px
+  //     rund 95px und passt nicht. Die Langfassung steht im `title`.
   const renderRow = (d) => {
+    const anzUeb = (d.exercises||[]).length;
     const setCount = (d.exercises||[]).reduce((a,e) => a + (e.targetSets||0), 0);
-    // Chip unter den Namen statt daneben — nebeneinander riss es bei mittellangen Namen
-    // mitten im Wort auf zwei Zeilen auseinander.
-    const planTag = activeDayIds.has(d.id)
-      ? '<span class="ex-item-plan-tag">Im aktuellen Plan</span>' : '';
-    return `<div class="plan-list-row" onclick="openLibDayDetail('${d.id}')">
-      <div class="plan-list-info">
-        <div class="plan-list-name">${pd(escapeHtml(d.name))}</div>
-        <div class="plan-list-meta">${(d.exercises||[]).length} Übungen • ${setCount} Sätze</div>
-        ${planTag ? `<div class="plan-list-tags">${planTag}</div>` : ''}
-      </div>
-      <div class="plan-list-action">›</div>
+    const imPlan = activeDayIds.has(d.id);
+    return `<div class="plan-list-row pld-kachel" onclick="openLibDayDetail('${d.id}')">
+      ${imPlan ? '<span class="pld-dot" title="Im aktuellen Plan"></span>' : ''}
+      <div class="plan-list-name">${pd(escapeHtml(d.name))}</div>
+      <div class="plan-list-meta">${anzUeb} ${anzUeb === 1 ? 'Übung' : 'Übungen'}<br>${setCount} Sätze</div>
     </div>`;
   };
   // (Kein Import-Button mehr nötig: im Referenz-Modell SIND alle Plan-Tage Bibliothek-Tage.
@@ -8735,6 +8772,10 @@ function initScrollHideNav() {
   if (dayDetail) attachToScreen(dayDetail, 'day-detail');
   const mehrEl = document.getElementById('screen-mehr');
   if (mehrEl) attachToScreen(mehrEl, 'mehr');
+  // Beim App-Start ist die Tableiste EINGEKLAPPT (Leonard-Wunsch 07.09.2026). Sie kommt wie
+  // gewohnt durch einen Tipp auf den blanken Tab-Hintergrund zurueck. Bewusst ueber
+  // `setNavHidden`, damit Laufanzeige und Pausenleiste denselben Zustand mitbekommen.
+  setNavHidden(true);
 }
 
 // Alle Tab-Inhalte einmal im Hintergrund rendern (App-Start), damit beim Wischen KEIN

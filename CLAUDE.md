@@ -560,6 +560,12 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 - **Querformat (ab 1024px):** Uebersicht ist ein 2-Spalten-Grid — Wochenplan links, Herocard rechts in DERSELBEN
   Zeile (seit 20.08.2026, vorher spannte die Herocard ueber beide Spalten). `align-content: start` ist Pflicht,
   sonst verteilt das Grid die uebrige Bildschirmhoehe auf die Zeilen und zwischen den Karten klaffen ~100px.
+  Die FUGE zwischen den beiden Herocard-Knoepfen liegt GENAU ueber der Fuge zwischen den
+  Wochenplan-Karten darunter (Leonard-Wunsch 07.09.2026): Die Karten tragen je 14px Rand,
+  zwischen ihnen stehen also 28px — `#ov-hero-wrap .hero-heute-spalten { gap: 28px }` gibt der
+  Herocard dieselbe Luecke (im Hochformat bleibt es bei 14px). Gemessen: Abweichung 0px.
+  NUR die Herocard der Uebersicht, sie ist die einzige, die ueber beide Spalten spannt — auf
+  der Seite „Laufen" und in der laufenden Einheit steht die Karte in EINER Spalte.
   Die Uebungsliste (`#active-ex-list`) fuellt SPALTENWEISE (`grid-auto-flow: column`): links 1-4, rechts 5-8.
   Dafuer setzt `_setzeUebungsSpalten` beim Rendern die Inline-Variable `--ex-rows` = ceil(Anzahl/2) — ohne sie
   wuesste das Grid nicht, wo die erste Spalte endet. Im Hochformat wirkungslos (dort kein Grid).
@@ -671,6 +677,33 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Knopf `#ex-plan-filter-btn` links neben „Alle ein-/ausklappen". Der Zustand wird BEWUSST nicht gespeichert — ein Filter, Beim Einschalten werden die Gruppen mit aufgeklappt
   (`collapsedExGroups.clear()`) — sonst bliebe die verkuerzte Liste hinter zugeklappten Kopfzeilen verborgen.
   der einen Neustart überlebt, lässt den Katalog später unerklärlich leer wirken.
+- **Gymtage stehen als DREIER-RASTER, nicht als volle Zeilen** (`#libdays-list` als Grid mit
+  `repeat(3, minmax(0, 1fr))`, Leonard-Wunsch 07.09.2026). Das Raster sitzt auf der LISTE, die
+  Kacheln (`.pld-kachel`) verlieren dafuer ihren eigenen Seitenrand — nur so sind alle drei
+  exakt gleich breit (109px auf 375px) und der Abstand zum Bildschirmrand bleibt bei 14px.
+  `minmax(0, 1fr)` ist Pflicht: Ein blosses `1fr` ist `minmax(auto, 1fr)` und laesst die Spalte
+  auf die Mindestbreite ihres Inhalts wachsen — „Shoulder/Legs" sprengte damit seine Spalte
+  (130 statt 111px) und schob die dritte Kachel ueber den rechten Rand.
+  Archiv-Knopf und Leermeldung spannen ueber alle drei Spalten und muessen ihre eigene Breite
+  samt Raendern zuruecksetzen (der Archiv-Knopf traegt sonst `width: calc(100% - 28px)`).
+  HOEHE 94px wie die fruehere vollbreite Karte (Leonard-Vorgabe: beibehalten). Ein zweizeiliger
+  Name braucht 41px; mit 12px Polster und 4px Abstand kaeme die Kachel auf 99px. 10px Polster
+  und 2px Abstand bringen sie auf 93px, die `min-height` hebt sie auf 94.
+  Was auf 109px NICHT mehr hineinpasst und deshalb entfallen ist: der Pfeil „›" (kostet Breite,
+  sagt nichts) und der Chip „Im aktuellen Plan" (95px Text) — Letzterer ist ein PUNKT
+  (`.pld-dot`) UNTEN rechts geworden, mit der Langfassung im `title`. Unten, weil er oben dem
+  Namen 12px nahm und „Ganzkörper" damit auf den Pixel genau nicht mehr passte.
+  Uebungen und Saetze stehen UNTEREINANDER statt durch „•" getrennt — nebeneinander braechen
+  sie ohnehin um, aber an beliebiger Stelle.
+  TEXTUMBRUCH, drei Fallen auf einmal: (1) `.pd-name` ist `inline-block` — ein zu langes Wort
+  macht die BOX breiter, statt umzubrechen, und lief sichtbar aus der Karte; in der Kachel
+  deshalb `display: block`. (2) `.pd-name` bringt neben dem 3px-Balken 9px Innenabstand mit —
+  in der Kachel auf 5px reduziert, sonst bleiben nur 81px Text. (3) KEIN Wortbruch
+  (`overflow-wrap: normal`): Jede Bruchregel trennte irgendwann mitten im Wort
+  („Ganzkör/per", „Shoulder/Leg|s"). Stattdessen Umbruch an Leerzeichen plus
+  `hyphens: auto` — das trennt ein ueberlanges Einzelwort nach deutschen Regeln mit
+  Bindestrich („Ganzkörper-krafttraining") und greift nur, wenn es sonst nicht passt.
+  Moeglich, weil `<html lang="de">` gesetzt ist.
 - **Übungskatalog:** nur noch Gruppierung nach Muskelgruppen — Sortierung nach Trainingstagen samt Umschalter wurde entfernt.
 - **Kopf der Uebersicht:** Reihenfolge rechts = Sicherungs-Chip, Zahnrad (Einstellungen), Glas-Knopf
   (Leonard-Wunsch 01.09.2026, vorher umgekehrt). Beide Knoepfe sind `.ph-gear`.
@@ -832,7 +865,10 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   das aktuelle Datum spielt keine Rolle und die eingefaerbte Zeile las sich wie eine Auswahl.
 - **Wochenplan in der Plan-Detailansicht:** `.wpe-list`/`.wpe-row` = eine Zeile pro Wochentag (nicht 7 Spalten), damit lange Tagnamen vollständig umbrechen können; unsichtbares `<select>`-Overlay pro Zeile weist den Tag zu.
 - **Löschen** = „Bearbeiten"-Modus (Kästchen auswählen → „Löschen (N)" → Sicherheits-Dialog) via `_delCtx`/`_delSel`/`buildDelEditList`; inline ✕ fragt ebenfalls nach. **Hinzufügen** = Multi-Select-Modals mit „Hinzufügen (N)".
-- **Bottom-Nav**: Scrollen blendet sie nur AUS (ab 60px Scrolltiefe, Runterwisch > 5px) und NIE wieder ein — auch nicht
+- **Bottom-Nav**: Beim APP-START ist sie EINGEKLAPPT (`setNavHidden(true)` am Ende von
+  `initScrollHideNav`, Leonard-Wunsch 07.09.2026) — bewusst ueber `setNavHidden`, damit
+  Laufanzeige und Pausenleiste denselben Zustand mitbekommen.
+  Scrollen blendet sie nur AUS (ab 60px Scrolltiefe, Runterwisch > 5px) und NIE wieder ein — auch nicht
   am Seitenanfang (Leonard-Entscheidung, 20.08.2026; vorher holte sie jeder Hochwisch zurueck). Zurueck kommt sie
   ausschliesslich durch einen Tipp auf den BLANKEN Tab-Hintergrund: `e.target === screenEl` in `initScrollHideNav`
   (Leonard-Entscheidung 01.09.2026). Die fruehere Pruefung ueber `e.composedPath()` liess auch Tipps auf „tote"
@@ -1147,6 +1183,25 @@ Leonard-Vorgabe:
 - **Die Karte steht in der Uebersicht ZUOBERST** (06.09.2026), ueber den Wochenplaenen; im
   Querformat spannt sie ueber beide Spalten, darunter teilen sich Gym- und Laufwochenplan die
   naechste Zeile.
+- **Ist an dem Tag NICHTS geplant, ist der Knopf GRAU und ohne Verlauf** (`.hero-v2-btn-grau`,
+  #475569, Leonard-Wunsch 07.09.2026) — je Sportart getrennt: kein Gym, aber ein Lauf geplant
+  → Gymknopf grau, Laufknopf hellgruen. Die Sportfarbe gehoert dem Tag, an dem etwas ansteht.
+  Bedienbar bleiben beide (freies Training bzw. Laufdaten holen). Dasselbe Grau wie
+  „Pausieren", damit die App nur EIN neutrales Knopfgrau kennt. Die Regel MUSS hinter den
+  beiden Sportfarben stehen — gleiche Spezifitaet, es entscheidet die Reihenfolge.
+- **ZWEITE ZEILE unter dem Trainingstag, nur auf der Seite „Gym"** (`.hero-heute-meta`,
+  `gymTagUmfang()`, Leonard-Wunsch 07.09.2026): Uebungen, Saetze und — sobald eine Einheit
+  dieses Tags abgeschlossen ist — deren mittlere Dauer („5 Übungen · 16 Sätze · Ø 1h 6min").
+  Die Dauer gab es schon einmal (`avgDauerFuerTag`, mit dem Herocard-Umbau am 06.09.2026
+  entfallen); Einheiten OHNE `duration` zaehlen weiterhin nicht mit.
+  In der UEBERSICHT steht sie NICHT — dort teilen sich zwei Sportarten die Breite.
+  **Die Karte darf dadurch nicht hoeher werden** (Leonard-Vorgabe). Die Zeile kostet 15px,
+  die `hero-mit-meta` an vier Stellen zurueckholt: Titelabstand 10→6, Spaltenabstand 10→6,
+  Abstand der beiden Textzeilen 2→0, Knopfpolster 12→10 (Knopf 41,5→37,5px, weiter ueber den
+  36px fuer sichere Treffer). Gemessen: 123,6px mit Zeile gegen 123,5px ohne.
+  Die Klasse setzt `buildHeuteHero` nur, wenn die Zeile wirklich drin ist — die Uebersicht
+  behaelt ihre Masse. ACHTUNG Spezifitaet: `.hero-heute .hero-v2-btn` setzt das Knopfpolster
+  und steht WEITER UNTEN, die Kompaktregeln brauchen deshalb drei Klassen.
 - **Die Wochenplan-Karten tragen das Sportsymbol vor dem Titel** (`.ppv-name-ic`, `1em` = die
   16px des Titels): Hantel beim Gym, Laeufer beim Lauf. Farbe `inherit` — sie folgen dem TITEL
   (Leonard-Wunsch 06.09.2026, vorher in den Sportartfarben) und sind damit im Transparenz-Modus

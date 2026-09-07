@@ -587,6 +587,90 @@ body.theme-plans .hist-action-dd {
 .plan-list-tags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
 .plan-list-action { color: var(--text3); font-size: 18px; flex-shrink: 0; }
 
+/* ─── Gymtage: DREI Kacheln pro Zeile (Leonard-Wunsch 07.09.2026) ───
+   Vorher lag jeder Tag als volle Zeile da. Das Raster sitzt auf der LISTE, die Kacheln
+   verlieren dafuer ihren eigenen Seitenrand — nur so sind alle drei exakt gleich breit und
+   der Abstand zum Bildschirmrand bleibt bei den ueblichen 14px.
+   `align-items: stretch` (Grid-Vorgabe) haelt sie in einer Zeile gleich hoch; die
+   `min-height` gibt die Hoehe der frueheren vollbreiten Karte vor (94px, Leonard-Wunsch:
+   Hoehe beibehalten). */
+#libdays-list {
+  display: grid;
+  /* `minmax(0, 1fr)` statt `1fr`: Ein blosses `1fr` ist `minmax(auto, 1fr)` und laesst die
+     Spalte auf die MINDESTBREITE ihres Inhalts wachsen — ein langer Tagname wie
+     „Shoulder/Legs" sprengte damit seine Spalte (130px statt 111px) und schob die Kachel
+     ueber den rechten Bildschirmrand hinaus. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0 14px;
+}
+/* Archiv-Knopf und Leermeldung sind keine Kacheln — sie spannen ueber alle drei Spalten.
+   Der Archiv-Knopf traegt sonst `width: calc(100% - 28px)` samt eigener Raender; im Raster
+   liefert die Spalte die Breite, beides muss also zurueckgesetzt werden. */
+#libdays-list > .plans-list-archive-header,
+#libdays-list > .plan-day-empty { grid-column: 1 / -1; width: auto; margin-left: 0; margin-right: 0; }
+
+.pld-kachel {
+  position: relative;
+  margin: 0;
+  /* Hoehe der frueheren vollbreiten Karte (Leonard-Wunsch: beibehalten). Ein ZWEIZEILIGER
+     Name braucht 41px — mit 12px Polster und 4px Abstand kaeme die Kachel auf 99px und die
+     Zeile waere 5px hoeher als die daneben. 10px Polster und 2px Abstand bringen sie auf 93px,
+     die `min-height` hebt sie auf 94: Alle Kacheln sind damit gleich hoch, ein- wie zweizeilig. */
+  min-height: 94px;
+  /* Seitlich 8px statt 10: Damit stehen dem Namen 90px zur Verfuegung. „Shoulder/Legs" misst
+     bei 13px 87px und passte mit 10px Polster (86px) um EIN Pixel nicht — der Browser brach
+     es dann mitten im Wort („Shoulder/Le | gs"), weil `break-word` die erste Zeile fuellt,
+     statt am Schraegstrich zu trennen. Senkrecht bleibt es bei 10px. */
+  padding: 10px 8px;
+  display: flex; flex-direction: column; gap: 2px;
+  align-items: stretch; justify-content: flex-start;
+}
+/* Auf 81px Textbreite passt kein 16px-Name mehr in eine Zeile. 14px und hoechstens zwei
+   Zeilen, danach Auslassungspunkte — `-webkit-line-clamp` ist dafuer das einzige Mittel,
+   das MITTEN in der zweiten Zeile abschneidet statt die dritte anzuhaengen. */
+.pld-kachel .plan-list-name {
+  font-size: 12px; line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+/* `.pd-name` (der Balken vor dem Namen) ist `inline-block` — ein Wort, das breiter ist als
+   die Kachel, macht damit die BOX breiter, statt umzubrechen: „Shoulder/Legs" lief auf
+   375px sichtbar ueber den Kartenrand hinaus. Als Block bricht der Text normal um, und
+   `overflow-wrap: anywhere` trennt notfalls INNERHALB eines Wortes — auf 81px Textbreite
+   passt sonst kein einziger langer Tagname. */
+/* `.pd-name` bringt neben dem 3px-Balken noch 9px Innenabstand mit — zusammen 12px, die dem
+   Text fehlen. In der schmalen Kachel sind das 81 statt 93px, und „Shoulder/Legs" (91px bei
+   13px Schrift) brach dadurch mitten im Wort um. Mit 5px Abstand und 12px Schrift bleiben
+   85px fuer den Text.
+   KEIN Wortbruch (`overflow-wrap: normal`): In einer Kachel dieser Breite passt kein Name
+   ueber rund 13 Zeichen einzeilig — und JEDE Bruchregel trennte irgendwann mitten im Wort
+   („Ganzkör/per", „Shoulder/Leg|s"). Sauberer ist der Umbruch an LEERZEICHEN plus die
+   Kuerzung mit Auslassungspunkten aus dem `-webkit-line-clamp` darueber: „Ganzkörper leicht"
+   wird zweizeilig, ein einzelnes ueberlanges Wort bekommt „…". Das ist vorhersehbar und
+   haengt nicht daran, wie Leonard seine Tage nennt. */
+.pld-kachel .pd-name {
+  display: block; overflow-wrap: normal; padding-left: 5px;
+  /* Fuer den Ausnahmefall eines sehr langen Einzelworts („Ganzkörperkrafttraining"):
+     Silbentrennung nach deutschen Regeln — moeglich, weil `<html lang="de">` gesetzt ist.
+     Sie greift NUR, wenn das Wort sonst nicht passt, und trennt mit Bindestrich an einer
+     erlaubten Stelle statt mitten in der Silbe. Ohne sie wurde so ein Name schlicht an der
+     Kartenkante abgeschnitten, und zwar OHNE Auslassungspunkte: Die kommen vom
+     `-webkit-line-clamp` und erscheinen nur beim Kappen ZWEIER Zeilen, nicht bei einem
+     einzelnen zu breiten Wort. */
+  -webkit-hyphens: auto; hyphens: auto;
+}
+/* Der Punkt sitzt UNTEN rechts, nicht oben: Oben nahm er dem Namen 12px, und damit blieben
+   genau 74px — „Ganzkörper" misst bei 13px ebenfalls 74px und brach dadurch mitten im Wort
+   um. Unten steht er neben der kurzen Meta-Zeile („9 Sätze", rund 45px) und kostet nichts. */
+.pld-kachel .plan-list-meta { font-size: 11px; line-height: 1.35; margin-top: auto; }
+/* „Im aktuellen Plan" als PUNKT statt als Chip — der Text misst bei 11px rund 95px und
+   passte nicht. Absolut gesetzt, damit er dem Namen keine Breite nimmt. */
+.pld-dot {
+  position: absolute; bottom: 12px; right: 10px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #0F766E;
+}
+
 /* Status-Chips für Pläne */
 .plan-status-chip {
   display: inline-flex; align-items: center; justify-content: center;
@@ -1307,6 +1391,35 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
   text-align: center; font-size: 13px; font-weight: 600; color: var(--text3);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* Zweite Zeile unter dem Trainingstag: Uebungen, Saetze und mittlere Dauer (Leonard-Wunsch
+   07.09.2026, nur auf der Seite „Gym"). Sie darf die Karte NICHT hoeher machen — deshalb:
+   Name und Zeile stehen zusammen in `.hero-heute-kopf` und teilen sich den EINEN Platz, den
+   vorher der Name allein hatte. Der Abstand der Spalte (10px) liegt damit weiterhin nur
+   zwischen diesem Block und dem Knopf, nicht zusaetzlich zwischen den beiden Textzeilen —
+   die trennen 2px. Zusammen mit der kleineren Schrift (11px) waechst der Block um 15px,
+   die der Knopf ueber `flex:1` wieder abgibt: Er ist ohnehin hoeher als sein Text.
+   ACHTUNG: Ohne `min-width: 0` am Kopf greift das Kuerzen des Namens nicht — ein Flex-Kind
+   schrumpft sonst nicht unter seinen Inhalt. */
+.hero-heute-kopf { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.hero-heute-meta {
+  text-align: center; font-size: 11px; font-weight: 600; color: var(--text3); opacity: .8;
+  line-height: 1.1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Die Zusatzzeile kostet 15px (13px Zeile + 2px Abstand). Genau die holt `hero-mit-meta`
+   an vier Stellen wieder herein, damit die Karte NICHT hoeher wird (Leonard-Vorgabe
+   07.09.2026): Titelabstand −4, Spaltenabstand −4, Abstand der beiden Textzeilen −2,
+   Knopfpolster −4, dazu 1px aus der engeren Zeilenhoehe oben.
+   Der Knopf verliert dabei 4px Hoehe (41,5 → 37,5) und bleibt damit ueber den 36px, ab
+   denen ein Ziel mit dem Finger sicher zu treffen ist.
+   NUR auf der Karte mit der Zeile — die Uebersicht behaelt ihre Masse unveraendert.
+   ACHTUNG Spezifitaet: `.hero-heute .hero-v2-btn` (zwei Klassen) setzt das Knopfpolster und
+   steht WEITER UNTEN in der Datei. Die Regel hier braucht deshalb drei Klassen, sonst
+   entscheidet die Reihenfolge und der Knopf behaelt seine 12px. */
+.hero-heute.hero-mit-meta .hero-heute-titel { margin-bottom: 6px; }
+.hero-heute.hero-mit-meta .hero-heute-spalte { gap: 6px; }
+.hero-heute.hero-mit-meta .hero-heute-kopf { gap: 0; }
+.hero-heute.hero-mit-meta .hero-v2-btn { padding-top: 10px; padding-bottom: 10px; }
 /* Die Beschriftung darf UMBRECHEN: „Lauf abgeschlossen" braucht bei 14px 135px Text, in den
    155px eines halben Knopfes bleiben nach Polster, Symbol und Abstand aber nur 114px. Kleiner
    setzen waere die Alternative gewesen — dann stuende der wichtigste Knopf der Uebersicht in
@@ -1341,6 +1454,13 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    sondern ein Zwischenhalt und soll sich von den farbigen Aktionsknoepfen abheben.
    Wie bei „Beenden" entscheidet die Reihenfolge: gleiche Spezifitaet wie die Gym-Regel. */
 .hero-heute .hero-v2-btn-pause { background: #475569; color: #fff; }
+/* Ist an dem Tag NICHTS geplant, ist der Knopf grau und ohne Verlauf (Leonard-Wunsch
+   07.09.2026) — pro Sportart getrennt: kein Gym, aber ein Lauf geplant → Gymknopf grau,
+   Laufknopf hellgruen. Die Sportfarbe gehoert dem Tag, an dem etwas ansteht.
+   Dasselbe Grau wie „Pausieren", damit die App nur EIN neutrales Knopfgrau kennt.
+   Zwei Klassen und NACH den beiden Sportregeln — bei gleicher Spezifitaet entscheidet
+   die Reihenfolge, sonst gewaenne der Verlauf. */
+.hero-heute .hero-v2-btn-grau { background: #475569; color: #fff; }
 .hero-v2-btn-lauf .hero-btn-ic svg { fill: none; stroke: currentColor; }
 .hero-v2-btn:disabled { opacity: .55; }
 /* Die alten Knopfsymbole sind gefuellte Formen (Play, Stop). Die neuen in `.hero-btn-ic`
@@ -2803,6 +2923,15 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
      ihre beiden Knoepfe teilen sich die Breite dann genauso wie im Hochformat.
      Darunter teilen sich Gym- und Laufwochenplan eine Zeile (Leonard-Wunsch 01.09.2026). */
   #screen-overview.active > #ov-hero-wrap { grid-column: 1 / -1; }
+  /* Die FUGE zwischen den beiden Knoepfen liegt genau ueber der Fuge zwischen den
+     Wochenplan-Karten darunter (Leonard-Wunsch 07.09.2026). Die Karten tragen je 14px
+     Rand, zwischen ihnen stehen also 28px — dieselbe Luecke braucht die Herocard, deren
+     Knopfspalten sich die volle Breite teilen. Mit den 14px des Hochformats sassen die
+     Kanten 7px zu weit innen.
+     NUR die Herocard der Uebersicht: Sie ist die einzige, die ueber beide Spalten spannt.
+     Auf der Seite „Laufen" und in der laufenden Einheit steht die Karte in EINER Spalte,
+     dort gibt es keine Fuge, an der etwas auszurichten waere. */
+  #ov-hero-wrap .hero-heute-spalten { gap: 28px; }
   #screen-overview.active > #ov-plan-card { grid-column: 1; }
   #screen-overview.active > #ov-runplan-card { grid-column: 2; }
   /* Im Hochformat steht der Kalender direkt über „Letzte Einheiten" (DOM-Reihenfolge).
