@@ -1412,15 +1412,23 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    Der KNOPF bleibt dabei unangetastet (Leonard-Praezisierung 07.09.2026 — eine erste Fassung
    nahm ihm 4px Polster; er soll seine volle Hoehe behalten). Der Platz kommt stattdessen von
    OBEN: Titel und Name ruecken zusammen, der ganze Textblock sitzt hoeher.
-   Aufteilung: Titelabstand 10→2 (−8), Spaltenabstand 10→6 (−4), Abstand der beiden
-   Textzeilen 2→0 (−2), dazu 1px aus der engeren Zeilenhoehe oben.
+   Aufteilung: Titelabstand 10→2 (−8), Spaltenabstand 10→6 (−4), dazu 1px aus der engeren
+   Zeilenhoehe oben. Bleiben 3px, um die die Karte waechst — genau der Abstand zwischen den
+   beiden Textzeilen.
+   NACHTRAG 07.09.2026: Der Abstand zwischen Trainingstag und Umfangszeile stand zuerst auf 0
+   und klebte sichtbar (Leonard-Meldung). Er ist jetzt 3px — derselbe Wert, den die App
+   ueberall zwischen einem Titel und seiner Unterzeile nutzt (`.plan-list-meta`).
+   Die 3px waren nirgends mehr zu holen: Titel (2px) und Spalte (6px) sind bereits am Anschlag,
+   der Knopf ist tabu, und haette man sie der SPALTE genommen, stuende die Umfangszeile gleich
+   weit vom Namen wie vom Knopf — sie laese sich dann als eigener Punkt statt als Teil des
+   Namensblocks. Die Karte ist deshalb 126,6px statt 123,6px hoch.
    NUR auf der Karte mit der Zeile — die Uebersicht behaelt ihre Masse unveraendert.
    ACHTUNG Spezifitaet: `.hero-heute .hero-v2-btn` (zwei Klassen) setzt das Knopfpolster und
    steht WEITER UNTEN in der Datei — wer hier doch einmal am Knopf dreht, braucht drei
    Klassen, sonst entscheidet die Reihenfolge. */
 .hero-heute.hero-mit-meta .hero-heute-titel { margin-bottom: 2px; }
 .hero-heute.hero-mit-meta .hero-heute-spalte { gap: 6px; }
-.hero-heute.hero-mit-meta .hero-heute-kopf { gap: 0; }
+.hero-heute.hero-mit-meta .hero-heute-kopf { gap: 3px; }
 /* Die Beschriftung darf UMBRECHEN: „Lauf abgeschlossen" braucht bei 14px 135px Text, in den
    155px eines halben Knopfes bleiben nach Polster, Symbol und Abstand aber nur 114px. Kleiner
    setzen waere die Alternative gewesen — dann stuende der wichtigste Knopf der Uebersicht in

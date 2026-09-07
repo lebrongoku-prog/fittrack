@@ -1199,12 +1199,16 @@ Leonard-Vorgabe:
   Die Dauer gab es schon einmal (`avgDauerFuerTag`, mit dem Herocard-Umbau am 06.09.2026
   entfallen); Einheiten OHNE `duration` zaehlen weiterhin nicht mit.
   In der UEBERSICHT steht sie NICHT — dort teilen sich zwei Sportarten die Breite.
-  **Die Karte darf dadurch nicht hoeher werden UND der Knopf nicht flacher** (Leonard-Vorgabe,
-  praezisiert 07.09.2026 — eine erste Fassung nahm dem Knopf 4px Polster). Die Zeile kostet
-  15px, die `hero-mit-meta` von OBEN zurueckholt: Titelabstand 10→2, Spaltenabstand 10→6,
-  Abstand der beiden Textzeilen 2→0, dazu 1px engere Zeilenhoehe. Titel und Name ruecken also
-  zusammen, der ganze Textblock sitzt hoeher; der Knopf bleibt bei 41,5px.
-  Gemessen: 123,6px mit Zeile gegen 123,5px ohne, Knopf in beiden Faellen 41,5px.
+  **Der Knopf bleibt auf voller Hoehe** (Leonard-Vorgabe, praezisiert 07.09.2026 — eine erste
+  Fassung nahm ihm 4px Polster). Die Zeile kostet 15px, die `hero-mit-meta` weitgehend von OBEN
+  zurueckholt: Titelabstand 10→2, Spaltenabstand 10→6, dazu 1px engere Zeilenhoehe.
+  Die letzten 3px sind der Abstand ZWISCHEN Trainingstag und Umfangszeile. Der stand zuerst auf
+  0 und klebte sichtbar (Leonard-Meldung 07.09.2026); jetzt 3px, derselbe Wert wie ueberall
+  sonst zwischen Titel und Unterzeile (`.plan-list-meta`). Anderswo waren sie nicht zu holen —
+  Titel und Spalte sind am Anschlag, der Knopf ist tabu, und aus der SPALTE genommen stuende die
+  Zeile gleich weit vom Namen wie vom Knopf und laese sich als eigener Punkt statt als Teil des
+  Namensblocks. Die Karte ist deshalb 126,6px hoch statt 123,5px.
+  Gemessen: 126,6px mit Zeile gegen 123,5px ohne, Knopf in beiden Faellen 41,5px.
   Die Klasse setzt `buildHeuteHero` nur, wenn die Zeile wirklich drin ist — die Uebersicht
   behaelt ihre Masse. ACHTUNG Spezifitaet: `.hero-heute .hero-v2-btn` setzt das Knopfpolster
   und steht WEITER UNTEN, die Kompaktregeln brauchen deshalb drei Klassen.
