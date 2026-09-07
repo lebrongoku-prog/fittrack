@@ -903,23 +903,8 @@ function renderOverview() {
   }
   ensureTimerActive();
 
-  // ─ Aktiver Plan als Dashboard-Karte (ersetzt „Trainingswoche"-Karte + separaten Wochenplan-Strip) ─
-  // Die ganze Karte ist EIN Ziel und fuehrt auf die Plan-Seite IHRER Sportart (Leonard-Wunsch
-  // 06.09.2026): Gymwochenplan -> Seite „Gymplan", Laufwochenplan -> Seite „Laufplan". Ob man
-  // einen Wochentag oder den Balken trifft, macht keinen Unterschied — dafuer genuegt es, kein
-  // `dayOnTap` zu setzen. Vorher sprang ein Tipp auf einen Wochentag in den Trainings-Tab, und
-  // die Karte selbst landete auf der zuletzt gewaehlten Plan-Seite statt auf der passenden.
-  const zurPlanSeite = (seite) => `setPlansView('${seite}');wischeZuTab('plans')`;
-  const planCardEl = document.getElementById('ov-plan-card');
-  if (planCardEl) {
-    planCardEl.innerHTML = active
-      ? buildPlanCard(active, zurPlanSeite('plans'), /*hideToday*/ false, /*hideStatus*/ true,
-                      /*hideMeta*/ true)
-      : `<div class="plan-card-v2" onclick="${zurPlanSeite('plans')}" style="cursor:pointer">
-           <div class="ppv-name" style="color:var(--text2)">Kein aktiver Trainingsplan</div>
-           <div class="ppv-meta">Tippe, um einen Plan anzulegen oder zu aktivieren.</div>
-         </div>`;
-  }
+  // ─ EINE Wochenplankarte fuer beide Sportarten ─ (siehe `renderWochenKarte`)
+  renderWochenKarte();
 
   // ─ Hinweis auf das Plan-Ende + Sicherungs-Status ─
   renderBackupLine();
@@ -929,9 +914,139 @@ function renderOverview() {
   // Umbau im Übungen-Tab, der Kalender bleibt in der Übersicht.
   renderTrainingCalendar();
 
-  const runCard = document.getElementById('ov-runplan-card');
-  if (runCard) runCard.innerHTML = buildRunPlanCard();
+}
 
+// ─── Wochenplankarte der Uebersicht: EINE Karte fuer beide Sportarten ───────────────
+// Leonard-Wunsch 07.09.2026 („Variante A"). Sie ersetzt die frueher getrennten Karten
+// #ov-plan-card und #ov-runplan-card. Der TITEL ist ein Filter wie beim Trainingskalender:
+// beide → nur Gym → nur Lauf → beide. In den Einzelzustaenden zeichnen die bestehenden
+// Kartenbauer unveraendert weiter (samt Planname, Fortschrittsbalken und Statuschip); nur
+// der gemeinsame Zustand hat eine eigene Bauform.
+// BEWUSST nicht gespeichert — dieselbe Ueberlegung wie beim Kalender- und Katalogfilter:
+// Ein Zustand, der einen Neustart ueberlebt, laesst die Karte spaeter unerklaerlich
+// unvollstaendig wirken.
+let _wochenFilter = 'beide';
+const _WOCHEN_FILTER_TITEL = { beide: 'Trainingswoche', gym: 'Gymwoche', lauf: 'Laufwoche' };
+function toggleWochenFilter() {
+  _wochenFilter = _wochenFilter === 'beide' ? 'gym' : _wochenFilter === 'gym' ? 'lauf' : 'beide';
+  renderWochenKarte();
+}
+
+function renderWochenKarte() {
+  const el = document.getElementById('ov-week-card');
+  if (!el) return;
+  // Die ganze Karte ist EIN Ziel und fuehrt auf die Plan-Seite IHRER Sportart (Leonard-Wunsch
+  // 06.09.2026). Im gemeinsamen Zustand hat jede REIHE ihr eigenes Ziel — sie ist dort das,
+  // was sonst die ganze Karte ist.
+  const zurPlanSeite = (seite) => `setPlansView('${seite}');wischeZuTab('plans')`;
+  if (_wochenFilter === 'gym') {
+    const active = getActivePlan();
+    el.innerHTML = active
+      ? buildPlanCard(active, zurPlanSeite('plans'), /*hideToday*/ false, /*hideStatus*/ true,
+                      /*hideMeta*/ true, { filterOnTap: 'toggleWochenFilter' })
+      : leereWochenKarte('Kein aktiver Trainingsplan',
+          'Tippe, um einen Plan anzulegen oder zu aktivieren.', zurPlanSeite('plans'));
+  } else if (_wochenFilter === 'lauf') {
+    el.innerHTML = buildRunPlanCard(null, null, { filterOnTap: 'toggleWochenFilter' });
+  } else {
+    el.innerHTML = buildWochenKombi(zurPlanSeite);
+  }
+}
+
+// Leere Karte im Gym-Zustand — der Filtertitel muss auch dann erreichbar bleiben, sonst
+// steckte man ohne aktiven Plan im Gym-Zustand fest.
+function leereWochenKarte(titel, text, onTap) {
+  return `<div class="plan-card-v2" onclick="${onTap}" style="cursor:pointer">
+    <div class="ppv-head">${wochenFilterTitel('ppv-name')}</div>
+    <div class="ppv-name" style="color:var(--text2);margin-top:6px">${escapeHtml(titel)}</div>
+    <div class="ppv-meta">${escapeHtml(text)}</div>
+  </div>`;
+}
+
+// Der Filtertitel als Knopf. `stopPropagation` ist Pflicht: Sonst loeste sein Tipp zugleich
+// den Sprung der Karte in den Plan-Tab aus.
+function wochenFilterTitel(extraKlasse) {
+  return `<button class="${extraKlasse} ppv-filter-btn" onclick="event.stopPropagation();toggleWochenFilter()"
+    aria-label="Zwischen Gym, Läufen und beidem umschalten">${_WOCHEN_FILTER_TITEL[_wochenFilter]}</button>`;
+}
+
+// Gemeinsamer Zustand: EINE Wochentagszeile, darunter zwei Reihen Kreise (Gym dunkelgruen,
+// Lauf hellgruen). Senkrecht liest man damit ab, was an einem Tag ansteht.
+// Statt zweier Fortschrittszeilen — die Plaene stehen in verschiedenen Wochen und liessen
+// sich ohnehin nicht zu einer Zahl verrechnen — nur die Woche je Sportart.
+function buildWochenKombi(zurPlanSeite) {
+  const todayIdx = (new Date().getDay() + 6) % 7;
+
+  // ── Gym ──
+  const gp = getActivePlan();
+  const gymTage = [];
+  if (gp) {
+    const byId = {}; resolvePlanDays(gp).forEach(d => { byId[d.id] = d; });
+    const wp = (gp.weekPlan && gp.weekPlan.length) ? gp.weekPlan : DEFAULT_WEEKPLAN;
+    const weekDone = getCurrentWeekDays();
+    wp.forEach((w, i) => {
+      const d = w.planDayId ? byId[w.planDayId] : null;
+      gymTage[i] = { geplant: !!d, erledigt: !!(d && weekDone[i] && weekDone[i].dayDone) };
+    });
+  }
+  const gs = getWeekStatus();
+
+  // ── Lauf ──
+  const rp = runPlanAktiv();
+  const rs = runWochenStatus();
+  const gelaufen = {};
+  (rs.gelaufen || []).forEach(l => {
+    const [y, m, d] = l.date.split('-').map(Number);
+    gelaufen[(new Date(y, m - 1, d).getDay() + 6) % 7] = true;
+  });
+  const laufTage = WOCHENTAGE_KURZ.map((_, i) => ({
+    geplant: !!(rp && (rp.runDays || []).includes(i)), erledigt: !!gelaufen[i],
+  }));
+
+  const reihe = (tage, sport, icon, ziel, label) => {
+    const punkte = tage.map((t, i) => {
+      const cls = ['ppv-k-col'];
+      if (t.geplant) cls.push('training');
+      if (t.erledigt) cls.push('done');
+      if (i === todayIdx) cls.push('today');
+      return `<div class="${cls.join(' ')}"><span class="ppv-k-dot"></span></div>`;
+    }).join('');
+    return `<div class="ppv-k-reihe ${sport}" onclick="${ziel}" role="button" tabindex="0"
+                 aria-label="${label}">
+      <span class="ppv-k-ic">${icon}</span>${punkte}
+    </div>`;
+  };
+
+  const wochen = [
+    gp ? `<span class="ppv-k-wk gym">${_planProgramWeek(gp).num} / ${_planProgramWeek(gp).total}</span>` : '',
+    rp ? `<span class="ppv-k-wk lauf">${runKombiWoche(rp)}</span>` : '',
+  ].filter(Boolean).join('');
+
+  return `<div class="plan-card-v2 ppv-kombi">
+    <div class="ppv-head">
+      ${wochenFilterTitel('ppv-name')}
+      <span class="ppv-k-adh"><span class="gym">${gs.done}/${gs.planned}</span>
+        · <span class="lauf">${rs.done}/${rs.planned}</span></span>
+    </div>
+    ${wochen ? `<div class="ppv-k-wochen">${wochen}</div>` : ''}
+    <div class="ppv-k-labels">
+      <span class="ppv-k-ic"></span>
+      ${WOCHENTAGE_KURZ.map(l => `<span>${l}</span>`).join('')}
+    </div>
+    ${reihe(gymTage.length ? gymTage : WOCHENTAGE_KURZ.map(() => ({})), 'gym', PPV_ICON_HANTEL,
+            zurPlanSeite('plans'), 'Gymplan öffnen')}
+    ${reihe(laufTage, 'lauf', PPV_ICON_LAEUFER, zurPlanSeite('runplans'), 'Laufplan öffnen')}
+  </div>`;
+}
+
+// „Woche 3 / 4" des Laufplans — dieselbe Rechnung wie in `buildRunPlanCard`, dort steht sie
+// eingebettet im Fortschrittsblock und ist von aussen nicht zu holen.
+function runKombiWoche(p) {
+  const wochen = runPlanWochen(p);
+  const monStart = new Date(p.startDate); monStart.setHours(0, 0, 0, 0);
+  monStart.setDate(monStart.getDate() - ((monStart.getDay() + 6) % 7));
+  const num = Math.min(Math.max(Math.floor((Date.now() - monStart.getTime()) / (7 * 864e5)) + 1, 1), wochen || 1);
+  return `${num} / ${wochen}`;
 }
 
 // Die Ausrichtung der Ruhetag-Karte an der Wochenplan-Karte (`_ruhetagHeroAusrichten` /
@@ -1353,7 +1468,8 @@ function buildRunPlanCard(onTap, plan, opts) {
     // auf das Standardziel zurueck). Sie ist eine Aufforderung („Tippe, um …"); stumm gestellt
     // stuende der Nutzer ohne Weg zum Anlegen da.
     return `<div class="plan-card-v2 run-plan" onclick="${onTap || "setPlansView('runplans');wischeZuTab('plans')"}" style="cursor:pointer">
-      <div class="ppv-name" style="color:var(--text2)">Kein aktiver Laufplan</div>
+      ${opts.filterOnTap ? `<div class="ppv-head">${wochenFilterTitel('ppv-name')}</div>` : ''}
+      <div class="ppv-name" style="color:var(--text2)${opts.filterOnTap ? ';margin-top:6px' : ''}">Kein aktiver Laufplan</div>
       <div class="ppv-meta">Tippe, um einen Laufplan anzulegen.</div>
     </div>`;
   }
@@ -1401,7 +1517,8 @@ function buildRunPlanCard(onTap, plan, opts) {
     : ` onclick="${onTap || "setPlansView('runplans');wischeZuTab('plans')"}"`;
   return `<div class="plan-card-v2 run-plan plan-status-${status}${laeuft ? ' active' : ''}${inert ? ' karte-inert' : ''}"${kartenTipp}>
     <div class="ppv-head">
-      <div class="ppv-name">${PPV_ICON_LAEUFER}${escapeHtml(p.name || 'Laufplan')}</div>
+      ${opts.filterOnTap ? wochenFilterTitel('ppv-name')
+        : `<div class="ppv-name">${PPV_ICON_LAEUFER}${escapeHtml(p.name || 'Laufplan')}</div>`}
       ${laeuft ? '' : `<span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>`}
     </div>
     ${laeuft ? '' : `<div class="ppv-meta">${fmtDateRange(p.startDate, p.endDate)}${wochen ? ` · ${wochen} Wochen` : ''}</div>`}
@@ -5038,6 +5155,7 @@ function fmtDateRange(start, end) {
 // opts.selectedIdx  = Wochentag, der als ausgewaehlt markiert wird (Trainings-Tab)
 // opts.dayOnTap      = Funktionsname fuer den Tipp auf einen Wochentag. OHNE ihn sind die
 //                      Wochentage reine Anzeige und der Tipp faellt auf die KARTE durch.
+// opts.filterOnTap   = Titel wird zum Filterknopf der Uebersichts-Wochenkarte statt Planname
 // onTap === false    = die KARTE selbst tut nichts (`null`/weggelassen = Standardziel).
 //                      Sie verliert dann auch Zeigefinger und Tipp-Animation, sonst
 //                      antwortete sie sichtbar auf einen Tipp, der nichts bewirkt.
@@ -5094,7 +5212,8 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
   const kartenTipp = inert ? '' : ` onclick="${onTap || `openPlanDetail('${p.id}')`}"`;
   return `<div class="plan-card-v2 plan-status-${status}${isCurrent ? ' active' : ''}${inert ? ' karte-inert' : ''}"${kartenTipp}>
     <div class="ppv-head">
-      <div class="ppv-name">${PPV_ICON_HANTEL}${escapeHtml(p.name)}</div>
+      ${opts.filterOnTap ? wochenFilterTitel('ppv-name')
+        : `<div class="ppv-name">${PPV_ICON_HANTEL}${escapeHtml(p.name)}</div>`}
       ${hideStatus ? '' : `<span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>`}
     </div>
     ${hideMeta ? '' : `<div class="ppv-meta">${fmtDateRange(p.startDate, p.endDate)}${planWochen(p) ? ` · ${planWochen(p)} Wochen` : ''}</div>`}

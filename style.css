@@ -1508,6 +1508,101 @@ html.wo-running #wo-week-card { display: none; }
    Tag unten angezeigt wird — ohne Markierung waere nicht erkennbar, welcher das ist.
    („Heute" traegt dagegen den Ring um den Kreis, beide bleiben unterscheidbar.) */
 .ppv-col.selected { background: var(--accent-bg); border-radius: 9px; }
+
+/* ─── Kombinierte Wochenplankarte der Uebersicht („Variante A", 07.09.2026) ───────────────
+   EINE Wochentagszeile, darunter zwei Reihen Kreise: Gym dunkelgruen, Lauf hellgruen.
+   Senkrecht liest man ab, was an einem Tag ansteht.
+   Beschriftung und beide Reihen liegen auf DEMSELBEN Raster (`--ppv-k-lead` fuer die
+   Symbolspalte, dann 7 gleiche Spalten) — nur so stehen die Kreise unter ihrem Wochentag. */
+.ppv-kombi { --ppv-k-lead: 20px; }
+.ppv-k-labels, .ppv-k-reihe {
+  display: grid;
+  grid-template-columns: var(--ppv-k-lead) repeat(7, 1fr);
+  align-items: center; gap: 4px;
+}
+/* Dieselben seitlichen Masse wie die Reihen darunter (−6px Rand, 6px Polster). Ohne das
+   sind die beiden INHALTSBOXEN verschieden breit, sobald die Breite gekappt ist — im
+   Querformat drifteten die Wochentage dadurch bis zu 11px gegen ihre Kreise. */
+.ppv-k-labels {
+  margin: 12px -6px 0; padding: 0 6px;
+  font-size: 12px; font-weight: 600; color: var(--text3); text-align: center;
+}
+/* Die Reihe ist ihr eigenes Tipp-Ziel — sie ist hier das, was sonst die ganze Karte ist.
+   Das Polster gibt dem Finger Flaeche, ohne die Kreise auseinanderzuziehen. */
+.ppv-k-reihe {
+  margin: 0 -6px; padding: 3px 6px; border-radius: 10px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.ppv-k-reihe:active { background: rgba(0,0,0,.05); }
+.ppv-k-ic { width: 15px; height: 15px; display: inline-flex; color: var(--text3); }
+.ppv-k-ic svg { width: 100%; height: 100%; }
+.ppv-k-reihe.gym  .ppv-k-ic { color: #0F766E; }
+.ppv-k-reihe.lauf .ppv-k-ic { color: #22A05B; }
+/* Der Kreis: leer = nichts geplant, gefuellt = geplant, Haken = erledigt. Kleiner als die
+   30px der Einzelkarten — hier stehen ZWEI Reihen uebereinander. */
+.ppv-k-col { display: flex; justify-content: center; min-width: 0; }
+.ppv-k-dot {
+  position: relative;
+  width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%;
+  background: var(--card2);
+}
+.ppv-k-reihe.gym  .training .ppv-k-dot, .ppv-k-reihe.gym  .done .ppv-k-dot { background: #0F766E; }
+.ppv-k-reihe.lauf .training .ppv-k-dot, .ppv-k-reihe.lauf .done .ppv-k-dot { background: #4ADE80; }
+/* Heute: Ring um den Kreis — sichtbar auch an einem Tag ohne Training. */
+.ppv-k-col.today .ppv-k-dot::after {
+  content: ''; position: absolute; inset: -3px;
+  border-radius: 50%; border: 2px solid var(--accent);
+}
+.ppv-k-reihe.gym  .today.training .ppv-k-dot::after { border-color: #0F766E; }
+.ppv-k-reihe.lauf .today.training .ppv-k-dot::after { border-color: #4ADE80; }
+/* Erledigt-Haken wie in den Einzelkarten — er unterscheidet „geplant" von „gemacht". */
+.ppv-k-col.done .ppv-k-dot::before {
+  content: '✓';
+  position: absolute; top: -3px; right: -4px; z-index: 1;
+  width: 13px; height: 13px; border-radius: 50%;
+  background: #fff; color: #0F766E;
+  font-size: 8px; font-weight: 900; line-height: 13px; text-align: center;
+  box-shadow: 0 0 0 1.5px #0F766E;
+}
+.ppv-k-reihe.lauf .done .ppv-k-dot::before { color: #4ADE80; box-shadow: 0 0 0 1.5px #4ADE80; }
+/* Statt zweier Fortschrittsbloecke nur die Woche je Sportart — die beiden Plaene stehen in
+   verschiedenen Wochen und liessen sich nicht zu einer Zahl verrechnen. */
+.ppv-k-wochen { display: flex; gap: 10px; margin-top: 4px; font-size: 12px; font-weight: 600; }
+.ppv-k-wk { color: var(--text3); }
+.ppv-k-wk::before { content: 'Woche '; }
+.ppv-k-wk.gym  { color: #0F766E; }
+.ppv-k-wk.lauf { color: #22A05B; }
+/* Die beiden Zahlen tragen die Farbe IHRER Reihe — sonst waere nicht zu erkennen, welche
+   zu welcher Sportart gehoert (die Reihenfolge allein genuegt dafuer nicht). */
+.ppv-k-adh { font-size: 13px; font-weight: 600; color: var(--text3); white-space: nowrap; }
+.ppv-k-adh .gym  { color: #0F766E; }
+.ppv-k-adh .lauf { color: #22A05B; }
+/* Der Filtertitel sieht aus wie jeder Kartentitel, ist aber ein Knopf. */
+.ppv-filter-btn {
+  border: none; background: none; padding: 0; margin: 0; text-align: left;
+  font: inherit; font-size: 16px; font-weight: 700; color: var(--text);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
+}
+.ppv-filter-btn:active { opacity: .6; }
+/* Transparenz-Modus: Die Karte liegt auf dem Farbverlauf. Kreise ohne Plan und die
+   Reihen-Rueckmeldung brauchen dort eigene Werte, sonst verschwinden sie. */
+/* NUR der LEERE Kreis wird hier weiss. Ungefiltert traf die Regel auch die geplanten —
+   sie hat einen id-Selektor im `:not()` und schlaegt damit jede Sportfarbe, geplant und
+   leer sahen dadurch gleich aus. Die Sportfarben MUESSEN im Transparenz-Modus bleiben:
+   Sie sind das Einzige, was die beiden Reihen unterscheidet (dieselbe Ueberlegung wie bei
+   den Plan-Balken im Kalender, die dort ebenfalls farbig bleiben). */
+html.glas .screen:not(#screen-mehr) .ppv-k-col:not(.training):not(.done) .ppv-k-dot {
+  background: rgba(255,255,255,.22);
+}
+html.glas .screen:not(#screen-mehr) .ppv-k-labels { color: rgba(255,255,255,.75); }
+html.glas .screen:not(#screen-mehr) .ppv-k-ic,
+html.glas .screen:not(#screen-mehr) .ppv-k-wk { color: rgba(255,255,255,.85); }
+html.glas .screen:not(#screen-mehr) .ppv-k-adh,
+html.glas .screen:not(#screen-mehr) .ppv-k-adh .gym,
+html.glas .screen:not(#screen-mehr) .ppv-k-adh .lauf { color: #fff; }
+html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
+html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,255,255,.12); }
 /* ═══════════════════════════════════
    WORKOUT (Active session) – Mockup v2
 ═══════════════════════════════════ */
@@ -2933,8 +3028,14 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
      Auf der Seite „Laufen" und in der laufenden Einheit steht die Karte in EINER Spalte,
      dort gibt es keine Fuge, an der etwas auszurichten waere. */
   #ov-hero-wrap .hero-heute-spalten { gap: 28px; }
-  #screen-overview.active > #ov-plan-card { grid-column: 1; }
-  #screen-overview.active > #ov-runplan-card { grid-column: 2; }
+  /* Die kombinierte Wochenkarte haelt beide Sportarten und spannt deshalb ueber beide
+     Spalten — wie die Herocard darueber (07.09.2026, vorher lagen hier zwei Karten
+     nebeneinander, je eine Sportart pro Spalte). */
+  #screen-overview.active > #ov-week-card { grid-column: 1 / -1; }
+  /* Das Wochenraster waechst dabei NICHT mit: Ueber die volle Breite standen die sieben
+     Kreise 136px auseinander und die Zeile las sich nicht mehr als Woche. 480px entspricht
+     etwa der Hochformat-Breite — die Reihen bleiben linksbuendig unter dem Titel. */
+  #ov-week-card .ppv-k-labels, #ov-week-card .ppv-k-reihe { max-width: 480px; }
   /* Im Hochformat steht der Kalender direkt über „Letzte Einheiten" (DOM-Reihenfolge).
      Im Zwei-Spalten-Layout würde er die beiden Kacheln auseinanderreißen — dort rutscht
      er per order hinter sie, ohne dass das Markup doppelt vorgehalten werden muss.

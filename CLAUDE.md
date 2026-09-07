@@ -560,10 +560,10 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 - **Querformat (ab 1024px):** Uebersicht ist ein 2-Spalten-Grid — Wochenplan links, Herocard rechts in DERSELBEN
   Zeile (seit 20.08.2026, vorher spannte die Herocard ueber beide Spalten). `align-content: start` ist Pflicht,
   sonst verteilt das Grid die uebrige Bildschirmhoehe auf die Zeilen und zwischen den Karten klaffen ~100px.
-  Die FUGE zwischen den beiden Herocard-Knoepfen liegt GENAU ueber der Fuge zwischen den
-  Wochenplan-Karten darunter (Leonard-Wunsch 07.09.2026): Die Karten tragen je 14px Rand,
-  zwischen ihnen stehen also 28px — `#ov-hero-wrap .hero-heute-spalten { gap: 28px }` gibt der
-  Herocard dieselbe Luecke (im Hochformat bleibt es bei 14px). Gemessen: Abweichung 0px.
+  Die FUGE zwischen den beiden Herocard-Knoepfen stand auf 28px, damit sie genau ueber der
+  Fuge zwischen den beiden Wochenplan-Karten darunter liegt (Leonard-Wunsch 07.09.2026).
+  ACHTUNG: Diese Fuge gibt es seit dem Umbau auf EINE Wochenkarte (07.09.2026) nicht mehr —
+  die 28px richten sich an nichts mehr aus und stehen nur noch aus Gewohnheit.
   NUR die Herocard der Uebersicht, sie ist die einzige, die ueber beide Spalten spannt — auf
   der Seite „Laufen" und in der laufenden Einheit steht die Karte in EINER Spalte.
   Die Uebungsliste (`#active-ex-list`) fuellt SPALTENWEISE (`grid-auto-flow: column`): links 1-4, rechts 5-8.
@@ -1147,6 +1147,41 @@ Die Karten tragen deshalb NICHT mehr `.karte-inert` (sie sind antippbar). Die Kl
 gilt seit dem 06.09.2026 fuer JEDE Karte, nicht mehr nur fuer `.plan-card-v2`.
 Im Transparenz-Modus brauchen Datum, Hinweistext und die Kachelflaechen eigene Regeln —
 `.hd-stat b` war schon erfasst, die Beschriftung darunter nicht.
+
+### Wochenplankarte der Uebersicht: EINE Karte fuer beide Sportarten
+07.09.2026, Leonard-Entscheidung „Variante A". `#ov-week-card` ersetzt die frueher getrennten
+Karten `#ov-plan-card` (Gym) und `#ov-runplan-card` (Lauf) — beide IDs gibt es nicht mehr.
+Gefuellt von `renderWochenKarte()`.
+**Der TITEL ist ein Filter wie beim Trainingskalender** (`_wochenFilter`, `toggleWochenFilter`,
+`_WOCHEN_FILTER_TITEL`): beide → Gym → Lauf → beide. Er BENENNT den Zustand
+(„Trainingswoche" / „Gymwoche" / „Laufwoche") statt den Plannamen zu zeigen — sonst wechselte
+die Beschriftung zwischen Zustandsname und Eigenname und liesse sich nicht als Schalter lesen.
+Der Planname steht dafuer nur noch im Plan-Tab. BEWUSST nicht gespeichert, wie jeder Filter
+der App.
+In den EINZELZUSTAENDEN zeichnen `buildPlanCard`/`buildRunPlanCard` unveraendert weiter
+(Fortschrittsbalken, „Woche 11 / 26", Wochentagskreise) — sie bekommen nur `opts.filterOnTap`
+und tauschen dafuer den Plannamen gegen den Filterknopf. Auch die LEEREN Karten („Kein aktiver
+Trainingsplan/Laufplan") tragen ihn, sonst steckte man ohne Plan in dem Zustand fest.
+Der GEMEINSAME Zustand (`buildWochenKombi`) hat eine eigene Bauform: eine Wochentagszeile,
+darunter zwei Reihen Kreise (Gym #0F766E, Lauf #4ADE80), je mit Sportsymbol davor. Senkrecht
+liest man ab, was an einem Tag ansteht. Statt zweier Fortschrittsbloecke nur die Woche je
+Sportart plus „0/3 · 1/3" im Kopf — beide Zahlenpaare tragen die Farbe IHRER Reihe, sonst
+waere nicht erkennbar, welche zu welcher Sportart gehoert.
+JEDE REIHE ist ihr eigenes Tipp-Ziel (Gym → Seite „Gymplan", Lauf → Seite „Laufplan") — sie ist
+dort das, was sonst die ganze Karte ist. Der Filterknopf braucht deshalb `stopPropagation`.
+`runKombiWoche(p)` rechnet „Woche 3 / 4" des Laufplans nach; in `buildRunPlanCard` steckt
+dieselbe Rechnung eingebettet im Fortschrittsblock und ist von aussen nicht zu holen.
+FALLE Rasterausrichtung: Beschriftungszeile und beide Reihen liegen auf demselben Grid
+(`var(--ppv-k-lead)` + 7 Spalten). Die REIHEN tragen zusaetzlich `margin: 0 -6px; padding: 3px 6px`
+als Tipp-Flaeche — die Beschriftung braucht dieselben Werte, sonst sind die INHALTSBOXEN
+verschieden breit, sobald die Breite gekappt ist, und die Wochentage driften gegen ihre Kreise
+(im Querformat gemessen bis 11px).
+QUERFORMAT: Die Karte spannt ueber beide Spalten wie die Herocard, das Wochenraster aber NICHT
+(`max-width: 480px`) — ueber die volle Breite standen die sieben Kreise 136px auseinander und
+die Zeile las sich nicht mehr als Woche.
+TRANSPARENZ-MODUS: Die Sportfarben bleiben, nur der LEERE Kreis wird weiss. Die Glas-Regel muss
+dafuer auf `:not(.training):not(.done)` eingeengt sein — ungefiltert schlaegt sie (id-Selektor
+im `:not()`) jede Sportfarbe, und geplant sah aus wie leer.
 
 ### Herocard „Heute"
 `buildHeuteHero(planDay, selDay, opts)` ersetzt seit dem 06.09.2026 die frueheren Vorschau- und

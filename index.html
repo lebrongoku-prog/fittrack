@@ -73,11 +73,11 @@
          Frage, mit der man die App oeffnet: Was steht heute an und was kann ich tun? -->
     <div id="ov-hero-wrap"></div>
 
-    <!-- Aktiver Trainingsplan als Dashboard-Karte (ersetzt „Trainingswoche" + separaten Wochenplan-Strip) -->
-    <div id="ov-plan-card"></div>
-
-    <!-- Laufwochenplan: baugleich mit dem Gymwochenplan, gefuellt von buildRunPlanCard(). -->
-    <div id="ov-runplan-card"></div>
+    <!-- EINE Wochenplankarte fuer beide Sportarten (07.09.2026, Leonard-Wunsch „Variante A") —
+         sie ersetzt die frueher getrennten Karten #ov-plan-card und #ov-runplan-card.
+         Der Titel ist ein FILTER wie beim Trainingskalender: beide → Gym → Lauf → beide.
+         Gefuellt von renderOverview() ueber buildWochenKombi() bzw. den beiden Kartenbauern. -->
+    <div id="ov-week-card"></div>
 
     <!-- Hinweis, wenn der aktive Plan in den nächsten sieben Tagen endet -->
 
