@@ -5787,15 +5787,19 @@ function renderLibDays() {
   //     braechen sie ohnehin um, aber an einer beliebigen Stelle.
   //   · Der Pfeil „›" faellt weg — er kostet Breite und sagt nichts, was die Kachel nicht
   //     schon durch ihre Antippbarkeit zeigt.
-  //   · „Im aktuellen Plan" wird zum PUNKT oben rechts (`.pld-dot`): Der Text misst bei 11px
-  //     rund 95px und passt nicht. Die Langfassung steht im `title`.
+  //   · „Im aktuellen Plan" wird zum PUNKT unten rechts (`.pld-dot`): Der Text misst rund
+  //     95px und passt nicht. Die Langfassung steht im `title`.
+  //   · Nach jedem SCHRAEGSTRICH im Namen steht ein `<wbr>`: Ohne diese Trennstelle gilt
+  //     „Shoulder/Legs" als EIN Wort und der Browser bricht es mitten im Wort um
+  //     („Shoulder/Leg | s"). Mit `<wbr>` trennt er sauber nach dem Strich. Betrifft nur die
+  //     Anzeige — gespeichert bleibt der Name unveraendert.
   const renderRow = (d) => {
     const anzUeb = (d.exercises||[]).length;
     const setCount = (d.exercises||[]).reduce((a,e) => a + (e.targetSets||0), 0);
     const imPlan = activeDayIds.has(d.id);
     return `<div class="plan-list-row pld-kachel" onclick="openLibDayDetail('${d.id}')">
       ${imPlan ? '<span class="pld-dot" title="Im aktuellen Plan"></span>' : ''}
-      <div class="plan-list-name">${pd(escapeHtml(d.name))}</div>
+      <div class="plan-list-name">${pd(escapeHtml(d.name).replace(/\//g, '/<wbr>'))}</div>
       <div class="plan-list-meta">${anzUeb} ${anzUeb === 1 ? 'Übung' : 'Übungen'}<br>${setCount} Sätze</div>
     </div>`;
   };

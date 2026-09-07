@@ -686,24 +686,28 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   (130 statt 111px) und schob die dritte Kachel ueber den rechten Rand.
   Archiv-Knopf und Leermeldung spannen ueber alle drei Spalten und muessen ihre eigene Breite
   samt Raendern zuruecksetzen (der Archiv-Knopf traegt sonst `width: calc(100% - 28px)`).
-  HOEHE 94px wie die fruehere vollbreite Karte (Leonard-Vorgabe: beibehalten). Ein zweizeiliger
-  Name braucht 41px; mit 12px Polster und 4px Abstand kaeme die Kachel auf 99px. 10px Polster
-  und 2px Abstand bringen sie auf 93px, die `min-height` hebt sie auf 94.
+  HOEHE 113px — 20% mehr als die fruehere vollbreite Karte (94px), und die Schriften darin
+  wachsen im selben Verhaeltnis mit: Name 12→14,4px, Meta 11→13,2px (Leonard-Wunsch
+  07.09.2026; die erste Fassung behielt die 94px).
   Was auf 109px NICHT mehr hineinpasst und deshalb entfallen ist: der Pfeil „›" (kostet Breite,
   sagt nichts) und der Chip „Im aktuellen Plan" (95px Text) — Letzterer ist ein PUNKT
   (`.pld-dot`) UNTEN rechts geworden, mit der Langfassung im `title`. Unten, weil er oben dem
   Namen 12px nahm und „Ganzkörper" damit auf den Pixel genau nicht mehr passte.
   Uebungen und Saetze stehen UNTEREINANDER statt durch „•" getrennt — nebeneinander braechen
   sie ohnehin um, aber an beliebiger Stelle.
-  TEXTUMBRUCH, drei Fallen auf einmal: (1) `.pd-name` ist `inline-block` — ein zu langes Wort
+  TEXTUMBRUCH, vier Fallen auf einmal: (1) `.pd-name` ist `inline-block` — ein zu langes Wort
   macht die BOX breiter, statt umzubrechen, und lief sichtbar aus der Karte; in der Kachel
   deshalb `display: block`. (2) `.pd-name` bringt neben dem 3px-Balken 9px Innenabstand mit —
-  in der Kachel auf 5px reduziert, sonst bleiben nur 81px Text. (3) KEIN Wortbruch
-  (`overflow-wrap: normal`): Jede Bruchregel trennte irgendwann mitten im Wort
-  („Ganzkör/per", „Shoulder/Leg|s"). Stattdessen Umbruch an Leerzeichen plus
-  `hyphens: auto` — das trennt ein ueberlanges Einzelwort nach deutschen Regeln mit
-  Bindestrich („Ganzkörper-krafttraining") und greift nur, wenn es sonst nicht passt.
-  Moeglich, weil `<html lang="de">` gesetzt ist.
+  in der Kachel auf 5px reduziert, sonst bleiben nur 81px Text. (3) `overflow-wrap: break-word`
+  trennt notfalls mitten im Wort; das ist seit der hoeheren Kachel vertretbar (Platz fuer zwei
+  Zeilen), bei 94px war es das nicht und dort stand `normal` samt Abschneiden. (4) Ein
+  Schraegstrich ist KEINE Trennstelle: „Shoulder/Legs" gilt als ein Wort und brach als
+  „Shoulder/Leg | s". Das JS setzt deshalb nach jedem Schraegstrich ein `<wbr>` — reine
+  Anzeigesache, gespeichert bleibt der Name unveraendert. Die Reihenfolge ist wichtig:
+  ERST `escapeHtml`, DANN das `<wbr>` einsetzen.
+  Dazu `hyphens: auto` fuer ein ueberlanges Einzelwort ohne Trennstelle — trennt nach
+  deutschen Regeln mit Bindestrich („Ganzkörper-krafttraining"), moeglich weil
+  `<html lang="de">` gesetzt ist.
 - **Übungskatalog:** nur noch Gruppierung nach Muskelgruppen — Sortierung nach Trainingstagen samt Umschalter wurde entfernt.
 - **Kopf der Uebersicht:** Reihenfolge rechts = Sicherungs-Chip, Zahnrad (Einstellungen), Glas-Knopf
   (Leonard-Wunsch 01.09.2026, vorher umgekehrt). Beide Knoepfe sind `.ph-gear`.
@@ -1195,10 +1199,12 @@ Leonard-Vorgabe:
   Die Dauer gab es schon einmal (`avgDauerFuerTag`, mit dem Herocard-Umbau am 06.09.2026
   entfallen); Einheiten OHNE `duration` zaehlen weiterhin nicht mit.
   In der UEBERSICHT steht sie NICHT — dort teilen sich zwei Sportarten die Breite.
-  **Die Karte darf dadurch nicht hoeher werden** (Leonard-Vorgabe). Die Zeile kostet 15px,
-  die `hero-mit-meta` an vier Stellen zurueckholt: Titelabstand 10→6, Spaltenabstand 10→6,
-  Abstand der beiden Textzeilen 2→0, Knopfpolster 12→10 (Knopf 41,5→37,5px, weiter ueber den
-  36px fuer sichere Treffer). Gemessen: 123,6px mit Zeile gegen 123,5px ohne.
+  **Die Karte darf dadurch nicht hoeher werden UND der Knopf nicht flacher** (Leonard-Vorgabe,
+  praezisiert 07.09.2026 — eine erste Fassung nahm dem Knopf 4px Polster). Die Zeile kostet
+  15px, die `hero-mit-meta` von OBEN zurueckholt: Titelabstand 10→2, Spaltenabstand 10→6,
+  Abstand der beiden Textzeilen 2→0, dazu 1px engere Zeilenhoehe. Titel und Name ruecken also
+  zusammen, der ganze Textblock sitzt hoeher; der Knopf bleibt bei 41,5px.
+  Gemessen: 123,6px mit Zeile gegen 123,5px ohne, Knopf in beiden Faellen 41,5px.
   Die Klasse setzt `buildHeuteHero` nur, wenn die Zeile wirklich drin ist — die Uebersicht
   behaelt ihre Masse. ACHTUNG Spezifitaet: `.hero-heute .hero-v2-btn` setzt das Knopfpolster
   und steht WEITER UNTEN, die Kompaktregeln brauchen deshalb drei Klassen.
