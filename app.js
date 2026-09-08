@@ -497,12 +497,50 @@ function getCurrentWeekDays() {
       idx: i, date: d, label: wpEntry.label, dayKey: wpEntry.dayKey,
       planDay, planDayId: wpEntry.planDayId,
       isToday, isPast, isFuture, isTomorrow, dayDone,
+      // Wurde die hier geplante Einheit an einem ANDEREN Tag dieser Woche gemacht?
+      // Wird gleich unten nachgetragen — dafuer braucht es erst alle sieben Tage.
+      verschoben: false,
       // Ruhetag wenn: kein planDayId zugewiesen ODER die zugewiesene ID existiert nicht
       // mehr (verwaiste Referenz nach Plan-Import mit "Ersetzen")
       isRest: !planDay,
     });
   }
+  _verschobeneZuordnen(out, ws, mon);
   return out;
+}
+
+// VERSCHOBENE EINHEITEN (08.09.2026, Leonard-Wunsch): Wer die Einheit vom Dienstag am Montag
+// vorzieht, soll das in den Wochenplan-Karten sehen — der Montag bekommt seinen Haken (das
+// macht `dayDone`), und der Dienstag darf nicht laenger offen aussehen.
+//
+// Zugeordnet wird ueber `wo.planDayId` — die Einheit weiss, zu welchem Trainingstag sie
+// gehoert. NICHT ueber den Wochentag: Derselbe Trainingstag kann zweimal in der Woche stehen.
+//
+// Zwei Schritte, damit nichts doppelt zaehlt:
+//   1. Jede Einheit, die AM RICHTIGEN Tag lief, verbraucht ihren eigenen Platz.
+//   2. Was uebrig bleibt, fuellt die noch offenen Plaetze DESSELBEN Trainingstags — der
+//      frueheste zuerst. Ein freies Training (`planDayId === null`) passt zu keinem Platz
+//      und bleibt einfach der Haken an seinem eigenen Tag.
+function _verschobeneZuordnen(tage, ws, mon) {
+  const so = new Date(mon); so.setDate(so.getDate() + 6); so.setHours(23, 59, 59, 999);
+  const uebrig = [];
+  ws.forEach(w => {
+    if (w.startTs < mon.getTime() || w.startTs > so.getTime()) return;
+    if (!w.planDayId) return;                       // freies Training — keinem Platz zuzuordnen
+    const idx = woDayIdx(w);
+    // Lief sie an dem Tag, an dem genau dieser Trainingstag geplant war? Dann ist ihr Platz
+    // besetzt und sie steht fuer eine Verschiebung nicht mehr zur Verfuegung.
+    if (idx >= 0 && tage[idx] && tage[idx].planDayId === w.planDayId) return;
+    uebrig.push(w.planDayId);
+  });
+  if (!uebrig.length) return;
+  tage.forEach(t => {
+    if (!t.planDayId || t.dayDone) return;          // kein Platz bzw. an dem Tag lief etwas
+    const i = uebrig.indexOf(t.planDayId);
+    if (i === -1) return;
+    uebrig.splice(i, 1);                            // Einheit ist vergeben, zaehlt nur einmal
+    t.verschoben = true;
+  });
 }
 
 // Workouts completed in the current Mon-Sun week — uses ACTIVE plan
@@ -1020,7 +1058,11 @@ function buildWochenKombi(zurTrainingsSeite) {
     const weekDone = getCurrentWeekDays();
     wp.forEach((w, i) => {
       const d = w.planDayId ? byId[w.planDayId] : null;
-      gymTage[i] = { geplant: !!d, erledigt: !!(d && weekDone[i] && weekDone[i].dayDone) };
+      // „Erledigt" haengt am TAG, nicht am Plan — siehe `buildPlanCard`. `verschoben` heisst:
+      // Die hier geplante Einheit lief an einem anderen Tag dieser Woche.
+      gymTage[i] = { geplant: !!d,
+                     erledigt: !!(weekDone[i] && weekDone[i].dayDone),
+                     verschoben: !!(weekDone[i] && weekDone[i].verschoben) };
     });
   }
   const gs = getWeekStatus();
@@ -1033,8 +1075,10 @@ function buildWochenKombi(zurTrainingsSeite) {
     const [y, m, d] = l.date.split('-').map(Number);
     gelaufen[(new Date(y, m - 1, d).getDay() + 6) % 7] = true;
   });
+  const laufVerschoben = rp ? runVerschobeneTage() : {};
   const laufTage = WOCHENTAGE_KURZ.map((_, i) => ({
     geplant: !!(rp && (rp.runDays || []).includes(i)), erledigt: !!gelaufen[i],
+    verschoben: !!(laufVerschoben[i] && !gelaufen[i]),
   }));
 
   const reihe = (tage, sport, icon, ziel, label) => {
@@ -1042,8 +1086,9 @@ function buildWochenKombi(zurTrainingsSeite) {
       const cls = ['ppv-k-col'];
       if (t.geplant) cls.push('training');
       if (t.erledigt) cls.push('done');
+      if (t.verschoben) cls.push('verschoben');
       if (i === todayIdx) cls.push('today');
-      if (i > todayIdx) cls.push('zukunft');   // nur umrandet, siehe `buildPlanCard`
+      if (i > todayIdx && !t.verschoben) cls.push('zukunft');   // nur umrandet, siehe `buildPlanCard`
       return `<div class="${cls.join(' ')}"><span class="ppv-k-dot"></span></div>`;
     }).join('');
     return `<div class="ppv-k-reihe ${sport}" onclick="${ziel}" role="button" tabindex="0"
@@ -1467,6 +1512,40 @@ function runWochenStatus() {
   return { done: gelaufen.length, planned: p ? (p.runDays || []).length : 0, mo, gelaufen };
 }
 
+// Gegenstueck zu `_verschobeneZuordnen` fuer die LAEUFE — mit einem wichtigen Unterschied:
+// Ein Lauf kommt aus der Google-Tabelle und weiss NICHT, zu welchem geplanten Lauftag er
+// gehoert (das Datenmodell kennt nur `runDays: [0..6]` und die gelaufenen Daten). Eine echte
+// Zuordnung wie beim Gym ist damit unmoeglich; gezaehlt wird stattdessen:
+// Laeufe an nicht geplanten Tagen decken offene Lauftage ab, der frueheste zuerst.
+// BEWUSST nur VERGANGENE Lauftage: Beim Gym ist die Verschiebung sicher (die Einheit nennt
+// ihren Trainingstag), hier ist sie geraten. Einen kuenftigen Lauftag deshalb abzuhaken,
+// weil man vorher einmal zusaetzlich gelaufen ist, waere eine Behauptung — der Tag kann
+// noch kommen.
+function runVerschobeneTage() {
+  const p = runPlanAktiv();
+  if (!p) return {};
+  const geplant = p.runDays || [];
+  if (!geplant.length) return {};
+  const st = runWochenStatus();
+  const proTag = {};
+  (st.gelaufen || []).forEach(l => {
+    const [y, m, d] = l.date.split('-').map(Number);
+    const i = (new Date(y, m - 1, d).getDay() + 6) % 7;
+    proTag[i] = (proTag[i] || 0) + 1;
+  });
+  // Jeder geplante Tag mit eigenem Lauf verbraucht einen davon.
+  let uebrig = Object.values(proTag).reduce((a, b) => a + b, 0);
+  geplant.forEach(i => { if (proTag[i]) uebrig--; });
+  if (uebrig <= 0) return {};
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const out = {};
+  for (let i = 0; i < todayIdx && uebrig > 0; i++) {
+    if (!geplant.includes(i) || proTag[i]) continue;   // nicht geplant bzw. selbst gelaufen
+    out[i] = true; uebrig--;
+  }
+  return out;
+}
+
 function runPlanStatus(p) {
   if (p.archived) return 'archived';
   const now = Date.now();
@@ -1503,12 +1582,15 @@ function buildRunPlanCard(onTap, plan, opts) {
     const [y, m, d] = l.date.split('-').map(Number);
     gelaufenAmTag[(new Date(y, m - 1, d).getDay() + 6) % 7] = true;
   });
+  const verschobenTage = laeuft ? runVerschobeneTage() : {};
   const strip = WOCHENTAGE_KURZ.map((label, i) => {
     const cls = ['ppv-col'];
     if ((p.runDays || []).includes(i)) cls.push('training');
     if (gelaufenAmTag[i]) cls.push('done');
+    // Lauftag, der durch einen Lauf an einem anderen Tag abgedeckt ist (`runVerschobeneTage`).
+    if (verschobenTage[i] && !gelaufenAmTag[i]) cls.push('verschoben');
     if (laeuft && i === todayIdx) cls.push('today');
-    if (laeuft && i > todayIdx) cls.push('zukunft');   // siehe `buildPlanCard`
+    if (laeuft && i > todayIdx && !verschobenTage[i]) cls.push('zukunft');   // siehe `buildPlanCard`
     if (opts.selectedIdx === i) cls.push('selected');
     // Auf der Seite „Laufen" waehlt ein Tipp den Tag aus — genau wie beim Gymwochenplan
     // (Leonard-Wunsch 04.09.2026). Ohne `dayOnTap` bleibt der Streifen reine Anzeige.
@@ -5199,15 +5281,26 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
   const strip = wp.map((w, i) => {
     const d = w.planDayId ? byId[w.planDayId] : null;
     const today = isCurrent && i === todayIdx && !hideToday;
-    const done = d && weekDone && weekDone[i] && weekDone[i].dayDone;
+    // „Erledigt" haengt am TAG, nicht am Plan (Leonard-Wunsch 08.09.2026): Eine Einheit an
+    // einem ungeplanten Tag bekommt ihren Haken genauso. Vorher stand hier `d && …` — ein
+    // vorgezogenes Training war dadurch unsichtbar, obwohl der Zaehler im Kartenkopf es
+    // laengst mitzaehlte (`getWeekStatus` filtert nicht nach Plan). Die Laufkarte verhielt
+    // sich schon immer so.
+    const done = weekDone && weekDone[i] && weekDone[i].dayDone;
+    // Die hier geplante Einheit wurde an einem anderen Tag gemacht — der Tag ist damit
+    // erledigt, aber nicht hier. Siehe `_verschobeneZuordnen`.
+    const verschoben = !!(weekDone && weekDone[i] && weekDone[i].verschoben);
     const cls = ['ppv-col'];
     if (d) cls.push('training');
     if (done) cls.push('done');
+    if (verschoben) cls.push('verschoben');
     if (today) cls.push('today');
     // Noch NICHT gewesene Tage dieser Woche werden nur UMRANDET statt gefuellt
     // (Leonard-Wunsch 08.09.2026): Die Fuellung sagt „war schon", die Kontur „steht noch an".
     // Heute zaehlt NICHT dazu — der Tag laeuft ja gerade.
-    if (isCurrent && i > todayIdx) cls.push('zukunft');
+    // Ein verschobener Tag ist erledigt und steht NICHT mehr an — sonst traege er Kontur und
+    // grauen Haken zugleich, und die Kontur gewaenne per Spezifitaet.
+    if (isCurrent && i > todayIdx && !verschoben) cls.push('zukunft');
     if (opts.selectedIdx === i) cls.push('selected');
     // Ein Wochentag bekommt seinen EIGENEN Tipp nur, wenn der Aufrufer einen nennt
     // (`opts.dayOnTap`) — genau wie bei `buildRunPlanCard`. Ohne Angabe faellt der Klick auf

@@ -1033,6 +1033,44 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Im Transparenz-Modus entsprechend `rgba(255,255,255,.22)` — dieselbe Flaeche wie der leere
   Kreis dort. Gilt NUR fuer die Kombi-Karte (`.ppv-k-dot`): In den Einzelkarten hat ein Tag
   ohne Training gar keine Fuellung, dort gaebe es kein Grau zu uebernehmen.
+- **VERSCHOBENE EINHEITEN werden in allen Wochenplan-Karten beruecksichtigt**
+  (08.09.2026, Leonard-Wunsch „A und B"). Wer die Einheit vom Dienstag am Montag vorzieht,
+  sah davon in den Karten nichts: Montag blieb leer, Dienstag blieb offen.
+  ZWEI getrennte Aenderungen, beide noetig:
+  1. **„Erledigt" haengt am TAG, nicht am Plan.** In `buildPlanCard` und `buildWochenKombi`
+     stand `const done = d && …` — ein Training an einem ungeplanten Tag war dadurch
+     unsichtbar. Das `d &&` ist weg. Es war streng genommen ein FEHLER: `getWeekStatus`
+     zaehlt seit jeher ALLE Einheiten der Woche, der Zaehler im Kartenkopf zeigte das
+     Training also laengst an, waehrend die Kreise darunter es verschwiegen. Die Laufkarte
+     verhielt sich immer schon so (`gelaufenAmTag` kennt keine Planpruefung).
+  2. **Die Verschiebung wird zugeordnet** (`_verschobeneZuordnen`, neues Feld `verschoben`
+     an `getCurrentWeekDays()`). Zugeordnet wird ueber `wo.planDayId` — die Einheit weiss,
+     zu welchem Trainingstag sie gehoert. NICHT ueber den Wochentag: Derselbe Trainingstag
+     kann zweimal in der Woche stehen (dieselbe Falle wie bei `weekPlan.findIndex`).
+     Zwei Schritte, damit nichts doppelt zaehlt: Erst verbraucht jede Einheit, die am
+     RICHTIGEN Tag lief, ihren eigenen Platz; was uebrig bleibt, fuellt die noch offenen
+     Plaetze DESSELBEN Trainingstags, der frueheste zuerst.
+     Ein freies Training (`planDayId === null`) passt zu keinem Platz und bleibt der Haken
+     an seinem eigenen Tag — ebenso die Einheit eines Trainingstags, der gar nicht in der
+     Woche steht.
+  **Der verschobene Plantag wirkt GRAU ABGEHAKT** (`.verschoben`, Leonard-Entscheidung):
+  hellgraue Fuellung, grauer Haken. Der FARBIGE Haken gehoert allein dem Tag, an dem
+  wirklich trainiert wurde — so gehoert zu jeder Einheit genau ein farbiger Haken und die
+  Karte behauptet nicht, es seien zwei gewesen. Der Zustand verdraengt `.zukunft`: Das
+  setzt schon das JS (`&& !verschoben`), sonst gewaenne die Kontur per Spezifitaet.
+  Die CSS-Regeln MUESSEN hinter `.ppv-col.training .ppv-wd` stehen, und die
+  `.run-plan`-Fassung braucht ihre eigene Zeile (die dortige Trainingsregel traegt eine
+  Klasse mehr).
+  **BEIM LAUFEN ist die Zuordnung GEZAEHLT, nicht erkannt** (`runVerschobeneTage`): Ein Lauf
+  kommt aus der Google-Tabelle und weiss NICHT, zu welchem geplanten Lauftag er gehoert —
+  das Modell kennt nur `runDays: [0..6]` und die gelaufenen Daten. Laeufe an nicht geplanten
+  Tagen decken deshalb offene Lauftage ab, der frueheste zuerst, und BEWUSST nur
+  VERGANGENE: Beim Gym ist die Verschiebung sicher, hier ist sie geraten — einen kuenftigen
+  Lauftag abzuhaken, weil man vorher zusaetzlich gelaufen ist, waere eine Behauptung.
+  GEPRUEFT (heute = Di, Push an Di+Do geplant): eine Einheit am Mo → Mo farbiger Haken,
+  Di grau abgehakt, Do bleibt offen · zwei Einheiten am Mo → Di UND Do grau abgehakt ·
+  freies Training am Mi → nur Mi, kein Plantag · Einheit eines fremden Trainingstags → nur
+  ihr eigener Tag · Lauf: geplant Mo+Do, gelaufen Di → Mo grau abgehakt, Do bleibt offen.
 - **AM WISCHEN NICHTS AENDERN, ohne auf dem iPhone gegenzupruefen** (Leonard-Meldung
   08.09.2026). An dem Tag wurden drei Eingriffe gebaut und noch am selben Tag komplett
   zurueckgenommen — das Wischen war danach „gar nicht mehr fluessig":
