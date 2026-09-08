@@ -861,6 +861,20 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   3. Den Neuaufbau des angekommenen Tabs ueberspringen, wenn sich nichts geaendert hat.
   Welcher der drei es war, ist NICHT geklaert — sie wurden zusammen ausgeliefert und zusammen
   zurueckgenommen. Wer einen davon erneut versucht, liefert ihn EINZELN aus.
+  ZWEITER ANLAUF fuer Punkt 1 (`initTabSwipeRelease`, allein ausgeliefert): Diesmal wird NICHT
+  pro Bild eingegriffen. Die App sagt dem Browser beim Loslassen EINMAL, wohin er fahren soll
+  (`scrollTo` mit `smooth`), und laesst ihn die Bewegung selbst ausfuehren. `scroll-snap-type`
+  bleibt unangetastet — das Ziel IST ein Rastpunkt, Browser und App wollen dasselbe. Damit
+  ziehen nicht mehr zwei Seiten gleichzeitig an der Position; genau das war der Verdacht.
+  Die ENTSCHEIDUNG steckt in `_swipeZiel(startX, jetztX, v, breite, anzahlTabs)` — bewusst eine
+  reine Rechnung ohne Seiteneffekte, damit sie ohne echte Geste pruefbar ist.
+  Die Geschwindigkeit wird nur ausgewertet, wenn zwischen den Proben mindestens 10ms liegen:
+  Feuern mehrere Scroll-Meldungen im selben Bild, kaeme eine absurd hohe Geschwindigkeit
+  heraus und ein winziger Wisch ginge durch.
+  TESTGERUEST: Bei aktivem `scroll-snap-type: x mandatory` laesst sich `scrollLeft` in der
+  versteckten Ansicht NICHT setzen — das Einrasten zieht sofort zurueck, ein nachgestellter
+  Wisch bewegt also gar nichts. Zum Pruefen im Test (und NUR dort) `scrollSnapType = 'none'`
+  setzen und hinterher zuruecknehmen.
   GRUND, warum das hier so leicht schiefgeht: Weder Geste noch Animation sind auf dem Rechner
   pruefbar (rAF feuert in der versteckten Ansicht nie, Timer werden auf ~1s gedrosselt, und
   Mausgesten loesen den Wisch gar nicht aus). Alles, was das Wischgefuehl betrifft, kann nur

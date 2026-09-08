@@ -8733,6 +8733,85 @@ function migrateDayModelV2(force) {
 // Horizontal-Snap-Scroll-Sync: Wenn der Nutzer per Wisch-Geste auf einen anderen Tab
 // snappt, erkennen wir den neuen Tab via scrollLeft und triggern den Renderer / Theme.
 // Programmatische Scrolls (showScreen) werden via _suppressScrollSync uebergangen.
+// ─── Loslassen: kurz und ohne Nachgleiten ─────────────────────────────────────────────
+// Leonard-Entscheidung („Auslaufen A"). Das ZIEHEN bleibt unveraendert nativ und
+// fingergebunden — nur nach dem Loslassen soll die Bewegung zuegig enden, statt mit der
+// Schwungphysik des Geraets lange auszurollen.
+//
+// ZWEITER ANLAUF (08.09.2026). Die erste Fassung schrieb die Scrollposition BILD FUER BILD
+// selbst und schaltete dabei `scroll-snap-type` auf `none`. Ergebnis: Das Wischen war „gar
+// nicht mehr fluessig" und alles wurde zurueckgenommen — auf iOS laeuft der Momentum-Scroll
+// nach dem Loslassen noch weiter, und beide zogen am selben Wert.
+// Diese Fassung greift deshalb NICHT pro Bild ein: Sie sagt dem Browser EINMAL, wohin er
+// fahren soll, und laesst ihn die Bewegung selbst ausfuehren (`scrollTo` mit `smooth`). Das
+// bricht den Schwung ab und ersetzt ihn durch eine kurze, gleichmaessige Fahrt — ohne dass
+// zwei Seiten gleichzeitig an der Position drehen. `scroll-snap-type` bleibt unangetastet;
+// das Ziel IST ein Rastpunkt, Browser und App wollen also dasselbe.
+//
+// Die ENTSCHEIDUNG, welcher Tab es wird, bildet das bisherige Verhalten nach (Leonard liess
+// „Nahtstelle 3" ausdruecklich unangetastet): ueber die Haelfte ODER genug Schwung, und
+// hoechstens EIN Tab pro Wisch.
+//
+// NICHT PRUEFBAR auf diesem Rechner: Mausgesten loesen den Wisch nicht aus, und in der
+// versteckten Browser-Ansicht werden Timer gedrosselt. Pruefbar ist nur die ENTSCHEIDUNG
+// (siehe `_swipeZiel`, bewusst als eigene Funktion herausgezogen) — das Gefuehl nicht.
+const SWIPE_SCHWUNG = 0.35;        // px/ms, ab der ein kurzer Wisch trotzdem durchgeht
+
+// Reine Rechnung, ohne Seiteneffekte — damit sie sich ohne echte Geste pruefen laesst.
+function _swipeZiel(startX, jetztX, v, breite, anzahlTabs) {
+  const startIdx = Math.round(startX / breite);
+  let ziel = Math.round(jetztX / breite);
+  if (Math.abs(v) > SWIPE_SCHWUNG) ziel = startIdx + (v > 0 ? 1 : -1);
+  ziel = Math.max(startIdx - 1, Math.min(startIdx + 1, ziel));      // hoechstens ein Tab
+  return Math.max(0, Math.min(anzahlTabs - 1, ziel));
+}
+
+function initTabSwipeRelease() {
+  const container = document.getElementById('tab-container');
+  if (!container) return;
+  let amZiehen = false;
+  let startX = 0;
+  let proben = [];
+
+  container.addEventListener('touchstart', () => {
+    amZiehen = true;
+    startX = container.scrollLeft;
+    proben = [{ t: performance.now(), x: startX }];
+  }, { passive: true });
+
+  container.addEventListener('scroll', () => {
+    if (!amZiehen) return;
+    proben.push({ t: performance.now(), x: container.scrollLeft });
+    if (proben.length > 6) proben.shift();
+  }, { passive: true });
+
+  const loslassen = () => {
+    if (!amZiehen) return;
+    amZiehen = false;
+    const w = container.clientWidth;
+    if (w <= 0) return;
+    const jetzt = container.scrollLeft;
+    // Senkrecht gescrollt, oder die Geste steckte in einem eigenen Scrollbereich (Kalender):
+    // waagerecht hat sich nichts getan, also nichts zu tun.
+    if (Math.abs(jetzt - startX) < 4) return;
+    // Geschwindigkeit aus dem LETZTEN Stueck der Geste (rund 100ms): Wer erst langsam schiebt
+    // und dann schnippt, will den Schnipp gewertet haben.
+    // Unter ~10ms Zeitspanne ist die Rechnung nicht belastbar: Feuern mehrere Scroll-Meldungen
+    // im selben Bild, kaeme eine absurd hohe Geschwindigkeit heraus und ein winziger Wisch
+    // wuerde durchgehen. Dann entscheidet allein die Strecke.
+    const b = proben[proben.length - 1];
+    const a = proben.find(x => b.t - x.t <= 100) || proben[Math.max(0, proben.length - 2)];
+    const spanne = b.t - a.t;
+    const v = spanne >= 10 ? (b.x - a.x) / spanne : 0;
+    const zielX = _swipeZiel(startX, jetzt, v, w, TAB_ORDER.length) * w;
+    if (Math.abs(zielX - jetzt) < 1) return;
+    const sanft = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    container.scrollTo({ left: zielX, behavior: sanft ? 'smooth' : 'auto' });
+  };
+  container.addEventListener('touchend', loslassen, { passive: true });
+  container.addEventListener('touchcancel', loslassen, { passive: true });
+}
+
 function initTabScrollSync() {
   const container = document.getElementById('tab-container');
   if (!container) return;
@@ -8971,6 +9050,7 @@ document.addEventListener('DOMContentLoaded', () => {
   _initKeineTippAnimationAufDiagramm();
   // Tab-Wechsel per nativem horizontalem Snap-Scroll am Tab-Container
   initTabScrollSync();
+  initTabSwipeRelease();
   // Bottom-Sheet-Modals nach unten wegswipen
   initSheetSwipeDismiss();
   // Edge-Swipe-Back im Plan-Detail (vom linken Bildschirmrand mit Finger nach rechts ziehen)
