@@ -66,10 +66,10 @@
      im `padding-bottom` der drei Tabs, die eine haben (`--sl-pad`), und hebt
      Laufanzeige-Pille und Toast an (`--sl-off`) — beim Aendern also nur diese eine Zahl
      anfassen, und sie muss zur echten Hoehe passen (siehe `.seg-toggle`).
-     GEMESSEN: 41px bei zwei Knoepfen (13px Schrift), 40px bei vier (`.seg-vier`, 12px).
-     Hier steht der GROESSERE der beiden — ein Pixel zu viel Polster faellt nicht auf,
-     ein Pixel zu wenig verdeckte die unterste Karte. */
-  --sl-h:      41px;
+     GEMESSEN: 43px bei zwei Knoepfen (13px Schrift), 42px bei vier (`.seg-vier`, 12px) —
+     seit dem Rahmen aus HCC je 2px mehr. Hier steht der GROESSERE der beiden: ein Pixel
+     zu viel Polster faellt nicht auf, ein Pixel zu wenig verdeckte die unterste Karte. */
+  --sl-h:      43px;
   /* Hoehe, um die die Laufanzeige-Pille der Seitenleiste ausweicht. 0, solange keine
      sichtbar ist; `html.sl-an` setzt sie — die Klasse haengt an der tatsaechlichen
      Sichtbarkeit der Leiste, nicht am Tab (die Vollbild-Overlays tragen das Theme
@@ -2816,8 +2816,8 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
    4. Die Hoehe steht in `--sl-h` und wird an zwei weiteren Stellen gebraucht:
       `--sl-pad` (Polster der drei Tabs) und `--sl-off` (Ausweichhoehe der
       Laufanzeige-Pille und des Toasts). Sie MUSS zur gemessenen Hoehe des Schalters
-      passen (4px Polster + 9px + Zeile + 9px + 4px): 41px bei zwei Knoepfen, 40px bei
-      vier — beim Aendern von Schriftgroesse oder Polster nachmessen. */
+      passen (1px Rahmen + 4px Polster + Knopf + 4px + 1px): 43px bei zwei Knoepfen, 42px
+      bei vier — beim Aendern von Schriftgroesse, Polster oder Rahmen nachmessen. */
 #seitenleiste {
   position: fixed; left: 0; right: 0;
   bottom: calc(var(--nav-h) + var(--safe-b) + 6px);
@@ -2847,35 +2847,42 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
    Leiste. */
 html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
 
-/* Der Schalter selbst — Bauform wie frueher im Kopf (weisse Pille auf der aktuellen
-   Seite, 12px-Rundung, 4px Polster), aber mit ZWEI GESICHTERN, je nach Modus
-   (08.09.2026, Leonard-Wunsch, Vorbild wieder die Zeitleiste aus „Health Command
-   Center"):
-     AKTIV  = DECKEND HELL. Heller Grund (`--card2`), dunkle Schrift, weisse Pille mit
-              Schatten auf der aktuellen Seite — die Optik einer iOS-Segmentanzeige.
-     PASSIV = DUNKEL DURCHSICHTIG. Der Grund wird zu 45-%-Dunkel, die Schrift weiss.
-   WARUM ueberhaupt eine Flaeche: Im Kopf lag hinter dem Schalter immer der farbige
-   Tab-Hintergrund, und die 22-%-Weissflaeche von damals genuegte. Unten liegt dahinter
-   der scrollende Inhalt — auf einer weissen Karte verschwand sie restlos und mit ihr die
-   weisse Schrift der nicht gewaehlten Seiten (von vier Seiten war nur die aktive lesbar,
-   gesehen 08.09.2026). Deshalb traegt der Schalter seinen Grund selbst mit.
-   Im PASSIVEN Modus darf er durchsichtig sein: Dort ist er ohnehin nur noch ein Hinweis,
-   und das Dunkel haelt die weisse Schrift auch ueber einer hellen Karte lesbar.
-   Die Deckkraft der ganzen Reihe (frueher `opacity: .5`) ist damit ENTFALLEN — die
-   Transparenz steckt jetzt in der Grundfarbe. Beides zusammen liesse die Schrift auf
-   einem hellen Untergrund verschwimmen.
-   KEIN `backdrop-filter` als Alternative — siehe oben. */
+/* Der Schalter selbst. FARBE UND TRANSPARENZ SIND 1:1 AUS DER ZEITLEISTE DER APP
+   „Health Command Center" UEBERNOMMEN (08.09.2026, Leonard-Wunsch) — dort `.zl-pille`
+   und `.zl-reihe`:
+     Flaeche  `color-mix(in srgb, var(--card) 78%, transparent)`  → hier `rgba(255,255,255,.78)`
+     Rahmen   `1px solid var(--border)`                            → gleicher Wert (#E2E8F0)
+     Schatten `var(--shadow)`                                      → gleicher Wert
+     Schrift  `var(--txt)` / `var(--txt2)`                         → hier `--text` / `--text2`
+     aktiv    `background: var(--tab-color); color: #fff`          → hier `var(--accent)`
+     passiv   `transform: scale(.7); opacity: .5`                  → gleiche Werte
+   Die Token heissen in beiden Apps verschieden, haben aber DIESELBEN Werte
+   (`--card` #ffffff, `--border` #E2E8F0, `--shadow` 0 1px 6px rgba(0,0,0,.18),
+   `--txt`/`--text` #0F172A, `--txt2`/`--text2` #64748B).
+   AUSGESCHRIEBEN statt `color-mix`: FitTrack nutzt die Funktion nirgends sonst, und ihr
+   Fehlschlag waere hier besonders teuer — eine nicht verstandene `background`-Angabe
+   faellt ersatzlos weg, der Schalter waere durchsichtig und seine Schrift auf einer
+   weissen Karte unlesbar. Mit `--card: #fff` ist der Wert ohnehin identisch.
+   NICHT uebernommen: `backdrop-filter: blur(16px)`. Der Weichzeichner zeichnete in
+   FitTrack auf iOS eine dunkle Linie an der Oberkante des Seitenschalters, sobald sich
+   der Inhalt dahinter aenderte (gemeldet 01.09.2026) — und unten aendert er sich bei
+   jedem Scrollen. Wer ihn doch will, prueft genau das auf dem Geraet gegen.
+   WARUM der Schalter ueberhaupt einen eigenen Grund traegt: Im Kopf lag dahinter immer
+   der farbige Tab-Hintergrund. Unten liegt dahinter der scrollende Inhalt — ohne eigene
+   Flaeche verschwand die Schrift der nicht gewaehlten Seiten auf einer weissen Karte
+   (von vier Seiten war nur die aktive lesbar, gesehen 08.09.2026). */
 .seg-toggle {
   pointer-events: auto;
   display: flex; gap: 4px; margin: 0 14px;
-  background: var(--card2);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--border);
   box-shadow: var(--shadow);
   border-radius: 12px; padding: 4px;
   /* Der Ursprung liegt an der UNTERKANTE: beim Schrumpfen im passiven Modus bleibt der
      Schalter damit an derselben Kante stehen und wandert nicht nach oben. */
   transform-origin: bottom center;
   transition: transform .2s cubic-bezier(0.4, 0, 0.2, 1),
-              background-color .2s cubic-bezier(0.4, 0, 0.2, 1);
+              opacity   .2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 /* Die zweiseitigen Schalter (Training: Gym|Laufen, Uebungen: Katalog|Stats) sind 30 %
    schmaler als die volle Zeile und stehen mittig (Leonard-Wunsch 08.09.2026) — zwei
@@ -2889,13 +2896,16 @@ html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
   width: calc((100% - 28px) * 0.7);
   margin-left: auto; margin-right: auto;
 }
-/* PASSIVER MODUS: 30 % kleiner und dunkel durchsichtig, sobald man scrollt, in einen
-   anderen Tab wischt oder neben ihn tippt. Geschrumpft wird ueber `transform: scale()`
-   statt ueber kleinere Masse — so schrumpfen Hoehe, Schrift, Polster und Rundungen im
-   selben Verhaeltnis und es kann nichts umbrechen. Anders als die Bottom-Nav verschwindet
-   der Schalter NIE: er ist das einzige Bedienelement fuer die Seite und muss erreichbar
-   bleiben (40px werden zu 28px). */
-#seitenleiste.passiv .seg-toggle { transform: scale(0.7); background: rgba(15, 23, 42, 0.45); }
+/* PASSIVER MODUS, exakt wie in HCC: 30 % kleiner und halb durchsichtig, sobald man
+   scrollt, in einen anderen Tab wischt oder neben ihn tippt. Die Deckkraft sitzt am
+   SCHALTER, nicht an den Knoepfen einzeln — so verblassen Flaeche, Rahmen, Schatten und
+   Schrift gleichmaessig und die Knoepfe bleiben untereinander gleich stark. Auf die
+   Tippflaeche wirkt sie nicht.
+   Geschrumpft wird ueber `transform: scale()` statt ueber kleinere Masse — so schrumpfen
+   Hoehe, Schrift, Polster und Rundungen im selben Verhaeltnis und es kann nichts
+   umbrechen. Anders als die Bottom-Nav verschwindet der Schalter NIE: er ist das einzige
+   Bedienelement fuer die Seite und muss erreichbar bleiben (43px werden zu 30px). */
+#seitenleiste.passiv .seg-toggle { transform: scale(0.7); opacity: .5; }
 /* `user-select: none` ist Pflicht: Ohne das loest ein Tipp auf iOS die Textauswahl aus —
    sichtbar als kurze Striche unter einzelnen Buchstaben. Dasselbe Verhalten wie beim
    Zahlenblock (siehe dort). */
@@ -2907,19 +2917,16 @@ html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
      Name, der nicht passt, endet mit „…" (Leonard-Wunsch 08.09.2026). */
   min-width: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  border: none; background: transparent; font-size: 13px; font-weight: 600;
-  /* Dunkel auf dem hellen Grund des aktiven Modus. Im passiven Modus wird sie weiss —
-     Regel gleich darunter. */
+  border: 1px solid transparent; background: transparent;
+  font-size: 13px; font-weight: 600;
   color: var(--text2);
-  padding: 9px 6px; border-radius: 9px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  padding: 8px 6px; border-radius: 9px; cursor: pointer; -webkit-tap-highlight-color: transparent;
   font-family: inherit; transition: background 0.15s, color 0.15s;
   -webkit-user-select: none; user-select: none;
 }
-#seitenleiste.passiv .seg-btn { color: #fff; }
-/* Die aktuelle Seite bleibt in BEIDEN Modi eine weisse Pille — hell auf hellgrauem Grund
-   wie eine iOS-Segmentanzeige, hell auf dunklem Grund im passiven Modus. */
-.seg-btn.active { background: #fff; color: var(--accent-dark); box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
-#seitenleiste.passiv .seg-btn.active { color: var(--accent-dark); }
+/* Die aktuelle Seite in der Tabfarbe mit weisser Schrift — HCCs `.zl-opt.aktiv`.
+   Der durchsichtige Rahmen oben haelt die Knoepfe dabei gleich hoch. */
+.seg-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 /* VIER Seiten (Plan-Tab seit 06.09.2026) statt zwei: Auf 375px bleiben je Knopf 82px.
    „Wettkämpfe" misst bei 13px 84px und waere gekuerzt worden — 12px und ein schmaleres
    seitliches Polster bringen es auf 78px. Nur dieser Umschalter ist betroffen, die

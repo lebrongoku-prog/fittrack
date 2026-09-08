@@ -874,31 +874,40 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `seitenleisteAktualisieren` (fuellt den Schalter neu — laeuft in `_applyTabState` und in
   allen drei `set*View`), `seitenleistePassiv`, `initSeitenleiste` (EIN Klick-Handler am
   Dokument).
-  **ZWEI GESICHTER, je nach Modus** (08.09.2026, Leonard-Wunsch, Vorbild wieder die
-  Zeitleiste aus „Health Command Center"):
-    AKTIV  = DECKEND HELL. Heller Grund (`--card2`, #f0f0f5), dunkle Schrift
-             (`--text2`), weisse Pille mit Schatten auf der aktuellen Seite in
-             `--accent-dark` — die Optik einer iOS-Segmentanzeige.
-    PASSIV = DUNKEL DURCHSICHTIG. Grund `rgba(15,23,42,.45)`, Schrift weiss, Pille
-             unveraendert weiss.
+  **FARBE UND TRANSPARENZ SIND 1:1 AUS HCC UEBERNOMMEN** (08.09.2026, Leonard-Wunsch) —
+  dort `.zl-pille` und `.zl-reihe`:
+
+  | | HCC | FitTrack |
+  |---|---|---|
+  | Flaeche | `color-mix(in srgb, var(--card) 78%, transparent)` | `rgba(255,255,255,.78)` |
+  | Rahmen | `1px solid var(--border)` | derselbe Wert (#E2E8F0) |
+  | Schatten | `var(--shadow)` | derselbe Wert |
+  | Schrift | `var(--txt2)` | `var(--text2)` (#64748B) |
+  | aktive Seite | `var(--tab-color)`, Schrift #fff | `var(--accent)`, Schrift #fff |
+  | passiv | `transform: scale(.7); opacity: .5` | dieselben Werte |
+
+  Die Token heissen in beiden Apps verschieden, haben aber DIESELBEN Werte.
+  AUSGESCHRIEBEN statt `color-mix`: FitTrack nutzt die Funktion nirgends sonst, und ihr
+  Fehlschlag waere hier besonders teuer — eine nicht verstandene `background`-Angabe
+  faellt ersatzlos weg, der Schalter waere durchsichtig und seine Schrift auf einer
+  weissen Karte unlesbar. Mit `--card: #fff` ist der Wert ohnehin identisch.
+  NICHT uebernommen: `backdrop-filter: blur(16px)`. Der Weichzeichner zeichnete in
+  FitTrack auf iOS eine dunkle Linie an der Oberkante des Seitenschalters, sobald sich
+  der Inhalt dahinter aenderte (gemeldet 01.09.2026) — und unten aendert er sich bei
+  jedem Scrollen. Wer ihn doch will, prueft genau das auf dem Geraet gegen.
   WARUM der Schalter ueberhaupt einen eigenen Grund traegt: Im Kopf lag dahinter immer
-  der farbige Tab-Hintergrund, und die 22-%-Weissflaeche von damals genuegte. Unten liegt
-  dahinter der scrollende Inhalt — auf einer weissen Karte verschwand sie restlos und mit
-  ihr die weisse Schrift der nicht gewaehlten Seiten; von vier Seiten war nur die aktive
-  lesbar (gesehen 08.09.2026). Im PASSIVEN Modus darf er durchsichtig sein: Dort ist er
-  ohnehin nur ein Hinweis, und das Dunkel haelt die weisse Schrift auch ueber einer
-  hellen Karte lesbar.
-  ZWISCHENSTAND, der wieder weg ist: Kurzzeitig war die Flaeche in BEIDEN Modi deckend
-  dunkel (`rgba(15,23,42,.72)` unter der alten 22-%-Weissschicht). Vorher war eine
-  Fassung in `var(--accent)` verworfen worden, weil der Trainings-Tab GRAU wird, wenn
-  heute nichts ansteht (`themeBgKey`) — der Schalter leuchtete dort gruen aus einem
-  grauen Hintergrund und widerspraeche dem Signal, das das Grau setzt. Wer wieder eine
-  Tabfarbe einsetzen will, muss diesen Fall loesen.
-  Die Deckkraft der ganzen Reihe (frueher `opacity: .5` im passiven Modus) ist ENTFALLEN
-  — die Transparenz steckt jetzt in der Grundfarbe. Beides zusammen liesse die Schrift
-  auf einem hellen Untergrund verschwimmen.
-  FOLGE: Die Glas-Sonderregel fuer die aktive Pille ist ebenfalls entfallen. Sie war
-  noetig, solange der Schalter durchschien; jetzt sieht er in beiden Farbmodi gleich aus.
+  der farbige Tab-Hintergrund. Unten liegt dahinter der scrollende Inhalt — ohne eigene
+  Flaeche verschwand die Schrift der nicht gewaehlten Seiten auf einer weissen Karte
+  (von vier Seiten war nur die aktive lesbar, gesehen 08.09.2026).
+  ZWEI Zwischenstaende an demselben Tag, beide WEG: (1) deckend dunkel in beiden Modi
+  (`rgba(15,23,42,.72)`), (2) deckend hell im aktiven und dunkel durchsichtig im
+  passiven Modus. Davor war eine Fassung in `var(--accent)` verworfen worden, weil der
+  Trainings-Tab GRAU wird, wenn heute nichts ansteht (`themeBgKey`) — der Schalter
+  leuchtete dort gruen aus einem grauen Hintergrund und widerspraeche dem Signal, das
+  das Grau setzt. Wer wieder eine Tabfarbe als FLAECHE einsetzen will, muss diesen Fall
+  loesen; die aktive PILLE traegt sie unbedenklich, sie ist nur ein Knopf.
+  FOLGE: Die Glas-Sonderregel fuer die aktive Pille ist entfallen — der Schalter sieht
+  in beiden Farbmodi gleich aus.
   **DIE ZWEISEITIGEN SCHALTER SIND 30 % SCHMALER** (`.seg-zwei`, Training: Gym|Laufen,
   Uebungen: Katalog|Stats; Leonard-Wunsch 08.09.2026). Zwei Knoepfe brauchen die volle
   Zeile nicht, und schmaler wirkt der Schalter weniger wie eine zweite Tableiste.
@@ -922,8 +931,10 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   so bleibt die **Unterkante exakt stehen** (gemessen 746px bei sichtbarer Nav, in beiden
   Zustaenden) und Hoehe, Schrift, Polster und Rundungen schrumpfen im selben Verhaeltnis.
   Kleinere Masse einzeln zu setzen brachte in HCC Umbruch-Risiko.
+  Die Deckkraft sitzt am SCHALTER, nicht an den Knoepfen einzeln — so verblassen Flaeche,
+  Rahmen, Schatten und Schrift gleichmaessig. Auf die Tippflaeche wirkt sie nicht.
   **Anders als die Bottom-Nav verschwindet er NIE** — er ist das einzige Bedienelement
-  fuer die Seite und muss erreichbar bleiben (41px werden zu 29px).
+  fuer die Seite und muss erreichbar bleiben (43px werden zu 30px).
   **Die Kuerzung mit „…"** (Leonard-Wunsch) haengt an `.seg-btn`: `min-width: 0` plus
   `text-overflow: ellipsis`. Die 0 ist der eigentliche Schalter — ohne sie schrumpft ein
   Flex-Kind NICHT unter seinen Inhalt (genau das machte die Knoepfe frueher verschieden
@@ -938,11 +949,11 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   2. KEIN `backdrop-filter` — siehe die Vorgeschichte von `.seg-toggle` (iOS zeichnete
      damit eine dunkle Linie an der Oberkante, sobald sich der Inhalt dahinter aenderte).
      Das war auch der Grund, ihn beim HCC-Zwischenstand wegzulassen.
-  3. Die Hoehe steht in `--sl-h` (41px) und wird an zwei weiteren Stellen gebraucht:
+  3. Die Hoehe steht in `--sl-h` (43px) und wird an zwei weiteren Stellen gebraucht:
      `--sl-pad` im `padding-bottom` der drei Tabs (sonst verschwindet die unterste Karte
-     unter dem Schalter) und `--sl-off` als Ausweichhoehe. GEMESSEN: 41px bei zwei
-     Knoepfen (13px Schrift), 40px bei vier (`.seg-vier`, 12px) — hier steht der
-     groessere Wert. Beim Aendern von Schriftgroesse oder Polster nachmessen.
+     unter dem Schalter) und `--sl-off` als Ausweichhoehe. GEMESSEN: 43px bei zwei
+     Knoepfen (13px Schrift), 42px bei vier (`.seg-vier`, 12px) — hier steht der
+     groessere Wert. Beim Aendern von Schriftgroesse, Polster oder Rahmen nachmessen.
   4. `seitenleisteAktualisieren` liest `currentScreen`. Das ist sicher, weil sowohl
      `showScreen` als auch der Settle in `initTabScrollSync` die Variable IMMER setzen,
      bevor sie `_applyTabState` rufen.
