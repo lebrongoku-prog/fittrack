@@ -8780,7 +8780,18 @@ function seitenleisteAktualisieren() {
   const el = document.getElementById('seitenleiste');
   if (!el) return;
   const tab = SEITEN_LEISTE[currentScreen];
+  // Auftauchen von unten, wenn die Leiste aus einem Tab OHNE sie hereinkommt (Uebersicht,
+  // Vollbild-Overlays; Leonard-Wunsch 08.09.2026). Nur beim UEBERGANG versteckt → sichtbar:
+  // Zwischen zwei Tabs mit Leiste bleibt sie stehen, dort waere die Bewegung nur Unruhe.
+  // Die Klasse muss vor dem Einblenden weg und danach neu gesetzt werden, sonst startet die
+  // Animation beim zweiten Mal nicht erneut — dafuer der erzwungene Reflow dazwischen.
+  const tauchtAuf = !!tab && el.hidden;
   el.hidden = !tab;
+  if (tauchtAuf) {
+    el.classList.remove('sl-rein');
+    void el.offsetWidth;
+    el.classList.add('sl-rein');
+  }
   // `--sl-off` (Ausweichhoehe von Laufanzeige-Pille und Toast) haengt an dieser Klasse
   // und NICHT am Theme: Die Vollbild-Overlays tragen das Theme ihres Tabs, haben aber
   // keine Leiste — die Pille schwebte dort sonst grundlos zu hoch.

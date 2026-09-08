@@ -647,6 +647,9 @@ body.theme-plans .hist-action-dd {
    liefert die Spalte die Breite, beides muss also zurueckgesetzt werden. */
 #libdays-list > .plans-list-archive-header,
 #libdays-list > .plan-day-empty { grid-column: 1 / -1; width: auto; margin-left: 0; margin-right: 0; }
+/* … der Archiv-Knopf holt sich seine halbe Breite danach zurueck (siehe dort). Die Regel
+   MUSS hinter der Zeile darueber stehen, beide haben dieselbe Spezifitaet. */
+#libdays-list > .plans-list-archive-header { width: 50%; margin-left: auto; margin-right: auto; }
 
 .pld-kachel {
   position: relative;
@@ -856,9 +859,16 @@ body.theme-plans .hist-action-dd {
    vereinheitlicht 05.09.2026). Weisse Karte, Beschriftung links, Anzahl und Ausklapp-Pfeil
    rechts. Ein `<button>` braucht die Breitenangabe: bei `width:auto` schrumpft er auf seinen
    Inhalt, auch als Block-Element. Der fruehere `.weitere-btn.archiv-btn` ist entfallen. */
+/* 50 % schmaler als die Zeile und mittig (Leonard-Wunsch 08.09.2026). Er oeffnet ein
+   Archiv und ist damit der unwichtigste Knopf der Seite — ueber die volle Breite wog er
+   schwerer als die Karten darueber. Gerechnet von der bisherigen Breite (Zeile minus die
+   beiden 14px-Raender): auf 375px also 173 statt 347px.
+   Gilt fuer ALLE DREI Listen, auch „Archivierte Gympläne" — Leonard hat zwei davon genannt,
+   aber sie sind seit dem 05.09.2026 bewusst EINE Bauform; zwei schmal und eine breit waere
+   ein Rueckschritt. */
 .plans-list-archive-header {
-  width: calc(100% - 28px); border: none; font-family: inherit; text-align: left;
-  margin: 16px 14px 8px;
+  width: calc((100% - 28px) * 0.5); border: none; font-family: inherit; text-align: left;
+  margin: 16px auto 8px;
   background: var(--card);
   border-radius: 12px;
   padding: 12px 16px;
@@ -1484,6 +1494,16 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 }
 /* Symbol in TEXTGROESSE vor der Beschriftung (Leonard-Vorgabe). `1em` bindet es an die
    Schriftgroesse des Knopfes — aendert die sich, waechst das Symbol mit. */
+/* Steht nur EINE Sportart in der Karte — also im Trainings-Tab auf den Seiten „Gym" und
+   „Laufen" —, ist der Knopf 20 % schmaler als die Karte und steht mittig (Leonard-Wunsch
+   08.09.2026). Ueber die volle Breite wirkte er wie ein Balken; in der Uebersicht teilen
+   sich zwei Knoepfe die Zeile und bleiben unveraendert.
+   `:not(.hero-aktiv)` ist Pflicht: Die Karte der LAUFENDEN Einheit nutzt dieselbe Huelle
+   und traegt `.einzeln`, sobald sie ohne Uebungen dasteht — „Pausieren" und „Beenden"
+   sollen aber die volle Breite behalten. */
+.hero-heute:not(.hero-aktiv) .hero-heute-spalten.einzeln .hero-v2-btn {
+  width: 80%; margin-left: auto; margin-right: auto;
+}
 .hero-btn-ic { width: 1em; height: 1em; flex-shrink: 0; display: inline-flex; }
 .hero-btn-ic svg { width: 100%; height: 100%; fill: currentColor; }
 /* Die Knoepfe tragen die Farbe der SPORTART statt der Tabfarbe (Leonard-Wunsch 06.09.2026) —
@@ -1605,9 +1625,15 @@ html.wo-running #wo-week-card { display: none; }
    den Kreis ist dort wie hier entfallen. Die Spalte ist schmaler als die Marke hoch ist,
    deshalb etwas Polster, damit das Feld nicht als Strich erscheint. */
 .ppv-k-col.today { background: var(--accent-bg); border-radius: 9px; padding: 3px 0; margin: -3px 0; }
-/* Kuenftige Tage nur umrandet, wie in den Wochenplan-Karten. */
-.ppv-k-reihe.gym  .training.zukunft:not(.done) .ppv-k-dot { background: transparent; box-shadow: inset 0 0 0 3px #0F766E; }
-.ppv-k-reihe.lauf .training.zukunft:not(.done) .ppv-k-dot { background: transparent; box-shadow: inset 0 0 0 3px #4ADE80; }
+/* Kuenftige Tage tragen den Ring der Sportart UND dieselbe hellgraue Fuellung wie ein Tag
+   ohne Training (`--card2`, Leonard-Wunsch 08.09.2026 — vorher `transparent`). Damit sind es
+   drei klar unterscheidbare Zustaende in EINER Formensprache:
+     hellgrau, kein Ring  = nichts geplant
+     hellgrau mit Ring    = geplant, steht noch an
+     voll in der Sportfarbe = war schon (Haken, wenn absolviert)
+   Vorher lag der Ring auf dem Tab-Hintergrund und die kuenftigen Tage wirkten wie Loecher. */
+.ppv-k-reihe.gym  .training.zukunft:not(.done) .ppv-k-dot { background: var(--card2); box-shadow: inset 0 0 0 3px #0F766E; }
+.ppv-k-reihe.lauf .training.zukunft:not(.done) .ppv-k-dot { background: var(--card2); box-shadow: inset 0 0 0 3px #4ADE80; }
 /* Erledigt-Haken wie in den Einzelkarten — er unterscheidet „geplant" von „gemacht". */
 .ppv-k-col.done .ppv-k-dot::before {
   content: '✓';
@@ -1643,8 +1669,8 @@ html.glas .screen:not(#screen-mehr) .ppv-k-col:not(.training):not(.done) .ppv-k-
 }
 /* Kuenftige Marken bleiben auch im Transparenz-Modus nur umrandet — die Sportfarbe traegt
    dort der Ring statt der Flaeche. */
-html.glas .screen:not(#screen-mehr) .ppv-k-reihe.gym  .training.zukunft:not(.done) .ppv-k-dot { background: transparent; }
-html.glas .screen:not(#screen-mehr) .ppv-k-reihe.lauf .training.zukunft:not(.done) .ppv-k-dot { background: transparent; }
+html.glas .screen:not(#screen-mehr) .ppv-k-reihe.gym  .training.zukunft:not(.done) .ppv-k-dot { background: rgba(255,255,255,.22); }
+html.glas .screen:not(#screen-mehr) .ppv-k-reihe.lauf .training.zukunft:not(.done) .ppv-k-dot { background: rgba(255,255,255,.22); }
 html.glas .screen:not(#screen-mehr) .ppv-k-labels { color: rgba(255,255,255,.75); }
 html.glas .screen:not(#screen-mehr) .ppv-k-ic { color: rgba(255,255,255,.85); }
 html.glas .screen:not(#screen-mehr) .ppv-k-adh,
@@ -1685,6 +1711,20 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
      der Karten und die Stauchung springt. */
   transition: background 0.2s ease, transform 0.1s ease;
 }
+/* 10 % schmaler als bisher und mittig (Leonard-Wunsch 08.09.2026). Gerechnet von der
+   bisherigen Breite (volle Zeile minus die beiden 26px-Raender), damit der Bezug derselbe
+   bleibt: auf 375px also 291 statt 323px.
+   AUSGENOMMEN die Tageskarte der Seite „Laufen" (`.lauf-tag-karte`): Sie borgt sich nur die
+   Klassen der Uebungskarte, ist aber keine — Leonard hat ausdruecklich die Seite „Gym" und
+   die Gymtag-Detailansicht genannt.
+   Ueber `width` + `margin: auto` statt ueber groessere Raender: Im Querformat ist
+   `#active-ex-list` ein zweispaltiges Grid, dort bezieht sich die Prozentangabe sauber auf
+   die Spalte statt auf den ganzen Screen. */
+.aex-v2:not(.lauf-tag-karte) {
+  width: calc((100% - 52px) * 0.9);
+  margin-left: auto; margin-right: auto;
+}
+
 /* Done: entire card turns green-tinted */
 .aex-v2.done {
   background: var(--green-bg);
@@ -2831,6 +2871,26 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
 #seitenleiste[hidden] { display: none; }
 /* Folgt der Bottom-Nav, genau wie Laufanzeige und Satzpause (`setNavHidden`). */
 #seitenleiste.nav-hidden { bottom: calc(var(--safe-b) + 8px); }
+
+/* AUFTAUCHEN VON UNTEN (Leonard-Wunsch 08.09.2026): Kommt man aus einem Tab OHNE
+   Seitenleiste (Uebersicht, Vollbild-Overlays), faehrt sie vom unteren Bildschirmrand
+   herein — dieselbe Bewegungsrichtung, mit der die Bottom-Nav ein- und ausgleitet.
+   Zwischen zwei Tabs MIT Leiste passiert nichts: Die Klasse setzt
+   `seitenleisteAktualisieren` nur beim Uebergang versteckt → sichtbar.
+   Der Weg ist genau die Strecke bis unter die Bildschirmkante — eigene Hoehe plus der
+   Abstand, den die Leiste vom unteren Rand haelt. Er haengt am Nav-Zustand und steht
+   deshalb als Variable, sonst faehrt sie bei eingeklappter Nav zu weit.
+   ANIMATION statt Transition: Eine Transition braeuchte einen Startwert im DOM und einen
+   erzwungenen Reflow, um zuverlaessig zu laufen. Eine Keyframe-Animation startet von
+   selbst, sobald die Klasse gesetzt wird. */
+#seitenleiste            { --sl-weg: calc(var(--sl-h) + var(--nav-h) + var(--safe-b) + 6px); }
+#seitenleiste.nav-hidden { --sl-weg: calc(var(--sl-h) + var(--safe-b) + 8px); }
+#seitenleiste.sl-rein { animation: sl-auftauchen .3s cubic-bezier(0.2, 0.7, 0.2, 1); }
+@keyframes sl-auftauchen {
+  from { transform: translateY(var(--sl-weg)); }
+  to   { transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) { #seitenleiste.sl-rein { animation: none; } }
 /* Laeuft eine Satzpause, nimmt deren Leiste den Streifen ueber der Nav ein — die
    Seitenleiste laege sonst genau darauf. Sie rueckt deshalb um eine Nav-Hoehe hoeher,
    in beiden Nav-Zustaenden. Ein Geschwister-Selektor genuegt: `#seitenleiste` wird an

@@ -919,6 +919,18 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Die Klasse setzt `seitenleisteAktualisieren` nach der Zahl der Seiten, genau wie
   `.seg-vier` — eine kuenftige dreiseitige Leiste bekaeme also automatisch keine von
   beiden.
+  **SIE TAUCHT VON UNTEN AUF** (`.sl-rein` + `@keyframes sl-auftauchen`, 0,3s,
+  Leonard-Wunsch 08.09.2026): Kommt man aus einem Tab OHNE Leiste (Uebersicht,
+  Vollbild-Overlays), faehrt sie vom unteren Bildschirmrand herein — dieselbe
+  Bewegungsrichtung, mit der die Bottom-Nav ein- und ausgleitet. Zwischen zwei Tabs MIT
+  Leiste passiert nichts; `seitenleisteAktualisieren` setzt die Klasse nur beim Uebergang
+  versteckt → sichtbar (`const tauchtAuf = !!tab && el.hidden` VOR dem Umschalten).
+  Die Klasse muss vorher entfernt und nach einem erzwungenen Reflow (`void el.offsetWidth`)
+  neu gesetzt werden — sonst startet die Animation beim zweiten Mal nicht.
+  Der Weg steht in `--sl-weg` und haengt am Nav-Zustand (eigene Hoehe plus Abstand zum
+  unteren Rand); mit einem festen Wert faehrt sie bei eingeklappter Nav zu weit.
+  Eine KEYFRAME-Animation statt einer Transition: Letztere braeuchte einen Startwert im DOM,
+  die Animation startet von selbst. `prefers-reduced-motion` schaltet sie ab.
   **AKTIVER und PASSIVER Modus:** Der Schalter schrumpft auf **70 %** und geht auf **50 %
   Deckkraft**, sobald man scrollt (in BEIDE Richtungen, Schwelle 2px gegen iOS'
   Nachfedern), **in einen anderen Tab wischt** oder irgendwo neben ihn tippt. Ein Tipp auf
@@ -990,6 +1002,37 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Folge: `openAddExModal('preview')` hat keinen Aufrufer mehr. Der Zweig
   `addExContext === 'preview'` in `addExConfirm` (27 Zeilen) steht BEWUSST noch da —
   er ist der Rueckweg, falls der Knopf zurueckkommt.
+- **Vier Elemente sind am 08.09.2026 SCHMALER geworden** (Leonard-Wunsch). Alle vier ueber
+  `width` + `margin-left/right: auto` statt ueber groessere Raender — so bleibt der Bezug
+  die bisherige Breite, und im Querformat rechnet die Prozentangabe gegen die Spalte statt
+  gegen den ganzen Screen. Gemessen auf 375px:
+
+  | Element | vorher | jetzt | Regel |
+  |---|---|---|---|
+  | Hero-Knopf im Trainings-Tab | 323px | **258px** (−20 %) | `.hero-heute:not(.hero-aktiv) .hero-heute-spalten.einzeln .hero-v2-btn` |
+  | Uebungskarte (Seite „Gym" + Gymtag-Detail) | 323px | **291px** (−10 %) | `.aex-v2:not(.lauf-tag-karte)` |
+  | Archiv-Knopf (alle drei Listen) | 347px | **173px** (−50 %) | `.plans-list-archive-header` |
+
+  DREI Fallen, die dabei stecken:
+  1. `.hero-heute-spalten.einzeln` traegt AUCH die Karte der laufenden Einheit, sobald sie
+     ohne Uebungen dasteht. `:not(.hero-aktiv)` ist deshalb Pflicht — sonst schrumpfen
+     „Pausieren" und „Beenden" mit. In der UEBERSICHT teilen sich zwei Knoepfe die Zeile,
+     dort greift die Regel gar nicht (kein `.einzeln`).
+  2. Die Tageskarte der Seite „Laufen" borgt sich die Klassen der Uebungskarte, ist aber
+     keine — `.lauf-tag-karte` ist ausgenommen und bleibt bei 323px.
+  3. Im Gymtage-Raster setzt `#libdays-list > .plans-list-archive-header` die Breite auf
+     `auto` zurueck (der Knopf spannt dort ueber alle drei Spalten). Die halbe Breite muss
+     danach NOCHMAL gesetzt werden, sonst ist dieser eine Knopf voll breit.
+- **Kuenftige Trainingstage in der kombinierten Wochenkarte sind hellgrau GEFUELLT plus Ring**
+  (08.09.2026, Leonard-Wunsch — vorher `background: transparent`). Damit kennt die Karte drei
+  Zustaende in EINER Formensprache:
+  hellgrau ohne Ring = nichts geplant · hellgrau MIT Ring = geplant, steht noch an ·
+  voll in der Sportfarbe = war schon (Haken, wenn absolviert).
+  Das Hellgrau ist dasselbe `--card2` wie beim leeren Kreis. Vorher lag der Ring auf dem
+  Tab-Hintergrund und die kuenftigen Tage wirkten wie Loecher.
+  Im Transparenz-Modus entsprechend `rgba(255,255,255,.22)` — dieselbe Flaeche wie der leere
+  Kreis dort. Gilt NUR fuer die Kombi-Karte (`.ppv-k-dot`): In den Einzelkarten hat ein Tag
+  ohne Training gar keine Fuellung, dort gaebe es kein Grau zu uebernehmen.
 - **AM WISCHEN NICHTS AENDERN, ohne auf dem iPhone gegenzupruefen** (Leonard-Meldung
   08.09.2026). An dem Tag wurden drei Eingriffe gebaut und noch am selben Tag komplett
   zurueckgenommen — das Wischen war danach „gar nicht mehr fluessig":
