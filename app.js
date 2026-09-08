@@ -1009,6 +1009,7 @@ function buildWochenKombi(zurPlanSeite) {
       if (t.geplant) cls.push('training');
       if (t.erledigt) cls.push('done');
       if (i === todayIdx) cls.push('today');
+      if (i > todayIdx) cls.push('zukunft');   // nur umrandet, siehe `buildPlanCard`
       return `<div class="${cls.join(' ')}"><span class="ppv-k-dot"></span></div>`;
     }).join('');
     return `<div class="ppv-k-reihe ${sport}" onclick="${ziel}" role="button" tabindex="0"
@@ -1017,18 +1018,12 @@ function buildWochenKombi(zurPlanSeite) {
     </div>`;
   };
 
-  const wochen = [
-    gp ? `<span class="ppv-k-wk gym">${_planProgramWeek(gp).num} / ${_planProgramWeek(gp).total}</span>` : '',
-    rp ? `<span class="ppv-k-wk lauf">${runKombiWoche(rp)}</span>` : '',
-  ].filter(Boolean).join('');
-
   return `<div class="plan-card-v2 ppv-kombi">
     <div class="ppv-head">
       ${wochenFilterTitel('ppv-name')}
       <span class="ppv-k-adh"><span class="gym">${gs.done}/${gs.planned}</span>
         · <span class="lauf">${rs.done}/${rs.planned}</span></span>
     </div>
-    ${wochen ? `<div class="ppv-k-wochen">${wochen}</div>` : ''}
     <div class="ppv-k-labels">
       <span class="ppv-k-ic"></span>
       ${WOCHENTAGE_KURZ.map(l => `<span>${l}</span>`).join('')}
@@ -1037,16 +1032,6 @@ function buildWochenKombi(zurPlanSeite) {
             zurPlanSeite('plans'), 'Gymplan öffnen')}
     ${reihe(laufTage, 'lauf', PPV_ICON_LAEUFER, zurPlanSeite('runplans'), 'Laufplan öffnen')}
   </div>`;
-}
-
-// „Woche 3 / 4" des Laufplans — dieselbe Rechnung wie in `buildRunPlanCard`, dort steht sie
-// eingebettet im Fortschrittsblock und ist von aussen nicht zu holen.
-function runKombiWoche(p) {
-  const wochen = runPlanWochen(p);
-  const monStart = new Date(p.startDate); monStart.setHours(0, 0, 0, 0);
-  monStart.setDate(monStart.getDate() - ((monStart.getDay() + 6) % 7));
-  const num = Math.min(Math.max(Math.floor((Date.now() - monStart.getTime()) / (7 * 864e5)) + 1, 1), wochen || 1);
-  return `${num} / ${wochen}`;
 }
 
 // Die Ausrichtung der Ruhetag-Karte an der Wochenplan-Karte (`_ruhetagHeroAusrichten` /
@@ -1489,6 +1474,7 @@ function buildRunPlanCard(onTap, plan, opts) {
     if ((p.runDays || []).includes(i)) cls.push('training');
     if (gelaufenAmTag[i]) cls.push('done');
     if (laeuft && i === todayIdx) cls.push('today');
+    if (laeuft && i > todayIdx) cls.push('zukunft');   // siehe `buildPlanCard`
     if (opts.selectedIdx === i) cls.push('selected');
     // Auf der Seite „Laufen" waehlt ein Tipp den Tag aus — genau wie beim Gymwochenplan
     // (Leonard-Wunsch 04.09.2026). Ohne `dayOnTap` bleibt der Streifen reine Anzeige.
@@ -5179,6 +5165,10 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
     if (d) cls.push('training');
     if (done) cls.push('done');
     if (today) cls.push('today');
+    // Noch NICHT gewesene Tage dieser Woche werden nur UMRANDET statt gefuellt
+    // (Leonard-Wunsch 08.09.2026): Die Fuellung sagt „war schon", die Kontur „steht noch an".
+    // Heute zaehlt NICHT dazu — der Tag laeuft ja gerade.
+    if (isCurrent && i > todayIdx) cls.push('zukunft');
     if (opts.selectedIdx === i) cls.push('selected');
     // Ein Wochentag bekommt seinen EIGENEN Tipp nur, wenn der Aufrufer einen nennt
     // (`opts.dayOnTap`) — genau wie bei `buildRunPlanCard`. Ohne Angabe faellt der Klick auf

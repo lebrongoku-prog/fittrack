@@ -777,13 +777,23 @@ body.theme-plans .hist-action-dd {
 .run-plan .ppv-col.done .ppv-wd { background: #4ADE80; }
 .run-plan .ppv-col.done .ppv-wd::before { color: #4ADE80; box-shadow: 0 0 0 1.5px #4ADE80; }
 /* Heute: Ring um den Kreis — funktioniert auch auf Ruhetagen (Kreis dann ohne Füllung). */
-.ppv-col.today .ppv-wd::after {
-  content: ''; position: absolute; inset: -4px;
-  border-radius: 50%; border: 2px solid var(--accent);
-}
-.ppv-col.today.done .ppv-wd::after { border-color: #0F766E; }
-.run-plan .ppv-col.today.done .ppv-wd::after { border-color: #4ADE80; }
+/* HEUTE wird als transparentes Feld hinter der ganzen SPALTE markiert, nicht mehr als Ring um
+   den Kreis (Leonard-Wunsch 08.09.2026) — dieselbe Form und Transparenz wie das Feld eines
+   ausgewaehlten Tages (`.ppv-col.selected`), damit die Karte nur EINE Art Hervorhebung kennt.
+   Der fruehere Ring (`.ppv-wd::after`, 2px in der Akzentfarbe, mit Sonderfaellen fuer erledigte
+   Gym- und Lauftage) ist damit ersatzlos entfallen. */
+.ppv-col.today { background: var(--accent-bg); border-radius: 9px; }
 .ppv-col.today:not(.training) .ppv-wd { color: var(--accent-dark); font-weight: 700; }
+/* Tage, die in dieser Woche noch KOMMEN, sind nur umrandet (Leonard-Wunsch 08.09.2026):
+   Fuellung heisst „war schon", Kontur „steht noch an". Heute ist bewusst ausgenommen — der Tag
+   laeuft gerade. Ein bereits erledigter Tag kann nicht in der Zukunft liegen, `.done` bleibt
+   deshalb unangetastet.
+   2px Kontur statt der 15%-Regel des Kalenders: In diesem Kreis steht der Wochentag, eine
+   4,5px-Kontur liesse fuer die Schrift kaum Platz. */
+.ppv-col.training.zukunft .ppv-wd {
+  background: transparent; box-shadow: inset 0 0 0 2px #0F766E; color: #0F766E;
+}
+.run-plan .ppv-col.training.zukunft .ppv-wd { box-shadow: inset 0 0 0 2px #4ADE80; color: #22A05B; }
 /* Erledigt-Haken am Kreis. Nötig, weil im Workouts-Tab die Akzentfarbe selbst grün ist —
    ohne den Haken wären „geplant" und „erledigt" dort kaum zu unterscheiden. */
 .ppv-col.done .ppv-wd::before {
@@ -1164,7 +1174,15 @@ html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-bar-fill { background: #f
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-wd       { color: rgba(255,255,255,.75); }
 /* Geplante Tage weiss gefuellt: Die Akzentfarbe liegt zu nah am Tab-Hintergrund. */
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.training .ppv-wd { background: rgba(255,255,255,.92); color: var(--accent-dark); }
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today .ppv-wd::after { border-color: rgba(255,255,255,.9); }
+/* Heute traegt seit dem 08.09.2026 ein Feld statt eines Rings — im Transparenz-Modus
+   dieselbe Weissflaeche wie ein ausgewaehlter Tag (`.selected`, weiter unten). */
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today { background: rgba(255,255,255,.18); }
+/* Kuenftige Tage bleiben auch hier nur UMRANDET. Ohne diese Regel gewinnt die Zeile darueber
+   (`.ppv-col.training .ppv-wd`) und fuellt den Kreis weiss — geplant und „steht noch an"
+   saehen dann gleich aus. */
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.training.zukunft .ppv-wd {
+  background: transparent; box-shadow: inset 0 0 0 2px rgba(255,255,255,.92); color: #fff;
+}
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today:not(.training) .ppv-wd { color: #fff; }
 /* Ausgewaehlter Tag im Trainings-Tab: KEIN weisser Ring um den Kreis mehr, und die Flaeche
    dahinter in transparentem Weiss statt in der Tab-Farbe (Leonard-Wunsch 01.09.2026).
@@ -1550,13 +1568,13 @@ html.wo-running #wo-week-card { display: none; }
 }
 .ppv-k-reihe.gym  .training .ppv-k-dot, .ppv-k-reihe.gym  .done .ppv-k-dot { background: #0F766E; }
 .ppv-k-reihe.lauf .training .ppv-k-dot, .ppv-k-reihe.lauf .done .ppv-k-dot { background: #4ADE80; }
-/* Heute: Ring um den Kreis — sichtbar auch an einem Tag ohne Training. */
-.ppv-k-col.today .ppv-k-dot::after {
-  content: ''; position: absolute; inset: -3px;
-  border-radius: 50%; border: 2px solid var(--accent);
-}
-.ppv-k-reihe.gym  .today.training .ppv-k-dot::after { border-color: #0F766E; }
-.ppv-k-reihe.lauf .today.training .ppv-k-dot::after { border-color: #4ADE80; }
+/* Heute: dasselbe transparente Feld wie in den Wochenplan-Karten (08.09.2026) — der Ring um
+   den Kreis ist dort wie hier entfallen. Die Spalte ist schmaler als die Marke hoch ist,
+   deshalb etwas Polster, damit das Feld nicht als Strich erscheint. */
+.ppv-k-col.today { background: var(--accent-bg); border-radius: 9px; padding: 3px 0; margin: -3px 0; }
+/* Kuenftige Tage nur umrandet, wie in den Wochenplan-Karten. */
+.ppv-k-reihe.gym  .training.zukunft:not(.done) .ppv-k-dot { background: transparent; box-shadow: inset 0 0 0 3px #0F766E; }
+.ppv-k-reihe.lauf .training.zukunft:not(.done) .ppv-k-dot { background: transparent; box-shadow: inset 0 0 0 3px #4ADE80; }
 /* Erledigt-Haken wie in den Einzelkarten — er unterscheidet „geplant" von „gemacht". */
 .ppv-k-col.done .ppv-k-dot::before {
   content: '✓';
@@ -1567,13 +1585,6 @@ html.wo-running #wo-week-card { display: none; }
   box-shadow: 0 0 0 1.5px #0F766E;
 }
 .ppv-k-reihe.lauf .done .ppv-k-dot::before { color: #4ADE80; box-shadow: 0 0 0 1.5px #4ADE80; }
-/* Statt zweier Fortschrittsbloecke nur die Woche je Sportart — die beiden Plaene stehen in
-   verschiedenen Wochen und liessen sich nicht zu einer Zahl verrechnen. */
-.ppv-k-wochen { display: flex; gap: 10px; margin-top: 4px; font-size: 12px; font-weight: 600; }
-.ppv-k-wk { color: var(--text3); }
-.ppv-k-wk::before { content: 'Woche '; }
-.ppv-k-wk.gym  { color: #0F766E; }
-.ppv-k-wk.lauf { color: #22A05B; }
 /* Die beiden Zahlen tragen die Farbe IHRER Reihe — sonst waere nicht zu erkennen, welche
    zu welcher Sportart gehoert (die Reihenfolge allein genuegt dafuer nicht). */
 .ppv-k-adh { font-size: 13px; font-weight: 600; color: var(--text3); white-space: nowrap; }
@@ -1597,9 +1608,12 @@ html.wo-running #wo-week-card { display: none; }
 html.glas .screen:not(#screen-mehr) .ppv-k-col:not(.training):not(.done) .ppv-k-dot {
   background: rgba(255,255,255,.22);
 }
+/* Kuenftige Marken bleiben auch im Transparenz-Modus nur umrandet — die Sportfarbe traegt
+   dort der Ring statt der Flaeche. */
+html.glas .screen:not(#screen-mehr) .ppv-k-reihe.gym  .training.zukunft:not(.done) .ppv-k-dot { background: transparent; }
+html.glas .screen:not(#screen-mehr) .ppv-k-reihe.lauf .training.zukunft:not(.done) .ppv-k-dot { background: transparent; }
 html.glas .screen:not(#screen-mehr) .ppv-k-labels { color: rgba(255,255,255,.75); }
-html.glas .screen:not(#screen-mehr) .ppv-k-ic,
-html.glas .screen:not(#screen-mehr) .ppv-k-wk { color: rgba(255,255,255,.85); }
+html.glas .screen:not(#screen-mehr) .ppv-k-ic { color: rgba(255,255,255,.85); }
 html.glas .screen:not(#screen-mehr) .ppv-k-adh,
 html.glas .screen:not(#screen-mehr) .ppv-k-adh .gym,
 html.glas .screen:not(#screen-mehr) .ppv-k-adh .lauf { color: #fff; }
