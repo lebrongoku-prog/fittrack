@@ -849,34 +849,22 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Der frueher eigene Streifen (`buildWpCol`/`buildWpInfo`/`renderNext7Strip`/`selectOverviewDay`, Klassen `.wp-*`)
   wurde am 20.08.2026 entfernt — er hatte danach keinen Aufrufer mehr. ACHTUNG beim Aufraeumen: Die Regel fuer den
   Erledigt-Haken war eine Selektorliste (`.ppv-col.done …, .wp-col.done …`) — dort durfte nur der tote Teil weg.
-- **Die WISCHGESTE zwischen den Tabs** (ueberarbeitet 08.09.2026 nach Leonards Kritik am
-  Auslaufen). Drei Eingriffe, die Entscheidung „welcher Tab" blieb bewusst unangetastet:
-  1. **Das Loslassen fuehrt die App selbst zu Ende** (`initTabSwipeRelease`, „Auslaufen A"):
-     Das ZIEHEN bleibt nativ und fingergebunden; nach dem Loslassen faehrt die App in fester
-     Zeit (`SWIPE_DAUER_MS`, 200ms, kubisch auslaufend) auf den Ziel-Tab, statt die
-     Schwungphysik des Geraets nachgleiten zu lassen. Ein kraeftiger Wisch dauert damit
-     genauso lang wie ein sanfter — das ist gewollt (verlaesslich), kostet aber den Schwung.
-     Die ENTSCHEIDUNG bildet das bisherige Verhalten nach: ueber die Haelfte ODER genug
-     Schwung (`SWIPE_SCHWUNG`, 0.35 px/ms), und hoechstens EIN Tab pro Wisch. Die
-     Geschwindigkeit misst die App aus den letzten ~100ms der Geste — ueber den ganzen Zug
-     gemittelt ginge ein Schnipp am Ende unter.
-     WAEHREND der eigenen Fahrt wird `scroll-snap-type` auf `none` gesetzt und danach wieder
-     freigegeben; sonst zieht der Browser am selben Wert und die Bewegung zappelt.
-     VORGESCHICHTE: Bis zum 29.05.2026 gab es ein komplettes selbstgebautes Wisch-System, das
-     zugunsten des nativen Snaps entfernt wurde. Dies hier ist bewusst NUR das Loslassen.
-     NICHT PRUEFBAR auf diesem Rechner: Weder die Geste noch die Animation laufen in der
-     versteckten Browser-Ansicht (rAF feuert dort nie, Timer werden auf ~1s gedrosselt).
-     Zum Pruefen der ENTSCHEIDUNG `requestAnimationFrame` voruebergehend synchron machen und
-     mit vorgerueckter Uhr aufrufen — dann schliesst die Fahrt in einem Schritt ab. Die
-     Schwungschwelle laesst sich so NICHT beurteilen, die geht nur auf dem Geraet.
-  2. **Der Farbsprung bei 50% ist eine kurze Blende** (130ms, „Nahtstelle 1 A"): siehe die
-     `transition` auf `body`. Vorgeschichte dort im Kommentar — hier standen frueher 450ms,
-     die Leonard abschalten liess.
-  3. **Der Neuaufbau nach dem Einrasten entfaellt, wenn sich nichts geaendert hat**
-     („Nahtstelle 2 A"): siehe `tabStandJetzt`/`_tabGezeichnetBei` bei `_applyTabState`.
-  BEWUSST NICHT angefasst (Leonard-Entscheidung 08.09.2026, „Nahtstelle 3 B"): das
-  Alles-oder-nichts beim Loslassen. Man landet nie zwischen zwei Tabs und kann einen Wisch
-  bewusst abbrechen — das ist eine Staerke, keine Schwaeche.
+- **AM WISCHEN NICHTS AENDERN, ohne auf dem iPhone gegenzupruefen** (Leonard-Meldung
+  08.09.2026). An dem Tag wurden drei Eingriffe gebaut und noch am selben Tag komplett
+  zurueckgenommen — das Wischen war danach „gar nicht mehr fluessig":
+  1. Das Loslassen selbst zu Ende fuehren (eigene Fahrt in 200ms statt der Schwungphysik des
+     Geraets, `scroll-snap-type` waehrend der Fahrt auf `none`). Das war der Hauptverdaechtige:
+     Die Uebernahme kaempft auf iOS gegen den noch laufenden Momentum-Scroll.
+  2. Eine 130ms-Blende auf den Akzentfarben beim Umschalten bei 50%. (Dieselbe Sache war
+     frueher schon einmal mit 450ms da und wurde ebenfalls abgeschaltet — inzwischen ZWEIMAL
+     verworfen.)
+  3. Den Neuaufbau des angekommenen Tabs ueberspringen, wenn sich nichts geaendert hat.
+  Welcher der drei es war, ist NICHT geklaert — sie wurden zusammen ausgeliefert und zusammen
+  zurueckgenommen. Wer einen davon erneut versucht, liefert ihn EINZELN aus.
+  GRUND, warum das hier so leicht schiefgeht: Weder Geste noch Animation sind auf dem Rechner
+  pruefbar (rAF feuert in der versteckten Ansicht nie, Timer werden auf ~1s gedrosselt, und
+  Mausgesten loesen den Wisch gar nicht aus). Alles, was das Wischgefuehl betrifft, kann nur
+  Leonard auf dem Geraet beurteilen.
 - **Tabwechsel per Wischbewegung aus der App heraus:** `wischeZuTab(name)` scrollt `#tab-container` mit
   `behavior:'smooth'` und OHNE `_suppressScrollSync` — dadurch fuehrt der Handler aus `initTabScrollSync`
   Hintergrund-Crossfade, Theme und Nav waehrend der Bewegung mit und ruft im Settle `_applyTabState`,
