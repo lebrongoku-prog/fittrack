@@ -869,8 +869,15 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Beide fuehlten sich schlechter an als der native Snap. Die Vermutung, es liege am
   Bild-fuer-Bild-Schreiben, hat sich damit NICHT bestaetigt — offenbar ist jede Uebernahme des
   Loslassens schlechter als die Geraetephysik, weil sie deren Momentum abwuergt.
-  NICHT ein drittes Mal versuchen, ohne dass Leonard ausdruecklich darauf besteht. Das
-  Auslaufen ist der Preis fuer eine Geste, die sich sonst richtig anfuehlt.
+  NICHT ein drittes Mal versuchen, ohne dass Leonard ausdruecklich darauf besteht.
+  STATTDESSEN am 08.09.2026 umgesetzt: `-webkit-overflow-scrolling: auto` am `#tab-container`
+  (nur dort — alle anderen Scrollbereiche behalten `touch`). Damit entfaellt die Schwungphase
+  von iOS und es bleibt nur die kurze Einrast-Animation des Browsers. Anders als die beiden
+  gescheiterten Versuche greift dabei NICHTS ins Scrollen ein; der Browser bleibt allein
+  zustaendig, ihm wird nur eine Phase abgenommen.
+  WICHTIG fuer kuenftige Wuensche wie „Auslaufen um X% verkuerzen": Es gibt KEINEN Regler.
+  Weder CSS noch JS geben die Bremsstaerke frei — es gibt nur „mit Schwung" oder „ohne".
+  Jeder Zwischenwert liefe auf eine eigene Fahrt hinaus, und die ist zweimal gescheitert.
   GRUND, warum das hier so leicht schiefgeht: Weder Geste noch Animation sind auf dem Rechner
   pruefbar (rAF feuert in der versteckten Ansicht nie, Timer werden auf ~1s gedrosselt, und
   Mausgesten loesen den Wisch gar nicht aus). Alles, was das Wischgefuehl betrifft, kann nur

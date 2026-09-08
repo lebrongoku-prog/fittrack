@@ -339,7 +339,18 @@ body.theme-plans .hist-action-dd {
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
   scroll-behavior: auto;
-  -webkit-overflow-scrolling: touch;
+  /* KEIN `-webkit-overflow-scrolling: touch` mehr (Leonard-Wunsch 08.09.2026: „Auslaufen
+     verkuerzen"). `touch` schaltet die Schwungphysik von iOS zu — die traegt die Bewegung nach
+     dem Loslassen noch lange weiter. Mit `auto` endet der Zug, sobald der Finger weg ist, und
+     der Browser faehrt nur noch seine kurze Einrast-Animation.
+     WICHTIG: Das ist KEIN Regler. Eine Bremsstaerke gibt weder CSS noch JS frei — es gibt nur
+     „mit Schwung" oder „ohne". „50% schneller" ist damit nicht darstellbar; das waere nur
+     ueber eine eigene Fahrt zu haben, und die ist am 08.09.2026 ZWEIMAL gescheitert (siehe
+     die Wisch-Warnung weiter unten).
+     Anders als jene beiden Versuche greift hier NICHTS ins Scrollen ein: Der Browser bleibt
+     allein zustaendig, ihm wird nur eine Phase abgenommen. Zum Zuruecknehmen die Zeile
+     wieder auf `touch` setzen. */
+  -webkit-overflow-scrolling: auto;
   scrollbar-width: none;
 }
 #tab-container::-webkit-scrollbar { display: none; }
