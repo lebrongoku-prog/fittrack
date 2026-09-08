@@ -62,6 +62,15 @@
   --radius:    14px;
   --radius-sm: 8px;
   --nav-h:     60px;
+  /* Hoehe der Seitenleiste unten (Pille und Pfeile). Sie steht im `padding-bottom`
+     der drei Tabs, die eine haben (`--sl-pad`), und hebt die Laufanzeige-Pille an
+     (`--sl-off`) — beim Aendern also nur diese eine Zahl anfassen. */
+  --sl-h:      53px;
+  /* Hoehe, um die die Laufanzeige-Pille der Seitenleiste ausweicht. 0, solange keine
+     sichtbar ist; `html.sl-an` setzt sie — die Klasse haengt an der tatsaechlichen
+     Sichtbarkeit der Leiste, nicht am Tab (die Vollbild-Overlays tragen das Theme
+     ihres Tabs, haben aber keine Leiste). */
+  --sl-off:    0px;
   --safe-b:    env(safe-area-inset-bottom, 0px);
   --safe-t:    env(safe-area-inset-top, 0px);
   --safe-l:    env(safe-area-inset-left, 0px);
@@ -166,7 +175,13 @@ body.theme-mehr #statusbar-scrim { opacity: 1; }
    Pille selbst ist antippbar, damit der Inhalt links und rechts bedienbar bleibt. */
 #workout-active-bar {
   position: fixed; left: 0; right: 0;
-  bottom: calc(var(--nav-h) + var(--safe-b) + 10px);
+  /* Drei Dinge koennen unter der Pille liegen: die Bottom-Nav (immer), die Satzpause
+     (`--rest-off`) und die Seitenleiste (`--sl-off`). Beide Zuschlaege sind VARIABLEN
+     und werden addiert — als getrennte `bottom`-Regeln haetten sie sich gegenseitig
+     per Spezifitaet verdraengt, und bei laufender Satzpause im Plan-Tab laege die
+     Pille auf der Seitenleiste. */
+  --rest-off: 0px;
+  bottom: calc(var(--nav-h) + var(--safe-b) + 10px + var(--rest-off) + var(--sl-off));
   z-index: 99;
   display: none; align-items: center; justify-content: center;
   pointer-events: none;
@@ -233,9 +248,7 @@ html.workout-active.wo-running body.theme-workouts #workout-active-bar { display
 /* Die Pille steht IMMER ueber der Satzpause. Ein Wert genuegt fuer beide Nav-Zustaende:
    bei ausgeblendeter Nav schiebt die eigene .nav-hidden-Verschiebung sie um genau die
    Nav-Hoehe mit nach unten, der Abstand zur Pausenleiste bleibt derselbe. */
-html.workout-active #rest-bar.show ~ #workout-active-bar {
-  bottom: calc(var(--nav-h) * 2 + var(--safe-b) + 10px);
-}
+html.workout-active #rest-bar.show ~ #workout-active-bar { --rest-off: var(--nav-h); }
 .rest-bar-fill {
   position: absolute; left: 0; top: 0; bottom: 0;
   background: rgba(255,255,255,0.16);
@@ -289,8 +302,8 @@ body.theme-workouts #wo-sticky-bar.show { display: flex; }
 .wsb-finish:active { transform: scale(.95); }
 
 /* Inhalt nicht hinter der Mini-Leiste verbergen (auf Workouts ist sie aus → normal). */
-html.workout-active .screen { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 54px); }
-html.workout-active body.theme-workouts #screen-workouts { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px); }
+html.workout-active .screen { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 54px + var(--sl-pad, 0px)); }
+html.workout-active body.theme-workouts #screen-workouts { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px + var(--sl-pad, 0px)); }
 
 @keyframes wo-pulse  { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.55); opacity: 0.45; } }
 /* Header texts adapt to the dark themed backgrounds */
@@ -370,8 +383,12 @@ body.theme-plans .hist-action-dd {
   /* Safe-Top: Inhalt ruht unter der transparenten Status-Bar (black-translucent)
      und scrollt dahinter; +8px Atemraum. */
   padding-top: calc(var(--safe-t) + 8px);
-  /* Damit der Inhalt nicht unter der Bottom-Nav verschwindet */
-  padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
+  /* Damit der Inhalt nicht unter der Bottom-Nav und der Seitenleiste verschwindet.
+     `--sl-pad` ist 0, ausser in den drei Tabs mit Seitenleiste (Regel gleich darunter).
+     Bewusst eine VARIABLE statt eigener padding-Regeln je Tab: die drei bestehenden
+     `padding-bottom`-Angaben fuer `.screen` haben sehr unterschiedliche Spezifitaet,
+     eine ID-Regel haette mal gewonnen und mal verloren. */
+  padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px + var(--sl-pad, 0px));
   /* Landscape-Notch-Polster symmetrisch (Portrait = 0): iOS liefert env(safe-area-inset-*)
      nur auf der Notch-Seite einen Wert >0 — max() von beiden haelt das Polster auf
      beiden Seiten gleich. (Das fruehere +8px-Basispolster wurde auf Wunsch entfernt.) */
@@ -382,6 +399,12 @@ body.theme-plans .hist-action-dd {
   /* Horizontale Overscroll-Bewegung soll am Snap-Container ankommen, nicht hier */
   overscroll-behavior-x: contain;
 }
+/* Nur diese drei Tabs haben einen Seitenschalter und damit eine Seitenleiste unten.
+   Fest je Tab statt ueber `html.sl-an`: so aendert sich das Polster eines Tabs nie,
+   auch nicht waehrend man in einem anderen steht — sonst spraenge beim Tabwechsel die
+   gemerkte Scrollposition der Nachbartabs. */
+#screen-workouts, #screen-exercises, #screen-plans { --sl-pad: calc(var(--sl-h) + 6px); }
+
 /* Active-Klasse hat keine Animation mehr — der Browser animiert per Snap-Scroll selbst. */
 .screen.active { /* nur als Marker fuer JS-Logik vorhanden */ }
 
@@ -1131,11 +1154,6 @@ html.glas .screen:not(#screen-mehr) .ex-chart-toggle .stats-mode-pill.active,
 html.glas .screen:not(#screen-mehr) .vol-unit-toggle .stats-mode-pill.active { color: #fff; }
 html.glas .screen:not(#screen-mehr) .ex-chart-toggle .stats-mode-pill.active,
 html.glas .screen:not(#screen-mehr) .vol-unit-toggle .stats-mode-pill.active { background: rgba(255,255,255,.28); }
-/* Seitenschalter (Uebungen: Katalog|Stats, Plaene: Trainingsplan|Trainingstage): Die weisse
-   Pille der aktuellen Seite ist im Transparenz-Modus ein Fremdkoerper. */
-html.glas .screen:not(#screen-mehr) .seg-btn.active {
-  background: rgba(255,255,255,.28); color: #fff;
-}
 /* Abgeschlossene Uebung: `.aex-v2.done .aex-v2-notes` traegt sonst ein helles Gruen, auf
    dem die im Glas-Modus weisse Notizschrift nicht mehr lesbar ist. */
 html.glas .screen:not(#screen-mehr) .aex-v2.done .aex-v2-notes {
@@ -1272,7 +1290,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 #glas-btn[aria-pressed="true"] { background: rgba(255,255,255,.42); }
 
 /* ─── Toast ─── */
-#toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 14px); left: 50%; transform: translateX(-50%) translateY(16px); background: #111; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 500; opacity: 0; transition: all .28s; z-index: 500; white-space: nowrap; pointer-events: none; }
+#toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 14px + var(--sl-off)); left: 50%; transform: translateX(-50%) translateY(16px); background: #111; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 500; opacity: 0; transition: all .28s; z-index: 500; white-space: nowrap; pointer-events: none; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 /* Variante mit Rückgängig-Knopf: muss anklickbar sein (der normale Toast ist es nicht). */
 #toast.with-undo { pointer-events: auto; display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 18px; }
@@ -2381,7 +2399,7 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
   border: none; background: none; padding: 0; margin: 0;
   font: inherit; font-size: 16px; font-weight: 700; color: inherit; text-align: left;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
-  /* Siehe `.seg-btn`: verhindert die Auswahl-Striche unter einzelnen Buchstaben. */
+  /* Siehe `.sl-pille`: verhindert die Auswahl-Striche unter einzelnen Buchstaben. */
   -webkit-user-select: none; user-select: none;
 }
 /* Farbe des Kalendertitels nach angezeigter Sportart (Leonard-Wunsch 06.09.2026):
@@ -2770,25 +2788,158 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
 .program-form-row textarea:focus, .program-form-textarea:focus { outline: none; border-color: var(--accent); }
 .day-addto-sub { font-size: 12px; color: var(--text3); padding: 10px 16px 4px; line-height: 1.4; }
 
-/* Segment-Toggle (Trainingsplan ↔ Trainingstage) im Plans-Tab */
-/* KEIN `backdrop-filter` mehr: Auf iOS zeichnete der Weichzeichner an der Oberkante des
-   Schalters eine dunkle Linie, sobald sich der Inhalt dahinter aenderte (Seitenwechsel
-   Trainingsplan → Laufplan, gemeldet 01.09.2026). Die 22-%-Weissflaeche allein genuegt. */
-.seg-toggle { display: flex; gap: 4px; margin: 0 14px 12px; background: rgba(255,255,255,0.22);
-  border-radius: 12px; padding: 4px; }
-/* `user-select: none` ist Pflicht: Ohne das loest ein Tipp auf iOS die Textauswahl aus —
-   sichtbar als kurze Striche unter einzelnen Buchstaben. Dasselbe Verhalten wie beim
-   Zahlenblock (siehe dort). */
-.seg-btn { flex: 1; border: none; background: transparent; color: #fff; font-size: 13px; font-weight: 600;
-  padding: 9px 6px; border-radius: 9px; cursor: pointer; -webkit-tap-highlight-color: transparent;
-  font-family: inherit; transition: background 0.15s, color 0.15s;
-  -webkit-user-select: none; user-select: none; }
-.seg-btn.active { background: #fff; color: var(--accent-dark); box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
-/* VIER Seiten (Plan-Tab seit 06.09.2026) statt drei: Auf 375px bleiben je Knopf nur noch
-   rund 82px. „Wettkämpfe" misst bei 13px 84px und waere umgebrochen — 12px und ein
-   schmaleres seitliches Polster bringen es auf 78px. Nur dieser Umschalter ist betroffen,
-   die dreiteiligen behalten ihre 13px. */
-.seg-vier .seg-btn { font-size: 12px; padding-left: 2px; padding-right: 2px; }
+/* ── Seitenleiste: der Seitenschalter der Tabs, unten am Bildschirm ─────────────
+   Uebernommen aus der Zeitleiste der App „Health Command Center" (08.09.2026,
+   Leonard-Wunsch): `‹` — Pille mit dem Namen der Seite — `›`, darueber die aufklappbare
+   Auswahl aller Seiten des Tabs. Sichtbar in Training, Uebungen und Plan; die Uebersicht
+   hat keine Seiten, die Vollbild-Overlays auch nicht.
+
+   Sie ERSETZT den fruehen `.seg-toggle` am Kopf dieser drei Tabs — `.seg-toggle`,
+   `.seg-btn` und `.seg-vier` sind damit ersatzlos entfallen. Gewonnen ist die Zeile
+   unter der Kopfzeile; im Plan-Tab war der Schalter mit vier Knoepfen ausserdem am
+   Anschlag (je 82px auf 375px, eine fuenfte Seite passte nicht mehr hinein). In die
+   Auswahl der Leiste passt sie ohne Weiteres.
+
+   VIER Dinge, die daran haengen:
+   1. `pointer-events: none` auf der Leiste, `auto` erst auf den Kindern. Die Leiste
+      spannt ueber die volle Breite; ohne das faengt der freie Platz neben der Pille
+      die Tipps ab, mit denen man die Bottom-Nav wieder einblendet.
+   2. Die Auswahl schliesst bei JEDEM Tipp, der nicht der Pille oder einem Eintrag gilt
+      — die Pfeile eingeschlossen — und beim Tabwechsel. „Ausserhalb der ganzen Leiste"
+      genuegte in HCC nicht: ein Tipp auf `‹`/`›` liess sie offen stehen.
+   3. KEIN `backdrop-filter`. In HCC ist die Leiste durchscheinend mit Weichzeichner; in
+      FitTrack zeichnete genau der auf iOS eine dunkle Linie an der Oberkante des
+      Seitenschalters, sobald sich der Inhalt dahinter aenderte (gemeldet 01.09.2026).
+      Deshalb hier DECKENDE Flaechen — dasselbe Muster wie die schwebende
+      Laufanzeige-Pille, die ebenfalls in beiden Farbmodi gleich aussieht. Aus demselben
+      Grund braucht die Leiste keine Glas-Sonderregel: Sie liegt ausserhalb von
+      `.screen`, auf das der Transparenz-Modus wirkt.
+   4. Die Hoehe steht in `--sl-h` und wird an zwei weiteren Stellen gebraucht:
+      `--sl-pad` (Polster der drei Tabs) und `--sl-off` (Ausweichhoehe der
+      Laufanzeige-Pille). */
+#seitenleiste {
+  position: fixed; left: 0; right: 0;
+  bottom: calc(var(--nav-h) + var(--safe-b) + 6px);
+  z-index: 99;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 0 calc(max(var(--safe-l), var(--safe-r)) + 12px);
+  pointer-events: none;
+  transition: bottom .25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* PFLICHT, sonst schlaegt `display: flex` das `hidden`-Attribut. */
+#seitenleiste[hidden] { display: none; }
+/* Folgt der Bottom-Nav, genau wie Laufanzeige und Satzpause (`setNavHidden`). */
+#seitenleiste.nav-hidden { bottom: calc(var(--safe-b) + 8px); }
+/* Laeuft eine Satzpause, nimmt deren Leiste den Streifen ueber der Nav ein — die
+   Seitenleiste laege sonst genau darauf. Sie rueckt deshalb um eine Nav-Hoehe hoeher,
+   in beiden Nav-Zustaenden. Ein Geschwister-Selektor genuegt: `#seitenleiste` wird an
+   `document.body` angehaengt und steht damit im Markup hinter `#rest-bar`.
+   Die Laufanzeige-Pille bleibt darueber — sie zaehlt beide Zuschlaege zusammen
+   (`--rest-off` + `--sl-off`). */
+#rest-bar.show ~ #seitenleiste { bottom: calc(var(--nav-h) * 2 + var(--safe-b) + 6px); }
+#rest-bar.show ~ #seitenleiste.nav-hidden { bottom: calc(var(--nav-h) + var(--safe-b) + 8px); }
+
+/* Solange eine Leiste steht, muessen die beiden anderen schwebenden Elemente hoeher:
+   die Laufanzeige-Pille und der Toast lagen sonst genau darauf. Die Klasse setzt
+   `seitenleisteAktualisieren()` und sie folgt der TATSAECHLICHEN Sichtbarkeit — nicht
+   dem Theme: die Vollbild-Overlays tragen das Theme ihres Tabs, haben aber keine
+   Leiste. */
+html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
+
+.sl-reihe {
+  pointer-events: auto;
+  display: flex; align-items: center; gap: 10px;
+  max-width: 100%;
+  /* Der Ursprung liegt an der UNTERKANTE: beim Schrumpfen im passiven Modus bleibt die
+     Leiste damit an derselben Kante stehen und wandert nicht nach oben. */
+  transform-origin: bottom center;
+  transition: transform .2s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity   .2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* PASSIVER MODUS: 30 % kleiner und halb durchsichtig, sobald man scrollt, in einen
+   anderen Tab wischt oder neben die Leiste tippt. Bewusst ueber `transform: scale()`
+   statt ueber kleinere Masse — so schrumpfen Hoehe, Schrift, Polster und Rundungen im
+   selben Verhaeltnis und es kann nichts umbrechen. Anders als die Bottom-Nav
+   verschwindet die Leiste NIE: sie ist das einzige Bedienelement fuer die Seite und
+   muss erreichbar bleiben (53px werden zu 37px). Die Deckkraft sitzt an der REIHE, nicht
+   an Pille und Pfeilen einzeln — so verblassen Flaeche, Schatten und Schrift
+   gleichmaessig. Auf die Tippflaeche wirkt sie nicht. */
+#seitenleiste.passiv .sl-reihe { transform: scale(0.7); opacity: .5; }
+
+/* Pille und Pfeile teilen dieselbe Flaeche: weiss mit Akzentschrift — genau die Optik,
+   die vorher die aktive Seite im `.seg-btn` hatte. */
+.sl-pille, .sl-pfeil {
+  height: var(--sl-h);
+  background: #fff;
+  color: var(--accent-dark);
+  border: none; border-radius: 999px;
+  box-shadow: 0 6px 18px -8px rgba(0,0,0,.5), 0 1px 4px rgba(0,0,0,.15);
+  font-family: inherit;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  /* Wie bei `.seg-btn`: ohne das loest ein Tipp auf iOS die Textauswahl aus. */
+  -webkit-user-select: none; user-select: none;
+}
+.sl-pille {
+  min-width: 100px; padding: 0 21px;
+  font-size: 18px; font-weight: 700;
+  /* Kuerzt einen zu langen Seitennamen mit „…". Der laengste heutige („Wettkämpfe")
+     misst rund 100px und passt auf 375px bequem — die Regel ist die Absicherung fuer
+     schmalere Geraete und kuenftige Seitennamen. Im passiven Modus schrumpft die REIHE
+     per `scale()`, Schrift und Kasten also im selben Verhaeltnis: dort kann nichts
+     abgeschnitten werden, was im aktiven Zustand noch hineinpasste.
+     `display: block` mit `line-height` statt Flex — `text-overflow` wirkt nur auf
+     Blocksatz, in einem Flex-Container bliebe der Name ungekuerzt stehen. */
+  max-width: calc(100vw - 2 * (56px + 10px + 12px) - 2 * max(var(--safe-l), var(--safe-r)));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: block; line-height: var(--sl-h); text-align: center;
+}
+.sl-pfeil {
+  width: 56px; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; line-height: 1;
+}
+/* Am Anfang und am Ende der Seitenliste hat ein Pfeil nichts zu tun. BEWUSST eine
+   KLASSE und NICHT das `disabled`-Attribut: Ein deaktivierter Knopf nimmt in WebKit
+   keine Tipps an — der Tipp liefe an ihm vorbei auf den Tab-Hintergrund und holte dort
+   die Bottom-Nav zurueck. Als gewoehnlicher Knopf faengt er ihn ab, der Handler prueft
+   die Klasse und tut dann nichts; `aria-disabled` erhaelt die Ansage fuer Screenreader.
+   In HCC ist genau dieser Fehler aufgetreten (08.09.2026) — wer das zurueckdreht, holt
+   ihn zurueck. */
+.sl-pfeil.inaktiv { opacity: .35; cursor: default; }
+.sl-pille:active, .sl-pfeil:not(.inaktiv):active { transform: scale(.96); }
+
+/* Auswahl ueber der Pille: alle Seiten des Tabs nebeneinander. Sie muss in EINE Zeile
+   passen — mit zwei Zeilen steht die Leiste als 3+1-Block ueber dem Inhalt und sieht aus,
+   als sei etwas verrutscht.
+   NACHGEMESSEN am laengsten Fall, den vier Seiten des Plan-Tabs: Bei 13.5px und 12px
+   Polster brauchten „Gymplan Gymtage Laufplan Wettkämpfe" 361.8px — 339px stehen zur
+   Verfuegung (375 abzueglich 2x12px Leisten-Polster und 2x6px Kasten-Polster), also brach
+   „Wettkämpfe" um. Mit 13px und 8px Polster sind es 320.4px, knapp 19px Luft. Wer hier
+   etwas vergroessert oder eine fuenfte Seite ergaenzt, misst nach. Auf schmaleren
+   Geraeten als 360px bricht die Zeile weiterhin um und bleibt zentriert — hingenommen. */
+.sl-optionen {
+  pointer-events: auto;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 4px;
+  max-width: 100%;
+  padding: 6px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 22px -10px rgba(0,0,0,.5), 0 1px 4px rgba(0,0,0,.15);
+}
+/* PFLICHT, nicht Kosmetik: `hidden` setzt display:none nur ueber das Browser-Stylesheet,
+   und JEDE eigene display-Regel schlaegt das. Ohne diese Zeile bliebe die Auswahl
+   dauerhaft offen — das Attribut wird zwar gesetzt, haette aber keine Wirkung. */
+.sl-optionen[hidden] { display: none; }
+.sl-opt {
+  height: 34px; padding: 0 8px;
+  border-radius: 999px; border: none; background: transparent;
+  color: var(--text2);
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
+}
+/* Die gewaehlte Seite in der Tabfarbe — dieselbe Sprache wie sonst in der App. */
+.sl-opt.aktiv { background: var(--accent); color: #fff; }
 
 
 /* ── Seite „Wettkämpfe" (Plan-Tab, 06.09.2026) ──────────────────────────────

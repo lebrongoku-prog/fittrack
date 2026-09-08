@@ -100,11 +100,9 @@
       </div>
     </div>
 
-    <div class="seg-toggle" id="wo-seg">
-      <button class="seg-btn active" id="seg-wo-gym" onclick="setWorkoutsView('gym')">Gym</button>
-      <button class="seg-btn" id="seg-wo-lauf" onclick="setWorkoutsView('laufen')">Laufen</button>
-    </div>
-
+    <!-- Der Seitenschalter steht seit dem 08.09.2026 als Seitenleiste UNTEN am Bildschirm
+         (`#seitenleiste`, gebaut in `seitenleisteBauen()`) — Vorbild ist die Zeitleiste der
+         App „Health Command Center". Hier oben steht deshalb nichts mehr. -->
     <div id="wo-view-gym">
       <!-- Wochenplan: dieselbe Karte wie in Uebersicht und Plaene-Tab, gefuellt von
            renderWorkoutWeekStrip() ueber buildPlanCard(). Waehrend einer laufenden Einheit
@@ -149,11 +147,6 @@
         </div>
       </div>
     </div>
-    <div class="seg-toggle" id="ex-seg">
-      <button class="seg-btn active" id="seg-ex-list" onclick="setExercisesView('list')">Übungen</button>
-      <button class="seg-btn" id="seg-ex-stats" onclick="setExercisesView('stats')">Stats</button>
-    </div>
-
     <div id="ex-view-list">
       <div class="ex-search-wrap">
         <input class="ex-search-bar" type="search" id="ex-catalog-search" placeholder="🔍 Übung suchen…" oninput="filterExerciseCatalog()" autocomplete="off">
@@ -222,12 +215,6 @@
       <div class="ex-add-btn" id="plans-add-btn" onclick="onPlansAdd()" title="Neu erstellen">
         <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </div>
-    </div>
-    <div class="seg-toggle seg-vier" id="plans-seg">
-      <button class="seg-btn active" id="seg-plans" onclick="setPlansView('plans')"></button>
-      <button class="seg-btn" id="seg-days" onclick="setPlansView('days')"></button>
-      <button class="seg-btn" id="seg-runplans" onclick="setPlansView('runplans')"></button>
-      <button class="seg-btn" id="seg-races" onclick="setPlansView('races')"></button>
     </div>
     <!-- Derselbe Trainingskalender wie in der Übersicht (zweite Instanz, Präfix "pcal") -->
     <div class="chart-card-v2" id="plans-cal-card"></div>

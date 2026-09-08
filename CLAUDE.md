@@ -111,12 +111,12 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 
 ## UI-Konventionen
 
-- **Tabs (4):** `overview` (Übersicht), `workouts` (Nav-Label „Training"), `exercises` (Übungen), `plans` (Nav-Label „Pläne"). Beide haben Unterseiten über einen `.seg-toggle`: Übungen = Katalog | Stats (`setExercisesView`/`renderExercisesScreen`, Container `#ex-view-list`/`#ex-view-stats`), Pläne = VIER Seiten (`setPlansView`/`renderPlansScreen`).
+- **Tabs (4):** `overview` (Übersicht), `workouts` (Nav-Label „Training"), `exercises` (Übungen), `plans` (Nav-Label „Pläne"). Drei davon haben Unterseiten, umgeschaltet über die **Seitenleiste unten am Bildschirm** (`#seitenleiste`, siehe eigenen Abschnitt — bis zum 08.09.2026 war es ein `.seg-toggle` im Kopf): Training = Gym | Laufen (`setWorkoutsView`), Übungen = Katalog | Stats (`setExercisesView`/`renderExercisesScreen`, Container `#ex-view-list`/`#ex-view-stats`), Pläne = VIER Seiten (`setPlansView`/`renderPlansScreen`).
   **Die vier Plan-Seiten stehen in EINER Tabelle** (`PLANS_SEITEN`, 06.09.2026 — vorher drei Zweige nebeneinander): Schluessel → Knopf-Id, Titel, Listen-Id und Sportsymbol. `renderPlansScreen` laeuft nur noch darueber, `setPlansView` prueft dagegen. Wer eine fuenfte Seite ergaenzt, traegt sie dort ein und legt Knopf plus Liste im Markup an; alles Weitere folgt.
   Der Kalender gehoert nur zu `plans` und `runplans`; `days` und `races` haben keinen.
   Die BESCHRIFTUNG setzt `renderPlansScreen` aus `PLANS_SEITEN` — die Knoepfe im Markup sind deshalb LEER.
-  Bei VIER Knoepfen traegt der Umschalter `.seg-vier` (12px statt 13px, engeres Polster): Auf 375px bleiben je Knopf 82px, und „Wettkämpfe" braucht bei 13px 84px. So sind alle vier gleich breit und einzeilig. Eine FUENFTE Seite passt in diese Leiste nicht mehr.
-  **KEINE Sportsymbole im Seitenschalter** (06.09.2026): Sie standen einen halben Tag lang erst am Tab-Titel, dann im Schalter, und sind auf Leonards Wunsch wieder entfallen. Mit Symbol brauchte „Wettkämpfe" 12+4+66 = 82px, der Schalter musste auf 11.5px und die Knoepfe waren nicht mehr gleich breit (79/79/79/89) — ein Flex-Kind schrumpft nicht unter seinen Inhalt. Wer sie erneut einbauen will, handelt sich genau das wieder ein. `.ppv-name-ic` LEBT weiter: Die Wochenplan-Karten tragen ihre Symbole unveraendert. Vollbild-Overlays: `plan-detail`, `day-detail` und **`mehr`** (Einstellungen — kein Tab mehr, erreichbar über das Zahnrad `.ph-gear` in der Übersicht, zurück via `closeMehr()`). Steuerung über `showScreen(name)` + `_applyTabState(name)`.
+  Die Enge des alten Schalters ist mit dem Umzug in die Seitenleiste WEG: Vier Knoepfe liessen auf 375px je 82px, „Wettkämpfe" brauchte bei 13px 84px und der Schalter musste auf `.seg-vier` (12px, engeres Polster) heruntergehen; eine FUENFTE Seite passte gar nicht mehr hinein. In der Auswahl der Seitenleiste passt sie ohne Weiteres (gemessen: vier Chips 320 von 339px).
+  **KEINE Sportsymbole im Seitenschalter** (06.09.2026): Sie standen einen halben Tag lang erst am Tab-Titel, dann im Schalter, und sind auf Leonards Wunsch wieder entfallen. Mit Symbol brauchte „Wettkämpfe" 12+4+66 = 82px, der Schalter musste auf 11.5px und die Knoepfe waren nicht mehr gleich breit (79/79/79/89) — ein Flex-Kind schrumpft nicht unter seinen Inhalt. Der Platzgrund ist mit der Seitenleiste entfallen, der Wunsch bleibt. `.ppv-name-ic` LEBT weiter: Die Wochenplan-Karten tragen ihre Symbole unveraendert. Vollbild-Overlays: `plan-detail`, `day-detail` und **`mehr`** (Einstellungen — kein Tab mehr, erreichbar über das Zahnrad `.ph-gear` in der Übersicht, zurück via `closeMehr()`). Steuerung über `showScreen(name)` + `_applyTabState(name)`.
 - **Kopf des Übungen-Tabs:** Die Knopfleiste rechts (`.ph-actions` / `#ex-head-actions`) wird auf der Stats-Seite per
   `visibility:hidden` unsichtbar geschaltet, NICHT ausgeblendet — sonst schrumpft der Kopf um ihre Höhe (36px gegen 30,5px Titel)
   und der Seitenwechsler springt beim Seitenwechsel nach oben. Unterzeilen (`.ph-sub`) hat dieser Tab keine mehr.
@@ -135,8 +135,9 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `setThemeBackground` selbst nach; ohne das bliebe der Hintergrund nach dem Seitenwechsel
   auf der Farbe der alten Seite stehen.
 - **`.weitere-btn`** — Ausklapp-Knopf auf farbigem Tab-Hintergrund, uebernommen aus der Health-Command-Center-App
-  (28.08.2026). Im Einsatz bei: „Uebung zum Trainingstag hinzufuegen" (Trainings-Tab), den Muskelgruppen-Koepfen im
-  Katalog (`.ex-group-btn`) und „Archivierte Plaene" (`.archiv-btn`).
+  (28.08.2026). Im Einsatz bei den Muskelgruppen-Koepfen im Katalog (`.ex-group-btn`) und „Archivierte Plaene"
+  (`.archiv-btn`). Sein erster Einsatzort, „Uebung zum Trainingstag hinzufuegen" auf der Seite „Gym", ist am
+  08.09.2026 ENTFALLEN (siehe unten).
   KEIN Rahmen, dafuer ein weicher Schatten; weisse Schrift auf 12-%-Weiss — setzt einen FARBIGEN Grund voraus, auf
   einer weissen Karte waere er unlesbar (dort dunkle Schrift auf `rgba(0,0,0,.06)`).
   `font:inherit` MUSS vor den Schrift-Angaben stehen, sonst gewinnt die Browser-Standardschrift fuer `<button>`.
@@ -271,13 +272,15 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   laeuft und man im Trainings-Tab scrollt — auch auf einem fremden Tag. Sie ist keine
   Sackgasse (ihr „Beenden" funktioniert dort), zeigt aber Titel und Uhr der laufenden Einheit
   ueber einer fremden Vorschau.
-- **Textauswahl auf Schalt-Texten unterbinden.** `.seg-btn`, `.cal-filter-btn` und
-  `.cal-detail-tag` tragen `user-select: none`. Ohne das loest ein Tipp auf iOS die Textauswahl
+- **Textauswahl auf Schalt-Texten unterbinden.** `.sl-pille`, `.sl-pfeil`, `.sl-opt`,
+  `.cal-filter-btn` und `.cal-detail-tag` tragen `user-select: none`. Ohne das loest ein Tipp auf iOS die Textauswahl
   aus — sichtbar als kurze Striche unter einzelnen Buchstaben (gemeldet 01.09.2026). Dasselbe
   Verhalten wie beim Zahlenblock; in Chrome NICHT reproduzierbar.
-- **`.seg-toggle` hat KEINEN `backdrop-filter` mehr.** Der Weichzeichner zeichnete auf iOS eine
+- **KEIN `backdrop-filter` auf dem Seitenschalter.** Der Weichzeichner zeichnete auf iOS eine
   dunkle Linie an der Oberkante, sobald sich der Inhalt dahinter aenderte (Seitenwechsel im
-  Plaene-Tab, gemeldet 01.09.2026). Die 22-%-Weissflaeche allein genuegt.
+  Plaene-Tab, gemeldet 01.09.2026). Galt fuer den fruehen `.seg-toggle` und gilt weiter fuer
+  die Seitenleiste, die ihn abgeloest hat: Deren Vorbild in „Health Command Center" ist
+  durchscheinend MIT Weichzeichner — in FitTrack sind die Flaechen deshalb deckend.
 - **Kein Zoom:** `viewport` in index.html trägt `maximum-scale=1.0, user-scalable=no` (greift in der installierten PWA), zusätzlich erzwingt die letzte Regel in style.css `input, select, textarea { font-size: 16px !important }` — unter 16px zoomt iOS beim Fokussieren automatisch hinein. Beim Anheben einer Schriftgröße in einem Eingabefeld also nie unter 16px gehen.
 - **Zahlenblock:** Der ganze Block (`#modal-numpad .sheet` und alle Teile) hat `user-select: none`. Ohne das loesten
   zwei schnelle Tipps auf eine Zifferntaste auf iOS die Textauswahl aus — sichtbar als senkrechter Strich
@@ -849,6 +852,97 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Der frueher eigene Streifen (`buildWpCol`/`buildWpInfo`/`renderNext7Strip`/`selectOverviewDay`, Klassen `.wp-*`)
   wurde am 20.08.2026 entfernt — er hatte danach keinen Aufrufer mehr. ACHTUNG beim Aufraeumen: Die Regel fuer den
   Erledigt-Haken war eine Selektorliste (`.ppv-col.done …, .wp-col.done …`) — dort durfte nur der tote Teil weg.
+- **Seitenleiste: der Seitenschalter steht UNTEN am Bildschirm** (`#seitenleiste`,
+  08.09.2026, Leonard-Wunsch). Uebernommen aus der **Zeitleiste der App „Health Command
+  Center"** (`#zeitleiste` dort) — Position, aktiver und passiver Modus und Layout sind
+  von dort kopiert, nur der Inhalt ist ein anderer: statt Zeitraeumen die SEITEN des
+  gerade offenen Tabs.
+  Aufbau: `‹` — Pille mit dem Namen der aktuellen Seite — `›`, darueber eine
+  aufklappbare Auswahl aller Seiten. Sichtbar in Training, Uebungen und Plan; die
+  Uebersicht hat keine Seiten, die Vollbild-Overlays auch nicht.
+  Sie ERSETZT den `.seg-toggle` im Kopf dieser drei Tabs; `.seg-toggle`, `.seg-btn` und
+  `.seg-vier` sind ersatzlos entfallen, ebenso das Feld `btn` in `PLANS_SEITEN` und die
+  `seg-*`-Abfragen in `renderWorkoutsScreen`/`renderExercisesScreen`/`renderPlansScreen`.
+  **Welche Seiten ein Tab hat, steht in EINER Tabelle** (`SEITEN_LEISTE`) — wie schon
+  `PLANS_SEITEN` und `OVERLAY_SCREENS`. Wer einem Tab eine Seite gibt, traegt sie dort
+  ein; Pille, Pfeile und Auswahl folgen von selbst.
+  ACHTUNG: `seiten`, `aktiv` und `setzen` sind FUNKTIONEN, keine Werte. Die Tabelle steht
+  weit VOR `PLANS_SEITEN` in der Datei — ein Array-Literal liefe in dessen temporale
+  Todeszone (derselbe Fehler wie einst bei `_datenStand` vor dem DB-Objekt).
+  Funktionen: `seitenleisteBauen` (einmal beim Start, haengt das Markup an `body`),
+  `seitenleisteAktualisieren` (fuellt sie neu — laeuft in `_applyTabState` und in allen
+  drei `set*View`), `seitenleisteSchritt`, `seitenleisteAuswahl`, `seitenleistePassiv`,
+  `initSeitenleiste` (EIN Klick-Handler am Dokument).
+  **AKTIVER und PASSIVER Modus:** Die Reihe schrumpft auf **70 %** und geht auf **50 %
+  Deckkraft**, sobald man scrollt (in BEIDE Richtungen, Schwelle 2px gegen iOS'
+  Nachfedern), **in einen anderen Tab wischt** oder irgendwo neben die Leiste tippt. Ein
+  Tipp auf Pille oder Pfeil holt sie zurueck; ein Tipp auf einen Eintrag der offenen
+  Auswahl laesst den Zustand, wie er ist.
+  Der WISCH braucht einen EIGENEN Ausloeser im Scroll-Handler des `#tab-container` — er
+  erzeugt keinen Klick. Beim Tabwechsel per Tableiste greift dagegen die Regel „Tipp
+  neben die Leiste" (die Nav liegt ausserhalb von `#seitenleiste`); beide Wege enden im
+  selben Zustand.
+  Geschrumpft wird ueber `transform: scale(.7)` mit `transform-origin: bottom center` —
+  so bleibt die **Unterkante exakt stehen** (gemessen 804px, mit sichtbarer Nav 746px,
+  beides unveraendert beim Umschalten) und Hoehe, Schrift und Abstaende schrumpfen im
+  selben Verhaeltnis. Kleinere Masse einzeln zu setzen brachte in HCC Umbruch-Risiko.
+  **Anders als die Bottom-Nav verschwindet sie NIE** — sie ist das einzige Bedienelement
+  fuer die Seite und muss erreichbar bleiben (53px werden zu 37px).
+  **Die Kuerzung mit „…"** sitzt auf `.sl-pille` (`max-width` + `text-overflow`,
+  Leonard-Wunsch). Sie greift in der Praxis NICHT: Weil die ganze Reihe per `scale()`
+  schrumpft, passt im passiven Modus alles, was aktiv passte. Der laengste heutige Name
+  („Wettkämpfe") misst 147px bei 219px Deckel. Die Regel ist die Absicherung fuer
+  schmalere Geraete und kuenftige Seitennamen. `display: block` mit `line-height` ist
+  dafuer Pflicht — `text-overflow` wirkt nicht in einem Flex-Container.
+  **VIER Dinge, die daran haengen:**
+  1. `pointer-events: none` auf der Leiste, `auto` erst auf den Kindern. Sie spannt ueber
+     die volle Breite; ohne das faengt der freie Platz neben der Pille die Tipps ab, mit
+     denen man die Bottom-Nav wieder einblendet (geprueft: dort liegt `#screen-plans`).
+  2. Die Auswahl schliesst bei JEDEM Tipp, der nicht der Pille oder einem Eintrag gilt —
+     die Pfeile eingeschlossen — und beim Tabwechsel. „Ausserhalb der ganzen Leiste"
+     genuegte in HCC nicht: ein Tipp auf `‹`/`›` liess sie offen stehen.
+  3. Am Rand der Liste wird der Pfeil blass ueber die KLASSE `.inaktiv`, **NICHT ueber
+     `disabled`**. Ein deaktivierter Knopf nimmt in WebKit keine Tipps an — der Tipp liefe
+     an ihm vorbei auf den Tab-Hintergrund und holte dort die Bottom-Nav zurueck. Genau
+     dieser Fehler ist in HCC aufgetreten. Wer das zurueckdreht, holt ihn zurueck.
+     KEIN Umlauf vom Ende zum Anfang: aus der Pille heraus waere er nicht ablesbar.
+  4. Die Hoehe steht in `--sl-h` (53px) und wird an zwei weiteren Stellen gebraucht:
+     `--sl-pad` im `padding-bottom` der drei Tabs (sonst verschwindet die unterste Karte
+     unter der Leiste) und `--sl-off` als Ausweichhoehe. Beim Aendern nur diese Zahl
+     anfassen.
+  **DIE STAPELUNG AM UNTEREN RAND ist die eigentliche Arbeit** — vier Dinge teilen sich
+  dort den Platz. Von unten: Bottom-Nav · Satzpause (`#rest-bar`) · Seitenleiste ·
+  Laufanzeige-Pille. Nachgemessen bei 375x812:
+
+  | Zustand | Satzpause | Seitenleiste | Pille |
+  |---|---|---|---|
+  | Nav sichtbar, Einheit laeuft | – | 693–746 | 647–683 |
+  | dazu Satzpause | 692–752 | 633–686 | 587–623 |
+  | Nav weg, beides | 752–812 | 691–744 | 647–683 |
+
+  Die Zuschlaege der Pille sind VARIABLEN (`--rest-off`, `--sl-off`) und werden addiert.
+  Als getrennte `bottom`-Regeln haetten sie sich per Spezifitaet verdraengt, und bei
+  laufender Satzpause im Plan-Tab laege die Pille auf der Seitenleiste. Der Toast rechnet
+  `--sl-off` ebenfalls mit.
+  `--sl-off` haengt an `html.sl-an`, gesetzt von `seitenleisteAktualisieren` — also an der
+  TATSAECHLICHEN Sichtbarkeit und NICHT am Theme: Die Vollbild-Overlays tragen das Theme
+  ihres Tabs, haben aber keine Leiste. `--sl-pad` haengt dagegen fest an den drei
+  Screen-Ids, damit sich das Polster eines Tabs nie aendert, waehrend man in einem anderen
+  steht (sonst spraenge deren gemerkte Scrollposition).
+  Die Leiste weicht der Satzpause ueber `#rest-bar.show ~ #seitenleiste` aus — ein
+  Geschwister-Selektor genuegt, weil `seitenleisteBauen` sie an `body` anhaengt und sie
+  damit hinter `#rest-bar` steht.
+  NICHT auf diesem Rechner pruefbar: der passive Modus beim WISCH in einen anderen Tab.
+  Wischgesten und die Scroll-Ereignisse des `#tab-container` gibt es hier nicht (siehe
+  „AM WISCHEN NICHTS AENDERN"). Alles Uebrige ist gemessen.
+- **Der Knopf „Uebung zum Trainingstag hinzufuegen" auf der Seite „Gym" ist ENTFALLEN**
+  (08.09.2026, Leonard-Wunsch, ersatzlos). Uebungen kommen ueber die Seite „Gymtage" im
+  Plan-Tab dazu. Der Knopf der LAUFENDEN Einheit („+ Uebung hinzufuegen", schreibt in die
+  Einheit UND den Trainingstag) bleibt, ebenso der gleichnamige Knopf in der
+  Trainingstag-Detailansicht (`openAddToPlanModal('libday')`).
+  Folge: `openAddExModal('preview')` hat keinen Aufrufer mehr. Der Zweig
+  `addExContext === 'preview'` in `addExConfirm` (27 Zeilen) steht BEWUSST noch da —
+  er ist der Rueckweg, falls der Knopf zurueckkommt.
 - **AM WISCHEN NICHTS AENDERN, ohne auf dem iPhone gegenzupruefen** (Leonard-Meldung
   08.09.2026). An dem Tag wurden drei Eingriffe gebaut und noch am selben Tag komplett
   zurueckgenommen — das Wischen war danach „gar nicht mehr fluessig":

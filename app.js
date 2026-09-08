@@ -842,6 +842,11 @@ function _applyTabState(name) {
   else if (name === 'runplan-detail') renderRunPlanDetail();
   else if (name === 'mehr') renderMehr();
 
+  // Seitenleiste unten: zeigt die Seiten des NEUEN Tabs (oder verschwindet, wenn er
+  // keine hat). Eine offene Auswahl gehoert zum alten Tab und wird geschlossen.
+  seitenleisteAuswahl(false);
+  seitenleisteAktualisieren();
+
   ensureTimerActive();
 
   // Bottom-Nav-Zustand wird beim Tab-Wechsel BEWUSST NICHT zurückgesetzt (Leonard-Wunsch):
@@ -1846,13 +1851,12 @@ function setWorkoutsView(mode) {
   // `wo-running` haengt an der gewaehlten Seite — ohne diesen Aufruf zoege die Klasse erst
   // beim naechsten Sekundentakt nach, und der Wochenplan blitzte kurz falsch auf.
   syncWorkoutActiveUI();
+  seitenleisteAktualisieren();
 }
 
 function renderWorkoutsScreen() {
-  const segG = document.getElementById('seg-wo-gym');
-  const segL = document.getElementById('seg-wo-lauf');
-  if (segG) segG.classList.toggle('active', workoutsViewMode === 'gym');
-  if (segL) segL.classList.toggle('active', workoutsViewMode === 'laufen');
+  // Welche Seite gewaehlt ist, zeigt die Seitenleiste unten — der fruehere
+  // `.seg-toggle` im Kopf ist entfallen (08.09.2026).
   const vG = document.getElementById('wo-view-gym');
   const vL = document.getElementById('wo-view-laufen');
   if (vG) vG.style.display = workoutsViewMode === 'gym' ? '' : 'none';
@@ -1917,9 +1921,12 @@ function _renderGymSeite() {
     if (!timerInterval) startTimer();
   } else if (planDay) {
     renderPreviewWorkout(planDay);
-    // Preview-Mode: Button schreibt nur in den Plan-Tag (kein aktives Workout vorhanden)
-    addWrap.style.display = '';
-    addWrap.innerHTML = `<button type="button" class="weitere-btn" onclick="openAddExModal('preview')">+ Übung zum Trainingstag hinzufügen</button>`;
+    // KEIN Knopf „Uebung zum Trainingstag hinzufuegen“ mehr auf der Seite „Gym“
+    // (Leonard-Wunsch 08.09.2026). Uebungen kommen ueber die Seite „Gymtage“ im Plan-Tab
+    // dazu; der Knopf der LAUFENDEN Einheit („+ Uebung hinzufuegen“) bleibt, der schreibt
+    // in die Einheit selbst. Damit hat `openAddExModal('preview')` keinen Aufrufer mehr.
+    addWrap.style.display = 'none';
+    addWrap.innerHTML = '';
     stopTimer();
   } else {
     document.getElementById('ex-tab-bar').innerHTML = '';
@@ -5551,6 +5558,7 @@ function setPlansView(mode) {
   if (!PLANS_SEITEN[mode]) return;
   plansViewMode = mode;
   renderPlansScreen();
+  seitenleisteAktualisieren();
 }
 function onPlansAdd() {
   if (plansViewMode === 'races') openRaceDialog();
@@ -5735,25 +5743,21 @@ function copyExistingPlan(planId) {
 // Die vier Seiten des Plan-Tabs: Knopf-Id, Beschriftung und die Liste, die dazugehoert.
 // Sportsymbole standen hier kurzzeitig (erst am Tab-Titel, dann im Seitenschalter) und sind
 // am 06.09.2026 auf Leonards Wunsch wieder entfallen — der Schalter traegt nur Text.
+// Das Feld `btn` (Id des Knopfes im `.seg-toggle`) ist am 08.09.2026 entfallen — den
+// Schalter im Kopf gibt es nicht mehr, die Seiten stehen in der Seitenleiste unten
+// (`SEITEN_LEISTE`). `titel` wird von dort gelesen und bleibt damit die EINE Stelle,
+// an der die Beschriftung steht.
 const PLANS_SEITEN = {
-  plans:    { btn: 'seg-plans',    titel: 'Gymplan',    liste: 'plans-list'    },
-  days:     { btn: 'seg-days',     titel: 'Gymtage',    liste: 'libdays-list'  },
-  runplans: { btn: 'seg-runplans', titel: 'Laufplan',   liste: 'runplans-list' },
-  races:    { btn: 'seg-races',    titel: 'Wettkämpfe', liste: 'races-list'    },
+  plans:    { titel: 'Gymplan',    liste: 'plans-list'    },
+  days:     { titel: 'Gymtage',    liste: 'libdays-list'  },
+  runplans: { titel: 'Laufplan',   liste: 'runplans-list' },
+  races:    { titel: 'Wettkämpfe', liste: 'races-list'    },
 };
 
 function renderPlansScreen() {
   const zeige = (el, an) => { if (el) el.style.display = an ? '' : 'none'; };
   Object.keys(PLANS_SEITEN).forEach(k => {
-    const s = PLANS_SEITEN[k];
-    const btn = document.getElementById(s.btn);
-    if (btn) {
-      btn.classList.toggle('active', plansViewMode === k);
-      // Die Beschriftung steht nur hier, damit sie an EINER Stelle liegt (die Knoepfe im
-      // Markup sind deshalb leer).
-      if (btn.textContent !== s.titel) btn.textContent = s.titel;
-    }
-    zeige(document.getElementById(s.liste), plansViewMode === k);
+    zeige(document.getElementById(PLANS_SEITEN[k].liste), plansViewMode === k);
   });
   const seite = PLANS_SEITEN[plansViewMode] || PLANS_SEITEN.plans;
   const h1 = document.getElementById('plans-h1');
@@ -6702,13 +6706,10 @@ let exercisesViewMode = 'list';   // 'list' | 'stats'
 function setExercisesView(mode) {
   exercisesViewMode = (mode === 'stats') ? 'stats' : 'list';
   renderExercisesScreen();
+  seitenleisteAktualisieren();
 }
 function renderExercisesScreen() {
   const stats = exercisesViewMode === 'stats';
-  const segL = document.getElementById('seg-ex-list');
-  const segS = document.getElementById('seg-ex-stats');
-  if (segL) segL.classList.toggle('active', !stats);
-  if (segS) segS.classList.toggle('active', stats);
   const viewL = document.getElementById('ex-view-list');
   const viewS = document.getElementById('ex-view-stats');
   if (viewL) viewL.style.display = stats ? 'none' : '';
@@ -8733,6 +8734,168 @@ function migrateDayModelV2(force) {
 // Horizontal-Snap-Scroll-Sync: Wenn der Nutzer per Wisch-Geste auf einen anderen Tab
 // snappt, erkennen wir den neuen Tab via scrollLeft und triggern den Renderer / Theme.
 // Programmatische Scrolls (showScreen) werden via _suppressScrollSync uebergangen.
+// ─── Seitenleiste: der Seitenschalter der Tabs, unten am Bildschirm ──────────
+// Uebernommen aus der Zeitleiste der App „Health Command Center" (08.09.2026,
+// Leonard-Wunsch): `‹` — Pille mit dem Namen der Seite — `›`, darueber die aufklappbare
+// Auswahl aller Seiten des Tabs. Sie ERSETZT den `.seg-toggle`, der bis dahin am Kopf
+// der Tabs Training, Uebungen und Plan stand; das Markup dort ist entfallen.
+//
+// Welche Seiten ein Tab hat, steht in EINER Tabelle — wie schon `PLANS_SEITEN` und
+// `OVERLAY_SCREENS`. Wer einem Tab eine Seite gibt, traegt sie hier ein; Pille, Pfeile
+// und Auswahl folgen von selbst. Tabs ohne Eintrag (Uebersicht) und die Vollbild-Overlays
+// zeigen gar keine Leiste.
+//
+// ACHTUNG: `seiten` ist eine FUNKTION, kein Array. Diese Tabelle steht weit VOR
+// `PLANS_SEITEN` in der Datei; ein Array-Literal wuerde dessen Wert schon beim Laden
+// lesen und liefe in die temporale Todeszone von `const` (derselbe Fehler wie einst bei
+// `_datenStand` vor dem DB-Objekt). Aus demselben Grund sind auch `aktiv` und `setzen`
+// Funktionen.
+const SEITEN_LEISTE = {
+  workouts:  { seiten: () => [['gym', 'Gym'], ['laufen', 'Laufen']],
+               aktiv:  () => workoutsViewMode,
+               setzen: (k) => setWorkoutsView(k) },
+  exercises: { seiten: () => [['list', 'Übungen'], ['stats', 'Stats']],
+               aktiv:  () => exercisesViewMode,
+               setzen: (k) => setExercisesView(k) },
+  plans:     { seiten: () => Object.keys(PLANS_SEITEN).map(k => [k, PLANS_SEITEN[k].titel]),
+               aktiv:  () => plansViewMode,
+               setzen: (k) => setPlansView(k) },
+};
+
+let _slOffen  = false;   // Auswahl ueber der Pille aufgeklappt?
+let _slPassiv = false;   // Reihe geschrumpft?
+
+function seitenleisteBauen() {
+  if (document.getElementById('seitenleiste')) return;
+  const el = document.createElement('div');
+  el.id = 'seitenleiste';
+  el.hidden = true;   // bis `seitenleisteAktualisieren` weiss, in welchem Tab wir stehen
+  el.innerHTML =
+      `<div class="sl-optionen" hidden role="group" aria-label="Seite"></div>`
+    + `<div class="sl-reihe">`
+    +   `<button type="button" class="sl-pfeil sl-prev" aria-label="Vorherige Seite">\u2039</button>`
+    +   `<button type="button" class="sl-pille" aria-haspopup="true" aria-expanded="false"></button>`
+    +   `<button type="button" class="sl-pfeil sl-next" aria-label="Nächste Seite">\u203a</button>`
+    + `</div>`;
+  document.body.appendChild(el);
+  seitenleisteAktualisieren();
+}
+
+// Fuellt die Leiste mit den Seiten des GERADE sichtbaren Tabs. Laeuft bei jedem
+// Tabwechsel (`_applyTabState`) und bei jedem Seitenwechsel (`set*View`).
+function seitenleisteAktualisieren() {
+  const el = document.getElementById('seitenleiste');
+  if (!el) return;
+  const tab = SEITEN_LEISTE[currentScreen];
+  el.hidden = !tab;
+  // `--sl-off` (Ausweichhoehe der Laufanzeige-Pille) haengt an dieser Klasse und NICHT
+  // am Theme: Die Vollbild-Overlays tragen das Theme ihres Tabs, haben aber keine
+  // Leiste — die Pille schwebte dort sonst grundlos zu hoch.
+  document.documentElement.classList.toggle('sl-an', !!tab);
+  if (!tab) { seitenleisteAuswahl(false); return; }
+
+  const seiten = tab.seiten();
+  const jetzt  = tab.aktiv();
+  const idx    = Math.max(0, seiten.findIndex(([k]) => k === jetzt));
+
+  const pille = el.querySelector('.sl-pille');
+  if (pille) pille.textContent = seiten[idx] ? seiten[idx][1] : '';
+
+  // Die Pfeile bleiben am Rand der Liste SICHTBAR und antippbar und werden nur blass —
+  // siehe die Begruendung bei `.sl-pfeil.inaktiv` im CSS (kein `disabled`).
+  const setzePfeil = (sel, aus) => {
+    const b = el.querySelector(sel);
+    if (!b) return;
+    b.classList.toggle('inaktiv', aus);
+    b.setAttribute('aria-disabled', aus ? 'true' : 'false');
+  };
+  setzePfeil('.sl-prev', idx <= 0);
+  setzePfeil('.sl-next', idx >= seiten.length - 1);
+
+  const box = el.querySelector('.sl-optionen');
+  if (box) box.innerHTML = seiten.map(([k, titel]) =>
+    `<button type="button" class="sl-opt${k === jetzt ? ' aktiv' : ''}" data-seite="${k}">${escapeHtml(titel)}</button>`
+  ).join('');
+}
+
+// Ein Schritt nach links oder rechts. KEIN Umlauf — am Rand ist der Pfeil `.inaktiv`,
+// ein Sprung vom Ende zurueck an den Anfang waere aus der Pille heraus nicht ablesbar.
+function seitenleisteSchritt(richtung) {
+  const tab = SEITEN_LEISTE[currentScreen];
+  if (!tab) return;
+  const seiten = tab.seiten();
+  const ziel = seiten.findIndex(([k]) => k === tab.aktiv()) + richtung;
+  if (ziel < 0 || ziel >= seiten.length) return;
+  tab.setzen(seiten[ziel][0]);
+  seitenleisteAktualisieren();
+}
+
+function seitenleisteAuswahl(offen) {
+  const el = document.getElementById('seitenleiste');
+  if (!el) return;
+  _slOffen = !!offen;
+  const box = el.querySelector('.sl-optionen');
+  if (box) box.hidden = !_slOffen;
+  const pille = el.querySelector('.sl-pille');
+  if (pille) pille.setAttribute('aria-expanded', _slOffen ? 'true' : 'false');
+}
+
+// PASSIVER MODUS. Die Leiste steht dauerhaft ueber dem Inhalt; wer gerade liest, scrollt
+// oder in einen anderen Tab wischt, braucht sie nicht — dann schrumpft sie auf 70 %,
+// bleibt aber sichtbar, bedienbar und an derselben Unterkante stehen. Ein Tipp auf Pille
+// oder Pfeil holt sie zurueck.
+// BEWUSST anders geloest als das Ausblenden der Bottom-Nav: die verschwindet ganz und
+// kommt nur ueber einen Tipp auf den blanken Tab-Hintergrund zurueck. Die Seitenleiste
+// muss jederzeit erreichbar bleiben — sie ist das einzige Bedienelement fuer die Seite.
+function seitenleistePassiv(ja) {
+  const el = document.getElementById('seitenleiste');
+  if (!el || _slPassiv === !!ja) return;   // nichts tun, wenn der Zustand schon stimmt
+  _slPassiv = !!ja;
+  el.classList.toggle('passiv', _slPassiv);
+  // Eine offene Auswahl gehoert zum aktiven Bedienen. Sie stehen zu lassen, waehrend die
+  // Reihe darunter schrumpft, saehe nach einem Fehler aus.
+  if (_slPassiv) seitenleisteAuswahl(false);
+}
+
+// EIN Handler fuer die ganze Leiste, am Dokument. Die Reihenfolge der Bloecke ist
+// wichtig — die Auswahl wird geschlossen, BEVOR die Pille sie umschaltet, sonst
+// schlossen und oeffneten sich beide im selben Tipp.
+function initSeitenleiste() {
+  seitenleisteBauen();
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+
+    // 1. Aktiv oder passiv. Ein Tipp auf Pille oder Pfeil holt die Leiste zurueck, ein
+    //    Tipp irgendwo daneben schickt sie in den passiven Modus. Ein Tipp auf einen
+    //    Eintrag der offenen Auswahl laesst den Zustand, wie er ist — er gehoert zum
+    //    Bedienen, und die Auswahl schliesst sich ohnehin gleich.
+    if (t.closest('.sl-reihe')) seitenleistePassiv(false);
+    else if (!t.closest('#seitenleiste')) seitenleistePassiv(true);
+
+    // 2. Die Auswahl schliesst bei JEDEM Tipp, der nicht ihr oder der Pille gilt — die
+    //    Blaetterpfeile eingeschlossen. „Ausserhalb der ganzen Leiste" genuegt NICHT:
+    //    ein Tipp auf `‹`/`›` liesse sie offen stehen, obwohl sie erledigt ist.
+    if (_slOffen && !t.closest('.sl-pille') && !t.closest('.sl-opt')) seitenleisteAuswahl(false);
+
+    if (t.closest('.sl-pille')) { seitenleisteAuswahl(!_slOffen); return; }
+
+    const opt = t.closest('.sl-opt');
+    if (opt) {
+      const tab = SEITEN_LEISTE[currentScreen];
+      seitenleisteAuswahl(false);
+      if (tab) { tab.setzen(opt.dataset.seite); seitenleisteAktualisieren(); }
+      return;
+    }
+
+    const pfeil = t.closest('.sl-pfeil');
+    // `.inaktiv` statt `disabled` — der Knopf faengt den Tipp ab und tut nichts.
+    if (pfeil && !pfeil.classList.contains('inaktiv')) {
+      seitenleisteSchritt(pfeil.classList.contains('sl-next') ? 1 : -1);
+    }
+  });
+}
+
 function initTabScrollSync() {
   const container = document.getElementById('tab-container');
   if (!container) return;
@@ -8758,6 +8921,11 @@ function initTabScrollSync() {
       // a) Hintergrund-Crossfade fingergebunden pro Frame mitfuehren.
       const progress = container.scrollLeft / w;
       updateBackgroundForSwipe(progress);
+      // Der Wisch braucht einen EIGENEN Ausloeser fuer den passiven Modus der
+      // Seitenleiste — er erzeugt keinen Klick, die Regel „Tipp neben die Leiste"
+      // greift also nicht. Beim Tabwechsel per Tableiste tut sie es sehr wohl (die
+      // Nav liegt ausserhalb von `#seitenleiste`); beide Wege enden im selben Zustand.
+      seitenleistePassiv(true);
       // b) Aktiven Tab an der 50%-Schwelle bestimmen (das Einrasten macht CSS-Snap).
       const idx = Math.max(0, Math.min(TAB_ORDER.length - 1, Math.round(progress)));
       const name = TAB_ORDER[idx];
@@ -8864,12 +9032,17 @@ function initScrollHideNav() {
   if (!nav) return;
   const bar = document.getElementById('workout-active-bar');
   const rest = document.getElementById('rest-bar');
-  // Laufanzeige UND Satzpause folgen der Nav: die Pille rueckt nach, die Pausenleiste
-  // nimmt bei ausgeblendeter Nav deren Platz ein.
+  // ACHTUNG Reihenfolge im Init: `initSeitenleiste()` MUSS vorher gelaufen sein, sonst
+  // ist `seitenLeiste` hier null und die Leiste bekaeme den Startzustand „Nav
+  // eingeklappt" nicht mit — sie saesse auf Nav-Hoehe ueber einer Luecke.
+  const seitenLeiste = document.getElementById('seitenleiste');
+  // Laufanzeige, Satzpause UND Seitenleiste folgen der Nav: die Pille rueckt nach, die
+  // Pausenleiste nimmt bei ausgeblendeter Nav deren Platz ein, die Leiste rutscht mit.
   const setNavHidden = (h) => {
     nav.classList.toggle('nav-hidden', h);
     if (bar) bar.classList.toggle('nav-hidden', h);
     if (rest) rest.classList.toggle('nav-hidden', h);
+    if (seitenLeiste) seitenLeiste.classList.toggle('nav-hidden', h);
   };
   const _navTickingByTab = new Map();
 
@@ -8901,6 +9074,10 @@ function initScrollHideNav() {
         // Tipp auf eine nicht-interaktive Fläche. Die 60px-Grenze bleibt, damit ein
         // kleiner Wisch ganz oben die Leiste nicht sofort wegnimmt.
         if (cur >= 60 && delta > 5) setNavHidden(true);
+        // Die Seitenleiste geht dagegen in BEIDE Richtungen in den passiven Modus und
+        // schon ab dem ersten Stueck Bewegung — wer scrollt, liest. Die 2px sind gegen
+        // das Nachfedern von iOS, nicht gegen echte Gesten.
+        if (Math.abs(delta) > 2) seitenleistePassiv(true);
         _navLastScrollY = cur;
         _navTickingByTab.set(tabName, false);
         if (tabName === 'workouts') checkStickyBar();
@@ -8963,6 +9140,9 @@ document.addEventListener('DOMContentLoaded', () => {
   prerenderAllTabs();
   // Drive-Sync initialisieren (versucht stillen Auto-Login, lädt Cloud-Daten falls verbunden)
   driveInit();
+  // Seitenleiste unten (Seitenschalter der Tabs) — MUSS vor `initScrollHideNav` stehen:
+  // das dortige `setNavHidden` merkt sich das Element beim Einrichten.
+  initSeitenleiste();
   // Bottom-Nav versteckt sich beim Runterscrollen, taucht beim Hochscrollen wieder auf
   initScrollHideNav();
   // Kalender: Kaestchengroesse beim Drehen neu rechnen, Auswahl bei Tipp daneben aufheben
