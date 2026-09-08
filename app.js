@@ -8791,8 +8791,10 @@ function seitenleisteAktualisieren() {
   const jetzt  = tab.aktiv();
   const box = el.querySelector('.seg-toggle');
   if (!box) return;
-  // Vier Knoepfe brauchen die engere Fassung — genau wie frueher im Kopf.
+  // Vier Knoepfe brauchen die engere Schrift — genau wie frueher im Kopf. Zwei Knoepfe
+  // brauchen umgekehrt die Breite nicht und stehen 30 % schmaler mittig (`.seg-zwei`).
   box.classList.toggle('seg-vier', seiten.length >= 4);
+  box.classList.toggle('seg-zwei', seiten.length === 2);
   box.innerHTML = seiten.map(([k, titel]) =>
     `<button type="button" class="seg-btn${k === jetzt ? ' active' : ''}" data-seite="${k}">${escapeHtml(titel)}</button>`
   ).join('');

@@ -115,7 +115,7 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   **Die vier Plan-Seiten stehen in EINER Tabelle** (`PLANS_SEITEN`, 06.09.2026 — vorher drei Zweige nebeneinander): Schluessel → Knopf-Id, Titel, Listen-Id und Sportsymbol. `renderPlansScreen` laeuft nur noch darueber, `setPlansView` prueft dagegen. Wer eine fuenfte Seite ergaenzt, traegt sie dort ein und legt Knopf plus Liste im Markup an; alles Weitere folgt.
   Der Kalender gehoert nur zu `plans` und `runplans`; `days` und `races` haben keinen.
   Die BESCHRIFTUNG setzt `renderPlansScreen` aus `PLANS_SEITEN` — die Knoepfe im Markup sind deshalb LEER.
-  Bei VIER Knoepfen traegt der Umschalter `.seg-vier` (12px statt 13px, engeres Polster): Auf 375px bleiben je Knopf 82px, und „Wettkämpfe" braucht bei 13px 84px. So sind alle vier gleich breit und einzeilig. Die Enge hat der Umzug nach unten NICHT geloest — der Schalter ist dort genauso breit. Eine FUENFTE Seite passt weiterhin nicht hinein; sie wuerde jetzt aber sauber mit „…" gekuerzt, statt den Schalter zu sprengen (`min-width: 0`, siehe Seitenleiste).
+  Bei VIER Knoepfen traegt der Umschalter `.seg-vier` (12px statt 13px, engeres Polster): Auf 375px bleiben je Knopf 82px, und „Wettkämpfe" braucht bei 13px 84px. So sind alle vier gleich breit und einzeilig. Die Enge hat der Umzug nach unten NICHT geloest — der Schalter ist dort genauso breit wie frueher im Kopf (die ZWEISEITIGEN sind seither 30 % schmaler, `.seg-zwei`; der vierseitige nutzt die volle Zeile). Eine FUENFTE Seite passt weiterhin nicht hinein; sie wuerde jetzt aber sauber mit „…" gekuerzt, statt den Schalter zu sprengen (`min-width: 0`, siehe Seitenleiste).
   **KEINE Sportsymbole im Seitenschalter** (06.09.2026): Sie standen einen halben Tag lang erst am Tab-Titel, dann im Schalter, und sind auf Leonards Wunsch wieder entfallen. Mit Symbol brauchte „Wettkämpfe" 12+4+66 = 82px, der Schalter musste auf 11.5px und die Knoepfe waren nicht mehr gleich breit (79/79/79/89) — ein Flex-Kind schrumpft nicht unter seinen Inhalt. Der Platzgrund ist mit der Seitenleiste entfallen, der Wunsch bleibt. `.ppv-name-ic` LEBT weiter: Die Wochenplan-Karten tragen ihre Symbole unveraendert. Vollbild-Overlays: `plan-detail`, `day-detail` und **`mehr`** (Einstellungen — kein Tab mehr, erreichbar über das Zahnrad `.ph-gear` in der Übersicht, zurück via `closeMehr()`). Steuerung über `showScreen(name)` + `_applyTabState(name)`.
 - **Kopf des Übungen-Tabs:** Die Knopfleiste rechts (`.ph-actions` / `#ex-head-actions`) wird auf der Stats-Seite per
   `visibility:hidden` unsichtbar geschaltet, NICHT ausgeblendet — sonst schrumpft der Kopf um ihre Höhe (36px gegen 30,5px Titel)
@@ -874,21 +874,42 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `seitenleisteAktualisieren` (fuellt den Schalter neu — laeuft in `_applyTabState` und in
   allen drei `set*View`), `seitenleistePassiv`, `initSeitenleiste` (EIN Klick-Handler am
   Dokument).
-  **DIE FLAECHE IST DECKEND UND DUNKEL — das ist die einzige Abweichung von frueher.**
-  Im Kopf lag hinter dem Schalter immer der farbige Tab-Hintergrund. Unten liegt dahinter
-  der scrollende Inhalt: Auf einer weissen Karte verschwand die 22-%-Weissflaeche restlos
-  und mit ihr die weisse Schrift der NICHT gewaehlten Seiten — von vier Seiten war nur die
-  aktive lesbar. Jetzt `rgba(15,23,42,.72)` MIT der alten 22-%-Weissschicht darueber; die
-  Schicht ist es, die dem Schalter sein Aussehen gibt, sie bleibt also.
-  NEUTRALES Dunkel und NICHT `var(--accent)`: Die Tabfarbe waere naeher am fruehen Bild,
-  aber der Trainings-Tab wird GRAU, wenn heute nichts ansteht (`themeBgKey`) — der
-  Schalter leuchtete dort gruen aus einem grauen Hintergrund und widerspraeche genau dem
-  Signal, das das Grau setzt. Ausprobiert und deshalb verworfen.
-  Dazu der Standard-Kartenschatten (`--shadow`), damit er als schwebendes Element gelesen
-  wird und nicht als Loch in einer Karte.
-  FOLGE: Die Glas-Sonderregel fuer die aktive Pille ist ENTFALLEN. Sie war noetig, solange
-  der Schalter durchschien; auf der deckenden Flaeche sieht er in beiden Farbmodi gleich
-  aus, und eine 28-%-Pille waere dort nur schlechter zu erkennen.
+  **ZWEI GESICHTER, je nach Modus** (08.09.2026, Leonard-Wunsch, Vorbild wieder die
+  Zeitleiste aus „Health Command Center"):
+    AKTIV  = DECKEND HELL. Heller Grund (`--card2`, #f0f0f5), dunkle Schrift
+             (`--text2`), weisse Pille mit Schatten auf der aktuellen Seite in
+             `--accent-dark` — die Optik einer iOS-Segmentanzeige.
+    PASSIV = DUNKEL DURCHSICHTIG. Grund `rgba(15,23,42,.45)`, Schrift weiss, Pille
+             unveraendert weiss.
+  WARUM der Schalter ueberhaupt einen eigenen Grund traegt: Im Kopf lag dahinter immer
+  der farbige Tab-Hintergrund, und die 22-%-Weissflaeche von damals genuegte. Unten liegt
+  dahinter der scrollende Inhalt — auf einer weissen Karte verschwand sie restlos und mit
+  ihr die weisse Schrift der nicht gewaehlten Seiten; von vier Seiten war nur die aktive
+  lesbar (gesehen 08.09.2026). Im PASSIVEN Modus darf er durchsichtig sein: Dort ist er
+  ohnehin nur ein Hinweis, und das Dunkel haelt die weisse Schrift auch ueber einer
+  hellen Karte lesbar.
+  ZWISCHENSTAND, der wieder weg ist: Kurzzeitig war die Flaeche in BEIDEN Modi deckend
+  dunkel (`rgba(15,23,42,.72)` unter der alten 22-%-Weissschicht). Vorher war eine
+  Fassung in `var(--accent)` verworfen worden, weil der Trainings-Tab GRAU wird, wenn
+  heute nichts ansteht (`themeBgKey`) — der Schalter leuchtete dort gruen aus einem
+  grauen Hintergrund und widerspraeche dem Signal, das das Grau setzt. Wer wieder eine
+  Tabfarbe einsetzen will, muss diesen Fall loesen.
+  Die Deckkraft der ganzen Reihe (frueher `opacity: .5` im passiven Modus) ist ENTFALLEN
+  — die Transparenz steckt jetzt in der Grundfarbe. Beides zusammen liesse die Schrift
+  auf einem hellen Untergrund verschwimmen.
+  FOLGE: Die Glas-Sonderregel fuer die aktive Pille ist ebenfalls entfallen. Sie war
+  noetig, solange der Schalter durchschien; jetzt sieht er in beiden Farbmodi gleich aus.
+  **DIE ZWEISEITIGEN SCHALTER SIND 30 % SCHMALER** (`.seg-zwei`, Training: Gym|Laufen,
+  Uebungen: Katalog|Stats; Leonard-Wunsch 08.09.2026). Zwei Knoepfe brauchen die volle
+  Zeile nicht, und schmaler wirkt der Schalter weniger wie eine zweite Tableiste.
+  Gerechnet von derselben Grundbreite wie sonst (volle Zeile minus die beiden
+  14px-Raender), also `calc((100% - 28px) * 0.7)` und mittig: auf 375px 243 statt 347px.
+  Der Plan-Tab mit vier Seiten behaelt die volle Breite — dort ist der Platz knapp.
+  Die 30 % gelten in BEIDEN Modi, weil sie an der Grundbreite haengen und `scale(.7)`
+  obendrauf kommt (passiv gemessen: 170px).
+  Die Klasse setzt `seitenleisteAktualisieren` nach der Zahl der Seiten, genau wie
+  `.seg-vier` — eine kuenftige dreiseitige Leiste bekaeme also automatisch keine von
+  beiden.
   **AKTIVER und PASSIVER Modus:** Der Schalter schrumpft auf **70 %** und geht auf **50 %
   Deckkraft**, sobald man scrollt (in BEIDE Richtungen, Schwelle 2px gegen iOS'
   Nachfedern), **in einen anderen Tab wischt** oder irgendwo neben ihn tippt. Ein Tipp auf
@@ -902,9 +923,7 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Zustaenden) und Hoehe, Schrift, Polster und Rundungen schrumpfen im selben Verhaeltnis.
   Kleinere Masse einzeln zu setzen brachte in HCC Umbruch-Risiko.
   **Anders als die Bottom-Nav verschwindet er NIE** — er ist das einzige Bedienelement
-  fuer die Seite und muss erreichbar bleiben (40px werden zu 28px).
-  Die Deckkraft sitzt am SCHALTER, nicht an den Knoepfen einzeln: so verblassen Flaeche
-  und Schrift gleichmaessig und die Knoepfe bleiben untereinander gleich stark.
+  fuer die Seite und muss erreichbar bleiben (41px werden zu 29px).
   **Die Kuerzung mit „…"** (Leonard-Wunsch) haengt an `.seg-btn`: `min-width: 0` plus
   `text-overflow: ellipsis`. Die 0 ist der eigentliche Schalter — ohne sie schrumpft ein
   Flex-Kind NICHT unter seinen Inhalt (genau das machte die Knoepfe frueher verschieden

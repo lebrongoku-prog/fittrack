@@ -2847,44 +2847,55 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
    Leiste. */
 html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
 
-/* Der Schalter selbst — dieselbe Bauform wie frueher im Kopf (weisse Schrift, weisse
-   Pille auf der aktuellen Seite, 12px-Rundung, 4px Polster), mit EINER noetigen
-   Aenderung: Die Flaeche traegt jetzt einen dunklen Grund.
-   GRUND: Im Kopf lag hinter dem Schalter IMMER der farbige Tab-Hintergrund. Unten liegt
-   dahinter der scrollende Inhalt — auf einer weissen Karte verschwand die
-   22-%-Weissflaeche restlos und mit ihr die weisse Schrift der nicht gewaehlten Seiten;
-   von vier Seiten war nur die aktive lesbar (gesehen 08.09.2026 auf „Wettkämpfe").
-   NEUTRALES Dunkel, NICHT die Tabfarbe: `var(--accent)` waere naeher am fruehen Bild,
-   aber der Trainings-Tab wird GRAU, wenn heute nichts ansteht (`themeBgKey`) — der
-   Schalter leuchtete dort gruen aus einem grauen Hintergrund heraus und widerspraeche
-   genau dem Signal, das das Grau setzt. Das Dunkel passt auf jeden der vier Tab-Verlaeufe,
-   auf die graue Fassung und im Transparenz-Modus.
-   Die 22-%-Weissschicht darueber BLEIBT — sie ist es, die dem Schalter sein Aussehen
-   gibt. Dazu der Standard-Kartenschatten, damit er als schwebendes Element ueber dem
-   Inhalt gelesen wird und nicht als Loch in einer Karte.
+/* Der Schalter selbst — Bauform wie frueher im Kopf (weisse Pille auf der aktuellen
+   Seite, 12px-Rundung, 4px Polster), aber mit ZWEI GESICHTERN, je nach Modus
+   (08.09.2026, Leonard-Wunsch, Vorbild wieder die Zeitleiste aus „Health Command
+   Center"):
+     AKTIV  = DECKEND HELL. Heller Grund (`--card2`), dunkle Schrift, weisse Pille mit
+              Schatten auf der aktuellen Seite — die Optik einer iOS-Segmentanzeige.
+     PASSIV = DUNKEL DURCHSICHTIG. Der Grund wird zu 45-%-Dunkel, die Schrift weiss.
+   WARUM ueberhaupt eine Flaeche: Im Kopf lag hinter dem Schalter immer der farbige
+   Tab-Hintergrund, und die 22-%-Weissflaeche von damals genuegte. Unten liegt dahinter
+   der scrollende Inhalt — auf einer weissen Karte verschwand sie restlos und mit ihr die
+   weisse Schrift der nicht gewaehlten Seiten (von vier Seiten war nur die aktive lesbar,
+   gesehen 08.09.2026). Deshalb traegt der Schalter seinen Grund selbst mit.
+   Im PASSIVEN Modus darf er durchsichtig sein: Dort ist er ohnehin nur noch ein Hinweis,
+   und das Dunkel haelt die weisse Schrift auch ueber einer hellen Karte lesbar.
+   Die Deckkraft der ganzen Reihe (frueher `opacity: .5`) ist damit ENTFALLEN — die
+   Transparenz steckt jetzt in der Grundfarbe. Beides zusammen liesse die Schrift auf
+   einem hellen Untergrund verschwimmen.
    KEIN `backdrop-filter` als Alternative — siehe oben. */
 .seg-toggle {
   pointer-events: auto;
   display: flex; gap: 4px; margin: 0 14px;
-  background: linear-gradient(rgba(255,255,255,0.22), rgba(255,255,255,0.22)),
-              rgba(15, 23, 42, 0.72);
+  background: var(--card2);
   box-shadow: var(--shadow);
   border-radius: 12px; padding: 4px;
   /* Der Ursprung liegt an der UNTERKANTE: beim Schrumpfen im passiven Modus bleibt der
      Schalter damit an derselben Kante stehen und wandert nicht nach oben. */
   transform-origin: bottom center;
   transition: transform .2s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity   .2s cubic-bezier(0.4, 0, 0.2, 1);
+              background-color .2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-/* PASSIVER MODUS: 30 % kleiner und halb durchsichtig, sobald man scrollt, in einen
-   anderen Tab wischt oder neben die Leiste tippt. Bewusst ueber `transform: scale()`
+/* Die zweiseitigen Schalter (Training: Gym|Laufen, Uebungen: Katalog|Stats) sind 30 %
+   schmaler als die volle Zeile und stehen mittig (Leonard-Wunsch 08.09.2026) — zwei
+   Knoepfe brauchen die Breite nicht, und der Schalter wirkt dadurch weniger wie eine
+   zweite Tableiste. Gerechnet von derselben Grundbreite wie sonst (volle Zeile minus die
+   beiden 14px-Raender): auf 375px also 243 statt 347px. Der Plan-Tab mit vier Seiten
+   behaelt die volle Breite, dort ist der Platz knapp.
+   Im PASSIVEN Modus schrumpft zusaetzlich `scale(.7)` — die 30 % gelten also in beiden
+   Zustaenden, weil sie an der Grundbreite haengen. */
+.seg-zwei {
+  width: calc((100% - 28px) * 0.7);
+  margin-left: auto; margin-right: auto;
+}
+/* PASSIVER MODUS: 30 % kleiner und dunkel durchsichtig, sobald man scrollt, in einen
+   anderen Tab wischt oder neben ihn tippt. Geschrumpft wird ueber `transform: scale()`
    statt ueber kleinere Masse — so schrumpfen Hoehe, Schrift, Polster und Rundungen im
-   selben Verhaeltnis und es kann nichts umbrechen. Anders als die Bottom-Nav
-   verschwindet der Schalter NIE: er ist das einzige Bedienelement fuer die Seite und
-   muss erreichbar bleiben (41.5px werden zu 29px). Die Deckkraft sitzt am SCHALTER,
-   nicht an den Knoepfen einzeln — so verblassen Flaeche und Schrift gleichmaessig und
-   die Knoepfe bleiben untereinander gleich stark. Auf die Tippflaeche wirkt sie nicht. */
-#seitenleiste.passiv .seg-toggle { transform: scale(0.7); opacity: .5; }
+   selben Verhaeltnis und es kann nichts umbrechen. Anders als die Bottom-Nav verschwindet
+   der Schalter NIE: er ist das einzige Bedienelement fuer die Seite und muss erreichbar
+   bleiben (40px werden zu 28px). */
+#seitenleiste.passiv .seg-toggle { transform: scale(0.7); background: rgba(15, 23, 42, 0.45); }
 /* `user-select: none` ist Pflicht: Ohne das loest ein Tipp auf iOS die Textauswahl aus —
    sichtbar als kurze Striche unter einzelnen Buchstaben. Dasselbe Verhalten wie beim
    Zahlenblock (siehe dort). */
@@ -2896,16 +2907,23 @@ html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
      Name, der nicht passt, endet mit „…" (Leonard-Wunsch 08.09.2026). */
   min-width: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  border: none; background: transparent; color: #fff; font-size: 13px; font-weight: 600;
+  border: none; background: transparent; font-size: 13px; font-weight: 600;
+  /* Dunkel auf dem hellen Grund des aktiven Modus. Im passiven Modus wird sie weiss —
+     Regel gleich darunter. */
+  color: var(--text2);
   padding: 9px 6px; border-radius: 9px; cursor: pointer; -webkit-tap-highlight-color: transparent;
   font-family: inherit; transition: background 0.15s, color 0.15s;
   -webkit-user-select: none; user-select: none;
 }
+#seitenleiste.passiv .seg-btn { color: #fff; }
+/* Die aktuelle Seite bleibt in BEIDEN Modi eine weisse Pille — hell auf hellgrauem Grund
+   wie eine iOS-Segmentanzeige, hell auf dunklem Grund im passiven Modus. */
 .seg-btn.active { background: #fff; color: var(--accent-dark); box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
-/* VIER Seiten (Plan-Tab seit 06.09.2026) statt zwei: Auf 375px bleiben je Knopf nur noch
-   rund 82px. „Wettkämpfe" misst bei 13px 84px und waere gekuerzt worden — 12px und ein
-   schmaleres seitliches Polster bringen es auf 78px. Nur dieser Umschalter ist betroffen,
-   die zweiteiligen behalten ihre 13px. */
+#seitenleiste.passiv .seg-btn.active { color: var(--accent-dark); }
+/* VIER Seiten (Plan-Tab seit 06.09.2026) statt zwei: Auf 375px bleiben je Knopf 82px.
+   „Wettkämpfe" misst bei 13px 84px und waere gekuerzt worden — 12px und ein schmaleres
+   seitliches Polster bringen es auf 78px. Nur dieser Umschalter ist betroffen, die
+   zweiteiligen behalten ihre 13px (sie sind dafuer schmaler, siehe `.seg-zwei`). */
 .seg-vier .seg-btn { font-size: 12px; padding-left: 2px; padding-right: 2px; }
 /* KEINE Glas-Sonderregel mehr fuer die aktive Pille. Frueher war sie noetig, weil die
    weisse Pille im Transparenz-Modus auf dem durchscheinenden Schalter ein Fremdkoerper
