@@ -8856,6 +8856,11 @@ const SEITEN_LEISTE = {
 };
 
 let _slPassiv = false;   // Schalter geschrumpft?
+// Laufendes Abtauchen. Die Dauer MUSS zur `animation`-Angabe von `.sl-raus` im CSS passen —
+// stehen die beiden auseinander, verschwindet die Leiste entweder zu frueh (Sprung) oder
+// bleibt nach der Bewegung noch einen Moment stehen.
+const SL_ANIM_MS = 300;
+let _slAusTimer = null;
 
 function seitenleisteBauen() {
   if (document.getElementById('seitenleiste')) return;
@@ -8873,22 +8878,46 @@ function seitenleisteAktualisieren() {
   const el = document.getElementById('seitenleiste');
   if (!el) return;
   const tab = SEITEN_LEISTE[currentScreen];
-  // Auftauchen von unten, wenn die Leiste aus einem Tab OHNE sie hereinkommt (Uebersicht,
-  // Vollbild-Overlays; Leonard-Wunsch 08.09.2026). Nur beim UEBERGANG versteckt → sichtbar:
-  // Zwischen zwei Tabs mit Leiste bleibt sie stehen, dort waere die Bewegung nur Unruhe.
-  // Die Klasse muss vor dem Einblenden weg und danach neu gesetzt werden, sonst startet die
-  // Animation beim zweiten Mal nicht erneut — dafuer der erzwungene Reflow dazwischen.
-  const tauchtAuf = !!tab && el.hidden;
-  el.hidden = !tab;
-  if (tauchtAuf) {
+
+  // AUF- UND ABTAUCHEN am unteren Bildschirmrand (Leonard-Wunsch 08.09.2026). Nur beim
+  // UEBERGANG zwischen „Tab ohne Leiste" und „Tab mit Leiste" — zwischen zwei Tabs MIT
+  // Leiste bleibt sie stehen, dort waere die Bewegung nur Unruhe.
+  // Die Animationsklasse muss vor dem Setzen entfernt und nach einem erzwungenen Reflow
+  // neu vergeben werden, sonst startet die Animation beim zweiten Mal nicht erneut.
+  if (tab) {
+    // Ein noch laufendes Abtauchen abbrechen: Wer schnell zurueckwischt, soll die Leiste
+    // sofort wiederhaben und nicht auf das Ende der alten Bewegung warten.
+    if (_slAusTimer) { clearTimeout(_slAusTimer); _slAusTimer = null; }
+    el.classList.remove('sl-raus');
+    const tauchtAuf = el.hidden;
+    el.hidden = false;
+    if (tauchtAuf) {
+      el.classList.remove('sl-rein');
+      void el.offsetWidth;
+      el.classList.add('sl-rein');
+    }
+  } else if (!el.hidden && !_slAusTimer) {
+    // Abtauchen: `hidden` erst NACH der Bewegung setzen, sonst waere die Leiste sofort weg.
+    // Kein `animationend`, sondern eine Zeitgrenze — bei `prefers-reduced-motion` laeuft gar
+    // keine Animation, das Ereignis kaeme nie und die Leiste bliebe fuer immer stehen.
     el.classList.remove('sl-rein');
     void el.offsetWidth;
-    el.classList.add('sl-rein');
+    el.classList.add('sl-raus');
+    _slAusTimer = setTimeout(() => {
+      el.hidden = true;
+      el.classList.remove('sl-raus');
+      _slAusTimer = null;
+      // Erst jetzt darf die Laufanzeige-Pille nachruecken — waehrend die Leiste noch
+      // abtaucht, wuerde sie sonst durch sie hindurchfallen.
+      document.documentElement.classList.remove('sl-an');
+    }, SL_ANIM_MS);
   }
+
   // `--sl-off` (Ausweichhoehe von Laufanzeige-Pille und Toast) haengt an dieser Klasse
   // und NICHT am Theme: Die Vollbild-Overlays tragen das Theme ihres Tabs, haben aber
   // keine Leiste — die Pille schwebte dort sonst grundlos zu hoch.
-  document.documentElement.classList.toggle('sl-an', !!tab);
+  // Beim Abtauchen bleibt sie stehen, bis die Bewegung durch ist (siehe oben).
+  if (tab) document.documentElement.classList.add('sl-an');
   if (!tab) return;
 
   const seiten = tab.seiten();

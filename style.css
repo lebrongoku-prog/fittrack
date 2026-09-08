@@ -2938,7 +2938,23 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
   from { transform: translateY(var(--sl-weg)); }
   to   { transform: translateY(0); }
 }
-@media (prefers-reduced-motion: reduce) { #seitenleiste.sl-rein { animation: none; } }
+/* Beim Verlassen dieselbe Bewegung rueckwaerts (Leonard-Wunsch 08.09.2026) — gleiche Dauer,
+   gleiche Kurve, nur andersherum. `forwards` haelt die Leiste unten stehen, bis das JS sie
+   nach `SL_ANIM_MS` auf `hidden` setzt; ohne das schnellte sie im letzten Bild kurz zurueck.
+   Waehrend sie abtaucht, nimmt sie KEINE Tipps mehr an: Sie gehoert schon zum verlassenen
+   Tab, ein Tipp wuerde dort eine Seite umschalten, die man gar nicht mehr sieht. */
+#seitenleiste.sl-raus { animation: sl-abtauchen .3s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
+#seitenleiste.sl-raus .seg-toggle { pointer-events: none; }
+@keyframes sl-abtauchen {
+  from { transform: translateY(0); }
+  to   { transform: translateY(var(--sl-weg)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #seitenleiste.sl-rein { animation: none; }
+  /* Ohne Bewegung soll sie auch nicht 0,3s stehen bleiben — das JS blendet sie danach aus,
+     sichtbar bleibt sie in dieser Zeit nicht. */
+  #seitenleiste.sl-raus { animation: none; visibility: hidden; }
+}
 /* Laeuft eine Satzpause, nimmt deren Leiste den Streifen ueber der Nav ein — die
    Seitenleiste laege sonst genau darauf. Sie rueckt deshalb um eine Nav-Hoehe hoeher,
    in beiden Nav-Zustaenden. Ein Geschwister-Selektor genuegt: `#seitenleiste` wird an

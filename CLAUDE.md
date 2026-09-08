@@ -919,18 +919,37 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Die Klasse setzt `seitenleisteAktualisieren` nach der Zahl der Seiten, genau wie
   `.seg-vier` — eine kuenftige dreiseitige Leiste bekaeme also automatisch keine von
   beiden.
-  **SIE TAUCHT VON UNTEN AUF** (`.sl-rein` + `@keyframes sl-auftauchen`, 0,3s,
-  Leonard-Wunsch 08.09.2026): Kommt man aus einem Tab OHNE Leiste (Uebersicht,
-  Vollbild-Overlays), faehrt sie vom unteren Bildschirmrand herein — dieselbe
-  Bewegungsrichtung, mit der die Bottom-Nav ein- und ausgleitet. Zwischen zwei Tabs MIT
-  Leiste passiert nichts; `seitenleisteAktualisieren` setzt die Klasse nur beim Uebergang
-  versteckt → sichtbar (`const tauchtAuf = !!tab && el.hidden` VOR dem Umschalten).
-  Die Klasse muss vorher entfernt und nach einem erzwungenen Reflow (`void el.offsetWidth`)
-  neu gesetzt werden — sonst startet die Animation beim zweiten Mal nicht.
+  **SIE TAUCHT VON UNTEN AUF UND WIEDER AB** (`.sl-rein`/`.sl-raus` +
+  `@keyframes sl-auftauchen`/`sl-abtauchen`, je 0,3s, dieselbe Kurve; Leonard-Wunsch
+  08.09.2026). Kommt man aus einem Tab OHNE Leiste (Uebersicht, Vollbild-Overlays), faehrt
+  sie vom unteren Bildschirmrand herein; geht man dorthin zurueck, faehrt sie ebenso wieder
+  hinaus — dieselbe Bewegungsrichtung, mit der die Bottom-Nav ein- und ausgleitet.
+  Zwischen zwei Tabs MIT Leiste passiert nichts; `seitenleisteAktualisieren` unterscheidet
+  allein den Uebergang „Tab ohne Leiste" ↔ „Tab mit Leiste".
+  Die Animationsklasse muss vorher entfernt und nach einem erzwungenen Reflow
+  (`void el.offsetWidth`) neu gesetzt werden — sonst startet die Animation beim zweiten Mal
+  nicht.
   Der Weg steht in `--sl-weg` und haengt am Nav-Zustand (eigene Hoehe plus Abstand zum
-  unteren Rand); mit einem festen Wert faehrt sie bei eingeklappter Nav zu weit.
+  unteren Rand; gemessen 109px bei sichtbarer, 51px bei eingeklappter Nav); mit einem festen
+  Wert faehrt sie in einem der beiden Zustaende zu weit.
   Eine KEYFRAME-Animation statt einer Transition: Letztere braeuchte einen Startwert im DOM,
-  die Animation startet von selbst. `prefers-reduced-motion` schaltet sie ab.
+  die Animation startet von selbst.
+  VIER Dinge am ABTAUCHEN, die leicht schiefgehen:
+  1. `hidden` darf erst NACH der Bewegung gesetzt werden, sonst ist die Leiste sofort weg.
+     Dafuer `SL_ANIM_MS` (300) und `_slAusTimer` — die Zahl MUSS zur `animation`-Angabe von
+     `.sl-raus` passen, sonst springt sie am Ende oder bleibt kurz stehen.
+  2. KEIN `animationend`: Bei `prefers-reduced-motion` laeuft gar keine Animation, das
+     Ereignis kaeme nie und die Leiste bliebe fuer immer stehen. Dort setzt das CSS
+     stattdessen `visibility: hidden`, damit sie die 0,3s nicht sichtbar herumsteht.
+  3. Wer waehrend des Abtauchens zurueckwischt, bekommt die Leiste SOFORT wieder — der Timer
+     wird abgebrochen und `.sl-raus` entfernt. Ohne das haette sie sich mitten in der
+     Rueckkehr noch ausgeblendet.
+  4. `html.sl-an` (und damit `--sl-off`, die Ausweichhoehe von Laufanzeige-Pille und Toast)
+     faellt erst am ENDE der Bewegung weg. Sofort abgeschaltet fiele die Pille durch die noch
+     abtauchende Leiste hindurch.
+  Waehrend des Abtauchens nimmt der Schalter keine Tipps mehr an (`pointer-events: none`) —
+  er gehoert schon zum verlassenen Tab, ein Tipp wuerde dort eine Seite umschalten, die man
+  gar nicht mehr sieht.
   **AKTIVER und PASSIVER Modus:** Der Schalter schrumpft auf **70 %** und geht auf **50 %
   Deckkraft**, sobald man scrollt (in BEIDE Richtungen, Schwelle 2px gegen iOS'
   Nachfedern), **in einen anderen Tab wischt** oder irgendwo neben ihn tippt. Ein Tipp auf
