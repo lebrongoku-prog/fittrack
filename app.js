@@ -705,10 +705,36 @@ function _scrollTabContainerTo(name) {
 const THEME_GRADIENTS = {
   overview:  'linear-gradient(135deg, #0C4A6E, #0891B2)',
   workouts:  'linear-gradient(135deg, #064E3B, #10B981)',
+  // Steht an dem Tag auf der gezeigten Seite nichts an, wird derselbe Verlauf GRAU
+  // (Leonard-Wunsch 08.09.2026). Gleicher Winkel, gleicher Hell-Dunkel-Sprung — nur die
+  // Farbe faellt weg. Das Gruen ist ein Versprechen; ohne Training gibt es keins.
+  'workouts-grau': 'linear-gradient(135deg, #334155, #94A3B8)',
   plans:     'linear-gradient(135deg, #78350F, #F59E0B)',
   exercises: 'linear-gradient(135deg, #172554, #1E40AF)',
   mehr:      'linear-gradient(135deg, #DBEAFE, #DBEAFE)',   // solid hellblau, kein sichtbarer Verlauf
 };
+
+// Ist auf der GERADE GEZEIGTEN Seite des Trainings-Tabs fuer HEUTE etwas geplant?
+// Bezug ist bewusst HEUTE und nicht der im Wochenplan gewaehlte Tag: Der Hintergrund ist ein
+// ruhiges Tagessignal („heute steht hier nichts an") und soll nicht bei jedem Tipp auf einen
+// anderen Wochentag umspringen.
+function trainingHeuteGeplant() {
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  if (workoutsViewMode === 'laufen') {
+    const t = new Date(); t.setHours(0, 0, 0, 0);
+    return !!runGeplanteTage()[_dayKeyOf(t.getTime())];
+  }
+  const woche = getCurrentWeekDays();
+  return !!(woche[todayIdx] && woche[todayIdx].planDay);
+}
+
+// Welcher Verlauf gilt fuer diesen Tab? Fuer alle ausser dem Trainings-Tab schlicht der Name.
+// Der Schluessel wird AUCH als `dataset.theme` der Layer benutzt — er muss die Variante
+// enthalten, sonst haelt der Crossfade Grau und Gruen faelschlich fuer denselben Zustand und
+// zeichnet beim Wechsel nicht neu.
+function themeBgKey(name) {
+  return (name === 'workouts' && !trainingHeuteGeplant()) ? 'workouts-grau' : name;
+}
 // Swipe-gebundener Background-Uebergang.
 // Layer A traegt den FROM-Theme-Gradient, Layer B den TO-Theme-Gradient.
 // Die Opacities interpolieren kontinuierlich mit der Scroll-Position des Tab-Containers
@@ -719,8 +745,8 @@ function updateBackgroundForSwipe(progress) {
   const fromIdx = Math.max(0, Math.min(TAB_ORDER.length - 1, Math.floor(progress)));
   const toIdx   = Math.max(0, Math.min(TAB_ORDER.length - 1, Math.ceil(progress)));
   const t = progress - fromIdx;
-  const fromName = TAB_ORDER[fromIdx];
-  const toName   = TAB_ORDER[toIdx];
+  const fromName = themeBgKey(TAB_ORDER[fromIdx]);
+  const toName   = themeBgKey(TAB_ORDER[toIdx]);
   const fromBg = THEME_GRADIENTS[fromName] || '';
   const toBg   = THEME_GRADIENTS[toName]   || '';
   const layerA = document.getElementById('bg-fade-a');
@@ -744,6 +770,7 @@ function updateBackgroundForSwipe(progress) {
 // Instant Set fuer Tableisten-Klick und App-Start.
 // Setzt Layer A auf das neue Theme mit opacity 1, Layer B opacity 0 — ohne Animation.
 function setThemeBackground(themeName) {
+  themeName = themeBgKey(themeName);
   const newBg = THEME_GRADIENTS[themeName] !== undefined ? THEME_GRADIENTS[themeName] : '';
   const layerA = document.getElementById('bg-fade-a');
   const layerB = document.getElementById('bg-fade-b');
@@ -937,8 +964,11 @@ function renderWochenKarte() {
   if (!el) return;
   // Die ganze Karte ist EIN Ziel und fuehrt auf die Plan-Seite IHRER Sportart (Leonard-Wunsch
   // 06.09.2026). Im gemeinsamen Zustand hat jede REIHE ihr eigenes Ziel — sie ist dort das,
-  // was sonst die ganze Karte ist.
+  // was sonst die ganze Karte ist, fuehrt aber in den TRAININGS-Tab statt in den Plan-Tab
+  // (Leonard-Wunsch 08.09.2026): Aus der Wochenuebersicht will man zum Training, nicht in die
+  // Planbearbeitung.
   const zurPlanSeite = (seite) => `setPlansView('${seite}');wischeZuTab('plans')`;
+  const zurTrainingsSeite = (seite) => `setWorkoutsView('${seite}');wischeZuTab('workouts')`;
   if (_wochenFilter === 'gym') {
     const active = getActivePlan();
     el.innerHTML = active
@@ -949,7 +979,7 @@ function renderWochenKarte() {
   } else if (_wochenFilter === 'lauf') {
     el.innerHTML = buildRunPlanCard(null, null, { filterOnTap: 'toggleWochenFilter' });
   } else {
-    el.innerHTML = buildWochenKombi(zurPlanSeite);
+    el.innerHTML = buildWochenKombi(zurTrainingsSeite);
   }
 }
 
@@ -974,7 +1004,7 @@ function wochenFilterTitel(extraKlasse) {
 // Lauf hellgruen). Senkrecht liest man damit ab, was an einem Tag ansteht.
 // Statt zweier Fortschrittszeilen — die Plaene stehen in verschiedenen Wochen und liessen
 // sich ohnehin nicht zu einer Zahl verrechnen — nur die Woche je Sportart.
-function buildWochenKombi(zurPlanSeite) {
+function buildWochenKombi(zurTrainingsSeite) {
   const todayIdx = (new Date().getDay() + 6) % 7;
 
   // ── Gym ──
@@ -1029,8 +1059,8 @@ function buildWochenKombi(zurPlanSeite) {
       ${WOCHENTAGE_KURZ.map(l => `<span>${l}</span>`).join('')}
     </div>
     ${reihe(gymTage.length ? gymTage : WOCHENTAGE_KURZ.map(() => ({})), 'gym', PPV_ICON_HANTEL,
-            zurPlanSeite('plans'), 'Gymplan öffnen')}
-    ${reihe(laufTage, 'lauf', PPV_ICON_LAEUFER, zurPlanSeite('runplans'), 'Laufplan öffnen')}
+            zurTrainingsSeite('gym'), 'Seite Gym öffnen')}
+    ${reihe(laufTage, 'lauf', PPV_ICON_LAEUFER, zurTrainingsSeite('laufen'), 'Seite Laufen öffnen')}
   </div>`;
 }
 
@@ -1810,6 +1840,9 @@ let workoutsViewMode = 'gym';
 function setWorkoutsView(mode) {
   workoutsViewMode = (mode === 'laufen') ? 'laufen' : 'gym';
   renderWorkoutsScreen();
+  // Der Tabhintergrund haengt an der gewaehlten SEITE (grau, wenn dort heute nichts ansteht) —
+  // ohne diesen Aufruf bliebe er nach dem Seitenwechsel auf der Farbe der alten Seite stehen.
+  if (currentScreen === 'workouts') setThemeBackground('workouts');
   // `wo-running` haengt an der gewaehlten Seite — ohne diesen Aufruf zoege die Klasse erst
   // beim naechsten Sekundentakt nach, und der Wochenplan blitzte kurz falsch auf.
   syncWorkoutActiveUI();

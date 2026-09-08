@@ -122,6 +122,18 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   und der Seitenwechsler springt beim Seitenwechsel nach oben. Unterzeilen (`.ph-sub`) hat dieser Tab keine mehr.
 - **Per-Tab-Theming** via `body.theme-*` (Akzent-CSS-Variablen): Übersicht=Cyan, Workouts=Emerald/Grün, Trainings=Amber, Übungen=Marineblau, Mehr=Hellblau.
 - **Tab-Hintergrund** = Two-Layer-Crossfade (`.bg-fade-layer`, IDs `bg-fade-a`/`bg-fade-b`), swipe-gebunden; natives CSS-Scroll-Snap fürs Paging. (Umgeht iOS-Safari-Bug bei `transition: background-image` zwischen Gradienten → Hex pro Theme statt `var()`.)
+  **Der TRAININGS-Tab wird GRAU, wenn auf der gezeigten Seite heute nichts ansteht**
+  (`'workouts-grau'`, `themeBgKey()`, `trainingHeuteGeplant()`, Leonard-Wunsch 08.09.2026):
+  gleicher Winkel, gleicher Hell-Dunkel-Sprung, nur ohne Farbe. Je SEITE getrennt — kein Gym,
+  aber ein Lauf geplant → Seite „Gym" grau, Seite „Laufen" gruen. Das Gruen ist ein
+  Versprechen; ohne Training gibt es keins.
+  Bezug ist HEUTE, nicht der im Wochenplan gewaehlte Tag: Der Hintergrund ist ein ruhiges
+  Tagessignal und soll nicht bei jedem Tipp auf einen anderen Wochentag umspringen.
+  ZWEI Fallen: (1) Der Schluessel aus `themeBgKey` wird AUCH als `dataset.theme` der Layer
+  benutzt — er MUSS die Variante enthalten, sonst haelt der Crossfade Grau und Gruen fuer
+  denselben Zustand und zeichnet beim Wechsel nicht neu. (2) `setWorkoutsView` ruft
+  `setThemeBackground` selbst nach; ohne das bliebe der Hintergrund nach dem Seitenwechsel
+  auf der Farbe der alten Seite stehen.
 - **`.weitere-btn`** — Ausklapp-Knopf auf farbigem Tab-Hintergrund, uebernommen aus der Health-Command-Center-App
   (28.08.2026). Im Einsatz bei: „Uebung zum Trainingstag hinzufuegen" (Trainings-Tab), den Muskelgruppen-Koepfen im
   Katalog (`.ex-group-btn`) und „Archivierte Plaene" (`.archiv-btn`).
@@ -1188,8 +1200,11 @@ dafuer gebauten Funktion `runKombiWoche`. In den EINZELZUSTAENDEN steht die Woch
 unveraendert im Fortschrittsblock. Statt zweier Fortschrittsbloecke nur die Woche je
 Sportart plus „0/3 · 1/3" im Kopf — beide Zahlenpaare tragen die Farbe IHRER Reihe, sonst
 waere nicht erkennbar, welche zu welcher Sportart gehoert.
-JEDE REIHE ist ihr eigenes Tipp-Ziel (Gym → Seite „Gymplan", Lauf → Seite „Laufplan") — sie ist
-dort das, was sonst die ganze Karte ist. Der Filterknopf braucht deshalb `stopPropagation`.
+JEDE REIHE ist ihr eigenes Tipp-Ziel und fuehrt in den TRAININGS-Tab auf die Seite ihrer
+Sportart (Gym → „Gym", Lauf → „Laufen"; Leonard-Wunsch 08.09.2026 — vorher in den Plan-Tab auf
+die Planbearbeitung). Aus der Wochenuebersicht will man zum Training, nicht zum Bearbeiten.
+Der Filterknopf braucht deshalb `stopPropagation`.
+Die Karte steht in der Uebersicht seit dem 08.09.2026 UEBER der Herocard.
 `runKombiWoche(p)` rechnet „Woche 3 / 4" des Laufplans nach; in `buildRunPlanCard` steckt
 dieselbe Rechnung eingebettet im Fortschrittsblock und ist von aussen nicht zu holen.
 FALLE Rasterausrichtung: Beschriftungszeile und beide Reihen liegen auf demselben Grid
