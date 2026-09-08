@@ -112,9 +112,18 @@ body {
      ist dort teils unzuverlaessig). Safe-Top-Padding wandert auf .screen (s.u.), damit
      der Inhalt unter die transparente Status-Bar scrollt (black-translucent). */
   min-height: 100vh;
-  /* KEINE Akzent-Transition mehr (Leonard-Wunsch): beim Tabwechsel schalten Icons + Akzentfarben
-     SOFORT um — nur der Tab-Hintergrund (fingergebundener .bg-fade-layer-Crossfade) animiert.
-     Früher transitionierten hier die @property-Akzent-Vars über 450ms. */
+  /* KURZE Blende auf den Akzentfarben (Leonard-Entscheidung 08.09.2026, „Nahtstelle 1 A"):
+     Beim Wisch springen Symbole, Textfarben und Flaechen bei 50% schlagartig um, waehrend der
+     Hintergrund fingergebunden gleitet — genau dieser Bruch ist gemeint. 130ms nehmen dem
+     Umschalten das Klickhafte, ohne dass es traege wirkt.
+     VORGESCHICHTE: Hier standen frueher 450ms; die hat Leonard abschalten lassen, weil der
+     Wechsel dadurch nachhinkte. 130ms sind gut ein Viertel davon — wer daran dreht, sollte
+     wissen, dass die Grenze zum Traegen irgendwo dazwischen liegt.
+     Moeglich ist das nur, weil die Akzent-Variablen oben per `@property` als `<color>`
+     registriert sind; ohne das waeren Custom Properties nicht interpolierbar und der Wechsel
+     bliebe schlicht hart — die Regel schadet dann nicht, sie tut nur nichts. */
+  transition: --accent .13s ease, --accent-dark .13s ease, --accent-bg .13s ease,
+              --accent-soft .13s ease, --gradient-from .13s ease;
 }
 
 /* Two-Layer Background-Crossfade: body hat KEIN background-image mehr.

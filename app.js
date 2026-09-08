@@ -408,7 +408,10 @@ const DB = {
   saveWorkouts(v) { localStorage.setItem('ft_workouts', JSON.stringify(v)); markLocalChange(); },
   addWorkout(w) { const ws = this.getWorkouts(); ws.unshift(w); this.saveWorkouts(ws); },
   getActive() { const s = localStorage.getItem('ft_active'); return s ? JSON.parse(s) : null; },
-  saveActive(v) { localStorage.setItem('ft_active', JSON.stringify(v)); },
+  // BEWUSST ohne `markLocalChange`: Die laufende Einheit gehoert nicht in die Drive-Sicherung.
+  // Den Anzeige-Zaehler muss sie trotzdem hochzaehlen — sonst zeigte die Uebersicht nach dem
+  // Start einer Einheit noch die alte Herocard, weil ihr Neuaufbau uebersprungen wuerde.
+  saveActive(v) { localStorage.setItem('ft_active', JSON.stringify(v)); _datenStand++; },
   clearActive() { localStorage.removeItem('ft_active'); },
 
   // Papierkorb: gelöschte Einheiten, Pläne, Trainingstage und Übungen liegen hier
@@ -427,6 +430,10 @@ function muscleColor(m) { return (MUSCLE_META[m] && MUSCLE_META[m].color) || '#0
 function muscleBg(m) { return (MUSCLE_META[m] && MUSCLE_META[m].bg) || '#e8f0ff'; }
 
 function fmtTimer(s) { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60; return h>0?`${h}:${pad(m)}:${pad(ss)}`:`${pad(m)}:${pad(ss)}`; }
+// Zaehlt JEDE Datenaenderung hoch. Steuert, ob ein Tab beim Ankommen neu gezeichnet werden
+// muss (siehe `tabStandJetzt`). Muss VOR dem DB-Objekt stehen — `saveActive` liest ihn.
+let _datenStand = 0;
+
 function fmtDur(s) { if(!s)return'0 min'; const h=Math.floor(s/3600),m=Math.floor((s%3600)/60); return h>0?`${h}h ${m}min`:`${m} min`; }
 function pad(n) { return String(n).padStart(2,'0'); }
 function fmtDate(ts) { return new Date(ts).toLocaleDateString('de-DE',{weekday:'short',day:'numeric',month:'short',year:'numeric'}); }
@@ -808,6 +815,24 @@ const OVERLAY_SCREENS = {
   'mehr':           'screen-mehr',
 };
 
+// ─── Neuaufbau eines Tabs nur, wenn sich seither etwas geaendert hat ──────────────────
+// Leonard-Entscheidung 08.09.2026 („Nahtstelle 2 A"). Nach jedem Wisch baute der angekommene
+// Tab bisher seinen kompletten Inhalt neu auf — auch beim blossen Hin- und Herwischen, wo
+// garantiert dasselbe herauskommt. Genau dort entstand das Haken bei der Ankunft.
+// `_datenStand` zaehlt JEDE Datenaenderung hoch (`markLocalChange`, also alle DB-Schreibwege,
+// plus der Laufdaten-Abruf, der an der Tabelle haengt und nicht ueber die DB laeuft).
+// Der TAGESSCHLUESSEL steckt mit im Vergleichswert: Ueber Mitternacht hinweg aendert sich zwar
+// kein Datum im Speicher, wohl aber „heute" — ohne ihn zeigte ein offener Tab am Morgen noch
+// die Markierungen des Vortags.
+// ACHTUNG: Der Timer der laufenden Einheit haengt NICHT am Neuzeichnen — `updateTimerDisplay`
+// schreibt jede Sekunde direkt in die Uhr-Elemente. Das Ueberspringen laesst ihn also
+// unberuehrt, auch im Trainings-Tab.
+const _tabGezeichnetBei = {};
+function tabStandJetzt() {
+  const t = new Date();
+  return `${_datenStand}|${t.getFullYear()}-${t.getMonth()}-${t.getDate()}`;
+}
+
 function _applyTabState(name) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   const navEl = document.getElementById('nav-'+name);
@@ -833,14 +858,23 @@ function _applyTabState(name) {
   // zuruecksetzen, damit sie beim Zurueckkehren nicht faelschlich sofort wieder steht.
   if (name !== 'workouts') updateStickyBar(false);
 
-  if (name === 'overview') renderOverview();
-  else if (name === 'workouts') renderWorkoutsScreen();
-  else if (name === 'exercises') renderExercisesScreen();
-  else if (name === 'plans') renderPlansScreen();
-  else if (name === 'plan-detail') renderPlanDetail();
-  else if (name === 'day-detail') renderLibDayDetail();
-  else if (name === 'runplan-detail') renderRunPlanDetail();
-  else if (name === 'mehr') renderMehr();
+  // Die vier HAUPT-Tabs werden nur neu gezeichnet, wenn sich seit dem letzten Mal etwas
+  // geaendert hat. Die Vollbild-Overlays sind ausgenommen: Sie werden gezielt geoeffnet, dort
+  // erwartet man den frischen Stand, und sie haengen an `editingPlanId` & Co. statt an den
+  // blossen Daten.
+  const stand = tabStandJetzt();
+  const hauptTab = ['overview', 'workouts', 'exercises', 'plans'].includes(name);
+  if (!hauptTab || _tabGezeichnetBei[name] !== stand) {
+    if (name === 'overview') renderOverview();
+    else if (name === 'workouts') renderWorkoutsScreen();
+    else if (name === 'exercises') renderExercisesScreen();
+    else if (name === 'plans') renderPlansScreen();
+    else if (name === 'plan-detail') renderPlanDetail();
+    else if (name === 'day-detail') renderLibDayDetail();
+    else if (name === 'runplan-detail') renderRunPlanDetail();
+    else if (name === 'mehr') renderMehr();
+    if (hauptTab) _tabGezeichnetBei[name] = stand;
+  }
 
   ensureTimerActive();
 
@@ -3651,6 +3685,7 @@ async function runLaeufeLaden({ interactive = false } = {}) {
       : roh;
   } finally {
     runLaden = false;
+    _datenStand++;   // die Laeufe liegen NICHT in der DB — sonst blieben Tabs auf dem alten Stand
     renderLaufVerwaltung(); renderRunSourceCard();
     // Die Knoepfe „Lauf abgeschlossen" stehen in den Herocards beider Tabs — beide muessen
     // den neuen Stand zeigen, nicht nur die Einstellungen (06.09.2026).
@@ -8104,6 +8139,7 @@ function clearDriveLog() {
 // pro Bearbeitungsphase, nicht pro Tastendruck.
 function markLocalChange() {
   localStorage.setItem('ft_drive_last_local_change', String(Date.now()));
+  _datenStand++;                      // siehe `tabStandJetzt` — macht gezeichnete Tabs ungueltig
   if (driveIsEnabled()) driveTriggerSync('Änderung');
 }
 
@@ -8733,6 +8769,94 @@ function migrateDayModelV2(force) {
 // Horizontal-Snap-Scroll-Sync: Wenn der Nutzer per Wisch-Geste auf einen anderen Tab
 // snappt, erkennen wir den neuen Tab via scrollLeft und triggern den Renderer / Theme.
 // Programmatische Scrolls (showScreen) werden via _suppressScrollSync uebergangen.
+// ─── Loslassen selbst zu Ende fuehren ─────────────────────────────────────────────────
+// Leonard-Entscheidung 08.09.2026 („Auslaufen A"). Das ZIEHEN bleibt unveraendert nativ und
+// fingergebunden — nur was NACH dem Loslassen passiert, uebernimmt die App: Statt des langen
+// Nachgleitens der Geraetephysik faehrt sie in fester Zeit weich auf den Ziel-Tab.
+// Die ENTSCHEIDUNG, welcher Tab das ist, bleibt bewusst so wie bisher (Leonard liess
+// „Nahtstelle 3" ausdruecklich unangetastet): Strecke ueber die Haelfte ODER genug Schwung,
+// und hoechstens EIN Tab pro Wisch. Die Geschwindigkeit muss dabei selbst gemessen werden —
+// vorher steckte sie in der Snap-Physik des Browsers.
+// VORGESCHICHTE: Bis zum 29.05.2026 gab es hier ein komplettes selbstgebautes Wisch-System,
+// das zugunsten des nativen Snaps entfernt wurde. Dies hier ist bewusst NUR das Loslassen —
+// Ziehen, Einrasten und die Begrenzung auf einen Tab kommen weiter vom Browser bzw. bilden
+// dessen Verhalten nach.
+const SWIPE_DAUER_MS = 200;        // feste Fahrzeit, unabhaengig von der Wischstaerke
+const SWIPE_SCHWUNG = 0.35;        // px/ms, ab der ein kurzer Wisch trotzdem durchgeht
+function initTabSwipeRelease() {
+  const container = document.getElementById('tab-container');
+  if (!container) return;
+  let amZiehen = false;
+  let startX = 0;
+  let proben = [];
+  let anim = null;
+
+  const animStoppen = () => { if (anim) { cancelAnimationFrame(anim); anim = null; } };
+  // Das Snap-Verhalten gehoert dem Browser — ausser waehrend UNSERER Fahrt. Sonst zieht er am
+  // selben Wert und die Bewegung zappelt.
+  const snapAn  = () => { container.style.scrollSnapType = ''; };
+  const snapAus = () => { container.style.scrollSnapType = 'none'; };
+
+  container.addEventListener('touchstart', () => {
+    animStoppen(); snapAn();
+    amZiehen = true;
+    startX = container.scrollLeft;
+    proben = [{ t: performance.now(), x: startX }];
+  }, { passive: true });
+
+  // Geschwindigkeit aus den letzten Bildern. Der Handler in `initTabScrollSync` laeuft
+  // ohnehin pro Bild — hier reicht ein schlanker zweiter Zuhoerer.
+  container.addEventListener('scroll', () => {
+    if (!amZiehen) return;
+    proben.push({ t: performance.now(), x: container.scrollLeft });
+    if (proben.length > 6) proben.shift();
+  }, { passive: true });
+
+  const loslassen = () => {
+    if (!amZiehen) return;
+    amZiehen = false;
+    const w = container.clientWidth;
+    if (w <= 0) return;
+    const jetzt = container.scrollLeft;
+    // Senkrecht gescrollt oder die Geste steckte in einem eigenen Scrollbereich (Kalender):
+    // waagerecht hat sich nichts getan, also nichts zu tun.
+    if (Math.abs(jetzt - startX) < 4) return;
+    // Geschwindigkeit aus dem LETZTEN Stueck der Geste (rund 100ms), nicht ueber den ganzen
+    // Zug: Wer erst langsam schiebt und dann schnippt, will den Schnipp gewertet haben — ueber
+    // die Gesamtstrecke gemittelt ginge er unter.
+    const b = proben[proben.length - 1];
+    const a = proben.find(x => b.t - x.t <= 100) || proben[Math.max(0, proben.length - 2)];
+    const v = (b.t - a.t) > 0 ? (b.x - a.x) / (b.t - a.t) : 0;
+    const startIdx = Math.round(startX / w);
+    let ziel = Math.round(jetzt / w);
+    if (Math.abs(v) > SWIPE_SCHWUNG) ziel = startIdx + (v > 0 ? 1 : -1);
+    ziel = Math.max(startIdx - 1, Math.min(startIdx + 1, ziel));         // hoechstens ein Tab
+    ziel = Math.max(0, Math.min(TAB_ORDER.length - 1, ziel));
+    fahreZu(ziel * w);
+  };
+  container.addEventListener('touchend', loslassen, { passive: true });
+  container.addEventListener('touchcancel', loslassen, { passive: true });
+
+  function fahreZu(zielX) {
+    const von = container.scrollLeft;
+    const strecke = zielX - von;
+    if (Math.abs(strecke) < 1) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      container.scrollLeft = zielX; return;
+    }
+    snapAus();
+    const t0 = performance.now();
+    const schritt = (jetzt) => {
+      const p = Math.min(1, (jetzt - t0) / SWIPE_DAUER_MS);
+      const e = 1 - Math.pow(1 - p, 3);                                   // weich auslaufend
+      container.scrollLeft = von + strecke * e;
+      if (p < 1) { anim = requestAnimationFrame(schritt); }
+      else { anim = null; snapAn(); }
+    };
+    anim = requestAnimationFrame(schritt);
+  }
+}
+
 function initTabScrollSync() {
   const container = document.getElementById('tab-container');
   if (!container) return;
@@ -8971,6 +9095,7 @@ document.addEventListener('DOMContentLoaded', () => {
   _initKeineTippAnimationAufDiagramm();
   // Tab-Wechsel per nativem horizontalem Snap-Scroll am Tab-Container
   initTabScrollSync();
+  initTabSwipeRelease();
   // Bottom-Sheet-Modals nach unten wegswipen
   initSheetSwipeDismiss();
   // Edge-Swipe-Back im Plan-Detail (vom linken Bildschirmrand mit Finger nach rechts ziehen)
