@@ -1084,6 +1084,18 @@ teilen sich beide eine Zeile, die Herocard rutscht darunter ueber die volle Brei
 **Trainings-Tab auf der Seite „Laufen" zuoberst**. Im QUERFORMAT teilen sich dort Wochenplan
 und Herocard eine Zeile — dieselbe Aufteilung wie auf der Seite „Gym" (`#wo-view-laufen` als
 Grid, 06.09.2026); „Diese Woche" und die Tageskarte spannen darunter ueber beide Spalten.
+DREI ZUSTAENDE eines Wochentagskreises (praezisiert 08.09.2026, Leonard-Wunsch):
+gefuellt = war schon (Vergangenheit oder erledigt) · nur UMRANDET = steht in dieser Woche
+noch an (`.zukunft`, gesetzt fuer `i > todayIdx`) · leer = nichts geplant. HEUTE zaehlt
+bewusst NICHT zur Zukunft, der Tag laeuft ja gerade. Die Kontur ist 2px, nicht die 15% des
+Kalenders: In diesem Kreis steht der Wochentag, eine 4,5px-Kontur liesse dafuer kaum Platz.
+Im Transparenz-Modus braucht `.zukunft` eine EIGENE Regel — sonst gewinnt
+`html.glas … .ppv-col.training .ppv-wd` (id im `:not()`) und fuellt den Kreis weiss.
+**HEUTE ist ein transparentes FELD hinter der Spalte, kein Ring um den Kreis** (08.09.2026):
+dieselbe Form und Deckkraft wie das Feld eines ausgewaehlten Tages (`.ppv-col.selected`),
+damit die Karte nur EINE Art Hervorhebung kennt. Der fruehere Ring (`.ppv-wd::after` samt
+seinen Sonderfaellen fuer erledigte Gym- und Lauftage und seiner Glas-Regel) ist ersatzlos
+entfallen. Gilt in den Wochenplan-Karten UND in der kombinierten Karte der Uebersicht.
 FARBE der Wochentagskreise (geplant WIE erledigt), des Hakens und des Fortschrittsbalkens
 (`.ppv-bar-fill`, alles seit 04.09.2026): Gym #0F766E (wie die trainierten Kalender-Kaestchen),
 Lauf #4ADE80 (wie die Laufkreise) — `.run-plan` als Modifikator. Die Karte folgt damit der
@@ -1165,9 +1177,15 @@ Trainingsplan/Laufplan") tragen ihn, sonst steckte man ohne Plan in dem Zustand 
 Der GEMEINSAME Zustand (`buildWochenKombi`) hat eine eigene Bauform: eine Wochentagszeile,
 darunter zwei Reihen KREISE (Gym #0F766E, Lauf #4ADE80), je mit Sportsymbol davor. Senkrecht
 liest man ab, was an einem Tag ansteht. Gefuellt = geplant, Haken oben rechts = absolviert.
+Kuenftige Tage dieser Woche sind nur UMRANDET und heute traegt ein transparentes Feld —
+dieselbe Regel wie in den Wochenplan-Karten (08.09.2026, siehe dort).
 VERWORFEN (07.09.2026, am selben Tag eingebaut und zurueckgenommen): die Zeichen des
-Trainingskalenders — Quadrat fuers Gym, Kreis fuer den Lauf, geplant nur umrandet, absolviert
-gefuellt, dafuer ohne Haken. Nicht erneut einbauen, ohne zu fragen. Statt zweier Fortschrittsbloecke nur die Woche je
+Trainingskalenders — Quadrat fuers Gym, Kreis fuer den Lauf, absolviert gefuellt, dafuer ohne
+Haken. Nicht erneut einbauen, ohne zu fragen.
+ENTFERNT am 08.09.2026 (Leonard-Wunsch): die Zeile mit der Wochenzahl je Plan
+(„Woche 8 / 9  Woche 3 / 4") unter dem Titel, samt `.ppv-k-wochen`/`.ppv-k-wk` und der nur
+dafuer gebauten Funktion `runKombiWoche`. In den EINZELZUSTAENDEN steht die Wochenzahl
+unveraendert im Fortschrittsblock. Statt zweier Fortschrittsbloecke nur die Woche je
 Sportart plus „0/3 · 1/3" im Kopf — beide Zahlenpaare tragen die Farbe IHRER Reihe, sonst
 waere nicht erkennbar, welche zu welcher Sportart gehoert.
 JEDE REIHE ist ihr eigenes Tipp-Ziel (Gym → Seite „Gymplan", Lauf → Seite „Laufplan") — sie ist
