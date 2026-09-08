@@ -843,8 +843,7 @@ function _applyTabState(name) {
   else if (name === 'mehr') renderMehr();
 
   // Seitenleiste unten: zeigt die Seiten des NEUEN Tabs (oder verschwindet, wenn er
-  // keine hat). Eine offene Auswahl gehoert zum alten Tab und wird geschlossen.
-  seitenleisteAuswahl(false);
+  // keine hat).
   seitenleisteAktualisieren();
 
   ensureTimerActive();
@@ -8735,15 +8734,16 @@ function migrateDayModelV2(force) {
 // snappt, erkennen wir den neuen Tab via scrollLeft und triggern den Renderer / Theme.
 // Programmatische Scrolls (showScreen) werden via _suppressScrollSync uebergangen.
 // ─── Seitenleiste: der Seitenschalter der Tabs, unten am Bildschirm ──────────
-// Uebernommen aus der Zeitleiste der App „Health Command Center" (08.09.2026,
-// Leonard-Wunsch): `‹` — Pille mit dem Namen der Seite — `›`, darueber die aufklappbare
-// Auswahl aller Seiten des Tabs. Sie ERSETZT den `.seg-toggle`, der bis dahin am Kopf
-// der Tabs Training, Uebungen und Plan stand; das Markup dort ist entfallen.
+// Der Seitenschalter sieht aus wie eh und je (`.seg-toggle` mit `.seg-btn`), steht aber
+// nicht mehr im Kopf des Tabs, sondern fest unten am Bildschirm — und macht dort den
+// aktiven und passiven Modus mit (08.09.2026, Leonard-Wunsch; Position und passiver
+// Modus sind aus der Zeitleiste der App „Health Command Center" uebernommen).
+// Sichtbar in Training, Uebungen und Plan; die Uebersicht hat keine Seiten, die
+// Vollbild-Overlays auch nicht.
 //
 // Welche Seiten ein Tab hat, steht in EINER Tabelle — wie schon `PLANS_SEITEN` und
-// `OVERLAY_SCREENS`. Wer einem Tab eine Seite gibt, traegt sie hier ein; Pille, Pfeile
-// und Auswahl folgen von selbst. Tabs ohne Eintrag (Uebersicht) und die Vollbild-Overlays
-// zeigen gar keine Leiste.
+// `OVERLAY_SCREENS`. Wer einem Tab eine Seite gibt, traegt sie hier ein; der Schalter
+// folgt von selbst.
 //
 // ACHTUNG: `seiten` ist eine FUNKTION, kein Array. Diese Tabelle steht weit VOR
 // `PLANS_SEITEN` in der Datei; ein Array-Literal wuerde dessen Wert schon beim Laden
@@ -8762,137 +8762,72 @@ const SEITEN_LEISTE = {
                setzen: (k) => setPlansView(k) },
 };
 
-let _slOffen  = false;   // Auswahl ueber der Pille aufgeklappt?
-let _slPassiv = false;   // Reihe geschrumpft?
+let _slPassiv = false;   // Schalter geschrumpft?
 
 function seitenleisteBauen() {
   if (document.getElementById('seitenleiste')) return;
   const el = document.createElement('div');
   el.id = 'seitenleiste';
   el.hidden = true;   // bis `seitenleisteAktualisieren` weiss, in welchem Tab wir stehen
-  el.innerHTML =
-      `<div class="sl-optionen" hidden role="group" aria-label="Seite"></div>`
-    + `<div class="sl-reihe">`
-    +   `<button type="button" class="sl-pfeil sl-prev" aria-label="Vorherige Seite">\u2039</button>`
-    +   `<button type="button" class="sl-pille" aria-haspopup="true" aria-expanded="false"></button>`
-    +   `<button type="button" class="sl-pfeil sl-next" aria-label="Nächste Seite">\u203a</button>`
-    + `</div>`;
+  el.innerHTML = `<div class="seg-toggle" role="group" aria-label="Seite"></div>`;
   document.body.appendChild(el);
   seitenleisteAktualisieren();
 }
 
-// Fuellt die Leiste mit den Seiten des GERADE sichtbaren Tabs. Laeuft bei jedem
+// Fuellt den Schalter mit den Seiten des GERADE sichtbaren Tabs. Laeuft bei jedem
 // Tabwechsel (`_applyTabState`) und bei jedem Seitenwechsel (`set*View`).
 function seitenleisteAktualisieren() {
   const el = document.getElementById('seitenleiste');
   if (!el) return;
   const tab = SEITEN_LEISTE[currentScreen];
   el.hidden = !tab;
-  // `--sl-off` (Ausweichhoehe der Laufanzeige-Pille) haengt an dieser Klasse und NICHT
-  // am Theme: Die Vollbild-Overlays tragen das Theme ihres Tabs, haben aber keine
-  // Leiste — die Pille schwebte dort sonst grundlos zu hoch.
+  // `--sl-off` (Ausweichhoehe von Laufanzeige-Pille und Toast) haengt an dieser Klasse
+  // und NICHT am Theme: Die Vollbild-Overlays tragen das Theme ihres Tabs, haben aber
+  // keine Leiste — die Pille schwebte dort sonst grundlos zu hoch.
   document.documentElement.classList.toggle('sl-an', !!tab);
-  if (!tab) { seitenleisteAuswahl(false); return; }
+  if (!tab) return;
 
   const seiten = tab.seiten();
   const jetzt  = tab.aktiv();
-  const idx    = Math.max(0, seiten.findIndex(([k]) => k === jetzt));
-
-  const pille = el.querySelector('.sl-pille');
-  if (pille) pille.textContent = seiten[idx] ? seiten[idx][1] : '';
-
-  // Die Pfeile bleiben am Rand der Liste SICHTBAR und antippbar und werden nur blass —
-  // siehe die Begruendung bei `.sl-pfeil.inaktiv` im CSS (kein `disabled`).
-  const setzePfeil = (sel, aus) => {
-    const b = el.querySelector(sel);
-    if (!b) return;
-    b.classList.toggle('inaktiv', aus);
-    b.setAttribute('aria-disabled', aus ? 'true' : 'false');
-  };
-  setzePfeil('.sl-prev', idx <= 0);
-  setzePfeil('.sl-next', idx >= seiten.length - 1);
-
-  const box = el.querySelector('.sl-optionen');
-  if (box) box.innerHTML = seiten.map(([k, titel]) =>
-    `<button type="button" class="sl-opt${k === jetzt ? ' aktiv' : ''}" data-seite="${k}">${escapeHtml(titel)}</button>`
+  const box = el.querySelector('.seg-toggle');
+  if (!box) return;
+  // Vier Knoepfe brauchen die engere Fassung — genau wie frueher im Kopf.
+  box.classList.toggle('seg-vier', seiten.length >= 4);
+  box.innerHTML = seiten.map(([k, titel]) =>
+    `<button type="button" class="seg-btn${k === jetzt ? ' active' : ''}" data-seite="${k}">${escapeHtml(titel)}</button>`
   ).join('');
 }
 
-// Ein Schritt nach links oder rechts. KEIN Umlauf — am Rand ist der Pfeil `.inaktiv`,
-// ein Sprung vom Ende zurueck an den Anfang waere aus der Pille heraus nicht ablesbar.
-function seitenleisteSchritt(richtung) {
-  const tab = SEITEN_LEISTE[currentScreen];
-  if (!tab) return;
-  const seiten = tab.seiten();
-  const ziel = seiten.findIndex(([k]) => k === tab.aktiv()) + richtung;
-  if (ziel < 0 || ziel >= seiten.length) return;
-  tab.setzen(seiten[ziel][0]);
-  seitenleisteAktualisieren();
-}
-
-function seitenleisteAuswahl(offen) {
-  const el = document.getElementById('seitenleiste');
-  if (!el) return;
-  _slOffen = !!offen;
-  const box = el.querySelector('.sl-optionen');
-  if (box) box.hidden = !_slOffen;
-  const pille = el.querySelector('.sl-pille');
-  if (pille) pille.setAttribute('aria-expanded', _slOffen ? 'true' : 'false');
-}
-
-// PASSIVER MODUS. Die Leiste steht dauerhaft ueber dem Inhalt; wer gerade liest, scrollt
-// oder in einen anderen Tab wischt, braucht sie nicht — dann schrumpft sie auf 70 %,
-// bleibt aber sichtbar, bedienbar und an derselben Unterkante stehen. Ein Tipp auf Pille
-// oder Pfeil holt sie zurueck.
+// PASSIVER MODUS. Der Schalter steht dauerhaft ueber dem Inhalt; wer gerade liest,
+// scrollt oder in einen anderen Tab wischt, braucht ihn nicht — dann schrumpft er auf
+// 70 %, bleibt aber sichtbar, bedienbar und an derselben Unterkante stehen. Ein Tipp
+// darauf holt ihn zurueck.
 // BEWUSST anders geloest als das Ausblenden der Bottom-Nav: die verschwindet ganz und
-// kommt nur ueber einen Tipp auf den blanken Tab-Hintergrund zurueck. Die Seitenleiste
-// muss jederzeit erreichbar bleiben — sie ist das einzige Bedienelement fuer die Seite.
+// kommt nur ueber einen Tipp auf den blanken Tab-Hintergrund zurueck. Der Seitenschalter
+// muss jederzeit erreichbar bleiben — er ist das einzige Bedienelement fuer die Seite.
 function seitenleistePassiv(ja) {
   const el = document.getElementById('seitenleiste');
   if (!el || _slPassiv === !!ja) return;   // nichts tun, wenn der Zustand schon stimmt
   _slPassiv = !!ja;
   el.classList.toggle('passiv', _slPassiv);
-  // Eine offene Auswahl gehoert zum aktiven Bedienen. Sie stehen zu lassen, waehrend die
-  // Reihe darunter schrumpft, saehe nach einem Fehler aus.
-  if (_slPassiv) seitenleisteAuswahl(false);
 }
 
-// EIN Handler fuer die ganze Leiste, am Dokument. Die Reihenfolge der Bloecke ist
-// wichtig — die Auswahl wird geschlossen, BEVOR die Pille sie umschaltet, sonst
-// schlossen und oeffneten sich beide im selben Tipp.
+// EIN Handler fuer die ganze Leiste, am Dokument.
 function initSeitenleiste() {
   seitenleisteBauen();
   document.addEventListener('click', (e) => {
     const t = e.target;
     if (!(t instanceof Element)) return;
 
-    // 1. Aktiv oder passiv. Ein Tipp auf Pille oder Pfeil holt die Leiste zurueck, ein
-    //    Tipp irgendwo daneben schickt sie in den passiven Modus. Ein Tipp auf einen
-    //    Eintrag der offenen Auswahl laesst den Zustand, wie er ist — er gehoert zum
-    //    Bedienen, und die Auswahl schliesst sich ohnehin gleich.
-    if (t.closest('.sl-reihe')) seitenleistePassiv(false);
-    else if (!t.closest('#seitenleiste')) seitenleistePassiv(true);
+    // Aktiv oder passiv: Ein Tipp auf den Schalter holt ihn zurueck, ein Tipp irgendwo
+    // daneben schickt ihn in den passiven Modus.
+    if (t.closest('#seitenleiste')) seitenleistePassiv(false);
+    else seitenleistePassiv(true);
 
-    // 2. Die Auswahl schliesst bei JEDEM Tipp, der nicht ihr oder der Pille gilt — die
-    //    Blaetterpfeile eingeschlossen. „Ausserhalb der ganzen Leiste" genuegt NICHT:
-    //    ein Tipp auf `‹`/`›` liesse sie offen stehen, obwohl sie erledigt ist.
-    if (_slOffen && !t.closest('.sl-pille') && !t.closest('.sl-opt')) seitenleisteAuswahl(false);
-
-    if (t.closest('.sl-pille')) { seitenleisteAuswahl(!_slOffen); return; }
-
-    const opt = t.closest('.sl-opt');
-    if (opt) {
-      const tab = SEITEN_LEISTE[currentScreen];
-      seitenleisteAuswahl(false);
-      if (tab) { tab.setzen(opt.dataset.seite); seitenleisteAktualisieren(); }
-      return;
-    }
-
-    const pfeil = t.closest('.sl-pfeil');
-    // `.inaktiv` statt `disabled` — der Knopf faengt den Tipp ab und tut nichts.
-    if (pfeil && !pfeil.classList.contains('inaktiv')) {
-      seitenleisteSchritt(pfeil.classList.contains('sl-next') ? 1 : -1);
-    }
+    const knopf = t.closest('#seitenleiste .seg-btn');
+    if (!knopf) return;
+    const tab = SEITEN_LEISTE[currentScreen];
+    if (tab) { tab.setzen(knopf.dataset.seite); seitenleisteAktualisieren(); }
   });
 }
 

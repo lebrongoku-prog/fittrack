@@ -62,10 +62,14 @@
   --radius:    14px;
   --radius-sm: 8px;
   --nav-h:     60px;
-  /* Hoehe der Seitenleiste unten (Pille und Pfeile). Sie steht im `padding-bottom`
-     der drei Tabs, die eine haben (`--sl-pad`), und hebt die Laufanzeige-Pille an
-     (`--sl-off`) — beim Aendern also nur diese eine Zahl anfassen. */
-  --sl-h:      53px;
+  /* Hoehe der Seitenleiste unten = gemessene Hoehe des Seitenschalters darin. Sie steht
+     im `padding-bottom` der drei Tabs, die eine haben (`--sl-pad`), und hebt
+     Laufanzeige-Pille und Toast an (`--sl-off`) — beim Aendern also nur diese eine Zahl
+     anfassen, und sie muss zur echten Hoehe passen (siehe `.seg-toggle`).
+     GEMESSEN: 41px bei zwei Knoepfen (13px Schrift), 40px bei vier (`.seg-vier`, 12px).
+     Hier steht der GROESSERE der beiden — ein Pixel zu viel Polster faellt nicht auf,
+     ein Pixel zu wenig verdeckte die unterste Karte. */
+  --sl-h:      41px;
   /* Hoehe, um die die Laufanzeige-Pille der Seitenleiste ausweicht. 0, solange keine
      sichtbar ist; `html.sl-an` setzt sie — die Klasse haengt an der tatsaechlichen
      Sichtbarkeit der Leiste, nicht am Tab (die Vollbild-Overlays tragen das Theme
@@ -2399,7 +2403,7 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
   border: none; background: none; padding: 0; margin: 0;
   font: inherit; font-size: 16px; font-weight: 700; color: inherit; text-align: left;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
-  /* Siehe `.sl-pille`: verhindert die Auswahl-Striche unter einzelnen Buchstaben. */
+  /* Siehe `.seg-btn`: verhindert die Auswahl-Striche unter einzelnen Buchstaben. */
   -webkit-user-select: none; user-select: none;
 }
 /* Farbe des Kalendertitels nach angezeigter Sportart (Leonard-Wunsch 06.09.2026):
@@ -2789,44 +2793,41 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
 .day-addto-sub { font-size: 12px; color: var(--text3); padding: 10px 16px 4px; line-height: 1.4; }
 
 /* ── Seitenleiste: der Seitenschalter der Tabs, unten am Bildschirm ─────────────
-   Uebernommen aus der Zeitleiste der App „Health Command Center" (08.09.2026,
-   Leonard-Wunsch): `‹` — Pille mit dem Namen der Seite — `›`, darueber die aufklappbare
-   Auswahl aller Seiten des Tabs. Sichtbar in Training, Uebungen und Plan; die Uebersicht
-   hat keine Seiten, die Vollbild-Overlays auch nicht.
+   Der Seitenschalter SIEHT AUS WIE EH UND JE (`.seg-toggle` mit `.seg-btn`) — er steht
+   nur nicht mehr im Kopf des Tabs, sondern fest UNTEN am Bildschirm, und macht dort den
+   aktiven und passiven Modus mit (08.09.2026, Leonard-Wunsch).
 
-   Sie ERSETZT den fruehen `.seg-toggle` am Kopf dieser drei Tabs — `.seg-toggle`,
-   `.seg-btn` und `.seg-vier` sind damit ersatzlos entfallen. Gewonnen ist die Zeile
-   unter der Kopfzeile; im Plan-Tab war der Schalter mit vier Knoepfen ausserdem am
-   Anschlag (je 82px auf 375px, eine fuenfte Seite passte nicht mehr hinein). In die
-   Auswahl der Leiste passt sie ohne Weiteres.
+   ZWISCHENSTAND, der wieder weg ist: Am selben Tag stand hier kurz die Bauform der
+   Zeitleiste aus „Health Command Center" — `‹` Pille `›` mit aufklappbarer Auswahl
+   darueber. Leonard wollte die gewohnte Optik zurueck; `.sl-pille`, `.sl-pfeil`,
+   `.sl-optionen` und `.sl-opt` sind ersatzlos entfallen. Uebernommen ist von dort nur
+   noch, WO die Leiste sitzt und dass sie einen passiven Modus hat.
 
    VIER Dinge, die daran haengen:
-   1. `pointer-events: none` auf der Leiste, `auto` erst auf den Kindern. Die Leiste
-      spannt ueber die volle Breite; ohne das faengt der freie Platz neben der Pille
-      die Tipps ab, mit denen man die Bottom-Nav wieder einblendet.
-   2. Die Auswahl schliesst bei JEDEM Tipp, der nicht der Pille oder einem Eintrag gilt
-      — die Pfeile eingeschlossen — und beim Tabwechsel. „Ausserhalb der ganzen Leiste"
-      genuegte in HCC nicht: ein Tipp auf `‹`/`›` liess sie offen stehen.
-   3. KEIN `backdrop-filter`. In HCC ist die Leiste durchscheinend mit Weichzeichner; in
-      FitTrack zeichnete genau der auf iOS eine dunkle Linie an der Oberkante des
-      Seitenschalters, sobald sich der Inhalt dahinter aenderte (gemeldet 01.09.2026).
-      Deshalb hier DECKENDE Flaechen — dasselbe Muster wie die schwebende
-      Laufanzeige-Pille, die ebenfalls in beiden Farbmodi gleich aussieht. Aus demselben
-      Grund braucht die Leiste keine Glas-Sonderregel: Sie liegt ausserhalb von
-      `.screen`, auf das der Transparenz-Modus wirkt.
+   1. `pointer-events: none` auf der Leiste, `auto` erst auf dem Schalter. Die Leiste
+      spannt ueber die volle Breite; ohne das faengt der Streifen links und rechts des
+      Schalters die Tipps ab, mit denen man die Bottom-Nav wieder einblendet.
+   2. KEIN `backdrop-filter` — siehe die Vorgeschichte von `.seg-toggle` (iOS zeichnete
+      damit eine dunkle Linie an der Oberkante, sobald sich der Inhalt dahinter
+      aenderte). Die 22-%-Weissflaeche allein genuegt, wie vorher im Kopf.
+   3. Die Glas-Regel fuer die aktive Seite haengt jetzt an `#seitenleiste`, NICHT mehr an
+      `.screen` — die Leiste liegt ausserhalb der Screens, die alte Regel haette sie nie
+      erreicht.
    4. Die Hoehe steht in `--sl-h` und wird an zwei weiteren Stellen gebraucht:
       `--sl-pad` (Polster der drei Tabs) und `--sl-off` (Ausweichhoehe der
-      Laufanzeige-Pille). */
+      Laufanzeige-Pille und des Toasts). Sie MUSS zur gemessenen Hoehe des Schalters
+      passen (4px Polster + 9px + Zeile + 9px + 4px): 41px bei zwei Knoepfen, 40px bei
+      vier — beim Aendern von Schriftgroesse oder Polster nachmessen. */
 #seitenleiste {
   position: fixed; left: 0; right: 0;
   bottom: calc(var(--nav-h) + var(--safe-b) + 6px);
   z-index: 99;
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 0 calc(max(var(--safe-l), var(--safe-r)) + 12px);
+  padding: 0 max(var(--safe-l), var(--safe-r));
   pointer-events: none;
   transition: bottom .25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-/* PFLICHT, sonst schlaegt `display: flex` das `hidden`-Attribut. */
+/* PFLICHT als Gewohnheit: Bekommt die Leiste je eine eigene display-Regel, schluege die
+   sonst das `hidden`-Attribut (siehe `.sl-optionen`-Vorgeschichte und den Zahlenblock). */
 #seitenleiste[hidden] { display: none; }
 /* Folgt der Bottom-Nav, genau wie Laufanzeige und Satzpause (`setNavHidden`). */
 #seitenleiste.nav-hidden { bottom: calc(var(--safe-b) + 8px); }
@@ -2846,12 +2847,31 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
    Leiste. */
 html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
 
-.sl-reihe {
+/* Der Schalter selbst — dieselbe Bauform wie frueher im Kopf (weisse Schrift, weisse
+   Pille auf der aktuellen Seite, 12px-Rundung, 4px Polster), mit EINER noetigen
+   Aenderung: Die Flaeche traegt jetzt einen dunklen Grund.
+   GRUND: Im Kopf lag hinter dem Schalter IMMER der farbige Tab-Hintergrund. Unten liegt
+   dahinter der scrollende Inhalt — auf einer weissen Karte verschwand die
+   22-%-Weissflaeche restlos und mit ihr die weisse Schrift der nicht gewaehlten Seiten;
+   von vier Seiten war nur die aktive lesbar (gesehen 08.09.2026 auf „Wettkämpfe").
+   NEUTRALES Dunkel, NICHT die Tabfarbe: `var(--accent)` waere naeher am fruehen Bild,
+   aber der Trainings-Tab wird GRAU, wenn heute nichts ansteht (`themeBgKey`) — der
+   Schalter leuchtete dort gruen aus einem grauen Hintergrund heraus und widerspraeche
+   genau dem Signal, das das Grau setzt. Das Dunkel passt auf jeden der vier Tab-Verlaeufe,
+   auf die graue Fassung und im Transparenz-Modus.
+   Die 22-%-Weissschicht darueber BLEIBT — sie ist es, die dem Schalter sein Aussehen
+   gibt. Dazu der Standard-Kartenschatten, damit er als schwebendes Element ueber dem
+   Inhalt gelesen wird und nicht als Loch in einer Karte.
+   KEIN `backdrop-filter` als Alternative — siehe oben. */
+.seg-toggle {
   pointer-events: auto;
-  display: flex; align-items: center; gap: 10px;
-  max-width: 100%;
-  /* Der Ursprung liegt an der UNTERKANTE: beim Schrumpfen im passiven Modus bleibt die
-     Leiste damit an derselben Kante stehen und wandert nicht nach oben. */
+  display: flex; gap: 4px; margin: 0 14px;
+  background: linear-gradient(rgba(255,255,255,0.22), rgba(255,255,255,0.22)),
+              rgba(15, 23, 42, 0.72);
+  box-shadow: var(--shadow);
+  border-radius: 12px; padding: 4px;
+  /* Der Ursprung liegt an der UNTERKANTE: beim Schrumpfen im passiven Modus bleibt der
+     Schalter damit an derselben Kante stehen und wandert nicht nach oben. */
   transform-origin: bottom center;
   transition: transform .2s cubic-bezier(0.4, 0, 0.2, 1),
               opacity   .2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2860,86 +2880,38 @@ html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
    anderen Tab wischt oder neben die Leiste tippt. Bewusst ueber `transform: scale()`
    statt ueber kleinere Masse — so schrumpfen Hoehe, Schrift, Polster und Rundungen im
    selben Verhaeltnis und es kann nichts umbrechen. Anders als die Bottom-Nav
-   verschwindet die Leiste NIE: sie ist das einzige Bedienelement fuer die Seite und
-   muss erreichbar bleiben (53px werden zu 37px). Die Deckkraft sitzt an der REIHE, nicht
-   an Pille und Pfeilen einzeln — so verblassen Flaeche, Schatten und Schrift
-   gleichmaessig. Auf die Tippflaeche wirkt sie nicht. */
-#seitenleiste.passiv .sl-reihe { transform: scale(0.7); opacity: .5; }
-
-/* Pille und Pfeile teilen dieselbe Flaeche: weiss mit Akzentschrift — genau die Optik,
-   die vorher die aktive Seite im `.seg-btn` hatte. */
-.sl-pille, .sl-pfeil {
-  height: var(--sl-h);
-  background: #fff;
-  color: var(--accent-dark);
-  border: none; border-radius: 999px;
-  box-shadow: 0 6px 18px -8px rgba(0,0,0,.5), 0 1px 4px rgba(0,0,0,.15);
-  font-family: inherit;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-  /* Wie bei `.seg-btn`: ohne das loest ein Tipp auf iOS die Textauswahl aus. */
-  -webkit-user-select: none; user-select: none;
-}
-.sl-pille {
-  min-width: 100px; padding: 0 21px;
-  font-size: 18px; font-weight: 700;
-  /* Kuerzt einen zu langen Seitennamen mit „…". Der laengste heutige („Wettkämpfe")
-     misst rund 100px und passt auf 375px bequem — die Regel ist die Absicherung fuer
-     schmalere Geraete und kuenftige Seitennamen. Im passiven Modus schrumpft die REIHE
-     per `scale()`, Schrift und Kasten also im selben Verhaeltnis: dort kann nichts
-     abgeschnitten werden, was im aktiven Zustand noch hineinpasste.
-     `display: block` mit `line-height` statt Flex — `text-overflow` wirkt nur auf
-     Blocksatz, in einem Flex-Container bliebe der Name ungekuerzt stehen. */
-  max-width: calc(100vw - 2 * (56px + 10px + 12px) - 2 * max(var(--safe-l), var(--safe-r)));
+   verschwindet der Schalter NIE: er ist das einzige Bedienelement fuer die Seite und
+   muss erreichbar bleiben (41.5px werden zu 29px). Die Deckkraft sitzt am SCHALTER,
+   nicht an den Knoepfen einzeln — so verblassen Flaeche und Schrift gleichmaessig und
+   die Knoepfe bleiben untereinander gleich stark. Auf die Tippflaeche wirkt sie nicht. */
+#seitenleiste.passiv .seg-toggle { transform: scale(0.7); opacity: .5; }
+/* `user-select: none` ist Pflicht: Ohne das loest ein Tipp auf iOS die Textauswahl aus —
+   sichtbar als kurze Striche unter einzelnen Buchstaben. Dasselbe Verhalten wie beim
+   Zahlenblock (siehe dort). */
+.seg-btn {
+  flex: 1;
+  /* Ohne `min-width: 0` schrumpft ein Flex-Kind NICHT unter seinen Inhalt: Die Knoepfe
+     waeren dann verschieden breit und ein zu langer Name schoebe den Schalter ueber den
+     Rand, statt gekuerzt zu werden. Mit der 0 sind alle exakt gleich breit und ein
+     Name, der nicht passt, endet mit „…" (Leonard-Wunsch 08.09.2026). */
+  min-width: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  display: block; line-height: var(--sl-h); text-align: center;
-}
-.sl-pfeil {
-  width: 56px; flex: 0 0 auto;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 26px; line-height: 1;
-}
-/* Am Anfang und am Ende der Seitenliste hat ein Pfeil nichts zu tun. BEWUSST eine
-   KLASSE und NICHT das `disabled`-Attribut: Ein deaktivierter Knopf nimmt in WebKit
-   keine Tipps an — der Tipp liefe an ihm vorbei auf den Tab-Hintergrund und holte dort
-   die Bottom-Nav zurueck. Als gewoehnlicher Knopf faengt er ihn ab, der Handler prueft
-   die Klasse und tut dann nichts; `aria-disabled` erhaelt die Ansage fuer Screenreader.
-   In HCC ist genau dieser Fehler aufgetreten (08.09.2026) — wer das zurueckdreht, holt
-   ihn zurueck. */
-.sl-pfeil.inaktiv { opacity: .35; cursor: default; }
-.sl-pille:active, .sl-pfeil:not(.inaktiv):active { transform: scale(.96); }
-
-/* Auswahl ueber der Pille: alle Seiten des Tabs nebeneinander. Sie muss in EINE Zeile
-   passen — mit zwei Zeilen steht die Leiste als 3+1-Block ueber dem Inhalt und sieht aus,
-   als sei etwas verrutscht.
-   NACHGEMESSEN am laengsten Fall, den vier Seiten des Plan-Tabs: Bei 13.5px und 12px
-   Polster brauchten „Gymplan Gymtage Laufplan Wettkämpfe" 361.8px — 339px stehen zur
-   Verfuegung (375 abzueglich 2x12px Leisten-Polster und 2x6px Kasten-Polster), also brach
-   „Wettkämpfe" um. Mit 13px und 8px Polster sind es 320.4px, knapp 19px Luft. Wer hier
-   etwas vergroessert oder eine fuenfte Seite ergaenzt, misst nach. Auf schmaleren
-   Geraeten als 360px bricht die Zeile weiterhin um und bleibt zentriert — hingenommen. */
-.sl-optionen {
-  pointer-events: auto;
-  display: flex; flex-wrap: wrap; justify-content: center; gap: 4px;
-  max-width: 100%;
-  padding: 6px;
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 8px 22px -10px rgba(0,0,0,.5), 0 1px 4px rgba(0,0,0,.15);
-}
-/* PFLICHT, nicht Kosmetik: `hidden` setzt display:none nur ueber das Browser-Stylesheet,
-   und JEDE eigene display-Regel schlaegt das. Ohne diese Zeile bliebe die Auswahl
-   dauerhaft offen — das Attribut wird zwar gesetzt, haette aber keine Wirkung. */
-.sl-optionen[hidden] { display: none; }
-.sl-opt {
-  height: 34px; padding: 0 8px;
-  border-radius: 999px; border: none; background: transparent;
-  color: var(--text2);
-  font-family: inherit; font-size: 13px; font-weight: 600;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  border: none; background: transparent; color: #fff; font-size: 13px; font-weight: 600;
+  padding: 9px 6px; border-radius: 9px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  font-family: inherit; transition: background 0.15s, color 0.15s;
   -webkit-user-select: none; user-select: none;
 }
-/* Die gewaehlte Seite in der Tabfarbe — dieselbe Sprache wie sonst in der App. */
-.sl-opt.aktiv { background: var(--accent); color: #fff; }
+.seg-btn.active { background: #fff; color: var(--accent-dark); box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+/* VIER Seiten (Plan-Tab seit 06.09.2026) statt zwei: Auf 375px bleiben je Knopf nur noch
+   rund 82px. „Wettkämpfe" misst bei 13px 84px und waere gekuerzt worden — 12px und ein
+   schmaleres seitliches Polster bringen es auf 78px. Nur dieser Umschalter ist betroffen,
+   die zweiteiligen behalten ihre 13px. */
+.seg-vier .seg-btn { font-size: 12px; padding-left: 2px; padding-right: 2px; }
+/* KEINE Glas-Sonderregel mehr fuer die aktive Pille. Frueher war sie noetig, weil die
+   weisse Pille im Transparenz-Modus auf dem durchscheinenden Schalter ein Fremdkoerper
+   war (`html.glas .screen:not(#screen-mehr) .seg-btn.active` → 28-%-Weiss). Seit der
+   Schalter unten steht und eine DECKENDE dunkle Flaeche traegt, sieht er in beiden Modi
+   gleich aus — eine 28-%-Pille waere dort nur schlechter zu erkennen. */
 
 
 /* ── Seite „Wettkämpfe" (Plan-Tab, 06.09.2026) ──────────────────────────────
