@@ -1090,26 +1090,56 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Di grau abgehakt, Do bleibt offen · zwei Einheiten am Mo → Di UND Do grau abgehakt ·
   freies Training am Mi → nur Mi, kein Plantag · Einheit eines fremden Trainingstags → nur
   ihr eigener Tag · Lauf: geplant Mo+Do, gelaufen Di → Mo grau abgehakt, Do bleibt offen.
-- **WOCHENPLAN-KARTEN UND HEROCARDS SIND 10 % HOEHER** (09.09.2026, Leonard-Wunsch). Die
-  gewonnene Hoehe ist nicht Luft, sondern geht an eine benannte Stelle:
-
-  | Karte | vorher | jetzt | die Hoehe geht an |
-  |---|---|---|---|
-  | Kombi-Karte (Uebersicht) | 130px | **143px** (+10.0 %) | Abstand Wochentagszeile → Kreisreihen |
-  | Wochenplan Gym/Lauf | 128px | **141px** (+10.2 %) | Abstand ueber den Wochentagskreisen |
-  | Herocard Trainings-Tab | 123.5px | **136.5px** (+10.5 %) | Knopfhoehe (41.5 → 54.5px) |
-  | Herocard Uebersicht | 141px | **154px** (+9.2 %) | dieselbe Knopfhoehe |
-
-  DREI Dinge, die dabei zu wissen sind:
-  1. Beim KNOPF ist es Polster (12 → 18.5px senkrecht), NICHT `min-height`. In der Uebersicht
-     bricht „Lauf abgeschlossen" auf zwei Zeilen um — der Knopf ist dort schon hoeher als
-     jede sinnvolle Mindesthoehe, die Karte waere gar nicht gewachsen. Polster wirkt immer.
-  2. Ein einzelner Polsterwert kann beide Herocards nicht exakt auf 10 % bringen (sie starten
-     bei 123.5 und 141px). +13px ist die Mitte; wer das aendert, misst beide nach.
-  3. In der Kombi-Karte sitzt der Zuschlag als `margin-top: 6.5px` an JEDER der beiden Reihen
-     (`.ppv-k-reihe`) — einmal Wochentagszeile → Gym, einmal Gym → Lauf. Zusammen die +13px.
-     Die Einzelkarten nutzen dafuer `.ppv-strip { margin-top }` (14 → 27px); beide Bauformen
-     haben getrennte Regeln, eine Aenderung an der einen wirkt NICHT auf die andere.
+- **ALLE WOCHENPLAN-KARTEN UND HEROCARDS SIND GENAU 143px HOCH** (09.09.2026,
+  Leonard-Wunsch). Kombi-Karte, Gym- und Laufwochenplan in allen drei Tabs, die Herocard
+  „Heute" in Uebersicht und Trainings-Tab und die Karte der laufenden Einheit — alle gleich.
+  ZWEI verschiedene Angaben, mit Absicht:
+  - `.plan-card-v2` bekommt `min-height`. In der LISTE des Plan-Tabs tragen archivierte und
+    kommende Plaene eine Statuszeile mehr und sind natuerlicherweise hoeher; die duerfen
+    wachsen, abgeschnitten waeren sie kaputt.
+  - `.hero-v2` bekommt `height`. Die Herocard der Uebersicht war mit ihren zweizeiligen
+    Knoepfen 154px hoch und musste SCHRUMPFEN — `min-height` haette daran nichts geaendert.
+  Damit die feste Hoehe bis zu den Knoepfen durchreicht, ist `.hero-heute` eine
+  FLEX-SPALTE (vorher `display: block`) und `.hero-heute-spalten`/`.hero-heute-spalte`
+  tragen `flex: 1`. Ohne das blieb unten Leerraum stehen und die Knoepfe waren mit 33.5px
+  KLEINER als vor der ganzen Aenderung (41.5px). Jetzt: 49px im Trainings-Tab, 51px in der
+  Uebersicht. Das Knopfpolster steht wieder bei 8px — es ist nur noch die Untergrenze, die
+  Hoehe kommt aus der Karte.
+  **Die einzelnen Gym- und Laufkarten holen ihre Hoehe aus den KREISEN**, nicht aus Luft
+  darueber (Leonard-Wunsch, ausdruecklich): `.ppv-wd` ist von 30 auf **40px** gewachsen, die
+  Schrift darin von 12 auf 14px. 40px ist praktisch das Maximum — die Spalte ist auf 375px
+  nur 41.9px breit (323px Inhalt minus 6 Luecken a 5px, durch 7). Die letzten 5px zur
+  Zielhoehe holt das Polster von `.ppv-col` (5 → 7.5px). `.ppv-strip` steht wieder bei 14px.
+  Die KOMBI-Karte behaelt ihre Loesung von gestern: 6.5px Abstand ueber jeder der beiden
+  Reihen (`.ppv-k-reihe`).
+- **KEINE Erledigt-Haken mehr an den Wochentagskreisen** (09.09.2026, Leonard-Wunsch): Der
+  gefuellte Kreis sagt schon, dass trainiert wurde. Entfallen sind `.ppv-col.done
+  .ppv-wd::before` samt Lauf-Variante und `.ppv-k-col.done .ppv-k-dot::before` samt
+  Lauf-Variante — in allen Karten, allen Tabs.
+  PREIS: In der VERGANGENHEIT sieht ein geplanter, aber ausgefallener Tag jetzt aus wie ein
+  absolvierter — beide sind voll in der Sportfarbe. Unterscheidbar bleiben nur kuenftige
+  Tage (nur umrandet) und verschobene (grau).
+  Der graue Haken der VERSCHOBENEN Tage BLEIBT deshalb: Ohne ihn waere ein verschobener Tag
+  von einem Tag ohne Training nicht mehr zu unterscheiden (beide grau).
+- **HEUTE ist EIN durchgehendes Feld ueber beide Reihen der Kombi-Karte** (09.09.2026,
+  Leonard-Wunsch — vorher zwei getrennte Felder mit sichtbarer Fuge). Beide Reihen tragen
+  weiterhin ihr eigenes Feld (sie sind getrennte Rasterzeilen, ein einzelnes Element koennte
+  sie nicht ueberspannen), aber sie stossen nahtlos aneinander: Die obere zieht ihr Feld um
+  die 6.5px des Zwischenraums nach unten (`padding-bottom: 9.5px` plus
+  `margin-bottom: -9.5px`, damit das Layout sich nicht verschiebt) und rundet nur oben, die
+  untere rundet nur unten. Gemessen: Unterkante Gym = Oberkante Lauf, Luecke 0.
+  ACHTUNG: Das setzt die Reihenfolge Gym → Lauf voraus (so baut `buildWochenKombi` sie
+  immer) und den 6.5px-Abstand. Wer den aendert, zieht die 9.5px mit.
+- **Die Sportsymbole der Kombi-Karte sind 19px und stehen mittig** zwischen dem AEUSSEREN
+  Kartenrand und dem ersten Wochentagskreis (09.09.2026, Leonard-Wunsch; vorher 15px und
+  linksbuendig in ihrer Spalte). Nachgemessen auf 375px: Kartenrand bei x=12, erster Kreis
+  bei x=58.6, Mitte also 35.3 — `justify-self: center` in der 20px-Spalte landet bei 36.
+  19px ist die Obergrenze: Die Spalte ist 20px breit, groesser muesste `--ppv-k-lead`
+  mitwachsen und schoebe alle Kreise nach rechts.
+  FALLE, die dabei zuschlug: In der Beschriftungszeile steht an derselben Stelle ein LEERER
+  `.ppv-k-ic` als Platzhalter fuer das Raster. Mit 19px zog er die Zeile von 15 auf 19px und
+  die ganze Karte um 4px mit. Er traegt deshalb `height: 0` — die Breite kommt ohnehin aus
+  `--ppv-k-lead`.
 - **KEINE roten Wochen im gemeinsamen „Trainingskalender"** (09.09.2026, Leonard-Wunsch).
   `wocheOhneTraining` gibt bei `zeigtKraft && zeigtLaeufe` sofort `false` zurueck. Im Gym- und
   im Laufkalender bleiben sie unveraendert — dort ist „diese Woche nichts" eine klare Aussage
