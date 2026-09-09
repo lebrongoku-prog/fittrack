@@ -798,7 +798,11 @@ body.theme-plans .hist-action-dd {
 .ppv-adh { font-size: 13px; font-weight: 600; color: var(--accent-dark); white-space: nowrap; }
 /* Wochenplan-Strip der Plan-Karte: nur Wochentage, Trainingstage als eingefärbter Kreis.
    Akzentfarbe = geplant, grün = diese Woche erledigt, Ring (::after) = heute. */
-.ppv-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 14px; }
+/* 27px statt 14px ueber den Wochentagskreisen: Die Karte soll rund 10 % hoeher werden
+   (Leonard-Wunsch 09.09.2026), und die gewonnene Hoehe gehoert dem Abstand zwischen dem
+   Fortschrittsblock und den Kreisen — dasselbe Prinzip wie in der kombinierten Karte, wo
+   die Wochentagszeile von ihren Kreisen abrueckt. Gemessen: 128 → 141px (+10.2 %). */
+.ppv-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 27px; }
 .ppv-col { display: flex; justify-content: center; min-width: 0; padding: 5px 0; }
 .ppv-wd {
   position: relative;
@@ -1512,7 +1516,15 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    zweizeilig. */
 .hero-heute .hero-v2-btn {
   width: 100%; align-self: auto; justify-content: center;
-  padding: 12px 8px; font-size: 14px; gap: 7px; line-height: 1.25;
+  /* 18.5px statt 12px senkrecht: Die Herocard soll rund 10 % hoeher werden, und die
+     gewonnene Hoehe gehoert dem KNOPF (Leonard-Wunsch 09.09.2026) — er ist das, was man
+     trifft. +6.5px oben und unten sind +13px Knopf und damit +13px Karte.
+     BEWUSST Polster statt `min-height`: In der Uebersicht bricht „Lauf abgeschlossen" auf
+     zwei Zeilen um, der Knopf ist dort schon hoeher als die Mindesthoehe — die Karte waere
+     dann gar nicht gewachsen. Polster wirkt in beiden Faellen.
+     Gemessen: Trainings-Tab 123.5 → 136.5px (+10.5 %), Uebersicht 141 → 154px (+9.2 %).
+     Ein einzelner Wert kann beide nicht exakt auf 10 % bringen; das hier ist die Mitte. */
+  padding: 18.5px 8px; font-size: 14px; gap: 7px; line-height: 1.25;
   min-width: 0; text-align: center; flex: 1;
 }
 /* Symbol in TEXTGROESSE vor der Beschriftung (Leonard-Vorgabe). `1em` bindet es an die
@@ -1624,7 +1636,11 @@ html.wo-running #wo-week-card { display: none; }
 /* Die Reihe ist ihr eigenes Tipp-Ziel — sie ist hier das, was sonst die ganze Karte ist.
    Das Polster gibt dem Finger Flaeche, ohne die Kreise auseinanderzuziehen. */
 .ppv-k-reihe {
-  margin: 0 -6px; padding: 3px 6px; border-radius: 10px;
+  /* 6.5px Abstand ueber JEDER der beiden Reihen: von der Wochentagszeile zur Gym-Reihe und
+     von dort zur Lauf-Reihe (Leonard-Wunsch 09.09.2026). Zusammen sind das die +13px, um die
+     die Karte hoeher werden soll — gemessen 130 → 143px (+10 %). Die Reihen standen vorher
+     direkt aneinander und die Wochentage klebten auf den Kreisen darunter. */
+  margin: 6.5px -6px 0; padding: 3px 6px; border-radius: 10px;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .ppv-k-reihe:active { background: rgba(0,0,0,.05); }

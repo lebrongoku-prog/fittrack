@@ -2241,7 +2241,11 @@ function renderActiveWorkout() {
           </div>
         </div>
       </div>
-      ${ex.done ? '' : (ex.skipped
+      ${ex.done
+        ? `<div class="aex-v2-actions">
+             <button class="btn btn-ghost btn-sm aex-v2-details" onclick="toggleAexChart('${exIdKey}')">Details</button>
+           </div>`
+        : (ex.skipped
         ? `<div class="aex-v2-actions">
              <button class="btn btn-ghost btn-sm" onclick="unskipExercise(${ei})">↻ Wieder aktiv setzen</button>
            </div>`
@@ -4548,6 +4552,12 @@ function renderTrainingCalendar(id, cardId) {
   // Was als „Training" zaehlt, folgt dem Modus des Kalenders: im Gymkalender die Krafteinheiten
   // (inklusive der nachgetragenen Tage), im Laufkalender die Laeufe, im gemeinsamen beides.
   const wocheOhneTraining = (weekStart) => {
+    // NUR in den Einzelkalendern (Leonard-Wunsch 09.09.2026): Im gemeinsamen
+    // „Trainingskalender" gibt es die roten Spalten nicht mehr. Dort stehen Gym und Lauf
+    // nebeneinander im selben Kaestchen — eine Woche ohne BEIDES ist selten, und das Rot
+    // uebertoente die Marken, statt etwas zu zeigen. Im Gym- und im Laufkalender bleibt es:
+    // Dort ist „diese Woche nichts" eine klare Aussage ueber genau eine Sportart.
+    if (zeigtKraft && zeigtLaeufe) return false;
     const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
     if (weekEnd.getTime() >= today.getTime()) return false;
     for (let d = 0; d < 7; d++) {
@@ -4798,8 +4808,16 @@ function showCalDay(key, id) {
   const dateStr = new Date(y, m-1, d).toLocaleDateString('de-DE', { weekday:'long', day:'numeric', month:'long' });
   const scope = document.getElementById(id + '-grid');
   if (scope) {
-    scope.querySelectorAll('.cal-day.sel').forEach(c => c.classList.remove('sel'));
     const cell = scope.querySelector(`.cal-day[data-key="${key}"]`);
+    // Ein ZWEITER Tipp auf denselben Tag raeumt die Beschreibung wieder weg
+    // (Leonard-Wunsch 09.09.2026) — derselbe Weg hinein und hinaus. Gilt fuer alle
+    // Kalender, weil beide dieselbe Funktion nutzen.
+    if (cell && cell.classList.contains('sel')) {
+      cell.classList.remove('sel');
+      el.innerHTML = '';
+      return;
+    }
+    scope.querySelectorAll('.cal-day.sel').forEach(c => c.classList.remove('sel'));
     if (cell) cell.classList.add('sel');
   }
   // Neben dem Ergebnis auch nennen, was fuer den Tag vorgesehen war — sonst bliebe

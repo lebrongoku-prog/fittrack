@@ -1090,6 +1090,41 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Di grau abgehakt, Do bleibt offen · zwei Einheiten am Mo → Di UND Do grau abgehakt ·
   freies Training am Mi → nur Mi, kein Plantag · Einheit eines fremden Trainingstags → nur
   ihr eigener Tag · Lauf: geplant Mo+Do, gelaufen Di → Mo grau abgehakt, Do bleibt offen.
+- **WOCHENPLAN-KARTEN UND HEROCARDS SIND 10 % HOEHER** (09.09.2026, Leonard-Wunsch). Die
+  gewonnene Hoehe ist nicht Luft, sondern geht an eine benannte Stelle:
+
+  | Karte | vorher | jetzt | die Hoehe geht an |
+  |---|---|---|---|
+  | Kombi-Karte (Uebersicht) | 130px | **143px** (+10.0 %) | Abstand Wochentagszeile → Kreisreihen |
+  | Wochenplan Gym/Lauf | 128px | **141px** (+10.2 %) | Abstand ueber den Wochentagskreisen |
+  | Herocard Trainings-Tab | 123.5px | **136.5px** (+10.5 %) | Knopfhoehe (41.5 → 54.5px) |
+  | Herocard Uebersicht | 141px | **154px** (+9.2 %) | dieselbe Knopfhoehe |
+
+  DREI Dinge, die dabei zu wissen sind:
+  1. Beim KNOPF ist es Polster (12 → 18.5px senkrecht), NICHT `min-height`. In der Uebersicht
+     bricht „Lauf abgeschlossen" auf zwei Zeilen um — der Knopf ist dort schon hoeher als
+     jede sinnvolle Mindesthoehe, die Karte waere gar nicht gewachsen. Polster wirkt immer.
+  2. Ein einzelner Polsterwert kann beide Herocards nicht exakt auf 10 % bringen (sie starten
+     bei 123.5 und 141px). +13px ist die Mitte; wer das aendert, misst beide nach.
+  3. In der Kombi-Karte sitzt der Zuschlag als `margin-top: 6.5px` an JEDER der beiden Reihen
+     (`.ppv-k-reihe`) — einmal Wochentagszeile → Gym, einmal Gym → Lauf. Zusammen die +13px.
+     Die Einzelkarten nutzen dafuer `.ppv-strip { margin-top }` (14 → 27px); beide Bauformen
+     haben getrennte Regeln, eine Aenderung an der einen wirkt NICHT auf die andere.
+- **KEINE roten Wochen im gemeinsamen „Trainingskalender"** (09.09.2026, Leonard-Wunsch).
+  `wocheOhneTraining` gibt bei `zeigtKraft && zeigtLaeufe` sofort `false` zurueck. Im Gym- und
+  im Laufkalender bleiben sie unveraendert — dort ist „diese Woche nichts" eine klare Aussage
+  ueber genau eine Sportart, im gemeinsamen Kalender uebertoente das Rot nur die Marken.
+  Gemessen: Trainingskalender 0, Gymkalender 165, Laufkalender 249 rote Kaestchen.
+- **Ein ZWEITER Tipp auf denselben Tag schliesst die Kalender-Fusszeile wieder**
+  (09.09.2026, Leonard-Wunsch). `showCalDay` prueft als Erstes, ob die Zelle schon `.sel`
+  traegt — dann nimmt es die Markierung weg, leert `#<id>-detail` und kehrt zurueck.
+  Gilt automatisch in BEIDEN Kalendern, weil beide dieselbe Funktion nutzen. Der Tipp auf
+  einen ANDEREN Tag schaltet weiterhin normal um.
+- **Der Details-Knopf bleibt bei ERLEDIGTEN Uebungen stehen** (09.09.2026, Leonard-Wunsch).
+  `renderActiveWorkout` warf bei `ex.done` die ganze Aktionsleiste weg — mit ihr das
+  Verlaufsdiagramm, ausgerechnet nachdem man die Uebung abgeschlossen hatte. Jetzt bekommt
+  eine erledigte Uebung eine Leiste mit NUR diesem Knopf: „+ Satz", „− Satz" und
+  „Ueberspringen" ergeben dort nichts mehr.
 - **AM WISCHEN NICHTS AENDERN, ohne auf dem iPhone gegenzupruefen** (Leonard-Meldung
   08.09.2026). An dem Tag wurden drei Eingriffe gebaut und noch am selben Tag komplett
   zurueckgenommen — das Wischen war danach „gar nicht mehr fluessig":
