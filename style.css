@@ -740,6 +740,15 @@ body.theme-plans .hist-action-dd {
      selbst treffen die 143px genau (siehe `.ppv-strip` und `.ppv-wd`). */
   min-height: 143px; box-sizing: border-box;
 }
+/* Die drei WOCHENPLAN-Karten bekommen die 143px FEST, nicht nur als Untergrenze
+   (Leonard-Meldung 09.09.2026: beim Umschalten des Filters in der Uebersicht sprang die
+   Karte, weil die Einzelfassung hoeher wurde als die kombinierte). Mit `height` kann das
+   strukturell nicht mehr passieren — egal, was der Kopf an Inhalt bekommt.
+   NUR hier: In der LISTE des Plan-Tabs muessen archivierte und kommende Plaene weiter
+   wachsen duerfen, die tragen eine Statuszeile mehr. */
+#ov-week-card > .plan-card-v2,
+#wo-week-card > .plan-card-v2,
+#wo-view-laufen > .plan-card-v2 { height: 143px; }
 /* Tipp-Rueckmeldung fuer ALLE Karten (Leonard-Wunsch 28.08.2026) — dieselbe dezente
    Stauchung wie bei der Wochenplan-Karte. `transition` NUR auf transform, damit die
    Farbwechsel der Karten (z. B. erledigte Uebung) unveraendert bleiben. */
@@ -809,16 +818,17 @@ body.theme-plans .hist-action-dd {
    stattdessen die KREISE selbst, siehe `.ppv-wd`. */
 .ppv-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 14px; }
 .ppv-col { display: flex; justify-content: center; min-width: 0; padding: 7.5px 0; }
-/* 40px statt 30px (Leonard-Wunsch 09.09.2026): Die Karte soll 143px hoch sein, und der
-   gewonnene Platz gehoert den KREISEN, nicht der Luft darueber.
-   40px ist praktisch das Maximum — die Spalte ist auf 375px nur 41.9px breit (323px Inhalt
-   minus 6 Luecken a 5px, geteilt durch 7). Ein groesserer Kreis liefe ueber seine Spalte
-   hinaus. Die restlichen 5px zur Zielhoehe holt das Polster von `.ppv-col` (5 → 7.5px).
-   Die Schrift waechst mit (12 → 14px), sonst schwaemme der Wochentag im leeren Kreis. */
+/* 36px statt der urspruenglichen 30px — und bewusst NICHT die 40px, die kurzzeitig
+   dastanden (09.09.2026): Mit 40px war die Einzelkarte NATUERLICH schon 143px hoch, also
+   genau am Deckel. Jede Kleinigkeit mehr im Kopf (langer Planname, zweizeilige Kennzahl)
+   schob sie darueber, waehrend die Kombi-Karte bei 142 blieb — beim Umschalten des Filters
+   sprang die Karte (Leonard-Meldung 09.09.2026).
+   Mit 36px liegt die Einzelkarte natuerlich bei rund 139px und hat Luft unter dem Deckel.
+   Die Schrift bleibt bei 14px. */
 .ppv-wd {
   position: relative;
   display: flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; box-sizing: border-box;
+  width: 36px; height: 36px; box-sizing: border-box;
   border-radius: 50%;
   font-size: 14px; font-weight: 600; color: var(--text3);
 }
@@ -861,15 +871,6 @@ body.theme-plans .hist-action-dd {
 .ppv-col.verschoben .ppv-wd,
 .run-plan .ppv-col.verschoben .ppv-wd {
   background: var(--card2); color: var(--text2); font-weight: 700; box-shadow: none;
-}
-.ppv-col.verschoben .ppv-wd::before,
-.run-plan .ppv-col.verschoben .ppv-wd::before {
-  content: '✓';
-  position: absolute; top: -2px; right: -3px; z-index: 1;
-  width: 14px; height: 14px; border-radius: 50%;
-  background: #fff; color: var(--text3);
-  font-size: 9px; font-weight: 900; line-height: 14px; text-align: center;
-  box-shadow: 0 0 0 1.5px var(--text3);
 }
 
 /* Der Erledigt-Haken am Kreis ist ENTFALLEN (09.09.2026, Leonard-Wunsch): Der gefuellte
@@ -1482,7 +1483,11 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 .hero-heute { display: flex; flex-direction: column; padding: 14px; }
 .hero-heute-spalten { flex: 1; min-height: 0; }
 .hero-heute .hero-heute-spalte { flex: 1; min-height: 0; }
-.hero-heute-titel { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+/* 2px statt 10px unter dem Titel (Leonard-Wunsch 09.09.2026): Zwischen „Heute" und der
+   mittigen Beschriftung darunter stand zu viel Luft. Weil die Karte 143px FEST hoch ist und
+   die Knoepfe `flex: 1` tragen, landen die gesparten 8px automatisch in der Knopfhoehe —
+   genau dort, wo Leonard sie haben wollte. */
+.hero-heute-titel { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
 /* Laufende Einheit: Trainingstag links, Uhr rechts in derselben Zeile. */
 .hero-aktiv-titel { display: flex; align-items: baseline; gap: 10px; }
 .hero-aktiv-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1516,18 +1521,14 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
   line-height: 1.1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* Die Zusatzzeile kostet 15px (13px Zeile + 2px Abstand). Genau die holt `hero-mit-meta`
-   wieder herein, damit die Karte NICHT hoeher wird (Leonard-Vorgabe 07.09.2026).
-   Der KNOPF bleibt dabei unangetastet (Leonard-Praezisierung 07.09.2026 — eine erste Fassung
-   nahm ihm 4px Polster; er soll seine volle Hoehe behalten). Der Platz kommt stattdessen von
-   OBEN: Titel und Name ruecken zusammen, der ganze Textblock sitzt hoeher.
-   Aufteilung: Titelabstand 10→2 (−8), Spaltenabstand 10→6 (−4), Abstand der beiden
-   Textzeilen 2→0 (−2), dazu 1px aus der engeren Zeilenhoehe oben.
-   NUR auf der Karte mit der Zeile — die Uebersicht behaelt ihre Masse unveraendert.
-   ACHTUNG Spezifitaet: `.hero-heute .hero-v2-btn` (zwei Klassen) setzt das Knopfpolster und
-   steht WEITER UNTEN in der Datei — wer hier doch einmal am Knopf dreht, braucht drei
-   Klassen, sonst entscheidet die Reihenfolge. */
-.hero-heute.hero-mit-meta .hero-heute-titel { margin-bottom: 2px; }
+/* URSPRUNG (07.09.2026): Die Zusatzzeile auf der Seite „Gym" kostet 15px, und die Karte
+   durfte dadurch nicht hoeher werden — `hero-mit-meta` holte sie von oben wieder herein.
+   SEIT dem 09.09.2026 ist die Karte 143px FEST hoch, wachsen kann sie also ohnehin nicht
+   mehr; der Titelabstand ist inzwischen auch generell auf 2px. Geblieben ist der Block, weil
+   er den Textblock weiter zusammenhaelt und damit dem KNOPF mehr Hoehe laesst — ohne ihn
+   waere der Knopf auf der Seite „Gym" spuerbar flacher als auf „Laufen".
+   Die Zeile fuer den Titelabstand ist mit der generellen Umstellung entfallen (sie setzte
+   dieselben 2px noch einmal). */
 .hero-heute.hero-mit-meta .hero-heute-spalte { gap: 6px; }
 .hero-heute.hero-mit-meta .hero-heute-kopf { gap: 0; }
 /* Die Beschriftung darf UMBRECHEN: „Lauf abgeschlossen" braucht bei 14px 135px Text, in den
@@ -1725,14 +1726,6 @@ html.wo-running #wo-week-card { display: none; }
    farbige Ring weg und ein grauer Haken kommt dazu. */
 .ppv-k-reihe.gym  .verschoben .ppv-k-dot,
 .ppv-k-reihe.lauf .verschoben .ppv-k-dot { background: var(--card2); box-shadow: none; }
-.ppv-k-col.verschoben .ppv-k-dot::before {
-  content: '✓';
-  position: absolute; top: -3px; right: -4px; z-index: 1;
-  width: 13px; height: 13px; border-radius: 50%;
-  background: #fff; color: var(--text3);
-  font-size: 8px; font-weight: 900; line-height: 13px; text-align: center;
-  box-shadow: 0 0 0 1.5px var(--text3);
-}
 
 /* Auch hier KEIN Erledigt-Haken mehr (09.09.2026) — siehe die Begruendung bei
    `.ppv-col.done .ppv-wd` weiter oben. */
@@ -1767,10 +1760,6 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe.lauf .training.zukunft:not(.don
    bleibt gedaempft weiss — Grau auf dem Schleier waere kaum zu sehen. */
 html.glas .screen:not(#screen-mehr) .ppv-k-reihe.gym  .verschoben .ppv-k-dot,
 html.glas .screen:not(#screen-mehr) .ppv-k-reihe.lauf .verschoben .ppv-k-dot { background: rgba(255,255,255,.22); }
-html.glas .screen:not(#screen-mehr) .ppv-k-col.verschoben .ppv-k-dot::before,
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.verschoben .ppv-wd::before {
-  background: rgba(255,255,255,.85); color: #64748B; box-shadow: 0 0 0 1.5px rgba(255,255,255,.85);
-}
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.verschoben .ppv-wd {
   background: rgba(255,255,255,.22); color: rgba(255,255,255,.85);
 }
@@ -2934,6 +2923,65 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
 }
 .program-form-row textarea:focus, .program-form-textarea:focus { outline: none; border-color: var(--accent); }
 .day-addto-sub { font-size: 12px; color: var(--text3); padding: 10px 16px 4px; line-height: 1.4; }
+
+/* ── Zeitstrahl der Wettkaempfe (09.09.2026, Leonard-Wunsch) ───────────────────
+   Zweite Ansicht der Seite „Wettkämpfe", umgeschaltet ueber den Knopf links neben dem „+".
+   Die Bauform ist die der Einheiten-Detailansicht (`.hd-rail`): eine senkrechte Linie mit
+   Marken daneben. Bewusst kein Neubau — die App soll nur EINEN Zeitstrahl kennen; hier
+   traegt er nur andere Inhalte und ist antippbar.
+   Die Linie liegt bei 10px, die Marken sitzen mittig darauf (`left: -30px` + 22px breit,
+   genau wie `.hd-step-num`). Wer den Einzug aendert, zieht beides mit. */
+.wk-strahl { position: relative; padding: 4px 14px 8px 44px; }
+/* Die Linie MUSS unter den Marken liegen: `.wk-strahl` hat 44px Einzug, die Marke sitzt
+   `left: -30px` davon und ist 14px breit — ihre Mitte liegt also bei 44−30+7 = 21px. Bei
+   einem 2px-Strich heisst das `left: 20px`. Wer den Einzug oder die Markengroesse aendert,
+   rechnet hier nach (ein erster Anlauf hatte 54px, die Linie lief rechts an den Marken
+   vorbei). */
+.wk-strahl::before {
+  content: ""; position: absolute; left: 20px; top: 16px; bottom: 14px;
+  width: 2px; background: rgba(255,255,255,.35);
+}
+/* Die Jahreszahl sitzt AUF der Linie und gliedert den Strahl. Ihre Flaeche deckt die Linie
+   ab, damit sie nicht durch die Ziffern laeuft. */
+.wk-jahr {
+  position: relative; margin: 14px 0 10px -30px;
+  font-size: 13px; font-weight: 800; color: #fff;
+  background: rgba(255,255,255,.22); border-radius: 999px;
+  padding: 3px 10px; display: inline-block;
+}
+.wk-strahl > .wk-jahr:first-child { margin-top: 0; }
+.wk-punkt { position: relative; margin-bottom: 10px; }
+.wk-punkt:last-child { margin-bottom: 0; }
+/* Der Kopf ist der ganze Tipp-Bereich — ein `<button>`, damit `initScrollHideNav` ihn als
+   Bedienelement erkennt und die Tableiste nicht zurueckholt. */
+.wk-punkt-kopf {
+  position: relative; width: 100%; border: none; background: transparent;
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 5px 0; font-family: inherit; text-align: left;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
+}
+.wk-punkt-marke {
+  position: absolute; left: -30px; top: 4px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; box-sizing: border-box;
+}
+/* Drei Zustaende, dieselbe Aussage wie in den Karten: gelaufen = gefuellt in der Lauffarbe,
+   steht noch an = nur umrandet, vorbei ohne Werte = blass. */
+.wk-punkt.hat-lauf  .wk-punkt-marke { background: #4ADE80; box-shadow: 0 0 0 2px rgba(255,255,255,.9); }
+.wk-punkt.kuenftig  .wk-punkt-marke { background: transparent; border: 2.5px solid #fff; }
+.wk-punkt.fehlt     .wk-punkt-marke { background: rgba(255,255,255,.45); }
+.wk-punkt.offen     .wk-punkt-marke { box-shadow: 0 0 0 3px rgba(255,255,255,.55); }
+.wk-punkt-name  { font-size: 14.5px; font-weight: 700; color: #fff; flex: 1; min-width: 0;
+                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wk-punkt-datum { font-size: 12px; font-weight: 600; color: rgba(255,255,255,.7); flex: 0 0 auto; }
+/* Die Karte steht IMMER im Markup und wird nur ein- und ausgeblendet — so ist das Oeffnen
+   ein Klassenwechsel statt eines Neuaufbaus (siehe `wettkampfStrahl`). */
+.wk-punkt-karte { display: none; }
+.wk-punkt.offen .wk-punkt-karte { display: block; }
+/* Die Karte bringt ihre eigenen 14px Seitenrand mit; im Strahl sitzt sie schon eingerueckt,
+   deshalb hier auf 0 und nur ein kleiner Abstand nach oben. */
+.wk-punkt-karte .wk-card { margin: 4px 0 12px; }
 
 /* ── Seitenleiste: der Seitenschalter der Tabs, unten am Bildschirm ─────────────
    Der Seitenschalter SIEHT AUS WIE EH UND JE (`.seg-toggle` mit `.seg-btn`) — er steht

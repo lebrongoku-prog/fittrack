@@ -1106,10 +1106,15 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Uebersicht. Das Knopfpolster steht wieder bei 8px — es ist nur noch die Untergrenze, die
   Hoehe kommt aus der Karte.
   **Die einzelnen Gym- und Laufkarten holen ihre Hoehe aus den KREISEN**, nicht aus Luft
-  darueber (Leonard-Wunsch, ausdruecklich): `.ppv-wd` ist von 30 auf **40px** gewachsen, die
-  Schrift darin von 12 auf 14px. 40px ist praktisch das Maximum — die Spalte ist auf 375px
-  nur 41.9px breit (323px Inhalt minus 6 Luecken a 5px, durch 7). Die letzten 5px zur
-  Zielhoehe holt das Polster von `.ppv-col` (5 → 7.5px). `.ppv-strip` steht wieder bei 14px.
+  darueber (Leonard-Wunsch, ausdruecklich): `.ppv-wd` ist von 30 auf **36px** gewachsen, die
+  Schrift darin von 12 auf 14px. Die letzten Pixel zur Zielhoehe holt das Polster von
+  `.ppv-col` (5 → 7.5px). `.ppv-strip` steht wieder bei 14px.
+  36px und nicht 40px: Mit 40px war die Einzelkarte NATUERLICH schon 143px hoch, also genau
+  am Deckel — jede Kleinigkeit mehr im Kopf schob sie darueber, waehrend die Kombi-Karte bei
+  142 blieb, und beim Umschalten des Filters sprang die Karte (Leonard-Meldung 09.09.2026).
+  Mit 36px liegt sie natuerlich bei 139px. ZUSAETZLICH tragen die drei WOCHENKARTEN
+  (`#ov-week-card`, `#wo-week-card`, `#wo-view-laufen`) die 143px als `height` statt nur als
+  `min-height` — damit ist ein Sprung strukturell unmoeglich, egal was der Kopf zeigt.
   Die KOMBI-Karte behaelt ihre Loesung von gestern: 6.5px Abstand ueber jeder der beiden
   Reihen (`.ppv-k-reihe`).
 - **KEINE Erledigt-Haken mehr an den Wochentagskreisen** (09.09.2026, Leonard-Wunsch): Der
@@ -1119,8 +1124,17 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   PREIS: In der VERGANGENHEIT sieht ein geplanter, aber ausgefallener Tag jetzt aus wie ein
   absolvierter — beide sind voll in der Sportfarbe. Unterscheidbar bleiben nur kuenftige
   Tage (nur umrandet) und verschobene (grau).
-  Der graue Haken der VERSCHOBENEN Tage BLEIBT deshalb: Ohne ihn waere ein verschobener Tag
-  von einem Tag ohne Training nicht mehr zu unterscheiden (beide grau).
+  Am 09.09.2026 ist auch der graue Haken der VERSCHOBENEN Tage entfallen (Leonard-Wunsch).
+  FOLGE, die man kennen muss: In der KOMBI-Karte ist ein verschobener Tag jetzt von einem
+  Tag ohne Training nicht mehr zu unterscheiden — beide tragen dasselbe `--card2`. In den
+  EINZELKARTEN bleibt er erkennbar (hellgrau gefuellt gegen gar keine Fuellung).
+- **Der Abstand unter dem Titel „Heute" ist von 10 auf 2px** (09.09.2026, Leonard-Wunsch:
+  zwischen Titel und der mittigen Beschriftung stand zu viel Luft). Weil die Karte 143px FEST
+  hoch ist und die Knoepfe `flex: 1` tragen, landen die gesparten 8px automatisch in der
+  KNOPFHOEHE — genau dort, wo sie hin sollten. Gemessen: Knoepfe 49 → **57px** in beiden
+  Herocards. Die Sonderregel `hero-mit-meta` hat ihre Titelzeile dabei verloren (sie setzte
+  dieselben 2px noch einmal); der Rest des Blocks bleibt, er haelt den Textblock der Seite
+  „Gym" zusammen und laesst dem Knopf dort dieselbe Hoehe wie auf „Laufen".
 - **HEUTE ist EIN durchgehendes Feld ueber beide Reihen der Kombi-Karte** (09.09.2026,
   Leonard-Wunsch — vorher zwei getrennte Felder mit sichtbarer Fuge). Beide Reihen tragen
   weiterhin ihr eigenes Feld (sie sind getrennte Rasterzeilen, ein einzelnes Element koennte
@@ -1510,6 +1524,35 @@ Die Karten tragen deshalb NICHT mehr `.karte-inert` (sie sind antippbar). Die Kl
 gilt seit dem 06.09.2026 fuer JEDE Karte, nicht mehr nur fuer `.plan-card-v2`.
 Im Transparenz-Modus brauchen Datum, Hinweistext und die Kachelflaechen eigene Regeln —
 `.hd-stat b` war schon erfasst, die Beschriftung darunter nicht.
+
+### Seite „Wettkämpfe": ZWEITE Ansicht als Zeitstrahl
+09.09.2026, Leonard-Wunsch. Neben der gewohnten Liste gibt es einen senkrechten Zeitstrahl.
+Umgeschaltet wird ueber einen Knopf LINKS neben dem „+" oben rechts (`#races-view-btn` in
+`.ph-actions`); er steht NUR auf dieser Seite und sein Symbol zeigt, wohin er fuehrt —
+Zeitstrahl-Symbol in der Liste, Listen-Symbol im Zeitstrahl (`syncWkAnsichtBtn`, gerufen aus
+`renderPlansScreen`).
+`_wkAnsicht` ('liste' | 'strahl') wird BEWUSST nicht gespeichert — wie jeder Ansichtszustand
+der App. Nach einem Neustart steht wieder die Liste da.
+**Bauform:** `.hd-rail` aus der Einheiten-Detailansicht, nachgebaut als `.wk-strahl` —
+senkrechte Linie, Marken daneben, Jahreszahl als Pille AUF der Linie. Gruppiert wird nach
+Jahr, aufsteigend wie die Liste (bei Leonard beginnt es 2024).
+DREI Zustaende an der Marke, dieselbe Aussage wie in den Karten: gelaufen = gefuellt in
+#4ADE80 · steht noch an = nur umrandet (`.kuenftig`) · vorbei ohne Werte = blass (`.fehlt`).
+FALLE, die dabei zuschlug: Der dritte Zustand hiess zuerst `offen` — genau wie die Klasse fuer
+den HERVORGEHOBENEN Eintrag. Beim Umschalten standen dadurch alle fuenf Karten sofort offen.
+**Genau EINER kann hervorgehoben sein** (`_wkOffen`, `wkStrahlWaehlen`). Ein zweiter Tipp auf
+denselben schliesst ihn wieder — dieselbe Regel wie bei der Fusszeile des Kalenders.
+**SCROLLEN klappt ihn wieder zu** (`initWettkampfStrahl`, Listener auf `#screen-plans`).
+Die Karte jedes Wettkampfs steht dafuer IMMER im Markup und wird nur per Klasse ein- und
+ausgeblendet: Auf- und Zuklappen ist ein Klassenwechsel, kein Neuaufbau — ein Neuaufbau
+mitten in der Scrollbewegung wuerde ruckeln.
+Die KARTE selbst ist unveraendert `wettkampfKarte()`, dieselbe wie in der Liste. Nur ihr
+Seitenrand ist im Strahl auf 0 gesetzt, sie sitzt dort schon eingerueckt.
+TESTHINWEIS: Das Zuklappen beim Scrollen ist auf dem Rechner nur ueber ein von Hand
+ausgeloestes `scroll`-Ereignis pruefbar — in der versteckten Browser-Ansicht feuert das
+Setzen von `scrollTop` keines (siehe die uebrigen Testhinweise).
+
+---
 
 ### Wochenplankarte der Uebersicht: EINE Karte fuer beide Sportarten
 07.09.2026, Leonard-Entscheidung „Variante A". `#ov-week-card` ersetzt die frueher getrennten

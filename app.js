@@ -5869,6 +5869,7 @@ function renderPlansScreen() {
   Object.keys(PLANS_SEITEN).forEach(k => {
     zeige(document.getElementById(PLANS_SEITEN[k].liste), plansViewMode === k);
   });
+  syncWkAnsichtBtn();
   const seite = PLANS_SEITEN[plansViewMode] || PLANS_SEITEN.plans;
   const h1 = document.getElementById('plans-h1');
   if (h1) h1.textContent = seite.titel;
@@ -5889,6 +5890,37 @@ function renderPlansScreen() {
 // Je Wettkampf eine Karte. Die WERTE stammen aus dem Lauf, der an dem Tag in der Tabelle
 // steht (`ft_races` haelt nur Datum und Name) — deshalb kann eine Karte auch ohne Werte
 // dastehen, etwa wenn die Laufdaten noch nicht abgerufen wurden.
+// Die Seite „Wettkämpfe" hat ZWEI Ansichten (09.09.2026, Leonard-Wunsch): die gewohnte
+// Liste und einen senkrechten Zeitstrahl. Umgeschaltet wird ueber den Knopf links neben dem
+// „+" oben rechts; er steht NUR auf dieser Seite (`renderPlansScreen`).
+// BEWUSST nicht gespeichert — wie jeder Ansichtszustand der App (Kalenderfilter,
+// Wochenfilter, Katalogfilter). Nach einem Neustart steht wieder die Liste da.
+let _wkAnsicht = 'liste';        // 'liste' | 'strahl'
+let _wkOffen   = null;           // Datum des hervorgehobenen Wettkampfs im Zeitstrahl
+
+const WK_ICON_STRAHL = `<svg viewBox="0 0 24 24"><line x1="7" y1="3" x2="7" y2="21"/><circle cx="7" cy="7" r="2.4"/><circle cx="7" cy="17" r="2.4"/><line x1="12" y1="7" x2="20" y2="7"/><line x1="12" y1="17" x2="20" y2="17"/></svg>`;
+const WK_ICON_LISTE  = `<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>`;
+
+function toggleWettkampfAnsicht() {
+  _wkAnsicht = (_wkAnsicht === 'liste') ? 'strahl' : 'liste';
+  _wkOffen = null;               // beim Wechsel nichts hervorgehoben stehen lassen
+  renderWettkaempfe();
+  syncWkAnsichtBtn();
+}
+
+// Knopf oben rechts: nur auf der Seite „Wettkämpfe" sichtbar, und sein Symbol zeigt, WOHIN
+// er fuehrt (Zeitstrahl-Symbol in der Liste, Listen-Symbol im Zeitstrahl).
+function syncWkAnsichtBtn() {
+  const b = document.getElementById('races-view-btn');
+  if (!b) return;
+  const an = plansViewMode === 'races';
+  b.style.display = an ? '' : 'none';
+  if (!an) return;
+  const zurListe = _wkAnsicht === 'strahl';
+  b.innerHTML = zurListe ? WK_ICON_LISTE : WK_ICON_STRAHL;
+  b.title = zurListe ? 'Als Liste zeigen' : 'Als Zeitstrahl zeigen';
+}
+
 function renderWettkaempfe() {
   const el = document.getElementById('races-list');
   if (!el) return;
@@ -5898,7 +5930,75 @@ function renderWettkaempfe() {
     return;
   }
   const laeufe = runNachTag();
-  el.innerHTML = rennen.map(r => wettkampfKarte(r, laeufe[r.date])).join('');
+  el.innerHTML = _wkAnsicht === 'strahl'
+    ? wettkampfStrahl(rennen, laeufe)
+    : rennen.map(r => wettkampfKarte(r, laeufe[r.date])).join('');
+}
+
+// Senkrechter Zeitstrahl, aelteste zuerst — dieselbe Reihenfolge wie die Liste.
+// Die Bauform ist die der Einheiten-Detailansicht (`.hd-rail`/`.hd-step`): eine senkrechte
+// Linie mit Marken daneben. BEWUSST kein Neubau — die App soll nur EINEN Zeitstrahl kennen.
+//
+// Die Karte jedes Wettkampfs steht IMMER im Markup und wird nur per Klasse ein- und
+// ausgeblendet. Das Oeffnen ist damit ein Klassenwechsel statt eines Neuaufbaus: Beim
+// Zuklappen durchs Scrollen (siehe `initWettkampfStrahl`) wuerde ein Neuaufbau mitten in
+// der Bewegung ruckeln.
+function wettkampfStrahl(rennen, laeufe) {
+  let jahr = null;
+  const heute = new Date(); heute.setHours(0, 0, 0, 0);
+  const teile = rennen.map(r => {
+    const [y, m, d] = r.date.split('-').map(Number);
+    const stueck = [];
+    if (y !== jahr) { jahr = y; stueck.push(`<div class="wk-jahr">${y}</div>`); }
+    const kurz = new Date(y, m - 1, d).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
+    const lauf = laeufe[r.date];
+    // Drei Zustaende an der Marke, dieselbe Aussage wie in den Karten: gelaufen (gefuellt),
+    // steht noch an (nur umrandet), vorbei ohne Werte (blass).
+    const kuenftig = new Date(y, m - 1, d).getTime() > heute.getTime();
+    // ACHTUNG: NICHT `offen` nennen — diese Klasse gehoert dem hervorgehobenen Eintrag.
+    // Beim ersten Anlauf hiess der Zustand so und alle fuenf Karten standen sofort offen.
+    const mk = lauf ? ' hat-lauf' : (kuenftig ? ' kuenftig' : ' fehlt');
+    const offen = _wkOffen === r.date;
+    return stueck.join('') + `
+      <div class="wk-punkt${offen ? ' offen' : ''}${mk}" data-date="${r.date}">
+        <button type="button" class="wk-punkt-kopf" onclick="wkStrahlWaehlen('${r.date}')"
+                aria-expanded="${offen ? 'true' : 'false'}">
+          <span class="wk-punkt-marke" aria-hidden="true"></span>
+          <span class="wk-punkt-name">${escapeHtml(r.name || 'Wettkampf')}</span>
+          <span class="wk-punkt-datum">${kurz}</span>
+        </button>
+        <div class="wk-punkt-karte">${wettkampfKarte(r, lauf)}</div>
+      </div>`;
+  });
+  return `<div class="wk-strahl">${teile.join('')}</div>`;
+}
+
+// Genau EINER kann hervorgehoben sein. Ein zweiter Tipp auf denselben schliesst ihn wieder —
+// dieselbe Regel wie bei der Fusszeile des Kalenders.
+function wkStrahlWaehlen(datum) {
+  _wkOffen = (_wkOffen === datum) ? null : datum;
+  document.querySelectorAll('#races-list .wk-punkt').forEach(p => {
+    const an = p.dataset.date === _wkOffen;
+    p.classList.toggle('offen', an);
+    const k = p.querySelector('.wk-punkt-kopf');
+    if (k) k.setAttribute('aria-expanded', an ? 'true' : 'false');
+  });
+}
+
+// Scrollen klappt den hervorgehobenen Wettkampf wieder zu (Leonard-Wunsch 09.09.2026).
+// Nur ein Klassenwechsel, KEIN Neuaufbau — sonst ruckelte die Liste mitten in der Bewegung.
+function initWettkampfStrahl() {
+  const scr = document.getElementById('screen-plans');
+  if (!scr) return;
+  scr.addEventListener('scroll', () => {
+    if (!_wkOffen) return;
+    _wkOffen = null;
+    document.querySelectorAll('#races-list .wk-punkt.offen').forEach(p => {
+      p.classList.remove('offen');
+      const k = p.querySelector('.wk-punkt-kopf');
+      if (k) k.setAttribute('aria-expanded', 'false');
+    });
+  }, { passive: true });
 }
 
 function wettkampfKarte(r, lauf) {
@@ -9228,6 +9328,8 @@ document.addEventListener('DOMContentLoaded', () => {
   prerenderAllTabs();
   // Drive-Sync initialisieren (versucht stillen Auto-Login, lädt Cloud-Daten falls verbunden)
   driveInit();
+  // Zeitstrahl der Wettkaempfe: Scrollen klappt den hervorgehobenen wieder zu
+  initWettkampfStrahl();
   // Seitenleiste unten (Seitenschalter der Tabs) — MUSS vor `initScrollHideNav` stehen:
   // das dortige `setNavHidden` merkt sich das Element beim Einrichten.
   initSeitenleiste();

@@ -212,8 +212,13 @@
         <h1 id="plans-h1">Gymplan</h1>
         <div class="ph-sub" id="plans-subline" style="display:none">Übersicht aller Pläne</div>
       </div>
-      <div class="ex-add-btn" id="plans-add-btn" onclick="onPlansAdd()" title="Neu erstellen">
-        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <div class="ph-actions">
+        <!-- Nur auf der Seite „Wettkämpfe": schaltet zwischen Liste und Zeitstrahl um.
+             Sichtbarkeit und Symbol setzt renderPlansScreen bzw. syncWkAnsichtBtn. -->
+        <div class="ex-add-btn" id="races-view-btn" onclick="toggleWettkampfAnsicht()" style="display:none"></div>
+        <div class="ex-add-btn" id="plans-add-btn" onclick="onPlansAdd()" title="Neu erstellen">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
       </div>
     </div>
     <!-- Derselbe Trainingskalender wie in der Übersicht (zweite Instanz, Präfix "pcal") -->
