@@ -1004,22 +1004,28 @@ function toggleWochenFilter() {
 function renderWochenKarte() {
   const el = document.getElementById('ov-week-card');
   if (!el) return;
-  // Die ganze Karte ist EIN Ziel und fuehrt auf die Plan-Seite IHRER Sportart (Leonard-Wunsch
-  // 06.09.2026). Im gemeinsamen Zustand hat jede REIHE ihr eigenes Ziel — sie ist dort das,
-  // was sonst die ganze Karte ist, fuehrt aber in den TRAININGS-Tab statt in den Plan-Tab
-  // (Leonard-Wunsch 08.09.2026): Aus der Wochenuebersicht will man zum Training, nicht in die
-  // Planbearbeitung.
+  // Jede Karte ist EIN Ziel und fuehrt in den TRAININGS-Tab auf die Seite IHRER Sportart
+  // (Leonard-Wunsch 09.09.2026 — vorher in den Plan-Tab auf die Planbearbeitung). Damit
+  // verhalten sich jetzt ALLE drei Zustaende der Karte gleich: Der gemeinsame Zustand fuehrt
+  // seine Reihen schon seit dem 08.09.2026 dorthin. Aus der Wochenuebersicht will man zum
+  // Training, nicht in die Planbearbeitung.
+  // AUSNAHME: Die LEEREN Karten fuehren weiter in den Plan-Tab — dort steht „Tippe, um einen
+  // Plan anzulegen", und anlegen kann man ihn nur da. Der Trainings-Tab haette ohne Plan
+  // nichts zu zeigen.
   const zurPlanSeite = (seite) => `setPlansView('${seite}');wischeZuTab('plans')`;
   const zurTrainingsSeite = (seite) => `setWorkoutsView('${seite}');wischeZuTab('workouts')`;
   if (_wochenFilter === 'gym') {
     const active = getActivePlan();
     el.innerHTML = active
-      ? buildPlanCard(active, zurPlanSeite('plans'), /*hideToday*/ false, /*hideStatus*/ true,
+      ? buildPlanCard(active, zurTrainingsSeite('gym'), /*hideToday*/ false, /*hideStatus*/ true,
                       /*hideMeta*/ true, { filterOnTap: 'toggleWochenFilter' })
       : leereWochenKarte('Kein aktiver Trainingsplan',
           'Tippe, um einen Plan anzulegen oder zu aktivieren.', zurPlanSeite('plans'));
   } else if (_wochenFilter === 'lauf') {
-    el.innerHTML = buildRunPlanCard(null, null, { filterOnTap: 'toggleWochenFilter' });
+    // `buildRunPlanCard` zeichnet die leere Karte selbst und faellt dort auf ihr Standardziel
+    // zurueck, wenn kein Ziel genannt ist — deshalb hier nur bei vorhandenem Plan eines setzen.
+    el.innerHTML = buildRunPlanCard(runPlanAktiv() ? zurTrainingsSeite('laufen') : null, null,
+                                    { filterOnTap: 'toggleWochenFilter' });
   } else {
     el.innerHTML = buildWochenKombi(zurTrainingsSeite);
   }

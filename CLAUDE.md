@@ -160,6 +160,11 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   (`rgba(255,255,255,.12)` plus die vier Farbtoken). Ohne diese Regel blieb er als einziges
   Element der Seite deckend weiss stehen und sprang heraus (Leonard-Meldung 09.09.2026) —
   er ist eben eine Karte, und Karten sind dort durchscheinend.
+  Die ANZAHL-PILLE braucht dabei eine EIGENE Angabe: Sie liest `background: var(--card)`,
+  und `--card` steht in der Regel darueber nicht mit drin. Sie blieb deshalb deckend weiss
+  — mit einer 65-%-weissen Ziffer darin, also ein leerer weisser Fleck (Leonard-Meldung
+  09.09.2026 mit Screenshot). Jetzt `rgba(255,255,255,.25)` mit weisser Ziffer. Betraf
+  ALLE DREI Knoepfe, sie teilen sich die Klasse.
 - **Alle Kartentitel sind 16px** (01.09.2026, Vorbild „Trainingskalender"): `.chart-card-v2-title`,
   `.plan-section-head h3`, `.ppv-name`, `.scv2-title`, `.hero-v2-title` (auch in `rest-mode` und
   `active-mode` — deren eigene Groessenangaben sind entfallen). `.mehr-section-title` ist KEIN
@@ -826,10 +831,20 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 
   | Ort | Tipp auf die Karte | Tipp auf einen Wochentag |
   |---|---|---|
-  | Uebersicht, Gym | Plan-Tab, Seite „Gymplan" | wie Karte |
-  | Uebersicht, Lauf | Plan-Tab, Seite „Laufplan" | wie Karte |
+  | Uebersicht, Gym | Trainings-Tab, Seite „Gym" | wie Karte |
+  | Uebersicht, Lauf | Trainings-Tab, Seite „Laufen" | wie Karte |
+  | Uebersicht, LEER (kein Plan) | Plan-Tab — dort legt man einen an | wie Karte |
   | Trainings-Tab | **nichts** | waehlt den Tag AUS (`selectWorkoutDay` / `selectRunDay`) |
   | Plaene-Tab | Detailansicht des Plans | wie Karte |
+
+  Die Uebersicht fuehrt seit dem 09.09.2026 in den TRAININGS-Tab (vorher in den Plan-Tab,
+  Leonard-Wunsch). Damit verhalten sich alle drei Zustaende der Wochenkarte gleich — der
+  gemeinsame Zustand fuehrt seine Reihen schon seit dem 08.09.2026 dorthin. Aus der
+  Wochenuebersicht will man zum Training, nicht in die Planbearbeitung.
+  AUSNAHME sind die LEEREN Karten: Dort steht „Tippe, um einen Plan anzulegen", und anlegen
+  kann man ihn nur im Plan-Tab. `buildRunPlanCard` zeichnet ihre leere Fassung selbst und
+  faellt auf ihr Standardziel zurueck, wenn kein Ziel genannt ist — `renderWochenKarte`
+  nennt deshalb nur bei vorhandenem Plan eines.
 
   Im Trainings-Tab wird der gewaehlte Tag zusaetzlich markiert (`opts.selectedIdx` →
   `.ppv-col.selected`) — die Auswahl steuert dort, welcher Tag darunter erscheint. Nur deshalb

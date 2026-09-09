@@ -1316,6 +1316,15 @@ html.glas .screen:not(#screen-mehr) .plans-list-archive-header {
   --text: #fff; --text2: rgba(255,255,255,.85); --text3: rgba(255,255,255,.65);
   --border: rgba(255,255,255,.24);
 }
+/* Die Anzahl-Pille liest `background: var(--card)` — und `--card` blieb in der Regel darueber
+   auf Weiss stehen. Ergebnis war ein deckend weisser Fleck mit einer 65-%-weissen Ziffer
+   darin, also praktisch unsichtbar (Leonard-Meldung 09.09.2026, Screenshot). Sie braucht
+   deshalb eine eigene Angabe — beide Werte ausgeschrieben statt ueber `--card`, damit der
+   Zusammenhang beim Lesen sofort da steht.
+   Gilt fuer ALLE DREI Archiv-Knoepfe, sie teilen sich die Klasse. */
+html.glas .screen:not(#screen-mehr) .plans-list-archive-header .plan-day-collapse-count {
+  background: rgba(255,255,255,.25); color: #fff;
+}
 
 /* Die Ruhetag-Karte traegt ihren hellen Verlauf ueber die Klasse (frueher inline gesetzt,
    was jede Regel geschlagen haette) — hier wird er durch den Schleier ersetzt. */
