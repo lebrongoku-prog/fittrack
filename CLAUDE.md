@@ -156,6 +156,10 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Pfeil links neben der Beschriftung, mittig) und nur im Gymtage-Archiv die weisse Karte.
   Der Zustand steht als KLASSE `.expanded` UND als `aria-expanded` am Knopf — die Drehregel
   fragt beides ab, damit sie unabhaengig vom Aufrufer greift.
+  Im TRANSPARENZ-MODUS traegt er dieselben Werte wie `.plan-list-row` daneben
+  (`rgba(255,255,255,.12)` plus die vier Farbtoken). Ohne diese Regel blieb er als einziges
+  Element der Seite deckend weiss stehen und sprang heraus (Leonard-Meldung 09.09.2026) —
+  er ist eben eine Karte, und Karten sind dort durchscheinend.
 - **Alle Kartentitel sind 16px** (01.09.2026, Vorbild „Trainingskalender"): `.chart-card-v2-title`,
   `.plan-section-head h3`, `.ppv-name`, `.scv2-title`, `.hero-v2-title` (auch in `rest-mode` und
   `active-mode` — deren eigene Groessenangaben sind entfallen). `.mehr-section-title` ist KEIN
@@ -1132,7 +1136,19 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   zwischen Titel und der mittigen Beschriftung stand zu viel Luft). Weil die Karte 143px FEST
   hoch ist und die Knoepfe `flex: 1` tragen, landen die gesparten 8px automatisch in der
   KNOPFHOEHE — genau dort, wo sie hin sollten. Gemessen: Knoepfe 49 → **57px** in beiden
-  Herocards. Die Sonderregel `hero-mit-meta` hat ihre Titelzeile dabei verloren (sie setzte
+  Herocards.
+  ACHTUNG, hier steckt eine Falle: Der sichtbare Abstand zwischen Titel und Namenszeile ist
+  NICHT nur dieser `margin-bottom`. Die Karte ist eine Flex-Spalte und erbt von `.hero-v2`
+  einen `gap: 12px` — zusammen also 14px. Wer dort etwas holen will, muss den GAP anfassen;
+  am Titelabstand allein sind nur 2px zu gewinnen (genau dieser Irrtum kostete einen
+  Anlauf).
+  **„Einheit starten" ist genauso hoch wie „Freies Training starten"**
+  (`.hero-heute.hero-mit-meta { gap: 4px }`, Leonard-Wunsch 09.09.2026). Vorher war er
+  8.1px flacher: Die Zusatzzeile kostet 12.1px, der engere Spaltenabstand gibt nur 4px
+  zurueck. Die fehlenden 8px kommen jetzt aus eben jenem Gap (14 → 6px) — die Karte bleibt
+  bei 143px, beide Knoepfe messen 57px (56.9 gegen 57.0, also 0.1px auseinander).
+  NUR im Meta-Fall: Ohne Zusatzzeile bleibt der Abstand bei 14px. Kuerzte man ihn dort
+  auch, waere „Freies Training starten" wieder hoeher und die Gleichheit dahin. Die Sonderregel `hero-mit-meta` hat ihre Titelzeile dabei verloren (sie setzte
   dieselben 2px noch einmal); der Rest des Blocks bleibt, er haelt den Textblock der Seite
   „Gym" zusammen und laesst dem Knopf dort dieselbe Hoehe wie auf „Laufen".
 - **HEUTE ist EIN durchgehendes Feld ueber beide Reihen der Kombi-Karte** (09.09.2026,

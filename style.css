@@ -1304,6 +1304,18 @@ html.glas .screen:not(#screen-mehr) .plan-list-row {
   --border: rgba(255,255,255,.24);
 }
 html.glas .screen:not(#screen-mehr) .plan-list-row .plan-list-name { color: #fff; }
+/* Der Archiv-Knopf ist eine KARTE (weisse Flaeche mit Schatten, seit 05.09.2026 dieselbe
+   Bauform fuer alle drei Listen) und blieb im Transparenz-Modus als einziges Element
+   deckend weiss stehen — er sprang aus der Seite heraus (Leonard-Meldung 09.09.2026).
+   Dieselben Werte wie `.plan-list-row` daneben, damit er sich einreiht. Die Farbtoken
+   werden mitgesetzt: Beschriftung, Anzahl-Pille und Pfeil lesen sie. */
+html.glas .screen:not(#screen-mehr) .plans-list-archive-header {
+  background: rgba(255,255,255,.12);
+  box-shadow: 0 1px 6px rgba(0,0,0,.18);
+  color: rgba(255,255,255,.85);
+  --text: #fff; --text2: rgba(255,255,255,.85); --text3: rgba(255,255,255,.65);
+  --border: rgba(255,255,255,.24);
+}
 
 /* Die Ruhetag-Karte traegt ihren hellen Verlauf ueber die Klasse (frueher inline gesetzt,
    was jede Regel geschlagen haette) — hier wird er durch den Schleier ersetzt. */
@@ -1480,7 +1492,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    Knoepfen — `.hero-heute-spalten` und `.hero-heute-spalte` wachsen mit `flex: 1`, der Knopf
    darin ebenfalls. Als `display: block` blieb unten schlicht Leerraum stehen und die Knoepfe
    waren KLEINER als vorher (33.5 statt 41.5px, gemessen 09.09.2026). */
-.hero-heute { display: flex; flex-direction: column; padding: 14px; }
+.hero-heute { display: flex; flex-direction: column; gap: 12px; padding: 14px; }
 .hero-heute-spalten { flex: 1; min-height: 0; }
 .hero-heute .hero-heute-spalte { flex: 1; min-height: 0; }
 /* 2px statt 10px unter dem Titel (Leonard-Wunsch 09.09.2026): Zwischen „Heute" und der
@@ -1530,6 +1542,17 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    Die Zeile fuer den Titelabstand ist mit der generellen Umstellung entfallen (sie setzte
    dieselben 2px noch einmal). */
 .hero-heute.hero-mit-meta .hero-heute-spalte { gap: 6px; }
+/* „Einheit starten" war 8.1px FLACHER als „Freies Training starten" (48.9 gegen 57px,
+   gemessen 09.09.2026): Die Zusatzzeile kostet 12.1px, der engere Spaltenabstand gibt nur
+   4px zurueck. Leonard wollte beide gleich hoch — ohne die Karte zu vergroessern, und der
+   Platz soll aus dem Abstand zwischen dem Titel „Heute" und der Zeile mit dem
+   Trainingstagnamen kommen.
+   Genau das macht diese Zeile: Der Abstand dort ist der FLEX-GAP der Karte (12px, geerbt
+   von `.hero-v2`) plus die 2px Titelabstand — zusammen 14px. Auf 4px gekuerzt bleiben 6px,
+   und die freien 8px landen im Knopf: beide messen jetzt 57px.
+   NUR im Meta-Fall — im Fall ohne Zusatzzeile bleibt der Abstand bei 14px, sonst waere
+   „Freies Training starten" wieder hoeher und die Gleichheit dahin. */
+.hero-heute.hero-mit-meta { gap: 4px; }
 .hero-heute.hero-mit-meta .hero-heute-kopf { gap: 0; }
 /* Die Beschriftung darf UMBRECHEN: „Lauf abgeschlossen" braucht bei 14px 135px Text, in den
    155px eines halben Knopfes bleiben nach Polster, Symbol und Abstand aber nur 114px. Kleiner
