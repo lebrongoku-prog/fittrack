@@ -1810,11 +1810,6 @@ html.wo-running #wo-week-card { display: none; }
 
 /* Auch hier KEIN Erledigt-Haken mehr (09.09.2026) — siehe die Begruendung bei
    `.ppv-col.done .ppv-wd` weiter oben. */
-/* Die beiden Zahlen tragen die Farbe IHRER Reihe — sonst waere nicht zu erkennen, welche
-   zu welcher Sportart gehoert (die Reihenfolge allein genuegt dafuer nicht). */
-.ppv-k-adh { font-size: 13px; font-weight: 600; color: var(--text3); white-space: nowrap; }
-.ppv-k-adh .gym  { color: #0F766E; }
-.ppv-k-adh .lauf { color: #22A05B; }
 /* Der Filtertitel sieht aus wie jeder Kartentitel, ist aber ein Knopf. */
 .ppv-filter-btn {
   border: none; background: none; padding: 0; margin: 0; text-align: left;
@@ -1846,9 +1841,6 @@ html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.verschoben .ppv-wd {
 }
 html.glas .screen:not(#screen-mehr) .ppv-k-labels { color: rgba(255,255,255,.75); }
 html.glas .screen:not(#screen-mehr) .ppv-k-ic { color: rgba(255,255,255,.85); }
-html.glas .screen:not(#screen-mehr) .ppv-k-adh,
-html.glas .screen:not(#screen-mehr) .ppv-k-adh .gym,
-html.glas .screen:not(#screen-mehr) .ppv-k-adh .lauf { color: #fff; }
 html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 /* ═══════════════════════════════════
    WORKOUT (Active session) – Mockup v2

@@ -1126,8 +1126,6 @@ function buildWochenKombi() {
                      verschoben: !!(weekDone[i] && weekDone[i].verschoben) };
     });
   }
-  const gs = getWeekStatus();
-
   // ── Lauf ──
   const rp = runPlanAktiv();
   const rs = runWochenStatus();
@@ -1171,8 +1169,6 @@ function buildWochenKombi() {
   return `<div class="plan-card-v2 ppv-kombi karte-inert">
     <div class="ppv-head">
       ${wochenFilterTitel('ppv-name')}
-      <span class="ppv-k-adh"><span class="gym">${gs.done}/${gs.planned}</span>
-        · <span class="lauf">${rs.done}/${rs.planned}</span></span>
     </div>
     <div class="ppv-k-labels">
       <span class="ppv-k-ic"></span>

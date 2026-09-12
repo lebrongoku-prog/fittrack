@@ -1742,9 +1742,12 @@ Haken. Nicht erneut einbauen, ohne zu fragen.
 ENTFERNT am 08.09.2026 (Leonard-Wunsch): die Zeile mit der Wochenzahl je Plan
 („Woche 8 / 9  Woche 3 / 4") unter dem Titel, samt `.ppv-k-wochen`/`.ppv-k-wk` und der nur
 dafuer gebauten Funktion `runKombiWoche`. In den EINZELZUSTAENDEN steht die Wochenzahl
-unveraendert im Fortschrittsblock. Statt zweier Fortschrittsbloecke nur die Woche je
-Sportart plus „0/3 · 1/3" im Kopf — beide Zahlenpaare tragen die Farbe IHRER Reihe, sonst
-waere nicht erkennbar, welche zu welcher Sportart gehoert.
+unveraendert im Fortschrittsblock.
+ENTFERNT am 13.09.2026 (Leonard-Wunsch): auch das Zahlenpaar „0/3 · 1/3" oben rechts im
+Kopf, samt `.ppv-k-adh` und dessen Glas-Regel — der Kopf der Kombi-Karte traegt seither nur
+noch den Filtertitel. Mit ihm fiel der Aufruf von `getWeekStatus()` in `buildWochenKombi`
+weg (die Funktion selbst lebt weiter, die Einzelkarten nutzen sie). Die EINZELZUSTAENDE
+behalten ihre Zeile „2/5 diese Woche" (`.ppv-adh`, andere Klasse) unveraendert.
 **JEDER WOCHENTAG IST EIN EIGENES TIPP-ZIEL** (12.09.2026, Leonard-Wunsch;
 `waehleKombiTag(sport, idx)`, Zustand `_kombiWahl`). Die Herocard direkt darunter zeigt
 daraufhin DIESEN Tag — Titel, Beschriftung und Knopf.
