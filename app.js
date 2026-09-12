@@ -891,6 +891,12 @@ function _applyTabState(name) {
   // über Hintergrund-Tipp (Toggle) oder Hochscrollen (beides in initScrollHideNav).
 }
 
+// Die Bottom-Nav ausblenden, von ausserhalb von `initScrollHideNav` aus. Dort ist
+// `setNavHidden` eine lokale Funktion; hier steht der Zeiger darauf, damit der Tabwechsel
+// sie erreicht (12.09.2026, Leonard-Wunsch: „beim Swipen und Wechseln zwischen den Tabs soll
+// die Tableiste verschwinden"). Vor dem Einrichten tut sie nichts.
+let _navVerstecken = () => {};
+
 function showScreen(name) {
   // Vollbild-Overlays UEBER dem Tab-Container. Als Tabelle statt als Kette von Zweigen —
   // mit dem Laufplan-Detail waere es der vierte gleichlautende Block gewesen (04.09.2026).
@@ -907,6 +913,12 @@ function showScreen(name) {
 
   // Wenn der Ziel-Tab nicht in der TAB_ORDER ist, ignorieren
   if (!TAB_ORDER.includes(name)) return;
+
+  // Tabwechsel blendet die Tableiste aus (Leonard-Wunsch 12.09.2026). NUR zwischen zwei
+  // Tabs — die Rueckkehr aus einem Vollbild-Overlay (Einstellungen, Plan-Detail) ist kein
+  // Tabwechsel und soll die Leiste stehen lassen. Der Wisch hat seinen eigenen Ausloeser in
+  // `initTabScrollSync`; beide enden im selben Zustand.
+  if (currentScreen !== name && TAB_ORDER.includes(currentScreen)) _navVerstecken(true);
 
   currentScreen = name;
   // Programmatisch zum Tab scrollen (instant, kein smooth — Nutzer-Praeferenz)
@@ -2006,7 +2018,13 @@ function oeffneLaufendeEinheit() {
   const idx = woDayIdx(wo);
   if (idx >= 0) selectedWorkoutDayIdx = idx;
   workoutsViewMode = 'gym';
-  showScreen('workouts');
+  // Erst zeichnen, dann wischen — dieselbe Reihenfolge wie in `jumpToWorkoutDay`: Der Tab
+  // liegt schon (ausserhalb des Bildes) im DOM und zeigt die laufende Einheit bereits
+  // richtig, waehrend er hereinwandert (Leonard-Wunsch 12.09.2026: die Pille soll wischen,
+  // nicht springen). `wischeZuTab` faellt aus einem Vollbild-Overlay heraus von selbst auf
+  // den harten Wechsel zurueck.
+  renderWorkoutsScreen();
+  wischeZuTab('workouts');
 }
 
 function jumpToWorkoutDay(idx) {
@@ -2169,7 +2187,7 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
                  data-np-ctx="preview" data-np-day="${planDay.id}" data-np-mode="${mode}" data-np-ei="${ei}" data-np-si="${si}" data-np-field="weight" data-np-label="${escapeHtml(ex.name)}"
                  aria-label="Gewicht Satz ${si+1}" onclick="openNumpadFromInput(this)">${s.weight === '' ? '–' : s.weight}</div>
           </div>`).join('');
-    return `<div class="aex-v2 ${collapsedCls}" id="aex-${ei}" style="--c:${col.c};--c-bg:${col.bg}"
+    return `<div class="aex-v2 ${collapsedCls}" id="aex-${ei}" data-ex="${exIdKey}" style="--c:${col.c};--c-bg:${col.bg}"
                  ondragstart="aexDragStart(event,${ei},'${mode}','${planDay.id}')"
                  ondragend="aexDragEnd(event)"
                  ondragover="aexDragOver(event,${ei})"
@@ -2323,7 +2341,7 @@ function renderActiveWorkout() {
     const stateCls = ex.done ? 'done' : (ex.skipped ? 'skipped' : '');
     const exIdKey = ex.exId || ex.id;
     const collapsedCls = isAexExpanded(exIdKey) ? '' : 'collapsed';
-    return `<div class="aex-v2 ${stateCls} ${collapsedCls}" id="aex-${ei}" style="--c:${col.c};--c-bg:${col.bg}"
+    return `<div class="aex-v2 ${stateCls} ${collapsedCls}" id="aex-${ei}" data-ex="${exIdKey}" style="--c:${col.c};--c-bg:${col.bg}"
                  ondragstart="aexDragStart(event,${ei},'active')"
                  ondragend="aexDragEnd(event)"
                  ondragover="aexDragOver(event,${ei})"
@@ -2415,6 +2433,53 @@ function ensureActiveExpanded(wo) {
   const next = wo.exercises.find(e => !e.done && !e.skipped);
   if (next) expandedAexIds.add(next.exId || next.id);
 }
+// ─── Auf- und Zuklappen mit Bewegung (12.09.2026, Leonard-Wunsch) ────────────────────
+// Das Umschalten baut die ganze Kartenliste neu auf — eine CSS-Transition auf `.collapsed`
+// liefe deshalb NIE: Das Element ist beim ersten Zeichnen schon im Endzustand.
+// Darum wird die HOEHE DER KARTE von Hand gefahren (Web Animations API) und der Neuaufbau
+// erst danach ausgeloest. Das erfasst alles auf einmal — Koerper, Aktionsleiste, Diagramm,
+// die Zeile „Zuletzt" und das Polster des Kopfes —, ohne dass das Markup umgebaut werden
+// muesste. Der Inhalt selbst springt sofort in seine Endlage und wird von `overflow: hidden`
+// beschnitten; genau so sieht ein Akkordeon aus.
+// BEIM ZUKLAPPEN wird die Klasse nur zum MESSEN gesetzt und sofort wieder entfernt (dazwischen
+// zeichnet der Browser nicht, es ist also unsichtbar) — sonst waere der Inhalt schon weg,
+// bevor sich die Karte bewegt, und es schrumpfte eine leere Flaeche.
+const AEX_KLAPP_MS = 200;
+function _aexKarte(exId) {
+  return document.querySelector(`.aex-v2[data-ex="${CSS.escape(String(exId))}"]`);
+}
+function _aexKlappAnimieren(el, auf, danach) {
+  const reduziert = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!el || reduziert || !el.animate) { danach(); return; }
+  const von = el.getBoundingClientRect().height;
+  el.classList.toggle('collapsed', !auf);
+  const bis = el.getBoundingClientRect().height;
+  if (!auf) el.classList.remove('collapsed');   // Inhalt bis zum Ende stehen lassen
+  if (Math.abs(bis - von) < 1) { if (!auf) el.classList.add('collapsed'); danach(); return; }
+  el.style.overflow = 'hidden';
+  const anim = el.animate([{ height: von + 'px' }, { height: bis + 'px' }],
+                          { duration: AEX_KLAPP_MS, easing: 'ease' });
+  // `danach` zeichnet die Liste neu und setzt damit den Endzustand; das geschieht im selben
+  // Arbeitsschritt wie das Ende der Bewegung, es blitzt also nichts dazwischen auf.
+  // NOTBREMSE: Die Zeitleiste des Dokuments steht still, solange die Seite nicht sichtbar
+  // ist (App im Hintergrund, versteckte Browser-Ansicht) — `onfinish` kaeme dann NIE, und
+  // die Karte bliebe mit fester Hoehe und `overflow: hidden` stehen, ohne dass die Liste je
+  // neu gezeichnet wuerde. Der Wecker holt beides nach. Dieselbe Vorsichtsmassnahme wie in
+  // `_tabFahrt`.
+  let erledigt = false;
+  const fertig = () => {
+    if (erledigt) return;
+    erledigt = true;
+    clearTimeout(wecker);
+    if (anim.playState === 'running') anim.cancel();
+    el.style.overflow = '';
+    danach();
+  };
+  const wecker = setTimeout(fertig, AEX_KLAPP_MS + 300);
+  anim.onfinish = fertig;
+  anim.oncancel = fertig;
+}
+
 function toggleAexCollapse(exId, ev) {
   if (ev) {
     // Klick auf die Erledigt-Box soll NICHT togglen. (Der frueher hier mitgeprüfte
@@ -2422,16 +2487,20 @@ function toggleAexCollapse(exId, ev) {
     const t = ev.target;
     if (t.closest && t.closest('.aex-v2-done')) return;
   }
-  if (expandedAexIds.has(exId)) {
+  const auf = !expandedAexIds.has(exId);
+  if (auf) {
+    expandedAexIds.add(exId);
+  } else {
     expandedAexIds.delete(exId);
     aexChartOffen.delete(exId);      // Diagramm schliesst mit und bleibt zu
-  } else {
-    expandedAexIds.add(exId);
   }
   // Merken, ob der Nutzer bewusst alles zugeklappt hat (siehe ensureActiveExpanded)
   _aexUserClosedAll = expandedAexIds.size === 0;
-  if (currentScreen === 'workouts') renderWorkoutsScreen();
-  else if (currentScreen === 'day-detail') renderLibDayDetail();
+  const neuZeichnen = () => {
+    if (currentScreen === 'workouts') renderWorkoutsScreen();
+    else if (currentScreen === 'day-detail') renderLibDayDetail();
+  };
+  _aexKlappAnimieren(_aexKarte(exId), auf, neuZeichnen);
 }
 // SVG-Chevron-Snippet fuer die Card-Header (gemeinsame Konstante)
 const AEX_CHEV_SVG = '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>';
@@ -3043,7 +3112,9 @@ function expandNextExercise() {
   const nextExId = nextEx.exId || nextEx.id;
   if (!isAexExpanded(nextExId)) {
     expandedAexIds.add(nextExId);
-    renderWorkoutsScreen();
+    // Dieselbe Bewegung wie beim Antippen (Leonard-Wunsch 12.09.2026). Die Karte steht hier
+    // noch eingeklappt im DOM — `renderWorkoutsScreen` lief, bevor die Id im Satz war.
+    _aexKlappAnimieren(_aexKarte(nextExId), true, () => renderWorkoutsScreen());
   }
   return nextIdx;
 }
@@ -6018,7 +6089,8 @@ function renderPlansScreen() {
 // „+" oben rechts; er steht NUR auf dieser Seite (`renderPlansScreen`).
 // BEWUSST nicht gespeichert — wie jeder Ansichtszustand der App (Kalenderfilter,
 // Wochenfilter, Katalogfilter). Nach einem Neustart steht wieder die Liste da.
-let _wkAnsicht = 'liste';        // 'liste' | 'strahl'
+let _wkAnsicht = 'strahl';       // 'liste' | 'strahl' — Standard ist der Zeitstrahl
+                                 // (Leonard-Wunsch 12.09.2026, vorher die Liste).
 let _wkOffen   = null;           // Datum des hervorgehobenen Wettkampfs im Zeitstrahl
 
 const WK_ICON_STRAHL = `<svg viewBox="0 0 24 24"><line x1="7" y1="3" x2="7" y2="21"/><circle cx="7" cy="7" r="2.4"/><circle cx="7" cy="17" r="2.4"/><line x1="12" y1="7" x2="20" y2="7"/><line x1="12" y1="17" x2="20" y2="17"/></svg>`;
@@ -6073,7 +6145,6 @@ function wettkampfStrahl(rennen, laeufe) {
     const [y, m, d] = r.date.split('-').map(Number);
     const stueck = [];
     if (y !== jahr) { jahr = y; stueck.push(`<div class="wk-jahr">${y}</div>`); }
-    const kurz = new Date(y, m - 1, d).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
     const lauf = laeufe[r.date];
     // Drei Zustaende an der Marke, dieselbe Aussage wie in den Karten: gelaufen (gefuellt),
     // steht noch an (nur umrandet), vorbei ohne Werte (blass).
@@ -6088,7 +6159,6 @@ function wettkampfStrahl(rennen, laeufe) {
                 aria-expanded="${offen ? 'true' : 'false'}">
           <span class="wk-punkt-marke" aria-hidden="true"></span>
           <span class="wk-punkt-name">${escapeHtml(r.name || 'Wettkampf')}</span>
-          <span class="wk-punkt-datum">${kurz}</span>
         </button>
         <div class="wk-punkt-karte">${wettkampfKarte(r, lauf)}</div>
       </div>`;
@@ -9243,6 +9313,11 @@ function initTabScrollSync() {
       // Theme + Nav-Highlight schon WAEHREND des Snaps wechseln (responsiv);
       // der "schwere" Renderer kommt erst im Settle.
       if (name !== lastReported) {
+        // Der Wisch blendet die Tableiste aus (Leonard-Wunsch 12.09.2026) — hier, weil der
+        // Handler die Schwelle von 50 % ohnehin schon kennt. Deckt den Fingerwisch UND die
+        // programmatische Fahrt aus `wischeZuTab` ab; der harte Wechsel ueber die Tableiste
+        // selbst hat seinen Ausloeser in `showScreen`.
+        _navVerstecken(true);
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         const navEl = document.getElementById('nav-'+name);
         if (navEl) navEl.classList.add('active');
@@ -9355,6 +9430,8 @@ function initScrollHideNav() {
     if (rest) rest.classList.toggle('nav-hidden', h);
     if (seitenLeiste) seitenLeiste.classList.toggle('nav-hidden', h);
   };
+  // Von aussen erreichbar machen — der Tabwechsel blendet die Leiste damit ebenfalls aus.
+  _navVerstecken = setNavHidden;
   const _navTickingByTab = new Map();
 
   function attachToScreen(screenEl, tabName) {

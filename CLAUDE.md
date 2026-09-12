@@ -217,6 +217,31 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   TESTHINWEIS: Die Debug-Zeile liegt in `#drive-connected`, das ohne Drive-Verbindung
   `display:none` ist. Darin liefert `getComputedStyle` keine brauchbaren Werte — zum Messen den
   Block einblenden UND `transition: none` setzen, sonst misst man die laufende Animation.
+- **Uebungskarten klappen mit Bewegung auf und zu** (`_aexKlappAnimieren`, 200ms,
+  12.09.2026, Leonard-Wunsch — manuell wie automatisch).
+  WARUM VON HAND und nicht per CSS-Transition: Das Umschalten baut die ganze Kartenliste neu
+  auf (`renderWorkoutsScreen`). Eine Transition auf `.collapsed` liefe deshalb NIE — das
+  Element ist beim ersten Zeichnen bereits im Endzustand. Gefahren wird darum die HOEHE DER
+  KARTE ueber die Web Animations API, und der Neuaufbau kommt erst danach (`danach`-Rueckruf).
+  Das erfasst alles auf einmal — Koerper, Aktionsleiste, Diagramm, die Zeile „Zuletzt" und das
+  Polster des Kopfes —, ohne dass das Markup umgebaut werden muss. Der Inhalt springt sofort
+  in seine Endlage und wird von `overflow: hidden` beschnitten; genau so sieht ein Akkordeon aus.
+  DREI Dinge, die daran haengen:
+  1. **Beim ZUklappen** wird `.collapsed` nur zum MESSEN gesetzt und sofort wieder entfernt —
+     dazwischen zeichnet der Browser nicht, es ist also unsichtbar. Ohne das waere der Inhalt
+     schon weg, bevor sich die Karte bewegt, und es schrumpfte eine leere Flaeche.
+  2. **NOTBREMSE** (`setTimeout`, 500ms): Die Zeitleiste des Dokuments steht still, solange die
+     Seite nicht sichtbar ist. `onfinish` kaeme dann NIE — die Karte bliebe mit fester Hoehe
+     und `overflow: hidden` stehen, und die Liste wuerde nie neu gezeichnet. GEMESSEN: In der
+     versteckten Browser-Ansicht greift ausschliesslich der Wecker, und der Endzustand stimmt.
+     Dieselbe Vorsichtsmassnahme wie in `_tabFahrt`.
+  3. Die Karte wird ueber `data-ex` gefunden (`_aexKarte`), nicht ueber `id="aex-<index>"` —
+     der Index verschiebt sich beim Sortieren, die Uebungs-Id nicht. Beide Kartenbauer setzen
+     das Attribut.
+  Das AUTOMATISCHE Aufklappen der naechsten Uebung (`expandNextExercise`, nach dem letzten
+  abgehakten Satz) nutzt dieselbe Funktion: Die Karte steht dort noch eingeklappt im DOM, weil
+  `renderWorkoutsScreen` lief, bevor die Id im Satz war.
+  Bei `prefers-reduced-motion` wird nur umgeschaltet und neu gezeichnet.
 - **Uebungskarten (`.aex-v2`) haben KEINEN sichtbaren Drag-Griff mehr** (die drei Striche `≡`,
   entfernt 01.09.2026). Das Sortieren haengt jetzt am ganzen Kartenkopf: `.aex-v2-header` traegt
   `onpointerdown`/`onpointerup` und schaltet `draggable` der Karte. Der Klick zum Auf-/Zuklappen
@@ -275,6 +300,11 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   laufenden Einheit" im Hinweis der Vorschau (`.hero-v2-running-notice`, vorher reiner Text)
   und die Pille. Alle drei nutzen `oeffneLaufendeEinheit()` bzw. `jumpToWorkoutDay` — ein
   blosses `showScreen('workouts')` genuegt NICHT, es liesse den fremden Tag stehen.
+  `oeffneLaufendeEinheit` WISCHT seit dem 12.09.2026 in den Trainings-Tab, statt zu springen
+  (Leonard-Wunsch): erst `renderWorkoutsScreen()`, dann `wischeZuTab('workouts')` — dieselbe
+  Reihenfolge wie in `jumpToWorkoutDay`, damit der Tab schon richtig aussieht, waehrend er
+  hereinwandert. Aus einem Vollbild-Overlay heraus faellt `wischeZuTab` von selbst auf den
+  harten Wechsel zurueck.
   `setWorkoutsView` ruft `syncWorkoutActiveUI()` selbst nach, sonst zoege die Klasse beim
   Seitenwechsel Gym|Laufen erst beim naechsten Sekundentakt nach.
   NICHT angefasst: Die Sticky-Leiste beim Scrollen erscheint weiterhin, sobald eine Einheit
@@ -742,6 +772,15 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   deutschen Regeln mit Bindestrich („Ganzkörper-krafttraining"), moeglich weil
   `<html lang="de">` gesetzt ist.
 - **Übungskatalog:** nur noch Gruppierung nach Muskelgruppen — Sortierung nach Trainingstagen samt Umschalter wurde entfernt.
+- **Die Uebungsliste hat KEINE Tipp-Animation** (12.09.2026, Leonard-Wunsch): `.ex-list` ist
+  aus der Sammelregel `.card, … { transition: transform }` / `:active { transform: scale(.995) }`
+  herausgenommen. Sie ist die Karte um ALLE Uebungen einer Muskelgruppe — ein Tipp auf eine
+  einzelne Zeile stauchte damit den ganzen Block, obwohl sich nur diese eine Zeile auf- oder
+  zuklappt. Der Muskelgruppen-Knopf darueber (`.ex-group-btn`) BEHAELT seine Animation, er ist
+  ein einzelnes Bedienelement.
+  Betrifft alle drei Stellen mit `.ex-list`: Katalog, Uebungsliste im Trainingstag-Modal und
+  der Uebung-hinzufuegen-Dialog. In `TIPP_ANIM_KARTEN` steht `.ex-list` weiter drin — sie dort
+  zu fuehren kostet nichts, seit sie keine Animation mehr hat.
 - **Kopf der Uebersicht:** Reihenfolge rechts = Sicherungs-Chip, Zahnrad (Einstellungen), Glas-Knopf
   (Leonard-Wunsch 01.09.2026, vorher umgekehrt). Beide Knoepfe sind `.ph-gear`.
 - **Einheitliches Kartenpolster: 14px** (01.09.2026, Vorbild „Trainingskalender"). Gilt fuer jede
@@ -1345,6 +1384,18 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 - **Bottom-Nav**: Beim APP-START ist sie EINGEKLAPPT (`setNavHidden(true)` am Ende von
   `initScrollHideNav`, Leonard-Wunsch 07.09.2026) — bewusst ueber `setNavHidden`, damit
   Laufanzeige und Pausenleiste denselben Zustand mitbekommen.
+  **JEDER TABWECHSEL BLENDET SIE AUS** (12.09.2026, Leonard-Wunsch „beim Swipen und Wechseln
+  zwischen den Tabs soll die Tableiste verschwinden"). ZWEI Ausloeser, weil es zwei Wege gibt:
+  der Wisch (und die programmatische Fahrt aus `wischeZuTab`) meldet sich im Scroll-Handler
+  von `initTabScrollSync` an der 50-%-Schwelle, der harte Wechsel in `showScreen`.
+  `setNavHidden` ist eine LOKALE Funktion in `initScrollHideNav`; damit `showScreen` sie
+  erreicht, steht der Zeiger darauf in `_navVerstecken` (vor dem Einrichten eine leere
+  Funktion).
+  Zwei Faelle sind ausdruecklich AUSGENOMMEN: derselbe Tab noch einmal angetippt (`onNavTap`
+  scrollt dann nur nach oben und kommt gar nicht bis `showScreen`) und die Rueckkehr aus
+  einem Vollbild-Overlay (`closeMehr`, Plan-Detail) — das ist kein Tabwechsel, deshalb prueft
+  `showScreen` zusaetzlich, ob der VORHERIGE Bildschirm ueberhaupt ein Tab war. Beides
+  gemessen.
   Scrollen blendet sie nur AUS (ab 60px Scrolltiefe, Runterwisch > 5px) und NIE wieder ein — auch nicht
   am Seitenanfang (Leonard-Entscheidung, 20.08.2026; vorher holte sie jeder Hochwisch zurueck). Zurueck kommt sie
   ausschliesslich durch einen Tipp auf den BLANKEN Tab-Hintergrund: `e.target === screenEl` in `initScrollHideNav`
@@ -1640,7 +1691,11 @@ Umgeschaltet wird ueber einen Knopf LINKS neben dem „+" oben rechts (`#races-v
 Zeitstrahl-Symbol in der Liste, Listen-Symbol im Zeitstrahl (`syncWkAnsichtBtn`, gerufen aus
 `renderPlansScreen`).
 `_wkAnsicht` ('liste' | 'strahl') wird BEWUSST nicht gespeichert — wie jeder Ansichtszustand
-der App. Nach einem Neustart steht wieder die Liste da.
+der App. **Standard ist seit dem 12.09.2026 der ZEITSTRAHL** (Leonard-Wunsch; vorher die
+Liste): Nach einem Neustart steht er wieder da, die Liste erreicht man ueber den Knopf.
+Die DATUMSANGABE rechts an jeder Marke (`.wk-punkt-datum`, „26. Oktober") ist am selben Tag
+ERSATZLOS entfallen (Leonard-Wunsch) — auf der Zeitachse steht nur noch der Name. Das
+vollstaendige Datum nennt weiterhin die aufgeklappte Karte darunter.
 **Bauform:** `.hd-rail` aus der Einheiten-Detailansicht, nachgebaut als `.wk-strahl` —
 senkrechte Linie, Marken daneben, Jahreszahl als Pille AUF der Linie. Gruppiert wird nach
 Jahr, aufsteigend wie die Liste (bei Leonard beginnt es 2024).

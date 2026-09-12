@@ -752,12 +752,17 @@ body.theme-plans .hist-action-dd {
 /* Tipp-Rueckmeldung fuer ALLE Karten (Leonard-Wunsch 28.08.2026) — dieselbe dezente
    Stauchung wie bei der Wochenplan-Karte. `transition` NUR auf transform, damit die
    Farbwechsel der Karten (z. B. erledigte Uebung) unveraendert bleiben. */
+/* `.ex-list` ist hier BEWUSST nicht mehr dabei (12.09.2026, Leonard-Wunsch): Die Liste ist
+   die Karte um ALLE Uebungen einer Muskelgruppe — ein Tipp auf eine einzelne Zeile stauchte
+   damit den ganzen Block, obwohl sich nur diese eine Zeile auf- oder zuklappt. Der
+   Muskelgruppen-Knopf darueber (`.ex-group-btn`) behaelt seine Animation, er ist ein
+   einzelnes Bedienelement. */
 .card, .plan-section-card, .chart-card-v2, .hero-v2, .aex-v2,
-.ex-list, .plan-card-v2, .plan-list-row, .mehr-card {
+.plan-card-v2, .plan-list-row, .mehr-card {
   transition: transform .1s ease;
 }
 .card:active, .plan-section-card:active, .chart-card-v2:active,
-.hero-v2:active, .aex-v2:active, .ex-list:active, .plan-card-v2:active,
+.hero-v2:active, .aex-v2:active, .plan-card-v2:active,
 .plan-list-row:active, .mehr-card:active { transform: scale(0.995); }
 /* AUSNAHME Kalenderkarten: Sie enthalten einen eigenen waagerechten Scrollbereich. Ein
    transform auf dem Vorfahren waehrend `:active` bricht auf iOS die laufende Wischgeste ab
@@ -3049,7 +3054,6 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .wk-punkt.offen     .wk-punkt-marke { box-shadow: 0 0 0 3px rgba(255,255,255,.55); }
 .wk-punkt-name  { font-size: 14.5px; font-weight: 700; color: #fff; flex: 1; min-width: 0;
                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wk-punkt-datum { font-size: 12px; font-weight: 600; color: rgba(255,255,255,.7); flex: 0 0 auto; }
 /* Die Karte steht IMMER im Markup und wird nur ein- und ausgeblendet — so ist das Oeffnen
    ein Klassenwechsel statt eines Neuaufbaus (siehe `wettkampfStrahl`). */
 .wk-punkt-karte { display: none; }
