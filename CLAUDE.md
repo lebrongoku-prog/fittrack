@@ -1188,16 +1188,19 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   auch, waere „Freies Training starten" wieder hoeher und die Gleichheit dahin. Die Sonderregel `hero-mit-meta` hat ihre Titelzeile dabei verloren (sie setzte
   dieselben 2px noch einmal); der Rest des Blocks bleibt, er haelt den Textblock der Seite
   „Gym" zusammen und laesst dem Knopf dort dieselbe Hoehe wie auf „Laufen".
-- **Die Knopfschrift der Herocard ist im TRAININGS-Tab 20 % groesser** (14 → 16.8px,
-  Leonard-Wunsch 12.09.2026): `#screen-workouts .hero-heute:not(.hero-aktiv) .hero-v2-btn`.
-  Betrifft nur die Seiten „Gym" und „Laufen" — dort steht EIN Knopf in der Karte, und er ist
-  ohnehin schon 20 % schmaler als die Karte. In der UEBERSICHT bleibt es bei 14px: Dort teilen
-  sich zwei Knoepfe die Zeile, „Lauf abgeschlossen" bricht schon bei 14px auf zwei Zeilen um.
+- **Die Knopfschrift der Gym- und Lauf-Herocard ist so gross wie der KARTENTITEL: 16px**
+  (`.hero-heute:not(.hero-aktiv) .hero-v2-btn`, Leonard-Wunsch 12.09.2026) — in ALLEN Tabs
+  derselbe Wert, also Uebersicht wie Trainings-Tab. Vorher standen 14px (Uebersicht) und
+  16.8px (Trainings-Tab) nebeneinander; die 16.8px waren ein Zwischenstand vom selben Tag.
+  Bezug ist `.hero-heute-titel` — aendert sich die Titelgroesse, zieht die Knopfschrift mit.
   `:not(.hero-aktiv)` nimmt die Karte der LAUFENDEN Einheit aus (gemessen: „Beenden" bleibt bei
-  14px) — sie hat ebenfalls zwei Knoepfe nebeneinander.
+  14px) — „Pausieren" und „Beenden" benennen keine Sportart.
   Das Symbol im Knopf ist `1em` und waechst von selbst mit.
-  Gemessen auf 375px: Karte weiterhin 143px, Knopf 57px, „Freies Training starten" passt bei
-  16.8px noch auf EINE Zeile (258px Knopfbreite), kein Ueberlauf.
+  ENGSTELLE ist die UEBERSICHT: Dort teilen sich zwei Knoepfe die Zeile, „Lauf abgeschlossen"
+  bricht auf zwei Zeilen um, und die Knopfhoehe ist ueber `flex: 1` an die Resthoehe der
+  143px-Karte gebunden — beim Anheben der Schrift also auf Ueberlauf pruefen.
+  Gemessen auf 375px: alle Karten 143px, alle Knoepfe 57px, kein Ueberlauf; „Freies Training
+  starten" passt im Trainings-Tab auf eine Zeile.
 - **HEUTE ist EIN durchgehendes Feld ueber beide Reihen der Kombi-Karte** (09.09.2026,
   Leonard-Wunsch — vorher zwei getrennte Felder mit sichtbarer Fuge). Beide Reihen tragen
   weiterhin ihr eigenes Feld (sie sind getrennte Rasterzeilen, ein einzelnes Element koennte
@@ -1330,6 +1333,13 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 - **Der heutige Wochentag wird in der Plan-Detailansicht NICHT hervorgehoben** (01.09.2026). Die Klasse
   `.wpe-row.today` steht weiter im Markup, hat aber keine Regeln mehr — dort wird ein Plan bearbeitet,
   das aktuelle Datum spielt keine Rolle und die eingefaerbte Zeile las sich wie eine Auswahl.
+  **Seit dem 12.09.2026 gilt dasselbe fuer die WOCHENPLAN-KARTEN der Seiten „Gymplan" und
+  „Laufplan"** (Leonard-Wunsch): Dort ist das Heute-Feld hinter dem Wochentag abgeschaltet —
+  im Plan-Tab verwaltet man Plaene, nicht den heutigen Tag. In der UEBERSICHT (alle drei
+  Filterzustaende) und im TRAININGS-Tab bleibt es unveraendert stehen.
+  Geschaltet wird es ueber den Parameter `hideToday` von `buildPlanCard`; `buildRunPlanCard`
+  hat dafuer am selben Tag `opts.hideToday` als Gegenstueck bekommen (die Funktion nimmt ihre
+  Schalter ueber `opts`, nicht ueber Positionsparameter).
 - **Wochenplan in der Plan-Detailansicht:** `.wpe-list`/`.wpe-row` = eine Zeile pro Wochentag (nicht 7 Spalten), damit lange Tagnamen vollständig umbrechen können; unsichtbares `<select>`-Overlay pro Zeile weist den Tag zu.
 - **Löschen** = „Bearbeiten"-Modus (Kästchen auswählen → „Löschen (N)" → Sicherheits-Dialog) via `_delCtx`/`_delSel`/`buildDelEditList`; inline ✕ fragt ebenfalls nach. **Hinzufügen** = Multi-Select-Modals mit „Hinzufügen (N)".
 - **Bottom-Nav**: Beim APP-START ist sie EINGEKLAPPT (`setNavHidden(true)` am Ende von

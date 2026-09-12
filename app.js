@@ -1647,7 +1647,9 @@ function buildRunPlanCard(onTap, plan, opts) {
     if (gelaufenAmTag[i]) cls.push('done');
     // Lauftag, der durch einen Lauf an einem anderen Tag abgedeckt ist (`runVerschobeneTage`).
     if (verschobenTage[i] && !gelaufenAmTag[i]) cls.push('verschoben');
-    if (laeuft && i === todayIdx) cls.push('today');
+    // `opts.hideToday` ist das Gegenstueck zum gleichnamigen Parameter von `buildPlanCard`
+    // — die Seite „Laufplan" im Plan-Tab schaltet das Heute-Feld damit ab.
+    if (laeuft && i === todayIdx && !opts.hideToday) cls.push('today');
     if (laeuft && i > todayIdx && !verschobenTage[i]) cls.push('zukunft');   // siehe `buildPlanCard`
     if (opts.selectedIdx === i) cls.push('selected');
     // Auf der Seite „Laufen" waehlt ein Tipp den Tag aus — genau wie beim Gymwochenplan
@@ -4167,7 +4169,8 @@ function renderLaufVerwaltung() {
     el.innerHTML = `<div class="plan-day-empty" style="margin:24px 14px">Noch kein Laufplan — tippe auf das + oben rechts, um deinen ersten Plan anzulegen.</div>`;
     return;
   }
-  const zeile = (p) => buildRunPlanCard(`openRunPlanDetail('${p.id}')`, p);
+  // Ohne Heute-Feld, genau wie die Gymplan-Liste nebenan (Leonard-Wunsch 12.09.2026).
+  const zeile = (p) => buildRunPlanCard(`openRunPlanDetail('${p.id}')`, p, { hideToday: true });
 
   let html = offen.map(zeile).join('');
   if (archiv.length) {
@@ -5509,8 +5512,11 @@ function renderPlans() {
   // zum Bearbeiten des Plans, nicht zum Trainieren — und ein Wisch in einen fremden Tab war
   // aus einer Liste heraus, in der jede andere Stelle die Bearbeitung oeffnet, ueberraschend.
   // Kein `dayOnTap` zu setzen genuegt dafuer.
+  // KEIN Heute-Feld auf dieser Seite (Leonard-Wunsch 12.09.2026): Hier verwaltet man Plaene,
+  // das aktuelle Datum spielt dabei keine Rolle — dieselbe Ueberlegung wie bei `.wpe-row.today`
+  // in der Plan-Detailansicht (01.09.2026). In Uebersicht und Trainings-Tab bleibt es stehen.
   const renderRow = (p) => planStatus(p) === 'active'
-    ? buildPlanCard(p, null, /*hideToday*/ false, /*hideStatus*/ true, /*hideMeta*/ true)
+    ? buildPlanCard(p, null, /*hideToday*/ true, /*hideStatus*/ true, /*hideMeta*/ true)
     : buildPlanCard(p, null, /*hideToday*/ true);
 
   let html = '';

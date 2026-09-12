@@ -1594,14 +1594,17 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 .hero-heute:not(.hero-aktiv) .hero-heute-spalten.einzeln .hero-v2-btn {
   width: 80%; margin-left: auto; margin-right: auto;
 }
-/* Auf den Seiten „Gym" und „Laufen" im Trainings-Tab ist die Knopfschrift 20 % groesser
-   (14 → 16.8px, Leonard-Wunsch 12.09.2026). Dort steht nur EIN Knopf in der Karte; in der
-   UEBERSICHT bleibt es bei 14px, weil sich dort zwei Knoepfe die Zeile teilen und
-   „Lauf abgeschlossen" schon bei 14px umbricht.
+/* Die Beschriftung der Gym- und Lauf-Knoepfe ist so gross wie der KARTENTITEL: 16px
+   (`.hero-heute-titel`, Leonard-Wunsch 12.09.2026) — in ALLEN Tabs gleich, also auch in der
+   Uebersicht, wo sich zwei Knoepfe die Zeile teilen. Vorher standen dort 14px und im
+   Trainings-Tab 16.8px nebeneinander.
    `:not(.hero-aktiv)` nimmt die Karte der LAUFENDEN Einheit aus — „Pausieren" und „Beenden"
-   behalten ihre Groesse; sie stehen zu zweit in einer Zeile wie in der Uebersicht.
-   Das Symbol ist `1em` und waechst von selbst mit. */
-#screen-workouts .hero-heute:not(.hero-aktiv) .hero-v2-btn { font-size: 16.8px; }
+   bleiben bei 14px, sie benennen keine Sportart.
+   Das Symbol ist `1em` und waechst von selbst mit.
+   ENGSTELLE Uebersicht: „Lauf abgeschlossen" bricht dort auf zwei Zeilen um und der Knopf ist
+   ueber `flex: 1` auf die Resthoehe der 143px-Karte festgelegt — beim Anheben der Schrift
+   also nachmessen, ob der Text noch hineinpasst. */
+.hero-heute:not(.hero-aktiv) .hero-v2-btn { font-size: 16px; }
 .hero-btn-ic { width: 1em; height: 1em; flex-shrink: 0; display: inline-flex; }
 .hero-btn-ic svg { width: 100%; height: 100%; fill: currentColor; }
 /* Die Knoepfe tragen die Farbe der SPORTART statt der Tabfarbe (Leonard-Wunsch 06.09.2026) —
