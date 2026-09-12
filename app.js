@@ -982,7 +982,7 @@ let _wochenFilter = 'beide';
 const _WOCHEN_FILTER_TITEL = { beide: 'Trainingswoche', gym: 'Gymwoche', lauf: 'Laufwoche' };
 function toggleWochenFilter() {
   _wochenFilter = _wochenFilter === 'beide' ? 'gym' : _wochenFilter === 'gym' ? 'lauf' : 'beide';
-  _kombiWahl = null;           // die Auswahl gehoert zur Kombi-Karte, die es hier nicht mehr gibt
+  _kombiTag = null;            // die Auswahl gehoert zur Kombi-Karte, die es hier nicht mehr gibt
   renderWochenKarte();
   renderUebersichtHero();
 }
@@ -991,9 +991,10 @@ function toggleWochenFilter() {
 // Jeder Wochentagskreis der beiden Reihen ist ein eigenes Tipp-Ziel; die Herocard direkt
 // darunter zeigt daraufhin DIESEN Tag. `null` heisst „nichts gewaehlt" — dann steht dort
 // wie bisher heute.
-// Gewaehlt wird IMMER nur EINE Sportart: Ein Tipp auf einen Gym-Kreis schiebt die Gym-Spalte
-// der Herocard auf diesen Tag, die Lauf-Spalte bleibt auf heute (Leonard-Entscheidung
-// 12.09.2026). Man sieht damit genau das, was man angetippt hat.
+// Gewaehlt ist ein TAG, keine Sportart: Ein Tipp auf einen Kreis markiert denselben Wochentag
+// in BEIDEN Reihen, und BEIDE Spalten der Herocard springen mit (Leonard-Entscheidung
+// 12.09.2026 — eine erste Fassung am selben Tag liess nur die getippte Sportart mitgehen, dann
+// sprach der Titel aber nur fuer die halbe Karte).
 // Ein ZWEITER Tipp auf denselben Kreis hebt die Auswahl wieder auf — dieselbe Regel wie bei
 // der Kalender-Fusszeile und dem Wettkampf-Zeitstrahl.
 // BEWUSST nicht gespeichert, wie jeder Ansichtszustand der App.
@@ -1001,10 +1002,9 @@ function toggleWochenFilter() {
 // Trainings-Tab; mit den antippbaren Kreisen laegen zwei Ziele in einer Kachel, und genau
 // das hat Leonard am 06.09.2026 abgelehnt. Zum Training kommt man ueber den Knopf der
 // Herocard darunter (Leonard-Entscheidung 12.09.2026).
-let _kombiWahl = null;   // { sport: 'gym'|'lauf', idx: 0..6 } oder null
-function waehleKombiTag(sport, idx) {
-  const gleich = _kombiWahl && _kombiWahl.sport === sport && _kombiWahl.idx === idx;
-  _kombiWahl = gleich ? null : { sport, idx };
+let _kombiTag = null;   // 0..6 oder null (= heute)
+function waehleKombiTag(idx) {
+  _kombiTag = (_kombiTag === idx) ? null : idx;
   renderWochenKarte();
   renderUebersichtHero();
 }
@@ -1024,22 +1024,23 @@ function renderUebersichtHero() {
     wrap.innerHTML = buildSessionCard(activeWo, heroDay, week7[todayIdx], { label: 'LAUFENDE EINHEIT' });
     return;
   }
-  // Je Sportart der Tag, der gilt: der gewaehlte, sonst heute.
-  const gymGewaehlt = !!(_kombiWahl && _kombiWahl.sport === 'gym');
-  const gEintrag = week7[gymGewaehlt ? _kombiWahl.idx : todayIdx] || week7[todayIdx];
+  // Der Tag, der gilt: der gewaehlte, sonst heute. Er gilt fuer BEIDE Spalten.
+  const gewaehlt = _kombiTag != null;
+  const idx = gewaehlt ? _kombiTag : todayIdx;
+  const eintrag = week7[idx] || week7[todayIdx];
   // OHNE Auswahl bleibt die bisherige Regel: Ist die heutige Einheit schon absolviert, zeigt
   // die Karte „Kein Gym" und bietet freies Training an — heute ist erledigt.
   // MIT Auswahl gilt die Regel des Trainings-Tabs (`_renderGymSeite`): dort steht der
   // Trainingstag unabhaengig davon, ob er schon gelaufen ist. Leonard wollte beide Stellen
   // gleich (12.09.2026), und „Kein Gym" an einem Tag, an dem man trainiert hat, waere falsch.
-  const tag = gymGewaehlt ? (gEintrag.planDay || null)
-                          : ((gEintrag.planDay && !gEintrag.dayDone) ? gEintrag.planDay : null);
-  wrap.innerHTML = buildHeuteHero(tag, gEintrag, {
+  const tag = gewaehlt ? (eintrag.planDay || null)
+                       : ((eintrag.planDay && !eintrag.dayDone) ? eintrag.planDay : null);
+  wrap.innerHTML = buildHeuteHero(tag, eintrag, {
     previewOnClick: tag ? `requestStartFromOverview('${tag.id}')` : null,
-    runIdx: (_kombiWahl && _kombiWahl.sport === 'lauf') ? _kombiWahl.idx : null,
+    runIdx: gewaehlt ? _kombiTag : null,
     // Der Titel nennt den gewaehlten Tag statt „Heute" (Leonard-Entscheidung 12.09.2026).
     // Ist heute gewaehlt, bleibt es bei „Heute" — der Wochentag saehe dort wie ein Fehler aus.
-    titel: (_kombiWahl && _kombiWahl.idx !== todayIdx) ? WOCHENTAGE_LANG[_kombiWahl.idx] : 'Heute',
+    titel: (gewaehlt && idx !== todayIdx) ? WOCHENTAGE_LANG[idx] : 'Heute',
   });
 }
 
@@ -1139,9 +1140,14 @@ function buildWochenKombi() {
       if (t.erledigt) cls.push('done');
       if (t.verschoben) cls.push('verschoben');
       if (i === todayIdx) cls.push('today');
-      if (i > todayIdx && !t.verschoben) cls.push('zukunft');   // nur umrandet, siehe `buildPlanCard`
-      if (_kombiWahl && _kombiWahl.sport === sport && _kombiWahl.idx === i) cls.push('selected');
-      return `<div class="${cls.join(' ')}" onclick="waehleKombiTag('${sport}',${i})"
+      // GEFUELLT heisst „absolviert", sonst nichts (Leonard-Meldung 12.09.2026). Alles, was
+      // geplant und noch nicht absolviert ist, traegt den Ring — heute genauso wie ein
+      // kuenftiger oder ein ausgefallener Tag. Vorher hing der Ring am Datum
+      // (`i > todayIdx`): Ein geplanter Lauf von HEUTE war damit voll eingefaerbt und sah
+      // aus wie gelaufen, obwohl er noch anstand.
+      if (t.geplant && !t.erledigt && !t.verschoben) cls.push('offen');
+      if (_kombiTag === i) cls.push('selected');
+      return `<div class="${cls.join(' ')}" onclick="waehleKombiTag(${i})"
                    role="button" tabindex="0" aria-label="${sportName} am ${WOCHENTAGE_LANG[i]}">
         <span class="ppv-k-dot"></span></div>`;
     }).join('');

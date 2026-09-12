@@ -1683,7 +1683,9 @@ html.wo-running #wo-week-card { display: none; }
    Senkrecht liest man ab, was an einem Tag ansteht.
    Beschriftung und beide Reihen liegen auf DEMSELBEN Raster (`--ppv-k-lead` fuer die
    Symbolspalte, dann 7 gleiche Spalten) — nur so stehen die Kreise unter ihrem Wochentag. */
-.ppv-kombi { --ppv-k-lead: 20px; }
+/* 24px statt 20px: Das Sportsymbol ist am 12.09.2026 um 20 % gewachsen (19 → 22.8px) und
+   braucht eine breitere Spalte — es sitzt darin mittig. */
+.ppv-kombi { --ppv-k-lead: 24px; }
 .ppv-k-labels, .ppv-k-reihe {
   display: grid;
   grid-template-columns: var(--ppv-k-lead) repeat(7, 1fr);
@@ -1693,8 +1695,13 @@ html.wo-running #wo-week-card { display: none; }
    sind die beiden INHALTSBOXEN verschieden breit, sobald die Breite gekappt ist — im
    Querformat drifteten die Wochentage dadurch bis zu 11px gegen ihre Kreise. */
 .ppv-k-labels {
-  margin: 12px -6px 0; padding: 0 6px;
-  font-size: 12px; font-weight: 600; color: var(--text3); text-align: center;
+  /* 5px statt 12px Abstand nach oben: Die Karte ist FEST 143px hoch, und die um 20 %
+     groesseren Kreise und Wochentage (12.09.2026) brauchen den Platz. Genommen wird er hier
+     und aus dem Abstand ueber den Reihen (6.5 → 4.5px) — das ist der Raum, der am wenigsten
+     wehtut. Die Alternative waere eine hoehere Karte gewesen; alle Wochenplan-Karten und
+     Herocards sind aber genau 143px (09.09.2026). */
+  margin: 5px -6px 0; padding: 0 6px;
+  font-size: 14.4px; font-weight: 600; color: var(--text3); text-align: center;
 }
 /* Die Reihe ist seit dem 12.09.2026 STUMM (Leonard-Entscheidung): Antippbar sind jetzt die
    einzelnen Wochentage darin, und zwei Ziele in einer Kachel hat Leonard am 06.09.2026
@@ -1705,8 +1712,10 @@ html.wo-running #wo-week-card { display: none; }
   /* 6.5px Abstand ueber JEDER der beiden Reihen: von der Wochentagszeile zur Gym-Reihe und
      von dort zur Lauf-Reihe (Leonard-Wunsch 09.09.2026). Zusammen sind das die +13px, um die
      die Karte hoeher werden soll — gemessen 130 → 143px (+10 %). Die Reihen standen vorher
-     direkt aneinander und die Wochentage klebten auf den Kreisen darunter. */
-  margin: 6.5px -6px 0; padding: 3px 6px; border-radius: 10px;
+     direkt aneinander und die Wochentage klebten auf den Kreisen darunter.
+     Am 12.09.2026 auf 4.5px gekuerzt: Die um 20 % groesseren Kreise brauchen den Platz, und
+     die Karte darf nicht ueber 143px wachsen. */
+  margin: 4.5px -6px 0; padding: 3px 6px; border-radius: 10px;
   -webkit-tap-highlight-color: transparent;
 }
 /* 19px statt 15px und MITTIG zwischen dem aeusseren Kartenrand und dem ersten
@@ -1716,9 +1725,11 @@ html.wo-running #wo-week-card { display: none; }
    liegt also bei 35.3. Mit `justify-self: center` in der 20px-Spalte landet das Symbol bei
    36, also 0.7px daneben; das ist unter der Wahrnehmungsschwelle. Wer `--ppv-k-lead` oder
    das Kartenpolster aendert, misst nach.
-   19px ist hier die Obergrenze: Die Spalte ist 20px breit, ein groesseres Symbol muesste
-   `--ppv-k-lead` mitwachsen lassen und schoebe alle Kreise nach rechts. */
-.ppv-k-ic { width: 19px; height: 19px; display: inline-flex; justify-self: center; color: var(--text3); }
+   Am 12.09.2026 um 20 % auf 22.8px gewachsen (Leonard-Wunsch) — dafuer musste
+   `--ppv-k-lead` von 20 auf 24px mit, sonst passt das Symbol nicht in seine Spalte. Das
+   schiebt alle Kreise um 4px nach rechts; nachgemessen ist die Mitte danach wieder
+   stimmig. */
+.ppv-k-ic { width: 22.8px; height: 22.8px; display: inline-flex; justify-self: center; color: var(--text3); }
 /* In der Beschriftungszeile steht an derselben Stelle ein LEERER Platzhalter, damit die
    Wochentage auf denselben Rasterspalten sitzen wie die Kreise. Er darf die Zeile aber nicht
    hoeher machen: Mit dem Wachsen des Symbols auf 19px zog er die Zeile von 15 auf 19px und
@@ -1738,7 +1749,7 @@ html.wo-running #wo-week-card { display: none; }
 }
 .ppv-k-dot {
   position: relative;
-  width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%;
+  width: 26.4px; height: 26.4px; box-sizing: border-box; border-radius: 50%;
   background: var(--card2);
 }
 .ppv-k-reihe.gym  .training .ppv-k-dot, .ppv-k-reihe.gym  .done .ppv-k-dot { background: #0F766E; }
@@ -1754,28 +1765,35 @@ html.wo-running #wo-week-card { display: none; }
    nicht verschiebt) und rundet nur oben, die UNTERE rundet nur unten.
    ACHTUNG: Das setzt die Reihenfolge Gym → Lauf voraus, so wie `buildWochenKombi` sie
    immer baut, und den 6.5px-Abstand aus `.ppv-k-reihe`. Wer den Abstand aendert, zieht
-   die 9.5px hier mit (3px eigenes Polster + Abstand). */
-.ppv-k-col.today { background: var(--accent-bg); padding: 3px 0; margin: -3px 0; }
-.ppv-k-reihe.gym  .ppv-k-col.today { border-radius: 9px 9px 0 0; padding-bottom: 9.5px; margin-bottom: -9.5px; }
-.ppv-k-reihe.lauf .ppv-k-col.today { border-radius: 0 0 9px 9px; }
-/* Der GEWAEHLTE Tag (12.09.2026): dasselbe transparente Feld wie „heute" — die Karte kennt
-   nur EINE Art Hervorhebung (Leonard-Vorgabe 08.09.2026). Anders als „heute" steht es nur in
-   SEINER Reihe, denn gewaehlt ist immer nur eine Sportart; es ist deshalb rundum gerundet
-   statt oben/unten offen.
-   `:not(.today)` ist Pflicht: Faellt die Auswahl auf heute, gewaenne diese Regel sonst per
-   Reihenfolge und schnitte das durchgehende Feld ueber beide Reihen entzwei. */
-.ppv-k-col.selected:not(.today) {
-  background: var(--accent-bg); border-radius: 9px; padding: 3px 0; margin: -3px 0;
-}
-/* Kuenftige Tage tragen den Ring der Sportart UND dieselbe hellgraue Fuellung wie ein Tag
-   ohne Training (`--card2`, Leonard-Wunsch 08.09.2026 — vorher `transparent`). Damit sind es
-   drei klar unterscheidbare Zustaende in EINER Formensprache:
-     hellgrau, kein Ring  = nichts geplant
-     hellgrau mit Ring    = geplant, steht noch an
-     voll in der Sportfarbe = war schon (Haken, wenn absolviert)
-   Vorher lag der Ring auf dem Tab-Hintergrund und die kuenftigen Tage wirkten wie Loecher. */
-.ppv-k-reihe.gym  .training.zukunft:not(.done) .ppv-k-dot { background: var(--card2); box-shadow: inset 0 0 0 3px #0F766E; }
-.ppv-k-reihe.lauf .training.zukunft:not(.done) .ppv-k-dot { background: var(--card2); box-shadow: inset 0 0 0 3px #4ADE80; }
+   die 7.5px hier mit (3px eigenes Polster + 4.5px Abstand). */
+/* Der GEWAEHLTE Tag (12.09.2026) nutzt DIESELBEN Regeln: Ein Tipp markiert denselben
+   Wochentag in beiden Reihen, das Feld sieht also genauso aus und spannt genauso ueber
+   beide. Die Karte kennt damit weiterhin nur EINE Art Hervorhebung (Leonard-Vorgabe
+   08.09.2026). Faellt die Auswahl auf heute, tragen beide Klassen dieselben Werte — es
+   gibt nichts zu entscheiden. */
+.ppv-k-col.today, .ppv-k-col.selected { background: var(--accent-bg); padding: 3px 0; margin: -3px 0; }
+.ppv-k-reihe.gym  .ppv-k-col.today,
+.ppv-k-reihe.gym  .ppv-k-col.selected { border-radius: 9px 9px 0 0; padding-bottom: 7.5px; margin-bottom: -7.5px; }
+.ppv-k-reihe.lauf .ppv-k-col.today,
+.ppv-k-reihe.lauf .ppv-k-col.selected { border-radius: 0 0 9px 9px; }
+/* Ein geplanter, noch NICHT absolvierter Tag traegt den Ring der Sportart und dieselbe
+   hellgraue Fuellung wie ein Tag ohne Training (`--card2`, Leonard-Wunsch 08.09.2026 —
+   vorher `transparent`). Damit sind es drei klar unterscheidbare Zustaende in EINER
+   Formensprache:
+     hellgrau, kein Ring    = nichts geplant
+     hellgrau mit Ring      = geplant, nicht absolviert
+     voll in der Sportfarbe = ABSOLVIERT
+   `.offen` hiess bis zum 12.09.2026 `.zukunft` und haengte am DATUM (`i > todayIdx`). Ein
+   geplanter Lauf von HEUTE war dadurch voll eingefaerbt und sah aus wie gelaufen, obwohl er
+   noch anstand (Leonard-Meldung 12.09.2026 mit Screenshot). Jetzt entscheidet allein, ob die
+   Einheit absolviert ist — heute wie in Vergangenheit und Zukunft.
+   PREIS: Ein ausgefallener Tag der Vergangenheit sieht aus wie einer, der noch aussteht.
+   Das ist die kleinere Unwahrheit — „gefuellt" behauptete vorher ein Training, das es nie gab.
+   Die EINZELKARTEN (`.ppv-col.zukunft` in `buildPlanCard`/`buildRunPlanCard`) behalten
+   bewusst die Datumsregel: Dort ist „gefuellt = war schon (Vergangenheit oder erledigt)"
+   Leonards ausdrueckliche Vorgabe vom 08.09.2026. */
+.ppv-k-reihe.gym  .training.offen:not(.done) .ppv-k-dot { background: var(--card2); box-shadow: inset 0 0 0 3.6px #0F766E; }
+.ppv-k-reihe.lauf .training.offen:not(.done) .ppv-k-dot { background: var(--card2); box-shadow: inset 0 0 0 3.6px #4ADE80; }
 /* VERSCHOBEN — dieselbe Aussage wie in den Einzelkarten: erledigt, aber nicht an diesem Tag.
    Die Fuellung ist ohnehin schon das Hellgrau eines Tages ohne Training; hier faellt nur der
    farbige Ring weg und ein grauer Haken kommt dazu. */
@@ -1809,8 +1827,8 @@ html.glas .screen:not(#screen-mehr) .ppv-k-col:not(.training):not(.done) .ppv-k-
 }
 /* Kuenftige Marken bleiben auch im Transparenz-Modus nur umrandet — die Sportfarbe traegt
    dort der Ring statt der Flaeche. */
-html.glas .screen:not(#screen-mehr) .ppv-k-reihe.gym  .training.zukunft:not(.done) .ppv-k-dot { background: rgba(255,255,255,.22); }
-html.glas .screen:not(#screen-mehr) .ppv-k-reihe.lauf .training.zukunft:not(.done) .ppv-k-dot { background: rgba(255,255,255,.22); }
+html.glas .screen:not(#screen-mehr) .ppv-k-reihe.gym  .training.offen:not(.done) .ppv-k-dot { background: rgba(255,255,255,.22); }
+html.glas .screen:not(#screen-mehr) .ppv-k-reihe.lauf .training.offen:not(.done) .ppv-k-dot { background: rgba(255,255,255,.22); }
 /* Verschoben im Transparenz-Modus: dieselbe Flaeche wie ein Tag ohne Training, der Haken
    bleibt gedaempft weiss — Grau auf dem Schleier waere kaum zu sehen. */
 html.glas .screen:not(#screen-mehr) .ppv-k-reihe.gym  .verschoben .ppv-k-dot,
@@ -1824,7 +1842,6 @@ html.glas .screen:not(#screen-mehr) .ppv-k-adh,
 html.glas .screen:not(#screen-mehr) .ppv-k-adh .gym,
 html.glas .screen:not(#screen-mehr) .ppv-k-adh .lauf { color: #fff; }
 html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
-html.glas .screen:not(#screen-mehr) .ppv-k-col.selected:not(.today) { background: rgba(255,255,255,.18); }
 /* ═══════════════════════════════════
    WORKOUT (Active session) – Mockup v2
 ═══════════════════════════════════ */

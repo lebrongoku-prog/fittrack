@@ -1156,6 +1156,19 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   FOLGE, die man kennen muss: In der KOMBI-Karte ist ein verschobener Tag jetzt von einem
   Tag ohne Training nicht mehr zu unterscheiden — beide tragen dasselbe `--card2`. In den
   EINZELKARTEN bleibt er erkennbar (hellgrau gefuellt gegen gar keine Fuellung).
+  **IN DER KOMBI-KARTE HEISST GEFUELLT SEIT DEM 12.09.2026 „ABSOLVIERT"** (Leonard-Meldung
+  mit Screenshot: Der fuer heute GEPLANTE Lauf war voll eingefaerbt und sah aus wie gelaufen,
+  waehrend der gemeinsame Kalender darunter richtig nichts zeigte). Der Ring haengt jetzt
+  daran, ob die Einheit absolviert ist — nicht mehr am Datum (`i > todayIdx`); die Klasse
+  heisst deshalb `.offen` statt `.zukunft`. Drei Zustaende:
+    hellgrau, kein Ring    = nichts geplant
+    hellgrau mit Ring      = geplant, nicht absolviert (heute, kuenftig ODER ausgefallen)
+    voll in der Sportfarbe = absolviert
+  PREIS: Ein ausgefallener Tag der Vergangenheit sieht aus wie einer, der noch aussteht. Das
+  ist die kleinere Unwahrheit — „gefuellt" behauptete vorher ein Training, das es nie gab.
+  Die EINZELKARTEN behalten bewusst die alte Regel („gefuellt = war schon, Vergangenheit oder
+  erledigt", Leonard-Vorgabe 08.09.2026): Dort ist `.zukunft` unveraendert das Datum. Wer die
+  beiden Karten angleichen will, fragt vorher nach.
 - **Der Abstand unter dem Titel „Heute" ist von 10 auf 2px** (09.09.2026, Leonard-Wunsch:
   zwischen Titel und der mittigen Beschriftung stand zu viel Luft). Weil die Karte 143px FEST
   hoch ist und die Knoepfe `flex: 1` tragen, landen die gesparten 8px automatisch in der
@@ -1194,12 +1207,25 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   untere rundet nur unten. Gemessen: Unterkante Gym = Oberkante Lauf, Luecke 0.
   ACHTUNG: Das setzt die Reihenfolge Gym → Lauf voraus (so baut `buildWochenKombi` sie
   immer) und den 6.5px-Abstand. Wer den aendert, zieht die 9.5px mit.
-- **Die Sportsymbole der Kombi-Karte sind 19px und stehen mittig** zwischen dem AEUSSEREN
-  Kartenrand und dem ersten Wochentagskreis (09.09.2026, Leonard-Wunsch; vorher 15px und
-  linksbuendig in ihrer Spalte). Nachgemessen auf 375px: Kartenrand bei x=12, erster Kreis
-  bei x=58.6, Mitte also 35.3 — `justify-self: center` in der 20px-Spalte landet bei 36.
-  19px ist die Obergrenze: Die Spalte ist 20px breit, groesser muesste `--ppv-k-lead`
-  mitwachsen und schoebe alle Kreise nach rechts.
+- **DER INHALT DER KOMBI-KARTE IST AM 12.09.2026 UM 20 % GEWACHSEN** (Leonard-Wunsch):
+  Wochentagsschrift 12 → 14.4px, Kreise 22 → 26.4px, Sportsymbole 19 → 22.8px (mit ihnen
+  `--ppv-k-lead` 20 → 24px, sonst passt das Symbol nicht in seine Spalte) und der Ring der
+  offenen Tage 3 → 3.6px.
+  DIE HOEHE KOMMT AUS DEN ABSTAENDEN, nicht aus der Karte: Sie ist FEST 143px (09.09.2026),
+  die groesseren Inhalte kosten aber 10.6px. Geholt sind sie ueber der Wochentagszeile
+  (12 → 5px) und ueber jeder der beiden Reihen (6.5 → 4.5px). Gemessen: Inhalt 142.8px, kein
+  Ueberlauf. Wer weiter vergroessern will, hat hier nichts mehr zu holen — dann muss die
+  Karte hoeher werden, und das betrifft ALLE Wochenplan-Karten und Herocards.
+  Mit dem kleineren Reihenabstand wandert auch die Naht des Heute-Feldes mit: 9.5 → 7.5px
+  (3px eigenes Polster + 4.5px Abstand).
+- **Die Sportsymbole der Kombi-Karte stehen mittig** zwischen dem AEUSSEREN Kartenrand und dem
+  ersten Wochentagskreis (09.09.2026, Leonard-Wunsch; vorher linksbuendig in ihrer Spalte).
+  Nachgemessen auf 375px nach der Vergroesserung: Kartenrand bei x=12, erster Kreis bei
+  x=60.2, Mitte also 36.1 — `justify-self: center` in der 24px-Spalte landet bei 38, also
+  1.9px daneben. Der Versatz ist eine Folge des Rasterabstands (4px) und laesst sich ueber
+  `--ppv-k-lead` NICHT wegbekommen: Schrumpft die Spalte, wandert der erste Kreis mit und der
+  Sollwert mit ihm (gemessen bei 20, 21 und 24px — immer dieselben ~1.9px). Nur ein fester
+  Versatz am Symbol koennte es, der haengt aber an der Bildschirmbreite.
   FALLE, die dabei zuschlug: In der Beschriftungszeile steht an derselben Stelle ein LEERER
   `.ppv-k-ic` als Platzhalter fuer das Raster. Mit 19px zog er die Zeile von 15 auf 19px und
   die ganze Karte um 4px mit. Er traegt deshalb `height: 0` — die Breite kommt ohnehin aus
@@ -1657,16 +1683,18 @@ waere nicht erkennbar, welche zu welcher Sportart gehoert.
 **JEDER WOCHENTAG IST EIN EIGENES TIPP-ZIEL** (12.09.2026, Leonard-Wunsch;
 `waehleKombiTag(sport, idx)`, Zustand `_kombiWahl`). Die Herocard direkt darunter zeigt
 daraufhin DIESEN Tag — Titel, Beschriftung und Knopf.
-Gewaehlt ist immer nur EINE Sportart: Ein Tipp auf einen Gym-Kreis schiebt die GYM-Spalte der
-Herocard auf den Tag, die Lauf-Spalte bleibt auf heute (Leonard-Entscheidung 12.09.2026 — man
-sieht genau das, was man angetippt hat). Ein ZWEITER Tipp auf denselben Kreis hebt die Auswahl
-auf, wie bei der Kalender-Fusszeile und dem Wettkampf-Zeitstrahl. Ein Filterwechsel setzt sie
-ebenfalls zurueck (die Kombi-Karte, zu der sie gehoert, ist dann gar nicht mehr im Bild).
-BEWUSST nicht gespeichert, wie jeder Ansichtszustand.
-Die Markierung ist DASSELBE transparente Feld wie bei „heute" — die Karte kennt nur EINE Art
-Hervorhebung. Anders als „heute" steht es nur in SEINER Reihe und ist deshalb rundum gerundet;
-`.ppv-k-col.selected:not(.today)` ist Pflicht, sonst schnitte es das durchgehende Heute-Feld
-ueber beide Reihen entzwei.
+Gewaehlt ist ein TAG, keine Sportart (`_kombiTag`, ein Index 0..6): Der Tipp markiert denselben
+Wochentag in BEIDEN Reihen, und BEIDE Spalten der Herocard springen mit. Eine erste Fassung vom
+selben Tag liess nur die getippte Sportart mitgehen — dann sprach der Titel („Dienstag") aber
+nur fuer die halbe Karte, waehrend die andere Spalte weiter heute zeigte. Leonard hat das noch
+am 12.09.2026 korrigiert.
+Ein ZWEITER Tipp auf denselben Kreis hebt die Auswahl auf, wie bei der Kalender-Fusszeile und
+dem Wettkampf-Zeitstrahl. Ein Filterwechsel setzt sie ebenfalls zurueck (die Kombi-Karte, zu
+der sie gehoert, ist dann gar nicht mehr im Bild). BEWUSST nicht gespeichert, wie jeder
+Ansichtszustand.
+Die Markierung ist DASSELBE transparente Feld wie bei „heute", inklusive des durchgehenden
+Felds ueber beide Reihen — `.today` und `.selected` teilen sich die Regeln. Faellt die Auswahl
+auf heute, tragen beide Klassen dieselben Werte, es gibt also nichts zu entscheiden.
 **DIE REIHEN SIND DAMIT STUMM** (12.09.2026). Bis dahin fuehrte ein Tipp auf die Reihe in den
 Trainings-Tab auf die Seite ihrer Sportart (08.09.2026). Mit antippbaren Kreisen laegen zwei
 Ziele in einer Kachel — genau das hat Leonard am 06.09.2026 abgelehnt. Zum Training kommt man
@@ -1702,9 +1730,7 @@ Leonard-Vorgabe:
   In der Uebersicht schiebt ein Tipp auf einen Wochentagskreis der Kombi-Karte die Karte auf
   diesen Tag, und der Titel nennt ihn dann ausgeschrieben („Dienstag"). Faellt die Auswahl auf
   heute, bleibt es bei „Heute" — der Wochentag saehe dort wie ein Fehler aus.
-  ACHTUNG, bekannte Unschaerfe: Gewaehlt wird nur EINE Sportart, die andere Spalte zeigt
-  weiter heute — der Titel spricht also fuer die getippte Spalte. Beides ist Leonards
-  ausdrueckliche Entscheidung vom 12.09.2026.
+  BEIDE Spalten folgen dem gewaehlten Tag, der Titel gilt also fuer die ganze Karte.
   Der Trainings-Tab nutzt `opts.titel` NICHT: Dort steht weiter „Heute", auch wenn im
   Wochenplan ein anderer Tag gewaehlt ist.
   MIT Auswahl gilt ausserdem die Regel des Trainings-Tabs — der Trainingstag steht da,
