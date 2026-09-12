@@ -1252,8 +1252,30 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   pruefbar (rAF feuert in der versteckten Ansicht nie, Timer werden auf ~1s gedrosselt, und
   Mausgesten loesen den Wisch gar nicht aus). Alles, was das Wischgefuehl betrifft, kann nur
   Leonard auf dem Geraet beurteilen.
-- **Tabwechsel per Wischbewegung aus der App heraus:** `wischeZuTab(name)` scrollt `#tab-container` mit
-  `behavior:'smooth'` und OHNE `_suppressScrollSync` — dadurch fuehrt der Handler aus `initTabScrollSync`
+- **Die Fahrt von Tab zu Tab bei einem PROGRAMMATISCHEN Wechsel laeuft seit dem 12.09.2026 von
+  Hand** (`_tabFahrt`, 320ms, ease-out). Vorher stand dort `scrollTo({ behavior: 'smooth' })` —
+  seit `#tab-container` am 08.09.2026 `-webkit-overflow-scrolling: auto` traegt (die Schwungphase
+  sollte weg), faellt WebKits eigene weiche Fahrt aber auf einen harten Sprung zurueck. Genau das
+  hat Leonard am 12.09.2026 gemeldet („der Wechsel geschieht nicht ueber die Wischanimation").
+  Beides zugleich gibt es nicht: Entweder der Browser fuehrt den Scroller (dann mit Schwung) oder
+  wir fuehren ihn.
+  ABGRENZUNG zu den zwei gescheiterten Versuchen vom 08.09.2026 (siehe die Wisch-Warnung weiter
+  unten): Die wollten das LOSLASSEN einer Wischgeste uebernehmen und kaempften gegen den noch
+  laufenden Momentum-Scroll. Hier liegt kein Finger auf dem Glas und es gibt kein Momentum — die
+  GESTE selbst ist unangetastet.
+  DREI Dinge, die daran haengen:
+  1. `scroll-snap-type` muss waehrend der Fahrt auf `none`. Bei `mandatory` zieht WebKit nach
+     jedem Schreiben von `scrollLeft` sofort auf den naechsten Rastpunkt. Am Ende landet die
+     Fahrt exakt auf einem Rastpunkt, das Wiedereinschalten ruckelt also nicht.
+  2. NOTBREMSE (`setTimeout`, 720ms): `requestAnimationFrame` ruht, solange die Seite nicht
+     sichtbar ist. Ohne sie bliebe die Fahrt auf halbem Weg stehen UND `scroll-snap-type` auf
+     `none` — der Container haette danach gar kein Einrasten mehr.
+  3. Ein `pointerdown` waehrend der Fahrt bricht sie ab; wer selbst wischt, bekommt seinen Wisch.
+  NICHT auf diesem Rechner pruefbar (rAF feuert in der versteckten Ansicht nie — dort greift
+  immer die Notbremse). Zum ZURUECKNEHMEN genuegt es, den Aufruf in `wischeZuTab` wieder durch
+  `container.scrollTo({ left: …, behavior: 'smooth' })` zu ersetzen.
+- **Tabwechsel per Wischbewegung aus der App heraus:** `wischeZuTab(name)` scrollt `#tab-container`
+  OHNE `_suppressScrollSync` — dadurch fuehrt der Handler aus `initTabScrollSync`
   Hintergrund-Crossfade, Theme und Nav waehrend der Bewegung mit und ruft im Settle `_applyTabState`,
   genau wie bei einer echten Wischgeste. `showScreen` bleibt der harte Sprung (`behavior:'auto'` plus
   unterdrueckter Handler) und ist die Rueckfallebene: aus Vollbild-Overlays heraus, bei unbekanntem Ziel
@@ -1632,10 +1654,29 @@ dafuer gebauten Funktion `runKombiWoche`. In den EINZELZUSTAENDEN steht die Woch
 unveraendert im Fortschrittsblock. Statt zweier Fortschrittsbloecke nur die Woche je
 Sportart plus „0/3 · 1/3" im Kopf — beide Zahlenpaare tragen die Farbe IHRER Reihe, sonst
 waere nicht erkennbar, welche zu welcher Sportart gehoert.
-JEDE REIHE ist ihr eigenes Tipp-Ziel und fuehrt in den TRAININGS-Tab auf die Seite ihrer
-Sportart (Gym → „Gym", Lauf → „Laufen"; Leonard-Wunsch 08.09.2026 — vorher in den Plan-Tab auf
-die Planbearbeitung). Aus der Wochenuebersicht will man zum Training, nicht zum Bearbeiten.
-Der Filterknopf braucht deshalb `stopPropagation`.
+**JEDER WOCHENTAG IST EIN EIGENES TIPP-ZIEL** (12.09.2026, Leonard-Wunsch;
+`waehleKombiTag(sport, idx)`, Zustand `_kombiWahl`). Die Herocard direkt darunter zeigt
+daraufhin DIESEN Tag — Titel, Beschriftung und Knopf.
+Gewaehlt ist immer nur EINE Sportart: Ein Tipp auf einen Gym-Kreis schiebt die GYM-Spalte der
+Herocard auf den Tag, die Lauf-Spalte bleibt auf heute (Leonard-Entscheidung 12.09.2026 — man
+sieht genau das, was man angetippt hat). Ein ZWEITER Tipp auf denselben Kreis hebt die Auswahl
+auf, wie bei der Kalender-Fusszeile und dem Wettkampf-Zeitstrahl. Ein Filterwechsel setzt sie
+ebenfalls zurueck (die Kombi-Karte, zu der sie gehoert, ist dann gar nicht mehr im Bild).
+BEWUSST nicht gespeichert, wie jeder Ansichtszustand.
+Die Markierung ist DASSELBE transparente Feld wie bei „heute" — die Karte kennt nur EINE Art
+Hervorhebung. Anders als „heute" steht es nur in SEINER Reihe und ist deshalb rundum gerundet;
+`.ppv-k-col.selected:not(.today)` ist Pflicht, sonst schnitte es das durchgehende Heute-Feld
+ueber beide Reihen entzwei.
+**DIE REIHEN SIND DAMIT STUMM** (12.09.2026). Bis dahin fuehrte ein Tipp auf die Reihe in den
+Trainings-Tab auf die Seite ihrer Sportart (08.09.2026). Mit antippbaren Kreisen laegen zwei
+Ziele in einer Kachel — genau das hat Leonard am 06.09.2026 abgelehnt. Zum Training kommt man
+aus der Kombi-Ansicht jetzt ueber den KNOPF der Herocard darunter; in den Einzelzustaenden
+(Gymwoche/Laufwoche) fuehrt die Karte weiter dorthin.
+Entfallen sind damit `cursor: pointer` und das Tipp-Aufleuchten der Reihe (`.ppv-k-reihe:active`
+samt Glas-Fassung); die KARTE traegt jetzt `.karte-inert`, und `.ppv-k-col` hat den Zeigefinger.
+Der Filterknopf braucht weiterhin `stopPropagation`.
+WENN EINE EINHEIT LAEUFT, zeigt die Herocard die laufende Einheit — die Auswahl wirkt dann
+nicht auf sie (die Markierung in der Karte bleibt sichtbar).
 Die Karte steht in der Uebersicht seit dem 08.09.2026 UEBER der Herocard.
 `runKombiWoche(p)` rechnet „Woche 3 / 4" des Laufplans nach; in `buildRunPlanCard` steckt
 dieselbe Rechnung eingebettet im Fortschrittsblock und ist von aussen nicht zu holen.
@@ -1657,7 +1698,20 @@ im `:not()`) jede Sportfarbe, und geplant sah aus wie leer.
 Ruhetag-Karten UND die eigene Karte der Seite „Laufen" (`buildRestHero`, `buildLaufHero`,
 `heroLaufZeile`, `heroLaufBtn`, `freeWorkoutBtn` sind alle entfallen). Aufbau nach
 Leonard-Vorgabe:
-- **Titel ist immer „Heute"** — kein Obertitel (das fruehere `RUHETAG` / `NAECHSTE EINHEIT`)
+- **Der Titel ist „Heute", ausser ein anderer Tag ist gewaehlt** (`opts.titel`, 12.09.2026):
+  In der Uebersicht schiebt ein Tipp auf einen Wochentagskreis der Kombi-Karte die Karte auf
+  diesen Tag, und der Titel nennt ihn dann ausgeschrieben („Dienstag"). Faellt die Auswahl auf
+  heute, bleibt es bei „Heute" — der Wochentag saehe dort wie ein Fehler aus.
+  ACHTUNG, bekannte Unschaerfe: Gewaehlt wird nur EINE Sportart, die andere Spalte zeigt
+  weiter heute — der Titel spricht also fuer die getippte Spalte. Beides ist Leonards
+  ausdrueckliche Entscheidung vom 12.09.2026.
+  Der Trainings-Tab nutzt `opts.titel` NICHT: Dort steht weiter „Heute", auch wenn im
+  Wochenplan ein anderer Tag gewaehlt ist.
+  MIT Auswahl gilt ausserdem die Regel des Trainings-Tabs — der Trainingstag steht da,
+  unabhaengig davon, ob er schon absolviert ist. OHNE Auswahl bleibt es bei der alten Regel
+  der Uebersicht: Ist die heutige Einheit erledigt, steht dort „Kein Gym" und der Knopf bietet
+  freies Training an.
+- **Kein Obertitel** (das fruehere `RUHETAG` / `NAECHSTE EINHEIT`)
   und kein Untertitel (Wochentag, Uebungen/Saetze, Ø-Dauer). Er steht an derselben Stelle wie
   jeder andere Kartentitel: 16px, 14px vom Rand, 10px Abstand nach unten.
 - **Je Sportart eine Spalte** aus mittiger Beschriftung und Knopf. Gym: Name des Trainingstags

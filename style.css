@@ -769,7 +769,8 @@ body.theme-plans .hist-action-dd {
    damit sie die Regel darueber schlaegt; die Wochentage behalten ihren Zeigefinger. */
 .karte-inert { cursor: default; }
 .karte-inert:active { transform: none; }
-.plan-card-v2.karte-inert .ppv-col[role="button"] { cursor: pointer; }
+.plan-card-v2.karte-inert .ppv-col[role="button"],
+.plan-card-v2.karte-inert .ppv-k-col[role="button"] { cursor: pointer; }
 /* Ein Tipp INS Diagramm zeigt nur den Messwert an — die Karte soll dabei nicht zucken
    (Leonard-Wunsch 01.09.2026). Die Klasse setzt `_initKeineTippAnimationAufDiagramm`
    waehrend der Beruehrung; `:has(canvas:active)` waere kuerzer, verlaesst sich aber
@@ -1695,17 +1696,19 @@ html.wo-running #wo-week-card { display: none; }
   margin: 12px -6px 0; padding: 0 6px;
   font-size: 12px; font-weight: 600; color: var(--text3); text-align: center;
 }
-/* Die Reihe ist ihr eigenes Tipp-Ziel — sie ist hier das, was sonst die ganze Karte ist.
-   Das Polster gibt dem Finger Flaeche, ohne die Kreise auseinanderzuziehen. */
+/* Die Reihe ist seit dem 12.09.2026 STUMM (Leonard-Entscheidung): Antippbar sind jetzt die
+   einzelnen Wochentage darin, und zwei Ziele in einer Kachel hat Leonard am 06.09.2026
+   abgelehnt. Das Polster bleibt — es gibt den Kreisen Luft, ohne sie auseinanderzuziehen —,
+   Zeigefinger und Tipp-Aufleuchten der Reihe sind entfallen. Die Karte traegt dafuer
+   `.karte-inert` (kein Zeigefinger, keine Stauchung). */
 .ppv-k-reihe {
   /* 6.5px Abstand ueber JEDER der beiden Reihen: von der Wochentagszeile zur Gym-Reihe und
      von dort zur Lauf-Reihe (Leonard-Wunsch 09.09.2026). Zusammen sind das die +13px, um die
      die Karte hoeher werden soll — gemessen 130 → 143px (+10 %). Die Reihen standen vorher
      direkt aneinander und die Wochentage klebten auf den Kreisen darunter. */
   margin: 6.5px -6px 0; padding: 3px 6px; border-radius: 10px;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: transparent;
 }
-.ppv-k-reihe:active { background: rgba(0,0,0,.05); }
 /* 19px statt 15px und MITTIG zwischen dem aeusseren Kartenrand und dem ersten
    Wochentagskreis (Leonard-Wunsch 09.09.2026). Vorher sass das Symbol linksbuendig am
    Anfang seiner 20px-Spalte.
@@ -1729,7 +1732,10 @@ html.wo-running #wo-week-card { display: none; }
    30px der Einzelkarten — hier stehen ZWEI Reihen uebereinander.
    Die Kalender-Zeichen (Quadrat/Kreis, geplant nur umrandet) waren am 07.09.2026 kurz
    eingebaut und wurden am selben Tag zurueckgenommen (Leonard-Wunsch). */
-.ppv-k-col { display: flex; justify-content: center; min-width: 0; }
+.ppv-k-col {
+  display: flex; justify-content: center; min-width: 0;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
 .ppv-k-dot {
   position: relative;
   width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%;
@@ -1752,6 +1758,15 @@ html.wo-running #wo-week-card { display: none; }
 .ppv-k-col.today { background: var(--accent-bg); padding: 3px 0; margin: -3px 0; }
 .ppv-k-reihe.gym  .ppv-k-col.today { border-radius: 9px 9px 0 0; padding-bottom: 9.5px; margin-bottom: -9.5px; }
 .ppv-k-reihe.lauf .ppv-k-col.today { border-radius: 0 0 9px 9px; }
+/* Der GEWAEHLTE Tag (12.09.2026): dasselbe transparente Feld wie „heute" — die Karte kennt
+   nur EINE Art Hervorhebung (Leonard-Vorgabe 08.09.2026). Anders als „heute" steht es nur in
+   SEINER Reihe, denn gewaehlt ist immer nur eine Sportart; es ist deshalb rundum gerundet
+   statt oben/unten offen.
+   `:not(.today)` ist Pflicht: Faellt die Auswahl auf heute, gewaenne diese Regel sonst per
+   Reihenfolge und schnitte das durchgehende Feld ueber beide Reihen entzwei. */
+.ppv-k-col.selected:not(.today) {
+  background: var(--accent-bg); border-radius: 9px; padding: 3px 0; margin: -3px 0;
+}
 /* Kuenftige Tage tragen den Ring der Sportart UND dieselbe hellgraue Fuellung wie ein Tag
    ohne Training (`--card2`, Leonard-Wunsch 08.09.2026 — vorher `transparent`). Damit sind es
    drei klar unterscheidbare Zustaende in EINER Formensprache:
@@ -1809,7 +1824,7 @@ html.glas .screen:not(#screen-mehr) .ppv-k-adh,
 html.glas .screen:not(#screen-mehr) .ppv-k-adh .gym,
 html.glas .screen:not(#screen-mehr) .ppv-k-adh .lauf { color: #fff; }
 html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
-html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,255,255,.12); }
+html.glas .screen:not(#screen-mehr) .ppv-k-col.selected:not(.today) { background: rgba(255,255,255,.18); }
 /* ═══════════════════════════════════
    WORKOUT (Active session) – Mockup v2
 ═══════════════════════════════════ */

@@ -952,24 +952,8 @@ function renderOverview() {
   const subEl = document.getElementById('ov-week-info');
   subEl.innerHTML = `Woche ${prog.num} • <span class="ph-sub-accent">${wStatus.done} von ${wStatus.planned||plan.length}</span> Einheiten absolviert`;
 
-  // ─ Hero card ─
-  // Decision tree:
-  //   1. Active workout → full hero in active mode
-  //   2. Today is a training day (not done) → preview hero for today's plan day
-  //   3. Today is a rest day OR done → compact Ruhetag hero (today's status)
-  //   4. No plan at all → "Kein Workout geplant" rest-hero
-  const wrap = document.getElementById('ov-hero-wrap');
-  if (activeWo) {
-    const heroDay = plan.find(d => d.id === activeWo.planDayId);
-    wrap.innerHTML = buildSessionCard(activeWo, heroDay, todayEntry, { label: 'LAUFENDE EINHEIT' });
-  } else {
-    // Vorschau UND Ruhetag laufen ueber dieselbe Karte — der Unterschied steckt nur in der
-    // Beschriftung ueber dem Knopf (Trainingstag bzw. „Ruhetag").
-    const tag = (todayEntry.planDay && !todayEntry.dayDone) ? todayEntry.planDay : null;
-    wrap.innerHTML = buildHeuteHero(tag, todayEntry, {
-      previewOnClick: tag ? `requestStartFromOverview('${tag.id}')` : null,
-    });
-  }
+  // ─ Hero card ─ (eigene Funktion, siehe `renderUebersichtHero`)
+  renderUebersichtHero();
   ensureTimerActive();
 
   // ─ EINE Wochenplankarte fuer beide Sportarten ─ (siehe `renderWochenKarte`)
@@ -998,7 +982,65 @@ let _wochenFilter = 'beide';
 const _WOCHEN_FILTER_TITEL = { beide: 'Trainingswoche', gym: 'Gymwoche', lauf: 'Laufwoche' };
 function toggleWochenFilter() {
   _wochenFilter = _wochenFilter === 'beide' ? 'gym' : _wochenFilter === 'gym' ? 'lauf' : 'beide';
+  _kombiWahl = null;           // die Auswahl gehoert zur Kombi-Karte, die es hier nicht mehr gibt
   renderWochenKarte();
+  renderUebersichtHero();
+}
+
+// ─── Tagesauswahl in der Kombi-Wochenplankarte (12.09.2026, Leonard-Wunsch) ───────────
+// Jeder Wochentagskreis der beiden Reihen ist ein eigenes Tipp-Ziel; die Herocard direkt
+// darunter zeigt daraufhin DIESEN Tag. `null` heisst „nichts gewaehlt" — dann steht dort
+// wie bisher heute.
+// Gewaehlt wird IMMER nur EINE Sportart: Ein Tipp auf einen Gym-Kreis schiebt die Gym-Spalte
+// der Herocard auf diesen Tag, die Lauf-Spalte bleibt auf heute (Leonard-Entscheidung
+// 12.09.2026). Man sieht damit genau das, was man angetippt hat.
+// Ein ZWEITER Tipp auf denselben Kreis hebt die Auswahl wieder auf — dieselbe Regel wie bei
+// der Kalender-Fusszeile und dem Wettkampf-Zeitstrahl.
+// BEWUSST nicht gespeichert, wie jeder Ansichtszustand der App.
+// FOLGE: Die REIHEN sind damit stumm geworden. Vorher fuehrte ein Tipp auf die Reihe in den
+// Trainings-Tab; mit den antippbaren Kreisen laegen zwei Ziele in einer Kachel, und genau
+// das hat Leonard am 06.09.2026 abgelehnt. Zum Training kommt man ueber den Knopf der
+// Herocard darunter (Leonard-Entscheidung 12.09.2026).
+let _kombiWahl = null;   // { sport: 'gym'|'lauf', idx: 0..6 } oder null
+function waehleKombiTag(sport, idx) {
+  const gleich = _kombiWahl && _kombiWahl.sport === sport && _kombiWahl.idx === idx;
+  _kombiWahl = gleich ? null : { sport, idx };
+  renderWochenKarte();
+  renderUebersichtHero();
+}
+
+// Herocard der Uebersicht. Eigene Funktion, weil die Tagesauswahl sie einzeln neu zeichnet —
+// ein voller `renderOverview()` baute auch den Kalender neu und liesse ihn an den
+// Jahresanfang springen.
+function renderUebersichtHero() {
+  const wrap = document.getElementById('ov-hero-wrap');
+  if (!wrap) return;
+  const week7 = getCurrentWeekDays();
+  const todayIdx = Math.max(0, week7.findIndex(d => d.isToday));
+  const activeWo = DB.getActive();
+  if (activeWo) {
+    const aktiv = getActivePlan();
+    const heroDay = (aktiv ? aktiv.trainingDays : []).find(d => d.id === activeWo.planDayId);
+    wrap.innerHTML = buildSessionCard(activeWo, heroDay, week7[todayIdx], { label: 'LAUFENDE EINHEIT' });
+    return;
+  }
+  // Je Sportart der Tag, der gilt: der gewaehlte, sonst heute.
+  const gymGewaehlt = !!(_kombiWahl && _kombiWahl.sport === 'gym');
+  const gEintrag = week7[gymGewaehlt ? _kombiWahl.idx : todayIdx] || week7[todayIdx];
+  // OHNE Auswahl bleibt die bisherige Regel: Ist die heutige Einheit schon absolviert, zeigt
+  // die Karte „Kein Gym" und bietet freies Training an — heute ist erledigt.
+  // MIT Auswahl gilt die Regel des Trainings-Tabs (`_renderGymSeite`): dort steht der
+  // Trainingstag unabhaengig davon, ob er schon gelaufen ist. Leonard wollte beide Stellen
+  // gleich (12.09.2026), und „Kein Gym" an einem Tag, an dem man trainiert hat, waere falsch.
+  const tag = gymGewaehlt ? (gEintrag.planDay || null)
+                          : ((gEintrag.planDay && !gEintrag.dayDone) ? gEintrag.planDay : null);
+  wrap.innerHTML = buildHeuteHero(tag, gEintrag, {
+    previewOnClick: tag ? `requestStartFromOverview('${tag.id}')` : null,
+    runIdx: (_kombiWahl && _kombiWahl.sport === 'lauf') ? _kombiWahl.idx : null,
+    // Der Titel nennt den gewaehlten Tag statt „Heute" (Leonard-Entscheidung 12.09.2026).
+    // Ist heute gewaehlt, bleibt es bei „Heute" — der Wochentag saehe dort wie ein Fehler aus.
+    titel: (_kombiWahl && _kombiWahl.idx !== todayIdx) ? WOCHENTAGE_LANG[_kombiWahl.idx] : 'Heute',
+  });
 }
 
 function renderWochenKarte() {
@@ -1027,7 +1069,7 @@ function renderWochenKarte() {
     el.innerHTML = buildRunPlanCard(runPlanAktiv() ? zurTrainingsSeite('laufen') : null, null,
                                     { filterOnTap: 'toggleWochenFilter' });
   } else {
-    el.innerHTML = buildWochenKombi(zurTrainingsSeite);
+    el.innerHTML = buildWochenKombi();
   }
 }
 
@@ -1052,7 +1094,7 @@ function wochenFilterTitel(extraKlasse) {
 // Lauf hellgruen). Senkrecht liest man damit ab, was an einem Tag ansteht.
 // Statt zweier Fortschrittszeilen — die Plaene stehen in verschiedenen Wochen und liessen
 // sich ohnehin nicht zu einer Zahl verrechnen — nur die Woche je Sportart.
-function buildWochenKombi(zurTrainingsSeite) {
+function buildWochenKombi() {
   const todayIdx = (new Date().getDay() + 6) % 7;
 
   // ── Gym ──
@@ -1087,7 +1129,10 @@ function buildWochenKombi(zurTrainingsSeite) {
     verschoben: !!(laufVerschoben[i] && !gelaufen[i]),
   }));
 
-  const reihe = (tage, sport, icon, ziel, label) => {
+  // Jeder Wochentagskreis ist ein eigenes Tipp-Ziel und schiebt die Herocard darunter auf
+  // diesen Tag (siehe `waehleKombiTag`). Die REIHE selbst ist stumm — zwei Ziele in einer
+  // Kachel hat Leonard abgelehnt.
+  const reihe = (tage, sport, icon, sportName) => {
     const punkte = tage.map((t, i) => {
       const cls = ['ppv-k-col'];
       if (t.geplant) cls.push('training');
@@ -1095,15 +1140,17 @@ function buildWochenKombi(zurTrainingsSeite) {
       if (t.verschoben) cls.push('verschoben');
       if (i === todayIdx) cls.push('today');
       if (i > todayIdx && !t.verschoben) cls.push('zukunft');   // nur umrandet, siehe `buildPlanCard`
-      return `<div class="${cls.join(' ')}"><span class="ppv-k-dot"></span></div>`;
+      if (_kombiWahl && _kombiWahl.sport === sport && _kombiWahl.idx === i) cls.push('selected');
+      return `<div class="${cls.join(' ')}" onclick="waehleKombiTag('${sport}',${i})"
+                   role="button" tabindex="0" aria-label="${sportName} am ${WOCHENTAGE_LANG[i]}">
+        <span class="ppv-k-dot"></span></div>`;
     }).join('');
-    return `<div class="ppv-k-reihe ${sport}" onclick="${ziel}" role="button" tabindex="0"
-                 aria-label="${label}">
+    return `<div class="ppv-k-reihe ${sport}">
       <span class="ppv-k-ic">${icon}</span>${punkte}
     </div>`;
   };
 
-  return `<div class="plan-card-v2 ppv-kombi">
+  return `<div class="plan-card-v2 ppv-kombi karte-inert">
     <div class="ppv-head">
       ${wochenFilterTitel('ppv-name')}
       <span class="ppv-k-adh"><span class="gym">${gs.done}/${gs.planned}</span>
@@ -1113,9 +1160,8 @@ function buildWochenKombi(zurTrainingsSeite) {
       <span class="ppv-k-ic"></span>
       ${WOCHENTAGE_KURZ.map(l => `<span>${l}</span>`).join('')}
     </div>
-    ${reihe(gymTage.length ? gymTage : WOCHENTAGE_KURZ.map(() => ({})), 'gym', PPV_ICON_HANTEL,
-            zurTrainingsSeite('gym'), 'Seite Gym öffnen')}
-    ${reihe(laufTage, 'lauf', PPV_ICON_LAEUFER, zurTrainingsSeite('laufen'), 'Seite Laufen öffnen')}
+    ${reihe(gymTage.length ? gymTage : WOCHENTAGE_KURZ.map(() => ({})), 'gym', PPV_ICON_HANTEL, 'Gym')}
+    ${reihe(laufTage, 'lauf', PPV_ICON_LAEUFER, 'Laufen')}
   </div>`;
 }
 
@@ -1793,7 +1839,7 @@ function buildHeuteHero(planDay, selDay, opts) {
   // wieder herein, den die Zusatzzeile kostet (siehe CSS). Nur wo die Zeile wirklich steht.
   const hatMeta = spalten.some(sp => sp.includes('hero-heute-meta'));
   return `<div class="hero-v2 hero-heute${hatMeta ? ' hero-mit-meta' : ''}">
-    <div class="hero-heute-titel">Heute</div>
+    <div class="hero-heute-titel">${escapeHtml(opts.titel || 'Heute')}</div>
     <div class="hero-heute-spalten${spalten.length === 1 ? ' einzeln' : ''}">${spalten.join('')}</div>
   </div>`;
 }
@@ -1885,7 +1931,62 @@ function wischeZuTab(name) {
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     showScreen(name); return;
   }
-  container.scrollTo({ left: idx * container.clientWidth, behavior: 'smooth' });
+  _tabFahrt(container, idx * container.clientWidth);
+}
+
+// Die Fahrt von Tab zu Tab bei einem PROGRAMMATISCHEN Wechsel (Tipp auf eine Karte, auf die
+// Laufanzeige-Pille, auf „Zur laufenden Einheit"). NICHT die Wischgeste — die macht
+// weiterhin allein der Browser, hier fasst nichts sie an.
+//
+// WARUM VON HAND (12.09.2026, Leonard-Meldung „der Wechsel geschieht nicht ueber die
+// Wischanimation"): Vorher stand hier `scrollTo({ behavior: 'smooth' })`. Seit dem
+// 08.09.2026 traegt `#tab-container` aber `-webkit-overflow-scrolling: auto` (die
+// Schwungphase sollte weg) — und damit faellt WebKits eigene weiche Fahrt auf einen harten
+// Sprung zurueck. Beides zugleich gibt es nicht: entweder der Browser fuehrt den Scroller
+// (dann mit Schwung) oder wir.
+// ABGRENZUNG zu den zwei gescheiterten Versuchen vom 08.09.2026 (siehe CLAUDE.md): Die
+// wollten das LOSLASSEN einer Wischgeste uebernehmen und kaempften dabei gegen den noch
+// laufenden Momentum-Scroll des Geraets. Hier liegt kein Finger auf dem Glas und es gibt
+// kein Momentum abzuwuergen — es ist eine reine Ansteuerung.
+// ZUM ZURUECKNEHMEN genuegt es, den Aufruf oben wieder durch
+// `container.scrollTo({ left: …, behavior: 'smooth' })` zu ersetzen.
+const WISCH_MS = 320;
+let _wischRaf = null;
+function _tabFahrt(container, ziel) {
+  if (_wischRaf) { cancelAnimationFrame(_wischRaf); _wischRaf = null; }
+  const start = container.scrollLeft;
+  const weg = ziel - start;
+  if (!weg) return;
+  // Das Einrasten muss waehrend der Fahrt aus sein: Bei `mandatory` zieht WebKit nach JEDEM
+  // Schreiben von `scrollLeft` sofort auf den naechsten Rastpunkt und die Fahrt springt.
+  // Am Ende landen wir exakt auf einem Rastpunkt, das Wiedereinschalten ruckelt also nicht.
+  const snapVorher = container.style.scrollSnapType;
+  container.style.scrollSnapType = 'none';
+  // NOTBREMSE: `requestAnimationFrame` ruht, solange die Seite nicht sichtbar ist (App im
+  // Hintergrund, versteckte Browser-Ansicht). Ohne sie bliebe die Fahrt auf halbem Weg
+  // stehen UND `scroll-snap-type` auf `none` — der Tab-Container haette danach gar kein
+  // Einrasten mehr. Der Wecker holt beides nach.
+  let notbremse = null;
+  const beenden = () => {
+    if (_wischRaf) { cancelAnimationFrame(_wischRaf); _wischRaf = null; }
+    if (notbremse) { clearTimeout(notbremse); notbremse = null; }
+    container.style.scrollSnapType = snapVorher;
+    container.removeEventListener('pointerdown', abbrechen);
+  };
+  // Wer waehrend der Fahrt selbst wischt, bekommt seinen Wisch: Die Fahrt bricht ab und der
+  // Browser uebernimmt wieder. Ohne das schriebe die Animation gegen den Finger.
+  const abbrechen = () => beenden();
+  container.addEventListener('pointerdown', abbrechen, { once: true });
+  notbremse = setTimeout(() => { container.scrollLeft = ziel; beenden(); }, WISCH_MS + 400);
+  const t0 = performance.now();
+  const schritt = (jetzt) => {
+    const p = Math.min(1, (jetzt - t0) / WISCH_MS);
+    container.scrollLeft = start + weg * (1 - Math.pow(1 - p, 3));   // ease-out
+    if (p < 1) { _wischRaf = requestAnimationFrame(schritt); return; }
+    container.scrollLeft = ziel;
+    beenden();
+  };
+  _wischRaf = requestAnimationFrame(schritt);
 }
 
 // Von ueberall her zurueck zur laufenden Einheit: Tab, Seite UND Wochentag stellen sich
@@ -3644,6 +3745,10 @@ const RUN_SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
 const RUN_TOKEN_KEY = 'ft_run_token_exp';
 
 const WOCHENTAGE_KURZ = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+// Ausgeschriebene Namen nach demselben Index (0=Mo). `dayFullName` geht ueber den `dayKey`
+// eines Wochenplan-Eintrags — der kann bei einem selbst gebauten Plan leer sein, hier ist
+// der Index die sichere Quelle.
+const WOCHENTAGE_LANG = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 const HERZZONEN = ['', 'Z1', 'Z2', 'Z3', 'Z4', 'Z5'];
 
 let runTokenClient = null, runToken = null, runTokenExp = 0;
