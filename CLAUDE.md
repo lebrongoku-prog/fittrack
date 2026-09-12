@@ -365,9 +365,11 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Kaestchen hellgruen (`#CDE7E1`). `.done::before` steht SPAETER in der Datei und gewinnt damit
   bei gleicher Spezifitaet — ein geplanter und absolvierter Tag ist gefuellt. Mit der Flaeche
   entfiel auch die Glas-Sonderregel dafuer; die Umrandung bleibt im Transparenz-Modus dunkelgruen.
-  STRICHSTAERKE: 2,1px gegen 1,4px beim Laufkreis. Absolut gleich dick wirkten sie NICHT gleich —
-  das Quadrat ist mit 14px 1,5-mal so gross wie der 9,34px-Kreis. 1,4 × 14/9,34 = 2,1px stellt
+  STRICHSTAERKE: 2,52px gegen 1,68px beim Laufkreis. Absolut gleich dick wirkten sie NICHT gleich —
+  das Quadrat ist mit 16,8px 1,5-mal so gross wie der 11,2px-Kreis. 1,68 × 16,8/11,2 = 2,52px stellt
   das Verhaeltnis her (Leonard-Meldung 04.09.2026); beim Aendern der Insets nachrechnen.
+  (Bis zum 12.09.2026 waren es 2,1 gegen 1,4px bei einem 21px-Kaestchen — dieselbe Rechnung,
+  nur 20 % kleiner.)
   `_calPlanIndex()`/`_calPlanInfo()` rekonstruieren den Plan je Datum aus `startDate`/`endDate`/`weekPlan` ALLER Pläne (auch archivierter — die behalten ihren Wochenplan);
   ohne abdeckenden Plan wird keine Fläche gezeichnet, kommende Tage sind blass (`.future`). Antippen beschreibt den Tag in `#cal-detail`, inklusive der geplanten Einheit.
   **Aufbau der Fusszeile:** Zeile 1 nur Wochentag und Datum (`.cal-detail-datum`), darunter
@@ -625,8 +627,15 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Das brauchte eine Farbe — im Transparenz-Modus gibt es keine, dort schienen die Kaestchen durch die Spalte
   hindurch. Mit dem Umbau entfielen die Maske, `--cal-mask-over` und der Einzug der Monatszeile.
   **Rastergroesse (01.09.2026 angehoben, nur das Raster — Titel und Kennzahl der Karte blieben
-  unveraendert):** Kaestchen 21px, Abstand 3px, Wochentagsspalte 24px, Schrift der Wochentage und
-  Monate 13px. Rund 12 Wochen sind gleichzeitig sichtbar.
+  unveraendert; am 12.09.2026 auf Leonards Wunsch noch einmal um 20 % vergroessert):**
+  Kaestchen 25,2px, Abstand 3,6px, Wochentagsspalte 28,8px, Schrift der Wochentage und
+  Monate 15,6px. Rund 10 Wochen sind gleichzeitig sichtbar (vorher 12).
+  Die 20 % gelten fuer ALLES im Raster, nicht nur fuer das Kaestchen: Abstand, Wochentagsspalte,
+  Monatszeile, die beiden Schriften UND die Marken darin (Insets und Strichstaerken). Nur so
+  bleiben die Groessenverhaeltnisse, die weiter unten ausgerechnet sind, unveraendert — ein
+  groesseres Kaestchen mit unveraendertem Kern haette den Lauf-Kreis darin verschwinden lassen.
+  NICHT mitgewachsen: `--cal-pad-x`/`--cal-pad-y` (Polster, kein Raster) und die Plan-Spuren
+  darueber (NAME_H/SPUR_H im JS) — sie gehoeren zur Beschriftung, nicht zum Raster.
   Die Groesse ist FEST und passt sich der Bildschirmbreite NICHT mehr an (Leonard-Wunsch): Das Raster
   ist im Querformat genauso gross wie im Hochformat und scrollt auch dort waagerecht. Die frueheren
   Konstanten `CAL_CELL_DEFAULT`/`CAL_CELL_MIN` und die Schleife, die das Kaestchen bis zum Hineinpassen
@@ -638,12 +647,12 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Seiten auseinanderliefen — je weiter rechts, desto staerker.
   Masse als Variablen in `:root` — beim Aendern NUR die Variable anfassen:
   `--cal-pad-x` (1px, seitliches Polster) → `.cal-body`, `.cal-scroll`, `.cal-detail`;
-  `--cal-cell` (21px) / `--cal-gap` (3px) → die Raster-Regeln UND das JS (beide werden dort gelesen);
+  `--cal-cell` (25,2px) / `--cal-gap` (3,6px) → die Raster-Regeln UND das JS (beide werden dort gelesen);
   `--cal-pad-y` (5px, Polster oben/unten im Scroller) → `.cal-scroll` UND der obere Abstand der Wochentagsspalte;
-  `--cal-label-w` (24px) / `--cal-label-gap` (4px) → Breite der Spalte und ihr Abstand zum Scroller;
+  `--cal-label-w` (28,8px) / `--cal-label-gap` (4,8px) → Breite der Spalte und ihr Abstand zum Scroller;
   `--cal-band-over` (4px) = Ueberstand der Plan-Umrandung ueber das Raster → `.cal-band` top/bottom, muss in
   `--cal-pad-y` passen, sonst schneidet `overflow-y: hidden` die Kante ab;
-  `--cal-months-h` (16px) = feste Hoehe der Monatszeile, `--cal-months-gap` (10px) = ihr Abstand zum Raster.
+  `--cal-months-h` (19,2px) = feste Hoehe der Monatszeile, `--cal-months-gap` (12px) = ihr Abstand zum Raster.
   Beide zusammen (plus `--cal-pad-y`) sind der obere Abstand der Wochentagsspalte — nur so liegen „Mo" und die
   erste Rasterzeile auf einer Linie. Deshalb eine FESTE Hoehe statt einer gemessenen Schrifthoehe.
   ACHTUNG Platzrechnung: `renderTrainingCalendar` misst `scrollerEl.clientWidth`. Der ist bereits um die
@@ -1166,6 +1175,16 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   auch, waere „Freies Training starten" wieder hoeher und die Gleichheit dahin. Die Sonderregel `hero-mit-meta` hat ihre Titelzeile dabei verloren (sie setzte
   dieselben 2px noch einmal); der Rest des Blocks bleibt, er haelt den Textblock der Seite
   „Gym" zusammen und laesst dem Knopf dort dieselbe Hoehe wie auf „Laufen".
+- **Die Knopfschrift der Herocard ist im TRAININGS-Tab 20 % groesser** (14 → 16.8px,
+  Leonard-Wunsch 12.09.2026): `#screen-workouts .hero-heute:not(.hero-aktiv) .hero-v2-btn`.
+  Betrifft nur die Seiten „Gym" und „Laufen" — dort steht EIN Knopf in der Karte, und er ist
+  ohnehin schon 20 % schmaler als die Karte. In der UEBERSICHT bleibt es bei 14px: Dort teilen
+  sich zwei Knoepfe die Zeile, „Lauf abgeschlossen" bricht schon bei 14px auf zwei Zeilen um.
+  `:not(.hero-aktiv)` nimmt die Karte der LAUFENDEN Einheit aus (gemessen: „Beenden" bleibt bei
+  14px) — sie hat ebenfalls zwei Knoepfe nebeneinander.
+  Das Symbol im Knopf ist `1em` und waechst von selbst mit.
+  Gemessen auf 375px: Karte weiterhin 143px, Knopf 57px, „Freies Training starten" passt bei
+  16.8px noch auf EINE Zeile (258px Knopfbreite), kein Ueberlauf.
 - **HEUTE ist EIN durchgehendes Feld ueber beide Reihen der Kombi-Karte** (09.09.2026,
   Leonard-Wunsch — vorher zwei getrennte Felder mit sichtbarer Fuge). Beide Reihen tragen
   weiterhin ihr eigenes Feld (sie sind getrennte Rasterzeilen, ein einzelnes Element koennte
@@ -1440,8 +1459,8 @@ verdrahtet und nicht `var(--accent)`: Der Lauf soll in jedem Kalender gleich aus
 die Karte spaeter in einem anders eingefaerbten Tab steht.
 An einem Tag mit beidem bleibt so beides sichtbar.
 GROESSENVERHAELTNIS (Leonard-Vorgabe 01.09.2026): Das Lauf-Quadrat verhaelt sich zum Kern wie der
-Kern zum ganzen Kaestchen. Kaestchen 21px, Kern 14px (inset 3,5) → 14 x 14/21 = 9,33px, also
-inset 5,83px. CSS kann nicht durch eine Laenge teilen, der Wert steht deshalb FEST — beim Aendern
+Kern zum ganzen Kaestchen. Kaestchen 25,2px, Kern 16,8px (inset 4,2) → 16,8 x 16,8/25,2 = 11,2px,
+also inset 7px. CSS kann nicht durch eine Laenge teilen, der Wert steht deshalb FEST — beim Aendern
 von `--cal-cell` oder dem Kern-Inset hier nachrechnen.
 Die Lauf-Zeile steht ZUUNTERST in der Tagesbeschreibung, nach dem Plan-Stand, und erbt Groesse
 UND Farbe von `.cal-detail` — sie sieht damit aus wie die Angaben zur Trainingseinheit darueber.

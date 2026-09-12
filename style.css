@@ -1593,6 +1593,14 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 .hero-heute:not(.hero-aktiv) .hero-heute-spalten.einzeln .hero-v2-btn {
   width: 80%; margin-left: auto; margin-right: auto;
 }
+/* Auf den Seiten „Gym" und „Laufen" im Trainings-Tab ist die Knopfschrift 20 % groesser
+   (14 → 16.8px, Leonard-Wunsch 12.09.2026). Dort steht nur EIN Knopf in der Karte; in der
+   UEBERSICHT bleibt es bei 14px, weil sich dort zwei Knoepfe die Zeile teilen und
+   „Lauf abgeschlossen" schon bei 14px umbricht.
+   `:not(.hero-aktiv)` nimmt die Karte der LAUFENDEN Einheit aus — „Pausieren" und „Beenden"
+   behalten ihre Groesse; sie stehen zu zweit in einer Zeile wie in der Uebersicht.
+   Das Symbol ist `1em` und waechst von selbst mit. */
+#screen-workouts .hero-heute:not(.hero-aktiv) .hero-v2-btn { font-size: 16.8px; }
 .hero-btn-ic { width: 1em; height: 1em; flex-shrink: 0; display: inline-flex; }
 .hero-btn-ic svg { width: 100%; height: 100%; fill: currentColor; }
 /* Die Knoepfe tragen die Farbe der SPORTART statt der Tabfarbe (Leonard-Wunsch 06.09.2026) —
@@ -2388,7 +2396,7 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
   display: flex; gap: var(--cal-gap); margin-bottom: var(--cal-months-gap);
   height: var(--cal-months-h);
 }
-.cal-month { width: var(--cal-cell, 19px); flex: 0 0 var(--cal-cell, 19px); font-size: 13px; line-height: var(--cal-months-h); color: var(--text3); white-space: nowrap; }
+.cal-month { width: var(--cal-cell, 19px); flex: 0 0 var(--cal-cell, 19px); font-size: 15.6px; line-height: var(--cal-months-h); color: var(--text3); white-space: nowrap; }
 /* Liegt absolut ueber dem linken Rand von `.cal-body` — bewusst NICHT als Flex-/Grid-Spalte,
    damit `.cal-scroll` ein gewoehnlicher Block bleiben kann (siehe oben).
    Der obere Abstand bildet die Monatszeile im Scroller nach, damit „Mo" auf einer Linie mit
@@ -2403,7 +2411,7 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
   width: var(--cal-label-w);
   display: flex; flex-direction: column; gap: var(--cal-gap);
 }
-.cal-daylabels span { height: var(--cal-cell, 19px); font-size: 13px; line-height: var(--cal-cell, 19px); color: var(--text3); }
+.cal-daylabels span { height: var(--cal-cell, 19px); font-size: 15.6px; line-height: var(--cal-cell, 19px); color: var(--text3); }
 .cal-grid { display: flex; gap: var(--cal-gap); }
 .cal-week { display: flex; flex-direction: column; gap: var(--cal-gap); }
 /* Zwei Schichten pro Tag: die Fläche sagt, ob laut Plan ein Training vorgesehen war,
@@ -2411,7 +2419,7 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
    der Kalender beantwortet nur „trainiert oder nicht". */
 .cal-day {
   position: relative;
-  width: var(--cal-cell, 19px); height: var(--cal-cell, 19px); border-radius: 5px; display: block;
+  width: var(--cal-cell, 19px); height: var(--cal-cell, 19px); border-radius: 6px; display: block;
   background: var(--border);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
@@ -2421,12 +2429,12 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
    `.cal-day.done::before` steht spaeter in der Datei und gewinnt damit bei gleicher
    Spezifitaet: Ein geplanter UND absolvierter Tag ist gefuellt. */
 .cal-day.planned::before {
-  content: ''; position: absolute; inset: 3.5px;
-  /* 2,1px statt 1,4px: Beide Umrandungen waren absolut gleich dick, das Quadrat ist mit 14px
-     aber 1,5-mal so gross wie der 9,34px-Kreis — die gleiche Strichstaerke wirkt darauf
-     duenner. 1,4 × 14/9,34 = 2,1px stellt das Verhaeltnis her (Leonard-Meldung 04.09.2026).
+  content: ''; position: absolute; inset: 4.2px;
+  /* 2,52px statt 1,68px: Beide Umrandungen waren absolut gleich dick, das Quadrat ist mit 16,8px
+     aber 1,5-mal so gross wie der 11,2px-Kreis — die gleiche Strichstaerke wirkt darauf
+     duenner. 1,68 × 16,8/11,2 = 2,52px stellt das Verhaeltnis her (Leonard-Meldung 04.09.2026).
      Beim Aendern von --cal-cell oder einem der beiden Insets hier nachrechnen. */
-  border-radius: 2.5px; box-shadow: inset 0 0 0 2.1px #0F766E;
+  border-radius: 3px; box-shadow: inset 0 0 0 2.52px #0F766E;
 }
 /* Rahmen + Beschriftung der Plan-Zeiträume — dasselbe Grün wie die trainierten Kerne. */
 .cal-scroll { --cal-plan-color: #0F766E; }
@@ -2442,34 +2450,34 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
    liest den Wert von der Karte und rechnet damit die Spaltenbreite fuer Plan-Umrandungen
    und Scrollposition. Standen beide getrennt da, liefen die Umrandungen bei abweichenden
    Werten gegenueber den Spalten aus dem Tritt — je weiter rechts, desto staerker. */
-:root { --cal-gap: 3px; }
+:root { --cal-gap: 3.6px; }
 /* Groesse EINES Kaestchens. FESTE Groesse in jeder Ausrichtung — das Raster scrollt damit
    im Querformat genauso waagerecht wie im Hochformat (Leonard-Wunsch 01.09.2026).
    renderTrainingCalendar liest den Wert hier aus, statt ihn selbst zu setzen. */
-:root { --cal-cell: 21px; }
-:root { --cal-label-gap: 4px; }
+:root { --cal-cell: 25.2px; }
+:root { --cal-label-gap: 4.8px; }
 /* Breite der Wochentagsspalte. Sie steht ausserhalb des Scrollers — die Platzrechnung in
    renderTrainingCalendar misst den Scroller und muss sie deshalb NICHT mehr abziehen. */
-:root { --cal-label-w: 24px; }
+:root { --cal-label-w: 28.8px; }
 /* Feste Hoehe der Monatszeile. Feste Hoehe statt gemessener Schrifthoehe, weil die
    Wochentagsspalte ausserhalb des Scrollers denselben Wert als oberen Abstand nutzt —
    nur so liegen „Mo" und die erste Rasterzeile garantiert auf einer Linie. */
-:root { --cal-months-h: 16px; --cal-months-gap: 10px; }
+:root { --cal-months-h: 19.2px; --cal-months-gap: 12px; }
 /* Der Kern behaelt sein Groessenverhaeltnis zum Kaestchen (frueher 3px bei 16px) —
    daher 4,5px und keine runde Zahl. */
 .cal-day.done::before {
-  content: ''; position: absolute; inset: 3.5px;
-  border-radius: 2.5px; background: #0F766E;
+  content: ''; position: absolute; inset: 4.2px;
+  border-radius: 3px; background: #0F766E;
 }
 /* Gemeinsamer Kalender — DREI Schichten im selben Kaestchen:
    Flaeche = laut Plan vorgesehen · gruener Kern = Krafttraining absolviert ·
    kleines Quadrat mittig = gelaufen. So bleibt an einem Tag mit beidem beides sichtbar.
    GROESSE des Lauf-Quadrats: Es verhaelt sich zum Trainingskern wie der Kern zum ganzen
-   Kaestchen. Kaestchen 21px, Kern 14px (inset 3,5) → 14 × 14/21 = 9,33px, also inset 5,83px.
+   Kaestchen. Kaestchen 25,2px, Kern 16,8px (inset 4,2) → 16,8 × 16,8/25,2 = 11,2px, also inset 7px.
    CSS kann nicht durch eine Laenge teilen, der Wert steht deshalb fest — beim Aendern von
    --cal-cell oder dem Kern-Inset (`.cal-day.done::before`) hier nachrechnen. */
 .cal-day.run::after, .cal-day.run-planned::after {
-  content: ''; position: absolute; inset: 5.83px;
+  content: ''; position: absolute; inset: 7px;
   /* KREIS und FESTE Farbe des Laufen-Tabs (Violett) — nicht `var(--accent)`: Der Lauf
      gehoert zu seiner eigenen Domaene und soll in jedem Kalender gleich aussehen, auch
      wenn die Karte spaeter in einem anders eingefaerbten Tab steht. */
@@ -2478,7 +2486,7 @@ html.glas .screen:not(#screen-mehr) .ppv-k-reihe:active { background: rgba(255,2
      Kalender gleich aussieht. */
   border-radius: 50%; background: #4ADE80;
 }
-.cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 1.4px #4ADE80; }
+.cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 1.68px #4ADE80; }
 /* Wettkampftag: das GANZE Kaestchen hellgruen — der auffaelligste Zustand im Kalender, weil
    es der eine Tag ist, auf den ein Laufplan hinarbeitet (Leonard-Wunsch 04.09.2026). Steht vor
    den Zustandsregeln fuer heute/ausgewaehlt, damit deren Rahmen weiter obenauf liegen. */
