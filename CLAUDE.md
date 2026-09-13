@@ -1253,6 +1253,39 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   — das ist die ganzzahlige Rundung von `line-height: normal`, kein Fehler.
   FOLGE fuer die Uebersicht: Die langen Knopfbeschriftungen passten nicht mehr (siehe
   „Knopfschrift" weiter unten) und heissen seither „Freies Training" und „Lauf erledigt".
+- **DER INHALT DER WOCHENPLAN-KARTEN IST SENKRECHT GLEICHMAESSIG VERTEILT** (13.09.2026,
+  Leonard-Wunsch: unter der Lauf-Reihe der Kombi-Karte und unter den Wochentagen der
+  Gym-/Laufkarte war zu viel Luft). Vorher standen die Bloecke mit festen Abstaenden oben
+  aneinander und der gesamte Freiraum der festen Hoehe lag unter der letzten Kreisreihe.
+  Jetzt ist `.plan-card-v2` eine FLEX-SPALTE: Der Titel bleibt an seiner Stelle (gemessen
+  unveraendert, alle Fassungen), und der Freiraum darunter verteilt sich ueber gleich grosse
+  `auto`-Abstaende — vor jedem Block nach dem Titel und nach dem letzten (`::after` statt
+  `padding-bottom`).
+  Ein BLOCK ist der ganze Kasten, bei Kreisreihen also INKLUSIVE des Feldes fuer heute bzw.
+  den gewaehlten Tag. GEMESSEN (157.3px):
+
+  | Karte | Abstand zwischen den Bloecken und zum Rand | unter den Kreisen |
+  |---|---|---|
+  | Kombi | 9.2px | 20.5 → **12.5px** |
+  | Gym/Lauf (Uebersicht, Trainings-Tab, laufender Plan in der Liste) | 16.6px | 29.5 → **24.9px** |
+  | Plan-Liste mit Laufzeitzeile (kommend/archiviert) | 21.3px | 35.5 → **29.6px** |
+
+  In der Gym-/Laufkarte ist der Abstand UNTER den Kreisen jetzt genau so gross wie der ueber
+  ihnen (beide 24.9px, weil das Spaltenpolster symmetrisch ist).
+  Nicht verteilt werden: die Laufzeitzeile (`.ppv-meta`, gehoert zum Titel) und der Abstand
+  ZWISCHEN den Kombi-Reihen (4.95px) — an ihm haengt die Naht des durchgehenden Heute-Feldes
+  (gemessen: Luecke 0).
+  UNTERGRENZE 8px: Jeder verteilte Block traegt 8px `padding-top`, `::after` ist 8px hoch.
+  Waechst eine Listenkarte ueber ihre Mindesthoehe (langer Planname, gemessen 183.9px), faellt
+  `auto` auf 0 — die Bloecke stehen dann 8px auseinander statt aneinander. Die 8px duerfen
+  nicht ueber 9.2px steigen, sonst passt die Kombi-Karte nicht mehr in ihre Hoehe.
+  FALLE, die dabei zuschlug: `.ppv-name` traegt `flex: 1` fuer die waagerechte Kopfzeile. In
+  der LEEREN Karte („Kein aktiver Trainingsplan") steht der Name aber direkt in der Karte und
+  wuchs in der Flex-Spalte senkrecht — die Hinweiszeile rutschte an den unteren Rand.
+  `.plan-card-v2 > .ppv-name { flex: none }` verhindert das.
+  Im Querformat identisch gemessen. Die Regel `justify-content: center` fuer die Wochenkarte im
+  Querformat-Grid des Trainings-Tabs ist dadurch wirkungslos geworden (die `auto`-Abstaende
+  nehmen den Freiraum), aber unschaedlich.
 - **ALLE WOCHENPLAN-KARTEN UND HEROCARDS SIND GENAU 143px HOCH** (09.09.2026,
   Leonard-Wunsch). Kombi-Karte, Gym- und Laufwochenplan in allen drei Tabs, die Herocard
   „Heute" in Uebersicht und Trainings-Tab und die Karte der laufenden Einheit — alle gleich.

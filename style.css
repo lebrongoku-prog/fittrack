@@ -736,7 +736,9 @@ body.theme-plans .hist-action-dd {
      Herocards samt Inhalt um 10 % gewachsen (Leonard-Wunsch). Das seitliche Polster bleibt
      beim app-weiten Kartenpolster — sonst stuende der Titel 1.4px weiter rechts als der
      Titel jeder anderen Karte darueber und darunter. */
-  padding: 15.4px 14px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  /* Unten KEIN Polster mehr (13.09.2026) — den Abstand zum unteren Rand stellt `::after`,
+     siehe „Gleichmaessige Hoehenverteilung" direkt unter dieser Regel. */
+  padding: 15.4px 14px 0; cursor: pointer; -webkit-tap-highlight-color: transparent;
   /* ALLE Wochenplan-Karten und Herocards sind gleich hoch: 157.3px (Leonard-Wunsch
      09.09.2026 mit 143px, am 13.09.2026 um 10 % angehoben). Hier `min-height`, nicht
      `height`: In der Liste des Plan-Tabs tragen archivierte und kommende Plaene eine
@@ -753,6 +755,45 @@ body.theme-plans .hist-action-dd {
 #ov-week-card > .plan-card-v2,
 #wo-week-card > .plan-card-v2,
 #wo-view-laufen > .plan-card-v2 { height: 157.3px; }
+/* ── Gleichmaessige Hoehenverteilung (13.09.2026, Leonard-Wunsch) ─────────────────────
+   Bis dahin standen die Bloecke mit festen Abstaenden oben aneinander, und der ganze
+   Freiraum der festen Kartenhoehe lag UNTER der letzten Kreisreihe — in der Kombi-Karte
+   20.5px unter den Kreisen gegen 11.6px zwischen den Reihen, in der Gym-/Laufkarte 29.5px.
+   Jetzt ist die Karte eine Flex-Spalte: Der TITEL bleibt oben an seinem Platz, und der
+   Freiraum darunter wird ueber gleich grosse `auto`-Abstaende VERTEILT — vor jedem Block,
+   der auf den Titel folgt, und nach dem letzten (`::after`, der untere Rand).
+   Ein Block ist dabei immer der GANZE Kasten, bei den Kreisreihen also inklusive des
+   Feldes, das „heute" bzw. den gewaehlten Tag markiert (`.ppv-col`-Polster bzw.
+   `.ppv-k-reihe`-Polster). Nur so sind die Abstaende zwischen den Feldern und zum Rand gleich.
+   GEMESSEN (157.3px-Karte): Kombi 9.22px zwischen allen Bloecken und zum Rand — unter den
+   Kreisen 12.5 statt 20.5px. Gym/Lauf 16.6px — unter den Kreisen 24.9 statt 29.5px, und
+   jetzt genauso viel wie ueber ihnen. Plan-Liste mit Laufzeitzeile 21.3px.
+   DREI Dinge, die daran haengen:
+   1. Die 8px `padding-top` an jedem verteilten Block (und die 8px Hoehe von `::after`) sind
+      eine UNTERGRENZE: `auto` verteilt nur, was UEBRIG ist. Waechst eine Karte in der Liste
+      des Plan-Tabs ueber ihre Mindesthoehe (langer Planname), faellt das `auto` auf 0 und
+      die Bloecke stuenden ohne die 8px direkt aneinander bzw. am Rand. Weil alle Luecken
+      dieselben 8px tragen, bleiben sie trotzdem untereinander gleich. Die 8px duerfen nicht
+      ueber 9.22px steigen — sonst passt die Kombi-Karte nicht mehr in 157.3px.
+   2. Die Laufzeitzeile (`.ppv-meta`) wird NICHT verteilt, sie gehoert zum Titel und behaelt
+      ihre 4.4px. Ebenso der Abstand ZWISCHEN den beiden Kombi-Reihen (4.95px): Daran haengt
+      die Naht des Heute-Feldes, das ueber beide Reihen durchlaeuft (8.25px = 3.3 + 4.95) —
+      mit einem verteilten Abstand wuerde sie aufreissen.
+   3. Die erste Kombi-Reihe braucht `calc(3.3px + 8px)`: Die 3.3px sind ihr eigenes Polster,
+      in das das Heute-Feld ueber den Kreis hinausragt. `padding-top: 8px` allein haette
+      dieses Polster ersetzt statt ergaenzt. */
+.plan-card-v2 { display: flex; flex-direction: column; }
+.plan-card-v2::after { content: ''; flex: none; height: 8px; margin-top: auto; }
+.plan-card-v2 > .ppv-progress,
+.plan-card-v2 > .ppv-strip,
+.plan-card-v2 > .ppv-k-labels { margin-top: auto; padding-top: 8px; }
+.plan-card-v2 > .ppv-k-labels + .ppv-k-reihe { margin-top: auto; padding-top: calc(3.3px + 8px); }
+/* FALLE, die dabei zuschlug: `.ppv-name` traegt `flex: 1` — gedacht fuer die waagerechte
+   Kopfzeile, in der der Name den Platz neben Chip und Kennzahl fuellt. In der LEEREN Karte
+   („Kein aktiver Trainingsplan") steht `.ppv-name` aber direkt in der Karte, und in der
+   Flex-Spalte wuchs es damit SENKRECHT: Der Text rutschte in die Mitte, die Hinweiszeile an
+   den unteren Rand. Als direktes Kind der Karte waechst der Name deshalb nicht. */
+.plan-card-v2 > .ppv-name { flex: none; }
 /* Tipp-Rueckmeldung fuer ALLE Karten (Leonard-Wunsch 28.08.2026) — dieselbe dezente
    Stauchung wie bei der Wochenplan-Karte. `transition` NUR auf transform, damit die
    Farbwechsel der Karten (z. B. erledigte Uebung) unveraendert bleiben. */
