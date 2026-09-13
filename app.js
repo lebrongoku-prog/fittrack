@@ -4942,10 +4942,10 @@ function renderTrainingCalendar(id, cardId) {
       (anzahl ? (hNamen ? hNamen + 3 : 0) + hBalken + 6 : 0) + 'px');
   }
 
-  // Beim ERSTEN Aufbau zur laufenden Woche scrollen (nicht ans Jahresende — der Dezember
-  // ist noch leer). Danach die Position des Nutzers HALTEN: `renderTrainingCalendar` laeuft
-  // bei jedem Tabwechsel erneut (ueber `_applyTabState`), und ein erneutes Setzen liess das
-  // Raster jedes Mal zur aktuellen Woche zurueckspringen (gemeldet 01.09.2026).
+  // Beim ERSTEN Aufbau zum Beginn des laufenden Plans scrollen (13.09.2026, Leonard-Wunsch —
+  // vorher zur aktuellen Woche). Danach die Position des Nutzers HALTEN:
+  // `renderTrainingCalendar` laeuft bei jedem Tabwechsel erneut (ueber `_applyTabState`), und
+  // ein erneutes Setzen liess das Raster jedes Mal zurueckspringen (gemeldet 01.09.2026).
   const scroller = document.getElementById(id + '-scroll');
   if (scroller && !scroller.dataset.posMerker) {
     scroller.dataset.posMerker = '1';
@@ -4956,12 +4956,36 @@ function renderTrainingCalendar(id, cardId) {
   if (scroller) requestAnimationFrame(() => {
     if (_calPositioniert[id]) { scroller.scrollLeft = _calScrollPos[id] || 0; return; }
     if (!scroller.clientWidth) return;   // im unsichtbaren Tab nicht messbar — spaeter erneut
-    // Im laufenden Jahr zur aktuellen Woche, in einem vergangenen an den Jahresanfang — dort
-    // gibt es kein „heute", auf das sich der Blick richten koennte.
-    const heuteSpalte = Math.floor(Math.round((today - start) / 86400000) / 7);
-    const ziel = istLaufendesJahr
-      ? Math.max(0, heuteSpalte * SPALTE - scroller.clientWidth * 0.7)
-      : 0;
+    const spalteVon = (ts) => {
+      const d = new Date(ts); d.setHours(0, 0, 0, 0);
+      return Math.floor(Math.round((d - start) / 86400000) / 7);
+    };
+    // ── Wo faengt die Ansicht an? (13.09.2026, Leonard-Entscheidung) ──
+    // 1. Beim Beginn des laufenden Plans — JEDER Kalender folgt dabei seiner eigenen
+    //    Sportart: Gymkalender dem Gymplan, Laufkalender dem Laufplan, der gemeinsame
+    //    Trainingskalender dem frueheren von beiden. Sonst begaenne der Laufkalender beim
+    //    Start eines Gymplans, dessen Daten er gar nicht zeigt.
+    // 2. Liegt dieser Beginn nicht im angezeigten Jahr (anderes Jahr gewaehlt, oder der Plan
+    //    laeuft schon seit dem Vorjahr): Spalte des aktuellen Monats — aber nur im laufenden
+    //    Jahr, sonst gibt es keinen „aktuellen Monat".
+    // 3. Sonst der Jahresanfang.
+    const starts = [];
+    if (modus.kraft) { const gp = getActivePlan(); if (gp && gp.startDate) starts.push(gp.startDate); }
+    if (modus.lauf)  { const rp = runPlanAktiv(); if (rp && rp.startDate) starts.push(rp.startDate); }
+    const planStart = starts.length ? Math.min(...starts) : null;
+    let zielSpalte = 0;
+    if (planStart != null && new Date(planStart).getFullYear() === jahr) zielSpalte = spalteVon(planStart);
+    else if (istLaufendesJahr) zielSpalte = spalteVon(new Date(jahr, today.getMonth(), 1).getTime());
+    let ziel = Math.max(0, zielSpalte * SPALTE);
+    // HEUTE muss sichtbar bleiben (Leonard-Entscheidung 13.09.2026): Ein 18-Wochen-Plan ist
+    // breiter als die rund 10 sichtbaren Spalten — beim Planbeginn stehend waere die aktuelle
+    // Woche aus dem Bild, und man muesste jedes Mal nach rechts scrollen. Liegt heute rechts
+    // ausserhalb, wird nur so weit nachgeschoben, dass sein Kaestchen gerade hineinpasst.
+    if (istLaufendesJahr) {
+      const mindestens = spalteVon(today.getTime()) * SPALTE + zelle - scroller.clientWidth;
+      if (ziel < mindestens) ziel = mindestens;
+    }
+    ziel = Math.max(0, Math.min(ziel, scroller.scrollWidth - scroller.clientWidth));
     scroller.scrollLeft = ziel;
     _calScrollPos[id] = ziel;
     _calPositioniert[id] = true;

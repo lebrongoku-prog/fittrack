@@ -510,9 +510,26 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   da. Gemessen fuer 2024, 2025 und 2026 sowie beide Kalender: je 12 Beschriftungen, alle auf
   der Spalte ihres Monatsersten.
   Rand-Tage der ersten/letzten Woche tragen `.outside` (ausgegraut, nicht antippbar).
-  Beim ERSTEN Rendern wird zur laufenden Woche gescrollt, danach bleibt die Position des Nutzers stehen
-  (`_calPositioniert` und `_calScrollPos` je Kalender). Ohne das sprang das Raster bei jedem Tabwechsel
-  zurueck, weil `_applyTabState` den Renderer erneut aufruft (Leonard-Meldung 01.09.2026).
+  **Beim ERSTEN Rendern beginnt die Ansicht beim START DES LAUFENDEN PLANS** (13.09.2026,
+  Leonard-Entscheidung; vorher stand die aktuelle Woche bei 70 % der Breite). Drei Stufen,
+  in dieser Reihenfolge:
+  1. Der Beginn des laufenden Plans, sofern er im ANGEZEIGTEN Jahr liegt. JEDER Kalender
+     folgt dabei SEINER Sportart: Gymkalender dem Gymplan, Laufkalender dem Laufplan, der
+     gemeinsame Trainingskalender dem frueheren von beiden. Sonst begaenne der Laufkalender
+     beim Start eines Gymplans, dessen Daten er gar nicht zeigt.
+  2. Sonst die Spalte des aktuellen Monats — aber nur im laufenden Jahr.
+  3. Sonst der Jahresanfang (vergangenes Jahr; dort gibt es kein „heute").
+  **HEUTE muss trotzdem sichtbar bleiben:** Ein 18-Wochen-Plan ist breiter als die rund zehn
+  sichtbaren Spalten — beim Planbeginn stehend waere die aktuelle Woche aus dem Bild und man
+  muesste jedes Mal nach rechts scrollen (Leonard-Entscheidung). Liegt heute rechts ausserhalb,
+  wird nur so weit nachgeschoben, dass sein Kaestchen gerade hineinpasst.
+  GEMESSEN auf 375px (Gymplan ab Spalte 26, Laufplan ab 32, heute 36, Monatserster 35):
+  Trainingskalender und Gymkalender starten bei 26.88 (heute gerade noch rechts im Bild),
+  Laufkalender bei genau 32, ohne aktiven Plan bei 35, im Vorjahr bei 0. Ein Plan, der schon
+  im Vorjahr begann, faellt korrekt auf den aktuellen Monat zurueck.
+  Danach bleibt die Position des Nutzers stehen (`_calPositioniert` und `_calScrollPos` je
+  Kalender). Ohne das sprang das Raster bei jedem Tabwechsel zurueck, weil `_applyTabState`
+  den Renderer erneut aufruft (Leonard-Meldung 01.09.2026).
   Als „positioniert" gilt der Kalender erst, wenn `clientWidth > 0` war — im unsichtbaren Tab waere die
   Position sonst sinnlos eingefroren.
   ACHTUNG: Die aktuelle Position fuehrt ein Scroll-Listener in `_calScrollPos` nach; sie darf NICHT zu
