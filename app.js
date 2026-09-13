@@ -1640,25 +1640,30 @@ function buildRunPlanCard(onTap, plan, opts) {
   const status = runPlanStatus(p);
   const laeuft = status === 'active';
   const todayIdx = (new Date().getDay() + 6) % 7;
-  // Die Haken gelten der LAUFENDEN Woche — bei einem beendeten oder kuenftigen Plan waeren
-  // sie sinnlos (dieselbe Regel wie bei `buildPlanCard`).
-  const st = laeuft ? runWochenStatus() : null;
+  // Die Zustaende gelten der LAUFENDEN Woche — bei einem beendeten oder kuenftigen Plan waeren
+  // sie sinnlos, und im Plan-Tab zeigt die Karte den Plan selbst (`opts.nurPlan`, dieselbe
+  // Regel wie bei `buildPlanCard`).
+  const zeigtWoche = laeuft && !opts.nurPlan;
+  const st = zeigtWoche ? runWochenStatus() : null;
   const gelaufenAmTag = {};
   if (st) st.gelaufen.forEach(l => {
     const [y, m, d] = l.date.split('-').map(Number);
     gelaufenAmTag[(new Date(y, m - 1, d).getDay() + 6) % 7] = true;
   });
-  const verschobenTage = laeuft ? runVerschobeneTage() : {};
+  const verschobenTage = zeigtWoche ? runVerschobeneTage() : {};
   const strip = WOCHENTAGE_KURZ.map((label, i) => {
     const cls = ['ppv-col'];
-    if ((p.runDays || []).includes(i)) cls.push('training');
+    const geplant = (p.runDays || []).includes(i);
+    if (geplant) cls.push('training');
     if (gelaufenAmTag[i]) cls.push('done');
     // Lauftag, der durch einen Lauf an einem anderen Tag abgedeckt ist (`runVerschobeneTage`).
     if (verschobenTage[i] && !gelaufenAmTag[i]) cls.push('verschoben');
     // `opts.hideToday` ist das Gegenstueck zum gleichnamigen Parameter von `buildPlanCard`
     // — die Seite „Laufplan" im Plan-Tab schaltet das Heute-Feld damit ab.
     if (laeuft && i === todayIdx && !opts.hideToday) cls.push('today');
-    if (laeuft && i > todayIdx && !verschobenTage[i]) cls.push('zukunft');   // siehe `buildPlanCard`
+    // Gefuellt heisst „gelaufen", geplant und noch nicht gelaufen ist umrandet — siehe
+    // `buildPlanCard` (13.09.2026).
+    if (zeigtWoche && geplant && !gelaufenAmTag[i] && !verschobenTage[i]) cls.push('offen');
     if (opts.selectedIdx === i) cls.push('selected');
     // Auf der Seite „Laufen" waehlt ein Tipp den Tag aus — genau wie beim Gymwochenplan
     // (Leonard-Wunsch 04.09.2026). Ohne `dayOnTap` bleibt der Streifen reine Anzeige.
@@ -1678,7 +1683,7 @@ function buildRunPlanCard(onTap, plan, opts) {
     progress = `<div class="ppv-progress">
       <span class="ppv-wk">Woche ${num} / ${wochen}</span>
       <div class="ppv-bar"><div class="ppv-bar-fill" style="width:${Math.min(100, pct)}%"></div></div>
-      <span class="ppv-adh">${st.done}/${st.planned} diese Woche</span>
+      ${st ? `<span class="ppv-adh">${st.done}/${st.planned} diese Woche</span>` : ''}
     </div>`;
   }
   // `onTap === false` = stumme Karte, siehe `buildPlanCard`.
@@ -4218,7 +4223,7 @@ function renderLaufVerwaltung() {
     return;
   }
   // Ohne Heute-Feld, genau wie die Gymplan-Liste nebenan (Leonard-Wunsch 12.09.2026).
-  const zeile = (p) => buildRunPlanCard(`openRunPlanDetail('${p.id}')`, p, { hideToday: true });
+  const zeile = (p) => buildRunPlanCard(`openRunPlanDetail('${p.id}')`, p, { hideToday: true, nurPlan: true });
 
   let html = offen.map(zeile).join('');
   if (archiv.length) {
@@ -5481,6 +5486,9 @@ function fmtDateRange(start, end) {
 // opts.dayOnTap      = Funktionsname fuer den Tipp auf einen Wochentag. OHNE ihn sind die
 //                      Wochentage reine Anzeige und der Tipp faellt auf die KARTE durch.
 // opts.filterOnTap   = Titel wird zum Filterknopf der Uebersichts-Wochenkarte statt Planname
+// opts.nurPlan       = die Karte zeigt den PLAN, nicht die laufende Woche (Plan-Tab,
+//                      13.09.2026): geplante Tage gefuellt, keine Unterscheidung „geplant /
+//                      absolviert / verschoben" und keine Kennzahl „x/y diese Woche".
 // onTap === false    = die KARTE selbst tut nichts (`null`/weggelassen = Standardziel).
 //                      Sie verliert dann auch Zeigefinger und Tipp-Animation, sonst
 //                      antwortete sie sichtbar auf einen Tipp, der nichts bewirkt.
@@ -5489,7 +5497,10 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
   const todayIdx = (new Date().getDay()+6) % 7;
   const status = planStatus(p);
   const isCurrent = status === 'active';
-  const weekDone = isCurrent ? getCurrentWeekDays() : null;   // erledigte Trainings dieser Woche (nur aktiver Plan)
+  // Die Karte beschreibt die LAUFENDE WOCHE nur beim aktiven Plan — und nur dort, wo sie nicht
+  // ausdruecklich den Plan selbst zeigen soll (`opts.nurPlan`, Plan-Tab).
+  const zeigtWoche = isCurrent && !opts.nurPlan;
+  const weekDone = zeigtWoche ? getCurrentWeekDays() : null;   // erledigte Trainings dieser Woche
   const days = resolvePlanDays(p);
   const byId = {}; days.forEach(d => { byId[d.id] = d; });
   const wp = (p.weekPlan && p.weekPlan.length) ? p.weekPlan : DEFAULT_WEEKPLAN;
@@ -5513,12 +5524,13 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
     if (done) cls.push('done');
     if (verschoben) cls.push('verschoben');
     if (today) cls.push('today');
-    // Noch NICHT gewesene Tage dieser Woche werden nur UMRANDET statt gefuellt
-    // (Leonard-Wunsch 08.09.2026): Die Fuellung sagt „war schon", die Kontur „steht noch an".
-    // Heute zaehlt NICHT dazu — der Tag laeuft ja gerade.
-    // Ein verschobener Tag ist erledigt und steht NICHT mehr an — sonst traege er Kontur und
-    // grauen Haken zugleich, und die Kontur gewaenne per Spezifitaet.
-    if (isCurrent && i > todayIdx && !verschoben) cls.push('zukunft');
+    // GEFUELLT heisst „absolviert" — dieselbe Regel wie in der Kombi-Karte (13.09.2026,
+    // Leonard-Wunsch). Geplant und noch nicht absolviert ist UMRANDET, egal ob heute, kuenftig
+    // oder ausgefallen. Vorher hing die Kontur am Datum (`.zukunft`, `i > todayIdx`), und ein
+    // geplanter Tag von heute oder gestern sah aus wie erledigt.
+    // Ein verschobener Tag ist erledigt, nur nicht hier — er bekommt seinen grauen Zustand,
+    // keine Kontur.
+    if (zeigtWoche && d && !done && !verschoben) cls.push('offen');
     if (opts.selectedIdx === i) cls.push('selected');
     // Ein Wochentag bekommt seinen EIGENEN Tipp nur, wenn der Aufrufer einen nennt
     // (`opts.dayOnTap`) — genau wie bei `buildRunPlanCard`. Ohne Angabe faellt der Klick auf
@@ -5537,12 +5549,16 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
   let progress = '';
   if (isCurrent) {
     const pw = _planProgramWeek(p);
-    const ws = getWeekStatus();
     const pct = Math.round(pw.num / (pw.total || 1) * 100);
+    // Die Kennzahl „x/y diese Woche" gehoert zur laufenden Woche und entfaellt deshalb im
+    // Plan-Tab (`opts.nurPlan`). „Woche 8 / 9" und der Balken bleiben: Sie beschreiben, wo der
+    // PLAN steht, nicht was man diese Woche trainiert hat.
+    const adh = opts.nurPlan ? '' : (() => { const ws = getWeekStatus();
+      return `<span class="ppv-adh">${ws.done}/${ws.planned} diese Woche</span>`; })();
     progress = `<div class="ppv-progress">
       <span class="ppv-wk">Woche ${pw.num} / ${pw.total}</span>
       <div class="ppv-bar"><div class="ppv-bar-fill" style="width:${Math.min(100,pct)}%"></div></div>
-      <span class="ppv-adh">${ws.done}/${ws.planned} diese Woche</span>
+      ${adh}
     </div>`;
   }
   // `onTap === false` = die Karte ist stumm (Trainings-Tab, Leonard-Wunsch 06.09.2026): Dort
@@ -5595,9 +5611,12 @@ function renderPlans() {
   // KEIN Heute-Feld auf dieser Seite (Leonard-Wunsch 12.09.2026): Hier verwaltet man Plaene,
   // das aktuelle Datum spielt dabei keine Rolle — dieselbe Ueberlegung wie bei `.wpe-row.today`
   // in der Plan-Detailansicht (01.09.2026). In Uebersicht und Trainings-Tab bleibt es stehen.
+  // Die Karten zeigen hier den PLAN, nicht den Verlauf der laufenden Woche (`nurPlan`,
+  // Leonard-Wunsch 13.09.2026): geplante Tage gefuellt, keine Unterscheidung geplant /
+  // absolviert, keine Kennzahl „x/y diese Woche".
   const renderRow = (p) => planStatus(p) === 'active'
-    ? buildPlanCard(p, null, /*hideToday*/ true, /*hideStatus*/ true, /*hideMeta*/ true)
-    : buildPlanCard(p, null, /*hideToday*/ true);
+    ? buildPlanCard(p, null, /*hideToday*/ true, /*hideStatus*/ true, /*hideMeta*/ true, { nurPlan: true })
+    : buildPlanCard(p, null, /*hideToday*/ true, false, false, { nurPlan: true });
 
   let html = '';
   if (!active.length && !archived.length) {

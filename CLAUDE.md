@@ -1334,9 +1334,27 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
     voll in der Sportfarbe = absolviert
   PREIS: Ein ausgefallener Tag der Vergangenheit sieht aus wie einer, der noch aussteht. Das
   ist die kleinere Unwahrheit — „gefuellt" behauptete vorher ein Training, das es nie gab.
-  Die EINZELKARTEN behalten bewusst die alte Regel („gefuellt = war schon, Vergangenheit oder
-  erledigt", Leonard-Vorgabe 08.09.2026): Dort ist `.zukunft` unveraendert das Datum. Wer die
-  beiden Karten angleichen will, fragt vorher nach.
+  **SEIT DEM 13.09.2026 GILT DIESELBE REGEL IN DEN EINZELKARTEN** (Gym- und Laufwoche in
+  Uebersicht und Trainings-Tab, Leonard-Wunsch): `.ppv-col.offen` ersetzt `.zukunft`, das am
+  Datum hing (`i > todayIdx`). Das AUSSEHEN ist das der Kombi-Karte — hellgrau (`--card2`) mit
+  2.2px-Ring in der Sportfarbe —, der Wochentag bleibt im Kreis stehen, in der Sportfarbe.
+  Im Transparenz-Modus 22-%-Weiss mit weissem Ring; der Ring gewinnt dort auch gegen
+  `.selected .ppv-wd { box-shadow: none }` (eine Klasse mehr, gemessen).
+  GEMESSEN (heute So, Gym Mo/Di/Do/Fr/So geplant, Einheiten Mo und Mi mit dem Pull vom Di):
+  Mo gefuellt · Di grau (verschoben) · Mi gefuellt (ungeplant, erledigt) · Do, Fr und So
+  hellgrau mit Ring. Lauf: So (heute, geplant, nicht gelaufen) mit Ring.
+- **IM PLAN-TAB ZEIGEN DIE WOCHENPLAN-KARTEN DEN PLAN, NICHT DIE LAUFENDE WOCHE**
+  (`opts.nurPlan` in `buildPlanCard` und `buildRunPlanCard`, Leonard-Wunsch 13.09.2026).
+  Gesetzt von beiden Listen (Gymplan: `renderRow`, Laufplan: `zeile` in `renderLaufVerwaltung`).
+  Dort gibt es KEINE Unterscheidung mehr zwischen geplant, absolviert, verschoben und offen:
+  Die geplanten Tage des Plans sind schlicht gefuellt, alle anderen leer — wann in dieser
+  Woche trainiert wurde, zeigt die Karte nicht. `getCurrentWeekDays`, `runWochenStatus` und
+  `runVerschobeneTage` werden dafuer gar nicht erst gerufen.
+  ENTFALLEN ist dort auch „x/y diese Woche" rechts neben dem Balken (`.ppv-adh`). „Woche 8 / 9"
+  links und der Balken BLEIBEN — sie beschreiben, wo der Plan steht. Der Balken fuellt dadurch
+  die freie Breite bis zum rechten Rand (`flex: 1`).
+  Das Heute-Feld war im Plan-Tab schon seit dem 12.09.2026 aus (`hideToday`); `nurPlan` ist
+  eine eigene Option, weil „kein Heute-Feld" und „keine Woche" zwei verschiedene Aussagen sind.
 - **Der Abstand unter dem Titel „Heute" ist von 10 auf 2px** (09.09.2026, Leonard-Wunsch:
   zwischen Titel und der mittigen Beschriftung stand zu viel Luft). Weil die Karte 143px FEST
   hoch ist und die Knoepfe `flex: 1` tragen, landen die gesparten 8px automatisch in der
