@@ -286,6 +286,29 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   abgehakten Satz) nutzt dieselbe Funktion: Die Karte steht dort noch eingeklappt im DOM, weil
   `renderWorkoutsScreen` lief, bevor die Id im Satz war.
   Bei `prefers-reduced-motion` wird nur umgeschaltet und neu gezeichnet.
+  Die Bewegung selbst samt Notbremse steckt seit dem 13.09.2026 in `_klappBewegung(el,
+  keyframes, fertig)` (Dauer `KLAPP_MS`, vorher `AEX_KLAPP_MS`) — die Muskelgruppen nutzen sie mit.
+- **DIE MUSKELGRUPPEN IM KATALOG KLAPPEN MIT DERSELBEN BEWEGUNG** (`_gruppeKlappAnimieren`,
+  13.09.2026, Leonard-Wunsch): gleiche 200ms, gleiche Kurve, gleiche Notbremse. Die Gruppe
+  traegt dafuer `data-gruppe="muscle:…"` (`_exGruppe(key)`).
+  ANDERS als bei den Uebungskarten wird die LISTE (`.ex-list`) gefahren, nicht die Gruppe:
+  Mit `overflow: hidden` auf der Gruppe waeren waehrend der Bewegung die weichen Schatten von
+  Knopf und Liste abgeschnitten. Die Liste hat `overflow: hidden` schon, ihr eigener Schatten
+  liegt ausserhalb davon.
+  FALLE ABSTAND: Zwischen Knopf und Liste liegen 11.2px (`margin-bottom` des Knopfes).
+  EINGEKLAPPT verschmilzt dieser Abstand mit dem 14px-Abstand unter der Gruppe — die Gruppe ist
+  dann nur so hoch wie ihr Knopf. Eine Liste mit Hoehe 0, die noch im Fluss steht, haelt die
+  11.2px dagegen fest; es sprang zu Beginn des Aufklappens und am Ende des Zuklappens um genau
+  diesen Betrag. Deshalb faehrt die Liste ihren `margin-top` von −11.2px bis 0 mit (der Wert
+  wird am Knopf gelesen). GEMESSEN mit angehaltener Animation: Abstand Knopf → naechste Gruppe
+  bei t=0 genau 14px (= eingeklappt), am Ende genau 212.2px (= aufgeklappt), in beiden
+  Richtungen.
+  Der KOPF springt sofort in den neuen Zustand (`aria-expanded` → der Pfeil dreht sich mit der
+  Bewegung, die Anzahl „(4)" erscheint bzw. verschwindet), der Rest folgt mit dem Neuaufbau.
+  „Alle ein-/ausklappen" (`toggleAllExGroups`) bewegt alle Gruppen, deren Zustand sich aendert,
+  GLEICHZEITIG und zeichnet EINMAL neu, wenn alle fertig sind.
+  KEINE Bewegung waehrend einer Suche: Dort sind alle Treffergruppen zwangsweise offen, der
+  Neuaufbau zoege eine gerade zugeklappte Gruppe sofort wieder auf.
 - **Uebungskarten (`.aex-v2`) haben KEINEN sichtbaren Drag-Griff mehr** (die drei Striche `≡`,
   entfernt 01.09.2026). Das Sortieren haengt jetzt am ganzen Kartenkopf: `.aex-v2-header` traegt
   `onpointerdown`/`onpointerup` und schaltet `draggable` der Karte. Der Klick zum Auf-/Zuklappen

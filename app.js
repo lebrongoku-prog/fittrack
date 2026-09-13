@@ -2464,40 +2464,84 @@ function ensureActiveExpanded(wo) {
 // BEIM ZUKLAPPEN wird die Klasse nur zum MESSEN gesetzt und sofort wieder entfernt (dazwischen
 // zeichnet der Browser nicht, es ist also unsichtbar) — sonst waere der Inhalt schon weg,
 // bevor sich die Karte bewegt, und es schrumpfte eine leere Flaeche.
-const AEX_KLAPP_MS = 200;
+const KLAPP_MS = 200;
+// Faehrt `keyframes` auf `el` und ruft `fertig` GENAU EINMAL — am Ende der Bewegung, bei einem
+// Abbruch oder spaetestens ueber die Notbremse. Gemeinsamer Baustein der Uebungskarten und der
+// Muskelgruppen im Katalog (13.09.2026).
+// `fertig` zeichnet in beiden Faellen die Liste neu und setzt damit den Endzustand; das
+// geschieht im selben Arbeitsschritt wie das Ende der Bewegung, es blitzt also nichts dazwischen
+// auf (die Animation haelt ihren Endwert nicht — `fill` ist bewusst nicht gesetzt).
+// NOTBREMSE: Die Zeitleiste des Dokuments steht still, solange die Seite nicht sichtbar ist
+// (App im Hintergrund, versteckte Browser-Ansicht) — `onfinish` kaeme dann NIE, das Element
+// bliebe mit fester Hoehe stehen und die Liste wuerde nie neu gezeichnet. Der Wecker holt beides
+// nach. Dieselbe Vorsichtsmassnahme wie in `_tabFahrt`.
+function _klappBewegung(el, keyframes, fertig) {
+  const anim = el.animate(keyframes, { duration: KLAPP_MS, easing: 'ease' });
+  let erledigt = false;
+  const ende = () => {
+    if (erledigt) return;
+    erledigt = true;
+    clearTimeout(wecker);
+    if (anim.playState === 'running') anim.cancel();
+    fertig();
+  };
+  const wecker = setTimeout(ende, KLAPP_MS + 300);
+  anim.onfinish = ende;
+  anim.oncancel = ende;
+}
+function _bewegungReduziert() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
 function _aexKarte(exId) {
   return document.querySelector(`.aex-v2[data-ex="${CSS.escape(String(exId))}"]`);
 }
 function _aexKlappAnimieren(el, auf, danach) {
-  const reduziert = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!el || reduziert || !el.animate) { danach(); return; }
+  if (!el || _bewegungReduziert() || !el.animate) { danach(); return; }
   const von = el.getBoundingClientRect().height;
   el.classList.toggle('collapsed', !auf);
   const bis = el.getBoundingClientRect().height;
   if (!auf) el.classList.remove('collapsed');   // Inhalt bis zum Ende stehen lassen
   if (Math.abs(bis - von) < 1) { if (!auf) el.classList.add('collapsed'); danach(); return; }
   el.style.overflow = 'hidden';
-  const anim = el.animate([{ height: von + 'px' }, { height: bis + 'px' }],
-                          { duration: AEX_KLAPP_MS, easing: 'ease' });
-  // `danach` zeichnet die Liste neu und setzt damit den Endzustand; das geschieht im selben
-  // Arbeitsschritt wie das Ende der Bewegung, es blitzt also nichts dazwischen auf.
-  // NOTBREMSE: Die Zeitleiste des Dokuments steht still, solange die Seite nicht sichtbar
-  // ist (App im Hintergrund, versteckte Browser-Ansicht) — `onfinish` kaeme dann NIE, und
-  // die Karte bliebe mit fester Hoehe und `overflow: hidden` stehen, ohne dass die Liste je
-  // neu gezeichnet wuerde. Der Wecker holt beides nach. Dieselbe Vorsichtsmassnahme wie in
-  // `_tabFahrt`.
-  let erledigt = false;
-  const fertig = () => {
-    if (erledigt) return;
-    erledigt = true;
-    clearTimeout(wecker);
-    if (anim.playState === 'running') anim.cancel();
-    el.style.overflow = '';
-    danach();
-  };
-  const wecker = setTimeout(fertig, AEX_KLAPP_MS + 300);
-  anim.onfinish = fertig;
-  anim.oncancel = fertig;
+  _klappBewegung(el, [{ height: von + 'px' }, { height: bis + 'px' }],
+                 () => { el.style.overflow = ''; danach(); });
+}
+
+// ─── Muskelgruppen im Katalog klappen ebenso (13.09.2026, Leonard-Wunsch) ────────────
+// Gleiche Dauer, gleiche Kurve, gleiche Notbremse wie die Uebungskarten — gefahren wird hier
+// aber die LISTE (`.ex-list`), nicht die Gruppe: Die Gruppe mit `overflow: hidden` zu
+// beschneiden, schnitte waehrend der Bewegung den weichen Schatten des Knopfes und der Liste ab.
+// Die Liste hat `overflow: hidden` ohnehin, und ihr eigener Schatten liegt ausserhalb davon.
+// FALLE Abstand: Zwischen Knopf und Liste liegen 11.2px (`margin-bottom` des Knopfes). Im
+// EINGEKLAPPTEN Zustand verschmilzt dieser Abstand mit dem 14px-Abstand unter der Gruppe — die
+// Gruppe ist dann nur so hoch wie ihr Knopf. Eine Liste mit Hoehe 0, die noch im Fluss steht,
+// haelt die 11.2px dagegen fest: Es sprang am Anfang des Aufklappens und am Ende des Zuklappens
+// um genau diesen Betrag. Deshalb faehrt die Liste ihren `margin-top` mit, von −11.2px (hebt den
+// Knopfabstand auf) bis 0. Gelesen wird der Wert am Knopf, nicht fest verdrahtet.
+// Der KOPF springt sofort in den neuen Zustand (`aria-expanded` dreht den Pfeil, die Anzahl
+// erscheint bzw. verschwindet) — so dreht sich der Pfeil mit der Bewegung statt danach.
+function _exGruppe(key) {
+  return document.querySelector(`#ex-view-list .ex-group[data-gruppe="${CSS.escape(key)}"]`);
+}
+function _gruppeKlappAnimieren(gruppe, auf, danach) {
+  const liste = gruppe && gruppe.querySelector(':scope > .ex-list');
+  const knopf = gruppe && gruppe.querySelector(':scope > .ex-group-btn');
+  if (!liste || !knopf || _bewegungReduziert() || !liste.animate) { danach(); return; }
+  knopf.setAttribute('aria-expanded', auf ? 'true' : 'false');
+  const name = knopf.querySelector('.ex-group-name');
+  const anzahl = name && name.querySelector('.count');
+  if (name && auf && !anzahl) {
+    name.insertAdjacentHTML('beforeend', ` <span class="count">(${liste.querySelectorAll(':scope > .ex-item').length})</span>`);
+  } else if (name && !auf && anzahl) {
+    anzahl.remove(); name.textContent = name.textContent.trimEnd();
+  }
+  const luecke = parseFloat(getComputedStyle(knopf).marginBottom) || 0;
+  gruppe.classList.remove('collapsed');   // Liste in BEIDE Richtungen sichtbar halten
+  const hoehe = liste.getBoundingClientRect().height;
+  if (hoehe < 1) { danach(); return; }
+  const zu    = { height: '0px', marginTop: -luecke + 'px' };
+  const offen = { height: hoehe + 'px', marginTop: '0px' };
+  _klappBewegung(liste, auf ? [zu, offen] : [offen, zu], danach);
 }
 
 function toggleAexCollapse(exId, ev) {
@@ -6975,9 +7019,13 @@ const collapsedExGroups = new Set(); // Set of group keys (muscle-key oder planD
 MUSCLE_ORDER.forEach(m => collapsedExGroups.add('muscle:' + m));
 
 function toggleExGroup(key) {
-  if (collapsedExGroups.has(key)) collapsedExGroups.delete(key);
+  const auf = collapsedExGroups.has(key);
+  if (auf) collapsedExGroups.delete(key);
   else collapsedExGroups.add(key);
-  renderExercises();
+  // Mit Bewegung (13.09.2026). NICHT waehrend einer Suche: Dort sind alle Treffergruppen
+  // zwangsweise offen, der Neuaufbau zoege eine gerade zugeklappte Gruppe sofort wieder auf.
+  if (exCatalogSearch) { renderExercises(); return; }
+  _gruppeKlappAnimieren(_exGruppe(key), auf, renderExercises);
 }
 
 // Gruppen-Keys der aktuell sichtbaren Übungen-Ansicht (Muskelgruppen).
@@ -6990,9 +7038,16 @@ function toggleAllExGroups() {
   const keys = _currentExGroupKeys();
   if (!keys.length) return;
   const allCollapsed = keys.every(k => collapsedExGroups.has(k));
+  // Nur die Gruppen bewegen, deren Zustand sich wirklich aendert — und am Ende EINMAL neu
+  // zeichnen, wenn alle fertig sind (13.09.2026). Gruppen ohne Uebungen stehen gar nicht im
+  // Markup; `_gruppeKlappAnimieren` ruft fuer sie sofort zurueck, der Zaehler geht trotzdem auf.
+  const betroffen = keys.filter(k => allCollapsed ? collapsedExGroups.has(k) : !collapsedExGroups.has(k));
   if (allCollapsed) keys.forEach(k => collapsedExGroups.delete(k));
   else keys.forEach(k => collapsedExGroups.add(k));
-  renderExercises();
+  if (exCatalogSearch || !betroffen.length) { renderExercises(); return; }
+  let offen = betroffen.length;
+  const einmal = () => { if (--offen === 0) renderExercises(); };
+  betroffen.forEach(k => _gruppeKlappAnimieren(_exGruppe(k), allCollapsed, einmal));
 }
 
 // "Im aktuellen Plan"-Logik: sucht IMMER im aktiven Plan (per Datum), nie im Edit-Kontext.
@@ -7343,7 +7398,7 @@ function renderExercisesByMuscle() {
     if (!items.length) return '';
     const itemsHTML = items.map(ex => buildExItemHTML(ex)).join('');
     const isCollapsed = !exCatalogSearch && collapsedExGroups.has('muscle:' + m);
-    return `<div class="ex-group${isCollapsed ? ' collapsed' : ''}" style="--mc:${meta.color}">
+    return `<div class="ex-group${isCollapsed ? ' collapsed' : ''}" data-gruppe="muscle:${m}" style="--mc:${meta.color}">
       <button type="button" class="weitere-btn ex-group-btn" aria-expanded="${!isCollapsed}"
               onclick="toggleExGroup('muscle:${m}')">
         <span class="dot"></span>
