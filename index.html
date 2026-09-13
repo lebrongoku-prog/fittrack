@@ -586,30 +586,6 @@
 </div>
 
 <!-- Plan day detail -->
-<div id="modal-plan-day" class="overlay hidden">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title" id="plan-day-modal-title">Push bearbeiten</div>
-    <div class="sheet-body">
-      <div class="form-field">
-        <label class="form-label">Name des Trainingstages</label>
-        <input class="form-input" id="plan-day-name-input" type="text" placeholder="z. B. Push — Brust & Schultern">
-      </div>
-      <div style="margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px">
-          <span style="font-size:14px;font-weight:600">Übungen</span>
-          <div style="display:flex;align-items:center;gap:6px">
-            <span id="planday-ex-edit-slot"></span>
-            <button id="planday-add-ex-btn" class="btn btn-outline btn-sm" onclick="openAddToPlanModal()">+ Hinzufügen</button>
-          </div>
-        </div>
-        <div id="plan-day-ex-list"></div>
-      </div>
-      <button class="btn btn-primary btn-full" onclick="savePlanDay()">Speichern</button>
-    </div>
-  </div>
-</div>
-
 <!-- Add exercise to plan day -->
 <div id="modal-add-to-plan" class="overlay hidden">
   <div class="sheet">

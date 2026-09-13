@@ -2174,14 +2174,22 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
     // Pro-Satz-Tabelle als ZEILEN (je Satz eine Zeile: Wdh | kg). Werte: „letzte Einheit gewinnt"
     // (displaySetsForPe); Übernahme auf nachfolgende Sätze ist feld-spezifisch (Wdh→Wdh, kg→kg).
     const ptSets = displaySetsForPe(pe, last);
+    // BEARBEITBAR ist die Tabelle nur im Trainingstag-Detail (`mode === 'libday'`).
+    // Auf der Seite „Gym" im Trainings-Tab steht dieselbe Karte NUR ZUM LESEN da
+    // (13.09.2026, Leonard-Entscheidung: Gymtage werden ausschliesslich in ihrer
+    // Detailansicht angepasst). Vorher oeffnete ein Tipp dort den Zahlenblock und schrieb
+    // die Werte direkt in den Trainingstag — also in jeden Plan, der ihn verwendet.
+    const editierbar = mode === 'libday';
+    const zelle = (si, feld, wert) => editierbar
+      ? `<div class="aex-v2-inp" style="--c:${col.c}" role="button" tabindex="0"
+             data-np-ctx="preview" data-np-day="${planDay.id}" data-np-mode="${mode}" data-np-ei="${ei}" data-np-si="${si}" data-np-field="${feld}" data-np-label="${escapeHtml(ex.name)}"
+             aria-label="${feld === 'reps' ? 'Wiederholungen' : 'Gewicht'} Satz ${si+1}"
+             onclick="openNumpadFromInput(this)">${wert === '' ? '–' : wert}</div>`
+      : `<div class="aex-v2-inp aex-v2-inp-lesen" style="--c:${col.c}">${wert === '' ? '–' : wert}</div>`;
     const ptRows = ptSets.map((s, si) => `<div class="aex-v2-srow">
             <span class="aex-v2-snum">${si+1}</span>
-            <div class="aex-v2-inp" style="--c:${col.c}" role="button" tabindex="0"
-                 data-np-ctx="preview" data-np-day="${planDay.id}" data-np-mode="${mode}" data-np-ei="${ei}" data-np-si="${si}" data-np-field="reps" data-np-label="${escapeHtml(ex.name)}"
-                 aria-label="Wiederholungen Satz ${si+1}" onclick="openNumpadFromInput(this)">${s.reps === '' ? '–' : s.reps}</div>
-            <div class="aex-v2-inp" style="--c:${col.c}" role="button" tabindex="0"
-                 data-np-ctx="preview" data-np-day="${planDay.id}" data-np-mode="${mode}" data-np-ei="${ei}" data-np-si="${si}" data-np-field="weight" data-np-label="${escapeHtml(ex.name)}"
-                 aria-label="Gewicht Satz ${si+1}" onclick="openNumpadFromInput(this)">${s.weight === '' ? '–' : s.weight}</div>
+            ${zelle(si, 'reps', s.reps)}
+            ${zelle(si, 'weight', s.weight)}
           </div>`).join('');
     return `<div class="aex-v2 ${collapsedCls}" id="aex-${ei}" data-ex="${exIdKey}" style="--c:${col.c};--c-bg:${col.bg}"
                  ondragstart="aexDragStart(event,${ei},'${mode}','${planDay.id}')"
@@ -2212,9 +2220,9 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
         </div>
       </div>
       <div class="aex-v2-actions">
-        <button class="btn btn-ghost btn-sm" onclick="addPreviewSet('${planDay.id}',${ei},'${mode}')">+ Satz</button>
+        ${editierbar ? `<button class="btn btn-ghost btn-sm" onclick="addPreviewSet('${planDay.id}',${ei},'${mode}')">+ Satz</button>
         ${ptSets.length > 1 ? `<button class="btn btn-ghost btn-sm" onclick="removePreviewSet('${planDay.id}',${ei},'${mode}')">− Satz</button>` : ''}
-        ${mode === 'libday' ? `<button class="btn btn-ghost btn-sm aex-skip-btn" onclick="removeLibDayExercise(${ei})">Übung entfernen</button>` : ''}
+        <button class="btn btn-ghost btn-sm aex-skip-btn" onclick="removeLibDayExercise(${ei})">Übung entfernen</button>` : ''}
         <button class="btn btn-ghost btn-sm aex-v2-details" onclick="toggleAexChart('${exIdKey}')">Details</button>
       </div>
       ${aexChartOffen.has(exIdKey) ? `<div class="aex-v2-chart">${exChartHTML(ex.id, 'aex-chart-' + exIdKey)}</div>` : ''}
@@ -3245,11 +3253,11 @@ function togglePauseWorkout() {
 // Context bestimmt, wo die Uebung beim Klick landet.
 // 'active'  → in den aktiven Workout-Eintrag + verlinkten Plan-Tag (wie bisher)
 // 'preview' → nur in den Plan-Tag des im Workouts-Tab gerade selektierten Tages (kein Workout aktiv)
-let addExContext = 'active'; // 'active' | 'preview'
+let addExContext = 'active'; // 'active' (laufende Einheit) | 'libday' (Trainingstag-Detail)
 
 function openAddExModal(context) {
   // Kontext speichern — Default 'active' fuer Rueckwaerts-Kompatibilitaet
-  addExContext = (context === 'preview' || context === 'libday') ? context : 'active';
+  addExContext = (context === 'libday') ? 'libday' : 'active';
   document.getElementById('add-ex-search').value = '';
   renderAddExList('');
   openModal('modal-add-ex');
@@ -3337,40 +3345,7 @@ function addExToWorkout(exId) {
     return;
   }
 
-  if (addExContext === 'preview') {
-    // Aktiver Plan (per Datum), nicht Edit-Kontext/DEFAULT-Fallback — siehe renderWorkoutsScreen.
-    const weekDays = getCurrentWeekDays();
-    const selDay = weekDays[selectedWorkoutDayIdx];
-    const planDayId = selDay && selDay.planDayId;
-    if (!planDayId) {
-      closeModal('modal-add-ex');
-      showToast('Kein Trainingstag ausgewählt');
-      return;
-    }
-    // Referenz-Modell: planDayId ist eine globale Bibliothek-Tag-ID → direkt dort editieren
-    const days = DB.getTrainingDays();
-    const day = days.find(d => d.id === planDayId);
-    if (!day) {
-      closeModal('modal-add-ex');
-      showToast('Trainingstag nicht gefunden');
-      return;
-    }
-    if ((day.exercises || []).some(pe => pe.exId === exId)) {
-      closeModal('modal-add-ex');
-      showToast(`${ex.name} ist bereits im Trainingstag`);
-      return;
-    }
-    day.exercises.push({ exId, targetSets: 3, targetReps: 8 });
-    DB.saveTrainingDays(days);
-    // Falls trotz Preview-Kontext zufaellig ein passendes Active-Workout laeuft, mitziehen
-    syncActiveWorkoutWithPlanDay(planDayId);
-    closeModal('modal-add-ex');
-    renderWorkoutsScreen();
-    showToast(`${ex.name} zum Trainingstag hinzugefügt`);
-    return;
-  }
-
-  // Active-Kontext (Default): Uebung dem laufenden Workout + dem verlinkten Plan-Tag hinzufuegen.
+  // Active-Kontext (Default): Uebung NUR der laufenden Einheit hinzufuegen.
   const wo = DB.getActive();
   if (!wo) {
     // Defensive: openAddExModal('active') ohne laufendes Workout — abbrechen
@@ -3385,16 +3360,11 @@ function addExToWorkout(exId) {
     notes:'', done:false
   });
   DB.saveActive(wo);
-  // 2) Übung auch in den Plan-Trainingstag eintragen (sofern verlinkt, nicht doppelt)
-  // → künftige Workouts dieses Tags enthalten die Übung automatisch
-  if (wo.planDayId) {
-    const plan = DB.getPlan();
-    const day = plan.find(d => d.id === wo.planDayId);
-    if (day && !day.exercises.some(pe => pe.exId === exId)) {
-      day.exercises.push({ exId, targetSets: 3, targetReps: 8 });
-      DB.savePlan(plan);
-    }
-  }
+  // Die Uebung bleibt in DIESER Einheit. Sie wandert seit dem 13.09.2026 NICHT mehr in den
+  // Trainingstag (Leonard-Entscheidung: Gymtage werden ausschliesslich in ihrer
+  // Detailansicht angepasst) — vorher trug sie sich dort automatisch ein und tauchte damit
+  // in jedem kuenftigen Training dieses Tags auf, ohne dass man es angeordnet hatte.
+  // Wer sie dauerhaft will, traegt sie unter Plan → Gymtage → Tag ein.
   closeModal('modal-add-ex');
   renderWorkoutsScreen();
   showToast(`${ex.name} hinzugefügt`);
@@ -5404,7 +5374,6 @@ function deleteSession(i) {
 // SCREEN: MEHR
 // ═══════════════════════════════════════════════
 
-let editingDayIdx = null;
  // Toggle für die kollabierbare "Andere Trainingstage"-Sektion
 
 function renderMehr() {
@@ -5707,13 +5676,13 @@ function renderPlanDetail() {
       const isActive = !!dayLabelsFor[d.id];
       const setCount = d.exercises.reduce((a,e) => a+e.targetSets, 0);
       return `<div class="plan-day-row${isActive ? ' active' : ''}">
-        <div class="pdr-info" onclick="openPlanDayModal(${i})" style="cursor:pointer">
+        <div class="pdr-info" onclick="openLibDayDetail('${d.id}','plan-detail')" style="cursor:pointer">
           <div class="pdr-name">${pd(d.name)}</div>
           <div class="pdr-sub">${d.exercises.length} Übungen • ${setCount} Sätze</div>
         </div>
         ${dayChips(d)}
         <div class="plan-day-actions">
-          <button onclick="event.stopPropagation();openPlanDayModal(${i})" title="Bearbeiten">✎</button>
+          <button onclick="event.stopPropagation();openLibDayDetail('${d.id}','plan-detail')" title="Bearbeiten">✎</button>
           <button class="del" onclick="event.stopPropagation();deletePlanDay(${i})" title="Löschen">✕</button>
         </div>
       </div>`;
@@ -6383,8 +6352,28 @@ function createNewLibDay() {
   });
 }
 
-function openLibDayDetail(id) { editingLibDayId = id; resetDelEdit(); showScreen('day-detail'); }
-function closeLibDayDetail() { editingLibDayId = null; showScreen('plans'); }
+// GYMTAGE WERDEN AUSSCHLIESSLICH HIER BEARBEITET (13.09.2026, Leonard-Entscheidung) — siehe
+// den eigenen Abschnitt in CLAUDE.md. Zwei Wege fuehren auf diese Seite: die Kachel auf der
+// Seite „Gymtage" und die Zeile im Trainingstage-Abschnitt einer Plan-Detailansicht.
+// Der zweite Weg braucht einen RUECKWEG: `_applyTabState` raeumt `editingPlanId` ab, sobald
+// man das Plan-Detail verlaesst — ohne diesen Merker landete der Zurueck-Pfeil in der
+// Plan-LISTE statt im Plan, und der Plan waere nicht mehr der bearbeitete.
+let _libDayZurueck = null;   // { screen: 'plan-detail', planId } oder null
+function openLibDayDetail(id, zurueck) {
+  editingLibDayId = id;
+  _libDayZurueck = (zurueck === 'plan-detail' && editingPlanId)
+    ? { screen: 'plan-detail', planId: editingPlanId } : null;
+  resetDelEdit();
+  showScreen('day-detail');
+}
+function closeLibDayDetail() {
+  editingLibDayId = null;
+  const z = _libDayZurueck; _libDayZurueck = null;
+  // `editingPlanId` MUSS vor `showScreen` stehen: `_applyTabState` ruft `renderPlanDetail`,
+  // und das liest den Edit-Kontext.
+  if (z && z.planId) { editingPlanId = z.planId; showScreen('plan-detail'); return; }
+  showScreen('plans');
+}
 function _getEditingLibDay() { return DB.getTrainingDays().find(d => d.id === editingLibDayId) || null; }
 
 // In welchen Trainingsplänen ist DIESER Tag? Im Referenz-Modell ist das ein trivialer,
@@ -6585,8 +6574,10 @@ function removeLibDayExercise(ei) {
 // BEARBEITEN-MODUS / LÖSCH-AUSWAHL (Auswählen-dann-Löschen)
 // Pro Liste ein „Bearbeiten"-Button → Einträge werden ankreuzbar → „Löschen (N)"
 // → kurzer Sicherheits-Dialog. KEIN globaler Entwurf; nur der Lösch-Vorgang wird gesammelt.
-// Kontexte: 'libday-ex' (Trainingstag-Detail-Übungen), 'plan-days' (Plan-Detail-Tage),
-// 'planday-ex' (Übungen im modal-plan-day). IDs: Übungen=Array-Index, Tage=day.id.
+// Kontexte: 'libday-ex' (Trainingstag-Detail-Übungen), 'plan-days' (Plan-Detail-Tage).
+// IDs: Übungen=Array-Index, Tage=day.id. ('planday-ex' ist am 13.09.2026 mit dem
+// Bearbeiten-Dialog des Plan-Details entfallen — Übungen ändert man nur noch im
+// Trainingstag-Detail.)
 // ═══════════════════════════════════════════════
 let _delCtx = null;
 let _delSel = new Set();
@@ -6594,7 +6585,6 @@ function delEditActive(ctx) { return _delCtx === ctx; }
 function _rerenderDelCtx(ctx) {
   if (ctx === 'libday-ex') renderLibDayDetail();
   else if (ctx === 'plan-days') renderPlanDetail();
-  else if (ctx === 'planday-ex') { const plan = DB.getPlan(); if (plan[editingDayIdx]) renderPlanDayExList(plan[editingDayIdx]); }
 }
 function enterDelEdit(ctx) { _delCtx = ctx; _delSel = new Set(); _rerenderDelCtx(ctx); }
 function exitDelEdit() { const c = _delCtx; _delCtx = null; _delSel = new Set(); if (c) _rerenderDelCtx(c); }
@@ -6656,18 +6646,9 @@ function _applyDelEdit(ctx) {
     let ch = false;
     wp.forEach(d => { if (removeIds.has(d.planDayId)) { d.planDayId = null; ch = true; } });
     if (ch) DB.saveWeekPlan(wp);
-  } else if (ctx === 'planday-ex') {
-    const plan = DB.getPlan();
-    const day = plan[editingDayIdx];
-    if (day && Array.isArray(day.exercises)) {
-      day.exercises = day.exercises.filter((_, i) => !sel.has(String(i)));
-      DB.savePlan(plan);
-      syncActiveWorkoutWithPlanDay(day.id);
-    }
   }
   _delCtx = null; _delSel = new Set();
   _rerenderDelCtx(ctx);
-  if (ctx === 'planday-ex') _renderAfterPlanEdit();
 }
 
 // Start und Ende sind seit dem 04.09.2026 UNABHAENGIG voneinander — die Gesamtdauer wird aus
@@ -6712,18 +6693,6 @@ function saveWeekPlanDay(i, value) {
   wp[i].planDayId = value || null;
   DB.saveWeekPlan(wp);
   _renderAfterPlanEdit();
-}
-
-// Visueller Wochenplaner: Wochentag antippen → Picker (Trainingstage des Plans + Ruhetag).
-function openPlanDayModal(idx) {
-  editingDayIdx = idx;
-  resetDelEdit();
-  const plan = DB.getPlan();
-  const day = plan[idx];
-  document.getElementById('plan-day-modal-title').innerHTML = `${escapeHtml(day.name)} bearbeiten`;
-  document.getElementById('plan-day-name-input').value = day.name;
-  renderPlanDayExList(day);
-  openModal('modal-plan-day');
 }
 
 // Generischer Confirm-Helper (ersetzt confirm(), das in PWA-Mode oft blockiert wird).
@@ -6813,7 +6782,9 @@ function addNewPlanDayFromScratch() {
     DB.savePlan(plan);
     if (currentScreen === 'plan-detail') renderPlanDetail();
     showToast(`${escapeHtml(name)} hinzugefügt`);
-    openPlanDayModal(plan.length - 1);
+    // Direkt auf die Detailseite des neuen Tags — dort und nur dort traegt man die Uebungen
+    // ein (13.09.2026). Ein leerer Tag ohne Weiterleitung waere eine Sackgasse.
+    openLibDayDetail(id, 'plan-detail');
   });
 }
 
@@ -7501,139 +7472,17 @@ function deletePlanDay(idx) {
   );
 }
 
-function renderPlanDayExList(day) {
-  // Bearbeiten-Button (Lösch-Auswahl) im Modal-Übungen-Header; „+ Hinzufügen" im Edit-Modus ausblenden
-  const editSlot = document.getElementById('planday-ex-edit-slot');
-  const addBtn = document.getElementById('planday-add-ex-btn');
-  const hasVis = day.exercises.some(pe => !!getEx(pe.exId));
-  if (editSlot) editSlot.innerHTML = hasVis ? delEditBtn('planday-ex') : '';
-  if (addBtn) addBtn.style.display = delEditActive('planday-ex') ? 'none' : '';
-
-  if (delEditActive('planday-ex')) {
-    const items = day.exercises.map((pe, i) => {
-      const ex = getEx(pe.exId); if (!ex) return null;
-      return { id: i, name: ex.name, color: muscleColor(ex.muscle) };
-    }).filter(Boolean);
-    document.getElementById('plan-day-ex-list').innerHTML = buildDelEditList(items);
-    return;
-  }
-  // Layout wie das „Übungen zum Plan hinzufügen"-Modal: Muskelfarben-Streifen + Name,
-  // ohne Sätze×Wdh.-Felder (Ziele werden im Trainingstag-Detail/Vorschau editiert).
-  // Reihenfolge = Tag-Reihenfolge; Drag-Sortierung + ✕-Entfernen bleiben erhalten.
-  const html = day.exercises.map((pe, i) => {
-    const ex = getEx(pe.exId);
-    if (!ex) return '';
-    const col = muscleColor(ex.muscle);
-    return `<div class="ex-item plan-ex-item" style="--mc:${col}" data-idx="${i}"
-                 ondragstart="planExDragStart(event,${i})"
-                 ondragend="planExDragEnd(event)"
-                 ondragover="planExDragOver(event,${i})"
-                 ondragleave="planExDragLeave(event)"
-                 ondrop="planExDrop(event,${i})">
-      <div class="ex-item-head">
-        <span class="plan-ex-handle" draggable="true"
-              onpointerdown="event.currentTarget.closest('.ex-item').draggable=true"
-              onpointerup="event.currentTarget.closest('.ex-item').draggable=false">≡</span>
-        <div class="ex-item-stripe"></div>
-        <div class="ex-item-name">${ex.name}</div>
-        <button class="plan-ex-del" onclick="removePlanEx(${i})">✕</button>
-      </div>
-    </div>`;
-  }).join('');
-  document.getElementById('plan-day-ex-list').innerHTML = html
-    ? `<div class="ex-list">${html}</div>`
-    : '<p style="color:var(--text3);font-size:14px;padding:8px 0">Noch keine Übungen</p>';
-}
-
-// Drag-and-Drop für Plan-Day-Exercise-Reihenfolge
-let planExDraggedIdx = null;
-function planExDragStart(e, idx) {
-  planExDraggedIdx = idx;
-  if (e.dataTransfer) {
-    e.dataTransfer.effectAllowed = 'move';
-    try { e.dataTransfer.setData('text/plain', String(idx)); } catch(_){}
-  }
-  e.currentTarget.classList.add('dragging');
-}
-function planExDragOver(e, idx) {
-  e.preventDefault();
-  if (planExDraggedIdx === null || planExDraggedIdx === idx) return;
-  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-  const row = e.currentTarget;
-  const r = row.getBoundingClientRect();
-  const isAbove = (e.clientY - r.top) < r.height / 2;
-  row.classList.toggle('drop-target-above', isAbove);
-  row.classList.toggle('drop-target-below', !isAbove);
-}
-function planExDragLeave(e) {
-  e.currentTarget.classList.remove('drop-target-above','drop-target-below');
-}
-function planExDrop(e, targetIdx) {
-  e.preventDefault();
-  e.currentTarget.classList.remove('drop-target-above','drop-target-below');
-  if (planExDraggedIdx === null || planExDraggedIdx === targetIdx) return;
-  const plan = DB.getPlan();
-  if (!plan[editingDayIdx]) return;
-  const exs = plan[editingDayIdx].exercises;
-  const r = e.currentTarget.getBoundingClientRect();
-  const dropAfter = (e.clientY - r.top) >= r.height / 2;
-  const [moved] = exs.splice(planExDraggedIdx, 1);
-  let insertIdx = dropAfter ? targetIdx + 1 : targetIdx;
-  if (planExDraggedIdx < targetIdx) insertIdx -= 1;
-  if (insertIdx < 0) insertIdx = 0;
-  if (insertIdx > exs.length) insertIdx = exs.length;
-  exs.splice(insertIdx, 0, moved);
-  DB.savePlan(plan);
-  planExDraggedIdx = null;
-  renderPlanDayExList(plan[editingDayIdx]);
-}
-function planExDragEnd(e) {
-  e.currentTarget.classList.remove('dragging','drop-target-above','drop-target-below');
-  document.querySelectorAll('.plan-ex-item').forEach(r =>
-    r.classList.remove('drop-target-above','drop-target-below')
-  );
-  planExDraggedIdx = null;
-}
-
-function removePlanEx(exIdx) {
-  const plan = DB.getPlan();
-  if (!plan[editingDayIdx] || !plan[editingDayIdx].exercises[exIdx]) return;
-  const exName = (getEx(plan[editingDayIdx].exercises[exIdx].exId) || {}).name || 'Übung';
-  confirmAction('Übung entfernen?', `„${exName}" wird aus diesem Trainingstag entfernt.`,
-    () => {
-      const p = DB.getPlan();
-      if (!p[editingDayIdx] || !p[editingDayIdx].exercises[exIdx]) return;
-      p[editingDayIdx].exercises.splice(exIdx, 1);
-      DB.savePlan(p);
-      syncActiveWorkoutWithPlanDay(p[editingDayIdx].id);
-      renderPlanDayExList(p[editingDayIdx]);
-      _renderAfterPlanEdit();
-    },
-    { danger: true, confirmLabel: 'Entfernen' });
-}
-
-function savePlanDay() {
-  const plan = DB.getPlan();
-  plan[editingDayIdx].name = document.getElementById('plan-day-name-input').value.trim() || plan[editingDayIdx].name;
-  DB.savePlan(plan);
-  closeModal('modal-plan-day');
-  _renderAfterPlanEdit();
-  showToast('Plan gespeichert');
-}
-
 let planAddSelection = new Set();
 
-// Ziel des Mehrfach-Auswahl-Add-Modals: 'planday' (Plan-Detail-Tag, via editingDayIdx) ODER
-// 'libday' (Trainingstag-Detail, via editingLibDayId). Beide editieren denselben globalen Tag.
-let planAddTarget = 'planday';
+// Das Mehrfach-Auswahl-Add-Modal hat nur noch EIN Ziel: den Trainingstag, der gerade in
+// seiner Detailansicht offen ist (`editingLibDayId`). Der zweite Zweig ('planday', ueber
+// `editingDayIdx` im Bearbeiten-Dialog des Plan-Details) ist am 13.09.2026 entfallen —
+// Gymtage werden ausschliesslich in ihrer Detailansicht angepasst.
 // Liefert die aktuellen Übungen des Ziel-Tags (für „bereits enthalten").
 function _planAddTargetDay() {
-  if (planAddTarget === 'libday') return DB.getTrainingDays().find(d => d.id === editingLibDayId) || null;
-  const plan = DB.getPlan();
-  return plan[editingDayIdx] || null;
+  return DB.getTrainingDays().find(d => d.id === editingLibDayId) || null;
 }
-function openAddToPlanModal(target) {
-  planAddTarget = (target === 'libday') ? 'libday' : 'planday';
+function openAddToPlanModal() {
   document.getElementById('plan-add-search').value = '';
   planAddSelection.clear();
   renderPlanAddList('');
@@ -7673,32 +7522,16 @@ function confirmPlanAddSelection() {
     });
     return added;
   };
-  let added = 0, dayId = null;
-  if (planAddTarget === 'libday') {
-    // Trainingstag-Detail: direkt den globalen Bibliothek-Tag editieren
-    const days = DB.getTrainingDays();
-    const day = days.find(d => d.id === editingLibDayId);
-    if (!day) return;
-    added = _push(day);
-    DB.saveTrainingDays(days);
-    dayId = day.id;
-  } else {
-    const plan = DB.getPlan();
-    if (!plan[editingDayIdx]) return;
-    added = _push(plan[editingDayIdx]);
-    DB.savePlan(plan);
-    dayId = plan[editingDayIdx].id;
-  }
-  syncActiveWorkoutWithPlanDay(dayId);
+  // Trainingstag-Detail: direkt den globalen Bibliothek-Tag editieren
+  const days = DB.getTrainingDays();
+  const day = days.find(d => d.id === editingLibDayId);
+  if (!day) return;
+  const added = _push(day);
+  DB.saveTrainingDays(days);
+  syncActiveWorkoutWithPlanDay(day.id);
   planAddSelection.clear();
   closeModal('modal-add-to-plan');
-  if (planAddTarget === 'libday') {
-    renderLibDayDetail();
-  } else {
-    const plan = DB.getPlan();
-    if (plan[editingDayIdx]) renderPlanDayExList(plan[editingDayIdx]);
-    _renderAfterPlanEdit();
-  }
+  renderLibDayDetail();
   showToast(`${added} Übung${added>1?'en':''} hinzugefügt`);
 }
 

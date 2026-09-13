@@ -71,6 +71,50 @@ Regel: Nach jeder abgeschlossenen Umsetzung direkt hochladen und das Ergebnis me
 - `getActivePlan()` = aktiver Plan (per Datum) mit aufgelösten `trainingDays`. `getCurrentWeekDays()` = 7 Tage Mo–So mit `dayDone`/`planDay`/`isToday`.
 - Multi-Plan: `ft_plans`-Array; aktiver Plan per Datum. `editingPlanId` = aktuell im Plan-Detail bearbeiteter Plan (wird beim Verlassen des Screens zurückgesetzt, `_applyTabState`).
 
+### Gymtage werden AUSSCHLIESSLICH in ihrer Detailansicht angepasst
+13.09.2026, Leonard-Entscheidung. Vorher gab es VIER Stellen, an denen sich ein Trainingstag
+aendern liess — und weil Tage GETEILT sind (siehe Referenz-Tag-Modell), wirkte jede davon in
+allen Plaenen, die den Tag verwenden. Wer auf der Seite „Gym" eine Zahl antippte, aenderte
+seinen Plan, ohne es zu merken. Jetzt gibt es genau EINE Bearbeitungsflaeche:
+**die Detailansicht des Trainingstags** (`#screen-day-detail`, `renderLibDayDetail`).
+
+ZWEI Wege fuehren dorthin, beide oeffnen dieselbe Seite:
+1. Plan-Tab → Seite „Gymtage" → Kachel antippen.
+2. Plan-Tab → Seite „Gymplan" → Plan oeffnen → Abschnitt „Trainingstage" → Zeile oder ✎.
+
+Weg 2 braucht einen RUECKWEG: `_applyTabState` raeumt `editingPlanId` ab, sobald man das
+Plan-Detail verlaesst. `openLibDayDetail(id, 'plan-detail')` merkt sich den Plan in
+`_libDayZurueck`, `closeLibDayDetail` setzt ihn vor dem `showScreen` wieder — ohne das
+landete der Zurueck-Pfeil in der Plan-LISTE, und der Plan waere nicht mehr der bearbeitete.
+Gilt auch fuer die Wischgeste vom linken Rand (`initOverlayEdgeSwipe` ruft dieselbe Funktion).
+Ein NEUER Trainingstag aus dem Plan heraus (`addNewPlanDayFromScratch`) fuehrt ebenfalls
+direkt dorthin — ein leerer Tag ohne Weiterleitung waere eine Sackgasse.
+
+WAS DABEI ENTFALLEN IST:
+- **Der Bearbeiten-Dialog des Plan-Details** (`#modal-plan-day`, „‹Name› bearbeiten") samt
+  `openPlanDayModal`, `savePlanDay`, `renderPlanDayExList`, `removePlanEx`, den fuenf
+  `planEx*`-Drag-Funktionen, `editingDayIdx`, dem delEdit-Kontext `'planday-ex'` und den
+  CSS-Regeln `.plan-ex-item` / `.plan-ex-handle` / `.plan-ex-del`.
+  Das Uebung-hinzufuegen-Modal (`modal-add-to-plan`) hatte deshalb zwei Ziele; `planAddTarget`
+  und der 'planday'-Zweig sind mit weg, es schreibt nur noch in `editingLibDayId`.
+- **Die Bearbeitbarkeit der Vorschau auf der Seite „Gym"** (Trainings-Tab). Dieselbe Karte
+  wird dort jetzt NUR ZUM LESEN gezeichnet: `renderPreviewWorkout` haengt Zahlenblock und
+  die Knoepfe „+ Satz" / „− Satz" / „Uebung entfernen" an `mode === 'libday'`. Die Zellen
+  tragen `.aex-v2-inp-lesen` (kein Zeigefinger, kein Aufleuchten beim Beruehren) — ohne das
+  versprachen sie eine Eingabe, die es dort nicht mehr gibt. „Details" bleibt.
+- **Das Mitschreiben beim „+ Uebung hinzufuegen" der LAUFENDEN Einheit.** Die Uebung landet
+  nur noch in dieser einen Einheit; vorher trug sie sich zugleich in den Trainingstag ein und
+  tauchte damit in jedem kuenftigen Training dieses Tags auf.
+
+WAS BLEIBT — die EINZIGE Stelle, die den Tag ausserhalb seiner Detailansicht noch aendert:
+`syncSetCountsToPlanDay` beim BEENDEN einer Einheit uebernimmt die tatsaechlich trainierte
+Satzanzahl (Leonard-Bestaetigung 13.09.2026). Das ist keine Bedienoberflaeche, sondern haelt
+den Plan auf Stand; ohne sie startete die naechste Einheit wieder mit der alten Planzahl. Die
+Abschlussansicht weist die Aenderung aus.
+NICHT betroffen sind ausserdem: Tage dem Plan hinzufuegen und aus ihm entfernen, die Zuordnung
+zu Wochentagen im Wochenplaner und der Bearbeiten-Modus „Trainingstage aus Plan entfernen"
+(Kontext `'plan-days'`) — das ist Planpflege, kein Aendern des Tages.
+
 ### Pro-Satz-Datenmodell
 - Plan-Übungseintrag: `pe.sets = [{reps, weight}]` (weight als String, `''`=leer); Skalare `targetSets/targetReps/targetWeight` bleiben in Sync.
 - Helper: `peSets(pe)`, `_syncPeScalars`.
@@ -246,7 +290,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   entfernt 01.09.2026). Das Sortieren haengt jetzt am ganzen Kartenkopf: `.aex-v2-header` traegt
   `onpointerdown`/`onpointerup` und schaltet `draggable` der Karte. Der Klick zum Auf-/Zuklappen
   laeuft unveraendert daneben. ACHTUNG: HTML5-Drag gibt es auf iOS ohnehin nicht — das Sortieren
-  war und ist eine Maus-Funktion. Der Griff im Plan-Detail-Modal (`.plan-ex-handle`) bleibt.
+  war und ist eine Maus-Funktion. Der Griff im Plan-Detail-Modal (`.plan-ex-handle`) ist am
+  13.09.2026 mit diesem Modal entfallen.
 - **Trainingstag-Namen** = kräftiger Text mit 3px-Balken links (`.pd-name`, KEINE Flächenfarbe) via Helper `pd(name)`. Sonderfall `.ex-group-title .pd-name`: im Übungen-Tab stehen die Gruppentitel auf dem farbigen Tab-Hintergrund → dort hell; im Add-Übung-Modal (`.sheet-ex-group`) wieder dunkel.
 - **Zugeklappte Uebungskarte** zeigt nur den Namen: `.aex-v2-last` und `.aex-cmp-pr` sind ausgeblendet, und
   `.aex-v2-info` bekommt `min-height:32px` mit zentriertem Inhalt, damit der Name auf einer Linie mit der
@@ -1085,9 +1130,11 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Plan-Tab dazu. Der Knopf der LAUFENDEN Einheit („+ Uebung hinzufuegen", schreibt in die
   Einheit UND den Trainingstag) bleibt, ebenso der gleichnamige Knopf in der
   Trainingstag-Detailansicht (`openAddToPlanModal('libday')`).
-  Folge: `openAddExModal('preview')` hat keinen Aufrufer mehr. Der Zweig
-  `addExContext === 'preview'` in `addExConfirm` (27 Zeilen) steht BEWUSST noch da —
-  er ist der Rueckweg, falls der Knopf zurueckkommt.
+  Folge: `openAddExModal('preview')` hatte keinen Aufrufer mehr. Der Zweig
+  `addExContext === 'preview'` stand danach ein Jahr lang als Rueckweg da und ist am
+  13.09.2026 ENTFALLEN — er waere heute ein Rueckweg in eine Regel, die es nicht mehr gibt
+  (siehe „Gymtage werden ausschliesslich in ihrer Detailansicht angepasst").
+  `addExContext` kennt nur noch 'active' und 'libday'.
 - **Vier Elemente sind am 08.09.2026 SCHMALER geworden** (Leonard-Wunsch). Alle vier ueber
   `width` + `margin-left/right: auto` statt ueber groessere Raender — so bleibt der Bezug
   die bisherige Breite, und im Querformat rechnet die Prozentangabe gegen die Spalte statt
