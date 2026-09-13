@@ -1230,6 +1230,29 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Di grau abgehakt, Do bleibt offen · zwei Einheiten am Mo → Di UND Do grau abgehakt ·
   freies Training am Mi → nur Mi, kein Plantag · Einheit eines fremden Trainingstags → nur
   ihr eigener Tag · Lauf: geplant Mo+Do, gelaufen Di → Mo grau abgehakt, Do bleibt offen.
+- **SEIT DEM 13.09.2026 SIND ES 157.3px — WOCHENPLAN-KARTEN UND HEROCARDS SAMT INHALT +10 %**
+  (Leonard-Wunsch, „alle in allen Tabs"). Betrifft JEDE `.plan-card-v2` (Uebersicht in allen
+  drei Filterzustaenden, Trainings-Tab Gym/Laufen, beide Listen im Plan-Tab samt kommender und
+  archivierter Plaene) und JEDE `.hero-v2` (Heute in Uebersicht, Gym und Laufen, laufende
+  Einheit). Die 143px im Abschnitt darunter sind der Stand davor; die Regeln gelten unveraendert.
+  Gewachsen sind: Hoehe (`min-height`/`height` 157.3px), Polster OBEN/UNTEN (15.4px),
+  Wochentagskreise (39.6px/15.4px), Kennzahlen, Balken, Statuschip (nur in der Karte,
+  `.plan-card-v2 .plan-status-chip`), alle Abstaende, die ganze Kombi-Karte, Beschriftungen,
+  Knoepfe (17.6px), Uhr und Fortschrittsbalken der laufenden Einheit.
+  BEWUSST NICHT gewachsen:
+  - Das SEITLICHE Polster (14px) und damit auch der Abstand ZWISCHEN den Herocard-Knoepfen —
+    sonst stuende der Inhalt 1.4px weiter rechts als in jeder anderen Karte.
+  - Eckenradius und Schatten der Karte (die grossen Karten der App teilen sich 18px).
+  - Die KARTENTITEL (16px, Leonard-Entscheidung): „Trainingswoche", „Gymwoche", „Heute" und
+    der Name der laufenden Einheit bleiben so gross wie jeder andere Kartentitel. FOLGE: Die
+    Knopfschrift (17.6px) ist seither GROESSER als der Titel — die Gleichheit vom 12.09.2026
+    gilt nicht mehr.
+  GEMESSEN (Vorher/Nachher-Vergleich jedes Elements in 11 Kartenfassungen): alle Karten
+  143 → 157.3px (×1.100), alle Schriften ×1.1 ausser den Titeln, 20 feste Karten in beiden
+  Farbmodi ohne Ueberlauf. Einzeilige Texte wachsen in der HOEHE um 13 % statt 10 % (15 → 17px)
+  — das ist die ganzzahlige Rundung von `line-height: normal`, kein Fehler.
+  FOLGE fuer die Uebersicht: Die langen Knopfbeschriftungen passten nicht mehr (siehe
+  „Knopfschrift" weiter unten) und heissen seither „Freies Training" und „Lauf erledigt".
 - **ALLE WOCHENPLAN-KARTEN UND HEROCARDS SIND GENAU 143px HOCH** (09.09.2026,
   Leonard-Wunsch). Kombi-Karte, Gym- und Laufwochenplan in allen drei Tabs, die Herocard
   „Heute" in Uebersicht und Trainings-Tab und die Karte der laufenden Einheit — alle gleich.
@@ -1300,19 +1323,25 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   auch, waere „Freies Training starten" wieder hoeher und die Gleichheit dahin. Die Sonderregel `hero-mit-meta` hat ihre Titelzeile dabei verloren (sie setzte
   dieselben 2px noch einmal); der Rest des Blocks bleibt, er haelt den Textblock der Seite
   „Gym" zusammen und laesst dem Knopf dort dieselbe Hoehe wie auf „Laufen".
-- **Die Knopfschrift der Gym- und Lauf-Herocard ist so gross wie der KARTENTITEL: 16px**
-  (`.hero-heute:not(.hero-aktiv) .hero-v2-btn`, Leonard-Wunsch 12.09.2026) — in ALLEN Tabs
-  derselbe Wert, also Uebersicht wie Trainings-Tab. Vorher standen 14px (Uebersicht) und
-  16.8px (Trainings-Tab) nebeneinander; die 16.8px waren ein Zwischenstand vom selben Tag.
-  Bezug ist `.hero-heute-titel` — aendert sich die Titelgroesse, zieht die Knopfschrift mit.
+- **Die Knopfschrift der Gym- und Lauf-Herocard ist 17.6px** (`.hero-heute:not(.hero-aktiv)
+  .hero-v2-btn`) — in ALLEN Tabs derselbe Wert. Am 12.09.2026 war sie auf die Titelgroesse
+  (16px) gesetzt worden, am 13.09.2026 ist sie mit der Karte um 10 % gewachsen, der Titel aber
+  NICHT (beides Leonard-Entscheidung). Knopf und Titel sind seither verschieden gross.
+  **DIE KNOEPFE HEISSEN „Freies Training" und „Lauf erledigt"** (13.09.2026, vorher „Freies
+  Training starten" und „Lauf abgeschlossen", Leonard-Entscheidung fuer ALLE Tabs). Bei 17.6px
+  hat ein Knopf in der Uebersicht 111.6px Textplatz: „Freies Training starten" brach auf DREI
+  Zeilen um (Knopf 83.6px, die Karte laesst nur 64px — unten abgeschnitten), und
+  „abgeschlossen" (126.7px) stiess ueber den Knopfrand. 16px war die groesste Schrift, bei der
+  die alten Texte noch passten. Gemessen jetzt: alle Knoepfe 64px, kein Ueberlauf, in
+  Uebersicht (heute und drei gewaehlte Tage), Gym (frei/geplant) und Laufen.
+  Beim naechsten Anheben der Schrift ZUERST das breiteste Wort gegen den Textplatz rechnen:
+  Knopfbreite − 2 × Polster − Symbol (1em) − Luecke.
   `:not(.hero-aktiv)` nimmt die Karte der LAUFENDEN Einheit aus (gemessen: „Beenden" bleibt bei
   14px) — „Pausieren" und „Beenden" benennen keine Sportart.
   Das Symbol im Knopf ist `1em` und waechst von selbst mit.
-  ENGSTELLE ist die UEBERSICHT: Dort teilen sich zwei Knoepfe die Zeile, „Lauf abgeschlossen"
-  bricht auf zwei Zeilen um, und die Knopfhoehe ist ueber `flex: 1` an die Resthoehe der
-  143px-Karte gebunden — beim Anheben der Schrift also auf Ueberlauf pruefen.
-  Gemessen auf 375px: alle Karten 143px, alle Knoepfe 57px, kein Ueberlauf; „Freies Training
-  starten" passt im Trainings-Tab auf eine Zeile.
+  ENGSTELLE ist die UEBERSICHT: Dort teilen sich zwei Knoepfe die Zeile, und die Knopfhoehe ist
+  ueber `flex: 1` an die Resthoehe der Karte gebunden — beim Anheben der Schrift also auf
+  Ueberlauf pruefen (siehe oben).
 - **HEUTE ist EIN durchgehendes Feld ueber beide Reihen der Kombi-Karte** (09.09.2026,
   Leonard-Wunsch — vorher zwei getrennte Felder mit sichtbarer Fuge). Beide Reihen tragen
   weiterhin ihr eigenes Feld (sie sind getrennte Rasterzeilen, ein einzelnes Element koennte
@@ -1321,7 +1350,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `margin-bottom: -9.5px`, damit das Layout sich nicht verschiebt) und rundet nur oben, die
   untere rundet nur unten. Gemessen: Unterkante Gym = Oberkante Lauf, Luecke 0.
   ACHTUNG: Das setzt die Reihenfolge Gym → Lauf voraus (so baut `buildWochenKombi` sie
-  immer) und den 6.5px-Abstand. Wer den aendert, zieht die 9.5px mit.
+  immer) und den Reihenabstand. Wer den aendert, zieht die Naht mit — Stand 13.09.2026:
+  3.3px eigenes Polster + 4.95px Abstand = 8.25px.
 - **DER INHALT DER KOMBI-KARTE IST AM 12.09.2026 UM 20 % GEWACHSEN** (Leonard-Wunsch):
   Wochentagsschrift 12 → 14.4px, Kreise 22 → 26.4px, Sportsymbole 19 → 22.8px (mit ihnen
   `--ppv-k-lead` 20 → 24px, sonst passt das Symbol nicht in seine Spalte) und der Ring der
@@ -1333,6 +1363,18 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Karte hoeher werden, und das betrifft ALLE Wochenplan-Karten und Herocards.
   Mit dem kleineren Reihenabstand wandert auch die Naht des Heute-Feldes mit: 9.5 → 7.5px
   (3px eigenes Polster + 4.5px Abstand).
+  Am 13.09.2026 mit der ganzen Karte noch einmal +10 %: Kreise 29.04px, Symbole 25.08px,
+  `--ppv-k-lead` 26.4px, Wochentage 15.84px, Ring 3.96px, Naht 8.25px. Die Karte ist dabei
+  selbst mitgewachsen (157.3px) — der Satz „hier ist nichts mehr zu holen" bezog sich auf 143px.
+- **DIE SPORTSYMBOLE DER KOMBI-KARTE WAREN BIS ZUM 13.09.2026 NIE SO GROSS WIE EINGESTELLT.**
+  Das SVG steckt in der Reihe in einem `.ppv-name-ic` (dieselbe Konstante `PPV_ICON_HANTEL`/
+  `PPV_ICON_LAEUFER` wie vor den Kartentiteln), und der ist `width: 1em` — fest die 16px der
+  geerbten Schrift. Die Vergroesserungen vom 09.09. (15 → 19px) und 12.09.2026 (→ 22.8px)
+  wuchsen deshalb nur den unsichtbaren Rahmen `.ppv-k-ic`; SICHTBAR blieb das Symbol 16px und
+  sass oben links darin. Die frueheren Messungen hatten den Rahmen gemessen, nicht das SVG.
+  Seit `.ppv-k-ic .ppv-name-ic { width: 100%; height: 100% }` fuellt es den Rahmen: sichtbar
+  25.08px und senkrecht exakt auf Hoehe der Kreise (Leonard-Entscheidung, nachgemessen).
+  LEHRE: Bei Symbolen immer das `svg` selbst messen, nicht den umgebenden Kasten.
 - **Die Sportsymbole der Kombi-Karte stehen mittig** zwischen dem AEUSSEREN Kartenrand und dem
   ersten Wochentagskreis (09.09.2026, Leonard-Wunsch; vorher linksbuendig in ihrer Spalte).
   Nachgemessen auf 375px nach der Vergroesserung: Kartenrand bei x=12, erster Kreis bei

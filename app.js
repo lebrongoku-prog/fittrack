@@ -1823,7 +1823,10 @@ function buildHeuteHero(planDay, selDay, opts) {
       // KEIN Gym geplant: grauer Knopf ohne Verlauf (Leonard-Wunsch 07.09.2026). Die
       // Sportfarbe ist ein Versprechen — sie gehoert dem Tag, an dem etwas ansteht.
       // Bedienbar bleibt er trotzdem, freies Training geht immer.
-      knopf = `<button class="hero-v2-btn hero-v2-btn-grau" onclick="startFreeWorkout()">${HERO_ICON_HANTEL}Freies Training starten</button>`;
+      // „Freies Training" statt „Freies Training starten" (13.09.2026, Leonard-Entscheidung):
+      // Mit der um 10 % groesseren Knopfschrift brach die lange Fassung in der Uebersicht auf
+      // drei Zeilen um und wurde von der Karte abgeschnitten. Gilt in allen Tabs.
+      knopf = `<button class="hero-v2-btn hero-v2-btn-grau" onclick="startFreeWorkout()">${HERO_ICON_HANTEL}Freies Training</button>`;
     }
     // Zweite Zeile unter dem Namen: Umfang des Tages (Leonard-Wunsch 07.09.2026). Sie steht
     // NUR auf der Seite „Gym" im Trainings-Tab (`opts.sport === 'gym'`) — in der Uebersicht
@@ -1854,7 +1857,7 @@ function buildHeuteHero(planDay, selDay, opts) {
       <button class="hero-v2-btn hero-v2-btn-lauf${gepl ? '' : ' hero-v2-btn-grau'}"
               onclick="runLaeufeLaden({interactive:true})"
               ${runLaden ? 'disabled' : ''}>
-        ${HERO_ICON_LAEUFER}${runLaden ? 'Lese …' : 'Lauf abgeschlossen'}
+        ${HERO_ICON_LAEUFER}${runLaden ? 'Lese …' : 'Lauf erledigt'}
       </button>
     </div>`);
   }
@@ -3908,7 +3911,7 @@ async function runLaeufeLaden({ interactive = false } = {}) {
   } finally {
     runLaden = false;
     renderLaufVerwaltung(); renderRunSourceCard();
-    // Die Knoepfe „Lauf abgeschlossen" stehen in den Herocards beider Tabs — beide muessen
+    // Die Knoepfe „Lauf erledigt" stehen in den Herocards beider Tabs — beide muessen
     // den neuen Stand zeigen, nicht nur die Einstellungen (06.09.2026).
     if (currentScreen === 'overview') renderOverview();
     else if (currentScreen === 'workouts') renderWorkoutsScreen();

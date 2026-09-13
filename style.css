@@ -732,13 +732,17 @@ body.theme-plans .hist-action-dd {
 .plan-card-v2 {
   margin: 0 12px 12px; background: var(--card); border-radius: 18px;
   box-shadow: var(--shadow);
-  padding: 14px; cursor: pointer; -webkit-tap-highlight-color: transparent;
-  /* ALLE Wochenplan-Karten und Herocards sind gleich hoch: 143px (Leonard-Wunsch
-     09.09.2026). Hier `min-height`, nicht `height`: In der Liste des Plan-Tabs tragen
-     archivierte und kommende Plaene eine Statuszeile mehr und sind natuerlicherweise
-     hoeher — die duerfen wachsen, abgeschnitten waeren sie kaputt. Die Wochenplan-Karten
-     selbst treffen die 143px genau (siehe `.ppv-strip` und `.ppv-wd`). */
-  min-height: 143px; box-sizing: border-box;
+  /* Polster OBEN/UNTEN 15.4px, SEITLICH 14px: Am 13.09.2026 sind Wochenplan-Karten und
+     Herocards samt Inhalt um 10 % gewachsen (Leonard-Wunsch). Das seitliche Polster bleibt
+     beim app-weiten Kartenpolster — sonst stuende der Titel 1.4px weiter rechts als der
+     Titel jeder anderen Karte darueber und darunter. */
+  padding: 15.4px 14px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  /* ALLE Wochenplan-Karten und Herocards sind gleich hoch: 157.3px (Leonard-Wunsch
+     09.09.2026 mit 143px, am 13.09.2026 um 10 % angehoben). Hier `min-height`, nicht
+     `height`: In der Liste des Plan-Tabs tragen archivierte und kommende Plaene eine
+     Statuszeile mehr und sind natuerlicherweise hoeher — die duerfen wachsen, abgeschnitten
+     waeren sie kaputt. */
+  min-height: 157.3px; box-sizing: border-box;
 }
 /* Die drei WOCHENPLAN-Karten bekommen die 143px FEST, nicht nur als Untergrenze
    (Leonard-Meldung 09.09.2026: beim Umschalten des Filters in der Uebersicht sprang die
@@ -748,7 +752,7 @@ body.theme-plans .hist-action-dd {
    wachsen duerfen, die tragen eine Statuszeile mehr. */
 #ov-week-card > .plan-card-v2,
 #wo-week-card > .plan-card-v2,
-#wo-view-laufen > .plan-card-v2 { height: 143px; }
+#wo-view-laufen > .plan-card-v2 { height: 157.3px; }
 /* Tipp-Rueckmeldung fuer ALLE Karten (Leonard-Wunsch 28.08.2026) — dieselbe dezente
    Stauchung wie bei der Wochenplan-Karte. `transition` NUR auf transform, damit die
    Farbwechsel der Karten (z. B. erledigte Uebung) unveraendert bleiben. */
@@ -794,7 +798,10 @@ body.theme-plans .hist-action-dd {
    zucken (Leonard-Meldung 04.09.2026). Drei Klassen, damit `.mehr-card:active` verliert. */
 .mehr-card.plan-form-card { transition: none; }
 .mehr-card.plan-form-card:active { transform: none; }
-.ppv-head { display: flex; align-items: flex-start; gap: 8px; }
+/* Alle Masse in dieser Karte sind am 13.09.2026 um 10 % gewachsen (Leonard-Wunsch) — mit
+   EINER Ausnahme: Der TITEL bleibt bei 16px wie jeder andere Kartentitel der App
+   (Leonard-Entscheidung am selben Tag), samt Sportsymbol und dessen Abstand. */
+.ppv-head { display: flex; align-items: flex-start; gap: 8.8px; }
 .ppv-name { flex: 1; min-width: 0; font-size: 16px; font-weight: 700; color: var(--text);
   display: flex; align-items: center; gap: 8px; }
 /* Symbol der Sportart vor dem Titel (Leonard-Wunsch 06.09.2026), in TITELgroesse: `1em`
@@ -805,25 +812,28 @@ body.theme-plans .hist-action-dd {
    `inherit` heisst hier automatisch auch: im Transparenz-Modus weiss wie der Titel. */
 .ppv-name-ic { color: inherit; }
 .plan-status-past .ppv-name, .plan-status-archived .ppv-name { color: var(--text2); }
-.ppv-meta { font-size: 12px; color: var(--text3); margin-top: 4px; }
-.ppv-progress { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
-.ppv-wk { font-size: 13px; font-weight: 600; color: var(--text2); white-space: nowrap; }
-.ppv-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
-.ppv-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+.ppv-meta { font-size: 13.2px; color: var(--text3); margin-top: 4.4px; }
+.ppv-progress { display: flex; align-items: center; gap: 11px; margin-top: 13.2px; }
+.ppv-wk { font-size: 14.3px; font-weight: 600; color: var(--text2); white-space: nowrap; }
+.ppv-bar { flex: 1; height: 6.6px; background: var(--border); border-radius: 3.3px; overflow: hidden; }
+.ppv-bar-fill { height: 100%; background: var(--accent); border-radius: 3.3px; }
 /* Der Balken traegt die Farbe der SPORTART, nicht die des Tabs (Leonard-Wunsch 04.09.2026):
    Gym dunkelgruen wie die trainierten Kalender-Kaestchen, Lauf hellgruen wie die Laufkreise.
    Gilt in allen drei Tabs, weil es ueberall dieselbe Karte ist. Im Transparenz-Modus bleibt
    er weiss — das regelt die Glas-Regel weiter unten, die hier gewinnt. */
 .plan-card-v2 .ppv-bar-fill          { background: #0F766E; }
 .plan-card-v2.run-plan .ppv-bar-fill { background: #4ADE80; }
-.ppv-adh { font-size: 13px; font-weight: 600; color: var(--accent-dark); white-space: nowrap; }
+.ppv-adh { font-size: 14.3px; font-weight: 600; color: var(--accent-dark); white-space: nowrap; }
+/* Der Statuschip IN der Karte waechst mit (13.09.2026, +10 %). Nur hier — derselbe Chip
+   steht auch in den Detailansichten der Plaene, und die sind nicht gemeint. */
+.plan-card-v2 .plan-status-chip { font-size: 12.1px; padding: 4.4px 9.9px; border-radius: 6.6px; letter-spacing: .33px; }
 /* Wochenplan-Strip der Plan-Karte: nur Wochentage, Trainingstage als eingefärbter Kreis.
    Akzentfarbe = geplant, grün = diese Woche erledigt, Ring (::after) = heute. */
 /* Der Abstand ueber den Kreisen bleibt bei 14px (Leonard-Wunsch 09.09.2026 — eine erste
    Fassung hatte ihn auf 27px gesetzt, um die Karte hoeher zu machen). Die Hoehe holen
    stattdessen die KREISE selbst, siehe `.ppv-wd`. */
-.ppv-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 14px; }
-.ppv-col { display: flex; justify-content: center; min-width: 0; padding: 7.5px 0; }
+.ppv-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5.5px; margin-top: 15.4px; }
+.ppv-col { display: flex; justify-content: center; min-width: 0; padding: 8.25px 0; }
 /* 36px statt der urspruenglichen 30px — und bewusst NICHT die 40px, die kurzzeitig
    dastanden (09.09.2026): Mit 40px war die Einzelkarte NATUERLICH schon 143px hoch, also
    genau am Deckel. Jede Kleinigkeit mehr im Kopf (langer Planname, zweizeilige Kennzahl)
@@ -834,9 +844,9 @@ body.theme-plans .hist-action-dd {
 .ppv-wd {
   position: relative;
   display: flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; box-sizing: border-box;
+  width: 39.6px; height: 39.6px; box-sizing: border-box;   /* 36 → 39.6px, +10 % am 13.09.2026 */
   border-radius: 50%;
-  font-size: 14px; font-weight: 600; color: var(--text3);
+  font-size: 15.4px; font-weight: 600; color: var(--text3);
 }
 /* Geplante wie erledigte Tage tragen die Farbe der SPORTART, nicht die des Tabs
    (Leonard-Wunsch 04.09.2026): Gym im Dunkelgruen der trainierten Kalender-Kaestchen, Lauf im
@@ -853,7 +863,7 @@ body.theme-plans .hist-action-dd {
    ausgewaehlten Tages (`.ppv-col.selected`), damit die Karte nur EINE Art Hervorhebung kennt.
    Der fruehere Ring (`.ppv-wd::after`, 2px in der Akzentfarbe, mit Sonderfaellen fuer erledigte
    Gym- und Lauftage) ist damit ersatzlos entfallen. */
-.ppv-col.today { background: var(--accent-bg); border-radius: 9px; }
+.ppv-col.today { background: var(--accent-bg); border-radius: 9.9px; }
 .ppv-col.today:not(.training) .ppv-wd { color: var(--accent-dark); font-weight: 700; }
 /* Tage, die in dieser Woche noch KOMMEN, sind nur umrandet (Leonard-Wunsch 08.09.2026):
    Fuellung heisst „war schon", Kontur „steht noch an". Heute ist bewusst ausgenommen — der Tag
@@ -862,9 +872,9 @@ body.theme-plans .hist-action-dd {
    2px Kontur statt der 15%-Regel des Kalenders: In diesem Kreis steht der Wochentag, eine
    4,5px-Kontur liesse fuer die Schrift kaum Platz. */
 .ppv-col.training.zukunft .ppv-wd {
-  background: transparent; box-shadow: inset 0 0 0 2px #0F766E; color: #0F766E;
+  background: transparent; box-shadow: inset 0 0 0 2.2px #0F766E; color: #0F766E;
 }
-.run-plan .ppv-col.training.zukunft .ppv-wd { box-shadow: inset 0 0 0 2px #4ADE80; color: #22A05B; }
+.run-plan .ppv-col.training.zukunft .ppv-wd { box-shadow: inset 0 0 0 2.2px #4ADE80; color: #22A05B; }
 /* VERSCHOBEN: Die hier geplante Einheit wurde an einem ANDEREN Tag dieser Woche gemacht
    (Leonard-Wunsch 08.09.2026). Der Tag ist erledigt — aber nicht hier, deshalb GRAU abgehakt
    statt in der Sportfarbe: Der Haken sagt „erledigt", das Grau „nicht an diesem Tag". Den
@@ -1266,7 +1276,7 @@ html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today { background: r
    (`.ppv-col.training .ppv-wd`) und fuellt den Kreis weiss — geplant und „steht noch an"
    saehen dann gleich aus. */
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.training.zukunft .ppv-wd {
-  background: transparent; box-shadow: inset 0 0 0 2px rgba(255,255,255,.92); color: #fff;
+  background: transparent; box-shadow: inset 0 0 0 2.2px rgba(255,255,255,.92); color: #fff;
 }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today:not(.training) .ppv-wd { color: #fff; }
 /* Ausgewaehlter Tag im Trainings-Tab: KEIN weisser Ring um den Kreis mehr, und die Flaeche
@@ -1487,8 +1497,8 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
      154px hoch und muss SCHRUMPFEN. Die Knoepfe tragen `flex: 1` und fuellen den Rest der
      Karte von selbst aus — deshalb steht ihr Polster wieder bei 8px statt 18.5px: Es ist
      jetzt nur noch die Untergrenze, die Hoehe kommt aus der Karte. */
-  height: 143px; box-sizing: border-box;
-  padding: 14px; display: flex; gap: 12px; align-items: stretch;
+  height: 157.3px; box-sizing: border-box;   /* 143 → 157.3px, +10 % am 13.09.2026 */
+  padding: 15.4px 14px; display: flex; gap: 13.2px; align-items: stretch;
   position: relative; overflow: hidden;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   /* KEINE Kontur (Leonard-Wunsch 01.09.2026) — im Glas-Modus zeichnete sie eine weisse
@@ -1507,30 +1517,35 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    Knoepfen — `.hero-heute-spalten` und `.hero-heute-spalte` wachsen mit `flex: 1`, der Knopf
    darin ebenfalls. Als `display: block` blieb unten schlicht Leerraum stehen und die Knoepfe
    waren KLEINER als vorher (33.5 statt 41.5px, gemessen 09.09.2026). */
-.hero-heute { display: flex; flex-direction: column; gap: 12px; padding: 14px; }
+/* +10 % am 13.09.2026 (Leonard-Wunsch, Wochenplan-Karten und Herocards samt Inhalt): alle
+   Schriften, Abstaende und Knoepfe dieser Karte. Seitlich bleibt es bei 14px — beim
+   app-weiten Kartenpolster und beim Abstand ZWISCHEN den Knoepfen, der ihm gleich sein soll. */
+.hero-heute { display: flex; flex-direction: column; gap: 13.2px; padding: 15.4px 14px; }
 .hero-heute-spalten { flex: 1; min-height: 0; }
 .hero-heute .hero-heute-spalte { flex: 1; min-height: 0; }
 /* 2px statt 10px unter dem Titel (Leonard-Wunsch 09.09.2026): Zwischen „Heute" und der
    mittigen Beschriftung darunter stand zu viel Luft. Weil die Karte 143px FEST hoch ist und
    die Knoepfe `flex: 1` tragen, landen die gesparten 8px automatisch in der Knopfhoehe —
    genau dort, wo Leonard sie haben wollte. */
-.hero-heute-titel { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+/* Der Titel bleibt bei 16px wie jeder Kartentitel der App (Leonard-Entscheidung 13.09.2026) —
+   nur sein Abstand nach unten ist mit der Karte um 10 % gewachsen. */
+.hero-heute-titel { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 2.2px; }
 /* Laufende Einheit: Trainingstag links, Uhr rechts in derselben Zeile. */
-.hero-aktiv-titel { display: flex; align-items: baseline; gap: 10px; }
+.hero-aktiv-titel { display: flex; align-items: baseline; gap: 11px; }
 .hero-aktiv-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Der Fortschrittsbalken steht da, wo in der Karte „Heute" die Beschriftungen stehen — also
    mit demselben Abstand zu den Knoepfen darunter. */
-.hero-aktiv .hero-v2-progress-bar-thin { margin-bottom: 10px; }
+.hero-aktiv .hero-v2-progress-bar-thin { margin-bottom: 11px; }
 .hero-heute-spalten { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .hero-heute-spalten.einzeln { grid-template-columns: 1fr; }
 /* Abstand oben (Titel: `margin-bottom: 10px`) und unten GLEICH gross — damit sitzt die
    Beschriftung mittig zwischen Titel und Knopf (Leonard-Wunsch 06.09.2026); mit den
    vorherigen 6px klebte sie am Knopf. */
-.hero-heute-spalte { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.hero-heute-spalte { min-width: 0; display: flex; flex-direction: column; gap: 11px; }
 /* Die Einheit steht MITTIG ueber ihrem Knopf und wird gekuerzt statt umzubrechen — sonst
    stuenden die beiden Knoepfe auf verschiedenen Hoehen. */
 .hero-heute-einheit {
-  text-align: center; font-size: 13px; font-weight: 600; color: var(--text3);
+  text-align: center; font-size: 14.3px; font-weight: 600; color: var(--text3);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* Zweite Zeile unter dem Trainingstag: Uebungen, Saetze und mittlere Dauer (Leonard-Wunsch
@@ -1542,9 +1557,9 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    die der Knopf ueber `flex:1` wieder abgibt: Er ist ohnehin hoeher als sein Text.
    ACHTUNG: Ohne `min-width: 0` am Kopf greift das Kuerzen des Namens nicht — ein Flex-Kind
    schrumpft sonst nicht unter seinen Inhalt. */
-.hero-heute-kopf { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.hero-heute-kopf { min-width: 0; display: flex; flex-direction: column; gap: 2.2px; }
 .hero-heute-meta {
-  text-align: center; font-size: 11px; font-weight: 600; color: var(--text3); opacity: .8;
+  text-align: center; font-size: 12.1px; font-weight: 600; color: var(--text3); opacity: .8;
   line-height: 1.1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -1556,8 +1571,8 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    waere der Knopf auf der Seite „Gym" spuerbar flacher als auf „Laufen".
    Die Zeile fuer den Titelabstand ist mit der generellen Umstellung entfallen (sie setzte
    dieselben 2px noch einmal). */
-.hero-heute.hero-mit-meta .hero-heute-spalte { gap: 6px; }
-/* „Einheit starten" war 8.1px FLACHER als „Freies Training starten" (48.9 gegen 57px,
+.hero-heute.hero-mit-meta .hero-heute-spalte { gap: 6.6px; }
+/* „Einheit starten" war 8.1px FLACHER als „Freies Training" (48.9 gegen 57px,
    gemessen 09.09.2026): Die Zusatzzeile kostet 12.1px, der engere Spaltenabstand gibt nur
    4px zurueck. Leonard wollte beide gleich hoch — ohne die Karte zu vergroessern, und der
    Platz soll aus dem Abstand zwischen dem Titel „Heute" und der Zeile mit dem
@@ -1566,10 +1581,10 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    von `.hero-v2`) plus die 2px Titelabstand — zusammen 14px. Auf 4px gekuerzt bleiben 6px,
    und die freien 8px landen im Knopf: beide messen jetzt 57px.
    NUR im Meta-Fall — im Fall ohne Zusatzzeile bleibt der Abstand bei 14px, sonst waere
-   „Freies Training starten" wieder hoeher und die Gleichheit dahin. */
-.hero-heute.hero-mit-meta { gap: 4px; }
+   „Freies Training" wieder hoeher und die Gleichheit dahin. */
+.hero-heute.hero-mit-meta { gap: 4.4px; }
 .hero-heute.hero-mit-meta .hero-heute-kopf { gap: 0; }
-/* Die Beschriftung darf UMBRECHEN: „Lauf abgeschlossen" braucht bei 14px 135px Text, in den
+/* Die Beschriftung darf UMBRECHEN: „Lauf abgeschlossen" (heute „Lauf erledigt") brauchte bei 14px 135px Text, in den
    155px eines halben Knopfes bleiben nach Polster, Symbol und Abstand aber nur 114px. Kleiner
    setzen waere die Alternative gewesen — dann stuende der wichtigste Knopf der Uebersicht in
    12px da. Beide Knoepfe sind ueber `flex:1` in der Spalte gleich hoch, egal ob ein- oder
@@ -1579,12 +1594,12 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
   /* 18.5px statt 12px senkrecht: Die Herocard soll rund 10 % hoeher werden, und die
      gewonnene Hoehe gehoert dem KNOPF (Leonard-Wunsch 09.09.2026) — er ist das, was man
      trifft. +6.5px oben und unten sind +13px Knopf und damit +13px Karte.
-     BEWUSST Polster statt `min-height`: In der Uebersicht bricht „Lauf abgeschlossen" auf
+     BEWUSST Polster statt `min-height`: In der Uebersicht brach „Lauf abgeschlossen" auf
      zwei Zeilen um, der Knopf ist dort schon hoeher als die Mindesthoehe — die Karte waere
      dann gar nicht gewachsen. Polster wirkt in beiden Faellen.
      Gemessen: Trainings-Tab 123.5 → 136.5px (+10.5 %), Uebersicht 141 → 154px (+9.2 %).
      Ein einzelner Wert kann beide nicht exakt auf 10 % bringen; das hier ist die Mitte. */
-  padding: 8px; font-size: 14px; gap: 7px; line-height: 1.25;
+  padding: 8.8px; font-size: 15.4px; gap: 7.7px; line-height: 1.25; border-radius: 13.2px;
   min-width: 0; text-align: center; flex: 1;
 }
 /* Symbol in TEXTGROESSE vor der Beschriftung (Leonard-Vorgabe). `1em` bindet es an die
@@ -1599,17 +1614,20 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 .hero-heute:not(.hero-aktiv) .hero-heute-spalten.einzeln .hero-v2-btn {
   width: 80%; margin-left: auto; margin-right: auto;
 }
-/* Die Beschriftung der Gym- und Lauf-Knoepfe ist so gross wie der KARTENTITEL: 16px
-   (`.hero-heute-titel`, Leonard-Wunsch 12.09.2026) — in ALLEN Tabs gleich, also auch in der
-   Uebersicht, wo sich zwei Knoepfe die Zeile teilen. Vorher standen dort 14px und im
-   Trainings-Tab 16.8px nebeneinander.
+/* Die Beschriftung der Gym- und Lauf-Knoepfe: 17.6px in ALLEN Tabs. Am 12.09.2026 war sie auf
+   die Titelgroesse (16px) gesetzt worden (Leonard-Wunsch); am 13.09.2026 ist sie mit der Karte
+   um 10 % gewachsen, der Titel dagegen bewusst NICHT (Leonard-Entscheidung). Knopf und Titel
+   sind seither also NICHT mehr gleich gross.
    `:not(.hero-aktiv)` nimmt die Karte der LAUFENDEN Einheit aus — „Pausieren" und „Beenden"
    bleiben bei 14px, sie benennen keine Sportart.
    Das Symbol ist `1em` und waechst von selbst mit.
-   ENGSTELLE Uebersicht: „Lauf abgeschlossen" bricht dort auf zwei Zeilen um und der Knopf ist
-   ueber `flex: 1` auf die Resthoehe der 143px-Karte festgelegt — beim Anheben der Schrift
-   also nachmessen, ob der Text noch hineinpasst. */
-.hero-heute:not(.hero-aktiv) .hero-v2-btn { font-size: 16px; }
+   ENGSTELLE Uebersicht: Zwei Knoepfe teilen sich die Breite (111.6px Textplatz bei 17.6px),
+   und die Knopfhoehe ist ueber `flex: 1` an die Resthoehe der 157.3px-Karte gebunden. Mit den
+   alten Beschriftungen brach „Freies Training starten" dort auf DREI Zeilen um, der Knopf
+   ragte unten aus der Karte, und „abgeschlossen" (126.7px) stiess an den Knopfrand. Deshalb
+   heissen die Knoepfe seit dem 13.09.2026 „Freies Training" und „Lauf erledigt"
+   (Leonard-Entscheidung, in allen Tabs). Beim Anheben der Schrift hier nachmessen. */
+.hero-heute:not(.hero-aktiv) .hero-v2-btn { font-size: 17.6px; }
 .hero-btn-ic { width: 1em; height: 1em; flex-shrink: 0; display: inline-flex; }
 .hero-btn-ic svg { width: 100%; height: 100%; fill: currentColor; }
 /* Die Knoepfe tragen die Farbe der SPORTART statt der Tabfarbe (Leonard-Wunsch 06.09.2026) —
@@ -1647,17 +1665,17 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 .hero-v2-btn > svg { fill: #fff !important; }
 .hero-v2-btn:active { transform: scale(.97); }
 /* Inline progress bar (used inside hero-v2-text in active mode) */
-.hero-v2-progress-bar-thin { background: rgba(0,0,0,0.08); border-radius: 2px; height: 4px; overflow: hidden; margin-top: 6px; }
-.hero-v2-progress-fill-thin { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s; }
+.hero-v2-progress-bar-thin { background: rgba(0,0,0,0.08); border-radius: 2.2px; height: 4.4px; overflow: hidden; margin-top: 6.6px; }
+.hero-v2-progress-fill-thin { height: 100%; background: var(--accent); border-radius: 2.2px; transition: width 0.4s; }
 
 .hero-v2-timer {
   flex-shrink: 0; white-space: nowrap;
-  font-size: 22px; font-weight: 800; line-height: 1.15;
-  letter-spacing: 0.4px;
+  font-size: 24.2px; font-weight: 800; line-height: 1.15;
+  letter-spacing: 0.44px;
   color: var(--accent-dark);
   font-variant-numeric: tabular-nums;
-  padding: 0 12px;
-  border-radius: 8px;
+  padding: 0 13.2px;
+  border-radius: 8.8px;
   background: var(--card);
   box-shadow: 0 1px 4px rgba(15,23,42,0.06);
 }
@@ -1684,7 +1702,7 @@ html.wo-running #wo-week-card { display: none; }
 /* Ausgewaehlter Tag im Wochenplan des Trainings-Tabs: Die Auswahl steuert dort, welcher
    Tag unten angezeigt wird — ohne Markierung waere nicht erkennbar, welcher das ist.
    („Heute" traegt dagegen den Ring um den Kreis, beide bleiben unterscheidbar.) */
-.ppv-col.selected { background: var(--accent-bg); border-radius: 9px; }
+.ppv-col.selected { background: var(--accent-bg); border-radius: 9.9px; }
 
 /* ─── Kombinierte Wochenplankarte der Uebersicht („Variante A", 07.09.2026) ───────────────
    EINE Wochentagszeile, darunter zwei Reihen Kreise: Gym dunkelgruen, Lauf hellgruen.
@@ -1693,11 +1711,11 @@ html.wo-running #wo-week-card { display: none; }
    Symbolspalte, dann 7 gleiche Spalten) — nur so stehen die Kreise unter ihrem Wochentag. */
 /* 24px statt 20px: Das Sportsymbol ist am 12.09.2026 um 20 % gewachsen (19 → 22.8px) und
    braucht eine breitere Spalte — es sitzt darin mittig. */
-.ppv-kombi { --ppv-k-lead: 24px; }
+.ppv-kombi { --ppv-k-lead: 26.4px; }
 .ppv-k-labels, .ppv-k-reihe {
   display: grid;
   grid-template-columns: var(--ppv-k-lead) repeat(7, 1fr);
-  align-items: center; gap: 4px;
+  align-items: center; gap: 4.4px;
 }
 /* Dieselben seitlichen Masse wie die Reihen darunter (−6px Rand, 6px Polster). Ohne das
    sind die beiden INHALTSBOXEN verschieden breit, sobald die Breite gekappt ist — im
@@ -1708,8 +1726,8 @@ html.wo-running #wo-week-card { display: none; }
      und aus dem Abstand ueber den Reihen (6.5 → 4.5px) — das ist der Raum, der am wenigsten
      wehtut. Die Alternative waere eine hoehere Karte gewesen; alle Wochenplan-Karten und
      Herocards sind aber genau 143px (09.09.2026). */
-  margin: 5px -6px 0; padding: 0 6px;
-  font-size: 14.4px; font-weight: 600; color: var(--text3); text-align: center;
+  margin: 5.5px -6px 0; padding: 0 6px;
+  font-size: 15.84px; font-weight: 600; color: var(--text3); text-align: center;
 }
 /* Die Reihe ist seit dem 12.09.2026 STUMM (Leonard-Entscheidung): Antippbar sind jetzt die
    einzelnen Wochentage darin, und zwei Ziele in einer Kachel hat Leonard am 06.09.2026
@@ -1723,7 +1741,7 @@ html.wo-running #wo-week-card { display: none; }
      direkt aneinander und die Wochentage klebten auf den Kreisen darunter.
      Am 12.09.2026 auf 4.5px gekuerzt: Die um 20 % groesseren Kreise brauchen den Platz, und
      die Karte darf nicht ueber 143px wachsen. */
-  margin: 4.5px -6px 0; padding: 3px 6px; border-radius: 10px;
+  margin: 4.95px -6px 0; padding: 3.3px 6px; border-radius: 11px;
   -webkit-tap-highlight-color: transparent;
 }
 /* 19px statt 15px und MITTIG zwischen dem aeusseren Kartenrand und dem ersten
@@ -1737,7 +1755,7 @@ html.wo-running #wo-week-card { display: none; }
    `--ppv-k-lead` von 20 auf 24px mit, sonst passt das Symbol nicht in seine Spalte. Das
    schiebt alle Kreise um 4px nach rechts; nachgemessen ist die Mitte danach wieder
    stimmig. */
-.ppv-k-ic { width: 22.8px; height: 22.8px; display: inline-flex; justify-self: center; color: var(--text3); }
+.ppv-k-ic { width: 25.08px; height: 25.08px; display: inline-flex; justify-self: center; color: var(--text3); }
 /* In der Beschriftungszeile steht an derselben Stelle ein LEERER Platzhalter, damit die
    Wochentage auf denselben Rasterspalten sitzen wie die Kreise. Er darf die Zeile aber nicht
    hoeher machen: Mit dem Wachsen des Symbols auf 19px zog er die Zeile von 15 auf 19px und
@@ -1745,6 +1763,14 @@ html.wo-running #wo-week-card { display: none; }
    `--ppv-k-lead`, die Hoehe braucht er nicht. */
 .ppv-k-labels .ppv-k-ic { height: 0; }
 .ppv-k-ic svg { width: 100%; height: 100%; }
+/* DAS SYMBOL FUELLT SEINEN RAHMEN (Fehler gefunden 13.09.2026). In der Reihe steckt das SVG
+   in einem `.ppv-name-ic` (dieselbe Konstante wie vor den Kartentiteln), und der ist
+   `width: 1em` — also fest die 16px der geerbten Schrift. Die Vergroesserungen vom 09.09.
+   (15 → 19px) und 12.09.2026 (→ 22.8px) wuchsen deshalb nur den UNSICHTBAREN Rahmen; sichtbar
+   blieb das Symbol 16px und sass oben links statt mittig darin. Leonard hat das nie so
+   gesehen, wie es eingestellt war. Mit dieser Zeile ist es so gross wie `.ppv-k-ic` und
+   senkrecht exakt auf Hoehe der Kreise (nachgemessen). */
+.ppv-k-ic .ppv-name-ic { width: 100%; height: 100%; }
 .ppv-k-reihe.gym  .ppv-k-ic { color: #0F766E; }
 .ppv-k-reihe.lauf .ppv-k-ic { color: #22A05B; }
 /* Der Kreis: leer = nichts geplant, gefuellt = geplant, Haken = erledigt. Kleiner als die
@@ -1757,7 +1783,7 @@ html.wo-running #wo-week-card { display: none; }
 }
 .ppv-k-dot {
   position: relative;
-  width: 26.4px; height: 26.4px; box-sizing: border-box; border-radius: 50%;
+  width: 29.04px; height: 29.04px; box-sizing: border-box; border-radius: 50%;
   background: var(--card2);
 }
 .ppv-k-reihe.gym  .training .ppv-k-dot, .ppv-k-reihe.gym  .done .ppv-k-dot { background: #0F766E; }
@@ -1779,11 +1805,11 @@ html.wo-running #wo-week-card { display: none; }
    beide. Die Karte kennt damit weiterhin nur EINE Art Hervorhebung (Leonard-Vorgabe
    08.09.2026). Faellt die Auswahl auf heute, tragen beide Klassen dieselben Werte — es
    gibt nichts zu entscheiden. */
-.ppv-k-col.today, .ppv-k-col.selected { background: var(--accent-bg); padding: 3px 0; margin: -3px 0; }
+.ppv-k-col.today, .ppv-k-col.selected { background: var(--accent-bg); padding: 3.3px 0; margin: -3.3px 0; }
 .ppv-k-reihe.gym  .ppv-k-col.today,
-.ppv-k-reihe.gym  .ppv-k-col.selected { border-radius: 9px 9px 0 0; padding-bottom: 7.5px; margin-bottom: -7.5px; }
+.ppv-k-reihe.gym  .ppv-k-col.selected { border-radius: 9.9px 9.9px 0 0; padding-bottom: 8.25px; margin-bottom: -8.25px; }
 .ppv-k-reihe.lauf .ppv-k-col.today,
-.ppv-k-reihe.lauf .ppv-k-col.selected { border-radius: 0 0 9px 9px; }
+.ppv-k-reihe.lauf .ppv-k-col.selected { border-radius: 0 0 9.9px 9.9px; }
 /* Ein geplanter, noch NICHT absolvierter Tag traegt den Ring der Sportart und dieselbe
    hellgraue Fuellung wie ein Tag ohne Training (`--card2`, Leonard-Wunsch 08.09.2026 —
    vorher `transparent`). Damit sind es drei klar unterscheidbare Zustaende in EINER
@@ -1800,8 +1826,8 @@ html.wo-running #wo-week-card { display: none; }
    Die EINZELKARTEN (`.ppv-col.zukunft` in `buildPlanCard`/`buildRunPlanCard`) behalten
    bewusst die Datumsregel: Dort ist „gefuellt = war schon (Vergangenheit oder erledigt)"
    Leonards ausdrueckliche Vorgabe vom 08.09.2026. */
-.ppv-k-reihe.gym  .training.offen:not(.done) .ppv-k-dot { background: var(--card2); box-shadow: inset 0 0 0 3.6px #0F766E; }
-.ppv-k-reihe.lauf .training.offen:not(.done) .ppv-k-dot { background: var(--card2); box-shadow: inset 0 0 0 3.6px #4ADE80; }
+.ppv-k-reihe.gym  .training.offen:not(.done) .ppv-k-dot { background: var(--card2); box-shadow: inset 0 0 0 3.96px #0F766E; }
+.ppv-k-reihe.lauf .training.offen:not(.done) .ppv-k-dot { background: var(--card2); box-shadow: inset 0 0 0 3.96px #4ADE80; }
 /* VERSCHOBEN — dieselbe Aussage wie in den Einzelkarten: erledigt, aber nicht an diesem Tag.
    Die Fuellung ist ohnehin schon das Hellgrau eines Tages ohne Training; hier faellt nur der
    farbige Ring weg und ein grauer Haken kommt dazu. */
@@ -1813,7 +1839,7 @@ html.wo-running #wo-week-card { display: none; }
 /* Der Filtertitel sieht aus wie jeder Kartentitel, ist aber ein Knopf. */
 .ppv-filter-btn {
   border: none; background: none; padding: 0; margin: 0; text-align: left;
-  font: inherit; font-size: 16px; font-weight: 700; color: var(--text);
+  font: inherit; font-size: 16px; font-weight: 700; color: var(--text);   /* = .ppv-name, Kartentitel */
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none; user-select: none;
 }
