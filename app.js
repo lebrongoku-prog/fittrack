@@ -1018,7 +1018,32 @@ let _kombiTag = null;   // 0..6 oder null (= heute)
 function waehleKombiTag(idx) {
   _kombiTag = (_kombiTag === idx) ? null : idx;
   renderWochenKarte();
-  renderUebersichtHero();
+  mitHeroFarbwechsel('#ov-hero-wrap', renderUebersichtHero);
+}
+
+// ─── Herocard-Knoepfe wechseln ihre Farbe weich (13.09.2026, Leonard-Wunsch) ─────────
+// Tippt man in der Wochenplan-Karte auf einen anderen Tag, kann ein Knopf von Grau (nichts
+// geplant) auf seine Sportfarbe springen oder umgekehrt. Die Karte wird dabei NEU GEBAUT — eine
+// CSS-Transition auf `background` liefe nie, und Verlaeufe lassen sich ohnehin nicht
+// ueberblenden. Deshalb: vor dem Neubau die Farbe jedes Knopfs merken (`data-sport` gym/lauf
+// als Schluessel), danach bekommt jeder Knopf, dessen Farbe sich geaendert hat, die Klasse
+// `.hero-farbe-von-<alt>`. Sie legt die ALTE Flaeche als `::before` ueber den Knopfgrund und
+// laesst sie ausblenden (CSS `hero-farbe-verblassen`) — die neue Farbe erscheint darunter.
+// Genutzt von der Kombi-Karte der Uebersicht und den Tagesauswahlen der Seiten „Gym" und
+// „Laufen". Bei `prefers-reduced-motion` springt die Farbe wie bisher.
+function _heroKnopfFarbe(btn) {
+  return btn.classList.contains('hero-v2-btn-grau') ? 'grau' : btn.dataset.sport;
+}
+function mitHeroFarbwechsel(huelle, zeichnen) {
+  const vorher = {};
+  document.querySelectorAll(huelle + ' .hero-v2-btn[data-sport]')
+    .forEach(b => { vorher[b.dataset.sport] = _heroKnopfFarbe(b); });
+  zeichnen();
+  if (_bewegungReduziert()) return;
+  document.querySelectorAll(huelle + ' .hero-v2-btn[data-sport]').forEach(b => {
+    const alt = vorher[b.dataset.sport];
+    if (alt && alt !== _heroKnopfFarbe(b)) b.classList.add('hero-farbe-von-' + alt);
+  });
 }
 
 // Herocard der Uebersicht. Eigene Funktion, weil die Tagesauswahl sie einzeln neu zeichnet —
@@ -1818,12 +1843,12 @@ function buildHeuteHero(planDay, selDay, opts) {
     let knopf;
     if (blockiert) {
       knopf = laufIdx >= 0
-        ? `<button class="hero-v2-btn" onclick="jumpToWorkoutDay(${laufIdx})">
+        ? `<button class="hero-v2-btn" data-sport="gym" onclick="jumpToWorkoutDay(${laufIdx})">
              ${HERO_ICON_HANTEL}Zur laufenden Einheit</button>`
-        : `<button class="hero-v2-btn" disabled>${HERO_ICON_HANTEL}Einheit läuft</button>`;
+        : `<button class="hero-v2-btn" data-sport="gym" disabled>${HERO_ICON_HANTEL}Einheit läuft</button>`;
     } else if (planDay) {
       const start = opts.previewOnClick || `startWorkout('${planDay.id}')`;
-      knopf = `<button class="hero-v2-btn" onclick="${start}">${HERO_ICON_HANTEL}Einheit starten</button>`;
+      knopf = `<button class="hero-v2-btn" data-sport="gym" onclick="${start}">${HERO_ICON_HANTEL}Einheit starten</button>`;
     } else {
       // KEIN Gym geplant: grauer Knopf ohne Verlauf (Leonard-Wunsch 07.09.2026). Die
       // Sportfarbe ist ein Versprechen — sie gehoert dem Tag, an dem etwas ansteht.
@@ -1831,7 +1856,7 @@ function buildHeuteHero(planDay, selDay, opts) {
       // „Freies Training" statt „Freies Training starten" (13.09.2026, Leonard-Entscheidung):
       // Mit der um 10 % groesseren Knopfschrift brach die lange Fassung in der Uebersicht auf
       // drei Zeilen um und wurde von der Karte abgeschnitten. Gilt in allen Tabs.
-      knopf = `<button class="hero-v2-btn hero-v2-btn-grau" onclick="startFreeWorkout()">${HERO_ICON_HANTEL}Freies Training</button>`;
+      knopf = `<button class="hero-v2-btn hero-v2-btn-grau" data-sport="gym" onclick="startFreeWorkout()">${HERO_ICON_HANTEL}Freies Training</button>`;
     }
     // Zweite Zeile unter dem Namen: Umfang des Tages (Leonard-Wunsch 07.09.2026). Sie steht
     // NUR auf der Seite „Gym" im Trainings-Tab (`opts.sport === 'gym'`) — in der Uebersicht
@@ -1859,7 +1884,7 @@ function buildHeuteHero(planDay, selDay, opts) {
     // Kein Lauf geplant → grauer Knopf ohne Verlauf, dieselbe Regel wie beim Gym.
     spalten.push(`<div class="hero-heute-spalte">
       <div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf')}</div>
-      <button class="hero-v2-btn hero-v2-btn-lauf${gepl ? '' : ' hero-v2-btn-grau'}"
+      <button class="hero-v2-btn hero-v2-btn-lauf${gepl ? '' : ' hero-v2-btn-grau'}" data-sport="lauf"
               onclick="runLaeufeLaden({interactive:true})"
               ${runLaden ? 'disabled' : ''}>
         ${HERO_ICON_LAEUFER}${runLaden ? 'Lese …' : 'Lauf erledigt'}
@@ -1941,7 +1966,7 @@ function woDayIdx(wo) {
 
 function selectWorkoutDay(idx) {
   selectedWorkoutDayIdx = idx;
-  renderWorkoutsScreen();
+  mitHeroFarbwechsel('#wo-session-card-wrap', renderWorkoutsScreen);
 }
 
 // Aus der Plan-Karte (Übersicht) in den Trainings-Tab auf einen bestimmten Wochentag springen.
@@ -4121,7 +4146,7 @@ let _laufOffeneWochen = new Set();  // mehrere Wochen duerfen gleichzeitig offen
 // Ausgewaehlter Wochentag auf der Seite „Laufen". Vorbelegt mit HEUTE — dieselbe Bedienung
 // wie im Gymteil (`selectedWorkoutDayIdx`), nur fuer die Laufseite.
 let selectedRunDayIdx = null;
-function selectRunDay(idx) { selectedRunDayIdx = idx; renderLaufKalenderSeite(); }
+function selectRunDay(idx) { selectedRunDayIdx = idx; mitHeroFarbwechsel('#wo-lauf-hero', renderLaufKalenderSeite); }
 
 // Detailkarte zum gewaehlten Lauftag. Gebaut aus den Klassen der ausgeklappten
 // Uebungskarte (`.aex-v2`), damit sie auf der Nachbarseite „Gym" nicht wie ein Fremdkoerper
@@ -4380,7 +4405,13 @@ function renderRunPlanDetail() {
     </div>
 
     <div class="mehr-section">
-      <div class="mehr-section-title">Einheiten</div>
+      <div class="mehr-section-kopf">
+        <div class="mehr-section-title">Einheiten</div>
+        ${wochen ? `<button type="button" id="lp-alle-btn" class="lp-alle-btn"
+                aria-expanded="${_alleRunWochenOffen(p.id)}" onclick="toggleAlleRunWochen('${p.id}')">
+          <span class="lp-alle-txt">${_alleRunWochenOffen(p.id) ? 'Alle zuklappen' : 'Alle aufklappen'}</span>
+          <span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>` : ''}
+      </div>
       <div class="mehr-card plan-form-card lp-wochen-karte">${wochenBlocks.join('')}</div>
     </div>
 
@@ -4419,6 +4450,42 @@ function toggleRunWoche(id, w) {
   const auf = _laufOffeneWochen.has(k);
   btn.setAttribute('aria-expanded', auf ? 'true' : 'false');
   if (body) body.style.display = auf ? '' : 'none';
+  _syncAlleRunWochenBtn(id);
+}
+
+// „Alle aufklappen / Alle zuklappen" ueber dem Abschnitt „Einheiten" (13.09.2026,
+// Leonard-Wunsch). Sind ALLE Wochen offen, klappt der Knopf alle zu, sonst alle auf — dieselbe
+// Regel wie „Alle ein-/ausklappen" im Uebungskatalog.
+// WIE `toggleRunWoche` OHNE Neuaufbau: Die Detailseite ist ein Formular, ein Neuaufbau naehme
+// einem gerade bearbeiteten Feld seine noch nicht gespeicherte Eingabe.
+function _alleRunWochenOffen(id) {
+  const p = DB.getRunPlans().find(x => x.id === id);
+  const n = p ? runPlanWochen(p) : 0;
+  for (let w = 1; w <= n; w++) if (!_laufOffeneWochen.has(id + ':' + w)) return false;
+  return n > 0;
+}
+function toggleAlleRunWochen(id) {
+  const p = DB.getRunPlans().find(x => x.id === id);
+  if (!p) return;
+  const auf = !_alleRunWochenOffen(id);
+  for (let w = 1; w <= runPlanWochen(p); w++) {
+    const k = id + ':' + w;
+    auf ? _laufOffeneWochen.add(k) : _laufOffeneWochen.delete(k);
+  }
+  document.querySelectorAll('#runplan-detail-body .lp-woche-btn').forEach(btn => {
+    btn.setAttribute('aria-expanded', auf ? 'true' : 'false');
+    const body = btn.nextElementSibling;
+    if (body) body.style.display = auf ? '' : 'none';
+  });
+  _syncAlleRunWochenBtn(id);
+}
+function _syncAlleRunWochenBtn(id) {
+  const btn = document.getElementById('lp-alle-btn');
+  if (!btn) return;
+  const auf = _alleRunWochenOffen(id);
+  btn.setAttribute('aria-expanded', auf ? 'true' : 'false');
+  const txt = btn.querySelector('.lp-alle-txt');
+  if (txt) txt.textContent = auf ? 'Alle zuklappen' : 'Alle aufklappen';
 }
 
 // Nach einer Aenderung muss der SICHTBARE Bildschirm neu gezeichnet werden — seit dem
@@ -7416,9 +7483,50 @@ function renderExercisesByMuscle() {
     || `<p style="text-align:center;color:#fff;opacity:0.85;padding:32px 16px">${leerText}</p>`;
 }
 
+// Mit derselben Bewegung wie Uebungskarten und Muskelgruppen (13.09.2026, Leonard-Wunsch).
+// Im Katalog ist immer nur EINE Uebung offen: Wer eine andere antippt, schliesst die alte und
+// oeffnet die neue — beide bewegen sich GLEICHZEITIG, danach wird EINMAL neu gezeichnet.
 function toggleExItem(id) {
+  const alt = openExerciseId;
   openExerciseId = (openExerciseId === id) ? null : id;
-  renderExercises();
+  const zu  = alt ? document.getElementById('ex-item-' + alt) : null;
+  const auf = openExerciseId ? document.getElementById('ex-item-' + openExerciseId) : null;
+  if (_bewegungReduziert() || (!zu && !auf)) { renderExercises(); return; }
+  let offen = (zu ? 1 : 0) + (auf ? 1 : 0);
+  const einmal = () => { if (--offen === 0) renderExercises(); };
+  if (zu) _exItemKlappen(zu, alt, false, einmal);
+  if (auf) _exItemKlappen(auf, openExerciseId, true, einmal);
+}
+// Gefahren wird die Hoehe der ZEILE (Web Animations API, `_klappBewegung`), wie bei den
+// Uebungskarten: Das Umschalten baut die Liste neu, eine CSS-Transition liefe nie.
+// ZWEI Besonderheiten des Katalogs:
+// 1. Eine ZUGEKLAPPTE Zeile enthaelt KEIN Diagramm (es wird nur fuer die offene gebaut). Beim
+//    Aufklappen fehlten seine 162px in der Zielhoehe, und die Zeile spraenge am Ende um genau
+//    diesen Betrag. Deshalb wird der Diagrammblock VOR dem Messen eingesetzt — noch leer; er
+//    wird erst mit dem Neuaufbau gezeichnet (vorher gezeichnet, begaenne seine Einblendung beim
+//    Neuaufbau ein zweites Mal).
+// 2. Beim ZUklappen bleibt `.open` bis zum Ende stehen (sonst waere der Inhalt sofort weg und es
+//    schrumpfte eine leere Flaeche). Den Pfeil dreht `.zuklappend` trotzdem sofort zurueck.
+function _exItemKlappen(el, key, auf, fertig) {
+  if (!el.animate) { fertig(); return; }
+  const von = el.getBoundingClientRect().height;
+  if (auf) {
+    const body = el.querySelector('.ex-item-body');
+    if (body && !body.querySelector('.ex-chart-block')) {
+      const exId = key.includes('__') ? key.split('__')[1] : key;
+      const stats = body.querySelector('.ex-item-stats');
+      if (stats) stats.insertAdjacentHTML('afterend', exChartHTML(exId, 'ex-chart-' + key));
+    }
+    el.classList.add('open');
+  } else {
+    el.classList.remove('open');
+  }
+  const bis = el.getBoundingClientRect().height;
+  if (!auf) el.classList.add('open', 'zuklappend');
+  if (Math.abs(bis - von) < 1) { fertig(); return; }
+  el.style.overflow = 'hidden';
+  _klappBewegung(el, [{ height: von + 'px' }, { height: bis + 'px' }],
+                 () => { el.style.overflow = ''; fertig(); });
 }
 
 function saveExerciseNote(id, value) {

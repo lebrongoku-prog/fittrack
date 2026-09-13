@@ -309,6 +309,23 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   GLEICHZEITIG und zeichnet EINMAL neu, wenn alle fertig sind.
   KEINE Bewegung waehrend einer Suche: Dort sind alle Treffergruppen zwangsweise offen, der
   Neuaufbau zoege eine gerade zugeklappte Gruppe sofort wieder auf.
+- **AUCH DIE EINZELNEN UEBUNGEN IM KATALOG KLAPPEN MIT BEWEGUNG** (`toggleExItem` →
+  `_exItemKlappen`, 13.09.2026, Leonard-Wunsch). Gefahren wird die Hoehe der ZEILE (`.ex-item`),
+  wie bei den Uebungskarten. Es ist immer nur EINE Uebung offen — tippt man eine andere an,
+  schliesst die alte und oeffnet die neue GLEICHZEITIG, danach wird EINMAL neu gezeichnet.
+  ZWEI Besonderheiten:
+  1. Eine zugeklappte Zeile enthaelt KEIN Diagramm (`exChartHTML` wird nur fuer die offene
+     gebaut). Beim Aufklappen fehlten seine rund 162px in der Zielhoehe, die Zeile spraenge am
+     Ende genau darum. Deshalb setzt `_exItemKlappen` den Diagrammblock VOR dem Messen hinter
+     `.ex-item-stats` ein — noch leer (`.ex-chart-wrap` hat eine feste Hoehe, gezeichnet wird er
+     erst mit dem Neuaufbau; vorher gezeichnet, begaenne seine Einblendung ein zweites Mal).
+     GEMESSEN: Endhoehe der Bewegung = Hoehe nach dem Neuaufbau (524.9 = 524.9px; beim Wechsel
+     46 = 46 und 525.9 = 525.9px).
+  2. Beim ZUklappen bleibt `.open` bis zum Ende stehen (der Inhalt schrumpft sichtbar). Damit
+     der Pfeil trotzdem sofort zurueckdreht, kommt `.zuklappend` dazu
+     (`.ex-item.open.zuklappend > .ex-item-head > .aex-v2-chev { transform: none }`).
+  TESTHINWEIS: `getComputedStyle` auf den Pfeil liefert waehrend einer laufenden Transition den
+  STARTwert — zum Pruefen `transition: none` setzen.
 - **Uebungskarten (`.aex-v2`) haben KEINEN sichtbaren Drag-Griff mehr** (die drei Striche `≡`,
   entfernt 01.09.2026). Das Sortieren haengt jetzt am ganzen Kartenkopf: `.aex-v2-header` traegt
   `onpointerdown`/`onpointerup` und schaltet `draggable` der Karte. Der Klick zum Auf-/Zuklappen
@@ -1191,15 +1208,18 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 
   | Element | vorher | jetzt | Regel |
   |---|---|---|---|
-  | Hero-Knopf im Trainings-Tab | 323px | **258px** (−20 %) | `.hero-heute:not(.hero-aktiv) .hero-heute-spalten.einzeln .hero-v2-btn` |
+  | Hero-Knopf im Trainings-Tab | 323px | ~~258px (−20 %)~~ **seit 13.09.2026 wieder 323px** | Regel entfallen, siehe unten |
   | Uebungskarte (Seite „Gym" + Gymtag-Detail) | 323px | **291px** (−10 %) | `.aex-v2:not(.lauf-tag-karte)` |
   | Archiv-Knopf (alle drei Listen) | 347px | **173px** (−50 %) | `.plans-list-archive-header` |
 
-  DREI Fallen, die dabei stecken:
+  **DER HERO-KNOPF IST SEIT DEM 13.09.2026 WIEDER VOLL BREIT** (Leonard-Wunsch): Auf den Seiten
+  „Gym" und „Laufen" fuellt er die Karte zwischen den 14px-Polstern — dieselben Aussenabstaende
+  wie „Freies Training" und „Lauf erledigt" in der Uebersicht (gemessen: links und rechts je
+  14px, 323px breit, kein Ueberlauf). Die 80-%-Regel ist ersatzlos entfallen.
+  DREI Fallen, die dabei steckten (die erste ist mit der Regel erledigt):
   1. `.hero-heute-spalten.einzeln` traegt AUCH die Karte der laufenden Einheit, sobald sie
-     ohne Uebungen dasteht. `:not(.hero-aktiv)` ist deshalb Pflicht — sonst schrumpfen
-     „Pausieren" und „Beenden" mit. In der UEBERSICHT teilen sich zwei Knoepfe die Zeile,
-     dort greift die Regel gar nicht (kein `.einzeln`).
+     ohne Uebungen dasteht. `:not(.hero-aktiv)` war deshalb Pflicht — sonst schrumpften
+     „Pausieren" und „Beenden" mit.
   2. Die Tageskarte der Seite „Laufen" borgt sich die Klassen der Uebungskarte, ist aber
      keine — `.lauf-tag-karte` ist ausgenommen und bleibt bei 323px.
   3. Im Gymtage-Raster setzt `#libdays-list > .plans-list-archive-header` die Breite auf
@@ -1742,6 +1762,17 @@ Nummer und die Notiz auf einer EIGENEN Zeile unter den Werten statt in der recht
 die Tabelle ist hier nur eine Zeile hoch, daneben saehe die Notiz verloren aus. Wurde der Tag gelaufen, steht das in der Aktionsleiste mit einem Knopf zu
 `showRunDetail`.
 
+**„Alle aufklappen / Alle zuklappen" ueber dem Abschnitt „Einheiten"** (`toggleAlleRunWochen`,
+`#lp-alle-btn`, 13.09.2026, Leonard-Wunsch). Sind ALLE Wochen offen, klappt er alle zu, sonst
+alle auf — dieselbe Regel wie im Uebungskatalog. Die Beschriftung folgt dem echten Zustand, auch
+nach einzelnen Tipps auf eine Woche (`_syncAlleRunWochenBtn`, gerufen aus `toggleRunWoche`).
+WIE `toggleRunWoche` OHNE Neuaufbau — gemessen: Eine gerade getippte, noch nicht gespeicherte
+Eingabe in einem km-Feld bleibt beim Umschalten stehen.
+Der Titel steht dafuer in einer Zeile mit dem Knopf (`.mehr-section-kopf`, wiederverwendbar fuer
+jeden Abschnitt mit Knopf; der untere Abstand wandert vom Titel auf die Zeile). Der Knopf ist eine
+Pille in 18-%-Weiss auf dem farbigen Grund der Detailseite, mit dem App-weiten Pfeil.
+Die Wochen selbst klappen weiterhin OHNE Bewegung.
+
 **Oberflaeche:** Seitenschalter `Laufkalender | Laufplanverwaltung` (`setLaufView`, `_laufSeite`).
 Auf- und Zuklappen einer Woche laeuft OHNE Neuaufbau (`toggleRunWoche` schaltet nur `display`) und
 die Einheiten sichern sich beim Verlassen des Feldes ohne Re-Render — sonst verlieren die
@@ -2061,6 +2092,26 @@ Leonard-Vorgabe:
   vollen Breite (`.hero-heute-spalten.einzeln`).
 - Laeuft anderswo bereits eine Einheit, fuehrt der Gym-Knopf dorthin („Zur laufenden Einheit")
   statt eine zweite zu starten.
+- **WECHSELT EIN KNOPF SEINE FARBE, VERBLASST DIE ALTE** (13.09.2026, Leonard-Wunsch) — grau ↔
+  Sportfarbe, wenn man in der Wochenplan-Karte einen anderen Tag antippt. Gilt fuer die
+  Kombi-Karte der Uebersicht (`waehleKombiTag`) und die Tagesauswahlen der Seiten „Gym"
+  (`selectWorkoutDay`) und „Laufen" (`selectRunDay`). Alle drei zeichnen ueber
+  `mitHeroFarbwechsel(huelle, zeichnen)`.
+  WARUM SO: Die Karte wird bei jedem Tipp NEU GEBAUT — eine Transition auf `background` liefe
+  nie, und Verlaeufe lassen sich ohnehin nicht ueberblenden. Stattdessen merkt sich die Funktion
+  vor dem Neubau die Farbe jedes Knopfs (Schluessel `data-sport` gym/lauf, Farbe 'grau' | 'gym' |
+  'lauf' aus `_heroKnopfFarbe`) und haengt danach an jeden Knopf, dessen Farbe sich geaendert hat,
+  `.hero-farbe-von-<alt>`. Die ALTE Flaeche liegt dann als `::before` ueber dem Knopfgrund und
+  blendet in 0.35s aus (`@keyframes hero-farbe-verblassen`); die neue kommt darunter hervor.
+  `isolation: isolate` am Knopf ist Pflicht: Nur im eigenen Stapelkontext malt sich das
+  `z-index: -1` UEBER den Knopfgrund und UNTER Symbol und Schrift (gemessen: die Knopfmitte
+  trifft weiterhin den Knopf, im Bild liegt die Schrift oben).
+  Bleibt die Farbe gleich, passiert nichts. Bei `prefers-reduced-motion` springt sie wie bisher.
+  Die drei Flaechen in `.hero-farbe-von-*::before` wiederholen die Knopffarben — aendert sich
+  eine Knopffarbe, dort mitziehen.
+  TESTHINWEIS: In der versteckten Browser-Ansicht laeuft die Animation nicht, der Knopf bliebe
+  dort optisch in der ALTEN Farbe stehen. Zum Ansehen die Animation per `getAnimations()`
+  anhalten und `currentTime` setzen.
 
 „Lauf abgeschlossen" ruft `runLaeufeLaden({interactive:true})` — dieselbe Funktion wie
 „Aktualisieren" in den Einstellungen. FitTrack fuehrt keine Laeufe selbst; der Knopf kann nur
@@ -2105,6 +2156,18 @@ Einheit, nicht die Tagesuebersicht.
   schwarz auf farbigem Grund (gemeldet 04.09.2026). Alle vier Regeln (`.nav-btn svg`,
   `.nav-btn.active svg` und ihre beiden Glas-Fassungen) setzen deshalb `color` MIT.
 
+- **GLEICHNAMIGE GYMTAGE sind technisch harmlos, aber nicht unterscheidbar** (geprueft
+  13.09.2026 auf Leonards Frage). Alles Interne laeuft ueber die ID: Plaene (`dayIds`),
+  Wochenplan (`planDayId`), Einheiten, verschobene Einheiten, Satzanzahl-Rueckmeldung,
+  Volumenvergleich, Ø-Dauer. Keine Stelle ordnet einen Tag ueber den Namen zu, und es gibt beim
+  Anlegen oder Umbenennen KEINE Pruefung auf Doppelte.
+  DOPPELTE ENTSTEHEN VON SELBST: „Bestehenden Plan als Vorlage kopieren" (`copyExistingPlan`)
+  legt fuer die Kopie NEUE Gymtage mit DENSELBEN Namen an (gewollt: unabhaengige Kopie).
+  EINZIGE Namens-Zuordnung: der JSON-Plan-Import (`applyPlanImport`) verknuepft den Wochenplan der
+  Datei ueber den Tagnamen (ohne Gross-/Kleinschreibung). Stehen in EINER Datei zwei Tage gleichen
+  Namens, zeigen beide Wochentage auf den LETZTEN davon.
+  Sichtbar wird es in allen Listen und Auswahlen, die nur den Namen zeigen: Gymtage-Raster,
+  Wochenplan-Auswahl im Plan-Detail, Bibliothek-Auswahl, Kalender-Fusszeile, Herocard.
 - **Eine Einheit gehört zu genau EINEM Wochentag:** `wo.dayIdx` (0=Mo … 6=So) wird beim Start gesetzt, `woDayIdx(wo)` liest ihn (Rückfallebene `startTs`). NIEMALS den Wochentag über `weekPlan.findIndex(planDayId)` bestimmen — bei einem Trainingstag, der zweimal pro Woche im Plan steht, trifft das immer den ersten Treffer.
 - `activeOnSelected` in `renderWorkoutsScreen` prüft NUR `woDayIdx(active) === selectedWorkoutDayIdx` — bewusst nicht zusätzlich gegen `planDay`. Sonst verschwindet eine Einheit, die an einem Ruhetag läuft (Training verschoben), komplett aus dem Tab.
 - Freies Training hat `planDayId === null`; Anzeigepfade müssen darauf vorbereitet sein (`activeOnSelected` in `renderWorkoutsScreen`).

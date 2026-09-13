@@ -568,6 +568,25 @@ body.theme-plans .hist-action-dd {
 #screen-plan-detail .mehr-section-title,
 #screen-runplan-detail .mehr-section-title { color: #fff; }
 .mehr-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+/* Abschnittstitel mit einem Knopf rechts daneben (13.09.2026, zuerst „Einheiten" im
+   Laufplan-Detail). Der Abstand nach unten wandert vom Titel auf die Zeile. */
+.mehr-section-kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 2px 8px; }
+.mehr-section-kopf > .mehr-section-title { margin: 0; }
+/* „Alle aufklappen / Alle zuklappen" — steht auf dem farbigen Hintergrund der Detailseite, daher
+   weisse Schrift auf 18-%-Weiss wie die uebrigen Knoepfe auf farbigem Grund. Der Pfeil ist der
+   App-weite (`.aex-v2-chev`) und dreht sich, wenn ALLE Wochen offen sind. */
+.lp-alle-btn {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 4px 4px 4px 10px; border: 0; border-radius: 999px;
+  background: rgba(255,255,255,.18); color: #fff;
+  font: inherit; font-size: 12px; font-weight: 700;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none;
+}
+.lp-alle-btn:active { opacity: .7; }
+.lp-alle-btn .aex-v2-chev { width: 18px; height: 18px; color: inherit; }
+.lp-alle-btn .aex-v2-chev svg { width: 14px; height: 14px; }
+.lp-alle-btn[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
 
 .plan-day-row { padding: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; -webkit-tap-highlight-color: transparent; position: relative; }
 .plan-day-row + .plan-day-row { border-top: 1px solid var(--border); }
@@ -1652,15 +1671,10 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 /* Symbol in TEXTGROESSE vor der Beschriftung (Leonard-Vorgabe). `1em` bindet es an die
    Schriftgroesse des Knopfes — aendert die sich, waechst das Symbol mit. */
 /* Steht nur EINE Sportart in der Karte — also im Trainings-Tab auf den Seiten „Gym" und
-   „Laufen" —, ist der Knopf 20 % schmaler als die Karte und steht mittig (Leonard-Wunsch
-   08.09.2026). Ueber die volle Breite wirkte er wie ein Balken; in der Uebersicht teilen
-   sich zwei Knoepfe die Zeile und bleiben unveraendert.
-   `:not(.hero-aktiv)` ist Pflicht: Die Karte der LAUFENDEN Einheit nutzt dieselbe Huelle
-   und traegt `.einzeln`, sobald sie ohne Uebungen dasteht — „Pausieren" und „Beenden"
-   sollen aber die volle Breite behalten. */
-.hero-heute:not(.hero-aktiv) .hero-heute-spalten.einzeln .hero-v2-btn {
-  width: 80%; margin-left: auto; margin-right: auto;
-}
+   „Laufen" —, war der Knopf vom 08. bis 13.09.2026 20 % schmaler als die Karte und stand mittig.
+   Seit dem 13.09.2026 fuellt er wieder die volle Breite zwischen den 14px-Polstern
+   (Leonard-Wunsch) — dieselben Aussenabstaende wie „Freies Training" und „Lauf erledigt" in der
+   Uebersicht. Die Regel `width: 80%` ist ersatzlos entfallen. */
 /* Die Beschriftung der Gym- und Lauf-Knoepfe: 17.6px in ALLEN Tabs. Am 12.09.2026 war sie auf
    die Titelgroesse (16px) gesetzt worden (Leonard-Wunsch); am 13.09.2026 ist sie mit der Karte
    um 10 % gewachsen, der Titel dagegen bewusst NICHT (Leonard-Entscheidung). Knopf und Titel
@@ -1705,6 +1719,22 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    die Reihenfolge, sonst gewaenne der Verlauf. */
 .hero-heute .hero-v2-btn-grau { background: #475569; color: #fff; }
 .hero-v2-btn-lauf .hero-btn-ic svg { fill: none; stroke: currentColor; }
+/* FARBWECHSEL VERBLASST (13.09.2026, Leonard-Wunsch): Die Karte wird bei jedem Tipp auf einen
+   Tag neu gebaut, `mitHeroFarbwechsel` setzt dann `.hero-farbe-von-<alte Farbe>`. Die ALTE
+   Flaeche liegt als `::before` ueber dem Knopfgrund und blendet aus, die neue kommt darunter
+   hervor. `isolation: isolate` macht den Knopf zum eigenen Stapelkontext — nur so malt sich das
+   `z-index: -1` UEBER seinen Hintergrund, aber UNTER Symbol und Schrift.
+   Die drei Flaechen muessen den Knopfregeln oben entsprechen; aendert sich dort eine Farbe,
+   hier mitziehen. */
+.hero-heute .hero-v2-btn { position: relative; isolation: isolate; }
+.hero-farbe-von-grau::before, .hero-farbe-von-gym::before, .hero-farbe-von-lauf::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
+  pointer-events: none; animation: hero-farbe-verblassen .35s ease forwards;
+}
+.hero-farbe-von-grau::before { background: #475569; }
+.hero-farbe-von-gym::before  { background: linear-gradient(135deg, #0B4F49, #14B8A6); }
+.hero-farbe-von-lauf::before { background: linear-gradient(135deg, #15803D, #4ADE80); }
+@keyframes hero-farbe-verblassen { from { opacity: 1; } to { opacity: 0; } }
 .hero-v2-btn:disabled { opacity: .55; }
 /* Die alten Knopfsymbole sind gefuellte Formen (Play, Stop). Die neuen in `.hero-btn-ic`
    sind STRICHZEICHNUNGEN — sie duerfen nicht mitgefuellt werden, sonst wird die Hantel zum
@@ -2909,6 +2939,9 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .ex-item-head > .aex-v2-chev { margin-left: auto; width: 20px; height: 20px; }
 .ex-item-head > .aex-v2-chev svg { width: 17px; height: 17px; }
 .ex-item.open > .ex-item-head > .aex-v2-chev { transform: rotate(180deg); }
+/* Beim animierten Zuklappen bleibt `.open` bis zum Ende stehen (der Inhalt soll sichtbar
+   schrumpfen) — der Pfeil dreht sich trotzdem sofort zurueck (`_exItemKlappen`). */
+.ex-item.open.zuklappend > .ex-item-head > .aex-v2-chev { transform: none; }
 .ex-item-plan-tag {
   font-size: 11px; padding: 2px 7px; border-radius: 10px;
   background: var(--green-bg); color: var(--green); font-weight: 600;
