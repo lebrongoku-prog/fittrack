@@ -1730,7 +1730,15 @@ function buildSessionCard(active, planDay, selDay, opts) {
   opts = opts || {};
   const processedEx = active ? active.exercises.filter(e=>e.done || e.skipped).length : 0;
   // Ohne Trainingstag (freies Training) den Namen der Einheit anhängen statt nur den Wochentag.
-  const titleSuffix = planDay ? escapeHtml(planDay.name) : (active && active.planDayName ? escapeHtml(active.planDayName) : '');
+  // Der uebergebene `planDay` ist der Trainingstag des GEWAEHLTEN Wochentags — er gehoert nicht
+  // zwangslaeufig zu dieser Einheit. Ein freies Training an einem Tag, dessen geplante Einheit
+  // schon absolviert ist, trug deshalb faelschlich deren Namen im Titel („Push" statt „Freies
+  // Training", Leonard-Meldung 13.09.2026). Der Name des Tags gilt nur, wenn die Einheit
+  // wirklich zu ihm gehoert.
+  const gehoertZumTag = !!(planDay && active && active.planDayId === planDay.id);
+  const titleSuffix = gehoertZumTag ? escapeHtml(planDay.name)
+    : (active && active.planDayName ? escapeHtml(active.planDayName)
+    : (planDay ? escapeHtml(planDay.name) : ''));
   // Titel ist der TRAININGSTAG (Leonard-Wunsch 06.09.2026) — nicht mehr „Wochentag: Tag" mit
   // dem Etikett „LAUFENDE EINHEIT" darueber. Dass die Einheit laeuft, sagt die Uhr daneben.
   const titel = titleSuffix || dayFullName(selDay.dayKey);
@@ -4733,11 +4741,20 @@ function renderTrainingCalendar(id, cardId) {
   for (let w = 0; w < wochen; w++) {
     const weekStart = new Date(start); weekStart.setDate(start.getDate() + w * 7);
     const leereWoche = wocheOhneTraining(weekStart);
-    // Monatsbeschriftung, sobald eine Woche einen neuen Monat beginnt
-    const m = weekStart.getMonth();
-    const showLabel = m !== lastMonth && weekStart.getDate() <= 7;
-    months += `<span class="cal-month">${showLabel ? weekStart.toLocaleDateString('de-DE',{month:'short'}) : ''}</span>`;
-    if (showLabel) lastMonth = m;
+    // Die Monatsbeschriftung steht ueber der Spalte, in der der ERSTE des Monats liegt
+    // (Leonard-Wunsch 13.09.2026). Vorher stand sie ueber der ersten Woche, die IM neuen
+    // Monat beginnt — faellt der Monatserste auf einen Dienstag oder spaeter, war das die
+    // Woche danach, und die Beschriftung stand bis zu sechs Tage zu weit rechts.
+    // Nur der Erste des ANGEZEIGTEN Jahres zaehlt: Die erste Rasterwoche reicht in den
+    // Dezember davor, die letzte in den Januar danach — sonst stuende „Jan" zweimal da.
+    let monatsErster = null;
+    for (let d = 0; d < 7; d++) {
+      const tag = new Date(weekStart); tag.setDate(weekStart.getDate() + d);
+      if (tag.getDate() === 1 && tag.getFullYear() === jahr) { monatsErster = tag; break; }
+    }
+    const showLabel = !!monatsErster && monatsErster.getMonth() !== lastMonth;
+    months += `<span class="cal-month">${showLabel ? monatsErster.toLocaleDateString('de-DE',{month:'short'}) : ''}</span>`;
+    if (showLabel) lastMonth = monatsErster.getMonth();
 
     cells += '<div class="cal-week">';
     for (let d = 0; d < 7; d++) {

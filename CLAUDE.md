@@ -500,6 +500,15 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   beschreibt den Stand von heute), und die Scrollposition springt in einem vergangenen Jahr an
   den Jahresanfang statt zur „aktuellen Woche", die es dort nicht gibt. `setCalJahr` setzt dafuer
   `_calPositioniert[id]` zurueck — sonst bliebe die Spalte des alten Jahres stehen.
+  **Die MONATSBESCHRIFTUNG steht ueber der Spalte, in der der ERSTE des Monats liegt**
+  (13.09.2026, Leonard-Wunsch). Vorher stand sie ueber der ersten Woche, die IM neuen Monat
+  BEGINNT — faellt der Monatserste auf einen Dienstag oder spaeter, war das die Woche danach
+  und die Beschriftung stand bis zu sechs Tage zu weit rechts (gemessen: „Sep" 2026 sass auf
+  Spalte 36 statt 35).
+  Gezaehlt wird nur der Erste des ANGEZEIGTEN Jahres: Die erste Rasterwoche reicht in den
+  Dezember davor, die letzte in den Januar danach — ohne die Pruefung stuende „Jan" zweimal
+  da. Gemessen fuer 2024, 2025 und 2026 sowie beide Kalender: je 12 Beschriftungen, alle auf
+  der Spalte ihres Monatsersten.
   Rand-Tage der ersten/letzten Woche tragen `.outside` (ausgegraut, nicht antippbar).
   Beim ERSTEN Rendern wird zur laufenden Woche gescrollt, danach bleibt die Position des Nutzers stehen
   (`_calPositioniert` und `_calScrollPos` je Kalender). Ohne das sprang das Raster bei jedem Tabwechsel
@@ -1926,7 +1935,12 @@ nachschauen, was Health Auto Export inzwischen in die Tabelle geschrieben hat. `
 frischt deshalb auch den Trainings-Tab auf, nicht nur Uebersicht und Einstellungen.
 
 **Die LAUFENDE Einheit hat dieselbe Bauform** (`buildSessionCard`, `.hero-heute.hero-aktiv`,
-angeglichen 06.09.2026): Titel = Name des TRAININGSTAGS, Uhr rechts in derselben Zeile,
+angeglichen 06.09.2026): Titel = Name des TRAININGSTAGS — aber NUR, wenn die Einheit auch zu
+ihm gehoert (`active.planDayId === planDay.id`, korrigiert 13.09.2026). Die Seite „Gym" reicht
+den Trainingstag des GEWAEHLTEN Wochentags an die Karte weiter; ein FREIES Training an einem
+Tag, dessen geplante Einheit schon absolviert ist, trug dadurch faelschlich deren Namen
+(„Push" statt „Freies Training", Leonard-Meldung). Gespeichert war die Einheit immer korrekt —
+nur der Titel waehrend des Trainings war falsch. Sonst: Uhr rechts in derselben Zeile,
 darunter der Fortschrittsbalken und dann die Knoepfe „Pausieren"/„Fortsetzen" und „Beenden" —
 volle Breite, 14px zum Rand, 14px dazwischen, Symbol in Textgroesse. Ueber den Knoepfen steht
 KEIN Text; wo die Karte „Heute" ihre Beschriftungen hat, liegt hier der Balken.
