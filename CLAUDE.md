@@ -326,6 +326,36 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
      (`.ex-item.open.zuklappend > .ex-item-head > .aex-v2-chev { transform: none }`).
   TESTHINWEIS: `getComputedStyle` auf den Pfeil liefert waehrend einer laufenden Transition den
   STARTwert — zum Pruefen `transition: none` setzen.
+- **KALENDER-FUSSZEILE UND WETTKAMPFKARTE IM ZEITSTRAHL KLAPPEN EBENSO** (13.09.2026,
+  Leonard-Wunsch). Beide sind Kaesten, die aus dem NICHTS erscheinen bzw. ganz verschwinden —
+  dafuer gibt es `_boxFahren(el, von, bis, fertig)`: Es faehrt die Hoehe UND das senkrechte
+  Polster. Noetig wegen `box-sizing: border-box` (global): Ein Kasten kann nicht flacher werden
+  als sein Polster; ohne das bliebe bei Hoehe 0 der 12px-Streifen der Fusszeile stehen.
+  **Fusszeile** (`_calFussSetzen(el, html)`, beide Kalender): Aufklappen beim ersten Tipp,
+  Zuklappen beim zweiten Tipp UND beim Tipp daneben (`initCalendarDeselect`), und beim Wechsel
+  auf einen anderen Tag gleitet sie auf dessen Hoehe. Leerer Inhalt = zuklappen: Der ALTE Inhalt
+  bleibt waehrend der Bewegung stehen und wird erst am Ende geleert (sonst schrumpfte eine leere
+  Flaeche und `:empty` blendete die Zeile sofort aus). Das Leeren beim NEUAUFBAU des Rasters
+  (Jahr, Tabwechsel) bleibt bewusst sofort.
+  **Wettkampfkarte** (`_wkKarteKlappen(p, an)`): Oeffnen, Schliessen per zweitem Tipp, beim Wechsel
+  auf einen anderen Wettkampf (beide gleichzeitig) und beim Scrollen. Gefahren wird die HUELLE
+  `.wk-punkt-karte`, nicht der Eintrag — dessen Marke sitzt links AUSSERHALB auf der Linie und waere
+  mit `overflow: hidden` abgeschnitten. `.zuklappend` haelt die Karte bis zum Ende sichtbar; Marke
+  und `aria-expanded` wechseln sofort.
+  FALLE AUSSENABSTAND: Die Karte trug `margin: 4px 0 12px`. Aussenabstaende verrechnen sich mit den
+  Nachbarn, aber nicht mehr, sobald die Huelle `overflow: hidden` traegt — am Anfang und Ende der
+  Bewegung haette es gesprungen. Sie stehen jetzt als POLSTER der Huelle (`4px 0 2px`, beim
+  letzten Eintrag unten 12px) und bilden die alte Lage EXAKT nach (gemessen vor/nach dem Umbau fuer
+  alle fuenf Eintraege: Kopf → Karte 4px, → naechster Eintrag 12px, → Jahreszahl 26px, → Strahlende
+  20px). Die Jahreszahl ist `inline-block` — ihr `margin-top` verrechnet sich NICHT mit.
+  TOKEN-SCHUTZ (beide): Tippt man waehrend einer Bewegung erneut, bricht die alte ab und die neue
+  beginnt an der aktuellen Hoehe. Jede Bewegung merkt sich eine laufende Nummer am Element; ihr
+  Abschluss tut nichts, wenn inzwischen eine neuere laeuft — sonst leerte das „am Ende leeren" den
+  gerade neu gesetzten Inhalt. GEMESSEN: auf → zu → anderer Tag in einem Zug endet mit dem Inhalt
+  des letzten Tags, markierter Zelle und ohne `overflow`-Rest.
+  TESTHINWEIS: In der versteckten Browser-Ansicht meldet sich das Ende einer Bewegung erst ueber
+  die Notbremse (500ms) — `finish()` allein loest den Abschluss dort NICHT aus. Mindestens 600ms
+  warten, bevor der Endzustand gemessen wird.
 - **Uebungskarten (`.aex-v2`) haben KEINEN sichtbaren Drag-Griff mehr** (die drei Striche `≡`,
   entfernt 01.09.2026). Das Sortieren haengt jetzt am ganzen Kartenkopf: `.aex-v2-header` traegt
   `onpointerdown`/`onpointerup` und schaltet `draggable` der Karte. Der Klick zum Auf-/Zuklappen
@@ -1925,6 +1955,8 @@ FALLE, die dabei zuschlug: Der dritte Zustand hiess zuerst `offen` — genau wie
 den HERVORGEHOBENEN Eintrag. Beim Umschalten standen dadurch alle fuenf Karten sofort offen.
 **Genau EINER kann hervorgehoben sein** (`_wkOffen`, `wkStrahlWaehlen`). Ein zweiter Tipp auf
 denselben schliesst ihn wieder — dieselbe Regel wie bei der Fusszeile des Kalenders.
+Seit dem 13.09.2026 mit Ausklapp-Bewegung (`_wkKarteKlappen`, siehe „Kalender-Fusszeile und
+Wettkampfkarte klappen ebenso").
 **SCROLLEN klappt ihn wieder zu** (`initWettkampfStrahl`, Listener auf `#screen-plans`).
 Die Karte jedes Wettkampfs steht dafuer IMMER im Markup und wird nur per Klasse ein- und
 ausgeblendet: Auf- und Zuklappen ist ein Klassenwechsel, kein Neuaufbau — ein Neuaufbau

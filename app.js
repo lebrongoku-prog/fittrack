@@ -2514,6 +2514,23 @@ function _klappBewegung(el, keyframes, fertig) {
   anim.onfinish = ende;
   anim.oncancel = ende;
 }
+// Faehrt die Hoehe von `el` von `von` nach `bis` (sichtbare Rahmenhoehen wie
+// `getBoundingClientRect`) — fuer Kaesten, die aus dem NICHTS erscheinen oder GANZ
+// verschwinden (Kalender-Fusszeile, Wettkampfkarte im Zeitstrahl; 13.09.2026).
+// Das senkrechte Polster faehrt MIT: Bei `box-sizing: border-box` (global gesetzt) kann ein
+// Kasten nicht flacher werden als sein Polster — ohne das bliebe bei Hoehe 0 ein 12px-Streifen
+// stehen, und es spraenge am Anfang bzw. Ende genau darum.
+// `overflow: hidden` und den Endzustand setzt der AUFRUFER (er weiss, ob inzwischen eine neuere
+// Bewegung laeuft).
+function _boxFahren(el, von, bis, fertig) {
+  const cs = getComputedStyle(el);
+  const pt = parseFloat(cs.paddingTop) || 0, pb = parseFloat(cs.paddingBottom) || 0;
+  const pad = pt + pb;
+  const bild = (h) => (h < pad && pad > 0)
+    ? { height: h + 'px', paddingTop: (h * pt / pad) + 'px', paddingBottom: (h * pb / pad) + 'px' }
+    : { height: h + 'px', paddingTop: pt + 'px', paddingBottom: pb + 'px' };
+  _klappBewegung(el, [bild(von), bild(bis)], fertig);
+}
 function _bewegungReduziert() {
   return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 }
@@ -5116,6 +5133,40 @@ function renderTrainingCalendar(id, cardId) {
 }
 
 // Tippen auf ein Kästchen: Tag in der Fußzeile beschreiben.
+// Setzt den Inhalt der Kalender-Fusszeile und faehrt ihre Hoehe weich nach (13.09.2026,
+// Leonard-Wunsch): Aufklappen beim ersten Tipp, Zuklappen beim zweiten Tipp oder beim Tipp
+// daneben, und beim Wechsel auf einen anderen Tag gleitet sie auf die neue Hoehe.
+// Leerer Inhalt = zuklappen: Der ALTE Inhalt bleibt waehrend der Bewegung stehen und
+// verschwindet erst am Ende (sonst schrumpfte eine leere Flaeche, und `:empty` blendete die
+// Zeile sofort aus).
+// TOKEN: Tippt man waehrend einer laufenden Bewegung erneut, bricht die alte ab und die neue
+// beginnt an der AKTUELLEN Hoehe. Der Abschluss der alten Bewegung darf dann nichts mehr
+// anfassen — sonst leerte ihr „am Ende leeren" den gerade neu gesetzten Inhalt.
+function _calFussSetzen(el, html) {
+  const token = (el._fussToken || 0) + 1;
+  el._fussToken = token;
+  const von = el.getBoundingClientRect().height;
+  el.getAnimations().forEach(a => a.cancel());
+  el.style.overflow = '';
+  if (_bewegungReduziert() || !el.animate) { el.innerHTML = html; return; }
+  const aufraeumen = (leeren) => () => {
+    if (el._fussToken !== token) return;
+    el.style.overflow = '';
+    if (leeren) el.innerHTML = '';
+  };
+  if (!html) {
+    if (von < 1) { el.innerHTML = ''; return; }
+    el.style.overflow = 'hidden';
+    _boxFahren(el, von, 0, aufraeumen(true));
+    return;
+  }
+  el.innerHTML = html;
+  const bis = el.getBoundingClientRect().height;
+  if (Math.abs(bis - von) < 1) return;
+  el.style.overflow = 'hidden';
+  _boxFahren(el, von, bis, aufraeumen(false));
+}
+
 function showCalDay(key, id) {
   id = id || 'cal';
   const el = document.getElementById(id + '-detail');
@@ -5131,7 +5182,7 @@ function showCalDay(key, id) {
     // Kalender, weil beide dieselbe Funktion nutzen.
     if (cell && cell.classList.contains('sel')) {
       cell.classList.remove('sel');
-      el.innerHTML = '';
+      _calFussSetzen(el, '');
       return;
     }
     scope.querySelectorAll('.cal-day.sel').forEach(c => c.classList.remove('sel'));
@@ -5223,7 +5274,7 @@ function showCalDay(key, id) {
   ].filter(Boolean);
   const spalten = spaltenHTML.length ? `<div class="cal-detail-spalten">${spaltenHTML.join('')}</div>` : '';
 
-  el.innerHTML = `<div class="cal-detail-datum"><strong>${dateStr}</strong></div>${wkHTML}${spalten}`;
+  _calFussSetzen(el, `<div class="cal-detail-datum"><strong>${dateStr}</strong></div>${wkHTML}${spalten}`);
 }
 
 // Liegt der Tag in der Laufzeit eines Laufplans? Gegenstueck zu `plan.known` beim Gymplan —
@@ -6311,9 +6362,35 @@ function wkStrahlWaehlen(datum) {
   _wkOffen = (_wkOffen === datum) ? null : datum;
   document.querySelectorAll('#races-list .wk-punkt').forEach(p => {
     const an = p.dataset.date === _wkOffen;
-    p.classList.toggle('offen', an);
-    const k = p.querySelector('.wk-punkt-kopf');
-    if (k) k.setAttribute('aria-expanded', an ? 'true' : 'false');
+    if (an !== p.classList.contains('offen')) _wkKarteKlappen(p, an);
+  });
+}
+
+// Oeffnet bzw. schliesst die Karte eines Wettkampfs mit der Ausklapp-Bewegung (13.09.2026,
+// Leonard-Wunsch) — auch das Schliessen beim Wechsel auf einen anderen Wettkampf und beim
+// Scrollen. Gefahren wird die KARTE (`.wk-punkt-karte`), nicht der ganze Eintrag: Dessen Marke
+// sitzt links AUSSERHALB auf der Linie und waere mit `overflow: hidden` abgeschnitten.
+// Beim Schliessen haelt `.zuklappend` die Karte bis zum Ende sichtbar; Marke und `aria-expanded`
+// wechseln sofort. Derselbe Token-Schutz wie bei `_calFussSetzen`.
+function _wkKarteKlappen(p, an) {
+  const karte = p.querySelector('.wk-punkt-karte');
+  const kopf = p.querySelector('.wk-punkt-kopf');
+  if (kopf) kopf.setAttribute('aria-expanded', an ? 'true' : 'false');
+  const token = (p._wkToken || 0) + 1;
+  p._wkToken = token;
+  const von = karte ? karte.getBoundingClientRect().height : 0;
+  if (karte) { karte.getAnimations().forEach(a => a.cancel()); karte.style.overflow = ''; }
+  p.classList.remove('zuklappend');
+  p.classList.toggle('offen', an);
+  if (!karte || _bewegungReduziert() || !karte.animate) return;
+  if (!an) p.classList.add('zuklappend');
+  const bis = an ? karte.getBoundingClientRect().height : 0;
+  if (Math.abs(bis - von) < 1) { p.classList.remove('zuklappend'); return; }
+  karte.style.overflow = 'hidden';
+  _boxFahren(karte, von, bis, () => {
+    if (p._wkToken !== token) return;
+    karte.style.overflow = '';
+    p.classList.remove('zuklappend');
   });
 }
 
@@ -6325,11 +6402,7 @@ function initWettkampfStrahl() {
   scr.addEventListener('scroll', () => {
     if (!_wkOffen) return;
     _wkOffen = null;
-    document.querySelectorAll('#races-list .wk-punkt.offen').forEach(p => {
-      p.classList.remove('offen');
-      const k = p.querySelector('.wk-punkt-kopf');
-      if (k) k.setAttribute('aria-expanded', 'false');
-    });
+    document.querySelectorAll('#races-list .wk-punkt.offen').forEach(p => _wkKarteKlappen(p, false));
   }, { passive: true });
 }
 
@@ -9464,7 +9537,8 @@ function initCalendarDeselect() {
     // Rasters verliert die Zelle ihr .sel, die Beschreibung darunter bleibt aber stehen.
     // Ein Abbruch liess den Text dann fuer immer stehen.
     document.querySelectorAll('.cal-day.sel').forEach(c => c.classList.remove('sel'));
-    document.querySelectorAll('.cal-detail').forEach(el => { el.innerHTML = ''; });
+    // Zuklappen mit Bewegung; eine ohnehin leere Fusszeile laesst `_calFussSetzen` in Ruhe.
+    document.querySelectorAll('.cal-detail').forEach(el => { if (el.innerHTML) _calFussSetzen(el, ''); });
   });
 }
 

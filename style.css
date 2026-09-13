@@ -3159,11 +3159,19 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Die Karte steht IMMER im Markup und wird nur ein- und ausgeblendet — so ist das Oeffnen
    ein Klassenwechsel statt eines Neuaufbaus (siehe `wettkampfStrahl`). */
-.wk-punkt-karte { display: none; }
-.wk-punkt.offen .wk-punkt-karte { display: block; }
+.wk-punkt-karte { display: none; padding: 4px 0 2px; }
+.wk-punkt.offen .wk-punkt-karte,
+.wk-punkt.zuklappend .wk-punkt-karte { display: block; }
 /* Die Karte bringt ihre eigenen 14px Seitenrand mit; im Strahl sitzt sie schon eingerueckt,
-   deshalb hier auf 0 und nur ein kleiner Abstand nach oben. */
-.wk-punkt-karte .wk-card { margin: 4px 0 12px; }
+   deshalb hier auf 0.
+   Die Abstaende darueber und darunter stehen seit dem 13.09.2026 als POLSTER der Huelle statt
+   als Aussenabstand der Karte (`margin: 4px 0 12px`): Aussenabstaende verrechnen sich mit den
+   Nachbarn, aber nicht mehr, sobald die Huelle waehrend der Ausklapp-Bewegung
+   `overflow: hidden` traegt — es spraenge am Anfang und am Ende. Die Werte bilden die alte Lage
+   EXAKT nach (gemessen vorher/nachher): vor dem naechsten Eintrag 2 + 10px Eintragsabstand = 12,
+   vor einer Jahreszahl 2 + 10 + 14 = 26, am Ende des Strahls 12 + 8px Strahlpolster = 20. */
+.wk-punkt-karte .wk-card { margin: 0; }
+.wk-punkt:last-child .wk-punkt-karte { padding-bottom: 12px; }
 
 /* ── Seitenleiste: der Seitenschalter der Tabs, unten am Bildschirm ─────────────
    Der Seitenschalter SIEHT AUS WIE EH UND JE (`.seg-toggle` mit `.seg-btn`) — er steht
