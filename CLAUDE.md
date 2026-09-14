@@ -562,6 +562,40 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Jahr, und von dort geht es zu 2025 weiter. Der Rueckweg an den Anfang setzt wieder `'aktuell'`
   statt der Jahreszahl — so kehrt die Ansicht von selbst zurueck, sobald wieder ein Plan laeuft
   (gemessen: 2026 [aktuell] → 2025 → 2024 → 2026 [aktuell]).
+  **IN DER UEBERSICHT SEIT DEM 14.09.2026 EIN RAD STATT ZWEIER WECHSLER** (Leonard-Wunsch,
+  `openCalRad`, `#modal-cal-rad`): Ein Tipp auf Titel ODER Zeitraum oeffnet ein Blatt von unten mit
+  zwei Drehraedern — links der Kalender (Trainings-/Gym-/Laufkalender), rechts der Zeitraum (Aktuell,
+  dann die Jahre neueste zuerst). Der WECHSLER oben gilt nur noch im Plan-Tab (Leonard-Entscheidung);
+  `toggleCalFilter` und `_CAL_FILTER_FOLGE` sind entfallen.
+  SOFORTIGE UEBERNAHME (Leonard-Entscheidung): Rastet ein Rad ein (`CAL_RAD_RUHE_MS` = 120ms ohne
+  Scroll-Ereignis), zeichnet der Kalender dahinter neu. „Fertig", Tipp daneben und Herunterwischen
+  schliessen nur — `closeModal` ruft vorher `_calRadAbschliessen`, damit ein noch nicht eingerasteter
+  Stand trotzdem gilt. Danach meldet der ausgeblendete Scrollbereich scrollTop 0; deshalb bricht
+  `_calRadUebernehmen` bei verstecktem Overlay ab.
+  BAUART: Jede Spalte ist ein gewoehnlicher senkrechter Scrollbereich mit `scroll-snap-type: y
+  mandatory` — Schwung und Einrasten macht der Browser. Zeilenhoehe 40px steht ZWEIMAL: in `.rad-opt`
+  und als `CAL_RAD_ZEILE` im JS, beide muessen gleich sein. Je 80px leerer Rand oben und unten
+  (`.rad-rand`), damit erste und letzte Zeile in die Mitte kommen; Zeile i steht mittig bei
+  scrollTop = i × 40. Das Band `.rad-band` liegt hinter beiden Spalten, der Rand blendet per
+  `mask-image` aus. Ein Tipp auf eine Zeile dreht per `scrollTo(smooth)` dorthin.
+  DREI Fallen:
+  1. Die Zeitraum-Spalte haengt am Kalender: „Aktuell" nur, wenn fuer die Sportart ein Plan laeuft.
+     Rastet links ein anderer Kalender ein, wird rechts NEU GEFUELLT. Der Zeitraum wird dabei ZUERST
+     gegen die ALTE Liste abgelesen — sonst ginge ein gleichzeitig gedrehter Zeitraum verloren.
+  2. Ohne „Aktuell" in der Liste steht das laufende Jahr fuer `'aktuell'` (wie der Rueckweg im
+     Wechsler) — und uebernommen wird nur, was sich gegenueber der ANZEIGE aendert. Ohne diese
+     Pruefung haette das blosse Neufuellen ein gespeichertes 2026 in 'aktuell' umgeschrieben und die
+     Scrollposition des Rasters zurueckgesetzt.
+  3. Solange ein Rad noch dreht (`_radLaeuft`), wartet die Uebernahme auf es — sonst griffe der Timer
+     des anderen Rades einen Zwischenstand ab.
+  `initSheetSwipeDismiss` nimmt `.rad-spalte` vom Herunterwischen aus: Steht ein Rad in der obersten
+  Zeile (scrollTop 0), zoege ein Wisch nach unten sonst das ganze Blatt mit.
+  GEMESSEN: Laufkalender → 10 Spalten „12/15 Läufe (80 %)"; 2025 → 53 Spalten; Gym bei 2025 bleibt
+  2025; zurueck auf Aktuell → 18 Spalten. Ohne Laufplan: Liste „2026*, 2025, 2024", 2026 → 'aktuell',
+  links Trainingskalender → „Aktuell*" wieder da. Schliessen mitten im Drehen (Tipp daneben und
+  „Fertig") uebernimmt den Stand. Wisch im Rad bewegt das Blatt nicht, Wisch auf dem Titel schon.
+  „Trainingskalender" fett 158px in einer 195px-Spalte (375px). NICHT pruefbar hier: Schwung und
+  weiche Fahrt beim Tipp (versteckte Ansicht) — das Gefuehl beim Drehen nur auf dem iPhone.
   Die Beschreibung darunter zum „Auswahlfeld" ist Vorgeschichte; die Liste der Jahre gilt weiter.
   Zur Auswahl stehen alle Jahre, zu denen es Einheiten, nachgetragene Tage oder Laeufe gibt,
   plus das laufende — sonst koennte man in ein garantiert leeres Jahr springen. Die Liste ist
@@ -1890,7 +1924,8 @@ Beschreibung im selben Klick weg.
 folgt dem Filter im Titel, der Plan-Tab (`pcal`) der gewaehlten Seite — Gymplan zeigt den
 **Gymkalender** (nur Krafttraining), Laufplan den **Laufkalender** (nur Laeufe), Gymtage keinen.
 Der Titel wird beim Rendern gesetzt (`#cal-filter-btn` bzw. `#pcal-titel`), nicht im Markup.
-**Der Titel des Uebersichts-Kalenders ist ein FILTER** (`toggleCalFilter`, `_calFilter`):
+**Der Titel des Uebersichts-Kalenders ist ein FILTER** (`_calFilter`; seit dem 14.09.2026 ueber das
+Rad `openCalRad` gewaehlt, vorher per Tipp-Folge `toggleCalFilter`):
 beide → nur Training → nur Laeufe → beide. Er steuert die Marken im Raster UND die Zeilen in der
 Tagesbeschreibung. Der Titel BENENNT den Zustand statt ihn anzuhaengen: „Trainingskalender" /
 „Gymkalender" / „Laufkalender" (`_CAL_FILTER_TITEL`). Startet IMMER bei „beide" und wird BEWUSST nicht gespeichert — ein Filter,

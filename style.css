@@ -2745,6 +2745,42 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .cal-titel-gym  { color: #0F766E; }
 .cal-titel-lauf { color: #4ADE80; }
 .cal-filter-btn:active { opacity: .6; }
+/* ── Kalender-Rad (Uebersicht, 14.09.2026) ──────────────────────────────────────────
+   Zwei Drehraeder nebeneinander in einem Blatt von unten. Jede Spalte ist ein senkrechter
+   Scrollbereich mit Einrasten; die Zeilenhoehe (40px) steht als `CAL_RAD_ZEILE` auch im JS —
+   beide MUESSEN gleich sein, sonst liest das JS die falsche Zeile ab. Fuenf Zeilen sind
+   sichtbar, die mittlere ist die gewaehlte; oben und unten je zwei Zeilen leerer Rand. */
+.rad-sheet { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.rad-koepfe, .rad { display: flex; gap: 8px; padding: 0 16px; }
+.rad-koepfe { padding-top: 12px; padding-bottom: 4px; }
+.rad-koepfe span { font-size: 12px; font-weight: 600; color: var(--text3); text-align: center; }
+.rad-kopf-kalender, .rad-spalte-kalender { flex: 1.4 1 0; min-width: 0; }
+.rad-kopf-zeitraum, .rad-spalte-zeitraum { flex: 1 1 0; min-width: 0; }
+.rad { position: relative; }
+/* Das Band markiert die Mitte ueber BEIDE Spalten — wie bei iOS. Es liegt hinter den Spalten. */
+.rad-band {
+  position: absolute; left: 12px; right: 12px; top: 80px; height: 40px;
+  background: var(--card2); border-radius: 10px; pointer-events: none;
+}
+.rad-spalte {
+  position: relative; height: 200px;
+  overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  /* Oben und unten ausblenden: die Zeilen tauchen aus dem Rand auf wie bei einer Walze. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 38%, #000 62%, transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 38%, #000 62%, transparent 100%);
+}
+.rad-spalte::-webkit-scrollbar { display: none; }
+.rad-rand { height: 80px; }
+.rad-opt {
+  height: 40px; display: flex; align-items: center; justify-content: center;
+  font-size: 19px; color: var(--text3); white-space: nowrap;
+  scroll-snap-align: center; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: color .15s;
+}
+.rad-opt.gewaehlt { color: var(--text); font-weight: 600; }
+.rad-aktionen { padding: 14px 14px 0; }
 .cal-day.future { opacity: .45; }
 /* Rand-Tage der ersten/letzten Woche, die noch ins Vor- bzw. Folgejahr fallen */
 .cal-day.outside { opacity: .25; pointer-events: none; }

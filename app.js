@@ -4706,13 +4706,9 @@ function _calPlanInfo(date, index) {
 // nicht gespeichert: Ein Filter, der einen Neustart ueberlebt, laesst den Kalender spaeter
 // unerklaerlich unvollstaendig wirken. Dieselbe Ueberlegung wie beim Katalog-Filter.
 let _calFilter = 'beide';           // 'beide' | 'kraft' | 'lauf'
-const _CAL_FILTER_FOLGE = { beide: 'kraft', kraft: 'lauf', lauf: 'beide' };
 // Der Titel BENENNT den Filter, statt ihn als Zusatz anzuhaengen (Leonard-Wunsch 01.09.2026).
+// Umgeschaltet wird seit dem 14.09.2026 ueber das Rad (`openCalRad`), nicht mehr per Tipp-Folge.
 const _CAL_FILTER_TITEL = { beide: 'Trainingskalender', kraft: 'Gymkalender', lauf: 'Laufkalender' };
-function toggleCalFilter() {
-  _calFilter = _CAL_FILTER_FOLGE[_calFilter] || 'beide';
-  renderTrainingCalendar('cal', 'ov-cal-card');
-}
 // Welche Sportart zeigt WELCHER Kalender? Die Uebersicht folgt dem Filter im Titel, der
 // Plaene-Tab der gewaehlten Seite: Gymplan → Krafttraining, Laufplan → Laeufe.
 function _calModus(id) {
@@ -4745,16 +4741,22 @@ function calZurAktuellenAnsicht() {
 
 function calendarInnerHTML(id) {
   // Nur der Kalender der Uebersicht zeigt beide Sportarten — nur dort ist der Titel ein Filter.
+  // Titel UND Zeitraum oeffnen dort seit dem 14.09.2026 dasselbe RAD (`openCalRad`,
+  // Leonard-Wunsch): zwei Drehraeder in einem Blatt von unten, Kalender links, Zeitraum rechts.
   const titel = id === 'cal'
-    ? `<button class="chart-card-v2-title cal-filter-btn" id="cal-filter-btn" onclick="toggleCalFilter()"
-               aria-label="Zwischen Training, Läufen und beidem umschalten">Trainingskalender</button>`
+    ? `<button class="chart-card-v2-title cal-filter-btn" id="cal-filter-btn" onclick="openCalRad()"
+               aria-label="Kalender und Zeitraum wählen">Trainingskalender</button>`
     : `<span class="chart-card-v2-title" id="${id}-titel">Trainingskalender</span>`;
-  // Der Zeitraum steht direkt hinter dem Titel und ist seit dem 14.09.2026 ein WECHSLER wie der
-  // Titel selbst (Leonard-Wunsch; vorher ein Auswahlfeld mit unsichtbarem <select>): Jeder Tipp
+  // Der Zeitraum steht direkt hinter dem Titel. Im PLAN-TAB ist er seit dem 14.09.2026 ein
+  // WECHSLER (Leonard-Wunsch; vorher ein Auswahlfeld mit unsichtbarem <select>): Jeder Tipp
   // schaltet eine Stufe weiter — Aktuell → neuestes Jahr → … → aeltestes Jahr → Aktuell.
+  // In der UEBERSICHT oeffnet er das Rad, wie der Titel.
   // Ein echter <button>, damit `initScrollHideNav` ihn als Bedienelement erkennt.
-  const jahrFeld = `<button type="button" class="cal-jahr" id="${id}-jahr" onclick="wechselCalJahr('${id}')"
-                            aria-label="Zeitraum wechseln"></button>`;
+  const jahrFeld = id === 'cal'
+    ? `<button type="button" class="cal-jahr" id="cal-jahr" onclick="openCalRad()"
+               aria-label="Kalender und Zeitraum wählen"></button>`
+    : `<button type="button" class="cal-jahr" id="${id}-jahr" onclick="wechselCalJahr('${id}')"
+               aria-label="Zeitraum wechseln"></button>`;
   // Rechts neben der Kennzahl: im Plan-Tab die Lesehilfe (ⓘ), in der UEBERSICHT seit dem
   // 14.09.2026 stattdessen ein Knopf zurueck zur Erstansicht (Trainingskalender, „Aktuell",
   // Startposition — `calZurAktuellenAnsicht`, Leonard-Wunsch). Dieselbe runde 19px-Form wie das ⓘ,
@@ -4920,6 +4922,113 @@ function wechselCalJahr(id) {
   let naechste = folge[(i + 1) % folge.length];
   if (!hatAktuell && naechste === folge[0]) naechste = 'aktuell';
   setCalJahr(naechste, id);
+}
+
+// ── Rad fuer Kalender und Zeitraum (Uebersicht, 14.09.2026, Leonard-Wunsch) ────────────
+// Ein Tipp auf Titel ODER Zeitraum des Uebersichts-Kalenders oeffnet `#modal-cal-rad`: ein Blatt
+// von unten mit zwei Drehraedern — links der Kalender (Trainings-/Gym-/Laufkalender), rechts der
+// Zeitraum (Aktuell, dann die Jahre neueste zuerst, wie im Wechsler des Plan-Tabs).
+// SOFORTIGE UEBERNAHME (Leonard-Entscheidung): Sobald ein Rad einrastet, zeichnet der Kalender
+// dahinter neu. „Fertig", ein Tipp daneben und das Herunterwischen schliessen nur noch — und
+// uebernehmen dabei einen Stand, der noch nicht eingerastet war (`closeModal` ruft
+// `_calRadAbschliessen`).
+// Ein Rad ist ein gewoehnlicher senkrechter Scrollbereich mit `scroll-snap`: Das Einrasten und
+// der Schwung kommen vom Browser. Leere Rand-Zeilen oben und unten lassen erste und letzte Zeile
+// in die Mitte kommen; Zeile i steht genau dann in der Mitte, wenn scrollTop = i × Zeilenhoehe.
+// Die ZEITRAUM-Spalte haengt am Kalender: „Aktuell" steht nur darin, wenn fuer die gewaehlte
+// Sportart ein Plan laeuft (dieselbe Regel wie im Wechsler). Rastet links ein anderer Kalender
+// ein, wird die rechte Spalte neu gefuellt.
+const CAL_RAD_ZEILE = 40;                       // px — MUSS zur Hoehe von `.rad-opt` passen
+const CAL_RAD_RUHE_MS = 120;                    // so lange ohne Scroll-Ereignis gilt ein Rad als eingerastet
+const _CAL_RAD_FILTER = ['beide', 'kraft', 'lauf'];
+
+function _calRadZeitraeume(filter) {
+  const hatAktuell = !!_calAktuellePlaene({ kraft: filter !== 'lauf', lauf: filter !== 'kraft' }).bereich;
+  return { hatAktuell, werte: [...(hatAktuell ? ['aktuell'] : []), ...calJahre()] };
+}
+// Was der Kalender GERADE zeigt — ohne laufenden Plan zeigt 'aktuell' das laufende Jahr.
+function _calRadAngezeigt(hatAktuell) {
+  const wahl = calJahr('cal');
+  return (wahl === 'aktuell' && !hatAktuell) ? new Date().getFullYear() : wahl;
+}
+function _calRadIndex(el) {
+  const n = el.querySelectorAll('.rad-opt').length;
+  return Math.max(0, Math.min(n - 1, Math.round(el.scrollTop / CAL_RAD_ZEILE)));
+}
+function _calRadMarkieren(el, i) {
+  el.querySelectorAll('.rad-opt').forEach((o, k) => o.classList.toggle('gewaehlt', k === i));
+}
+function _calRadFuellen(el, texte, index) {
+  const rand = '<div class="rad-rand" aria-hidden="true"></div>';
+  el.innerHTML = rand + texte.map((t, i) =>
+    `<div class="rad-opt" role="option" onclick="_calRadTipp(this, ${i})">${escapeHtml(String(t))}</div>`).join('') + rand;
+  el.scrollTop = index * CAL_RAD_ZEILE;
+  _calRadMarkieren(el, index);
+}
+
+function openCalRad() {
+  openModal('modal-cal-rad');
+  // ERST sichtbar machen, dann fuellen: Einem ausgeblendeten Bereich laesst sich kein scrollTop setzen.
+  const fEl = document.getElementById('cal-rad-filter');
+  const zEl = document.getElementById('cal-rad-zeitraum');
+  _calRadFuellen(fEl, _CAL_RAD_FILTER.map(f => _CAL_FILTER_TITEL[f]),
+                 Math.max(0, _CAL_RAD_FILTER.indexOf(_calFilter)));
+  const z = _calRadZeitraeume(_calFilter);
+  _calRadFuellen(zEl, z.werte.map(w => w === 'aktuell' ? 'Aktuell' : w),
+                 Math.max(0, z.werte.indexOf(_calRadAngezeigt(z.hatAktuell))));
+}
+
+// Laeuft bei jedem Scroll-Ereignis eines Rades: die mittlere Zeile hervorheben und nach
+// `CAL_RAD_RUHE_MS` Stille uebernehmen. Waehrend ein Rad noch dreht (`_radLaeuft`), wartet die
+// Uebernahme auf es — sonst griffe sie einen Zwischenstand ab.
+function _calRadScroll(el) {
+  _calRadMarkieren(el, _calRadIndex(el));
+  el._radLaeuft = true;
+  clearTimeout(el._radTimer);
+  el._radTimer = setTimeout(() => { el._radLaeuft = false; _calRadUebernehmen(); }, CAL_RAD_RUHE_MS);
+}
+// Tipp auf eine Zeile: dorthin drehen. Uebernommen wird wie beim Wischen, sobald das Rad steht.
+function _calRadTipp(opt, i) {
+  opt.parentElement.scrollTo({ top: i * CAL_RAD_ZEILE, behavior: _bewegungReduziert() ? 'auto' : 'smooth' });
+}
+
+function _calRadUebernehmen() {
+  const overlay = document.getElementById('modal-cal-rad');
+  const fEl = document.getElementById('cal-rad-filter');
+  const zEl = document.getElementById('cal-rad-zeitraum');
+  // Ein ausgeblendeter Scrollbereich meldet scrollTop 0 — dort gibt es nichts abzulesen.
+  if (!overlay || overlay.classList.contains('hidden') || !fEl || !zEl) return;
+  if (fEl._radLaeuft || zEl._radLaeuft) return;
+  let geaendert = false;
+  // Zuerst den Zeitraum, und zwar gegen die Liste, die GERADE in der rechten Spalte steht —
+  // sie gehoert zum bisherigen Kalender.
+  const alt = _calRadZeitraeume(_calFilter);
+  const zeitraum = alt.werte[_calRadIndex(zEl)];
+  if (zeitraum !== undefined && zeitraum !== _calRadAngezeigt(alt.hatAktuell)) {
+    // Ohne „Aktuell" in der Liste steht das laufende Jahr fuer 'aktuell' — wie beim Rueckweg im
+    // Wechsler: So kehrt die Ansicht von selbst zurueck, sobald wieder ein Plan laeuft.
+    _calJahre.cal = (!alt.hatAktuell && zeitraum === new Date().getFullYear()) ? 'aktuell' : zeitraum;
+    _calPositioniert.cal = false;
+    _calScrollPos.cal = 0;
+    geaendert = true;
+  }
+  const filter = _CAL_RAD_FILTER[_calRadIndex(fEl)] || 'beide';
+  if (filter !== _calFilter) {
+    _calFilter = filter;
+    const neu = _calRadZeitraeume(filter);
+    _calRadFuellen(zEl, neu.werte.map(w => w === 'aktuell' ? 'Aktuell' : w),
+                   Math.max(0, neu.werte.indexOf(_calRadAngezeigt(neu.hatAktuell))));
+    geaendert = true;
+  }
+  if (geaendert) renderTrainingCalendar('cal', 'ov-cal-card');
+}
+// Beim Schliessen: laufende Wartezeiten abbrechen und den Stand sofort uebernehmen.
+function _calRadAbschliessen() {
+  ['cal-rad-filter', 'cal-rad-zeitraum'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { clearTimeout(el._radTimer); el._radLaeuft = false; }
+  });
+  _calRadUebernehmen();
 }
 
 function setCalJahr(jahr, id) {
@@ -8436,6 +8545,9 @@ function openModal(id) {
   });
 }
 function closeModal(id) {
+  // Das Kalender-Rad uebernimmt einen noch nicht eingerasteten Stand, BEVOR es verschwindet —
+  // danach meldet der ausgeblendete Scrollbereich nur noch 0.
+  if (id === 'modal-cal-rad') _calRadAbschliessen();
   document.getElementById(id).classList.add('hidden');
   // Das Diagramm der Uebungs-Detailansicht hier abraeumen: Geschlossen wird das Modal
   // ueber den Hintergrund-Tipp oder die Wischgeste, beide landen in dieser Funktion.
@@ -8471,7 +8583,9 @@ function initSheetSwipeDismiss() {
         if (Math.abs(delta) < 6) return;
         decided = true;
         // Nur nach unten + nur wenn nichts nach oben scrollbar offen ist
-        dragging = delta > 0 && !_sheetScrolledDown(e.target, sheet);
+        // Nicht in einem Drehrad (Kalender-Rad): Dort dreht ein Wisch nach unten das Rad —
+        // steht es in der obersten Zeile, zoege er sonst das ganze Blatt mit.
+        dragging = delta > 0 && !e.target.closest('.rad-spalte') && !_sheetScrolledDown(e.target, sheet);
       }
       if (!dragging) return;
       dy = Math.max(0, delta);

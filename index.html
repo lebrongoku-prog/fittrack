@@ -648,6 +648,24 @@
   </div>
 </div>
 
+<!-- Kalender-Rad der Uebersicht: Kalender und Zeitraum in einem (openCalRad). Die Spalten
+     fuellt das JS; uebernommen wird, sobald ein Rad einrastet. -->
+<div id="modal-cal-rad" class="overlay hidden">
+  <div class="sheet rad-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Kalender wählen</div>
+    <div class="rad-koepfe"><span class="rad-kopf-kalender">Kalender</span><span class="rad-kopf-zeitraum">Zeitraum</span></div>
+    <div class="rad">
+      <div class="rad-band" aria-hidden="true"></div>
+      <div class="rad-spalte rad-spalte-kalender" id="cal-rad-filter" role="listbox" aria-label="Kalender" onscroll="_calRadScroll(this)"></div>
+      <div class="rad-spalte rad-spalte-zeitraum" id="cal-rad-zeitraum" role="listbox" aria-label="Zeitraum" onscroll="_calRadScroll(this)"></div>
+    </div>
+    <div class="rad-aktionen">
+      <button class="btn btn-primary btn-full" onclick="closeModal('modal-cal-rad')">Fertig</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-cal-info" class="overlay hidden">
   <div class="sheet">
     <div class="sheet-handle"></div>
