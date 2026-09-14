@@ -4727,6 +4727,22 @@ function _calModus(id) {
            titel: _CAL_FILTER_TITEL[_calFilter] || 'Trainingskalender' };
 }
 
+// Kreispfeil „zurueck" fuer den Knopf zur aktuellen Ansicht — Strich wie die uebrigen Symbole.
+const CAL_RESET_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><polyline points="4.5 3.5 4.5 7.5 8.5 7.5"/></svg>';
+
+// Der Knopf rechts im Kopf des Uebersichts-Kalenders (14.09.2026, Leonard-Wunsch): zurueck zur
+// ERSTANSICHT — Filter „Trainingskalender" (beide Sportarten), Zeitraum „Aktuell" und die
+// Startposition des Rasters. Auch wenn beides schon eingestellt ist, stellt ein Tipp die
+// Startposition wieder her (man hat vielleicht weggescrollt).
+// Ohne laufenden Plan zeigt 'aktuell' das laufende Jahr (siehe `_calAktuellePlaene`).
+function calZurAktuellenAnsicht() {
+  _calFilter = 'beide';
+  _calJahre.cal = 'aktuell';
+  _calPositioniert.cal = false;
+  _calScrollPos.cal = 0;
+  renderTrainingCalendar('cal', 'ov-cal-card');
+}
+
 function calendarInnerHTML(id) {
   // Nur der Kalender der Uebersicht zeigt beide Sportarten — nur dort ist der Titel ein Filter.
   const titel = id === 'cal'
@@ -4739,11 +4755,19 @@ function calendarInnerHTML(id) {
   // Ein echter <button>, damit `initScrollHideNav` ihn als Bedienelement erkennt.
   const jahrFeld = `<button type="button" class="cal-jahr" id="${id}-jahr" onclick="wechselCalJahr('${id}')"
                             aria-label="Zeitraum wechseln"></button>`;
+  // Rechts neben der Kennzahl: im Plan-Tab die Lesehilfe (ⓘ), in der UEBERSICHT seit dem
+  // 14.09.2026 stattdessen ein Knopf zurueck zur Erstansicht (Trainingskalender, „Aktuell",
+  // Startposition — `calZurAktuellenAnsicht`, Leonard-Wunsch). Dieselbe runde 19px-Form wie das ⓘ,
+  // damit der Kopf in beiden Tabs gleich aussieht.
+  const rechtsKnopf = id === 'cal'
+    ? `<button class="info-btn cal-reset-btn" onclick="calZurAktuellenAnsicht()"
+               aria-label="Zur aktuellen Ansicht" title="Zur aktuellen Ansicht">${CAL_RESET_SVG}</button>`
+    : `<button class="info-btn" onclick="openModal('modal-cal-info')" aria-label="Was bedeuten die Farben?">i</button>`;
   return `<div class="chart-card-v2-head">
       <span class="cal-head-left">${titel}${jahrFeld}</span>
       <span class="cal-head-right">
         <span class="cal-stats" id="${id}-stats"></span>
-        <button class="info-btn" onclick="openModal('modal-cal-info')" aria-label="Was bedeuten die Farben?">i</button>
+        ${rechtsKnopf}
       </span>
     </div>
     <div class="cal-body">
@@ -5085,7 +5109,9 @@ function renderTrainingCalendar(id, cardId) {
   // der Laeufe. Im gemeinsamen Trainingskalender stuenden zwei Serien nebeneinander, ohne dass
   // erkennbar waere, welche welche ist — dort bleibt sie weg.
   // Die Serie beschreibt den STAND VON HEUTE — in einem vergangenen Jahr waere sie irrefuehrend.
-  const streak = (!istLaufendesJahr || (modus.kraft && modus.lauf)) ? 0
+  // In der UEBERSICHT steht die Serie seit dem 14.09.2026 gar nicht mehr (Leonard-Wunsch) — nur
+  // noch im Kalender des Plan-Tabs.
+  const streak = (id === 'cal' || !istLaufendesJahr || (modus.kraft && modus.lauf)) ? 0
     : (modus.kraft ? getWeekStreak() : getRunWeekStreak());
   const titelEl = document.getElementById(id === 'cal' ? 'cal-filter-btn' : id + '-titel');
   if (titelEl) {

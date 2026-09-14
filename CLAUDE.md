@@ -920,7 +920,14 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `color: inherit` hat dieselbe Spezifitaet und gewaenne sonst allein durch die Reihenfolge.
   Gilt fuer beide Kalender, auch den im Plan-Tab.
 - **Lesehilfe im Trainingskalender:** `.info-btn` neben der Kennzahl oben rechts (`.cal-head-right` fasst beide
-  zusammen) oeffnet `#modal-cal-info`. Die Farb-Legende steht NUR dort, nicht mehr in der Karte — dadurch ist die
+  zusammen) oeffnet `#modal-cal-info`. **Seit dem 14.09.2026 NUR NOCH IM PLAN-TAB** (Leonard-Wunsch).
+  In der UEBERSICHT steht an derselben Stelle ein Knopf ZURUECK ZUR ERSTANSICHT (`.cal-reset-btn`,
+  `calZurAktuellenAnsicht`): dieselbe runde 19px-Form mit einem Kreispfeil (`CAL_RESET_SVG`). Ein Tipp
+  setzt Filter „Trainingskalender", Zeitraum „Aktuell" UND die Startposition — auch wenn Filter und
+  Zeitraum schon stimmen, man hat vielleicht weggescrollt. Ohne laufenden Plan landet er beim laufenden
+  Jahr (so zeigt 'aktuell' dann). `calendarInnerHTML` waehlt den Knopf nach der Kalender-Id.
+  Ebenfalls seit dem 14.09.2026 zeigt die Uebersicht KEINE Wochenserie mehr in der Kennzahl
+  (`id === 'cal'` in der `streak`-Bedingung) — sie steht nur noch im Kalender des Plan-Tabs. Die Farb-Legende steht NUR dort, nicht mehr in der Karte — dadurch ist die
   Karte rund 100px flacher. Das Polster des Fussbereichs sitzt auf `.cal-detail`, damit die Karte ohne ausgewaehlten
   Tag direkt unter dem Raster endet.
 - **Lesehilfe „Volumen pro Muskelgruppe":** `.info-btn` neben dem Kartentitel öffnet `#modal-muscle-info`.
