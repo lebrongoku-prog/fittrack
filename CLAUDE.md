@@ -570,6 +570,39 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   beschreibt den Stand von heute), und die Scrollposition springt in einem vergangenen Jahr an
   den Jahresanfang statt zur „aktuellen Woche", die es dort nicht gibt. `setCalJahr` setzt dafuer
   `_calPositioniert[id]` zurueck — sonst bliebe die Spalte des alten Jahres stehen.
+  **ANSICHT „AKTUELL" — und sie ist die ERSTANSICHT** (14.09.2026, Leonard-Wunsch; `calJahr(id)`
+  liefert seither eine Jahreszahl ODER `'aktuell'`, Standard `'aktuell'`). Sie steht zuoberst im
+  Auswahlfeld der Jahre, der Titel lautet dann „Trainingskalender Aktuell ⌄". Das Raster zeigt NUR
+  die Wochen des laufenden Plans (`_calAktuellePlaene(modus)`): Gymkalender → laufender Gymplan,
+  Laufkalender → laufender Laufplan, gemeinsamer Trainingskalender → vom frueheren Beginn bis zum
+  spaeteren Ende beider (beide laufen heute, eine Luecke kann es nicht geben). Gilt fuer beide
+  Kalender; der im Plan-Tab folgt der Seite (Gymplan/Laufplan).
+  Der Renderer rechnet seither mit einem ZEITRAUM `von`/`bis` statt mit dem Jahr — `imBereich(tag)`
+  ersetzt ueberall `tag.getFullYear() === jahr` (Randtage, rote Wochen, Monatsbeschriftung).
+  VIER Regeln, alle Leonard-Entscheidung:
+  1. KEIN laufender Plan fuer den Modus → das laufende Jahr wie bisher, „Aktuell" steht gar nicht
+     in der Auswahl. Der gespeicherte Zustand bleibt `'aktuell'` — kommt ein Plan dazu, ist die
+     Ansicht von selbst zurueck, solange niemand ein Jahr gewaehlt hat.
+  2. Tage VOR Planbeginn bzw. NACH Planende in der ersten/letzten Spalte sind ausgegraut und nicht
+     antippbar (`.outside`) — dieselbe Regel wie die Tage des Vor- und Folgejahres.
+  3. Die KENNZAHL zeigt absolviert/geplant BIS EINSCHLIESSLICH HEUTE, je Sportart gegen ihren
+     eigenen Plan (`_calPlanStand`): „20/23 Einheiten · 12/15 Läufe" bzw. im Einzelkalender eine
+     der beiden plus Serie. „Absolviert" zaehlt wie die Jahressumme (Einheiten plus nachgetragene
+     Tage bzw. Laeufe inkl. Intervall), auch an ungeplanten Tagen. „Geplant" zaehlt die Wochentage
+     mit Trainingstag (`weekPlan`) bzw. die Lauftage (`runDays`) ab Planbeginn. Laeuft im
+     gemeinsamen Kalender fuer eine Sportart kein Plan, steht fuer sie nur die Anzahl im Zeitraum.
+  4. Die Startposition ist Spalte 0 — heute bleibt wie im Jahr sichtbar (gleiche Regel wie oben).
+  Monatsbeschriftung: Beginnt der Plan mitten im Monat, traegt die ERSTE Spalte den Monat des
+  Planbeginns — aber nur, wenn der naechste Monatserste mindestens zwei Spalten weiter liegt
+  (sonst ueberlappten die Namen). Ueber den Jahreswechsel laufen die Monate einfach weiter.
+  NEU POSITIONIEREN bei geaendertem Zeitraum (`_calBereich[id]`): Wechselt der Filter oder die
+  Plan-Seite, zeigt „Aktuell" einen anderen Zeitraum — die gemerkte Scrollposition passte nicht mehr.
+  Im Jahr bleibt der Zeitraum beim Filterwechsel gleich, dort bleibt auch die Position stehen.
+  GEMESSEN (Gymplan Mi 22.07.–So 22.11., Laufplan Mo 10.08.–So 18.10., heute 14.09.2026):
+  Trainings- und Gymkalender 18 Spalten mit Mo/Di 20./21.07. grau, Laufkalender 10 Spalten ohne
+  Grau; Kennzahlen 20/23 und 12/15 (unabhaengig nachgezaehlt); ohne Laufplan „20/23 Einheiten ·
+  15 Läufe"; Laufkalender ohne Plan = Jahr 2026 ohne „Aktuell"; Gymplan bis 10.02.2027 = 30
+  Spalten, Monate bis „Feb", 4 graue Tage hinten.
   **Die MONATSBESCHRIFTUNG steht ueber der Spalte, in der der ERSTE des Monats liegt**
   (13.09.2026, Leonard-Wunsch). Vorher stand sie ueber der ersten Woche, die IM neuen Monat
   BEGINNT — faellt der Monatserste auf einen Dienstag oder spaeter, war das die Woche danach

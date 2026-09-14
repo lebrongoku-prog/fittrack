@@ -4780,8 +4780,40 @@ const _calScrollPos = {};
 // Plan-Tab fuer Gymplan und Laufplan gemeinsam.
 // BEWUSST nicht gespeichert — wie der Sportart-Filter: Ein Jahr, das einen Neustart ueberlebt,
 // laesst den Kalender spaeter unerklaerlich leer wirken.
+// Seit dem 14.09.2026 gibt es neben den Jahren die Ansicht 'aktuell' — und sie ist der STANDARD
+// (Leonard-Wunsch). Liefert deshalb eine Jahreszahl ODER den Text 'aktuell'.
 const _calJahre = {};
-function calJahr(id) { return _calJahre[id] || new Date().getFullYear(); }
+function calJahr(id) { return _calJahre[id] || 'aktuell'; }
+// Zuletzt gezeichneter Zeitraum je Kalender — aendert er sich (anderer Filter, andere Plan-Seite,
+// neuer Plan), gehoert die gemerkte Scrollposition nicht mehr dazu.
+const _calBereich = {};
+
+// ── Ansicht „Aktuell" (14.09.2026, Leonard-Wunsch) ───────────────────────────────────
+// Das Raster zeigt NUR die Wochen des laufenden Plans. Welcher Plan zaehlt, folgt dem Modus:
+// Gymkalender → laufender Gymplan, Laufkalender → laufender Laufplan, gemeinsamer
+// Trainingskalender → beide zusammen (vom frueheren Beginn bis zum spaeteren Ende; beide laufen
+// heute, eine Luecke dazwischen kann es also nicht geben).
+// Gibt es fuer die Sportart KEINEN laufenden Plan, ist `bereich` null — der Kalender zeigt dann
+// das laufende Jahr und bietet „Aktuell" gar nicht erst an (Leonard-Entscheidung). Kommt wieder
+// ein Plan dazu, ist „Aktuell" von selbst zurueck, weil der gespeicherte Zustand weiter 'aktuell'
+// lautet, solange niemand ein Jahr gewaehlt hat.
+// Datumswerte auf LOKALE Mitternacht: Der Gymplan speichert UTC-Mitternacht, der Laufplan lokale —
+// in Mitteleuropa ergeben beide so denselben Kalendertag.
+function _calLokalTag(ts) { const d = new Date(ts); d.setHours(0, 0, 0, 0); return d; }
+function _calAktuellePlaene(modus) {
+  const gym = modus.kraft ? getActivePlan() : null;
+  const lauf = modus.lauf ? runPlanAktiv() : null;
+  const jahresende = new Date(new Date().getFullYear(), 11, 31);
+  const spannen = [gym, lauf].filter(p => p && p.startDate).map(p => ({
+    von: _calLokalTag(p.startDate),
+    bis: p.endDate ? _calLokalTag(p.endDate) : jahresende,
+  }));
+  const bereich = spannen.length ? {
+    von: new Date(Math.min(...spannen.map(x => x.von.getTime()))),
+    bis: new Date(Math.max(...spannen.map(x => x.bis.getTime()))),
+  } : null;
+  return { gym, lauf, bereich };
+}
 
 // Welche Jahre stehen zur Auswahl? Alles, wozu es Daten gibt, plus das laufende Jahr — sonst
 // koennte man in ein leeres Jahr springen und faende dort nichts.
@@ -4794,9 +4826,43 @@ function calJahre() {
   return [...jahre].filter(j => j > 2000).sort((a, b) => b - a);
 }
 
+// „20/24 Einheiten" bzw. „15/18 Läufe" fuer die Ansicht „Aktuell": absolvierte gegen geplante
+// Einheiten VOM BEGINN DES LAUFENDEN PLANS BIS EINSCHLIESSLICH HEUTE (Leonard-Wunsch 14.09.2026).
+// „Absolviert" zaehlt wie die Jahressumme: jede Krafteinheit plus nachgetragene Tage bzw. jeder
+// Lauf (auch Intervalltraining) — Einheiten an ungeplanten Tagen zaehlen mit, ein nachgeholtes
+// Training soll die Quote nicht druecken.
+// „Geplant" zaehlt die Wochentage mit Trainingstag (Gym, `weekPlan`) bzw. die Lauftage
+// (`runDays`) bis heute; ein Tag nach dem Planende zaehlt nicht mehr.
+// Laeuft fuer eine der beiden Sportarten im gemeinsamen Kalender KEIN Plan, steht fuer sie nur
+// die Anzahl im gezeigten Zeitraum, ohne Verhaeltnis — es gibt dann nichts, wogegen man zaehlt.
+function _calPlanStand(sport, plan, bereichVon, today) {
+  const wort = sport === 'gym' ? (n => n === 1 ? 'Einheit' : 'Einheiten') : (n => n === 1 ? 'Lauf' : 'Läufe');
+  const bisHeute = new Date(today); bisHeute.setHours(23, 59, 59, 999);
+  const vonDatum = plan ? _calLokalTag(plan.startDate) : bereichVon;
+  const vonKey = _dayKeyOf(vonDatum.getTime()), heuteKey = _dayKeyOf(today.getTime());
+  const absolviert = sport === 'gym'
+    ? DB.getWorkouts().filter(w => w.startTs >= vonDatum.getTime() && w.startTs <= bisHeute.getTime()).length
+      + DB.getManualDays().filter(k => k >= vonKey && k <= heuteKey).length
+    : DB.getRuns().filter(l => l.date >= vonKey && l.date <= heuteKey).length;
+  if (!plan) return `${absolviert} ${wort(absolviert)}`;
+  const ende = plan.endDate ? _calLokalTag(plan.endDate) : null;
+  const letzter = (ende && ende < today) ? ende : today;
+  let geplant = 0;
+  for (const d = new Date(vonDatum); d <= letzter; d.setDate(d.getDate() + 1)) {
+    const wi = (d.getDay() + 6) % 7;
+    if (sport === 'gym') {
+      const wp = (plan.weekPlan && plan.weekPlan.length) ? plan.weekPlan : DEFAULT_WEEKPLAN;
+      if (wp[wi] && wp[wi].planDayId) geplant++;
+    } else if ((plan.runDays || []).includes(wi)) {
+      geplant++;
+    }
+  }
+  return `${absolviert}/${geplant} ${wort(geplant)}`;
+}
+
 function setCalJahr(jahr, id) {
   id = id || 'cal';
-  const neu = Number(jahr);
+  const neu = jahr === 'aktuell' ? 'aktuell' : Number(jahr);
   if (!neu || neu === calJahr(id)) return;
   _calJahre[id] = neu;
   // Beim Jahreswechsel neu positionieren: Die gemerkte Spalte gehoert zum alten Jahr.
@@ -4814,23 +4880,41 @@ function renderTrainingCalendar(id, cardId) {
   if (!grid) return;
   const byDay = buildCalendarData();
 
-  // Immer das ganze Kalenderjahr: 1. Januar bis 31. Dezember. Das Raster beginnt am Montag
-  // der Woche, in der der 1. Januar liegt, damit die Wochentagszeilen durchgehend stimmen.
   const today = new Date(); today.setHours(0,0,0,0);
-  // Beide Kalender folgen ihrer eigenen Jahresauswahl (Leonard-Wunsch 06.09.2026).
-  const jahr = calJahr(id);
-  const istLaufendesJahr = jahr === today.getFullYear();
-  const jan1 = new Date(jahr, 0, 1);
-  const dez31 = new Date(jahr, 11, 31);
-  const start = new Date(jan1);
-  start.setDate(jan1.getDate() - ((jan1.getDay() + 6) % 7));
-  const wochen = Math.ceil((Math.round((dez31 - start) / 86400000) + 1) / 7);
-
-  // Plan-Zeitraeume einmal vorbereiten (statt pro Tag aufzuloesen).
-  const planIndex = _calPlanIndex();
   // Gemeinsamer Kalender: Die Laeufe kommen NUR in der Uebersicht dazu (Leonard-Entscheidung
   // 01.09.2026 — der Kalender im Plaene-Tab bleibt vorerst reines Krafttraining).
   const modus = _calModus(id);
+  // ZEITRAUM: entweder ein ganzes Kalenderjahr (1. Januar bis 31. Dezember) oder — Standard seit
+  // dem 14.09.2026 — nur der laufende Plan („Aktuell", siehe `_calAktuellePlaene`). Das Raster
+  // beginnt immer am Montag der Woche, in der der Zeitraum beginnt, damit die Wochentagszeilen
+  // durchgehend stimmen. Beide Kalender folgen ihrer eigenen Auswahl (Leonard-Wunsch 06.09.2026).
+  const wahl = calJahr(id);
+  const aktPlaene = _calAktuellePlaene(modus);
+  const aktuell = wahl === 'aktuell' && !!aktPlaene.bereich;
+  const jahr = (typeof wahl === 'number') ? wahl : today.getFullYear();
+  // „Aktuell" beschreibt immer den Stand von heute — wie das laufende Jahr.
+  const istLaufendesJahr = aktuell || jahr === today.getFullYear();
+  const von = aktuell ? aktPlaene.bereich.von : new Date(jahr, 0, 1);
+  const bis = aktuell ? aktPlaene.bereich.bis : new Date(jahr, 11, 31);
+  // Ausserhalb des Zeitraums (Rand-Tage der ersten/letzten Woche) = ausgegraut und nicht
+  // antippbar — im Jahr die Tage des Vor- und Folgejahres, in „Aktuell" die Tage vor Planbeginn
+  // und nach Planende (Leonard-Entscheidung 14.09.2026).
+  const imBereich = (tag) => tag.getTime() >= von.getTime() && tag.getTime() <= bis.getTime();
+  const start = new Date(von);
+  start.setDate(von.getDate() - ((von.getDay() + 6) % 7));
+  const wochen = Math.ceil((Math.round((bis - start) / 86400000) + 1) / 7);
+  // Hat sich der Zeitraum geaendert (anderer Filter, andere Plan-Seite, ein neuer Plan), passt die
+  // gemerkte Scrollposition nicht mehr — dann wie beim ersten Zeichnen neu positionieren. Beim
+  // Jahreswechsel setzt `setCalJahr` das ohnehin selbst zurueck.
+  const bereichKey = von.getTime() + '-' + bis.getTime();
+  if (_calBereich[id] !== undefined && _calBereich[id] !== bereichKey) {
+    _calPositioniert[id] = false;
+    _calScrollPos[id] = 0;
+  }
+  _calBereich[id] = bereichKey;
+
+  // Plan-Zeitraeume einmal vorbereiten (statt pro Tag aufzuloesen).
+  const planIndex = _calPlanIndex();
   const zeigtLaeufe = modus.lauf;
   const zeigtKraft = modus.kraft;
   const laeufeTag = zeigtLaeufe ? runNachTag() : {};
@@ -4863,7 +4947,7 @@ function renderTrainingCalendar(id, cardId) {
     if (weekEnd.getTime() >= today.getTime()) return false;
     for (let d = 0; d < 7; d++) {
       const tag = new Date(weekStart); tag.setDate(weekStart.getDate() + d);
-      if (tag.getFullYear() !== jahr) continue;
+      if (!imBereich(tag)) continue;
       const k = _dayKeyOf(tag.getTime());
       if (zeigtKraft && byDay[k]) return false;
       if (zeigtLaeufe && laeufeTag[k]) return false;
@@ -4881,12 +4965,20 @@ function renderTrainingCalendar(id, cardId) {
     // (Leonard-Wunsch 13.09.2026). Vorher stand sie ueber der ersten Woche, die IM neuen
     // Monat beginnt — faellt der Monatserste auf einen Dienstag oder spaeter, war das die
     // Woche danach, und die Beschriftung stand bis zu sechs Tage zu weit rechts.
-    // Nur der Erste des ANGEZEIGTEN Jahres zaehlt: Die erste Rasterwoche reicht in den
+    // Nur der Erste INNERHALB des Zeitraums zaehlt: Die erste Rasterwoche reicht in den
     // Dezember davor, die letzte in den Januar danach — sonst stuende „Jan" zweimal da.
     let monatsErster = null;
     for (let d = 0; d < 7; d++) {
       const tag = new Date(weekStart); tag.setDate(weekStart.getDate() + d);
-      if (tag.getDate() === 1 && tag.getFullYear() === jahr) { monatsErster = tag; break; }
+      if (tag.getDate() === 1 && imBereich(tag)) { monatsErster = tag; break; }
+    }
+    // In „Aktuell" beginnt der Zeitraum meist mitten im Monat — die ersten Spalten stuenden dann
+    // ohne Beschriftung da. Die erste Spalte traegt deshalb den Monat des Planbeginns, sofern der
+    // naechste Monatserste mindestens zwei Spalten weiter liegt (sonst ueberlappten die Namen).
+    if (aktuell && w === 0 && !monatsErster) {
+      const naechster = new Date(von.getFullYear(), von.getMonth() + 1, 1);
+      const spalteNaechster = Math.floor(Math.round((naechster - start) / 86400000) / 7);
+      if (spalteNaechster >= 2) monatsErster = von;
     }
     const showLabel = !!monatsErster && monatsErster.getMonth() !== lastMonth;
     months += `<span class="cal-month">${showLabel ? monatsErster.toLocaleDateString('de-DE',{month:'short'}) : ''}</span>`;
@@ -4899,7 +4991,7 @@ function renderTrainingCalendar(id, cardId) {
       const entry = byDay[key];
       const future = day.getTime() > today.getTime();
       const isToday = day.getTime() === today.getTime();
-      const ausserhalb = day.getFullYear() !== jahr;   // Rand-Tage der ersten/letzten Woche
+      const ausserhalb = !imBereich(day);   // Rand-Tage der ersten/letzten Woche (siehe `imBereich`)
       // Flaeche = war laut damaligem Plan ein Trainingstag, Kern = tatsaechlich trainiert.
       const plan = _calPlanInfo(day, planIndex);
       const cls = ['cal-day'];
@@ -4937,6 +5029,8 @@ function renderTrainingCalendar(id, cardId) {
 
   // Kennzahlen: Einheiten im Zeitraum + aktuelle Wochenserie
   // Der Laufkalender zaehlt Laeufe, der Gymkalender Krafteinheiten (Leonard-Wunsch 01.09.2026).
+  // In „Aktuell" steht statt der Jahressumme das VERHAELTNIS absolviert / geplant bis heute, je
+  // Sportart gegen ihren eigenen laufenden Plan (`_calPlanStand`, Leonard-Wunsch 14.09.2026).
   const inRange = modus.kraft
     ? DB.getWorkouts().filter(w => new Date(w.startTs).getFullYear() === jahr).length
       + DB.getManualDays().filter(k => Number(k.slice(0, 4)) === jahr).length
@@ -4968,18 +5062,26 @@ function renderTrainingCalendar(id, cardId) {
   // Das Jahr steht seit dem 06.09.2026 NEBEN dem Titel statt vorn in der Kennzahl
   // (Leonard-Wunsch) und ist in BEIDEN Kalendern ein Auswahlfeld — der Plan-Tab zeigte
   // zunaechst nur Text, seit dem 06.09.2026 kommt man auch dort in vergangene Jahre.
+  // „Aktuell" steht ZUOBERST in der Auswahl — aber nur, wenn es fuer den Modus einen laufenden
+  // Plan gibt (Leonard-Entscheidung 14.09.2026). Sonst waere es eine Wahl ohne Inhalt.
   const jahrEl = document.getElementById(id + '-jahr');
   if (jahrEl) {
     const jahre = calJahre();
-    jahrEl.innerHTML = `<span class="cal-jahr-txt">${jahr}</span>
+    const aktOption = aktPlaene.bereich
+      ? `<option value="aktuell"${aktuell ? ' selected' : ''}>Aktuell</option>` : '';
+    jahrEl.innerHTML = `<span class="cal-jahr-txt">${aktuell ? 'Aktuell' : jahr}</span>
       <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
-      <select class="cal-jahr-sel" aria-label="Kalenderjahr wählen" onchange="setCalJahr(this.value, '${id}')">
-        ${jahre.map(j => `<option value="${j}"${j === jahr ? ' selected' : ''}>${j}</option>`).join('')}
+      <select class="cal-jahr-sel" aria-label="Zeitraum wählen" onchange="setCalJahr(this.value, '${id}')">
+        ${aktOption}${jahre.map(j => `<option value="${j}"${!aktuell && j === jahr ? ' selected' : ''}>${j}</option>`).join('')}
       </select>`;
   }
   const statsEl = document.getElementById(id + '-stats');
   if (statsEl) {
-    statsEl.textContent = `${inRange} ${einheitWort(inRange)}${zusatzLauf}`
+    const kennzahl = aktuell
+      ? [modus.kraft ? _calPlanStand('gym', aktPlaene.gym, von, today) : null,
+         modus.lauf ? _calPlanStand('lauf', aktPlaene.lauf, von, today) : null].filter(Boolean).join(' · ')
+      : `${inRange} ${einheitWort(inRange)}${zusatzLauf}`;
+    statsEl.textContent = kennzahl
       + (streak > 0 ? ` · Serie ${streak} ${streak === 1 ? 'Woche' : 'Wochen'}` : '');
   }
 
@@ -5110,7 +5212,9 @@ function renderTrainingCalendar(id, cardId) {
     if (modus.lauf)  { const rp = runPlanAktiv(); if (rp && rp.startDate) starts.push(rp.startDate); }
     const planStart = starts.length ? Math.min(...starts) : null;
     let zielSpalte = 0;
-    if (planStart != null && new Date(planStart).getFullYear() === jahr) zielSpalte = spalteVon(planStart);
+    // In „Aktuell" beginnt das Raster ohnehin beim Planbeginn — Spalte 0.
+    if (aktuell) zielSpalte = 0;
+    else if (planStart != null && new Date(planStart).getFullYear() === jahr) zielSpalte = spalteVon(planStart);
     else if (istLaufendesJahr) zielSpalte = spalteVon(new Date(jahr, today.getMonth(), 1).getTime());
     let ziel = Math.max(0, zielSpalte * SPALTE);
     // HEUTE muss sichtbar bleiben (Leonard-Entscheidung 13.09.2026): Ein 18-Wochen-Plan ist
