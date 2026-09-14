@@ -552,6 +552,17 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Kennzahl oben rechts verschwunden, die frueher mit „2026 · …" begann. Sichtbar sind Text und
   Pfeil, darueber liegt ein unsichtbares `<select>` (dasselbe Muster wie `.wpe-select` und
   `.lp-zone`) — 74x39px Trefferflaeche statt der 41x19px des blossen Textes.
+  **SEIT DEM 14.09.2026 KEIN AUSWAHLFELD MEHR, SONDERN EIN WECHSLER** wie der Titel (Leonard-Wunsch;
+  `wechselCalJahr(id)`, `.cal-jahr` ist ein `<button>`): Jeder Tipp schaltet eine Stufe weiter —
+  Aktuell → 2026 → 2025 → 2024 → Aktuell, also vom aktuellsten Zeitraum zum aeltesten Jahr und
+  zurueck. Das unsichtbare `<select>` (`.cal-jahr-sel`) und der Pfeil sind entfallen — ein Pfeil
+  versprach eine Liste, die es nicht mehr gibt. Die Trefferflaeche ist gleich gross geblieben
+  (Polster 10/8px, per negativem Rand herausgerechnet; gemessen 71x39px, Lage unveraendert).
+  OHNE laufenden Plan fehlt „Aktuell" in der Folge; der Zustand 'aktuell' zeigt dann das laufende
+  Jahr, und von dort geht es zu 2025 weiter. Der Rueckweg an den Anfang setzt wieder `'aktuell'`
+  statt der Jahreszahl — so kehrt die Ansicht von selbst zurueck, sobald wieder ein Plan laeuft
+  (gemessen: 2026 [aktuell] → 2025 → 2024 → 2026 [aktuell]).
+  Die Beschreibung darunter zum „Auswahlfeld" ist Vorgeschichte; die Liste der Jahre gilt weiter.
   Zur Auswahl stehen alle Jahre, zu denen es Einheiten, nachgetragene Tage oder Laeufe gibt,
   plus das laufende — sonst koennte man in ein garantiert leeres Jahr springen. Die Liste ist
   fuer BEIDE Kalender dieselbe und folgt NICHT dem angezeigten Sport: Im Gymkalender stehen
@@ -571,8 +582,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   den Jahresanfang statt zur „aktuellen Woche", die es dort nicht gibt. `setCalJahr` setzt dafuer
   `_calPositioniert[id]` zurueck — sonst bliebe die Spalte des alten Jahres stehen.
   **ANSICHT „AKTUELL" — und sie ist die ERSTANSICHT** (14.09.2026, Leonard-Wunsch; `calJahr(id)`
-  liefert seither eine Jahreszahl ODER `'aktuell'`, Standard `'aktuell'`). Sie steht zuoberst im
-  Auswahlfeld der Jahre, der Titel lautet dann „Trainingskalender Aktuell ⌄". Das Raster zeigt NUR
+  liefert seither eine Jahreszahl ODER `'aktuell'`, Standard `'aktuell'`). Sie ist die erste Stufe
+  des Zeitraum-Wechslers, der Titel lautet dann „Trainingskalender Aktuell". Das Raster zeigt NUR
   die Wochen des laufenden Plans (`_calAktuellePlaene(modus)`): Gymkalender → laufender Gymplan,
   Laufkalender → laufender Laufplan, gemeinsamer Trainingskalender → vom frueheren Beginn bis zum
   spaeteren Ende beider (beide laufen heute, eine Luecke kann es nicht geben). Gilt fuer beide
@@ -586,8 +597,12 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   2. Tage VOR Planbeginn bzw. NACH Planende in der ersten/letzten Spalte sind ausgegraut und nicht
      antippbar (`.outside`) — dieselbe Regel wie die Tage des Vor- und Folgejahres.
   3. Die KENNZAHL zeigt absolviert/geplant BIS EINSCHLIESSLICH HEUTE, je Sportart gegen ihren
-     eigenen Plan (`_calPlanStand`): „20/23 Einheiten · 12/15 Läufe" bzw. im Einzelkalender eine
-     der beiden plus Serie. „Absolviert" zaehlt wie die Jahressumme (Einheiten plus nachgetragene
+     eigenen Plan (`_calPlanStand` rechnet, `_calPlanStandText` formatiert). Seit dem 14.09.2026
+     (Leonard-Wunsch) im gemeinsamen Trainingskalender NUR in Prozent — „Gym 87 % · Lauf 80 %" —,
+     im Gym- und Laufkalender absolut MIT Prozent in Klammern — „20/23 Einheiten (87 %)", dahinter
+     die Serie. Zwischen Zahl und „%" steht ein geschuetztes Leerzeichen (kein Umbruch dazwischen).
+     Noch nichts geplant (Plan beginnt heute an einem freien Tag): im gemeinsamen Kalender „–", im
+     Einzelkalender entfaellt die Klammer. Ueber 100 % ist moeglich (zusaetzliche Einheiten). „Absolviert" zaehlt wie die Jahressumme (Einheiten plus nachgetragene
      Tage bzw. Laeufe inkl. Intervall), auch an ungeplanten Tagen. „Geplant" zaehlt die Wochentage
      mit Trainingstag (`weekPlan`) bzw. die Lauftage (`runDays`) ab Planbeginn. Laeuft im
      gemeinsamen Kalender fuer eine Sportart kein Plan, steht fuer sie nur die Anzahl im Zeitraum.

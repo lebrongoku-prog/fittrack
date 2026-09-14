@@ -4733,10 +4733,12 @@ function calendarInnerHTML(id) {
     ? `<button class="chart-card-v2-title cal-filter-btn" id="cal-filter-btn" onclick="toggleCalFilter()"
                aria-label="Zwischen Training, Läufen und beidem umschalten">Trainingskalender</button>`
     : `<span class="chart-card-v2-title" id="${id}-titel">Trainingskalender</span>`;
-  // Das Jahr steht direkt hinter dem Titel, mit unsichtbarem <select> darueber (dasselbe
-  // Muster wie `.wpe-select` und `.lp-zone` — die Masse bestimmt das CSS, nicht der Browser).
-  // Seit dem 06.09.2026 in BEIDEN Kalendern waehlbar (Leonard-Wunsch), vorher nur in der Uebersicht.
-  const jahrFeld = `<span class="cal-jahr" id="${id}-jahr"></span>`;
+  // Der Zeitraum steht direkt hinter dem Titel und ist seit dem 14.09.2026 ein WECHSLER wie der
+  // Titel selbst (Leonard-Wunsch; vorher ein Auswahlfeld mit unsichtbarem <select>): Jeder Tipp
+  // schaltet eine Stufe weiter — Aktuell → neuestes Jahr → … → aeltestes Jahr → Aktuell.
+  // Ein echter <button>, damit `initScrollHideNav` ihn als Bedienelement erkennt.
+  const jahrFeld = `<button type="button" class="cal-jahr" id="${id}-jahr" onclick="wechselCalJahr('${id}')"
+                            aria-label="Zeitraum wechseln"></button>`;
   return `<div class="chart-card-v2-head">
       <span class="cal-head-left">${titel}${jahrFeld}</span>
       <span class="cal-head-right">
@@ -4844,7 +4846,7 @@ function _calPlanStand(sport, plan, bereichVon, today) {
     ? DB.getWorkouts().filter(w => w.startTs >= vonDatum.getTime() && w.startTs <= bisHeute.getTime()).length
       + DB.getManualDays().filter(k => k >= vonKey && k <= heuteKey).length
     : DB.getRuns().filter(l => l.date >= vonKey && l.date <= heuteKey).length;
-  if (!plan) return `${absolviert} ${wort(absolviert)}`;
+  if (!plan) return { absolviert, geplant: null, wort };
   const ende = plan.endDate ? _calLokalTag(plan.endDate) : null;
   const letzter = (ende && ende < today) ? ende : today;
   let geplant = 0;
@@ -4857,7 +4859,43 @@ function _calPlanStand(sport, plan, bereichVon, today) {
       geplant++;
     }
   }
-  return `${absolviert}/${geplant} ${wort(geplant)}`;
+  return { absolviert, geplant, wort };
+}
+
+// Formatiert den Planstand fuer die Kennzahl (14.09.2026, Leonard-Wunsch):
+//   Trainingskalender (beide Sportarten): nur Prozent — „Gym 87 % · Lauf 80 %"
+//   Gym-/Laufkalender: absolut plus Prozent in Klammern — „20/23 Einheiten (87 %)"
+// Ohne laufenden Plan steht nur die Anzahl („15 Läufe"). Ist noch nichts geplant (Plan beginnt
+// heute an einem Tag ohne Training), gibt es keinen Prozentwert: im gemeinsamen Kalender „–", im
+// Einzelkalender entfaellt die Klammer. Mehr als 100 % sind moeglich (zusaetzliche Einheiten) und
+// werden bewusst so angezeigt.
+// Zwischen Zahl und Prozentzeichen steht ein geschuetztes Leerzeichen — sonst koennte die Zeile
+// genau dazwischen umbrechen.
+function _calPlanStandText(sport, st, kombi) {
+  const prozent = st.geplant ? Math.round(st.absolviert / st.geplant * 100) + '\u00A0%' : null;
+  if (st.geplant == null) return `${st.absolviert} ${st.wort(st.absolviert)}`;
+  if (kombi) return `${sport === 'gym' ? 'Gym' : 'Lauf'} ${prozent || '–'}`;
+  return `${st.absolviert}/${st.geplant} ${st.wort(st.geplant)}` + (prozent ? ` (${prozent})` : '');
+}
+
+// Ein Tipp auf den Zeitraum schaltet eine Stufe weiter (14.09.2026, Leonard-Wunsch):
+// Aktuell → neuestes Jahr → … → aeltestes Jahr → Aktuell. Die Jahre sind dieselben wie bisher
+// in der Auswahl (`calJahre`, neueste zuerst).
+// „Aktuell" gehoert nur in die Folge, wenn fuer den Modus ein Plan laeuft. Ohne Plan zeigt der
+// Zustand 'aktuell' das laufende Jahr — die Folge beginnt dann dort. Der Rueckweg an den Anfang
+// setzt in diesem Fall wieder 'aktuell' statt der Jahreszahl: So kehrt die Ansicht „Aktuell"
+// von selbst zurueck, sobald wieder ein Plan laeuft (Leonard-Entscheidung vom selben Tag).
+function wechselCalJahr(id) {
+  id = id || 'cal';
+  const hatAktuell = !!_calAktuellePlaene(_calModus(id)).bereich;
+  const folge = [...(hatAktuell ? ['aktuell'] : []), ...calJahre()];
+  if (folge.length < 2) return;
+  const wahl = calJahr(id);
+  const angezeigt = (wahl === 'aktuell' && !hatAktuell) ? new Date().getFullYear() : wahl;
+  const i = folge.indexOf(angezeigt);
+  let naechste = folge[(i + 1) % folge.length];
+  if (!hatAktuell && naechste === folge[0]) naechste = 'aktuell';
+  setCalJahr(naechste, id);
 }
 
 function setCalJahr(jahr, id) {
@@ -5062,24 +5100,17 @@ function renderTrainingCalendar(id, cardId) {
   // Das Jahr steht seit dem 06.09.2026 NEBEN dem Titel statt vorn in der Kennzahl
   // (Leonard-Wunsch) und ist in BEIDEN Kalendern ein Auswahlfeld — der Plan-Tab zeigte
   // zunaechst nur Text, seit dem 06.09.2026 kommt man auch dort in vergangene Jahre.
-  // „Aktuell" steht ZUOBERST in der Auswahl — aber nur, wenn es fuer den Modus einen laufenden
-  // Plan gibt (Leonard-Entscheidung 14.09.2026). Sonst waere es eine Wahl ohne Inhalt.
+  // Der Wechsler zeigt nur den Zeitraum als Text — die Reihenfolge der Stufen steht in
+  // `wechselCalJahr`.
   const jahrEl = document.getElementById(id + '-jahr');
-  if (jahrEl) {
-    const jahre = calJahre();
-    const aktOption = aktPlaene.bereich
-      ? `<option value="aktuell"${aktuell ? ' selected' : ''}>Aktuell</option>` : '';
-    jahrEl.innerHTML = `<span class="cal-jahr-txt">${aktuell ? 'Aktuell' : jahr}</span>
-      <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
-      <select class="cal-jahr-sel" aria-label="Zeitraum wählen" onchange="setCalJahr(this.value, '${id}')">
-        ${aktOption}${jahre.map(j => `<option value="${j}"${!aktuell && j === jahr ? ' selected' : ''}>${j}</option>`).join('')}
-      </select>`;
-  }
+  if (jahrEl) jahrEl.textContent = aktuell ? 'Aktuell' : String(jahr);
   const statsEl = document.getElementById(id + '-stats');
   if (statsEl) {
+    const kombi = modus.kraft && modus.lauf;
     const kennzahl = aktuell
-      ? [modus.kraft ? _calPlanStand('gym', aktPlaene.gym, von, today) : null,
-         modus.lauf ? _calPlanStand('lauf', aktPlaene.lauf, von, today) : null].filter(Boolean).join(' · ')
+      ? [modus.kraft ? _calPlanStandText('gym', _calPlanStand('gym', aktPlaene.gym, von, today), kombi) : null,
+         modus.lauf ? _calPlanStandText('lauf', _calPlanStand('lauf', aktPlaene.lauf, von, today), kombi) : null]
+          .filter(Boolean).join(' · ')
       : `${inRange} ${einheitWort(inRange)}${zusatzLauf}`;
     statsEl.textContent = kennzahl
       + (streak > 0 ? ` · Serie ${streak} ${streak === 1 ? 'Woche' : 'Wochen'}` : '');
