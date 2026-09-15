@@ -1546,6 +1546,11 @@ function _doStartWorkout(dayId) {
   if (!active) { showToast('Kein aktiver Trainingsplan'); return; }
   const plan = active.trainingDays;
   const day = plan.find(d => d.id === dayId);
+  // Start AUSSERHALB des Trainings-Tabs (Uebersicht): Der Tab wird zuerst noch im NORMALEN
+  // Zustand des heutigen Tags gezeichnet — so wischt er mit „Einheit starten" herein, und beim
+  // Ankommen laeuft der Uebergang in den aktiven Modus (Leonard-Entscheidung 15.09.2026).
+  // MUSS vor `DB.saveActive` stehen, sonst zeichnete er schon die laufende Einheit.
+  const vonAussen = _woStartVorbereiten();
 
   const exercises = (day ? day.exercises : []).map(pe => {
     const ex = getEx(pe.exId);
@@ -1577,7 +1582,26 @@ function _doStartWorkout(dayId) {
   const firstEx = exercises[0];
   if (firstEx) expandedAexIds.add(firstEx.exId || firstEx.id);
   selectedWorkoutDayIdx = wo.dayIdx;
-  showScreen('workouts');
+  _woStartZeigen(vonAussen);
+}
+
+// Gemeinsamer Rahmen fuer „Einheit starten" und „Freies Training" (15.09.2026):
+// `_woStartVorbereiten` VOR dem Speichern der Einheit, `_woStartZeigen` danach.
+function _woStartVorbereiten() {
+  const vonAussen = currentScreen !== 'workouts';
+  if (vonAussen) {
+    selectedWorkoutDayIdx = (new Date().getDay() + 6) % 7;
+    workoutsViewMode = 'gym';
+    renderWorkoutsScreen();
+  }
+  return vonAussen;
+}
+function _woStartZeigen(vonAussen) {
+  workoutsViewMode = 'gym';
+  _woUebergangVormerken('start');
+  // Von aussen WISCHEN (der Settle zeichnet und spielt den Uebergang), auf der Seite selbst
+  // genuegt das Neuzeichnen ueber `showScreen`.
+  if (vonAussen) wischeZuTab('workouts'); else showScreen('workouts');
 }
 
 // ═══════════════════════════════════════════════
@@ -1925,6 +1949,7 @@ const PPV_ICON_LAEUFER = `<span class="ppv-name-ic">${heroRunnerSvg()}</span>`;
 // Freies Training: Einheit ohne Trainingstag, Übungen werden unterwegs hinzugefügt.
 function startFreeWorkout() {
   if (DB.getActive()) { showToast('Es läuft bereits eine Einheit'); return; }
+  const vonAussen = _woStartVorbereiten();
   const wo = {
     id: 'wo_' + Date.now(), planDayId: null, planDayName: 'Freies Training',
     startTs: Date.now(), dayIdx: (new Date().getDay()+6) % 7, exercises: [],
@@ -1933,7 +1958,7 @@ function startFreeWorkout() {
   expandedAexIds.clear();
   _aexUserClosedAll = false;
   selectedWorkoutDayIdx = wo.dayIdx;
-  showScreen('workouts');
+  _woStartZeigen(vonAussen);
   showToast('Freies Training gestartet — füge Übungen hinzu');
 }
 
@@ -2117,6 +2142,10 @@ function renderWorkoutsScreen() {
 }
 
 function _renderGymSeite() {
+  // Wechsel normal ↔ aktiv: Den ALTEN Stand festhalten, BEVOR er ueberschrieben wird
+  // (siehe „Uebergang" direkt darunter). Jede Zeichnung beendet ausserdem eine noch laufende
+  // Bewegung sauber.
+  const uebergang = _woUebergangVorher();
   ensureSelectedDayIdx();
   // WICHTIG: Der Workouts-Tab zeigt IMMER den AKTIVEN Plan (per Datum) — niemals den Edit-Kontext
   // (editingPlanId) und niemals den DEFAULT_PLAN/DEFAULT_WEEKPLAN-Fallback von DB.getPlan/getWeekPlan.
@@ -2188,6 +2217,207 @@ function _renderGymSeite() {
 
   syncWorkoutActiveUI();
   checkStickyBar();
+  if (uebergang) _woUebergangSpielen(uebergang);
+}
+
+// ── Uebergang normal ↔ aktiv auf der Seite „Gym" (15.09.2026, Leonard-Wunsch, Variante D) ──
+// Beim START einer Einheit und beim BEENDEN (auch „Verwerfen") laufen drei Bewegungen zugleich:
+//   1. Die Wochenplan-Karte klappt weg (Start) bzw. wieder auf (Ende) — `_woWocheFahren`.
+//   2. Aus dem Knopf, der den Wechsel ausloest, breitet sich eine Welle in seiner Farbe ueber
+//      die Herocard aus; darunter steht dann der neue Inhalt, und die Welle verblasst
+//      (`_woHeroWelle`). Start: aus „Einheit starten"/„Freies Training", Ende: aus „Beenden".
+//   3. Die alten Uebungskarten gleiten nacheinander hinaus, die neuen nacheinander herein
+//      (`_woUebungenStaffel`).
+// ABLAUF: Wer den Wechsel ausloest, merkt ihn vor (`_woUebergangVormerken`) und laesst die Seite
+// neu zeichnen. `_renderGymSeite` haelt VOR dem Zeichnen den alten Stand fest (Herocard als
+// HTML, Knopfposition, die alten Kartenknoten) und spielt NACH dem Zeichnen die Bewegung ab —
+// die neue Seite steht also sofort richtig im DOM, die Bewegung ist nur die Bruecke dorthin.
+// Verbraucht wird die Vormerkung nur, wenn der Trainings-Tab mit der Seite „Gym" gerade der
+// sichtbare Bildschirm ist: So kann der Start aus der Uebersicht erst in den Tab WISCHEN und die
+// Bewegung beim ANKOMMEN abspielen (der Settle ruft `_applyTabState` → `renderWorkoutsScreen`).
+// Eine Vormerkung, die nach `WO_UEB_FRIST_MS` noch niemand abgeholt hat, verfaellt — sonst
+// schluege sie bei irgendeiner spaeteren Zeichnung zu.
+// KEINE Bewegung bei `prefers-reduced-motion` und im Querformat ab 1024px: Dort stehen
+// Wochenplan und Herocard nebeneinander, und die Herocard wechselt beim Start die Breite.
+// TOKEN: Jede Zeichnung der Seite zaehlt `_woUebergangNr` hoch und raeumt eine laufende Bewegung
+// ab (`_woUebergangAufraeumen`). Die Fortsetzungen pruefen die Nummer — sonst fuegte eine
+// verspaetete Staffel ihre Karten in eine inzwischen neu gezeichnete Liste ein.
+// NOTBREMSE wie ueberall: Jede Teilbewegung endet spaetestens ueber einen Wecker, auch wenn die
+// Zeitleiste des Dokuments steht (App im Hintergrund, versteckte Browser-Ansicht).
+const WO_UEB_FRIST_MS = 3000;
+const WO_UEB_KURVE = 'cubic-bezier(.2,.8,.2,1)';
+let _woUebergang = null;          // vorgemerkt: { art: 'start' | 'ende', zeit }
+let _woUebergangNr = 0;
+let _woUebergangAufraeumen = [];
+// Beim BEENDEN liegen erst „Einheit beenden?" und dann die Abschlussansicht ueber dem Tab — eine
+// Bewegung dahinter saehe man nicht. Solange die Abschlussansicht offen ist, bleibt die Seite
+// deshalb im aktiven Zustand stehen (`wo-running` bleibt gesetzt, es wird nicht neu gezeichnet);
+// erst ihr Schliessen spielt die Bewegung (`closeModal`, Leonard-Entscheidung 15.09.2026).
+let _woEndeHalten = false;
+
+function _woUebergangVormerken(art) { _woUebergang = { art, zeit: Date.now() }; }
+
+// Kann auf der Seite ueberhaupt eine Bewegung laufen? Fuer das Ende zusaetzlich: Die laufende
+// Einheit steht gerade auf dem Bildschirm (`wo-running`).
+function _woUebergangMoeglich() {
+  if (_bewegungReduziert()) return false;
+  if (window.matchMedia && window.matchMedia('(min-width: 1024px)').matches) return false;
+  return currentScreen === 'workouts' && workoutsViewMode === 'gym';
+}
+
+function _woUebergangVorher() {
+  _woUebergangNr++;
+  _woUebergangAufraeumen.splice(0).forEach(f => f());
+  const v = _woUebergang;
+  if (!v || currentScreen !== 'workouts' || workoutsViewMode !== 'gym') return null;
+  _woUebergang = null;
+  if (Date.now() - v.zeit > WO_UEB_FRIST_MS || !_woUebergangMoeglich()) return null;
+  const karte = document.querySelector('#wo-session-card-wrap > .hero-v2');
+  // Nur vom passenden Ausgangszustand aus — steht schon der Zielzustand da (etwa weil
+  // zwischendurch jemand neu gezeichnet hat), gibt es nichts zu ueberbruecken.
+  if (!karte || karte.classList.contains('hero-aktiv') !== (v.art === 'ende')) return null;
+  const knopfEl = karte.querySelector(v.art === 'start' ? '.hero-v2-btn[data-sport="gym"]' : '.hero-v2-btn-danger');
+  let knopf = null;
+  if (knopfEl) {
+    const kr = karte.getBoundingClientRect(), br = knopfEl.getBoundingClientRect();
+    const cs = getComputedStyle(knopfEl);
+    knopf = { x: br.left + br.width / 2 - kr.left, y: br.top + br.height / 2 - kr.top,
+              farbe: cs.backgroundImage && cs.backgroundImage !== 'none' ? cs.backgroundImage : cs.backgroundColor };
+  }
+  const liste = document.getElementById('active-ex-list');
+  return { art: v.art, nr: _woUebergangNr, knopf,
+           karteKlassen: karte.className, karteInhalt: karte.innerHTML,
+           uebungen: liste ? [...liste.children] : [] };
+}
+
+function _woUebergangSpielen(v) {
+  Promise.all([_woWocheFahren(v), _woHeroWelle(v), _woUebungenStaffel(v)])
+    .then(() => { if (v.nr === _woUebergangNr) _woUebergangAufraeumen = []; });
+}
+
+// Web-Animation als Promise, die GARANTIERT endet (Notbremse).
+function _woAnim(el, keyframes, opts) {
+  return new Promise(res => {
+    let anim;
+    try { anim = el.animate(keyframes, opts); } catch (e) { res(); return; }
+    let erledigt = false;
+    const ende = () => { if (erledigt) return; erledigt = true; clearTimeout(wecker); res(); };
+    const wecker = setTimeout(ende, (opts.duration || 0) + (opts.delay || 0) + 300);
+    anim.onfinish = ende;
+    anim.oncancel = ende;
+  });
+}
+
+// 1. Wochenplan-Karte. Beim Start blendet `wo-running` sie sofort aus — `.wo-woche-faehrt` haelt
+// sie fuer die Dauer der Bewegung sichtbar und schneidet den Inhalt ab (`overflow: hidden`).
+// Gefahren wird die HUELLE `#wo-week-card`: Mit `overflow: hidden` liegt der 12px-Aussenabstand
+// der Karte innerhalb der Huelle, die Hoehe umfasst also Karte UND Abstand darunter — es springt
+// weder am Anfang noch am Ende.
+function _woWocheFahren(v) {
+  const huelle = document.getElementById('wo-week-card');
+  if (!huelle || !huelle.firstElementChild) return Promise.resolve();
+  huelle.classList.add('wo-woche-faehrt');
+  const h = huelle.offsetHeight;
+  const aufraeumen = () => {
+    huelle.getAnimations().forEach(a => a.cancel());
+    huelle.classList.remove('wo-woche-faehrt');
+  };
+  _woUebergangAufraeumen.push(aufraeumen);
+  const offen = { height: h + 'px', opacity: 1 }, zu = { height: '0px', opacity: 0 };
+  return _woAnim(huelle, v.art === 'start' ? [offen, zu] : [zu, offen],
+                 { duration: 280, easing: WO_UEB_KURVE, fill: 'forwards' })
+    .then(() => { if (v.nr === _woUebergangNr) aufraeumen(); });
+}
+
+// 2. Herocard. Die NEUE Karte steht schon im DOM; ihr Inhalt wird unsichtbar geschaltet
+// (`.hero-ueb-verdeckt`), und darueber liegt eine Kopie des ALTEN Inhalts (`.hero-ueb-alt`,
+// dieselben Klassen, aber ohne eigene Flaeche). Unsichtbar statt ueberdeckt: Im Transparenz-Modus
+// ist die Kartenflaeche durchscheinend, der neue Inhalt schiene sonst durch den alten hindurch.
+// Die Welle waechst aus der Mitte des alten Knopfs, bis sie die ganze Karte deckt (Radius = Weg
+// zur fernsten Ecke); dann wechselt der Inhalt darunter und die Welle verblasst. Die Karte hat
+// `overflow: hidden` und ihre Rundung schon — sie schneidet die Welle von selbst zu.
+function _woHeroWelle(v) {
+  const karte = document.querySelector('#wo-session-card-wrap > .hero-v2');
+  if (!karte) return Promise.resolve();
+  const alt = document.createElement('div');
+  alt.className = v.karteKlassen + ' hero-ueb-alt';
+  // Eigene Flaeche, Schatten, Aussenabstand und Hoehe weg — inline, damit auch die Glas-Regel
+  // (hoehere Spezifitaet) sie nicht zurueckholt.
+  alt.style.cssText = 'background:none;box-shadow:none;margin:0;height:auto';
+  alt.innerHTML = v.karteInhalt;
+  // Die Farbblende eines frueheren Tagwechsels (`mitHeroFarbwechsel`) haengt als Klasse am Knopf —
+  // in der Kopie liefe sie sonst ein zweites Mal.
+  alt.querySelectorAll('[class*="hero-farbe-von-"]').forEach(el =>
+    [...el.classList].filter(c => c.startsWith('hero-farbe-von-')).forEach(c => el.classList.remove(c)));
+  const w = karte.offsetWidth, hh = karte.offsetHeight;
+  const k = v.knopf || { x: w / 2, y: hh / 2, farbe: 'var(--accent)' };
+  const r = Math.hypot(Math.max(k.x, w - k.x), Math.max(k.y, hh - k.y));
+  const welle = document.createElement('div');
+  welle.className = 'hero-ueb-welle';
+  Object.assign(welle.style, { left: (k.x - r) + 'px', top: (k.y - r) + 'px',
+                               width: 2 * r + 'px', height: 2 * r + 'px', background: k.farbe });
+  karte.classList.add('hero-ueb-verdeckt');
+  // HINTER den neuen Inhalt anhaengen: `updateTimerDisplay` schreibt in ALLE `.hero-v2-timer`,
+  // und wer nur den ersten sucht, findet so die echte Uhr.
+  karte.append(alt, welle);
+  const aufraeumen = () => { alt.remove(); welle.remove(); karte.classList.remove('hero-ueb-verdeckt'); };
+  _woUebergangAufraeumen.push(aufraeumen);
+  return _woAnim(welle, [{ transform: 'scale(0)' }, { transform: 'scale(1)' }],
+                 { duration: 380, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' })
+    .then(() => {
+      if (v.nr !== _woUebergangNr) return;
+      alt.remove();
+      karte.classList.remove('hero-ueb-verdeckt');
+      return _woAnim(welle, [{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' });
+    })
+    .then(() => { if (v.nr === _woUebergangNr) aufraeumen(); });
+}
+
+// 3. Uebungskarten. Die NEUEN Karten hat die Zeichnung schon gebaut (samt Diagrammen); sie werden
+// kurz aus der Liste genommen und die ALTEN Knoten wieder eingesetzt. Die alten gleiten von unten
+// nach oben der Reihe nach hinaus, dann die neuen von oben nach unten herein. Karten unterhalb des
+// Bildschirms bewegen sich nicht — bei acht Uebungen dauerte die Staffel sonst weit ueber eine
+// Sekunde, ohne dass man etwas davon saehe. Die Verzoegerung ist deshalb auch nach der fuenften
+// Karte gedeckelt.
+function _woUebungenStaffel(v) {
+  const liste = document.getElementById('active-ex-list');
+  if (!liste) return Promise.resolve();
+  const neu = [...liste.children];
+  const alt = v.uebungen;
+  const knopf = document.getElementById('wo-add-ex-wrap');
+  if (!neu.length && !alt.length) return Promise.resolve();
+  const imBild = el => el.getBoundingClientRect().top < window.innerHeight;
+  neu.forEach(n => n.remove());
+  alt.forEach(n => { n.style.pointerEvents = 'none'; liste.appendChild(n); });
+  if (knopf) knopf.style.visibility = 'hidden';
+  const aufraeumen = () => {
+    [...alt, ...neu].forEach(n => n.getAnimations().forEach(a => a.cancel()));
+    if (knopf) { knopf.getAnimations().forEach(a => a.cancel()); knopf.style.visibility = ''; }
+  };
+  _woUebergangAufraeumen.push(aufraeumen);
+  const raus = alt.filter(imBild).reverse();
+  alt.filter(n => !raus.includes(n)).forEach(n => { n.style.opacity = '0'; });
+  return Promise.all(raus.map((n, i) => _woAnim(n,
+      [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(10px)' }],
+      { duration: 150, delay: i * 40, fill: 'forwards' })))
+    .then(() => {
+      // Hat inzwischen jemand neu gezeichnet, gehoert die Liste nicht mehr uns.
+      if (v.nr !== _woUebergangNr || alt.some(n => n.parentNode !== liste)) return;
+      alt.forEach(n => n.remove());
+      neu.forEach(n => liste.appendChild(n));
+      const rein = neu.filter(imBild);
+      const verz = i => Math.min(i, 5) * 80;
+      const bewegungen = rein.map((n, i) => _woAnim(n,
+        [{ opacity: 0, transform: 'translateY(18px)' }, { opacity: 1, transform: 'none' }],
+        { duration: 280, delay: verz(i), easing: WO_UEB_KURVE, fill: 'backwards' }));
+      if (knopf) {
+        knopf.style.visibility = '';
+        bewegungen.push(_woAnim(knopf, [{ opacity: 0 }, { opacity: 1 }],
+          { duration: 280, delay: verz(rein.length), fill: 'backwards' }));
+      }
+      return Promise.all(bewegungen);
+    })
+    .then(() => { if (v.nr === _woUebergangNr) aufraeumen(); });
 }
 
 // Zeilenzahl fuer die zweispaltige Uebungsliste im Querformat. Das Grid fuellt
@@ -3298,8 +3528,11 @@ function syncWorkoutActiveUI() {
   // Pille war ebenfalls weg. Die Einheit war damit aus dem Tab heraus nicht mehr erreichbar
   // (Leonard-Meldung 05.09.2026). An der Klasse haengen: das Ausblenden des Wochenplans, das
   // Querformat-Grid und — neu — das Ausblenden der Pille.
-  const einheitSichtbar = active && currentScreen === 'workouts'
-    && workoutsViewMode === 'gym' && woDayIdx(wo) === selectedWorkoutDayIdx;
+  const einheitSichtbar = (active && currentScreen === 'workouts'
+    && workoutsViewMode === 'gym' && woDayIdx(wo) === selectedWorkoutDayIdx)
+    // Nach „Beenden" bleibt die Seite bis zum Schliessen der Abschlussansicht im aktiven
+    // Zustand stehen — erst dann laeuft der Uebergang (`_woEndeHalten`).
+    || (_woEndeHalten && currentScreen === 'workouts');
   document.documentElement.classList.toggle('wo-running', !!einheitSichtbar);
   const barTimer = document.getElementById('wab-timer');
   if (active && barTimer) _woTimerRender(barTimer);
@@ -3493,6 +3726,10 @@ function finishWorkout() {
   const setChanges = syncSetCountsToPlanDay(wo.planDayId, cleanEx);
 
   const finalWo = { ...wo, exercises: cleanEx, duration, endTs: Date.now(), prs };
+  // Steht die laufende Einheit gerade auf dem Bildschirm, bleibt die Seite bis zum Schliessen
+  // der Abschlussansicht so stehen und wechselt DANN mit Bewegung (15.09.2026, Leonard-Wunsch).
+  // MUSS vor `DB.clearActive` stehen — danach ist `wo-running` schon weg.
+  _woEndeHalten = _woUebergangMoeglich() && document.documentElement.classList.contains('wo-running');
   DB.addWorkout(finalWo);
   DB.clearActive();
   stopTimer();
@@ -3501,8 +3738,9 @@ function finishWorkout() {
   closeModal('modal-finish');
 
   // Aktuellen Tab neu rendern — egal ob Workouts oder Übersicht, der Active-Mode endet sofort
+  // (ausser die Seite wartet auf das Schliessen der Abschlussansicht, siehe oben).
   if (currentScreen === 'overview') renderOverview();
-  else if (currentScreen === 'workouts') renderWorkoutsScreen();
+  else if (currentScreen === 'workouts' && !_woEndeHalten) renderWorkoutsScreen();
 
   // Abschluss zeigen statt nur einer kurzen Einblendung: Dauer, Volumen, Sätze, Rekorde
   // und der Vergleich zur letzten Einheit desselben Trainingstags.
@@ -3600,6 +3838,11 @@ function discardWorkout() {
     confirmAction('Einheit verwerfen?',
       'Die laufende Einheit wirklich verwerfen? Alle Eingaben gehen verloren.',
       () => {
+        // Dieselbe Rueckwaerts-Bewegung wie beim Beenden (Leonard-Entscheidung 15.09.2026) —
+        // vormerken, solange `wo-running` noch steht.
+        if (_woUebergangMoeglich() && document.documentElement.classList.contains('wo-running')) {
+          _woUebergangVormerken('ende');
+        }
         stopTimer();
         stopRestTimer(true);
         DB.clearActive();
@@ -8552,6 +8795,13 @@ function closeModal(id) {
   // Das Diagramm der Uebungs-Detailansicht hier abraeumen: Geschlossen wird das Modal
   // ueber den Hintergrund-Tipp oder die Wischgeste, beide landen in dieser Funktion.
   if (id === 'modal-hist-detail') { _hdCharts.forEach(c => c.destroy()); _hdCharts = []; }
+  // Abschlussansicht zu: Jetzt wechselt die Seite „Gym" mit Bewegung in den normalen Modus
+  // (siehe `_woEndeHalten`). Greift fuer „Fertig", den Tipp daneben und das Herunterwischen.
+  if (id === 'modal-summary' && _woEndeHalten) {
+    _woEndeHalten = false;
+    if (currentScreen === 'workouts') { _woUebergangVormerken('ende'); renderWorkoutsScreen(); }
+    else syncWorkoutActiveUI();
+  }
 }
 
 // Swipe-down-to-dismiss für ALLE Bottom-Sheet-Modals (.overlay > .sheet).

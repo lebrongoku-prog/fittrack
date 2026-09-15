@@ -1758,6 +1758,16 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 }
 /* Wochenplan-Kachel während der Einheit ausblenden (Platz für die Sätze). */
 html.wo-running #wo-week-card { display: none; }
+/* Uebergang normal ↔ aktiv (15.09.2026, `_woWocheFahren`): Waehrend die Wochenplan-Karte weg-
+   bzw. aufklappt, bleibt sie trotz `wo-running` sichtbar und schneidet ihren Inhalt ab. Eine
+   Klasse mehr als die Ausblende-Regel, damit sie gewinnt. */
+html.wo-running #wo-week-card.wo-woche-faehrt,
+#wo-week-card.wo-woche-faehrt { display: block; overflow: hidden; }
+/* Herocard im Uebergang (`_woHeroWelle`): Der neue Inhalt ist schon da, aber unsichtbar; darueber
+   liegt die Kopie des alten Inhalts, darueber die Welle aus dem getippten Knopf. */
+.hero-v2.hero-ueb-verdeckt > :not(.hero-ueb-alt):not(.hero-ueb-welle) { visibility: hidden; }
+.hero-v2.hero-ueb-alt { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.hero-ueb-welle { position: absolute; z-index: 5; border-radius: 50%; pointer-events: none; }
 
 .hero-v2-btn-danger {
   padding: 13px 14px; border-radius: 12px; border: none;

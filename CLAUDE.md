@@ -401,6 +401,65 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `DB.saveActive` laufen. Es hakt die Übung automatisch ab, wenn alle Sätze stehen, und startet die **Satzpause** (`startRestTimer`, Leiste `#rest-bar`) — aber NUR, wenn danach noch ein Satz der Übung offen ist. Nach dem letzten Satz läuft keine Pause mehr (eine ggf. laufende wird gestoppt): dort folgt der Übungswechsel, keine weitere Wiederholung. Die Pause startet IMMER bei 1:30 (`REST_DEFAULT_SEC`); `adjustRest(±30)` und `resetRest()` wirken nur auf die laufende Pause und werden NICHT als Vorgabe gemerkt. Kopf ist im aktiven Zustand kompakt (`.hero-v2.active-mode`), der Wochenplan ist ausgeblendet (`html.wo-running`, siehe unten), beim Scrollen erscheint `#wo-sticky-bar` — aber NUR im Trainings-Tab: Der Riegel
   (`body.theme-workouts #wo-sticky-bar.show`) liegt im CSS, damit sie beim Tabwechsel sofort verschwindet und nicht
   erst beim naechsten Scroll- oder Sekundentakt; `_applyTabState` raeumt zusaetzlich die `.show`-Klasse ab. `ensureActiveExpanded()` hält die nächste unerledigte Übung offen (`_aexUserClosedAll` respektiert bewusstes Zuklappen).
+- **WECHSEL NORMAL ↔ AKTIV AUF DER SEITE „GYM" MIT BEWEGUNG** (15.09.2026, Leonard-Wunsch,
+  „Variante D" aus einer interaktiven Vorschau). Beim START einer Einheit und rueckwaerts beim
+  BEENDEN und beim VERWERFEN laufen drei Bewegungen zugleich:
+  1. `_woWocheFahren`: Die Wochenplan-Karte klappt weg (280ms) bzw. wieder auf. Gefahren wird die
+     Huelle `#wo-week-card` mit `.wo-woche-faehrt` (haelt sie trotz `wo-running` sichtbar,
+     `overflow: hidden`). Mit `overflow: hidden` liegt der 12px-Aussenabstand der Karte IN der
+     Huelle — gemessen: die Herocard steht mit und ohne Klasse bei exakt 241.3px, kein Sprung.
+  2. `_woHeroWelle`: Aus der Mitte des ausloesenden Knopfs waechst eine Welle in SEINER Farbe
+     (computed `background-image` bzw. `background-color`) ueber die Herocard (380ms), darunter
+     wechselt der Inhalt, dann verblasst sie (260ms). Start: „Einheit starten"/„Freies Training"
+     (`[data-sport="gym"]`), Ende: „Beenden" (`.hero-v2-btn-danger`, rot).
+     Die NEUE Karte steht schon im DOM, ihr Inhalt ist nur unsichtbar (`.hero-ueb-verdeckt`);
+     darueber liegt eine Kopie des ALTEN Inhalts (`.hero-ueb-alt`, dieselben Klassen, Flaeche,
+     Schatten, Rand und Hoehe INLINE entfernt, damit die Glas-Regel sie nicht zurueckholt).
+     Unsichtbar statt ueberdeckt, weil die Karte im Transparenz-Modus durchscheint. Kopie und
+     Welle haengen HINTER dem echten Inhalt — `updateTimerDisplay` schreibt in alle
+     `.hero-v2-timer`. Klassen `hero-farbe-von-*` werden in der Kopie entfernt, sonst liefe die
+     Farbblende eines frueheren Tagwechsels noch einmal.
+  3. `_woUebungenStaffel`: Die NEUEN Karten (schon gebaut, samt Diagrammen) werden kurz aus der
+     Liste genommen, die ALTEN Knoten wieder eingesetzt (ohne Tipps). Alte gleiten von unten nach
+     oben hinaus (150ms, je 40ms versetzt), neue von oben nach unten herein (280ms, je 80ms,
+     ab der fuenften Karte gedeckelt). Karten unterhalb des Bildschirms bewegen sich nicht.
+     „+ Übung hinzufügen" blendet mit der letzten Karte ein.
+  ABLAUF: Der Ausloeser merkt den Wechsel vor (`_woUebergangVormerken('start'|'ende')`) und laesst
+  zeichnen. `_renderGymSeite` haelt VOR dem Zeichnen den alten Stand fest (`_woUebergangVorher`)
+  und spielt DANACH die Bewegung (`_woUebergangSpielen`). Verbraucht wird die Vormerkung nur,
+  wenn Trainings-Tab UND Seite „Gym" gerade sichtbar sind; nach `WO_UEB_FRIST_MS` (3s) verfaellt
+  sie. Nur vom passenden Ausgangszustand aus (alte Karte `.hero-aktiv` genau beim Ende).
+  TOKEN: Jede Zeichnung zaehlt `_woUebergangNr` hoch und raeumt die laufende Bewegung ab
+  (`_woUebergangAufraeumen`); Fortsetzungen pruefen die Nummer, die Staffel zusaetzlich, ob die
+  alten Knoten noch in der Liste stecken. NOTBREMSE: `_woAnim` endet spaetestens per Wecker.
+  DREI AUSLOESER, Leonard-Entscheidungen vom 15.09.2026:
+  - START auf der Seite „Gym": `_woStartZeigen` → `showScreen('workouts')` zeichnet und spielt.
+  - START aus der UEBERSICHT (Bestaetigung „Einheit starten" bzw. „Freies Training"): Der Tab
+    WISCHT herein und die Bewegung laeuft beim ANKOMMEN. Dafuer zeichnet `_woStartVorbereiten`
+    den Trainings-Tab VOR `DB.saveActive` noch im normalen Zustand des heutigen Tags — er
+    wandert also mit „Einheit starten" herein; der Settle von `initTabScrollSync` ruft
+    `_applyTabState` → Zeichnung → Bewegung. Vorher sprang `showScreen` hart.
+    `_woStartZeigen` setzt ausserdem `workoutsViewMode = 'gym'` (vorher blieb eine zuletzt
+    offene Seite „Laufen" stehen).
+  - BEENDEN: Nach „Beenden" liegen „Einheit beenden?" und die Abschlussansicht ueber dem Tab.
+    `_woEndeHalten` laesst die Seite bis zum SCHLIESSEN der Abschlussansicht im aktiven Zustand
+    stehen (`finishWorkout` zeichnet nicht neu, `syncWorkoutActiveUI` behaelt `wo-running`);
+    `closeModal('modal-summary')` spielt dann die Bewegung — fuer „Fertig", Tipp daneben und
+    Herunterwischen. `_woEndeHalten` MUSS vor `DB.clearActive` bestimmt werden.
+  - VERWERFEN: dieselbe Rueckwaerts-Bewegung, vorgemerkt im Bestaetigungs-Rueckruf VOR
+    `DB.clearActive`; sie laeuft, sobald der Bestaetigungsdialog zu ist.
+  KEINE Bewegung bei `prefers-reduced-motion` und im Querformat ab 1024px (Wochenplan und
+  Herocard stehen dort nebeneinander, die Herocard wechselt die Breite) — dort weiter der
+  sofortige Wechsel, auch ohne Halten beim Beenden (gemessen).
+  GEMESSEN (375px): Start auf der Seite, Start aus der Uebersicht (freies Training und
+  geplanter Tag, Settle von Hand ausgeloest), Beenden mit Halten und Bewegung nach dem Schliessen,
+  Verwerfen — jeweils Endzustand ohne Reste (keine Kopie, keine Welle, keine Klasse, keine
+  Inline-Sichtbarkeit), erste Uebung offen, `wo-running` korrekt. Standbild bei 190ms zeigt
+  Welle, fast zugeklappte Wochenkarte und ausblendende Karten.
+  RANDFALL: Die einmalige Frage „Deine Einheiten sichern?" (`maybePromptBackup`) oeffnet zugleich
+  mit der Abschlussansicht; ist sie beim Schliessen der Abschlussansicht noch offen, laeuft die
+  Bewegung dahinter.
+  NICHT pruefbar hier: das Gefuehl der Bewegung und das Wischen aus der Uebersicht auf dem Geraet.
 - **`html.wo-running` heisst: die laufende Einheit steht GERADE auf dem Bildschirm**
   (praezisiert 05.09.2026). Die Klasse verlangt vier Dinge zugleich: Es laeuft eine Einheit,
   der Trainings-Tab ist offen, die Seite „Gym" ist gewaehlt UND
