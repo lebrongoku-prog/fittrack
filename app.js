@@ -1044,7 +1044,17 @@ function mitHeroFarbwechsel(huelle, zeichnen) {
     const alt = vorher[b.dataset.sport];
     if (alt && alt !== _heroKnopfFarbe(b)) b.classList.add('hero-farbe-von-' + alt);
   });
+  // Der TEXT der Karte sprang bisher um, waehrend nur die Knopffarbe blendete (Leonard-Meldung
+  // 16.09.2026). Titel und Beschriftung blenden deshalb kurz ein — bewusst KEINE Kreuzblende mit
+  // einer Kopie des alten Textes: Die Karte wird bei jedem Tipp neu gebaut, und eine Kopie waere
+  // hier deutlich mehr Aufwand als der Gewinn. Die KNOEPFE bleiben aussen vor, sie haben mit der
+  // Farbblende schon ihre eigene Bewegung.
+  document.querySelectorAll(huelle + ' .hero-heute-titel, ' + huelle + ' .hero-heute-kopf')
+    .forEach(el => _animFahren(el, [{ opacity: 0 }, { opacity: 1 }],
+                               { duration: HERO_TEXT_MS, easing: SEITEN_EIN_KURVE, fill: 'backwards' })
+                     .then(() => el.getAnimations().forEach(a => a.cancel())));
 }
+const HERO_TEXT_MS = 180;
 
 // Herocard der Uebersicht. Eigene Funktion, weil die Tagesauswahl sie einzeln neu zeichnet —
 // ein voller `renderOverview()` baute auch den Kalender neu und liesse ihn an den
@@ -3046,6 +3056,9 @@ function toggleSetDone(ei, si) {
   // `saveActive` aufrufen, sonst sieht es die Einheit noch als pausiert.
   if (pauseBeendet) { ensureTimerActive(); updateTimerDisplay(); showToast('Einheit fortgesetzt'); }
   renderWorkoutsScreen();
+  // Kurze Rueckmeldung auf den Tipp (16.09.2026, Leonard-Wunsch) — nur beim SETZEN des Hakens.
+  // Beim Zuruecknehmen waere ein Puls eine Belohnung fuer das Gegenteil.
+  if (nowDone) _satzHakenPuls(exId, si);
 
   // Satzpause läuft nur ZWISCHEN Sätzen einer Übung. Nach dem letzten Satz gibt es nichts
   // mehr abzuwarten — dort folgt der Wechsel zur nächsten Übung, nicht die nächste Wdh.
@@ -3054,6 +3067,20 @@ function toggleSetDone(ei, si) {
   else if (allDone) stopRestTimer(true);   // letzten Satz früher abgehakt → laufende Pause beenden
   // Übung fertig → nächste offene Card aufklappen (gleiche Mechanik wie beim Erledigt-Haken)
   if (allDone) setTimeout(() => { expandNextExercise(); }, 50);
+}
+
+// Das Kaestchen des gerade abgehakten Satzes pulst einmal. Die Karte wird beim Abhaken neu
+// gebaut, deshalb wird das Kaestchen NACH dem Zeichnen gesucht: ueber `data-ex` die Karte, darin
+// das `si`-te Kaestchen. Ist die Uebung damit komplett, klappt die Karte zu — dann gibt es
+// nichts mehr zu pulsen, und der Abschluss hat ohnehin seinen eigenen Moment.
+function _satzHakenPuls(exId, si) {
+  if (_bewegungReduziert()) return;
+  const karte = _aexKarte(exId);
+  const box = karte && karte.querySelectorAll('.aex-v2-setcheck')[si];
+  if (!box || !box.offsetHeight) return;
+  _animFahren(box, [{ transform: 'scale(1)' }, { transform: 'scale(1.18)', offset: .35 }, { transform: 'scale(1)' }],
+              { duration: 260, easing: 'ease-out' })
+    .then(() => box.getAnimations().forEach(a => a.cancel()));
 }
 
 // ─── Bestleistungs-Moment ──────────────────────────────────────────

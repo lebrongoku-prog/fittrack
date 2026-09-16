@@ -521,6 +521,16 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   GEMESSEN (kuenstliche Abschlussansicht): Start bei „0 min / 0 kg / 0 / 0", Ende bei
   „1h 4min / 6.8 t / 15 / 5"; alle vier Bloecke danach bei Deckkraft 1 ohne Restanimation;
   kurze Fassung ohne Bestleistung und ohne Planaenderung ebenso.
+- **DAS KAESTCHEN PULST BEIM ABHAKEN EINES SATZES** (`_satzHakenPuls`, 16.09.2026,
+  Leonard-Wunsch): kurz auf 118 % und zurueck (260ms) — eine Rueckmeldung, dass der Tipp sass.
+  NUR beim SETZEN des Hakens, nicht beim Zuruecknehmen: Ein Puls waere dort eine Belohnung fuer
+  das Gegenteil.
+  Die Karte wird beim Abhaken neu gebaut, das Kaestchen wird deshalb NACH dem Zeichnen gesucht —
+  ueber `data-ex` die Karte, darin das `si`-te `.aex-v2-setcheck`. Ist die Uebung damit komplett,
+  klappt die Karte zu; dann gibt es nichts zu pulsen (Hoehe 0) und der Abschluss hat mit Konfetti
+  und Satzpause ohnehin seinen eigenen Moment.
+  GEMESSEN: erster Satz abgehakt → eine Bewegung mit den Keyframes scale(1) → 1.18 → 1, danach
+  `transform: none` ohne Restanimation; Haken zuruecknehmen → keine Bewegung.
 - **Bestleistungs-Moment:** `celebratePR(name, weight, prev)` läuft, sobald die ÜBUNG komplett abgehakt ist (in `toggleSetDone`, Zweig `allDone`) — nicht nach jedem Satz und nicht erst in der Abschlussansicht. Gewertet wird der schwerste Satz der Übung gegen `getExercisePR()` (gespeicherte Einheiten). Konfetti (`.pr-burst`, respektiert `prefers-reduced-motion`) + Vibration + Toast; `ex.prCelebrated` verhindert eine zweite Feier derselben Übung.
 - **`buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta)`** rendert die Plan-Kachel in BEIDEN Tabs.
   Der Plaene-Tab nutzt sie ueber den Alias `renderRow` — der muss eine Lambda bleiben (`p => buildPlanCard(p, ...)`),
@@ -2441,6 +2451,16 @@ Leonard-Vorgabe:
   TESTHINWEIS: In der versteckten Browser-Ansicht laeuft die Animation nicht, der Knopf bliebe
   dort optisch in der ALTEN Farbe stehen. Zum Ansehen die Animation per `getAnimations()`
   anhalten und `currentTime` setzen.
+  **DER TEXT DER KARTE BLENDET MIT** (16.09.2026, Leonard-Meldung „Titel und Beschriftung
+  springen, waehrend nur die Knopffarbe blendet"): `mitHeroFarbwechsel` laesst nach dem Neubau
+  `.hero-heute-titel` und jede `.hero-heute-kopf` in `HERO_TEXT_MS` (180ms) einblenden.
+  BEWUSST KEINE Kreuzblende mit einer Kopie des alten Textes — die Karte wird bei jedem Tipp neu
+  gebaut, eine Kopie waere hier deutlich mehr Aufwand als der Gewinn. Die KNOEPFE bleiben aussen
+  vor, sie haben mit der Farbblende schon ihre eigene Bewegung.
+  Gilt an allen drei Stellen, die ueber `mitHeroFarbwechsel` zeichnen: Kombi-Karte der Uebersicht,
+  Seite „Gym" und Seite „Laufen".
+  GEMESSEN (echter Tipp auf Donnerstag in der Uebersicht): Titel wechselt auf „Donnerstag",
+  Titel und Kopf blenden je einmal, danach Deckkraft 1 ohne Restanimation.
 
 „Lauf abgeschlossen" ruft `runLaeufeLaden({interactive:true})` — dieselbe Funktion wie
 „Aktualisieren" in den Einstellungen. FitTrack fuehrt keine Laeufe selbst; der Knopf kann nur
