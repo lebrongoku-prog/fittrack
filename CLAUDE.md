@@ -1199,9 +1199,18 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 - **SEITENWECHSEL INNERHALB EINES TABS BLENDET UEBER** (`_seitenWechsel`, 16.09.2026,
   Leonard-Wunsch, „Variante B" aus einer interaktiven Vorschau): Gym ↔ Laufen, Uebungen ↔ Stats
   und die vier Plan-Seiten wechseln nicht mehr hart. Die GANZE Flaeche unter der Kopfzeile
-  blendet in 90ms aus, dann wird gezeichnet, dann kommt die neue Seite in 170ms mit 14px Schub
-  von unten herein (`SEITEN_AUS_MS`/`SEITEN_EIN_MS`; am 16.09.2026 von 130/240ms verkuerzt —
-  Leonard: „etwas schneller", zusammen 370 → 260ms). VERWORFEN wurden dabei das seitliche Schieben (Richtung nach dem Schalter)
+  blendet in 90ms aus (`SEITEN_AUS_MS`), dann wird gezeichnet, dann kommt die neue Seite mit 14px
+  Schub von unten herein.
+  DAS EINBLENDEN SIND ZWEI BEWEGUNGEN mit verschiedenen Dauern UND Kurven (16.09.2026, Leonard:
+  „die Karten erscheinen zu ploetzlich") — das geht nur getrennt, eine Web-Animation kennt genau
+  EINE Kurve fuer alle ihre Eigenschaften: die DECKKRAFT 220ms gleichmaessig anlaufend
+  (`SEITEN_EIN_MS`, `SEITEN_EIN_KURVE`), der SCHUB 260ms ausrollend (`SEITEN_SCHUB_MS`,
+  `SEITEN_SCHUB_KURVE`).
+  GEMESSEN (Animation angehalten, Deckkraft bei 0/25/50/75/100 % der Zeit): 0 · 0.18 · 0.60 ·
+  0.91 · 1. Mit der frueheren Ease-out-Kurve stand sie nach einem Viertel der Zeit schon bei
+  rund 0.78 — die Karten waren praktisch sofort da, der Rest lief unsichtbar aus.
+  Die Dauern sind am 16.09.2026 zweimal geaendert worden: erst 130/240 → 90/170ms (Leonard:
+  „etwas schneller"), dann das Einblenden auf 220/260ms mit den neuen Kurven. VERWORFEN wurden dabei das seitliche Schieben (Richtung nach dem Schalter)
   und die Karten-Staffel (Leonard-Entscheidung).
   GEFAHREN werden die direkten Kinder des Screens AUSSER `.ph` (`_seitenInhalt`): Es gibt keine
   Huelle um den Inhalt, und eine einzuziehen haette jedes Layout beruehrt (Querformat-Grids).
@@ -1225,8 +1234,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Die Bewegung selbst laeuft ueber `_animFahren` (bis 15.09.2026 `_woAnim`) — dieselbe Promise
   mit Notbremse wie beim Modus-Uebergang der Seite „Gym".
   TESTHINWEIS: In der versteckten Browser-Ansicht steht die Zeitleiste; beide Phasen enden erst
-  ueber ihre Wecker (90+300 und 170+300ms). Vor dem Messen des Endzustands also mindestens
-  eine Sekunde warten — sonst steht das Element noch auf Deckkraft 0 (`fill: 'backwards'`).
+  ueber ihre Wecker (90+300 und 220+300ms). Vor dem Messen des Endzustands also mindestens
+  1,2 Sekunden warten — sonst steht das Element noch auf Deckkraft 0 (`fill: 'backwards'`).
   NICHT ANGETASTET: die Wischgeste. Seiten wechselt man weiterhin nur ueber den Schalter unten;
   ein seitlicher Wisch gehoert den Tabs (siehe „AM WISCHEN NICHTS AENDERN").
 - **Seitenleiste: der Seitenschalter steht UNTEN am Bildschirm** (`#seitenleiste`,

@@ -9752,9 +9752,18 @@ function migrateDayModelV2(force) {
 // bevor sie in den Plan-Tab wischt), bei `prefers-reduced-motion` und ohne Breite.
 // TOKEN: Wer waehrend der Blende weiterschaltet, bricht die laufende ab (`_seitenNr`); die alte
 // Kette hoert auf, BEVOR sie zeichnet — gezeichnet wird dann nur das neueste Ziel.
-// 16.09.2026 verkuerzt (Leonard: „etwas schneller") — vorher 130/240ms, zusammen 370ms.
-const SEITEN_AUS_MS = 90, SEITEN_EIN_MS = 170;
-const SEITEN_KURVE = 'cubic-bezier(.2,.8,.2,1)';
+// 16.09.2026 verkuerzt (Leonard: „etwas schneller") — vorher 130/240ms.
+// DAS EINBLENDEN LAEUFT SEITHER IN ZWEI BEWEGUNGEN (Leonard: „die Karten erscheinen zu
+// ploetzlich"): Deckkraft und Schub haben verschiedene Dauern UND verschiedene Kurven, und das
+// geht nur getrennt — eine Web-Animation kennt genau EINE Kurve fuer alle ihre Eigenschaften.
+// Die DECKKRAFT laeuft gleichmaessig an (fast linear, 220ms): Mit der frueheren Ease-out-Kurve
+// stand sie nach einem Viertel der Zeit schon bei 78 % — die Karten waren praktisch sofort da
+// und der Rest der Bewegung lief unsichtbar aus.
+// Der SCHUB bleibt eine ausrollende Bewegung (260ms) und faengt die Karten weich ab.
+// Das AUSBLENDEN bleibt kurz — es ist nur der Abgang.
+const SEITEN_AUS_MS = 90, SEITEN_EIN_MS = 220, SEITEN_SCHUB_MS = 260;
+const SEITEN_EIN_KURVE = 'cubic-bezier(.35,0,.5,1)';     // Deckkraft: kein Sprung am Anfang
+const SEITEN_SCHUB_KURVE = 'cubic-bezier(.22,.7,.3,1)';   // Schub: begleitet, rollt weich aus
 let _seitenNr = 0;
 function _seitenInhalt(screen) {
   return [...screen.children].filter(el => !el.classList.contains('ph') && el.offsetParent !== null);
@@ -9776,9 +9785,14 @@ function _seitenWechsel(screenId, tabName, setzen) {
       alt.forEach(el => el.getAnimations().forEach(a => a.cancel()));
       setzen();
       screen.scrollTop = 0;
-      return Promise.all(_seitenInhalt(screen).map(el => _animFahren(el,
-        [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }],
-        { duration: SEITEN_EIN_MS, easing: SEITEN_KURVE, fill: 'backwards' })));
+      const rein = [];
+      _seitenInhalt(screen).forEach(el => {
+        rein.push(_animFahren(el, [{ opacity: 0 }, { opacity: 1 }],
+                              { duration: SEITEN_EIN_MS, easing: SEITEN_EIN_KURVE, fill: 'backwards' }));
+        rein.push(_animFahren(el, [{ transform: 'translateY(14px)' }, { transform: 'none' }],
+                              { duration: SEITEN_SCHUB_MS, easing: SEITEN_SCHUB_KURVE, fill: 'backwards' }));
+      });
+      return Promise.all(rein);
     })
     .then(() => {
       if (nr === _seitenNr) [...screen.children].forEach(el => el.getAnimations().forEach(a => a.cancel()));
