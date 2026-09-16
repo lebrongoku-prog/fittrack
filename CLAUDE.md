@@ -1199,8 +1199,9 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 - **SEITENWECHSEL INNERHALB EINES TABS BLENDET UEBER** (`_seitenWechsel`, 16.09.2026,
   Leonard-Wunsch, „Variante B" aus einer interaktiven Vorschau): Gym ↔ Laufen, Uebungen ↔ Stats
   und die vier Plan-Seiten wechseln nicht mehr hart. Die GANZE Flaeche unter der Kopfzeile
-  blendet in 130ms aus, dann wird gezeichnet, dann kommt die neue Seite in 240ms mit 14px Schub
-  von unten herein. VERWORFEN wurden dabei das seitliche Schieben (Richtung nach dem Schalter)
+  blendet in 90ms aus, dann wird gezeichnet, dann kommt die neue Seite in 170ms mit 14px Schub
+  von unten herein (`SEITEN_AUS_MS`/`SEITEN_EIN_MS`; am 16.09.2026 von 130/240ms verkuerzt —
+  Leonard: „etwas schneller", zusammen 370 → 260ms). VERWORFEN wurden dabei das seitliche Schieben (Richtung nach dem Schalter)
   und die Karten-Staffel (Leonard-Entscheidung).
   GEFAHREN werden die direkten Kinder des Screens AUSSER `.ph` (`_seitenInhalt`): Es gibt keine
   Huelle um den Inhalt, und eine einzuziehen haette jedes Layout beruehrt (Querformat-Grids).
@@ -1224,8 +1225,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Die Bewegung selbst laeuft ueber `_animFahren` (bis 15.09.2026 `_woAnim`) — dieselbe Promise
   mit Notbremse wie beim Modus-Uebergang der Seite „Gym".
   TESTHINWEIS: In der versteckten Browser-Ansicht steht die Zeitleiste; beide Phasen enden erst
-  ueber ihre Wecker (130+300 und 240+300ms). Vor dem Messen des Endzustands also mindestens
-  1,2 Sekunden warten — sonst steht das Element noch auf Deckkraft 0 (`fill: 'backwards'`).
+  ueber ihre Wecker (90+300 und 170+300ms). Vor dem Messen des Endzustands also mindestens
+  eine Sekunde warten — sonst steht das Element noch auf Deckkraft 0 (`fill: 'backwards'`).
   NICHT ANGETASTET: die Wischgeste. Seiten wechselt man weiterhin nur ueber den Schalter unten;
   ein seitlicher Wisch gehoert den Tabs (siehe „AM WISCHEN NICHTS AENDERN").
 - **Seitenleiste: der Seitenschalter steht UNTEN am Bildschirm** (`#seitenleiste`,

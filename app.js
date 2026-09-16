@@ -9740,7 +9740,7 @@ function migrateDayModelV2(force) {
 // Funktionen.
 // ── Seitenwechsel innerhalb eines Tabs (16.09.2026, Leonard-Wunsch, „Variante B") ─────────
 // Gym ↔ Laufen, Uebungen ↔ Stats und die vier Plan-Seiten wechseln nicht mehr hart, sondern
-// mit einer Blende: Die GANZE Flaeche unter der Kopfzeile blendet aus, die neue Seite kommt mit
+// mit einer kurzen Blende: Die GANZE Flaeche unter der Kopfzeile blendet aus, die neue Seite kommt mit
 // einem kleinen Schub von unten herein (Leonard-Entscheidung: Flaeche statt nur Liste — im
 // Plan-Tab wandert der Trainingskalender also mit).
 // Gefahren werden die direkten Kinder des Screens AUSSER der Kopfzeile (`.ph`): Es gibt keine
@@ -9752,7 +9752,8 @@ function migrateDayModelV2(force) {
 // bevor sie in den Plan-Tab wischt), bei `prefers-reduced-motion` und ohne Breite.
 // TOKEN: Wer waehrend der Blende weiterschaltet, bricht die laufende ab (`_seitenNr`); die alte
 // Kette hoert auf, BEVOR sie zeichnet — gezeichnet wird dann nur das neueste Ziel.
-const SEITEN_AUS_MS = 130, SEITEN_EIN_MS = 240;
+// 16.09.2026 verkuerzt (Leonard: „etwas schneller") — vorher 130/240ms, zusammen 370ms.
+const SEITEN_AUS_MS = 90, SEITEN_EIN_MS = 170;
 const SEITEN_KURVE = 'cubic-bezier(.2,.8,.2,1)';
 let _seitenNr = 0;
 function _seitenInhalt(screen) {
