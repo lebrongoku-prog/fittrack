@@ -2119,7 +2119,12 @@ function renderWorkoutWeekStrip() {
 // Trainings-Tab: „Gym" (Krafttraining) und „Laufen" (gelaufene Einheiten).
 let workoutsViewMode = 'gym';
 function setWorkoutsView(mode) {
-  workoutsViewMode = (mode === 'laufen') ? 'laufen' : 'gym';
+  const neu = (mode === 'laufen') ? 'laufen' : 'gym';
+  if (neu !== workoutsViewMode) { _seitenWechsel('screen-workouts', 'workouts', () => _setWorkoutsView(neu)); return; }
+  _setWorkoutsView(neu);
+}
+function _setWorkoutsView(mode) {
+  workoutsViewMode = mode;
   renderWorkoutsScreen();
   // Der Tabhintergrund haengt an der gewaehlten SEITE (grau, wenn dort heute nichts ansteht) —
   // ohne diesen Aufruf bliebe er nach dem Seitenwechsel auf der Farbe der alten Seite stehen.
@@ -2295,8 +2300,9 @@ function _woUebergangSpielen(v) {
     .then(() => { if (v.nr === _woUebergangNr) _woUebergangAufraeumen = []; });
 }
 
-// Web-Animation als Promise, die GARANTIERT endet (Notbremse).
-function _woAnim(el, keyframes, opts) {
+// Web-Animation als Promise, die GARANTIERT endet (Notbremse). Gemeinsamer Baustein des
+// Modus-Uebergangs und des Seitenwechsels (`_seitenWechsel`).
+function _animFahren(el, keyframes, opts) {
   return new Promise(res => {
     let anim;
     try { anim = el.animate(keyframes, opts); } catch (e) { res(); return; }
@@ -2324,7 +2330,7 @@ function _woWocheFahren(v) {
   };
   _woUebergangAufraeumen.push(aufraeumen);
   const offen = { height: h + 'px', opacity: 1 }, zu = { height: '0px', opacity: 0 };
-  return _woAnim(huelle, v.art === 'start' ? [offen, zu] : [zu, offen],
+  return _animFahren(huelle, v.art === 'start' ? [offen, zu] : [zu, offen],
                  { duration: 280, easing: WO_UEB_KURVE, fill: 'forwards' })
     .then(() => { if (v.nr === _woUebergangNr) aufraeumen(); });
 }
@@ -2362,13 +2368,13 @@ function _woHeroWelle(v) {
   karte.append(alt, welle);
   const aufraeumen = () => { alt.remove(); welle.remove(); karte.classList.remove('hero-ueb-verdeckt'); };
   _woUebergangAufraeumen.push(aufraeumen);
-  return _woAnim(welle, [{ transform: 'scale(0)' }, { transform: 'scale(1)' }],
+  return _animFahren(welle, [{ transform: 'scale(0)' }, { transform: 'scale(1)' }],
                  { duration: 380, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' })
     .then(() => {
       if (v.nr !== _woUebergangNr) return;
       alt.remove();
       karte.classList.remove('hero-ueb-verdeckt');
-      return _woAnim(welle, [{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' });
+      return _animFahren(welle, [{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' });
     })
     .then(() => { if (v.nr === _woUebergangNr) aufraeumen(); });
 }
@@ -2397,7 +2403,7 @@ function _woUebungenStaffel(v) {
   _woUebergangAufraeumen.push(aufraeumen);
   const raus = alt.filter(imBild).reverse();
   alt.filter(n => !raus.includes(n)).forEach(n => { n.style.opacity = '0'; });
-  return Promise.all(raus.map((n, i) => _woAnim(n,
+  return Promise.all(raus.map((n, i) => _animFahren(n,
       [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(10px)' }],
       { duration: 150, delay: i * 40, fill: 'forwards' })))
     .then(() => {
@@ -2407,12 +2413,12 @@ function _woUebungenStaffel(v) {
       neu.forEach(n => liste.appendChild(n));
       const rein = neu.filter(imBild);
       const verz = i => Math.min(i, 5) * 80;
-      const bewegungen = rein.map((n, i) => _woAnim(n,
+      const bewegungen = rein.map((n, i) => _animFahren(n,
         [{ opacity: 0, transform: 'translateY(18px)' }, { opacity: 1, transform: 'none' }],
         { duration: 280, delay: verz(i), easing: WO_UEB_KURVE, fill: 'backwards' }));
       if (knopf) {
         knopf.style.visibility = '';
-        bewegungen.push(_woAnim(knopf, [{ opacity: 0 }, { opacity: 1 }],
+        bewegungen.push(_animFahren(knopf, [{ opacity: 0 }, { opacity: 1 }],
           { duration: 280, delay: verz(rein.length), fill: 'backwards' }));
       }
       return Promise.all(bewegungen);
@@ -6484,6 +6490,10 @@ let libDaysArchiveExpanded = false;
 
 function setPlansView(mode) {
   if (!PLANS_SEITEN[mode]) return;
+  if (mode !== plansViewMode) { _seitenWechsel('screen-plans', 'plans', () => _setPlansView(mode)); return; }
+  _setPlansView(mode);
+}
+function _setPlansView(mode) {
   plansViewMode = mode;
   renderPlansScreen();
   seitenleisteAktualisieren();
@@ -7766,7 +7776,12 @@ function renderExercises() {
 // Seiten des Übungen-Tabs: Katalog oder Stats (Aufbau analog zum Pläne-Tab).
 let exercisesViewMode = 'list';   // 'list' | 'stats'
 function setExercisesView(mode) {
-  exercisesViewMode = (mode === 'stats') ? 'stats' : 'list';
+  const neu = (mode === 'stats') ? 'stats' : 'list';
+  if (neu !== exercisesViewMode) { _seitenWechsel('screen-exercises', 'exercises', () => _setExercisesView(neu)); return; }
+  _setExercisesView(neu);
+}
+function _setExercisesView(mode) {
+  exercisesViewMode = mode;
   renderExercisesScreen();
   seitenleisteAktualisieren();
 }
@@ -9723,6 +9738,52 @@ function migrateDayModelV2(force) {
 // lesen und liefe in die temporale Todeszone von `const` (derselbe Fehler wie einst bei
 // `_datenStand` vor dem DB-Objekt). Aus demselben Grund sind auch `aktiv` und `setzen`
 // Funktionen.
+// ── Seitenwechsel innerhalb eines Tabs (16.09.2026, Leonard-Wunsch, „Variante B") ─────────
+// Gym ↔ Laufen, Uebungen ↔ Stats und die vier Plan-Seiten wechseln nicht mehr hart, sondern
+// mit einer Blende: Die GANZE Flaeche unter der Kopfzeile blendet aus, die neue Seite kommt mit
+// einem kleinen Schub von unten herein (Leonard-Entscheidung: Flaeche statt nur Liste — im
+// Plan-Tab wandert der Trainingskalender also mit).
+// Gefahren werden die direkten Kinder des Screens AUSSER der Kopfzeile (`.ph`): Es gibt keine
+// Huelle um den Inhalt, und eine einzufuegen haette jedes Layout (Querformat-Grids!) beruehrt.
+// Alle Kinder tragen dieselbe Bewegung, sichtbar ist also eine einzige Flaeche.
+// NACH OBEN SCROLLEN gehoert dazu (Leonard-Entscheidung): Der Sprung passiert im unsichtbaren
+// Moment zwischen Aus- und Einblenden, man sieht ihn nicht.
+// KEINE Bewegung, wenn der Tab gerade nicht sichtbar ist (die Uebersicht ruft `setPlansView`,
+// bevor sie in den Plan-Tab wischt), bei `prefers-reduced-motion` und ohne Breite.
+// TOKEN: Wer waehrend der Blende weiterschaltet, bricht die laufende ab (`_seitenNr`); die alte
+// Kette hoert auf, BEVOR sie zeichnet — gezeichnet wird dann nur das neueste Ziel.
+const SEITEN_AUS_MS = 130, SEITEN_EIN_MS = 240;
+const SEITEN_KURVE = 'cubic-bezier(.2,.8,.2,1)';
+let _seitenNr = 0;
+function _seitenInhalt(screen) {
+  return [...screen.children].filter(el => !el.classList.contains('ph') && el.offsetParent !== null);
+}
+function _seitenWechsel(screenId, tabName, setzen) {
+  const screen = document.getElementById(screenId);
+  const nr = ++_seitenNr;
+  if (!screen || currentScreen !== tabName || _bewegungReduziert() || screen.clientWidth <= 0) {
+    setzen();
+    return;
+  }
+  // Eine noch laufende Blende abraeumen — sonst faehrt sie gegen die neue.
+  [...screen.children].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+  const alt = _seitenInhalt(screen);
+  Promise.all(alt.map(el => _animFahren(el, [{ opacity: 1 }, { opacity: 0 }],
+                                        { duration: SEITEN_AUS_MS, fill: 'forwards' })))
+    .then(() => {
+      if (nr !== _seitenNr) return;                 // inzwischen weitergeschaltet: die neuere Kette zeichnet
+      alt.forEach(el => el.getAnimations().forEach(a => a.cancel()));
+      setzen();
+      screen.scrollTop = 0;
+      return Promise.all(_seitenInhalt(screen).map(el => _animFahren(el,
+        [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }],
+        { duration: SEITEN_EIN_MS, easing: SEITEN_KURVE, fill: 'backwards' })));
+    })
+    .then(() => {
+      if (nr === _seitenNr) [...screen.children].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+    });
+}
+
 const SEITEN_LEISTE = {
   workouts:  { seiten: () => [['gym', 'Gym'], ['laufen', 'Laufen']],
                aktiv:  () => workoutsViewMode,

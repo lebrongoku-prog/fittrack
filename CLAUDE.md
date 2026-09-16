@@ -1196,6 +1196,38 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Der frueher eigene Streifen (`buildWpCol`/`buildWpInfo`/`renderNext7Strip`/`selectOverviewDay`, Klassen `.wp-*`)
   wurde am 20.08.2026 entfernt — er hatte danach keinen Aufrufer mehr. ACHTUNG beim Aufraeumen: Die Regel fuer den
   Erledigt-Haken war eine Selektorliste (`.ppv-col.done …, .wp-col.done …`) — dort durfte nur der tote Teil weg.
+- **SEITENWECHSEL INNERHALB EINES TABS BLENDET UEBER** (`_seitenWechsel`, 16.09.2026,
+  Leonard-Wunsch, „Variante B" aus einer interaktiven Vorschau): Gym ↔ Laufen, Uebungen ↔ Stats
+  und die vier Plan-Seiten wechseln nicht mehr hart. Die GANZE Flaeche unter der Kopfzeile
+  blendet in 130ms aus, dann wird gezeichnet, dann kommt die neue Seite in 240ms mit 14px Schub
+  von unten herein. VERWORFEN wurden dabei das seitliche Schieben (Richtung nach dem Schalter)
+  und die Karten-Staffel (Leonard-Entscheidung).
+  GEFAHREN werden die direkten Kinder des Screens AUSSER `.ph` (`_seitenInhalt`): Es gibt keine
+  Huelle um den Inhalt, und eine einzuziehen haette jedes Layout beruehrt (Querformat-Grids).
+  Alle Kinder bekommen dieselbe Bewegung — sichtbar ist eine einzige Flaeche. Im PLAN-TAB wandert
+  der Trainingskalender deshalb MIT (Leonard-Entscheidung: ganze Flaeche, nicht nur die Liste);
+  auf „Gymtage" und „Wettkaempfe" ist er ohnehin aus.
+  NACH OBEN SCROLLEN gehoert dazu (Leonard-Entscheidung): `screen.scrollTop = 0` liegt im
+  unsichtbaren Moment zwischen Aus- und Einblenden. GEMESSEN: Katalog von 600 auf 0.
+  KEINE Blende, wenn der Tab gerade NICHT sichtbar ist — die Uebersicht ruft `setPlansView`,
+  bevor sie in den Plan-Tab wischt (gemessen: zeichnet sofort, keine Animation) — sowie bei
+  `prefers-reduced-motion` und ohne Breite.
+  BAUART: `setWorkoutsView`/`setExercisesView`/`setPlansView` pruefen nur noch, ob sich die Seite
+  aendert, und reichen das eigentliche Umschalten als Rueckruf (`_setWorkoutsView` usw.) an
+  `_seitenWechsel(screenId, tabName, setzen)` weiter. Wer die Reihenfolge im Umschalter aendert,
+  fasst nur den Rueckruf an.
+  TOKEN (`_seitenNr`): Wer waehrend der Blende weiterschaltet, bricht die laufende ab — die alte
+  Kette hoert auf, BEVOR sie zeichnet, gezeichnet wird nur das neueste Ziel. Zusaetzlich raeumt
+  jeder Start die Animationen aller Screen-Kinder ab, sonst faehrt eine Einblendung gegen die
+  naechste Ausblendung. GEMESSEN: dreimal in 40ms-Abstand weitergeschaltet → Endzustand ist die
+  zuletzt gewaehlte Seite, Deckkraft 1, keine Restanimation.
+  Die Bewegung selbst laeuft ueber `_animFahren` (bis 15.09.2026 `_woAnim`) — dieselbe Promise
+  mit Notbremse wie beim Modus-Uebergang der Seite „Gym".
+  TESTHINWEIS: In der versteckten Browser-Ansicht steht die Zeitleiste; beide Phasen enden erst
+  ueber ihre Wecker (130+300 und 240+300ms). Vor dem Messen des Endzustands also mindestens
+  1,2 Sekunden warten — sonst steht das Element noch auf Deckkraft 0 (`fill: 'backwards'`).
+  NICHT ANGETASTET: die Wischgeste. Seiten wechselt man weiterhin nur ueber den Schalter unten;
+  ein seitlicher Wisch gehoert den Tabs (siehe „AM WISCHEN NICHTS AENDERN").
 - **Seitenleiste: der Seitenschalter steht UNTEN am Bildschirm** (`#seitenleiste`,
   08.09.2026, Leonard-Wunsch). Der Schalter selbst ist der GEWOHNTE (`.seg-toggle` mit
   `.seg-btn`) — er steht nur nicht mehr im Kopf des Tabs, sondern fest unten, und macht
