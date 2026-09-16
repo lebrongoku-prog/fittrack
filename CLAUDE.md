@@ -1243,6 +1243,20 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   vor dem Messen also die Ansicht auf 375px stellen.
   NICHT ANGETASTET: die Wischgeste. Seiten wechselt man weiterhin nur ueber den Schalter unten;
   ein seitlicher Wisch gehoert den Tabs (siehe „AM WISCHEN NICHTS AENDERN").
+  **DIESELBE STAFFEL BEIM WOCHENTAG-WECHSEL auf der Seite „Gym"** (`selectWorkoutDay` →
+  `_kartenStaffelEin`, 16.09.2026, Leonard-Wunsch): Tippt man in der Wochenplan-Karte einen
+  anderen Tag an, kommen die Uebungskarten des neuen Tags gestaffelt herein.
+  ERST ZEICHNEN, DANN STAFFELN — ohne Abgang der alten Karten: Die Markierung des Wochentags und
+  die Herocard sollen sofort umspringen, ein 120ms-Abgang liesse den Tipp traege wirken.
+  Wochenplan-Karte und Herocard bewegen sich NICHT mit: Die eine ist der Umschalter, den man
+  gerade antippt, die andere hat mit der Farbblende ihres Knopfes (`mitHeroFarbwechsel`) schon
+  ihre eigene Bewegung.
+  `_kartenStaffelFahren(karten)` ist der gemeinsame Kern von Seitenwechsel und Tagwechsel;
+  `_kartenStaffelEin(behaelter)` nimmt zusaetzlich die sichtbaren Kinder eines Behaelters und
+  raeumt vorher laufende Bewegungen ab (schneller zweiter Tipp).
+  GEMESSEN (echte Tipps auf die Wochentage): Donnerstag = 5 Karten mit 0/80/160/240/320ms,
+  Wochentag sofort markiert; drei Tipps in 60ms-Abstand enden sauber (Deckkraft 1, keine
+  Restanimation); ein Tag OHNE Training hat keine Karten und wirft nichts.
 - **Seitenleiste: der Seitenschalter steht UNTEN am Bildschirm** (`#seitenleiste`,
   08.09.2026, Leonard-Wunsch). Der Schalter selbst ist der GEWOHNTE (`.seg-toggle` mit
   `.seg-btn`) — er steht nur nicht mehr im Kopf des Tabs, sondern fest unten, und macht

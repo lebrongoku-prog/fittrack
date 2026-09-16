@@ -1992,6 +1992,13 @@ function woDayIdx(wo) {
 function selectWorkoutDay(idx) {
   selectedWorkoutDayIdx = idx;
   mitHeroFarbwechsel('#wo-session-card-wrap', renderWorkoutsScreen);
+  // Die Uebungskarten des neuen Tags kommen gestaffelt herein (16.09.2026, Leonard-Wunsch) —
+  // dieselbe Bewegung wie beim Seitenwechsel. Wochenplan-Karte und Herocard bleiben stehen: Die
+  // eine ist der Umschalter, den man gerade antippt, die andere hat mit der Farbblende ihres
+  // Knopfes (`mitHeroFarbwechsel`) schon ihre eigene Bewegung.
+  // ERST zeichnen, DANN staffeln: Die Markierung des Wochentags und die Herocard sollen sofort
+  // umspringen — ein Abgang der alten Karten haette den Tipp traege wirken lassen.
+  _kartenStaffelEin(document.getElementById('active-ex-list'));
 }
 
 // Aus der Plan-Karte (Übersicht) in den Trainings-Tab auf einen bestimmten Wochentag springen.
@@ -9786,6 +9793,31 @@ function _staffelElemente(screen) {
   return karten;
 }
 
+// Karten eines Behaelters gestaffelt einblenden — der gemeinsame Teil von Seitenwechsel und
+// Tagwechsel auf der Seite „Gym". Die Karten stehen schon im DOM; hier kommt nur die Bewegung
+// dazu. Karten unterhalb des Bildschirms bleiben aussen vor, die Verzoegerung ist gedeckelt.
+function _kartenStaffelFahren(karten) {
+  const rein = [];
+  karten.forEach((el, i) => {
+    const verzug = Math.min(i, SEITEN_STAFFEL_MAX) * SEITEN_STAFFEL_MS;
+    rein.push(_animFahren(el, [{ opacity: 0 }, { opacity: 1 }],
+                          { duration: SEITEN_EIN_MS, delay: verzug, easing: SEITEN_EIN_KURVE, fill: 'backwards' }));
+    rein.push(_animFahren(el, [{ transform: 'translateY(14px)' }, { transform: 'none' }],
+                          { duration: SEITEN_SCHUB_MS, delay: verzug, easing: SEITEN_SCHUB_KURVE, fill: 'backwards' }));
+  });
+  return Promise.all(rein);
+}
+function _kartenStaffelEin(behaelter) {
+  if (!behaelter || _bewegungReduziert() || !behaelter.clientWidth) return Promise.resolve();
+  const karten = [...behaelter.children]
+    .filter(el => el.offsetHeight && el.getBoundingClientRect().top < window.innerHeight);
+  if (!karten.length) return Promise.resolve();
+  // Ein schneller zweiter Tipp trifft Karten, die noch laufen — erst abraeumen, dann neu fahren.
+  karten.forEach(el => el.getAnimations().forEach(a => a.cancel()));
+  return _kartenStaffelFahren(karten)
+    .then(() => karten.forEach(el => el.getAnimations().forEach(a => a.cancel())));
+}
+
 function _seitenWechsel(screenId, tabName, setzen) {
   const screen = document.getElementById(screenId);
   const nr = ++_seitenNr;
@@ -9807,15 +9839,7 @@ function _seitenWechsel(screenId, tabName, setzen) {
       const karten = _staffelElemente(screen).filter(el => el.getBoundingClientRect().top < window.innerHeight);
       // Ohne erkennbare Karten (leere Seite) faehrt die Flaeche selbst herein.
       const ziele = karten.length ? karten : _seitenInhalt(screen);
-      const rein = [];
-      ziele.forEach((el, i) => {
-        const verzug = Math.min(i, SEITEN_STAFFEL_MAX) * SEITEN_STAFFEL_MS;
-        rein.push(_animFahren(el, [{ opacity: 0 }, { opacity: 1 }],
-                              { duration: SEITEN_EIN_MS, delay: verzug, easing: SEITEN_EIN_KURVE, fill: 'backwards' }));
-        rein.push(_animFahren(el, [{ transform: 'translateY(14px)' }, { transform: 'none' }],
-                              { duration: SEITEN_SCHUB_MS, delay: verzug, easing: SEITEN_SCHUB_KURVE, fill: 'backwards' }));
-      });
-      return Promise.all(rein);
+      return _kartenStaffelFahren(ziele);
     })
     .then(() => {
       if (nr === _seitenNr) screen.querySelectorAll('*').forEach(el => el.getAnimations().forEach(a => a.cancel()));
