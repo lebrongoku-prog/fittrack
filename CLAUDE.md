@@ -1000,6 +1000,24 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   dem Schleier kaum lesbar). Die CSS-Regeln MUESSEN hinter `.cal-filter-btn` stehen: Dessen
   `color: inherit` hat dieselbe Spezifitaet und gewaenne sonst allein durch die Reihenfolge.
   Gilt fuer beide Kalender, auch den im Plan-Tab.
+- **DER WECHSEL DER KALENDERANSICHT BLENDET** (`_calRasterBlende`, 16.09.2026, Leonard-Wunsch):
+  Ein Tipp auf den Titel (Filter) oder den Zeitraum stellte das Raster bis dahin hart um. Jetzt
+  blendet alles UNTER der Kopfzeile in 110ms aus, wird neu gezeichnet und blendet in 190ms wieder
+  ein. Titel, Zeitraum und Kennzahl bleiben stehen — sie sind der Schalter, den man antippt.
+  Gefahren werden die Kinder der Kalenderkarte AUSSER `.chart-card-v2-head`, also `.cal-body`
+  (Wochentagsspalte, Raster, Planbeschriftung) und `.cal-foot` (die Fusszeile, die beim Neuaufbau
+  ohnehin geleert wird).
+  NUR die Deckkraft: Ein Schub waere im Raster unruhig, und ein `transform` auf dem Vorfahren
+  bricht auf iOS die Wischgeste im Scrollbereich ab (siehe „Kalenderkarten sind von der
+  Tipp-Animation ausgenommen").
+  Im Einsatz bei `toggleCalFilter`, `setCalJahr` (also auch `wechselCalJahr`) und
+  `calZurAktuellenAnsicht` — in BEIDEN Kalendern. Jeder andere Aufruf von
+  `renderTrainingCalendar` (Tabwechsel, Datenaenderung) zeichnet weiterhin ohne Blende.
+  Das Neuzeichnen liegt im unsichtbaren Moment, die Scrollposition springt also verdeckt.
+  TOKEN `_calBlendeNr`: Wer waehrend der Blende weitertippt, bricht die laufende ab.
+  GEMESSEN (echte Tipps): Titel und Zeitraum blenden `.cal-body` und `.cal-foot`, der Kopf bleibt
+  bei Deckkraft 1; Kreispfeil und der Zeitraum im Plan-Tab ebenso; dreimal in 50ms-Abstand
+  getippt endet sauber ohne Restanimation.
 - **Lesehilfe im Trainingskalender:** `.info-btn` neben der Kennzahl oben rechts (`.cal-head-right` fasst beide
   zusammen) oeffnet `#modal-cal-info`. **Seit dem 14.09.2026 NUR NOCH IM PLAN-TAB** (Leonard-Wunsch).
   In der UEBERSICHT steht an derselben Stelle ein Knopf ZURUECK ZUR ERSTANSICHT (`.cal-reset-btn`,

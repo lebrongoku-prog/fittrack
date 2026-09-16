@@ -5010,7 +5010,7 @@ const _CAL_FILTER_TITEL = { beide: 'Trainingskalender', kraft: 'Gymkalender', la
 function toggleCalFilter() {
   _calFilter = _CAL_FILTER_FOLGE[_calFilter] || 'beide';
   _calAnsichtSpeichern();
-  renderTrainingCalendar('cal', 'ov-cal-card');
+  _calRasterBlende('cal', () => renderTrainingCalendar('cal', 'ov-cal-card'));
 }
 // Welche Sportart zeigt WELCHER Kalender? Die Uebersicht folgt dem Filter im Titel, der
 // Plaene-Tab der gewaehlten Seite: Gymplan → Krafttraining, Laufplan → Laeufe.
@@ -5040,7 +5040,40 @@ function calZurAktuellenAnsicht() {
   _calAnsichtSpeichern();
   _calPositioniert.cal = false;
   _calScrollPos.cal = 0;
-  renderTrainingCalendar('cal', 'ov-cal-card');
+  _calRasterBlende('cal', () => renderTrainingCalendar('cal', 'ov-cal-card'));
+}
+
+// ── Blende beim Wechsel der Kalenderansicht (16.09.2026, Leonard-Wunsch) ──────────────
+// Ein Tipp auf den Titel (Filter) oder den Zeitraum stellte das Raster bisher hart um. Jetzt
+// blendet alles UNTER der Kopfzeile kurz aus, wird neu gezeichnet und blendet wieder ein —
+// Titel, Zeitraum und Kennzahl bleiben stehen, sie sind ja der Schalter, den man antippt.
+// Bewegt wird NUR die Deckkraft: Ein Schub wie bei den Karten waere im Raster unruhig, und das
+// Raster hat einen eigenen Scrollbereich, den ein `transform` auf dem Vorfahren auf iOS stoeren
+// kann (siehe „Kalenderkarten sind von der Tipp-Animation ausgenommen").
+// Das Neuzeichnen liegt im unsichtbaren Moment — auch die Scrollposition springt also verdeckt.
+// TOKEN `_calBlendeNr`: Wer waehrend der Blende weitertippt, bricht die laufende ab.
+const CAL_BLENDE_AUS_MS = 110, CAL_BLENDE_EIN_MS = 190;
+let _calBlendeNr = 0;
+function _calRasterBlende(id, zeichnen) {
+  const karte = document.getElementById(id === 'cal' ? 'ov-cal-card' : 'plans-cal-card');
+  const teile = karte ? [...karte.children].filter(el => !el.classList.contains('chart-card-v2-head')) : [];
+  const nr = ++_calBlendeNr;
+  if (!teile.length || _bewegungReduziert() || !karte.clientWidth) { zeichnen(); return; }
+  teile.forEach(el => el.getAnimations().forEach(a => a.cancel()));
+  Promise.all(teile.map(el => _animFahren(el, [{ opacity: 1 }, { opacity: 0 }],
+                                          { duration: CAL_BLENDE_AUS_MS, fill: 'forwards' })))
+    .then(() => {
+      if (nr !== _calBlendeNr) return;          // inzwischen weitergetippt: die neuere Blende zeichnet
+      teile.forEach(el => el.getAnimations().forEach(a => a.cancel()));
+      zeichnen();
+      // Nach dem Zeichnen stehen (bei der Fusszeile) andere Elemente in der Karte.
+      const neu = [...karte.children].filter(el => !el.classList.contains('chart-card-v2-head'));
+      return Promise.all(neu.map(el => _animFahren(el, [{ opacity: 0 }, { opacity: 1 }],
+        { duration: CAL_BLENDE_EIN_MS, easing: SEITEN_EIN_KURVE, fill: 'backwards' })));
+    })
+    .then(() => {
+      if (nr === _calBlendeNr) [...karte.children].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+    });
 }
 
 function calendarInnerHTML(id) {
@@ -5241,7 +5274,7 @@ function setCalJahr(jahr, id) {
   // Beim Jahreswechsel neu positionieren: Die gemerkte Spalte gehoert zum alten Jahr.
   _calPositioniert[id] = false;
   _calScrollPos[id] = 0;
-  renderTrainingCalendar(id, id === 'cal' ? 'ov-cal-card' : 'plans-cal-card');
+  _calRasterBlende(id, () => renderTrainingCalendar(id, id === 'cal' ? 'ov-cal-card' : 'plans-cal-card'));
 }
 
 function renderTrainingCalendar(id, cardId) {
