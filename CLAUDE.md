@@ -864,6 +864,27 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Muskelkarte auf die gemessene Hoehe der Volumenkarte (Leonard-Wunsch: gleich hoch). Gemessen statt fest
   verdrahtet, weil der Kopf der Volumenkarte je nach Breite ein- oder zweizeilig ist. Im Querformat wird nichts
   gesetzt — dort haelt das Grid die beiden ueber `stretch` von selbst gleich hoch.
+- **EINE LISTENZEILE KLAPPT BEIM LOESCHEN WEG** (`_zeileWegKlappen`, 16.09.2026,
+  Leonard-Wunsch): Vorher verschwand sie und alles darunter sprang hoch. Gefahren werden Hoehe,
+  senkrechtes Polster UND die Aussenabstaende (220ms): Bei `box-sizing: border-box` kann ein
+  Kasten nicht flacher werden als sein Polster, und der Abstand zur naechsten Zeile bliebe sonst
+  als Luecke stehen. `overflow: hidden` schneidet den Inhalt ab; aufgeraeumt wird nicht, weil der
+  Aufrufer direkt danach neu zeichnet. Gegenstueck: `_zeileEinblenden` fuer eine NEU
+  dazugekommene Zeile (nutzt `_kartenStaffelFahren` mit einer einzigen Karte).
+  IM EINSATZ an den Stellen, an denen die Liste beim Loeschen SICHTBAR bleibt:
+  Uebung im Katalog (`deleteExerciseFromCatalog` → `_exLoeschenAusfuehren`, Zeile
+  `#ex-item-<exId>`), Papierkorb (Zurueckholen und endgueltig Loeschen, Zeile
+  `.trash-row[data-trash]`) und Wettkampf (`#races-list [data-date]` — dieselbe Kennung traegt
+  der Punkt im Zeitstrahl UND die Karte in der Liste, `wettkampfKarte` hat sie dafuer bekommen).
+  Ein NEUER Wettkampf kommt umgekehrt herein (`saveRaceFromDialog`).
+  NICHT eingebaut bei Gymplan, Gymtag und Laufplan: Die drei werden aus ihrer DETAILANSICHT
+  heraus geloescht, die Seite wird dabei verlassen — es gibt keine Zeile, die wegklappen koennte.
+  `trashRestore` ruft sich nach der Bewegung SELBST noch einmal auf; `data-faehrt` an der Zeile
+  verhindert die Endlosschleife und schluckt zugleich einen zweiten Tipp waehrend der Bewegung.
+  GEMESSEN: Uebung geloescht (29 → 28, Eintrag im Papierkorb), Zeile mit `overflow: hidden` und
+  laufender Bewegung; Zurueckholen aus dem Papierkorb (Liste leer, Uebung wieder da); Wettkampf
+  angelegt (kommt herein, danach Deckkraft 1) und wieder geloescht (Punkt klappt weg, danach
+  aus dem Zeitstrahl verschwunden).
 - **Löschen ist zweifach abgesichert:** (1) `withUndo(label, fn, afterRestore)` + `showUndoToast()` — sichert die Stores vorab, „Rückgängig" 6 s lang. (2) **Papierkorb** (`ft_trash`, `trashPut/trashRestore/trashDeleteForever/emptyTrash/purgeTrash`, Liste via `renderTrash()` im Einstellungen-Overlay): gelöschte Einheiten, Pläne, Trainingstage und Übungen liegen `TRASH_KEEP_DAYS` = 30 Tage dort. `_snapshotStores` sichert `ft_trash` mit, sonst läge ein Objekt nach „Rückgängig" doppelt vor.
 - **Auswertungen** (Volumenentwicklung, Volumen pro Muskelgruppe, Letzte Einheiten, PRs und Bestleistungen) liegen auf der Stats-Seite des Übungen-Tabs, NICHT mehr in der Übersicht. „Letzte Einheiten" (`renderRecentSessions`, Karte `#ov-recent-sessions-card`) ist am 20.08.2026 dorthin gewandert — die ID behielt ihr `ov-`Präfix.
   Reihenfolge auf der Stats-Seite: Volumenentwicklung, Volumen pro Muskelgruppe, PRs & Bestleistungen, Letzte Einheiten (01.09.2026). `renderStatsPage()` füllt sie. Der Trainingskalender wird dagegen von `renderOverview()` gerendert — er gehört zur Übersicht. ACHTUNG: Vor dem Umbau hing sein Aufruf in `renderHomeStats()`; wandert er wieder dorthin, bleibt die Kalenderkarte in der Übersicht leer.
@@ -1021,8 +1042,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Gilt fuer beide Kalender, auch den im Plan-Tab.
 - **DER WECHSEL DER KALENDERANSICHT BLENDET** (`_calRasterBlende`, 16.09.2026, Leonard-Wunsch):
   Ein Tipp auf den Titel (Filter) oder den Zeitraum stellte das Raster bis dahin hart um. Jetzt
-  blendet alles UNTER der Kopfzeile in 110ms aus, wird neu gezeichnet und blendet in 190ms wieder
-  ein. Titel, Zeitraum und Kennzahl bleiben stehen — sie sind der Schalter, den man antippt.
+  blendet alles UNTER der Kopfzeile in 80ms aus, wird neu gezeichnet und blendet in 140ms wieder
+  ein (am selben Tag von 110/190ms verkuerzt — Leonard: „etwas schneller"). Titel, Zeitraum und Kennzahl bleiben stehen — sie sind der Schalter, den man antippt.
   Gefahren werden die Kinder der Kalenderkarte AUSSER `.chart-card-v2-head`, also `.cal-body`
   (Wochentagsspalte, Raster, Planbeschriftung) und `.cal-foot` (die Fusszeile, die beim Neuaufbau
   ohnehin geleert wird).

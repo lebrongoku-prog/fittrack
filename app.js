@@ -5102,7 +5102,8 @@ function calZurAktuellenAnsicht() {
 // kann (siehe „Kalenderkarten sind von der Tipp-Animation ausgenommen").
 // Das Neuzeichnen liegt im unsichtbaren Moment — auch die Scrollposition springt also verdeckt.
 // TOKEN `_calBlendeNr`: Wer waehrend der Blende weitertippt, bricht die laufende ab.
-const CAL_BLENDE_AUS_MS = 110, CAL_BLENDE_EIN_MS = 190;
+// 16.09.2026 verkuerzt (Leonard: „etwas schneller") — vorher 110/190ms.
+const CAL_BLENDE_AUS_MS = 80, CAL_BLENDE_EIN_MS = 140;
 let _calBlendeNr = 0;
 function _calRasterBlende(id, zeichnen) {
   const karte = document.getElementById(id === 'cal' ? 'ov-cal-card' : 'plans-cal-card');
@@ -7021,7 +7022,7 @@ function wettkampfKarte(r, lauf) {
   // Ein Tipp oeffnet denselben Dialog wie das „+", nur mit gefuellten Feldern — sonst gaebe es
   // keinen Weg, einen Vertipper zu berichtigen oder einen Termin wieder zu entfernen.
   const zustand = kuenftig ? ' wk-kuenftig' : (!kacheln.length && ueberfaellig ? ' wk-offen' : '');
-  return `<div class="chart-card-v2 wk-card${zustand}"
+  return `<div class="chart-card-v2 wk-card${zustand}" data-date="${r.date}"
        onclick="openRaceDialog('${r.date}')">
     <div class="wk-kopf">
       <div class="chart-card-v2-title wk-name">${escapeHtml(r.name || 'Wettkampf')}</div>
@@ -7055,9 +7056,12 @@ function saveRaceFromDialog() {
   const liste = DB.getRaces().filter(r => r.date !== _raceEditDate && r.date !== datum);
   liste.push({ date: datum, name: name || 'Wettkampf' });
   DB.saveRaces(liste);
+  const neu = !_raceEditDate || _raceEditDate !== datum;
   _raceEditDate = null;
   closeModal('modal-race');
   _wettkampfNeuZeichnen();
+  // Ein neuer Termin kommt wie eine Karte von unten herein — sonst steht er einfach da.
+  if (neu) _zeileEinblenden(document.querySelector(`#races-list [data-date="${datum}"]`));
 }
 
 function deleteRaceFromDialog() {
@@ -7065,12 +7069,17 @@ function deleteRaceFromDialog() {
   if (!datum) return;
   const r = DB.getRaces().find(x => x.date === datum);
   confirmAction('Wettkampf löschen?', `„${(r && r.name) || 'Wettkampf'}" wird aus dem Kalender entfernt.`, () => {
-    withUndo('Wettkampf gelöscht', () => {
-      DB.saveRaces(DB.getRaces().filter(x => x.date !== datum));
-    }, _wettkampfNeuZeichnen);
     _raceEditDate = null;
     closeModal('modal-race');
-    _wettkampfNeuZeichnen();
+    // Eintrag wegklappen, dann loeschen (16.09.2026). `data-date` trifft im Zeitstrahl den
+    // Punkt und in der Liste die Karte — beide tragen dieselbe Kennung.
+    const zeile = document.querySelector(`#races-list [data-date="${datum}"]`);
+    _zeileWegKlappen(zeile).then(() => {
+      withUndo('Wettkampf gelöscht', () => {
+        DB.saveRaces(DB.getRaces().filter(x => x.date !== datum));
+      }, _wettkampfNeuZeichnen);
+      _wettkampfNeuZeichnen();
+    });
   }, { danger: true, confirmLabel: 'Löschen' });
 }
 
@@ -8200,6 +8209,12 @@ function deleteExerciseFromCatalog(id) {
     ? `„${ex.name}" wird in mindestens einem Trainingstag verwendet. Trotzdem löschen? Die Übung wird automatisch aus dem Plan entfernt.`
     : `„${ex.name}" wirklich löschen?`;
   confirmAction('Übung löschen?', msg, () => {
+    // Erst die Zeile wegklappen, dann loeschen und neu zeichnen (16.09.2026).
+    const zeile = document.getElementById('ex-item-' + id);
+    _zeileWegKlappen(zeile).then(() => _exLoeschenAusfuehren(id, ex, usedInPlan));
+  }, { danger: true, confirmLabel: 'Löschen' });
+}
+function _exLoeschenAusfuehren(id, ex, usedInPlan) {
     withUndo('Übung gelöscht', () => {
       if (usedInPlan) {
         const p = DB.getPlan();
@@ -8212,7 +8227,6 @@ function deleteExerciseFromCatalog(id) {
       if (openExerciseId === id) openExerciseId = null;
       renderExercises();
     }, () => renderExercises());
-  }, { danger: true, confirmLabel: 'Löschen' });
 }
 
 // "Zum Plan hinzufügen" aus dem Übungen-Tab
@@ -8999,6 +9013,14 @@ function purgeTrash() {
 }
 
 function trashRestore(id) {
+  // Die Zeile klappt weg, bevor der Eintrag zurueckwandert (16.09.2026) — sonst springt die
+  // Liste. Ein zweiter Tipp waehrend der Bewegung findet den Eintrag nicht mehr und tut nichts.
+  const zeile = document.querySelector(`.trash-row[data-trash="${id}"]`);
+  if (zeile && !zeile.dataset.faehrt) {
+    zeile.dataset.faehrt = '1';
+    _zeileWegKlappen(zeile).then(() => trashRestore(id));
+    return;
+  }
   const trash = DB.getTrash();
   const idx = trash.findIndex(t => t.id === id);
   if (idx < 0) return;
@@ -9039,9 +9061,12 @@ function trashDeleteForever(id) {
   confirmAction('Endgültig löschen?',
     `„${entry.label}" wird unwiderruflich entfernt. Das lässt sich nicht mehr rückgängig machen.`,
     () => {
-      DB.saveTrash(DB.getTrash().filter(t => t.id !== id));
-      renderTrash();
-      showToast('Endgültig gelöscht');
+      const zeile = document.querySelector(`.trash-row[data-trash="${id}"]`);
+      _zeileWegKlappen(zeile).then(() => {
+        DB.saveTrash(DB.getTrash().filter(t => t.id !== id));
+        renderTrash();
+        showToast('Endgültig gelöscht');
+      });
     },
     { danger: true, confirmLabel: 'Endgültig löschen' });
 }
@@ -9099,7 +9124,7 @@ function renderTrash() {
   }
   wrap.innerHTML = trash.map(t => {
     const daysLeft = Math.max(0, TRASH_KEEP_DAYS - Math.floor((Date.now() - t.deletedAt) / 86400000));
-    return `<div class="trash-row">
+    return `<div class="trash-row" data-trash="${t.id}">
       <div class="trash-info">
         <div class="trash-name">${escapeHtml(t.label)}</div>
         <div class="trash-meta">${TRASH_LABELS[t.type] || 'Eintrag'} · gelöscht am ${fmtDateShort(t.deletedAt)} · noch ${daysLeft} ${daysLeft === 1 ? 'Tag' : 'Tage'}</div>
@@ -9932,6 +9957,31 @@ function _staffelElemente(screen) {
 // Karten eines Behaelters gestaffelt einblenden — der gemeinsame Teil von Seitenwechsel und
 // Tagwechsel auf der Seite „Gym". Die Karten stehen schon im DOM; hier kommt nur die Bewegung
 // dazu. Karten unterhalb des Bildschirms bleiben aussen vor, die Verzoegerung ist gedeckelt.
+// ── Eine Listenzeile klappt beim Loeschen weg (16.09.2026, Leonard-Wunsch) ─────────────
+// Vorher verschwand sie und alles darunter sprang hoch. Gefahren werden Hoehe, senkrechtes
+// Polster UND die Aussenabstaende: Bei `box-sizing: border-box` kann ein Kasten nicht flacher
+// werden als sein Polster, und der Abstand zur naechsten Zeile bliebe sonst als Luecke stehen.
+// `overflow: hidden` schneidet den Inhalt waehrenddessen ab. Aufgeraeumt wird nicht — direkt
+// danach zeichnet der Aufrufer die Liste neu.
+const ZEILE_WEG_MS = 220;
+function _zeileWegKlappen(el) {
+  if (!el || _bewegungReduziert() || !el.offsetHeight) return Promise.resolve();
+  const cs = getComputedStyle(el);
+  const z = (name) => parseFloat(cs[name]) || 0;
+  const voll = { height: el.offsetHeight + 'px', opacity: 1,
+                 marginTop: z('marginTop') + 'px', marginBottom: z('marginBottom') + 'px',
+                 paddingTop: z('paddingTop') + 'px', paddingBottom: z('paddingBottom') + 'px' };
+  const leer = { height: '0px', opacity: 0, marginTop: '0px', marginBottom: '0px',
+                 paddingTop: '0px', paddingBottom: '0px' };
+  el.style.overflow = 'hidden';
+  return _animFahren(el, [voll, leer], { duration: ZEILE_WEG_MS, easing: 'ease', fill: 'forwards' });
+}
+// Gegenstueck: eine NEU dazugekommene Zeile kommt wie eine Karte von unten herein.
+function _zeileEinblenden(el) {
+  if (!el || _bewegungReduziert()) return Promise.resolve();
+  return _kartenStaffelFahren([el]).then(() => el.getAnimations().forEach(a => a.cancel()));
+}
+
 function _kartenStaffelFahren(karten, grundVerzug) {
   const rein = [];
   karten.forEach((el, i) => {
