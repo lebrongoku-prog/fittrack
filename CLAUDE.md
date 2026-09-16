@@ -1257,6 +1257,12 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   GEMESSEN (echte Tipps auf die Wochentage): Donnerstag = 5 Karten mit 0/80/160/240/320ms,
   Wochentag sofort markiert; drei Tipps in 60ms-Abstand enden sauber (Deckkraft 1, keine
   Restanimation); ein Tag OHNE Training hat keine Karten und wirft nichts.
+  **DASSELBE AUF DER SEITE „LAUFEN"** (`selectRunDay`, 16.09.2026): Die Tageskarte unter „Diese
+  Woche" kommt ebenso von unten herein. Es ist EINE Karte, die Staffel hat dort also nur einen
+  Schritt. Die Huelle `#wo-lauftag-card` wird bei jedem Zeichnen neu gebaut — sie muss deshalb
+  NACH dem Zeichnen frisch gesucht werden.
+  GEMESSEN (echter Tipp auf Freitag): eine Karte (`.aex-v2.lauf-tag-karte`) ohne Verzoegerung,
+  Wochentag sofort markiert, Endzustand sauber; zwei Tipps in 60ms-Abstand ebenfalls.
 - **Seitenleiste: der Seitenschalter steht UNTEN am Bildschirm** (`#seitenleiste`,
   08.09.2026, Leonard-Wunsch). Der Schalter selbst ist der GEWOHNTE (`.seg-toggle` mit
   `.seg-btn`) — er steht nur nicht mehr im Kopf des Tabs, sondern fest unten, und macht

@@ -4419,7 +4419,15 @@ let _laufOffeneWochen = new Set();  // mehrere Wochen duerfen gleichzeitig offen
 // Ausgewaehlter Wochentag auf der Seite „Laufen". Vorbelegt mit HEUTE — dieselbe Bedienung
 // wie im Gymteil (`selectedWorkoutDayIdx`), nur fuer die Laufseite.
 let selectedRunDayIdx = null;
-function selectRunDay(idx) { selectedRunDayIdx = idx; mitHeroFarbwechsel('#wo-lauf-hero', renderLaufKalenderSeite); }
+function selectRunDay(idx) {
+  selectedRunDayIdx = idx;
+  mitHeroFarbwechsel('#wo-lauf-hero', renderLaufKalenderSeite);
+  // Die Tageskarte kommt wie die Uebungskarten auf der Seite „Gym" von unten herein
+  // (16.09.2026, Leonard-Wunsch). Wochenplan-Karte und Herocard bleiben stehen — dieselbe
+  // Aufteilung wie dort. `renderLaufKalenderSeite` baut die Huelle jedes Mal neu, deshalb wird
+  // sie hier frisch gesucht.
+  _kartenStaffelEin(document.getElementById('wo-lauftag-card'));
+}
 
 // Detailkarte zum gewaehlten Lauftag. Gebaut aus den Klassen der ausgeklappten
 // Uebungskarte (`.aex-v2`), damit sie auf der Nachbarseite „Gym" nicht wie ein Fremdkoerper
