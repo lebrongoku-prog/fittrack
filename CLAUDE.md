@@ -1196,46 +1196,51 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Der frueher eigene Streifen (`buildWpCol`/`buildWpInfo`/`renderNext7Strip`/`selectOverviewDay`, Klassen `.wp-*`)
   wurde am 20.08.2026 entfernt — er hatte danach keinen Aufrufer mehr. ACHTUNG beim Aufraeumen: Die Regel fuer den
   Erledigt-Haken war eine Selektorliste (`.ppv-col.done …, .wp-col.done …`) — dort durfte nur der tote Teil weg.
-- **SEITENWECHSEL INNERHALB EINES TABS BLENDET UEBER** (`_seitenWechsel`, 16.09.2026,
-  Leonard-Wunsch, „Variante B" aus einer interaktiven Vorschau): Gym ↔ Laufen, Uebungen ↔ Stats
-  und die vier Plan-Seiten wechseln nicht mehr hart. Die GANZE Flaeche unter der Kopfzeile
-  blendet in 90ms aus (`SEITEN_AUS_MS`), dann wird gezeichnet, dann kommt die neue Seite mit 14px
-  Schub von unten herein.
-  DAS EINBLENDEN SIND ZWEI BEWEGUNGEN mit verschiedenen Dauern UND Kurven (16.09.2026, Leonard:
-  „die Karten erscheinen zu ploetzlich") — das geht nur getrennt, eine Web-Animation kennt genau
-  EINE Kurve fuer alle ihre Eigenschaften: die DECKKRAFT 220ms gleichmaessig anlaufend
-  (`SEITEN_EIN_MS`, `SEITEN_EIN_KURVE`), der SCHUB 260ms ausrollend (`SEITEN_SCHUB_MS`,
-  `SEITEN_SCHUB_KURVE`).
-  GEMESSEN (Animation angehalten, Deckkraft bei 0/25/50/75/100 % der Zeit): 0 · 0.18 · 0.60 ·
-  0.91 · 1. Mit der frueheren Ease-out-Kurve stand sie nach einem Viertel der Zeit schon bei
-  rund 0.78 — die Karten waren praktisch sofort da, der Rest lief unsichtbar aus.
-  Die Dauern sind am 16.09.2026 zweimal geaendert worden: erst 130/240 → 90/170ms (Leonard:
-  „etwas schneller"), dann das Einblenden auf 220/260ms mit den neuen Kurven. VERWORFEN wurden dabei das seitliche Schieben (Richtung nach dem Schalter)
-  und die Karten-Staffel (Leonard-Entscheidung).
-  GEFAHREN werden die direkten Kinder des Screens AUSSER `.ph` (`_seitenInhalt`): Es gibt keine
-  Huelle um den Inhalt, und eine einzuziehen haette jedes Layout beruehrt (Querformat-Grids).
-  Alle Kinder bekommen dieselbe Bewegung — sichtbar ist eine einzige Flaeche. Im PLAN-TAB wandert
-  der Trainingskalender deshalb MIT (Leonard-Entscheidung: ganze Flaeche, nicht nur die Liste);
-  auf „Gymtage" und „Wettkaempfe" ist er ohnehin aus.
+- **SEITENWECHSEL INNERHALB EINES TABS: KARTEN IN STAFFEL** (`_seitenWechsel`, 16.09.2026,
+  Leonard-Wunsch, „Variante C" aus einer interaktiven Vorschau). Gym ↔ Laufen, Uebungen ↔ Stats
+  und die vier Plan-Seiten wechseln nicht mehr hart: Die GANZE Flaeche unter der Kopfzeile
+  blendet in 120ms aus, dann wird gezeichnet, dann kommen die Karten der neuen Seite
+  NACHEINANDER von unten herein — je 80ms versetzt, dieselbe Formensprache wie beim Wechsel in
+  den aktiven Modus auf der Seite „Gym".
+  VORGESCHICHTE, alles am 16.09.2026: Zuerst „Variante B" (die ganze Flaeche als EIN Stueck,
+  130/240ms), dann auf Leonards Wunsch schneller (90/170ms), dann das Einblenden geteilt („die
+  Karten erscheinen zu ploetzlich"), schliesslich der Wechsel auf diese Staffel. Das seitliche
+  Schieben („Variante A") war nie eingebaut.
+  WAS EINE KARTE IST, entscheidet `_staffelElemente`: Es laeuft vom Screen abwaerts und nimmt das
+  erste Element mit eigener KLASSE. Reine Huellen OHNE Klasse (`#wo-view-gym`, `#active-ex-list`,
+  `#plans-list`, `#exercises-groups` …) sind keine Karten, dort geht es eine Ebene tiefer — sonst
+  waere die ganze Uebungsliste EIN Schritt. Elemente mit Hoehe 0 fallen raus, sie kosteten sonst
+  einen unsichtbaren Schritt (der leere `#active-ex-list` der Vorschau war genau so ein Fall).
+  Karten UNTERHALB des Bildschirms bewegen sich nicht, und ab der sechsten Karte ist die
+  Verzoegerung gedeckelt (`SEITEN_STAFFEL_MAX`) — im Katalog stuenden sonst zwanzig Gruppen in
+  der Warteschlange. Findet sich gar keine Karte, faehrt die Flaeche selbst herein.
+  JE KARTE ZWEI BEWEGUNGEN mit verschiedenen Dauern UND Kurven — das geht nur getrennt, eine
+  Web-Animation kennt genau EINE Kurve fuer alle ihre Eigenschaften: Deckkraft 220ms
+  gleichmaessig anlaufend (`SEITEN_EIN_MS`/`SEITEN_EIN_KURVE`), Schub 14px in 260ms ausrollend
+  (`SEITEN_SCHUB_MS`/`SEITEN_SCHUB_KURVE`). GEMESSEN mit angehaltener Animation: Deckkraft bei
+  0/25/50/75/100 % der Zeit = 0 · 0.18 · 0.60 · 0.91 · 1. Eine reine Ease-out-Kurve stand nach
+  einem Viertel der Zeit schon bei 0.78 — genau das war „zu ploetzlich".
   NACH OBEN SCROLLEN gehoert dazu (Leonard-Entscheidung): `screen.scrollTop = 0` liegt im
-  unsichtbaren Moment zwischen Aus- und Einblenden. GEMESSEN: Katalog von 600 auf 0.
-  KEINE Blende, wenn der Tab gerade NICHT sichtbar ist — die Uebersicht ruft `setPlansView`,
-  bevor sie in den Plan-Tab wischt (gemessen: zeichnet sofort, keine Animation) — sowie bei
-  `prefers-reduced-motion` und ohne Breite.
+  unsichtbaren Moment zwischen Aus- und Einblenden (gemessen: Katalog von 600 auf 0).
+  KEINE Bewegung, wenn der Tab gerade NICHT sichtbar ist — die Uebersicht ruft `setPlansView`,
+  bevor sie in den Plan-Tab wischt — sowie bei `prefers-reduced-motion` und ohne Breite.
   BAUART: `setWorkoutsView`/`setExercisesView`/`setPlansView` pruefen nur noch, ob sich die Seite
   aendert, und reichen das eigentliche Umschalten als Rueckruf (`_setWorkoutsView` usw.) an
-  `_seitenWechsel(screenId, tabName, setzen)` weiter. Wer die Reihenfolge im Umschalter aendert,
-  fasst nur den Rueckruf an.
-  TOKEN (`_seitenNr`): Wer waehrend der Blende weiterschaltet, bricht die laufende ab — die alte
-  Kette hoert auf, BEVOR sie zeichnet, gezeichnet wird nur das neueste Ziel. Zusaetzlich raeumt
-  jeder Start die Animationen aller Screen-Kinder ab, sonst faehrt eine Einblendung gegen die
-  naechste Ausblendung. GEMESSEN: dreimal in 40ms-Abstand weitergeschaltet → Endzustand ist die
+  `_seitenWechsel(screenId, tabName, setzen)`. Wer die Reihenfolge im Umschalter aendert, fasst
+  nur den Rueckruf an. Die Bewegung selbst laeuft ueber `_animFahren` (bis 15.09.2026 `_woAnim`) —
+  dieselbe Promise mit Notbremse wie beim Modus-Uebergang.
+  TOKEN (`_seitenNr`): Wer waehrend der Bewegung weiterschaltet, bricht die laufende ab — die alte
+  Kette hoert auf, BEVOR sie zeichnet. Zusaetzlich raeumt jeder Start die Animationen ALLER
+  Elemente im Screen ab (`querySelectorAll('*')`), sonst faehrt eine Einblendung gegen die
+  naechste Ausblendung. GEMESSEN: dreimal in 50ms-Abstand weitergeschaltet → Endzustand ist die
   zuletzt gewaehlte Seite, Deckkraft 1, keine Restanimation.
-  Die Bewegung selbst laeuft ueber `_animFahren` (bis 15.09.2026 `_woAnim`) — dieselbe Promise
-  mit Notbremse wie beim Modus-Uebergang der Seite „Gym".
+  GEMESSEN ausserdem: Seite „Laufen" = 4 Karten mit 0/80/160/240ms; Katalog = 7 Karten,
+  Verzoegerungen 0…400ms (Deckel greift); Plan-Tab Gymplan = Kalenderkarte UND Plankarte.
   TESTHINWEIS: In der versteckten Browser-Ansicht steht die Zeitleiste; beide Phasen enden erst
-  ueber ihre Wecker (90+300 und 220+300ms). Vor dem Messen des Endzustands also mindestens
-  1,2 Sekunden warten — sonst steht das Element noch auf Deckkraft 0 (`fill: 'backwards'`).
+  ueber ihre Wecker. Vor dem Messen des Endzustands mindestens 1,5 Sekunden warten — sonst steht
+  eine Karte noch auf Deckkraft 0 (`fill: 'backwards'`). Ausserdem: Ist die Browser-Ansicht
+  schmal, meldet `.screen` `clientWidth` 0 und der Wechsel nimmt den Schnellpfad OHNE Bewegung —
+  vor dem Messen also die Ansicht auf 375px stellen.
   NICHT ANGETASTET: die Wischgeste. Seiten wechselt man weiterhin nur ueber den Schalter unten;
   ein seitlicher Wisch gehoert den Tabs (siehe „AM WISCHEN NICHTS AENDERN").
 - **Seitenleiste: der Seitenschalter steht UNTEN am Bildschirm** (`#seitenleiste`,

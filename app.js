@@ -9738,36 +9738,54 @@ function migrateDayModelV2(force) {
 // lesen und liefe in die temporale Todeszone von `const` (derselbe Fehler wie einst bei
 // `_datenStand` vor dem DB-Objekt). Aus demselben Grund sind auch `aktiv` und `setzen`
 // Funktionen.
-// ── Seitenwechsel innerhalb eines Tabs (16.09.2026, Leonard-Wunsch, „Variante B") ─────────
-// Gym ↔ Laufen, Uebungen ↔ Stats und die vier Plan-Seiten wechseln nicht mehr hart, sondern
-// mit einer kurzen Blende: Die GANZE Flaeche unter der Kopfzeile blendet aus, die neue Seite kommt mit
-// einem kleinen Schub von unten herein (Leonard-Entscheidung: Flaeche statt nur Liste — im
-// Plan-Tab wandert der Trainingskalender also mit).
-// Gefahren werden die direkten Kinder des Screens AUSSER der Kopfzeile (`.ph`): Es gibt keine
-// Huelle um den Inhalt, und eine einzufuegen haette jedes Layout (Querformat-Grids!) beruehrt.
-// Alle Kinder tragen dieselbe Bewegung, sichtbar ist also eine einzige Flaeche.
-// NACH OBEN SCROLLEN gehoert dazu (Leonard-Entscheidung): Der Sprung passiert im unsichtbaren
-// Moment zwischen Aus- und Einblenden, man sieht ihn nicht.
+// ── Seitenwechsel innerhalb eines Tabs (16.09.2026, Leonard-Wunsch, „Variante C: Staffel") ──
+// Gym ↔ Laufen, Uebungen ↔ Stats und die vier Plan-Seiten wechseln nicht mehr hart: Die GANZE
+// Flaeche unter der Kopfzeile blendet aus, dann wird gezeichnet, dann kommen die Karten der neuen
+// Seite NACHEINANDER von unten herein (je 80ms versetzt) — dieselbe Formensprache wie beim
+// Wechsel in den aktiven Modus auf der Seite „Gym".
+// VORGESCHICHTE: Vom selben Tag stammt „Variante B" (die ganze Flaeche blendete als EIN Stueck
+// ein). Sie ist auf Leonards Wunsch durch diese Staffel ersetzt worden.
+// WAS EINE KARTE IST, entscheidet `_staffelElemente`: Es laeuft vom Screen abwaerts und nimmt das
+// erste Element mit eigener KLASSE als Karte. Reine Huellen ohne Klasse (`#wo-view-gym`,
+// `#active-ex-list`, `#plans-list`, `#exercises-groups` …) sind keine Karten, dort geht es eine
+// Ebene tiefer — sonst waere die ganze Uebungsliste EIN Schritt der Staffel.
+// Karten UNTERHALB des Bildschirms bewegen sich nicht, und die Verzoegerung ist ab der sechsten
+// Karte gedeckelt: Im Uebungskatalog stehen sonst zwanzig Gruppen in der Warteschlange.
+// EINBLENDEN IN ZWEI BEWEGUNGEN je Karte (Leonard-Meldung 16.09.2026 „die Karten erscheinen zu
+// ploetzlich"): Deckkraft und Schub haben verschiedene Dauern UND Kurven, und das geht nur
+// getrennt — eine Web-Animation kennt genau EINE Kurve fuer alle ihre Eigenschaften.
+// NACH OBEN SCROLLEN gehoert dazu (Leonard-Entscheidung): Der Sprung liegt im unsichtbaren
+// Moment zwischen Aus- und Einblenden.
 // KEINE Bewegung, wenn der Tab gerade nicht sichtbar ist (die Uebersicht ruft `setPlansView`,
 // bevor sie in den Plan-Tab wischt), bei `prefers-reduced-motion` und ohne Breite.
-// TOKEN: Wer waehrend der Blende weiterschaltet, bricht die laufende ab (`_seitenNr`); die alte
-// Kette hoert auf, BEVOR sie zeichnet — gezeichnet wird dann nur das neueste Ziel.
-// 16.09.2026 verkuerzt (Leonard: „etwas schneller") — vorher 130/240ms.
-// DAS EINBLENDEN LAEUFT SEITHER IN ZWEI BEWEGUNGEN (Leonard: „die Karten erscheinen zu
-// ploetzlich"): Deckkraft und Schub haben verschiedene Dauern UND verschiedene Kurven, und das
-// geht nur getrennt — eine Web-Animation kennt genau EINE Kurve fuer alle ihre Eigenschaften.
-// Die DECKKRAFT laeuft gleichmaessig an (fast linear, 220ms): Mit der frueheren Ease-out-Kurve
-// stand sie nach einem Viertel der Zeit schon bei 78 % — die Karten waren praktisch sofort da
-// und der Rest der Bewegung lief unsichtbar aus.
-// Der SCHUB bleibt eine ausrollende Bewegung (260ms) und faengt die Karten weich ab.
-// Das AUSBLENDEN bleibt kurz — es ist nur der Abgang.
-const SEITEN_AUS_MS = 90, SEITEN_EIN_MS = 220, SEITEN_SCHUB_MS = 260;
-const SEITEN_EIN_KURVE = 'cubic-bezier(.35,0,.5,1)';     // Deckkraft: kein Sprung am Anfang
-const SEITEN_SCHUB_KURVE = 'cubic-bezier(.22,.7,.3,1)';   // Schub: begleitet, rollt weich aus
+// TOKEN: Wer waehrend der Bewegung weiterschaltet, bricht die laufende ab (`_seitenNr`); die alte
+// Kette hoert auf, BEVOR sie zeichnet — gezeichnet wird nur das neueste Ziel.
+const SEITEN_AUS_MS = 120;        // Abgang der alten Seite, als ein Stueck
+const SEITEN_EIN_MS = 220;        // Deckkraft je Karte, gleichmaessig anlaufend
+const SEITEN_SCHUB_MS = 260;      // Schub je Karte, weich ausrollend
+const SEITEN_STAFFEL_MS = 80;     // Abstand von Karte zu Karte
+const SEITEN_STAFFEL_MAX = 5;     // ab hier warten alle weiteren gleich lang
+const SEITEN_EIN_KURVE = 'cubic-bezier(.35,0,.5,1)';
+const SEITEN_SCHUB_KURVE = 'cubic-bezier(.22,.7,.3,1)';
 let _seitenNr = 0;
+
 function _seitenInhalt(screen) {
   return [...screen.children].filter(el => !el.classList.contains('ph') && el.offsetParent !== null);
 }
+// Die Karten der Seite, eine Ebene tiefer als die Flaeche (siehe Kommentar oben).
+function _staffelElemente(screen) {
+  const karten = [];
+  const sammeln = (el) => {
+    // Hoehe 0 = nicht zu sehen (leere Liste, ausgeblendeter Block) — so ein Element wuerde sonst
+    // einen unsichtbaren Schritt in der Staffel kosten.
+    if (!el.offsetHeight) return;
+    if (!el.getAttribute('class') && el.children.length) { [...el.children].forEach(sammeln); return; }
+    karten.push(el);
+  };
+  _seitenInhalt(screen).forEach(sammeln);
+  return karten;
+}
+
 function _seitenWechsel(screenId, tabName, setzen) {
   const screen = document.getElementById(screenId);
   const nr = ++_seitenNr;
@@ -9775,27 +9793,32 @@ function _seitenWechsel(screenId, tabName, setzen) {
     setzen();
     return;
   }
-  // Eine noch laufende Blende abraeumen — sonst faehrt sie gegen die neue.
-  [...screen.children].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+  // Eine noch laufende Bewegung abraeumen — sonst faehrt sie gegen die neue.
+  screen.querySelectorAll('*').forEach(el => el.getAnimations().forEach(a => a.cancel()));
   const alt = _seitenInhalt(screen);
   Promise.all(alt.map(el => _animFahren(el, [{ opacity: 1 }, { opacity: 0 }],
                                         { duration: SEITEN_AUS_MS, fill: 'forwards' })))
     .then(() => {
-      if (nr !== _seitenNr) return;                 // inzwischen weitergeschaltet: die neuere Kette zeichnet
+      if (nr !== _seitenNr) return;               // inzwischen weitergeschaltet: die neuere Kette zeichnet
       alt.forEach(el => el.getAnimations().forEach(a => a.cancel()));
       setzen();
       screen.scrollTop = 0;
+      // Nur was auf dem Bildschirm steht, wird gestaffelt — der Rest ist ohnehin nicht zu sehen.
+      const karten = _staffelElemente(screen).filter(el => el.getBoundingClientRect().top < window.innerHeight);
+      // Ohne erkennbare Karten (leere Seite) faehrt die Flaeche selbst herein.
+      const ziele = karten.length ? karten : _seitenInhalt(screen);
       const rein = [];
-      _seitenInhalt(screen).forEach(el => {
+      ziele.forEach((el, i) => {
+        const verzug = Math.min(i, SEITEN_STAFFEL_MAX) * SEITEN_STAFFEL_MS;
         rein.push(_animFahren(el, [{ opacity: 0 }, { opacity: 1 }],
-                              { duration: SEITEN_EIN_MS, easing: SEITEN_EIN_KURVE, fill: 'backwards' }));
+                              { duration: SEITEN_EIN_MS, delay: verzug, easing: SEITEN_EIN_KURVE, fill: 'backwards' }));
         rein.push(_animFahren(el, [{ transform: 'translateY(14px)' }, { transform: 'none' }],
-                              { duration: SEITEN_SCHUB_MS, easing: SEITEN_SCHUB_KURVE, fill: 'backwards' }));
+                              { duration: SEITEN_SCHUB_MS, delay: verzug, easing: SEITEN_SCHUB_KURVE, fill: 'backwards' }));
       });
       return Promise.all(rein);
     })
     .then(() => {
-      if (nr === _seitenNr) [...screen.children].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+      if (nr === _seitenNr) screen.querySelectorAll('*').forEach(el => el.getAnimations().forEach(a => a.cancel()));
     });
 }
 
