@@ -231,16 +231,31 @@ html.workout-active.wo-running body.theme-workouts #workout-active-bar { display
   bottom: calc(var(--nav-h) + var(--safe-b));
   height: var(--nav-h);
   z-index: 100;
-  display: none;
+  /* Sie FAEHRT ein und aus (16.09.2026) statt zu erscheinen: deshalb kein `display: none`,
+     sondern nach unten geschoben und unsichtbar. `visibility` schaltet erst am Ende der Fahrt
+     um (verzoegerte Transition) — ohne das waere sie waehrend des Abfahrens schon weg. */
+  transform: translateY(110%);
+  visibility: hidden;
   background: #0F766E; color: #fff;
   box-shadow: 0 -3px 14px rgba(0,0,0,0.2);
   overflow: hidden;
   /* Landscape: dasselbe Notch-Polster wie die Nav */
   padding-left: max(var(--safe-l), var(--safe-r));
   padding-right: max(var(--safe-l), var(--safe-r));
-  transition: bottom 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: bottom 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 0.26s;
 }
-#rest-bar.show { display: block; }
+/* Wer Bewegung reduziert haben moechte, bekommt sie wie frueher ohne Fahrt. */
+@media (prefers-reduced-motion: reduce) {
+  #rest-bar, #rest-bar.show { transition: none; }
+  .overlay.schliesst, .overlay.schliesst .sheet { animation: none; }
+}
+#rest-bar.show {
+  transform: translateY(0);
+  visibility: visible;
+  transition: bottom 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 0s;
+}
 /* Abgelaufen: kraeftigeres Gruen, damit die Meldung im Augenwinkel auffaellt. */
 #rest-bar.done { background: #15803D; }
 /* Nav ausgeblendet: der Timer setzt sich an deren Stelle, inklusive Home-Indikator-Polster. */
@@ -1114,6 +1129,13 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 ══════════════════════════════════════ */
 .overlay { position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.4); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); display: flex; align-items: flex-end; justify-content: center; }
 .overlay.hidden { display: none; }
+/* Schliessen ist das Spiegelbild des Oeffnens (16.09.2026, Leonard-Wunsch): Das Blatt faehrt
+   hinunter, der Schleier blendet aus. Das `hidden` setzt das JS erst danach (`MODAL_AUS_MS` in
+   `closeModal` — beide Zahlen muessen zusammenpassen). */
+.overlay.schliesst { animation: ov-aus .2s ease forwards; pointer-events: none; }
+.overlay.schliesst .sheet { animation: slideDown .2s ease forwards; }
+@keyframes ov-aus { from { opacity: 1; } to { opacity: 0; } }
+@keyframes slideDown { from { transform: none; opacity: 1; } to { transform: translateY(60px); opacity: .4; } }
 .sheet { background: var(--card); border-radius: 20px 20px 0 0; width: 100%; max-width: 600px; padding-bottom: calc(var(--safe-b) + 20px); max-height: 88vh; overflow-y: auto; -webkit-overflow-scrolling: touch; animation: slideUp .25s ease; }
 @keyframes slideUp { from { transform: translateY(60px); opacity: .6; } to { transform: translateY(0); opacity: 1; } }
 .sheet-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--border); margin: 10px auto 14px; }

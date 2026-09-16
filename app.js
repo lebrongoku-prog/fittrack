@@ -3266,14 +3266,14 @@ function showRestDone() {
       <button class="rest-bar-btn rest-bar-close" onclick="hideRestDone()" aria-label="Ausblenden">✕</button>
     </div>`;
   bar.classList.add('show', 'done');
+  clearTimeout(_restLeerTimer);
   clearTimeout(_restDoneTimeout);
   _restDoneTimeout = setTimeout(hideRestDone, REST_DONE_MS);
 }
 function hideRestDone() {
   clearTimeout(_restDoneTimeout);
   _restDoneTimeout = null;
-  const bar = document.getElementById('rest-bar');
-  if (bar) { bar.classList.remove('show', 'done'); bar.innerHTML = ''; }
+  _restLeisteAus();
 }
 
 function tickRestTimer() {
@@ -3314,10 +3314,27 @@ function resetRest() {
   renderRestBar();
 }
 
+// Die Satzpause faehrt seit dem 16.09.2026 von unten ein und wieder hinaus (Leonard-Wunsch) —
+// vorher erschien und verschwand sie schlagartig. Die Fahrt macht das CSS (`transform` +
+// `visibility`); hier wird nur der INHALT erst nach der Fahrt geleert, sonst faehrt ein leerer
+// gruener Streifen ab. Die Dauer MUSS zur `transition` von `#rest-bar` passen.
+const REST_FAHRT_MS = 260;
+let _restLeerTimer = null;
+function _restLeisteAus() {
+  const bar = document.getElementById('rest-bar');
+  if (!bar) return;
+  bar.classList.remove('show');
+  clearTimeout(_restLeerTimer);
+  _restLeerTimer = setTimeout(() => {
+    if (!bar.classList.contains('show')) { bar.innerHTML = ''; bar.classList.remove('done'); }
+  }, REST_FAHRT_MS);
+}
+
 function renderRestBar() {
   const bar = document.getElementById('rest-bar');
   if (!bar) return;
-  if (!restState) { bar.classList.remove('show'); bar.innerHTML = ''; return; }
+  if (!restState) { _restLeisteAus(); return; }
+  clearTimeout(_restLeerTimer);                     // sie kommt zurueck, bevor sie unten war
   const left = Math.max(0, Math.round((restState.endTs - Date.now()) / 1000));
   const pct = restState.total > 0 ? Math.max(0, Math.min(100, left / restState.total * 100)) : 0;
   bar.classList.remove('done');
@@ -8732,14 +8749,40 @@ function applyExercisesImport() {
 // MODAL HELPERS
 // ═══════════════════════════════════════════════
 
+// Blaetter von unten fahren beim Oeffnen herein (`@keyframes slideUp`) und seit dem 16.09.2026
+// beim Schliessen wieder hinaus (Leonard-Wunsch) — vorher verschwanden sie schlagartig, nur das
+// Herunterwischen hatte eine Bewegung.
+// KEIN `animationend`: Bei `prefers-reduced-motion` laeuft gar keine Animation, das Ereignis
+// kaeme nie und das Blatt bliebe fuer immer stehen (dieselbe Falle wie bei der Seitenleiste).
+// Die Dauer MUSS zur `animation`-Angabe von `.overlay.schliesst` passen.
+// Die NACHARBEIT (Diagramme abraeumen, Modus-Uebergang der Seite „Gym") laeuft erst am ENDE der
+// Fahrt — der Uebergang soll nicht hinter einem noch sichtbaren Blatt beginnen.
+const MODAL_AUS_MS = 200;
 function openModal(id) {
+  // Ein Blatt, das gerade abfaehrt, sofort abschliessen — sonst liegen zwei Schleier
+  // uebereinander und der Timer des alten wuerde spaeter das neue treffen.
+  document.querySelectorAll('.overlay.schliesst').forEach(o => _modalZu(o));
   document.getElementById(id).classList.remove('hidden');
   document.getElementById(id).addEventListener('click', function h(e) {
     if (e.target === this) { closeModal(id); this.removeEventListener('click',h); }
   });
 }
-function closeModal(id) {
-  document.getElementById(id).classList.add('hidden');
+// `ohneBewegung`: Das Blatt ist schon unten (Herunterwischen) — dann nur noch ausblenden.
+function closeModal(id, ohneBewegung) {
+  const ov = document.getElementById(id);
+  if (!ov || ov.classList.contains('hidden')) return;
+  if (ohneBewegung || _bewegungReduziert()) { _modalZu(ov); return; }
+  if (ov.classList.contains('schliesst')) return;          // faehrt schon
+  ov.classList.add('schliesst');
+  const nr = (ov._zuNr = (ov._zuNr || 0) + 1);
+  setTimeout(() => { if (ov._zuNr === nr) _modalZu(ov); }, MODAL_AUS_MS);
+}
+// Wirklich zu: ausblenden und die Nacharbeit des jeweiligen Blattes erledigen.
+function _modalZu(ov) {
+  ov._zuNr = (ov._zuNr || 0) + 1;                          // laufende Fahrt entwerten
+  ov.classList.remove('schliesst');
+  ov.classList.add('hidden');
+  const id = ov.id;
   // Das Diagramm der Uebungs-Detailansicht hier abraeumen: Geschlossen wird das Modal
   // ueber den Hintergrund-Tipp oder die Wischgeste, beide landen in dieser Funktion.
   if (id === 'modal-hist-detail') { _hdCharts.forEach(c => c.destroy()); _hdCharts = []; }
@@ -8797,7 +8840,9 @@ function initSheetSwipeDismiss() {
         sheet.style.transform = 'translateY(100%)';
         const id = overlay && overlay.id;
         setTimeout(() => {
-          if (id) closeModal(id);
+          // Das Blatt liegt schon unten — ohne Bewegung schliessen, sonst faehrt es ein
+          // zweites Mal los und springt dafuer erst wieder nach oben.
+          if (id) closeModal(id, true);
           sheet.style.transition = ''; sheet.style.transform = '';
           if (overlay) overlay.style.background = '';
         }, 200);

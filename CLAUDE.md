@@ -1127,6 +1127,42 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   keiner Plattform), und der Ton schweigt bei aktivem Klingelschalter. Der Ton ist ein Zweiklang aus dem WebAudio-
   Oszillator (`playRestDoneSound`); `initAudioUnlock` faengt jeden `pointerdown` ab und weckt den Audio-Kontext —
   iOS gibt Ton nur nach einer echten Nutzergeste frei. KEINE Audiodatei, damit nichts nachgeladen werden muss.
+- **BLAETTER SCHLIESSEN SICH MIT BEWEGUNG** (16.09.2026, Leonard-Wunsch): Bis dahin fuhren die
+  Bottom-Sheets beim Oeffnen herein (`@keyframes slideUp`) und verschwanden beim Schliessen
+  schlagartig — nur das Herunterwischen hatte eine Bewegung. Jetzt faehrt das Blatt hinunter und
+  der Schleier blendet aus (`.overlay.schliesst`, `@keyframes slideDown`/`ov-aus`, 200ms).
+  `closeModal(id, ohneBewegung)` setzt die Klasse und erst nach `MODAL_AUS_MS` das `hidden`;
+  `_modalZu` macht das eigentliche Schliessen SAMT der Nacharbeit (Diagramme der
+  Einheiten-Detailansicht abraeumen, Modus-Uebergang nach der Abschlussansicht) — die laeuft
+  damit erst, wenn das Blatt weg ist.
+  VIER Dinge, die daran haengen:
+  1. KEIN `animationend`: Bei `prefers-reduced-motion` laeuft keine Animation, das Ereignis kaeme
+     nie und das Blatt bliebe stehen (dieselbe Falle wie bei der Seitenleiste). Es ist ein
+     Wecker, und `MODAL_AUS_MS` MUSS zur `animation`-Angabe im CSS passen.
+  2. Das HERUNTERWISCHEN ruft `closeModal(id, true)` — das Blatt liegt schon unten, eine zweite
+     Fahrt liesse es erst wieder nach oben springen.
+  3. `openModal` schliesst ein gerade abfahrendes Blatt SOFORT ab (`_modalZu`): Sonst laegen zwei
+     Schleier uebereinander (z. B. „Einheit beenden?" und die Abschlussansicht direkt danach),
+     und der Wecker des alten traefe das neue.
+  4. Ein Token am Element (`ov._zuNr`) entwertet einen laufenden Wecker, wenn dasselbe Blatt
+     inzwischen wieder geoeffnet wurde.
+  GEMESSEN: Klasse gesetzt und `pointer-events: none` sofort, `hidden` nach der Fahrt, danach
+  keine Reste; erneutes Oeffnen sauber; Wischweg schliesst ohne Fahrt.
+- **DIE SATZPAUSE FAEHRT EIN UND AUS** (16.09.2026, Leonard-Wunsch) — vorher erschien und
+  verschwand sie schlagartig (`display: none` ↔ `block`). Jetzt steht sie immer im Fluss, ist aber
+  nach unten geschoben und unsichtbar (`transform: translateY(110%)`, `visibility: hidden`);
+  `.show` faehrt sie in 260ms herein. `visibility` schaltet ueber eine VERZOEGERTE Transition
+  (`visibility 0s linear .26s`) erst am Ende der Fahrt um — ohne das waere sie waehrend des
+  Abfahrens schon weg. Dasselbe Muster wie bei den Vollbild-Overlays.
+  Der INHALT wird erst nach der Fahrt geleert (`_restLeisteAus`, `REST_FAHRT_MS` — muss zur
+  Transition passen): Sonst faehrt ein leerer gruener Streifen ab. Kommt die Pause vorher zurueck
+  (`renderRestBar`, `showRestDone`), wird der Wecker abgebrochen.
+  GEMESSEN: Ruhezustand `translateY(66px)` und `visibility: hidden`; laufende Pause sitzt exakt
+  ueber dem unteren Rand (752–812px bei eingeklappter Nav, 60px hoch); nach dem Stoppen bleibt der
+  Inhalt 260ms stehen und ist danach leer.
+  TESTHINWEIS: In der versteckten Browser-Ansicht laufen Transitions nicht — `visibility` bleibt
+  dort auf `visible` stehen. Zum Pruefen der Endlage `transition: none` setzen und einen Reflow
+  erzwingen.
 - **Satzpause** (`#rest-bar`) hat exakt die Geometrie der Bottom-Nav: volle Breite, Hoehe `--nav-h`, gleiche Notch-Polster.
   Nav sichtbar → sitzt buendig darueber; Nav ausgeblendet → `.nav-hidden` setzt sie auf `bottom:0` und ergaenzt das
   `--safe-b`-Polster, sie nimmt also den Platz der Nav ein. `setNavHidden` in `initScrollHideNav` schaltet die Klasse
