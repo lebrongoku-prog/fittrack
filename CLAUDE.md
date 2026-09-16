@@ -502,6 +502,25 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Tippen nicht schrumpfen). Beides in Chrome NICHT reproduzierbar — nur auf iOS.
 - **Zahleneingabe** (Wdh./kg) läuft NICHT über die iOS-Tastatur: Die Felder sind **`<div role="button">`, kein `<input>`** (ein Eingabefeld würde Fokus bekommen → iOS-Zoom) und tragen `data-np-*`-Attribute; ein Tipp öffnet `#modal-numpad` (`openNumpadFromInput` → `npTap`/`npStep`/`closeNumpad`). Übernahme erst beim Schließen. Erste Ziffer ersetzt den alten Wert (`npState.fresh`), auch nach einem Schnellschritt (+2,5 usw.). Gilt für laufende Einheit (`ctx=active` → `updateSet`) und Vorschau/Trainingstag (`ctx=preview` → `updatePreviewSetTarget`).
 - **Abschluss** einer Einheit: `renderWorkoutSummary()` → `#modal-summary` (Dauer, Volumen, Sätze, Übungen, Volumenvergleich, neue Bestleistungen). Der stärkste Kraft-PR steht als dunkle `.pr-card` mit „Als Bild sichern" (`sharePRCard` → Canvas 1080×1350 → `navigator.share`, sonst Download); die restlichen PRs listet „Außerdem" darunter.
+- **DIE ABSCHLUSSANSICHT KOMMT IN BEWEGUNG** (`_sumBelebung`, 16.09.2026, Leonard-Wunsch):
+  Die vier Kacheln zaehlen von null auf ihren Wert hoch (`_zahlHoch`, 900ms, ease-out), und
+  Vergleichszeile, Bestleistungs-Karte, „Ausserdem"-Liste und der Hinweis auf den angepassten
+  Trainingstag kommen nacheinander von unten herein — derselbe Baustein wie beim Seitenwechsel
+  (`_kartenStaffelFahren`, jetzt mit optionalem Vorlauf).
+  ALLES BEGINNT ERST NACH `SUM_START_MS` (260ms): So lange faehrt das Blatt selbst herein
+  (`slideUp`), davor liefe die Bewegung dahinter.
+  NICHT bewegt werden der Name des Trainingstags und die Kachelzeile — sie sind der Rahmen, in
+  dem gezaehlt wird.
+  DIE ZAHLEN STEHEN FERTIG IM MARKUP (`data-zaehl`/`data-ziel`) und werden erst beim Start auf
+  null gesetzt: Bei `prefers-reduced-motion` und wenn sonst etwas schiefgeht, steht immer der
+  richtige Wert da. Formatiert wird bei jedem Schritt mit derselben Funktion wie am Ende
+  (`fmtDur`, `fmtVol`, ganze Zahl) — das Volumen wechselt unterwegs also sauber von kg auf t.
+  ZWEI NOTBREMSEN: `_zahlHoch` schreibt den Endwert spaetestens per Wecker (rAF ruht, solange die
+  Seite nicht sichtbar ist), und die Staffel raeumt ihre Animationen am Ende ab — ohne das bliebe
+  eine Karte bei `fill: 'backwards'` auf Deckkraft 0 stehen.
+  GEMESSEN (kuenstliche Abschlussansicht): Start bei „0 min / 0 kg / 0 / 0", Ende bei
+  „1h 4min / 6.8 t / 15 / 5"; alle vier Bloecke danach bei Deckkraft 1 ohne Restanimation;
+  kurze Fassung ohne Bestleistung und ohne Planaenderung ebenso.
 - **Bestleistungs-Moment:** `celebratePR(name, weight, prev)` läuft, sobald die ÜBUNG komplett abgehakt ist (in `toggleSetDone`, Zweig `allDone`) — nicht nach jedem Satz und nicht erst in der Abschlussansicht. Gewertet wird der schwerste Satz der Übung gegen `getExercisePR()` (gespeicherte Einheiten). Konfetti (`.pr-burst`, respektiert `prefers-reduced-motion`) + Vibration + Toast; `ex.prCelebrated` verhindert eine zweite Feier derselben Übung.
 - **`buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta)`** rendert die Plan-Kachel in BEIDEN Tabs.
   Der Plaene-Tab nutzt sie ueber den Alias `renderRow` — der muss eine Lambda bleiben (`p => buildPlanCard(p, ...)`),

@@ -3850,15 +3850,65 @@ function renderWorkoutSummary(wo, prevWorkouts, setChanges) {
   body.innerHTML = `
     <div class="sum-day">${pd(escapeHtml(wo.planDayName || 'Freies Training'))}</div>
     <div class="sum-stats">
-      <div class="sum-stat"><span class="sum-stat-val">${fmtDur(wo.duration)}</span><span class="sum-stat-lbl">Dauer</span></div>
-      <div class="sum-stat"><span class="sum-stat-val">${fmtVol(vol)}</span><span class="sum-stat-lbl">Volumen</span></div>
-      <div class="sum-stat"><span class="sum-stat-val">${setCount}</span><span class="sum-stat-lbl">${setCount === 1 ? 'Satz' : 'Sätze'}</span></div>
-      <div class="sum-stat"><span class="sum-stat-val">${exCount}</span><span class="sum-stat-lbl">${exCount === 1 ? 'Übung' : 'Übungen'}</span></div>
+      <div class="sum-stat"><span class="sum-stat-val" data-zaehl="dauer" data-ziel="${wo.duration || 0}">${fmtDur(wo.duration)}</span><span class="sum-stat-lbl">Dauer</span></div>
+      <div class="sum-stat"><span class="sum-stat-val" data-zaehl="vol" data-ziel="${vol}">${fmtVol(vol)}</span><span class="sum-stat-lbl">Volumen</span></div>
+      <div class="sum-stat"><span class="sum-stat-val" data-zaehl="zahl" data-ziel="${setCount}">${setCount}</span><span class="sum-stat-lbl">${setCount === 1 ? 'Satz' : 'Sätze'}</span></div>
+      <div class="sum-stat"><span class="sum-stat-val" data-zaehl="zahl" data-ziel="${exCount}">${exCount}</span><span class="sum-stat-lbl">${exCount === 1 ? 'Übung' : 'Übungen'}</span></div>
     </div>
     ${deltaHTML}
     ${prHTMLBlock}
     ${setChangeHTML}`;
+  _sumBelebung(body);
   openModal('modal-summary');
+}
+
+// ── Die Abschlussansicht kommt in Bewegung (16.09.2026, Leonard-Wunsch) ────────────────
+// Die vier Kacheln zaehlen von null auf ihren Wert hoch, danach kommen Vergleichszeile,
+// Bestleistungs-Karte, „Ausserdem"-Liste und der Hinweis auf den angepassten Trainingstag
+// nacheinander von unten herein — dieselbe Staffel wie ueberall sonst.
+// ALLES BEGINNT ERST, wenn das Blatt oben ist (`SUM_START_MS` ≈ die 250ms von `slideUp`);
+// vorher liefe die Bewegung hinter dem hereinfahrenden Blatt.
+// Die Zahlen stehen fertig im Markup und werden hier auf null zurueckgesetzt — so steht bei
+// `prefers-reduced-motion` und wenn etwas schiefgeht immer der richtige Wert da.
+const SUM_START_MS = 260, SUM_ZAEHL_MS = 900;
+function _sumBelebung(body) {
+  if (!body || _bewegungReduziert()) return;
+  const zahlen = [...body.querySelectorAll('[data-zaehl]')];
+  const formate = {
+    dauer: v => fmtDur(Math.round(v)),
+    vol:   v => fmtVol(v),
+    zahl:  v => String(Math.round(v)),
+  };
+  zahlen.forEach(el => { el.textContent = formate[el.dataset.zaehl](0); });
+  // Kacheln und Trainingstag stehen sofort — sie sind der Rahmen, in dem gezaehlt wird.
+  const bloecke = [...body.children]
+    .filter(el => !el.classList.contains('sum-day') && !el.classList.contains('sum-stats'));
+  // Derselbe Baustein wie beim Seiten- und Tagwechsel, nur mit Vorlauf — und mit Aufraeumen am
+  // Ende: Ohne das bliebe eine Karte bei `fill: 'backwards'` auf Deckkraft 0 stehen, falls die
+  // Bewegung nie laeuft (App im Hintergrund).
+  _kartenStaffelFahren(bloecke, SUM_START_MS)
+    .then(() => bloecke.forEach(el => el.getAnimations().forEach(a => a.cancel())));
+  setTimeout(() => zahlen.forEach(el =>
+    _zahlHoch(el, Number(el.dataset.ziel) || 0, formate[el.dataset.zaehl], SUM_ZAEHL_MS)), SUM_START_MS);
+}
+// Zaehlt `el` von null auf `ziel` (ease-out) und schreibt den Endwert GARANTIERT — auch wenn
+// `requestAnimationFrame` ruht, weil die Seite nicht sichtbar ist (Notbremse wie ueberall).
+function _zahlHoch(el, ziel, format, dauer) {
+  const t0 = performance.now();
+  let raf = null;
+  const fertig = () => {
+    if (raf) cancelAnimationFrame(raf);
+    clearTimeout(wecker);
+    el.textContent = format(ziel);
+  };
+  const wecker = setTimeout(fertig, dauer + 300);
+  const schritt = (jetzt) => {
+    const p = Math.min(1, (jetzt - t0) / dauer);
+    if (p >= 1) { fertig(); return; }
+    el.textContent = format(ziel * (1 - Math.pow(1 - p, 3)));
+    raf = requestAnimationFrame(schritt);
+  };
+  raf = requestAnimationFrame(schritt);
 }
 
 function discardWorkout() {
@@ -9882,10 +9932,10 @@ function _staffelElemente(screen) {
 // Karten eines Behaelters gestaffelt einblenden — der gemeinsame Teil von Seitenwechsel und
 // Tagwechsel auf der Seite „Gym". Die Karten stehen schon im DOM; hier kommt nur die Bewegung
 // dazu. Karten unterhalb des Bildschirms bleiben aussen vor, die Verzoegerung ist gedeckelt.
-function _kartenStaffelFahren(karten) {
+function _kartenStaffelFahren(karten, grundVerzug) {
   const rein = [];
   karten.forEach((el, i) => {
-    const verzug = Math.min(i, SEITEN_STAFFEL_MAX) * SEITEN_STAFFEL_MS;
+    const verzug = (grundVerzug || 0) + Math.min(i, SEITEN_STAFFEL_MAX) * SEITEN_STAFFEL_MS;
     rein.push(_animFahren(el, [{ opacity: 0 }, { opacity: 1 }],
                           { duration: SEITEN_EIN_MS, delay: verzug, easing: SEITEN_EIN_KURVE, fill: 'backwards' }));
     rein.push(_animFahren(el, [{ transform: 'translateY(14px)' }, { transform: 'none' }],
