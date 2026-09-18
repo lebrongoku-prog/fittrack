@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v357**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v358**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1143,7 +1143,10 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Im Einsatz bei `toggleCalFilter`, `setCalJahr` (also auch `wechselCalJahr`) und
   `calZurAktuellenAnsicht` — in BEIDEN Kalendern. Jeder andere Aufruf von
   `renderTrainingCalendar` (Tabwechsel, Datenaenderung) zeichnet weiterhin ohne Blende.
-  Ein weiterer Tipp bricht die laufende Blende ab und beginnt neu (`_calBlendeNr`).
+  Ein weiterer Tipp bricht die laufende Blende ab und beginnt neu. Der gemeinsame Kern ist seit
+  dem 18.09.2026 `_neuZeichnenEinblenden(schluessel, huelle, teile, zeichnen)` — ihn nutzt auch
+  die Wochenplankarte der Uebersicht (siehe dort); `_calBlendeNr` ist in dessen Nummer je
+  Schluessel aufgegangen.
   GEMESSEN (echte Tipps): Titel sofort „Gymkalender", `.cal-body` und `.cal-foot` je eine
   Bewegung 0 → 1 in 300ms, Kopf ohne Bewegung; dreimal in 50ms-Abstand → Endzustand sauber.
 - **DIE HOEHE DER KALENDERKARTE IN DER UEBERSICHT BLEIBT, WIE SIE IST — sie darf beim
@@ -2463,7 +2466,16 @@ Setzen von `scrollTop` keines (siehe die uebrigen Testhinweise).
 Karten `#ov-plan-card` (Gym) und `#ov-runplan-card` (Lauf) — beide IDs gibt es nicht mehr.
 Gefuellt von `renderWochenKarte()`.
 **Der TITEL ist ein Filter wie beim Trainingskalender** (`_wochenFilter`, `toggleWochenFilter`,
-`_WOCHEN_FILTER_TITEL`): beide → Gym → Lauf → beide. Er BENENNT den Zustand
+`_WOCHEN_FILTER_TITEL`): beide → Gym → Lauf → beide.
+**DER WECHSEL BLENDET EIN wie beim Kalender** (18.09.2026, Leonard-Wunsch „die gleiche
+Animation"): Die neue Karte steht sofort da, alles unter dem Titel (`.ppv-head` bleibt stehen)
+blendet in 300ms aus dem Durchsichtigen ein — derselbe Kern `_neuZeichnenEinblenden`, dieselbe
+Dauer und Kurve (`CAL_EIN_MS`, `CAL_EIN_KURVE`). Da die Karte bei jedem Wechsel NEU gebaut wird,
+liefert `teile` die Kinder der neuen Karte erst nach dem Zeichnen. Die Karte hat eine feste
+Hoehe (157.3px), es springt nichts. Die Herocard darunter zeichnet ohne Blende neu.
+GEMESSEN: Titel wechselt sofort; Gym-/Laufwoche blenden `.ppv-progress` und `.ppv-strip`,
+die Kombi-Karte `.ppv-k-labels` und beide Reihen, je 0 → 1 in 300ms; Hoehe 157px vor und nach;
+dreimal in 50ms-Abstand → Endzustand sauber, keine Restanimation. Er BENENNT den Zustand
 („Trainingswoche" / „Gymwoche" / „Laufwoche") statt den Plannamen zu zeigen — sonst wechselte
 die Beschriftung zwischen Zustandsname und Eigenname und liesse sich nicht als Schalter lesen.
 Der Planname steht dafuer nur noch im Plan-Tab. BEWUSST nicht gespeichert, wie jeder Filter

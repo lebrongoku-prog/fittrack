@@ -1011,10 +1011,18 @@ function renderOverview() {
 // unvollstaendig wirken.
 let _wochenFilter = 'beide';
 const _WOCHEN_FILTER_TITEL = { beide: 'Trainingswoche', gym: 'Gymwoche', lauf: 'Laufwoche' };
+// DER WECHSEL BLENDET EIN wie beim Kalender (18.09.2026, Leonard-Wunsch „die gleiche Animation"):
+// Die neue Karte steht sofort da, alles UNTER dem Titel blendet in 300ms aus dem Durchsichtigen
+// ein (`_neuZeichnenEinblenden`). Der Titel (`.ppv-head`) bleibt stehen — er ist der Schalter.
+// Die Karte hat eine FESTE Hoehe, es springt also nichts.
 function toggleWochenFilter() {
   _wochenFilter = _wochenFilter === 'beide' ? 'gym' : _wochenFilter === 'gym' ? 'lauf' : 'beide';
   _kombiTag = null;            // die Auswahl gehoert zur Kombi-Karte, die es hier nicht mehr gibt
-  renderWochenKarte();
+  const huelle = document.getElementById('ov-week-card');
+  _neuZeichnenEinblenden('woche', huelle, () => {
+    const karte = huelle && huelle.querySelector(':scope > .plan-card-v2');
+    return karte ? [...karte.children].filter(el => !el.classList.contains('ppv-head')) : [];
+  }, renderWochenKarte);
   renderUebersichtHero();
 }
 
@@ -5231,24 +5239,35 @@ function calZurAktuellenAnsicht() {
 // Vorfahren kann auf iOS die Wischgeste im Scrollbereich abbrechen (siehe „Kalenderkarten sind
 // von der Tipp-Animation ausgenommen").
 // Die Kurve laeuft SCHNELL an (ease-out), damit das Raster sofort zu ahnen ist.
-// Ein weiterer Tipp waehrend der Blende bricht sie ab und beginnt neu (`_calBlendeNr`).
+// Seit dem 18.09.2026 nutzt auch die Wochenplankarte der Uebersicht dieselbe Blende
+// (`toggleWochenFilter`) — der gemeinsame Kern ist `_neuZeichnenEinblenden`.
 const CAL_EIN_MS = 300;
 const CAL_EIN_KURVE = 'cubic-bezier(.2,.6,.3,1)';
-let _calBlendeNr = 0;
 function _calRasterBlende(id, zeichnen) {
   const karte = document.getElementById(id === 'cal' ? 'ov-cal-card' : 'plans-cal-card');
-  const nr = ++_calBlendeNr;
-  const teile = () => karte ? [...karte.children].filter(el => !el.classList.contains('chart-card-v2-head')) : [];
-  const sichtbar = karte && karte.clientWidth && !_bewegungReduziert();
-  if (karte) [...karte.children].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+  _neuZeichnenEinblenden('kal-' + id, karte,
+    () => karte ? [...karte.children].filter(el => !el.classList.contains('chart-card-v2-head')) : [],
+    zeichnen);
+}
+
+// Gemeinsamer Kern von Kalender- und Wochenplankarte: SOFORT zeichnen, dann die Teile, die
+// `teile()` NACH dem Zeichnen liefert, aus dem Durchsichtigen einblenden. `teile` ist eine
+// Funktion, weil das Zeichnen sie neu erzeugen kann (die Wochenplankarte wird ganz neu gebaut).
+// Vor dem Zeichnen werden die Blenden der noch stehenden Teile abgebrochen — ein weiterer Tipp
+// beginnt die Blende neu. Die Nummer je `schluessel` entwertet das Aufraeumen einer alten Blende.
+// Ohne Breite (Karte nicht sichtbar) und bei `prefers-reduced-motion` wird nur gezeichnet.
+const _einblendNr = {};
+function _neuZeichnenEinblenden(schluessel, huelle, teile, zeichnen) {
+  const nr = _einblendNr[schluessel] = (_einblendNr[schluessel] || 0) + 1;
+  const bewegen = !!huelle && !!huelle.clientWidth && !_bewegungReduziert();
+  teile().forEach(el => el.getAnimations().forEach(a => a.cancel()));
   zeichnen();
-  if (!sichtbar) return;
-  // Nach dem Zeichnen stehen (bei der Fusszeile) andere Elemente in der Karte — neu einsammeln.
+  if (!bewegen) return;
   const neu = teile();
   Promise.all(neu.map(el => _animFahren(el, [{ opacity: 0 }, { opacity: 1 }],
                                         { duration: CAL_EIN_MS, easing: CAL_EIN_KURVE })))
     .then(() => {
-      if (nr === _calBlendeNr) [...karte.children].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+      if (nr === _einblendNr[schluessel]) neu.forEach(el => el.getAnimations().forEach(a => a.cancel()));
     });
 }
 
