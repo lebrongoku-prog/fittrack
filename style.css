@@ -189,14 +189,34 @@ body.theme-mehr #statusbar-scrim { opacity: 1; }
   z-index: 99;
   display: none; align-items: center; justify-content: center;
   pointer-events: none;
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease,
+              translate 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 0s;
 }
 html.workout-active #workout-active-bar { display: flex; }
 /* Auf dem Workouts-Tab ist der aktive Block sichtbar → Pille dort ausblenden. ABER nur,
    wenn er es wirklich ist: `wo-running` heisst seit dem 05.09.2026 „die laufende Einheit steht
    gerade auf dem Bildschirm". Auf einem fremden Wochentag oder der Seite „Laufen" bleibt die
-   Pille jetzt stehen — sonst gaebe es dort keinen Weg zurueck (Leonard-Meldung 05.09.2026). */
-html.workout-active.wo-running body.theme-workouts #workout-active-bar { display: none; }
+   Pille jetzt stehen — sonst gaebe es dort keinen Weg zurueck (Leonard-Meldung 05.09.2026).
+   MIT BEWEGUNG (18.09.2026, Leonard-Wunsch): Vorher `display: none` — die Pille war beim
+   Tabwechsel schlagartig da oder weg. Jetzt taucht sie nach unten ab und blendet aus bzw.
+   kommt so wieder. Beim Wisch aus dem Trainings-Tab heraus erscheint sie an der 50-%-Schwelle
+   (dort wechselt die Theme-Klasse am body), beim Wisch hinein verschwindet sie beim Einrasten
+   (dort setzt `syncWorkoutActiveUI` `wo-running`).
+   Gefahren wird `translate` statt `transform`: `transform` gehoert schon dem Mitwandern mit der
+   Bottom-Nav (`.nav-hidden`), die beiden Eigenschaften addieren sich.
+   `visibility` schaltet erst am Ende der Fahrt um (verzoegerte Transition, dasselbe Muster wie
+   bei der Satzpause) — sonst waere sie beim Abtauchen sofort weg. Unsichtbar nimmt sie keine
+   Tipps mehr an. Beginn und Ende einer Einheit schalten weiterhin ueber `display` und sind
+   damit ohne Bewegung. */
+html.workout-active.wo-running body.theme-workouts #workout-active-bar {
+  opacity: 0; translate: 0 18px; visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.25s ease,
+              translate 0.2s cubic-bezier(0.4, 0, 1, 1), visibility 0s linear 0.2s;
+}
+@media (prefers-reduced-motion: reduce) {
+  #workout-active-bar,
+  html.workout-active.wo-running body.theme-workouts #workout-active-bar { transition: transform 0.25s ease; }
+}
 /* Mit der Bottom-Nav-Auto-Hide mitwandern (Klasse via initScrollHideNav gespiegelt):
    Die Nav gleitet weg, die Pille rueckt um deren Hoehe nach — NICHT zusaetzlich um die
    10px Abstand, sonst klebte sie auf Geraeten ohne Home-Indikator am Bildschirmrand. */
@@ -2894,6 +2914,12 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
    einem Kreispfeil statt des Buchstabens. */
 .cal-reset-btn svg { width: 11px; height: 11px; display: block; }
 .cal-head-right .cal-stats { margin-left: 0; }
+/* In der UEBERSICHT steht die Kennzahl IMMER in einer eigenen zweiten Zeile, rechtsbuendig
+   (18.09.2026, Leonard-Wunsch „die Karte soll immer gleich hoch bleiben"). Vorher brach der Kopf
+   nur um, wenn Titel und Kennzahl nicht nebeneinander passten — „Laufkalender Aktuell" und
+   „11/12 Läufe (92 %)" passten, „Gymkalender Aktuell" und „10/12 Einheiten (83 %)" nicht, und die
+   Karte sprang beim Filterwechsel um eine Zeile (19 gegen 46px). */
+#ov-cal-card .cal-head-right { flex-basis: 100%; justify-content: flex-end; }
 /* Legende steht nur noch im Erklaer-Dialog, nicht mehr in der Karte. */
 .cal-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 11px; color: var(--text3); }
 .cal-legend-modal { gap: 10px 18px; margin: 14px 0 0; font-size: 12.5px; color: var(--text2); }

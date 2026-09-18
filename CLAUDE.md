@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v354**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v355**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1127,24 +1127,48 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   dem Schleier kaum lesbar). Die CSS-Regeln MUESSEN hinter `.cal-filter-btn` stehen: Dessen
   `color: inherit` hat dieselbe Spezifitaet und gewaenne sonst allein durch die Reihenfolge.
   Gilt fuer beide Kalender, auch den im Plan-Tab.
-- **DER WECHSEL DER KALENDERANSICHT BLENDET** (`_calRasterBlende`, 16.09.2026, Leonard-Wunsch):
-  Ein Tipp auf den Titel (Filter) oder den Zeitraum stellte das Raster bis dahin hart um. Jetzt
-  blendet alles UNTER der Kopfzeile in 80ms aus, wird neu gezeichnet und blendet in 140ms wieder
-  ein (am selben Tag von 110/190ms verkuerzt — Leonard: „etwas schneller"). Titel, Zeitraum und Kennzahl bleiben stehen — sie sind der Schalter, den man antippt.
+- **DER WECHSEL DER KALENDERANSICHT BLENDET EIN** (`_calRasterBlende`, 16.09.2026, seit dem
+  18.09.2026 in dieser Form — Leonard-Entscheidung „Nur einblenden"): Ein Tipp auf den Titel
+  (Filter) oder den Zeitraum zeichnet SOFORT neu, und alles UNTER der Kopfzeile blendet aus dem
+  Durchsichtigen ein (`CAL_EIN_MS` 300ms, schnell anlaufende Kurve `CAL_EIN_KURVE`). Es gibt KEIN
+  Ausblenden vorher und damit keinen leeren Moment.
+  VORGESCHICHTE: Vom 16. bis 18.09.2026 blendete der alte Kalender erst aus (110 → 80ms) und der
+  neue dann ein (190 → 140ms) — das las sich wie ein Blinzeln. `CAL_BLENDE_AUS_MS` ist entfallen.
+  Titel, Zeitraum und Kennzahl bleiben stehen — sie sind der Schalter, den man antippt.
   Gefahren werden die Kinder der Kalenderkarte AUSSER `.chart-card-v2-head`, also `.cal-body`
-  (Wochentagsspalte, Raster, Planbeschriftung) und `.cal-foot` (die Fusszeile, die beim Neuaufbau
-  ohnehin geleert wird).
+  (Wochentagsspalte, Raster, Planbeschriftung) und `.cal-foot`.
   NUR die Deckkraft: Ein Schub waere im Raster unruhig, und ein `transform` auf dem Vorfahren
   bricht auf iOS die Wischgeste im Scrollbereich ab (siehe „Kalenderkarten sind von der
   Tipp-Animation ausgenommen").
   Im Einsatz bei `toggleCalFilter`, `setCalJahr` (also auch `wechselCalJahr`) und
   `calZurAktuellenAnsicht` — in BEIDEN Kalendern. Jeder andere Aufruf von
   `renderTrainingCalendar` (Tabwechsel, Datenaenderung) zeichnet weiterhin ohne Blende.
-  Das Neuzeichnen liegt im unsichtbaren Moment, die Scrollposition springt also verdeckt.
-  TOKEN `_calBlendeNr`: Wer waehrend der Blende weitertippt, bricht die laufende ab.
-  GEMESSEN (echte Tipps): Titel und Zeitraum blenden `.cal-body` und `.cal-foot`, der Kopf bleibt
-  bei Deckkraft 1; Kreispfeil und der Zeitraum im Plan-Tab ebenso; dreimal in 50ms-Abstand
-  getippt endet sauber ohne Restanimation.
+  Ein weiterer Tipp bricht die laufende Blende ab und beginnt neu (`_calBlendeNr`).
+  GEMESSEN (echte Tipps): Titel sofort „Gymkalender", `.cal-body` und `.cal-foot` je eine
+  Bewegung 0 → 1 in 300ms, Kopf ohne Bewegung; dreimal in 50ms-Abstand → Endzustand sauber.
+- **DIE KALENDERKARTE DER UEBERSICHT IST IN JEDER ANSICHT GLEICH HOCH** (18.09.2026,
+  Leonard-Wunsch; auch ueber den Zeitraum hinweg, Leonard-Entscheidung). Vorher sprang sie beim
+  Wechsel aus DREI Gruenden:
+  1. Die KOPFZEILE brach nur um, wenn Titel und Kennzahl nicht nebeneinander passten (19 gegen
+     46px). Jetzt steht die Kennzahl in der Uebersicht IMMER in einer eigenen zweiten Zeile,
+     rechtsbuendig (`#ov-cal-card .cal-head-right { flex-basis: 100% }`).
+  2. Die PLANNAMEN stehen nur im Gym- und Laufkalender, nicht im gemeinsamen.
+  3. Die Zahl der PLANBALKEN haengt an Ansicht und Zeitraum — in Jahren ohne Plan gibt es keine.
+  Fuer 2 und 3 haelt `renderTrainingCalendar` (nur `id === 'cal'`) oben und unten so viel Platz
+  frei, wie die HOECHSTE ALLER ANSICHTEN braucht: `_calZonenReserve` rechnet alle drei Filter mal
+  alle Zeitraeume (Aktuell plus jedes waehlbare Jahr) durch. Die fehlende Hoehe steht als Luft
+  UEBER den Monatsnamen (sie bleiben am Raster) und UNTER den unteren Balken; `--cal-names-h`
+  rechnet die obere Luft mit, damit „Mo" auf der ersten Rasterzeile bleibt.
+  Dafuer sind drei Teile aus dem Renderer herausgeloest: `_calRaster` (Zeitraum und Wochenzahl),
+  `_calPlanStuecke` (Planbalken und Spuren) und `_calZonen` (Hoehe der Planzeilen, Masse in
+  `CAL_SPUR_MASSE`). Beim Aendern der Abstaende der Planzeilen dort UND an den Inline-Raendern im
+  Renderer mitziehen.
+  PREIS: In Ansichten mit wenigen Balken steht ueber den Monatsnamen Leerraum — so viel, wie die
+  voellste Ansicht an Namen und Balken braucht.
+  NICHT betroffen: das Aufklappen der Fusszeile beim Tipp auf einen Tag (gewollte Bewegung) und
+  der Kalender im Plan-Tab.
+  GEMESSEN: alle 9 Ansichten (3 Filter × Aktuell/2026/2025) Karte 448.1px, Raster an derselben
+  Stelle, „Mo" exakt auf der ersten Rasterzeile, Kopf 46px; auch waehrend der Einblendung.
 - **Lesehilfe im Trainingskalender:** `.info-btn` neben der Kennzahl oben rechts (`.cal-head-right` fasst beide
   zusammen) oeffnet `#modal-cal-info`. **Seit dem 14.09.2026 NUR NOCH IM PLAN-TAB** (Leonard-Wunsch).
   In der UEBERSICHT steht an derselben Stelle ein Knopf ZURUECK ZUR ERSTANSICHT (`.cal-reset-btn`,
@@ -1353,6 +1377,16 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Die Pille steht IMMER darueber: ein einziger Wert (`--nav-h * 2 + --safe-b + 10px`) genuegt fuer beide Nav-Zustaende,
   weil ihre eigene `.nav-hidden`-Verschiebung sie um genau die Nav-Hoehe mitnimmt.
 - **Laufanzeige waehrend einer Einheit** (`#workout-active-bar`, sichtbar nur AUSSERHALB des Workouts-Tabs):
+  ERSCHEINT UND VERSCHWINDET SEIT DEM 18.09.2026 MIT BEWEGUNG (Leonard-Wunsch): Beim Tabwechsel
+  taucht sie von unten auf und blendet ein (250ms) bzw. taucht ab und blendet aus (200ms). Vorher
+  `display: none`. Gefahren wird `translate` (18px) — `transform` gehoert dem Mitwandern mit der
+  Bottom-Nav. `visibility` schaltet verzoegert erst am Ende um. Beim Wisch AUS dem Trainings-Tab
+  erscheint sie an der 50-%-Schwelle (Theme-Klasse am body), beim Wisch HINEIN verschwindet sie
+  beim Einrasten (`wo-running` aus `syncWorkoutActiveUI`). Start und Ende einer Einheit schalten
+  weiter ohne Bewegung (`html.workout-active` → `display`).
+  GEMESSEN: im Trainings-Tab Deckkraft 0 und `hidden`; nach dem Wechsel in die Uebersicht laufen
+  Deckkraft und Versatz (250ms), danach 1/none/visible; zurueck laufen sie in 200ms, danach
+  0/18px/hidden.
   schwebende Pille statt vollem Streifen (Leonard-Entscheidung 20.08.2026). Der Rahmen bleibt volle Breite, nimmt aber
   keine Tipps an (`pointer-events:none`) — nur `.wab-pill` ist antippbar, damit der Inhalt daneben bedienbar bleibt.
   Inhalt: ruhender Punkt, Zeit, Satzstand (`_woSatzStand`, abgehakte/gesamte Saetze), Pfeil.

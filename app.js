@@ -5219,35 +5219,34 @@ function calZurAktuellenAnsicht() {
   _calRasterBlende('cal', () => renderTrainingCalendar('cal', 'ov-cal-card'));
 }
 
-// ── Blende beim Wechsel der Kalenderansicht (16.09.2026, Leonard-Wunsch) ──────────────
-// Ein Tipp auf den Titel (Filter) oder den Zeitraum stellte das Raster bisher hart um. Jetzt
-// blendet alles UNTER der Kopfzeile kurz aus, wird neu gezeichnet und blendet wieder ein —
-// Titel, Zeitraum und Kennzahl bleiben stehen, sie sind ja der Schalter, den man antippt.
-// Bewegt wird NUR die Deckkraft: Ein Schub wie bei den Karten waere im Raster unruhig, und das
-// Raster hat einen eigenen Scrollbereich, den ein `transform` auf dem Vorfahren auf iOS stoeren
-// kann (siehe „Kalenderkarten sind von der Tipp-Animation ausgenommen").
-// Das Neuzeichnen liegt im unsichtbaren Moment — auch die Scrollposition springt also verdeckt.
-// TOKEN `_calBlendeNr`: Wer waehrend der Blende weitertippt, bricht die laufende ab.
-// 16.09.2026 verkuerzt (Leonard: „etwas schneller") — vorher 110/190ms.
-const CAL_BLENDE_AUS_MS = 80, CAL_BLENDE_EIN_MS = 140;
+// ── Einblenden beim Wechsel der Kalenderansicht (16.09.2026, Leonard-Wunsch) ────────────
+// Ein Tipp auf den Titel (Filter) oder den Zeitraum stellte das Raster frueher hart um. Seit dem
+// 18.09.2026 (Leonard-Entscheidung „Nur einblenden") steht der NEUE Kalender sofort an der Stelle
+// des alten und blendet aus dem Durchsichtigen ein — ohne vorheriges Ausblenden, es gibt also
+// keinen leeren Moment mehr. VORGESCHICHTE: vom 16. bis 18.09.2026 blendete der alte erst aus
+// (zuletzt 80ms), dann der neue ein (140ms) — das las sich wie ein Blinzeln.
+// Eingeblendet wird alles UNTER der Kopfzeile; Titel, Zeitraum und Kennzahl bleiben stehen, sie
+// sind der Schalter, den man antippt.
+// Bewegt wird NUR die Deckkraft: Ein Schub waere im Raster unruhig, und ein `transform` auf dem
+// Vorfahren kann auf iOS die Wischgeste im Scrollbereich abbrechen (siehe „Kalenderkarten sind
+// von der Tipp-Animation ausgenommen").
+// Die Kurve laeuft SCHNELL an (ease-out), damit das Raster sofort zu ahnen ist.
+// Ein weiterer Tipp waehrend der Blende bricht sie ab und beginnt neu (`_calBlendeNr`).
+const CAL_EIN_MS = 300;
+const CAL_EIN_KURVE = 'cubic-bezier(.2,.6,.3,1)';
 let _calBlendeNr = 0;
 function _calRasterBlende(id, zeichnen) {
   const karte = document.getElementById(id === 'cal' ? 'ov-cal-card' : 'plans-cal-card');
-  const teile = karte ? [...karte.children].filter(el => !el.classList.contains('chart-card-v2-head')) : [];
   const nr = ++_calBlendeNr;
-  if (!teile.length || _bewegungReduziert() || !karte.clientWidth) { zeichnen(); return; }
-  teile.forEach(el => el.getAnimations().forEach(a => a.cancel()));
-  Promise.all(teile.map(el => _animFahren(el, [{ opacity: 1 }, { opacity: 0 }],
-                                          { duration: CAL_BLENDE_AUS_MS, fill: 'forwards' })))
-    .then(() => {
-      if (nr !== _calBlendeNr) return;          // inzwischen weitergetippt: die neuere Blende zeichnet
-      teile.forEach(el => el.getAnimations().forEach(a => a.cancel()));
-      zeichnen();
-      // Nach dem Zeichnen stehen (bei der Fusszeile) andere Elemente in der Karte.
-      const neu = [...karte.children].filter(el => !el.classList.contains('chart-card-v2-head'));
-      return Promise.all(neu.map(el => _animFahren(el, [{ opacity: 0 }, { opacity: 1 }],
-        { duration: CAL_BLENDE_EIN_MS, easing: SEITEN_EIN_KURVE, fill: 'backwards' })));
-    })
+  const teile = () => karte ? [...karte.children].filter(el => !el.classList.contains('chart-card-v2-head')) : [];
+  const sichtbar = karte && karte.clientWidth && !_bewegungReduziert();
+  if (karte) [...karte.children].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+  zeichnen();
+  if (!sichtbar) return;
+  // Nach dem Zeichnen stehen (bei der Fusszeile) andere Elemente in der Karte — neu einsammeln.
+  const neu = teile();
+  Promise.all(neu.map(el => _animFahren(el, [{ opacity: 0 }, { opacity: 1 }],
+                                        { duration: CAL_EIN_MS, easing: CAL_EIN_KURVE })))
     .then(() => {
       if (nr === _calBlendeNr) [...karte.children].forEach(el => el.getAnimations().forEach(a => a.cancel()));
     });
@@ -5457,6 +5456,97 @@ function setCalJahr(jahr, id) {
   _calRasterBlende(id, () => renderTrainingCalendar(id, id === 'cal' ? 'ov-cal-card' : 'plans-cal-card'));
 }
 
+// Zeitraum des Rasters fuer einen Modus und eine Wahl ('aktuell' | Jahreszahl) — aus
+// `renderTrainingCalendar` herausgeloest (18.09.2026), damit `_calZonenReserve` dieselbe
+// Rechnung fuer ALLE Ansichten anstellen kann. Das Raster beginnt immer am Montag der Woche, in
+// der der Zeitraum beginnt.
+function _calRaster(modus, wahl, today) {
+  const aktPlaene = _calAktuellePlaene(modus);
+  const aktuell = wahl === 'aktuell' && !!aktPlaene.bereich;
+  const jahr = (typeof wahl === 'number') ? wahl : today.getFullYear();
+  const von = aktuell ? aktPlaene.bereich.von : new Date(jahr, 0, 1);
+  const bis = aktuell ? aktPlaene.bereich.bis : new Date(jahr, 11, 31);
+  const start = new Date(von);
+  start.setDate(von.getDate() - ((von.getDay() + 6) % 7));
+  const wochen = Math.ceil((Math.round((bis - start) / 86400000) + 1) / 7);
+  return { aktPlaene, aktuell, jahr, von, bis, start, wochen };
+}
+
+// Planbalken eines Rasters: welche Plaene im Bild sind, auf welchen Spalten und in welcher Spur.
+// Aus `renderTrainingCalendar` herausgeloest (18.09.2026, siehe `_calRaster`).
+// `plaene`/`laufplaene` duerfen vorab gelesen uebergeben werden — `_calZonenReserve` rechnet
+// viele Ansichten und liest den Speicher sonst jedes Mal neu.
+function _calPlanStuecke(modus, start, wochen, plaene, laufplaene) {
+  // Spalte NICHT über Millisekunden-Division bestimmen: Zwischen Winter- und Sommerzeit
+  // fehlt eine Stunde, wodurch ein Datum genau auf einer Wochengrenze in die Vorwoche
+  // rutschte. Über ganze Tage gerundet stimmt es.
+  const spalteFuer = (ts) => {
+    const d = new Date(ts); d.setHours(0, 0, 0, 0);
+    return Math.floor(Math.round((d - start) / 86400000) / 7);
+  };
+  const rasterEnde = new Date(start.getTime());
+  rasterEnde.setDate(rasterEnde.getDate() + wochen * 7);
+  rasterEnde.setMilliseconds(-1);
+  // Welche Plaene der Kalender zeigt, folgt seinem Modus: Gymkalender nur Trainingsplaene,
+  // Laufkalender nur Laufplaene, die Uebersicht im Modus „beide" beide Arten.
+  const imBild = (p) => p && p.startDate
+    && p.startDate <= rasterEnde.getTime() && (p.endDate || Infinity) >= start.getTime();
+  const zeitraeume = [];
+  if (modus.kraft) (plaene || DB.getPlans()).filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'gym' }));
+  if (modus.lauf)  (laufplaene || DB.getRunPlans()).filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'lauf' }));
+  zeitraeume.sort((a, b) => (a.typ === b.typ ? a.p.startDate - b.p.startDate : (a.typ === 'gym' ? -1 : 1)));
+
+  // Jede Sportart bekommt ihre eigene Spur, damit Gym und Lauf sich nie ueberlagern.
+  // Ueberschneiden sich ZWEI Plaene derselben Sportart, oeffnet der zweite eine weitere
+  // Spur — sonst stuenden zwei Namen uebereinander.
+  const spuren = [];   // je Eintrag: { typ, bis }
+  const stuecke = [];  // je Eintrag: { p, typ, von, bis, spur }
+  zeitraeume.forEach(({ p, typ }) => {
+    const von = Math.max(0, spalteFuer(p.startDate));
+    const bis = Math.min(wochen - 1, spalteFuer(p.endDate || rasterEnde.getTime()));
+    if (bis < von) return;
+    let nr = spuren.findIndex(sp => sp.typ === typ && sp.bis < von);
+    if (nr < 0) { nr = spuren.length; spuren.push({ typ, bis }); }
+    else spuren[nr].bis = bis;
+    stuecke.push({ p, typ, von, bis, spur: nr });
+  });
+  return { stuecke, anzahl: spuren.length };
+}
+
+// Masse der Planzeilen ueber und unter dem Raster, und was sie zusammen an Hoehe kosten.
+// `oben` = Namen + Abstand + obere Balken + Abstand zum Raster, `unten` = Abstand + untere Balken.
+// Beim Aendern der Abstaende hier UND in `renderTrainingCalendar` (Inline-Raender) mitziehen.
+const CAL_SPUR_MASSE = { NAME_H: 15, NAME_GAP: 3, SPUR_H: 5, SPUR_GAP: 3 };
+function _calZonen(anzahl, zeigtNamen) {
+  const { NAME_H, NAME_GAP, SPUR_H, SPUR_GAP } = CAL_SPUR_MASSE;
+  const hNamen = (anzahl && zeigtNamen) ? anzahl * NAME_H + (anzahl - 1) * NAME_GAP : 0;
+  const hBalken = anzahl ? anzahl * SPUR_H + (anzahl - 1) * SPUR_GAP : 0;
+  return { hNamen, hBalken,
+           oben: anzahl ? (hNamen ? hNamen + 3 : 0) + hBalken + 6 : 0,
+           unten: anzahl ? hBalken + 7 : 0 };
+}
+
+// Der hoechste Platzbedarf ueber und unter dem Raster, den der Kalender der UEBERSICHT in
+// IRGENDEINER seiner Ansichten hat — alle drei Filter mal alle Zeitraeume (Aktuell plus jedes
+// waehlbare Jahr). Siehe „Gleiche Hoehe in der Uebersicht" in `renderTrainingCalendar`.
+// Je Filter wird die Namenszeile mitgerechnet, wo er sie zeigt (nicht im gemeinsamen Kalender).
+function _calZonenReserve(today) {
+  const plaene = DB.getPlans(), laufplaene = DB.getRunPlans();
+  const zeitraeume = ['aktuell', ...calJahre()];
+  let oben = 0, unten = 0;
+  ['beide', 'kraft', 'lauf'].forEach(f => {
+    const modus = { kraft: f !== 'lauf', lauf: f !== 'kraft' };
+    zeitraeume.forEach(wahl => {
+      const r = _calRaster(modus, wahl, today);
+      const z = _calZonen(_calPlanStuecke(modus, r.start, r.wochen, plaene, laufplaene).anzahl,
+                          !(modus.kraft && modus.lauf));
+      oben = Math.max(oben, z.oben);
+      unten = Math.max(unten, z.unten);
+    });
+  });
+  return { oben, unten };
+}
+
 function renderTrainingCalendar(id, cardId) {
   id = id || 'cal';
   cardId = cardId || 'ov-cal-card';
@@ -5475,20 +5565,13 @@ function renderTrainingCalendar(id, cardId) {
   // beginnt immer am Montag der Woche, in der der Zeitraum beginnt, damit die Wochentagszeilen
   // durchgehend stimmen. Beide Kalender folgen ihrer eigenen Auswahl (Leonard-Wunsch 06.09.2026).
   const wahl = calJahr(id);
-  const aktPlaene = _calAktuellePlaene(modus);
-  const aktuell = wahl === 'aktuell' && !!aktPlaene.bereich;
-  const jahr = (typeof wahl === 'number') ? wahl : today.getFullYear();
+  const { aktPlaene, aktuell, jahr, von, bis, start, wochen } = _calRaster(modus, wahl, today);
   // „Aktuell" beschreibt immer den Stand von heute — wie das laufende Jahr.
   const istLaufendesJahr = aktuell || jahr === today.getFullYear();
-  const von = aktuell ? aktPlaene.bereich.von : new Date(jahr, 0, 1);
-  const bis = aktuell ? aktPlaene.bereich.bis : new Date(jahr, 11, 31);
   // Ausserhalb des Zeitraums (Rand-Tage der ersten/letzten Woche) = ausgegraut und nicht
   // antippbar — im Jahr die Tage des Vor- und Folgejahres, in „Aktuell" die Tage vor Planbeginn
   // und nach Planende (Leonard-Entscheidung 14.09.2026).
   const imBereich = (tag) => tag.getTime() >= von.getTime() && tag.getTime() <= bis.getTime();
-  const start = new Date(von);
-  start.setDate(von.getDate() - ((von.getDay() + 6) % 7));
-  const wochen = Math.ceil((Math.round((bis - start) / 86400000) + 1) / 7);
   // Hat sich der Zeitraum geaendert (anderer Filter, andere Plan-Seite, ein neuer Plan), passt die
   // gemerkte Scrollposition nicht mehr — dann wie beim ersten Zeichnen neu positionieren. Beim
   // Jahreswechsel setzt `setCalJahr` das ohnehin selbst zurueck.
@@ -5690,41 +5773,8 @@ function renderTrainingCalendar(id, cardId) {
   const spurenEl = document.getElementById(id + '-planlanes');
   const spurenObenEl = document.getElementById(id + '-planlanes-oben');
   if (namenEl && spurenEl && spurenObenEl) {
-    // Spalte NICHT über Millisekunden-Division bestimmen: Zwischen Winter- und Sommerzeit
-    // fehlt eine Stunde, wodurch ein Datum genau auf einer Wochengrenze in die Vorwoche
-    // rutschte. Über ganze Tage gerundet stimmt es.
-    const spalteFuer = (ts) => {
-      const d = new Date(ts); d.setHours(0, 0, 0, 0);
-      return Math.floor(Math.round((d - start) / 86400000) / 7);
-    };
-    const rasterEnde = new Date(start.getTime());
-    rasterEnde.setDate(rasterEnde.getDate() + wochen * 7);
-    rasterEnde.setMilliseconds(-1);
-    // Welche Plaene der Kalender zeigt, folgt seinem Modus: Gymkalender nur Trainingsplaene,
-    // Laufkalender nur Laufplaene, die Uebersicht im Modus „beide" beide Arten.
-    const imBild = (p) => p && p.startDate
-      && p.startDate <= rasterEnde.getTime() && (p.endDate || Infinity) >= start.getTime();
-    const zeitraeume = [];
-    if (modus.kraft) DB.getPlans().filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'gym' }));
-    if (modus.lauf)  DB.getRunPlans().filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'lauf' }));
-    zeitraeume.sort((a, b) => (a.typ === b.typ ? a.p.startDate - b.p.startDate : (a.typ === 'gym' ? -1 : 1)));
-
-    // Jede Sportart bekommt ihre eigene Spur, damit Gym und Lauf sich nie ueberlagern.
-    // Ueberschneiden sich ZWEI Plaene derselben Sportart, oeffnet der zweite eine weitere
-    // Spur — sonst stuenden zwei Namen uebereinander.
-    const spuren = [];   // je Eintrag: { typ, bis }
-    const stuecke = [];  // je Eintrag: { p, typ, von, bis, spur }
-    zeitraeume.forEach(({ p, typ }) => {
-      const von = Math.max(0, spalteFuer(p.startDate));
-      const bis = Math.min(wochen - 1, spalteFuer(p.endDate || rasterEnde.getTime()));
-      if (bis < von) return;
-      let nr = spuren.findIndex(sp => sp.typ === typ && sp.bis < von);
-      if (nr < 0) { nr = spuren.length; spuren.push({ typ, bis }); }
-      else spuren[nr].bis = bis;
-      stuecke.push({ p, typ, von, bis, spur: nr });
-    });
-
-    const NAME_H = 15, NAME_GAP = 3, SPUR_H = 5, SPUR_GAP = 3;
+    const { stuecke, anzahl } = _calPlanStuecke(modus, start, wochen);
+    const { NAME_H, NAME_GAP, SPUR_H, SPUR_GAP } = CAL_SPUR_MASSE;
     const stil = (st) => `left:${st.von * SPALTE}px;width:${(st.bis - st.von + 1) * SPALTE - CAL_GAP}px`;
     const klasse = (st) => (st.typ === 'lauf' ? ' lauf' : '') + (st.p.archived ? ' archiviert' : '');
 
@@ -5746,19 +5796,28 @@ function renderTrainingCalendar(id, cardId) {
     // schiebt ausserdem das Raster nach unten — die Wochentagsspalte liegt ABSOLUT ueber dem
     // Kalender und muss denselben Versatz mitrechnen, sonst steht „Mo" nicht mehr auf einer
     // Linie mit der ersten Rasterzeile. Deshalb `--cal-names-h` als gemeinsame Quelle.
-    const anzahl = spuren.length;
-    const hNamen = (anzahl && zeigtNamen) ? anzahl * NAME_H + (anzahl - 1) * NAME_GAP : 0;
-    const hBalken = anzahl ? anzahl * SPUR_H + (anzahl - 1) * SPUR_GAP : 0;
-    namenEl.style.height = hNamen + 'px';
-    namenEl.style.marginBottom = hNamen ? '3px' : '0';
-    spurenObenEl.style.height = hBalken + 'px';
+    const z = _calZonen(anzahl, zeigtNamen);
+    namenEl.style.height = z.hNamen + 'px';
+    namenEl.style.marginBottom = z.hNamen ? '3px' : '0';
+    spurenObenEl.style.height = z.hBalken + 'px';
     spurenObenEl.style.marginBottom = anzahl ? '6px' : '0';
-    spurenEl.style.height = hBalken + 'px';
+    spurenEl.style.height = z.hBalken + 'px';
     spurenEl.style.marginTop = anzahl ? '7px' : '0';
+    // GLEICHE HOEHE IN DER UEBERSICHT (18.09.2026, Leonard-Wunsch): Die Karte soll beim Wechsel
+    // zwischen Trainings-, Gym- und Laufkalender UND zwischen den Zeitraeumen nicht springen.
+    // Oben und unten wird deshalb so viel Platz freigehalten, wie die hoechste aller Ansichten
+    // braucht (`_calZonenReserve`); was die aktuelle weniger braucht, steht als Luft UEBER den
+    // Monatsnamen (die bleiben am Raster) bzw. UNTER den unteren Balken. Das Raster steht damit
+    // in jeder Ansicht an derselben Stelle. Der Kalender im Plan-Tab bleibt, wie er war.
+    const res = id === 'cal' ? _calZonenReserve(today) : z;
+    const luftOben = Math.max(0, res.oben - z.oben), luftUnten = Math.max(0, res.unten - z.unten);
+    const monateEl = document.getElementById(id + '-months');
+    if (monateEl) monateEl.style.marginTop = luftOben + 'px';
+    spurenEl.style.marginBottom = luftUnten + 'px';
     // Alles, was UEBER dem Raster liegt, muss die absolut positionierte Wochentagsspalte
     // mitrechnen — sonst steht „Mo" nicht mehr auf einer Linie mit der ersten Rasterzeile.
-    if (card) card.style.setProperty('--cal-names-h',
-      (anzahl ? (hNamen ? hNamen + 3 : 0) + hBalken + 6 : 0) + 'px');
+    // Die Luft ueber den Monatsnamen gehoert dazu.
+    if (card) card.style.setProperty('--cal-names-h', (z.oben + luftOben) + 'px');
   }
 
   // Beim ERSTEN Aufbau zum Beginn des laufenden Plans scrollen (13.09.2026, Leonard-Wunsch —
