@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v355**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v356**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1146,29 +1146,32 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Ein weiterer Tipp bricht die laufende Blende ab und beginnt neu (`_calBlendeNr`).
   GEMESSEN (echte Tipps): Titel sofort „Gymkalender", `.cal-body` und `.cal-foot` je eine
   Bewegung 0 → 1 in 300ms, Kopf ohne Bewegung; dreimal in 50ms-Abstand → Endzustand sauber.
-- **DIE KALENDERKARTE DER UEBERSICHT IST IN JEDER ANSICHT GLEICH HOCH** (18.09.2026,
-  Leonard-Wunsch; auch ueber den Zeitraum hinweg, Leonard-Entscheidung). Vorher sprang sie beim
-  Wechsel aus DREI Gruenden:
-  1. Die KOPFZEILE brach nur um, wenn Titel und Kennzahl nicht nebeneinander passten (19 gegen
-     46px). Jetzt steht die Kennzahl in der Uebersicht IMMER in einer eigenen zweiten Zeile,
-     rechtsbuendig (`#ov-cal-card .cal-head-right { flex-basis: 100% }`).
-  2. Die PLANNAMEN stehen nur im Gym- und Laufkalender, nicht im gemeinsamen.
-  3. Die Zahl der PLANBALKEN haengt an Ansicht und Zeitraum — in Jahren ohne Plan gibt es keine.
-  Fuer 2 und 3 haelt `renderTrainingCalendar` (nur `id === 'cal'`) oben und unten so viel Platz
-  frei, wie die HOECHSTE ALLER ANSICHTEN braucht: `_calZonenReserve` rechnet alle drei Filter mal
-  alle Zeitraeume (Aktuell plus jedes waehlbare Jahr) durch. Die fehlende Hoehe steht als Luft
-  UEBER den Monatsnamen (sie bleiben am Raster) und UNTER den unteren Balken; `--cal-names-h`
-  rechnet die obere Luft mit, damit „Mo" auf der ersten Rasterzeile bleibt.
-  Dafuer sind drei Teile aus dem Renderer herausgeloest: `_calRaster` (Zeitraum und Wochenzahl),
-  `_calPlanStuecke` (Planbalken und Spuren) und `_calZonen` (Hoehe der Planzeilen, Masse in
-  `CAL_SPUR_MASSE`). Beim Aendern der Abstaende der Planzeilen dort UND an den Inline-Raendern im
-  Renderer mitziehen.
-  PREIS: In Ansichten mit wenigen Balken steht ueber den Monatsnamen Leerraum — so viel, wie die
-  voellste Ansicht an Namen und Balken braucht.
-  NICHT betroffen: das Aufklappen der Fusszeile beim Tipp auf einen Tag (gewollte Bewegung) und
-  der Kalender im Plan-Tab.
-  GEMESSEN: alle 9 Ansichten (3 Filter × Aktuell/2026/2025) Karte 448.1px, Raster an derselben
-  Stelle, „Mo" exakt auf der ersten Rasterzeile, Kopf 46px; auch waehrend der Einblendung.
+- **HOEHE DER KALENDERKARTE IN DER UEBERSICHT: KOMPAKT, DIE KENNZAHL IMMER IN ZEILE 2**
+  (18.09.2026). Die Karte sprang beim Filterwechsel aus zwei Gruenden (gemessen auf 375px, je ein
+  Gym- und ein Laufplan):
+  1. DIE KOPFZEILE — der grosse Sprung (27px): „Laufkalender Aktuell" und „11/12 Läufe (92 %)"
+     passten nebeneinander, bei Trainings- und Gymkalender brach die Kennzahl in eine zweite Zeile
+     um (19 gegen 46px). Seit dem 18.09.2026 steht die Kennzahl in der Uebersicht IMMER in einer
+     eigenen zweiten Zeile, rechtsbuendig (`#ov-cal-card .cal-head-right { flex-basis: 100% }`) —
+     wie im Plan-Tab, wo „· Serie 3 Wochen" die zweite Zeile ohnehin erzwingt.
+  2. DIE PLANZEILEN: Ueber dem Raster stehen im Trainingskalender zwei Balken ohne Namen
+     (19px), im Gym-/Laufkalender Name plus ein Balken (29px); darunter 20 gegen 12px. Unterm
+     Strich ist der Trainingskalender 2px niedriger, das Raster rueckt beim Wechsel um 10px.
+     Das bleibt BEWUSST so.
+  VERWORFEN (am selben Tag eingebaut und zurueckgenommen, Leonard: „die Karte ist sehr hoch, die
+  Inhalte nicht mehr kompakt"): oben und unten so viel Platz freizuhalten, wie die voellste
+  Ansicht ALLER Filter und Jahre braucht (`_calZonenReserve`). Ein einziges Jahr mit
+  ueberlappenden Plaenen blaehte damit jede Ansicht auf, und ueber den Monatsnamen stand Luft.
+  Leonards Vorgabe seither: Die Karte darf NICHT hoeher sein als Gym- und Laufkalender im
+  Plan-Tab. Beim Zeitraumwechsel darf sie ihre Hoehe aendern (Jahr ohne Plan = niedriger).
+  Aus diesem Anlauf geblieben sind drei aus dem Renderer herausgeloeste Teile: `_calRaster`
+  (Zeitraum und Wochenzahl), `_calPlanStuecke` (Planbalken und Spuren) und `_calZonen` (Hoehe der
+  Planzeilen, Masse in `CAL_SPUR_MASSE`). Beim Aendern der Abstaende der Planzeilen dort UND an
+  den Inline-Raendern im Renderer mitziehen.
+  GEMESSEN auf 375, 393 und 430px: Uebersicht 362 (Trainings-) / 364 (Gym-, Laufkalender), im
+  Plan-Tab Gym- und Laufkalender je 364px, Kopf ueberall 46px; „Mo" auf der ersten Rasterzeile.
+  TESTHINWEIS: Im Plan-Tab erst messen, wenn Kennzahl und Zeitraum gezeichnet sind — ein zu
+  frueh gemessener Kopf ist einzeilig (19px) und taeuscht eine niedrigere Karte vor.
 - **Lesehilfe im Trainingskalender:** `.info-btn` neben der Kennzahl oben rechts (`.cal-head-right` fasst beide
   zusammen) oeffnet `#modal-cal-info`. **Seit dem 14.09.2026 NUR NOCH IM PLAN-TAB** (Leonard-Wunsch).
   In der UEBERSICHT steht an derselben Stelle ein Knopf ZURUECK ZUR ERSTANSICHT (`.cal-reset-btn`,

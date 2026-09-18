@@ -5457,9 +5457,8 @@ function setCalJahr(jahr, id) {
 }
 
 // Zeitraum des Rasters fuer einen Modus und eine Wahl ('aktuell' | Jahreszahl) — aus
-// `renderTrainingCalendar` herausgeloest (18.09.2026), damit `_calZonenReserve` dieselbe
-// Rechnung fuer ALLE Ansichten anstellen kann. Das Raster beginnt immer am Montag der Woche, in
-// der der Zeitraum beginnt.
+// `renderTrainingCalendar` herausgeloest (18.09.2026). Das Raster beginnt immer am Montag der
+// Woche, in der der Zeitraum beginnt.
 function _calRaster(modus, wahl, today) {
   const aktPlaene = _calAktuellePlaene(modus);
   const aktuell = wahl === 'aktuell' && !!aktPlaene.bereich;
@@ -5474,9 +5473,7 @@ function _calRaster(modus, wahl, today) {
 
 // Planbalken eines Rasters: welche Plaene im Bild sind, auf welchen Spalten und in welcher Spur.
 // Aus `renderTrainingCalendar` herausgeloest (18.09.2026, siehe `_calRaster`).
-// `plaene`/`laufplaene` duerfen vorab gelesen uebergeben werden — `_calZonenReserve` rechnet
-// viele Ansichten und liest den Speicher sonst jedes Mal neu.
-function _calPlanStuecke(modus, start, wochen, plaene, laufplaene) {
+function _calPlanStuecke(modus, start, wochen) {
   // Spalte NICHT über Millisekunden-Division bestimmen: Zwischen Winter- und Sommerzeit
   // fehlt eine Stunde, wodurch ein Datum genau auf einer Wochengrenze in die Vorwoche
   // rutschte. Über ganze Tage gerundet stimmt es.
@@ -5492,8 +5489,8 @@ function _calPlanStuecke(modus, start, wochen, plaene, laufplaene) {
   const imBild = (p) => p && p.startDate
     && p.startDate <= rasterEnde.getTime() && (p.endDate || Infinity) >= start.getTime();
   const zeitraeume = [];
-  if (modus.kraft) (plaene || DB.getPlans()).filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'gym' }));
-  if (modus.lauf)  (laufplaene || DB.getRunPlans()).filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'lauf' }));
+  if (modus.kraft) DB.getPlans().filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'gym' }));
+  if (modus.lauf)  DB.getRunPlans().filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'lauf' }));
   zeitraeume.sort((a, b) => (a.typ === b.typ ? a.p.startDate - b.p.startDate : (a.typ === 'gym' ? -1 : 1)));
 
   // Jede Sportart bekommt ihre eigene Spur, damit Gym und Lauf sich nie ueberlagern.
@@ -5524,27 +5521,6 @@ function _calZonen(anzahl, zeigtNamen) {
   return { hNamen, hBalken,
            oben: anzahl ? (hNamen ? hNamen + 3 : 0) + hBalken + 6 : 0,
            unten: anzahl ? hBalken + 7 : 0 };
-}
-
-// Der hoechste Platzbedarf ueber und unter dem Raster, den der Kalender der UEBERSICHT in
-// IRGENDEINER seiner Ansichten hat — alle drei Filter mal alle Zeitraeume (Aktuell plus jedes
-// waehlbare Jahr). Siehe „Gleiche Hoehe in der Uebersicht" in `renderTrainingCalendar`.
-// Je Filter wird die Namenszeile mitgerechnet, wo er sie zeigt (nicht im gemeinsamen Kalender).
-function _calZonenReserve(today) {
-  const plaene = DB.getPlans(), laufplaene = DB.getRunPlans();
-  const zeitraeume = ['aktuell', ...calJahre()];
-  let oben = 0, unten = 0;
-  ['beide', 'kraft', 'lauf'].forEach(f => {
-    const modus = { kraft: f !== 'lauf', lauf: f !== 'kraft' };
-    zeitraeume.forEach(wahl => {
-      const r = _calRaster(modus, wahl, today);
-      const z = _calZonen(_calPlanStuecke(modus, r.start, r.wochen, plaene, laufplaene).anzahl,
-                          !(modus.kraft && modus.lauf));
-      oben = Math.max(oben, z.oben);
-      unten = Math.max(unten, z.unten);
-    });
-  });
-  return { oben, unten };
 }
 
 function renderTrainingCalendar(id, cardId) {
@@ -5803,21 +5779,13 @@ function renderTrainingCalendar(id, cardId) {
     spurenObenEl.style.marginBottom = anzahl ? '6px' : '0';
     spurenEl.style.height = z.hBalken + 'px';
     spurenEl.style.marginTop = anzahl ? '7px' : '0';
-    // GLEICHE HOEHE IN DER UEBERSICHT (18.09.2026, Leonard-Wunsch): Die Karte soll beim Wechsel
-    // zwischen Trainings-, Gym- und Laufkalender UND zwischen den Zeitraeumen nicht springen.
-    // Oben und unten wird deshalb so viel Platz freigehalten, wie die hoechste aller Ansichten
-    // braucht (`_calZonenReserve`); was die aktuelle weniger braucht, steht als Luft UEBER den
-    // Monatsnamen (die bleiben am Raster) bzw. UNTER den unteren Balken. Das Raster steht damit
-    // in jeder Ansicht an derselben Stelle. Der Kalender im Plan-Tab bleibt, wie er war.
-    const res = id === 'cal' ? _calZonenReserve(today) : z;
-    const luftOben = Math.max(0, res.oben - z.oben), luftUnten = Math.max(0, res.unten - z.unten);
-    const monateEl = document.getElementById(id + '-months');
-    if (monateEl) monateEl.style.marginTop = luftOben + 'px';
-    spurenEl.style.marginBottom = luftUnten + 'px';
+    // KEIN freigehaltener Platz fuer andere Ansichten (am 18.09.2026 kurz eingebaut und am selben
+    // Tag zurueckgenommen, Leonard: „die Karte ist sehr hoch, die Inhalte nicht mehr kompakt") —
+    // reserviert wurde fuer die voellste Ansicht ALLER Jahre. Die Karte ist so hoch, wie die
+    // gezeigte Ansicht braucht; zwischen Trainings- und Einzelkalender bleiben 2px Unterschied.
     // Alles, was UEBER dem Raster liegt, muss die absolut positionierte Wochentagsspalte
     // mitrechnen — sonst steht „Mo" nicht mehr auf einer Linie mit der ersten Rasterzeile.
-    // Die Luft ueber den Monatsnamen gehoert dazu.
-    if (card) card.style.setProperty('--cal-names-h', (z.oben + luftOben) + 'px');
+    if (card) card.style.setProperty('--cal-names-h', z.oben + 'px');
   }
 
   // Beim ERSTEN Aufbau zum Beginn des laufenden Plans scrollen (13.09.2026, Leonard-Wunsch —
