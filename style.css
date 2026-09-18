@@ -896,6 +896,19 @@ body.theme-plans .hist-action-dd {
 .ppv-name-ic { color: inherit; }
 .plan-status-past .ppv-name, .plan-status-archived .ppv-name { color: var(--text2); }
 .ppv-meta { font-size: 13.2px; color: var(--text3); margin-top: 4.4px; }
+/* BESCHREIBUNGSZEILE MIT QUOTE (beendete Plaene, 18.09.2026, `planMetaZeile`): Laufzeit und
+   Quote sind zwei eigene Teile. Passt die Quote nicht mehr in die Zeile — auf 375px ist das
+   die Regel —, rutscht sie als GANZES in die zweite Zeile, statt mitten in „der Einheiten"
+   umzubrechen.
+   DER TRENNPUNKT verschwindet dabei: Jeder Teil traegt ihn VOR sich (`::before`), und die ganze
+   Zeile ist um genau dessen Breite nach links geschoben (`.ppv-meta-in`). Am Zeilenanfang liegt
+   der Punkt damit links AUSSERHALB der Zeile und wird von `overflow: hidden` abgeschnitten —
+   beim ersten Teil immer, bei der Quote nur, wenn sie eine neue Zeile beginnt. Mitten in der
+   Zeile steht er sichtbar zwischen beiden. Die Breite (.9em) entspricht „ · " im Text davor. */
+.ppv-meta.mit-quote { overflow: hidden; }
+.ppv-meta-in { margin-left: -.9em; }
+.ppv-meta-teil { display: inline-block; white-space: nowrap; }
+.ppv-meta-teil::before { content: '·'; display: inline-block; width: .9em; text-align: center; }
 .ppv-progress { display: flex; align-items: center; gap: 11px; margin-top: 13.2px; }
 .ppv-wk { font-size: 14.3px; font-weight: 600; color: var(--text2); white-space: nowrap; }
 .ppv-bar { flex: 1; height: 6.6px; background: var(--border); border-radius: 3.3px; overflow: hidden; }
@@ -3390,6 +3403,15 @@ html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
 .seg-zwei {
   width: calc((100% - 28px) * 0.7);
   margin-left: auto; margin-right: auto;
+}
+/* UEBERBLENDEN beim Tabwechsel (18.09.2026, `_slUeberblenden`): Die alten Knoepfe liegen fuer
+   die Dauer der Bewegung in einer eigenen Ebene UEBER dem Schalter — in ihrer alten Breite
+   (Inline-`width`) und mittig, damit sie beim Ausblenden stehen bleiben, waehrend der Schalter
+   seine Breite aendert. Oben/unten 4px = das Polster des Schalters, `gap` wie dort. */
+.seg-toggle { position: relative; }
+.seg-toggle > .sl-alt {
+  position: absolute; top: 4px; bottom: 4px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 4px; pointer-events: none;
 }
 /* PASSIVER MODUS, exakt wie in HCC: 30 % kleiner und halb durchsichtig, sobald man
    scrollt, in einen anderen Tab wischt oder neben ihn tippt. Die Deckkraft sitzt am

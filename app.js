@@ -1755,7 +1755,7 @@ function buildRunPlanCard(onTap, plan, opts) {
         : `<div class="ppv-name">${PPV_ICON_LAEUFER}${escapeHtml(p.name || 'Laufplan')}</div>`}
       ${laeuft ? '' : `<span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>`}
     </div>
-    ${laeuft ? '' : `<div class="ppv-meta">${fmtDateRange(p.startDate, p.endDate)}${wochen ? ` · ${wochen} Wochen` : ''}</div>`}
+    ${laeuft ? '' : planMetaZeile('lauf', p, `${fmtDateRange(p.startDate, p.endDate)}${wochen ? ` · ${wochen} Wochen` : ''}`)}
     ${progress}
     <div class="ppv-strip">${strip}</div>
   </div>`;
@@ -4736,6 +4736,7 @@ function toggleRunplansArchive() {
 function renderLaufVerwaltung() {
   const el = document.getElementById('runplans-list');
   if (!el) return;
+  autoArchivBeendetePlaene();
   const plaene = DB.getRunPlans();
   const offen = plaene.filter(p => !p.archived).sort((a, b) => (a.startDate || 0) - (b.startDate || 0));
   const archiv = plaene.filter(p => p.archived).sort((a, b) => (b.startDate || 0) - (a.startDate || 0));
@@ -5360,18 +5361,21 @@ function calJahre() {
 // (`runDays`) bis heute; ein Tag nach dem Planende zaehlt nicht mehr.
 // Laeuft fuer eine der beiden Sportarten im gemeinsamen Kalender KEIN Plan, steht fuer sie nur
 // die Anzahl im gezeigten Zeitraum, ohne Verhaeltnis — es gibt dann nichts, wogegen man zaehlt.
+// Seit dem 18.09.2026 auch fuer BEENDETE Plaene (Quote in der Plankarte, `planMetaZeile`): Dort
+// endet die Zaehlung an seinem letzten Tag — Einheiten danach gehoeren nicht mehr dazu. Fuer den
+// laufenden Plan aendert das nichts, sein Ende liegt nach heute.
 function _calPlanStand(sport, plan, bereichVon, today) {
   const wort = sport === 'gym' ? (n => n === 1 ? 'Einheit' : 'Einheiten') : (n => n === 1 ? 'Lauf' : 'Läufe');
-  const bisHeute = new Date(today); bisHeute.setHours(23, 59, 59, 999);
   const vonDatum = plan ? _calLokalTag(plan.startDate) : bereichVon;
-  const vonKey = _dayKeyOf(vonDatum.getTime()), heuteKey = _dayKeyOf(today.getTime());
-  const absolviert = sport === 'gym'
-    ? DB.getWorkouts().filter(w => w.startTs >= vonDatum.getTime() && w.startTs <= bisHeute.getTime()).length
-      + DB.getManualDays().filter(k => k >= vonKey && k <= heuteKey).length
-    : DB.getRuns().filter(l => l.date >= vonKey && l.date <= heuteKey).length;
-  if (!plan) return { absolviert, geplant: null, wort };
-  const ende = plan.endDate ? _calLokalTag(plan.endDate) : null;
+  const ende = (plan && plan.endDate) ? _calLokalTag(plan.endDate) : null;
   const letzter = (ende && ende < today) ? ende : today;
+  const bisLetzter = new Date(letzter); bisLetzter.setHours(23, 59, 59, 999);
+  const vonKey = _dayKeyOf(vonDatum.getTime()), bisKey = _dayKeyOf(letzter.getTime());
+  const absolviert = sport === 'gym'
+    ? DB.getWorkouts().filter(w => w.startTs >= vonDatum.getTime() && w.startTs <= bisLetzter.getTime()).length
+      + DB.getManualDays().filter(k => k >= vonKey && k <= bisKey).length
+    : DB.getRuns().filter(l => l.date >= vonKey && l.date <= bisKey).length;
+  if (!plan) return { absolviert, geplant: null, wort };
   let geplant = 0;
   for (const d = new Date(vonDatum); d <= letzter; d.setDate(d.getDate() + 1)) {
     const wi = (d.getDay() + 6) % 7;
@@ -6261,22 +6265,61 @@ function renderMehr() {
 // SCREEN: TRAININGSPLÄNE (Liste + Detail)
 // ═══════════════════════════════════════════════
 
-// Auto-archivierung: Pläne deren Enddatum > 30 Tage in der Vergangenheit liegt
-// werden automatisch als archived markiert (wenn nicht schon). Wird beim Rendern der Liste aufgerufen.
-function autoArchiveOldPlans() {
-  const plans = DB.getPlans();
-  const cutoff = Date.now() - 30 * 24 * 3600 * 1000;
-  let dirty = false;
-  for (const p of plans) {
-    if (!p.archived && p.endDate && p.endDate < cutoff) {
-      // Tag-Modell v2: beim (Auto-)Archivieren die Tage EINFRIEREN (Snapshot), damit der
-      // Rückblick nicht von späteren Bibliotheks-Änderungen verändert wird.
-      p.archivedDays = JSON.parse(JSON.stringify(resolvePlanDays(p)));
+// Ist der Plan BEENDET, also sein letzter Tag vorbei? Gerechnet in KALENDERTAGEN, nicht in
+// Millisekunden: Der Gymplan speichert sein Ende als UTC-Mitternacht (in Mitteleuropa 02:00 des
+// letzten Tags), der Laufplan als lokale Mitternacht — `_calLokalTag` macht aus beidem denselben
+// Kalendertag. Ein Vergleich mit `Date.now()` hielte den Gymplan schon am Morgen seines letzten
+// Tags fuer beendet.
+function _planBeendet(p) {
+  if (!p || !p.endDate) return false;
+  const heute = new Date(); heute.setHours(0, 0, 0, 0);
+  return _calLokalTag(p.endDate).getTime() < heute.getTime();
+}
+
+// BEENDETE PLAENE WANDERN VON SELBST INS ARCHIV — Gym- UND Laufplaene, sobald ihr letzter Tag
+// vorbei ist (18.09.2026, Leonard-Wunsch). Vorher nur Gymplaene und erst 30 Tage nach dem Ende;
+// Laufplaene gar nicht.
+// Laeuft beim App-Start und vor dem Zeichnen beider Planlisten — auch eine App, die ueber
+// Mitternacht offen bleibt, holt es beim naechsten Blick in die Liste nach.
+// NUR EINMAL JE ENDDATUM (`autoArchivEnde`): Holt man einen beendeten Plan von Hand aus dem
+// Archiv, darf er nicht beim naechsten Zeichnen sofort zurueckwandern — beim Gymplan legt das
+// Zurueckholen sogar frische Kopien seiner Trainingstage an, jeder Rueckfall haette also neue
+// Tage erzeugt. Verschiebt man das Ende und ist auch das neue vorbei, wird wieder archiviert.
+// Der Gymplan friert beim Archivieren seine Tage ein (Snapshot, Tag-Modell v2) — genau wie beim
+// Archivieren von Hand, damit der Rueckblick nicht von spaeteren Aenderungen der Tage abhaengt.
+function autoArchivBeendetePlaene() {
+  const ziehen = (liste, einfrieren) => {
+    let geaendert = false;
+    for (const p of liste) {
+      if (p.archived || !_planBeendet(p) || p.autoArchivEnde === p.endDate) continue;
+      if (einfrieren) p.archivedDays = JSON.parse(JSON.stringify(resolvePlanDays(p)));
       p.archived = true;
-      dirty = true;
+      p.autoArchivEnde = p.endDate;
+      geaendert = true;
     }
-  }
-  if (dirty) DB.savePlans(plans);
+    return geaendert;
+  };
+  const plaene = DB.getPlans();
+  if (ziehen(plaene, true)) DB.savePlans(plaene);
+  const laufplaene = DB.getRunPlans();
+  if (ziehen(laufplaene, false)) DB.saveRunPlans(laufplaene);
+}
+
+// Quote eines BEENDETEN Plans fuer die Beschreibungszeile seiner Karte (18.09.2026,
+// Leonard-Wunsch, Wortlaut „84 % der Einheiten" — auch beim Laufplan, dessen Einheiten im
+// Datenmodell ebenfalls `units` heissen). Gezaehlt wird wie in der Kennzahl des Kalenders
+// (`_calPlanStand`): absolvierte gegen geplante Einheiten vom ersten bis zum letzten Plantag;
+// ueber 100 % ist moeglich. Ohne geplante Einheit gibt es keine Quote.
+// Die Quote ist ein eigener Teil der Zeile (`.ppv-meta-teil`): Passt sie nicht mehr hinein
+// (auf dem iPhone die Regel), rutscht sie als Ganzes in die zweite Zeile, und der Trennpunkt
+// davor verschwindet — siehe `.ppv-meta.mit-quote` im CSS.
+function planMetaZeile(sport, p, text) {
+  if (!_planBeendet(p)) return `<div class="ppv-meta">${text}</div>`;
+  const st = _calPlanStand(sport, p, null, new Date());
+  if (!st.geplant) return `<div class="ppv-meta">${text}</div>`;
+  const quote = Math.round(st.absolviert / st.geplant * 100) + '\u00A0% der Einheiten';
+  return `<div class="ppv-meta mit-quote"><div class="ppv-meta-in">` +
+    `<span class="ppv-meta-teil">${text}</span><span class="ppv-meta-teil">${quote}</span></div></div>`;
 }
 
 // Status eines Plans relativ zu heute
@@ -6395,7 +6438,7 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
         : `<div class="ppv-name">${PPV_ICON_HANTEL}${escapeHtml(p.name)}</div>`}
       ${hideStatus ? '' : `<span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>`}
     </div>
-    ${hideMeta ? '' : `<div class="ppv-meta">${fmtDateRange(p.startDate, p.endDate)}${planWochen(p) ? ` · ${planWochen(p)} Wochen` : ''}</div>`}
+    ${hideMeta ? '' : planMetaZeile('gym', p, `${fmtDateRange(p.startDate, p.endDate)}${planWochen(p) ? ` · ${planWochen(p)} Wochen` : ''}`)}
     ${progress}
     <div class="ppv-strip">${strip}</div>
   </div>`;
@@ -6408,7 +6451,7 @@ function togglePlansArchive() {
 }
 
 function renderPlans() {
-  autoArchiveOldPlans();
+  autoArchivBeendetePlaene();
   const plans = DB.getPlans();
   const active = plans.filter(p => !p.archived).sort((a,b) => a.startDate - b.startDate);
   const archived = plans.filter(p => p.archived).sort((a,b) => b.startDate - a.startDate);
@@ -10226,12 +10269,12 @@ function seitenleisteAktualisieren() {
   // Leiste bleibt sie stehen, dort waere die Bewegung nur Unruhe.
   // Die Animationsklasse muss vor dem Setzen entfernt und nach einem erzwungenen Reflow
   // neu vergeben werden, sonst startet die Animation beim zweiten Mal nicht erneut.
+  const tauchtAuf = !!tab && el.hidden;
   if (tab) {
     // Ein noch laufendes Abtauchen abbrechen: Wer schnell zurueckwischt, soll die Leiste
     // sofort wiederhaben und nicht auf das Ende der alten Bewegung warten.
     if (_slAusTimer) { clearTimeout(_slAusTimer); _slAusTimer = null; }
     el.classList.remove('sl-raus');
-    const tauchtAuf = el.hidden;
     el.hidden = false;
     if (tauchtAuf) {
       el.classList.remove('sl-rein');
@@ -10268,11 +10311,109 @@ function seitenleisteAktualisieren() {
   if (!box) return;
   // Vier Knoepfe brauchen die engere Schrift — genau wie frueher im Kopf. Zwei Knoepfe
   // brauchen umgekehrt die Breite nicht und stehen 30 % schmaler mittig (`.seg-zwei`).
-  box.classList.toggle('seg-vier', seiten.length >= 4);
-  box.classList.toggle('seg-zwei', seiten.length === 2);
-  box.innerHTML = seiten.map(([k, titel]) =>
-    `<button type="button" class="seg-btn${k === jetzt ? ' active' : ''}" data-seite="${k}">${escapeHtml(titel)}</button>`
-  ).join('');
+  const fuellen = () => {
+    box.classList.toggle('seg-vier', seiten.length >= 4);
+    box.classList.toggle('seg-zwei', seiten.length === 2);
+    // Eine noch ausblendende alte Beschriftung (`.sl-alt`, siehe `_slUeberblenden`) bleibt stehen.
+    const alt = box.querySelector(':scope > .sl-alt');
+    box.innerHTML = seiten.map(([k, titel]) =>
+      `<button type="button" class="seg-btn${k === jetzt ? ' active' : ''}" data-seite="${k}">${escapeHtml(titel)}</button>`
+    ).join('');
+    if (alt) box.appendChild(alt);
+  };
+  // Wechsel zwischen zwei Tabs, die BEIDE eine Leiste haben: ueberblenden statt springen.
+  // Nur wenn die Leiste schon stand (nicht beim Auftauchen) und der Tab ein anderer ist — ein
+  // Seitenwechsel im selben Tab schaltet nur die aktive Pille um.
+  const blenden = !tauchtAuf && _slTab && _slTab !== currentScreen;
+  _slTab = currentScreen;
+  if (blenden) _slUeberblenden(box, fuellen);
+  else fuellen();
+}
+
+// ── Wechsel der Seitenleiste zwischen zwei Tabs: UEBERBLENDEN (18.09.2026, Leonard-Wunsch) ──
+// Vorher sprang der Schalter beim Wischen von „Gym | Laufen" auf „Übungen | Stats" schlagartig
+// um, und zwar erst beim Einrasten. Jetzt bleibt er stehen, die alten Beschriftungen blenden aus,
+// die neuen ein, und die BREITE gleitet auf die neue Knopfzahl (zweiseitig 70 % ↔ vierseitig
+// volle Breite, `.seg-zwei`). Leonard hat das gegen „Ab- und Auftauchen" und „Mitschieben"
+// gewaehlt.
+// Ausgeloest wird es in `seitenleisteAktualisieren`, also beim EINRASTEN des Wischs (Settle von
+// `initTabScrollSync` → `_applyTabState`) — die Geste selbst bleibt unangetastet (siehe „AM
+// WISCHEN NICHTS AENDERN"). Derselbe Weg gilt fuer den Tipp auf die Tableiste.
+// DIE ALTEN KNOEPFE wandern in eine eigene Ebene ueber dem Schalter (`.sl-alt`), in ihrer ALTEN
+// Breite und mittig — so bleiben sie beim Ausblenden stehen, waehrend der Schalter um sie herum
+// seine Breite aendert. Schrift und seitliches Polster werden eingefroren: Der Schalter traegt
+// schon die Klassen des neuen Tabs (`.seg-vier` hat 12 statt 13px), und die alten Beschriftungen
+// wuerden sonst im Ausblenden springen. `overflow: hidden` am Schalter beschneidet die breitere
+// alte Ebene, wenn er schmaler wird.
+// Waehrend der Bewegung haelt ein Inline-`margin: auto` den Schalter mittig — der vierseitige
+// steht sonst ueber `margin: 0 14px` links an, und mit fester Breite waere er nicht mehr mittig.
+// TOKEN `_slBlendeNr`: Ein zweiter Wechsel waehrend der Bewegung raeumt die alte Ebene ab und
+// startet von der aktuellen Breite; nur die neueste Kette raeumt am Ende auf.
+// Bei `prefers-reduced-motion` und ohne Breite (Leiste nicht sichtbar) wird nur umgeschaltet.
+const SL_BLENDE_MS = 260;      // Breite
+// Die beiden Blenden UEBERLAPPEN: Die neue beginnt, solange die alte noch zu sehen ist — sonst
+// stuende der Schalter kurz leer da.
+const SL_BLENDE_AUS_MS = 160;  // alte Beschriftungen
+const SL_BLENDE_EIN_MS = 200;  // neue Beschriftungen, nach kurzem Vorlauf
+const SL_BLENDE_VORLAUF_MS = 60;
+let _slTab = null;             // Tab, dessen Seiten gerade im Schalter stehen
+let _slBlendeNr = 0;
+let _slBreiteAnim = null;
+
+function _slUeberblenden(box, fuellen) {
+  const nr = ++_slBlendeNr;
+  if (_bewegungReduziert() || !box.animate || !box.offsetWidth) { fuellen(); return; }
+  // Reste eines noch laufenden Wechsels abraeumen — die Breite startet dort, wo sie gerade steht.
+  // `offsetWidth` ist die LAYOUT-Breite — der passive Modus (`scale(.7)`) rechnet nicht mit hinein.
+  const vonBreite = box.offsetWidth;
+  box.querySelectorAll(':scope > .sl-alt').forEach(x => x.remove());
+  if (_slBreiteAnim) { _slBreiteAnim.cancel(); _slBreiteAnim = null; }
+  const alteKnoepfe = [...box.querySelectorAll(':scope > .seg-btn')];
+  alteKnoepfe.forEach(k => {
+    k.getAnimations().forEach(a => a.cancel());
+    const cs = getComputedStyle(k);
+    k.style.fontSize = cs.fontSize;
+    k.style.paddingLeft = cs.paddingLeft;
+    k.style.paddingRight = cs.paddingRight;
+  });
+  const innen = box.clientWidth - (parseFloat(getComputedStyle(box).paddingLeft) || 0)
+                                - (parseFloat(getComputedStyle(box).paddingRight) || 0);
+  fuellen();
+  const nachBreite = box.offsetWidth;
+  const alt = document.createElement('div');
+  alt.className = 'sl-alt';
+  alt.setAttribute('aria-hidden', 'true');
+  alt.style.width = innen + 'px';
+  alteKnoepfe.forEach(k => alt.appendChild(k));
+  box.appendChild(alt);
+  box.style.overflow = 'hidden';
+  box.style.marginLeft = 'auto';
+  box.style.marginRight = 'auto';
+  const kurve = 'cubic-bezier(.4,0,.2,1)';
+  const ketten = [];
+  if (Math.abs(nachBreite - vonBreite) > 0.5) {
+    // `fill: 'forwards'`: Die Breite bleibt stehen, bis das Aufraeumen sie ZUSAMMEN mit dem
+    // Inline-`margin: auto` wegnimmt. Endete sie vorher, stuende der vierseitige Schalter fuer
+    // einen Moment ohne seine 14px-Raender da (`width: auto` + `margin: auto` = volle Breite).
+    _slBreiteAnim = box.animate([{ width: vonBreite + 'px' }, { width: nachBreite + 'px' }],
+                                { duration: SL_BLENDE_MS, easing: kurve, fill: 'forwards' });
+    ketten.push(_slBreiteAnim.finished.catch(() => {}));
+  }
+  ketten.push(_animFahren(alt, [{ opacity: 1 }, { opacity: 0 }],
+                          { duration: SL_BLENDE_AUS_MS, easing: kurve, fill: 'forwards' }));
+  box.querySelectorAll(':scope > .seg-btn').forEach(k => ketten.push(
+    _animFahren(k, [{ opacity: 0 }, { opacity: 1 }],
+                { duration: SL_BLENDE_EIN_MS, delay: SL_BLENDE_VORLAUF_MS, easing: kurve, fill: 'backwards' })));
+  // Notbremse: Die Zeitleiste steht, solange die Seite nicht sichtbar ist — `finished` kaeme dann nie.
+  Promise.race([Promise.all(ketten), new Promise(r => setTimeout(r, SL_BLENDE_MS + 400))]).then(() => {
+    if (nr !== _slBlendeNr) return;
+    alt.remove();
+    if (_slBreiteAnim) { _slBreiteAnim.cancel(); _slBreiteAnim = null; }
+    box.querySelectorAll(':scope > .seg-btn').forEach(k => k.getAnimations().forEach(a => a.cancel()));
+    box.style.overflow = '';
+    box.style.marginLeft = '';
+    box.style.marginRight = '';
+  });
 }
 
 // PASSIVER MODUS. Der Schalter steht dauerhaft ueber dem Inhalt; wer gerade liest,
@@ -10548,6 +10689,8 @@ document.addEventListener('DOMContentLoaded', () => {
   cleanupOrphanWeekplan();
   // Satzanzahl der Trainingstage einmalig an die letzte absolvierte Einheit angleichen
   migrateSetCountsFromHistory();
+  // Beendete Gym- und Laufplaene ins Archiv (18.09.2026) — vor dem ersten Zeichnen
+  autoArchivBeendetePlaene();
   // Papierkorb ausmisten: Einträge älter als TRASH_KEEP_DAYS verschwinden endgültig
   purgeTrash();
   const activeWo = DB.getActive();

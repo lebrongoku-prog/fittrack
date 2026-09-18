@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v352**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v353**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -552,6 +552,37 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   GEMESSEN: erster Satz abgehakt → eine Bewegung mit den Keyframes scale(1) → 1.18 → 1, danach
   `transform: none` ohne Restanimation; Haken zuruecknehmen → keine Bewegung.
 - **Bestleistungs-Moment:** `celebratePR(name, weight, prev)` läuft, sobald die ÜBUNG komplett abgehakt ist (in `toggleSetDone`, Zweig `allDone`) — nicht nach jedem Satz und nicht erst in der Abschlussansicht. Gewertet wird der schwerste Satz der Übung gegen `getExercisePR()` (gespeicherte Einheiten). Konfetti (`.pr-burst`, respektiert `prefers-reduced-motion`) + Vibration + Toast; `ex.prCelebrated` verhindert eine zweite Feier derselben Übung.
+- **BEENDETE PLAENE WANDERN VON SELBST INS ARCHIV** (`autoArchivBeendetePlaene`, 18.09.2026,
+  Leonard-Wunsch) — Gym- UND Laufplaene, sobald ihr letzter Tag vorbei ist. Vorher nur
+  Gymplaene und erst 30 Tage nach dem Ende (`autoArchiveOldPlans`, entfallen); Laufplaene gar
+  nicht. Laeuft beim App-Start und vor dem Zeichnen beider Planlisten (`renderPlans`,
+  `renderLaufVerwaltung`).
+  „Beendet" rechnet in KALENDERTAGEN (`_planBeendet`): Der Gymplan speichert sein Ende als
+  UTC-Mitternacht (in Mitteleuropa 02:00 des letzten Tags), der Laufplan als lokale Mitternacht;
+  `_calLokalTag` macht aus beidem denselben Tag. Ein Vergleich mit `Date.now()` hielte den
+  Gymplan schon am Morgen seines letzten Tags fuer beendet.
+  NUR EINMAL JE ENDDATUM (`autoArchivEnde` am Plan): Wer einen beendeten Plan von Hand aus dem
+  Archiv holt, behaelt ihn draussen — beim Gymplan legt das Zurueckholen sogar frische Kopien
+  seiner Trainingstage an, jeder Rueckfall haette neue Tage erzeugt. Wird das Ende verschoben
+  und ist auch das neue vorbei, wird wieder archiviert.
+  Der Gymplan friert dabei seine Tage ein (`archivedDays`), wie beim Archivieren von Hand.
+  GEMESSEN: Gym- und Laufplan mit Ende vorgestern → beim Start archiviert (Gym mit Snapshot);
+  Laufplan mit Ende heute → bleibt; beide von Hand zurueckgeholt → bleiben draussen.
+- **BEENDETE PLAENE ZEIGEN IHRE QUOTE in der Beschreibungszeile ihrer Karte** (`planMetaZeile`,
+  18.09.2026, Leonard-Wunsch, Wortlaut „84 % der Einheiten" — auch beim Laufplan). Gerechnet
+  wie die Kennzahl des Kalenders (`_calPlanStand`): absolvierte gegen geplante Einheiten vom
+  ersten bis zum LETZTEN Plantag, ueber 100 % moeglich, ohne geplante Einheit keine Quote.
+  `_calPlanStand` zaehlt dafuer seit diesem Tag auch das Absolvierte nur bis zum Planende —
+  vorher bis heute, was beim laufenden Plan dasselbe ist, beim beendeten aber spaetere
+  Einheiten mitgezaehlt haette.
+  Auf 375px passt die Quote NICHT mehr in die Zeile. Sie ist deshalb ein eigener Teil
+  (`.ppv-meta-teil`, `nowrap`) und rutscht als Ganzes in die zweite Zeile; der Trennpunkt davor
+  verschwindet dann, weil er links ausserhalb der Zeile liegt (`.ppv-meta-in` ist um seine
+  Breite nach links geschoben, `.ppv-meta.mit-quote` schneidet ab). Auf breiteren Bildschirmen
+  steht alles in einer Zeile mit Punkt dazwischen (gemessen bei 520px).
+  GEMESSEN: Gym 5/5 und Lauf 5/5 = 100 %, unabhaengig nachgezaehlt; die Einheit einen Tag nach
+  Planende zaehlt nicht mit; Plan ohne Einheiten 0 %; laufender und heute endender Plan ohne
+  Quote.
 - **`buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta)`** rendert die Plan-Kachel in BEIDEN Tabs.
   Der Plaene-Tab nutzt sie ueber den Alias `renderRow` — der muss eine Lambda bleiben (`p => buildPlanCard(p, ...)`),
   denn `array.map(buildPlanCard)` reicht (element, index, array) durch: Der Index landete als `onTap` und erzeugte
@@ -1511,8 +1542,37 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   08.09.2026). Kommt man aus einem Tab OHNE Leiste (Uebersicht, Vollbild-Overlays), faehrt
   sie vom unteren Bildschirmrand herein; geht man dorthin zurueck, faehrt sie ebenso wieder
   hinaus — dieselbe Bewegungsrichtung, mit der die Bottom-Nav ein- und ausgleitet.
-  Zwischen zwei Tabs MIT Leiste passiert nichts; `seitenleisteAktualisieren` unterscheidet
-  allein den Uebergang „Tab ohne Leiste" ↔ „Tab mit Leiste".
+  Zwischen zwei Tabs MIT Leiste taucht sie NICHT ab — dort BLENDET der Schalter seit dem
+  18.09.2026 ueber (siehe naechster Absatz). `seitenleisteAktualisieren` unterscheidet drei
+  Faelle: Auftauchen (Leiste war versteckt), Ueberblenden (anderer Tab, Leiste stand schon) und
+  schlichtes Neuzeichnen (derselbe Tab, also ein Seitenwechsel — nur die aktive Pille wandert).
+  **UEBERBLENDEN ZWISCHEN ZWEI TABS MIT LEISTE** (`_slUeberblenden`, 18.09.2026, Leonard-
+  Entscheidung „Ueberblenden" gegen „Ab- und Auftauchen" und „Mitschieben"): Vorher sprang der
+  Schalter beim Wischen z. B. von „Gym | Laufen" auf „Übungen | Stats" schlagartig um. Jetzt
+  bleibt er stehen, die alten Beschriftungen blenden aus (160ms), die neuen nach 60ms ein
+  (200ms), und die BREITE gleitet auf die neue Knopfzahl (260ms; zweiseitig 243px ↔ vierseitig
+  347px auf 375px). Welcher Tab zuletzt im Schalter stand, merkt `_slTab`.
+  AUSGELOEST BEIM EINRASTEN des Wischs (Settle → `_applyTabState`), ebenso beim Tipp auf die
+  Tableiste. Die Geste selbst ist unangetastet (siehe „AM WISCHEN NICHTS AENDERN").
+  BAUART: Die alten Knoepfe wandern in eine Ebene ueber dem Schalter (`.sl-alt`, absolut, in
+  ihrer ALTEN Breite und mittig) — so stehen sie beim Ausblenden still, waehrend der Schalter
+  um sie herum seine Breite aendert. Ihre Schrift und ihr seitliches Polster werden eingefroren
+  (inline), weil der Schalter schon die Klassen des neuen Tabs traegt (`.seg-vier` = 12 statt
+  13px). `overflow: hidden` beschneidet die alte Ebene, wenn der Schalter schmaler wird;
+  `margin: auto` (inline) haelt ihn waehrend der Bewegung mittig — der vierseitige steht sonst
+  ueber `margin: 0 14px` links an.
+  FALLE: Die Breitenbewegung traegt `fill: 'forwards'` und wird erst im Aufraeumen ZUSAMMEN mit
+  dem Inline-`margin: auto` entfernt. Endete sie vorher, stuende der vierseitige Schalter einen
+  Moment mit `width: auto` + `margin: auto` da — also OHNE seine 14px-Raender (gemessen: 375
+  statt 347px).
+  Ein weiterer Wechsel waehrend der Bewegung raeumt die alte Ebene ab und startet von der
+  aktuellen Breite (Token `_slBlendeNr`). Notbremse wie ueberall: Die Zeitleiste steht, solange
+  die Seite nicht sichtbar ist — nach 660ms wird in jedem Fall aufgeraeumt.
+  GEMESSEN (Zeit von Hand gesetzt, die Zeitleiste der Testansicht stand still): Breite
+  243 → 303 → 343 → 347px bei 0/100/200/260ms, alte Beschriftung 1 → 0.11 → 0, neue
+  0 → 0.13 → 0.94 → 1; danach keine Ebene, keine Inline-Angabe, keine Restanimation.
+  Seitenwechsel im selben Tab und Rueckkehr aus der Uebersicht blenden NICHT; zweimal schnell
+  weitergeschaltet endet beim richtigen Tab. NICHT pruefbar hier: der echte Wisch.
   Die Animationsklasse muss vorher entfernt und nach einem erzwungenen Reflow
   (`void el.offsetWidth`) neu gesetzt werden — sonst startet die Animation beim zweiten Mal
   nicht.
