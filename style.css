@@ -2914,12 +2914,6 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
    einem Kreispfeil statt des Buchstabens. */
 .cal-reset-btn svg { width: 11px; height: 11px; display: block; }
 .cal-head-right .cal-stats { margin-left: 0; }
-/* In der UEBERSICHT steht die Kennzahl IMMER in einer eigenen zweiten Zeile, rechtsbuendig
-   (18.09.2026, Leonard-Wunsch „die Karte soll immer gleich hoch bleiben"). Vorher brach der Kopf
-   nur um, wenn Titel und Kennzahl nicht nebeneinander passten — „Laufkalender Aktuell" und
-   „11/12 Läufe (92 %)" passten, „Gymkalender Aktuell" und „10/12 Einheiten (83 %)" nicht, und die
-   Karte sprang beim Filterwechsel um eine Zeile (19 gegen 46px). */
-#ov-cal-card .cal-head-right { flex-basis: 100%; justify-content: flex-end; }
 /* Legende steht nur noch im Erklaer-Dialog, nicht mehr in der Karte. */
 .cal-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 11px; color: var(--text3); }
 .cal-legend-modal { gap: 10px 18px; margin: 14px 0 0; font-size: 12.5px; color: var(--text2); }
