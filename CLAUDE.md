@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v127**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v352**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -326,6 +326,26 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
      (`.ex-item.open.zuklappend > .ex-item-head > .aex-v2-chev { transform: none }`).
   TESTHINWEIS: `getComputedStyle` auf den Pfeil liefert waehrend einer laufenden Transition den
   STARTwert — zum Pruefen `transition: none` setzen.
+- **DIE DREI ARCHIVE IM PLAN-TAB KLAPPEN EBENSO** (`_archivKlappen`, 18.09.2026, Leonard-Wunsch):
+  „Archivierte Gympläne", „Archivierte Gymtage" und „Archivierte Laufpläne" — gleiche 200ms,
+  gleiche Kurve, gleiche Notbremse (`_klappBewegung`) wie Muskelgruppen und Uebungskarten.
+  Die archivierten Eintraege stehen dafuer in EINER Huelle hinter dem Knopf (`.archiv-inhalt`),
+  gefahren wird deren Hoehe. Bei den Gymtagen baut die Huelle dasselbe Dreier-Raster noch einmal
+  (`#libdays-list > .archiv-inhalt`) — Spalten und Abstaende sind unveraendert (gemessen:
+  14/133/252px, je 109px breit, 18px unter dem Knopf wie vorher; in den Planlisten 8px).
+  BESCHNITTEN PER `clip-path`, NICHT per `overflow: hidden`: Die Kacheln stossen seitlich direkt an
+  die Huelle, ihre Schatten waeren waehrend der Bewegung abgeschnitten und am Ende aufgeblitzt.
+  Der Ausschnitt reicht seitlich und oben ueber die Huelle hinaus, nur seine Unterkante folgt der
+  Hoehe. Das Archiv steht immer ZULETZT in seiner Liste; die Hoehe faehrt trotzdem mit, damit die
+  Seite beim Zuklappen weit unten gleichmaessig nachzieht statt am Ende zu springen.
+  Der Knopf springt sofort in den neuen Zustand, der Pfeil dreht sich mit. Beim AUFklappen steht
+  er nach dem Neuzeichnen schon gedreht da und wird kurz in die alte Lage gesetzt, damit die
+  Drehung laeuft. TOKEN `_archivNr` an der Liste: Ein weiterer Tipp waehrend des Zuklappens
+  entwertet dessen Neuzeichnen am Ende.
+  `_staffelKarten` (Seitenwechsel) steigt in `.archiv-inhalt` hinab — die archivierten Kacheln
+  kommen dort einzeln, nicht als ein Block.
+  GEMESSEN: auf/zu in allen drei Listen, Standbild bei 45ms (Kacheln halb aufgedeckt, Schatten
+  seitlich heil), dreimal in 60ms-Abstand getippt → Endzustand stimmt ohne Reste.
 - **KALENDER-FUSSZEILE UND WETTKAMPFKARTE IM ZEITSTRAHL KLAPPEN EBENSO** (13.09.2026,
   Leonard-Wunsch). Beide sind Kaesten, die aus dem NICHTS erscheinen bzw. ganz verschwinden —
   dafuer gibt es `_boxFahren(el, von, bis, fertig)`: Es faehrt die Hoehe UND das senkrechte
@@ -597,7 +617,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Kreis leer und der gelaufene gefuellt ist (Leonard-Wunsch); vorher faerbte „geplant" das ganze
   Kaestchen hellgruen (`#CDE7E1`). `.done::before` steht SPAETER in der Datei und gewinnt damit
   bei gleicher Spezifitaet — ein geplanter und absolvierter Tag ist gefuellt. Mit der Flaeche
-  entfiel auch die Glas-Sonderregel dafuer; die Umrandung bleibt im Transparenz-Modus dunkelgruen.
+  entfiel auch die Glas-Sonderregel dafuer. Im Transparenz-Modus sind Umrandung und Fuellung seit
+  dem 18.09.2026 halbweiss (siehe „Keine Sportfarben im Transparenz-Modus“).
   STRICHSTAERKE: 2,52px gegen 1,68px beim Laufkreis. Absolut gleich dick wirkten sie NICHT gleich —
   das Quadrat ist mit 16,8px 1,5-mal so gross wie der 11,2px-Kreis. 1,68 × 16,8/11,2 = 2,52px stellt
   das Verhaeltnis her (Leonard-Meldung 04.09.2026); beim Aendern der Insets nachrechnen.
@@ -781,7 +802,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   oeffnet der zweite eine weitere (einfaches Intervall-Packing in `renderTrainingCalendar`).
   Name und Balken eines Plans stehen dadurch immer in derselben Spur uebereinander.
   Farbe wie ueberall: Gym #0F766E (`--cal-plan-color`), Lauf #4ADE80; archivierte Plaene mit
-  `opacity: .5`. Beides bleibt im Transparenz-Modus farbig.
+  `opacity: .5`. Im Transparenz-Modus seit dem 18.09.2026 WEISS (vorher farbig) — im gemeinsamen
+  Kalender unterscheidet die beiden Balken dann nur ihre Lage (Gym-Spur oben, Lauf-Spur unten).
   ACHTUNG WOCHENTAGSSPALTE: Die Namenszeile schiebt das Raster nach unten, `.cal-daylabels` liegt
   aber ABSOLUT ueber dem Kalender. `renderTrainingCalendar` setzt deshalb `--cal-names-h` auf der
   KARTE (0px, wenn kein Plan im Bild ist), und der `top`-Wert der Spalte rechnet es mit. Der Wert
@@ -1128,6 +1150,44 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   zu fuehren kostet nichts, seit sie keine Animation mehr hat.
 - **Kopf der Uebersicht:** Reihenfolge rechts = Sicherungs-Chip, Zahnrad (Einstellungen), Glas-Knopf
   (Leonard-Wunsch 01.09.2026, vorher umgekehrt). Beide Knoepfe sind `.ph-gear`.
+- **DER WECHSEL IN DEN TRANSPARENZ-MODUS UND ZURUECK BREITET SICH ALS KREIS AUS DEM GLAS-KNOPF AUS**
+  (`toggleGlasModus`, 18.09.2026, Leonard-Entscheidung „Kreis aus dem Knopf" gegen eine schlichte
+  Ueberblendung). Vorher sprang die ganze App schlagartig um.
+  GEBAUT MIT DER VIEW TRANSITIONS API: `document.startViewTransition(umschalten)` fotografiert den
+  alten Zustand, `umschalten` setzt den Modus und zeichnet die Diagramme neu, und der NEUE Zustand
+  wird per `clip-path: circle()` auf `::view-transition-new(root)` aufgedeckt — Mittelpunkt ist die
+  Mitte des Glas-Knopfs, der Radius reicht bis in die entfernteste Bildschirmecke (`GLAS_KREIS_MS`,
+  500ms). Die Standard-Kreuzblende des Browsers ist abgeschaltet
+  (`html.glas-kreis::view-transition-old/new(root) { animation: none; mix-blend-mode: normal }`);
+  die Klasse `glas-kreis` haengt NUR fuer die Dauer dieses Wechsels am Dokument, damit eine
+  kuenftige andere View Transition ihre Blende behaelt.
+  Waehrend der 0.5s nimmt die Seite keine Tipps an (die Ebene des Browsers liegt darueber).
+  RUECKFALL: Ohne die API (iOS vor 18) und bei `prefers-reduced-motion` springt es wie bisher.
+  GEMESSEN: Kreis beginnt bei (342, 45) = Knopfmitte, Radius 840px auf 375x812; Standbild bei
+  220ms zeigt oben rechts schon den neuen Modus, unten links noch den alten; danach keine Reste
+  (Klasse weg, keine Animation auf den Pseudo-Elementen), Diagrammfarben folgen dem Modus.
+  NICHT pruefbar hier: ob Safari auf Leonards iPhone die API kennt (ab iOS 18).
+- **KEINE SPORTFARBEN IM TRANSPARENZ-MODUS in Wochenplan- und Kalenderkarten** (18.09.2026,
+  Leonard-Wunsch „um die Sichtbarkeit zu erhoehen" — Dunkelgruen und Hellgruen gingen auf dem
+  Farbverlauf unter). Im EINZELNEN:
+  - KOMBI-KARTE der Uebersicht: absolviert in BEIDEN Reihen weiss gefuellt (92 %), offen mit
+    weissem Ring — dieselben Werte wie die Kreise der Einzelkarten. Welche Reihe welcher Sport
+    ist, sagen die Symbole davor.
+  - Die EINZELKARTEN (Gym-/Laufwoche, Plan-Tab) waren schon weiss. Der Wochentag IM weissen
+    Kreis bleibt farbig (`--accent-dark`) — weiss auf weiss waere er unlesbar.
+  - KALENDER: Gym-Quadrat (geplant = Umriss, absolviert = Fuellung) HALBWEISS (60 %), Laufkreis
+    (gelaufen = Fuellung, geplant = Ring) VOLL weiss. Die Abstufung ist Pflicht: Der Laufkreis
+    sitzt MITTEN im Quadrat — beide voll weiss, und ein Tag mit Gym UND Lauf saehe aus wie ein
+    reiner Gymtag. Dieselbe Rangfolge wie im hellen Modus, wo der Kreis heller ist als das
+    Quadrat. Ein absolvierter Tag ist meist auch geplant; seine Fuellung setzt deshalb den Ring
+    ab (`box-shadow: none`), sonst laege er als hellerer Rand auf der Flaeche.
+  - Planname und Planbalken ueber und unter dem Raster WEISS (Leonard-Entscheidung), ebenso die
+    beiden Spalten der Kalender-Fusszeile. Der Kalendertitel war schon weiss.
+  - FARBIG BLEIBEN (Leonard-Entscheidung): der Wettkampftag (hellgruenes Kaestchen) und die
+    rote Woche ohne Training — beide faerben das ganze Kaestchen und tragen eine eigene Aussage.
+    Die Herocards gehoerten nicht zum Wunsch und behalten ihre Knopffarben.
+  GEMESSEN/GESEHEN: Trainings- und Gymkalender samt Fusszeile und Planbalken, Kombi-Karte; ein
+  Tag mit Gym und Lauf zeigt den weissen Kreis im halbweissen Quadrat.
 - **Einheitliches Kartenpolster: 14px** (01.09.2026, Vorbild „Trainingskalender"). Gilt fuer jede
   Karte, die die volle Breite einnimmt — auch fuer die Zeilen INNERHALB einer Karte, die ihr Polster
   selbst tragen (`.plan-day-row`, `.mehr-row`, `.plan-day-empty`, `.trash-empty`, `.program-form-row`,
@@ -1345,6 +1405,18 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   eine Karte noch auf Deckkraft 0 (`fill: 'backwards'`). Ausserdem: Ist die Browser-Ansicht
   schmal, meldet `.screen` `clientWidth` 0 und der Wechsel nimmt den Schnellpfad OHNE Bewegung —
   vor dem Messen also die Ansicht auf 375px stellen.
+  **DIESELBE STAFFEL BEIM ANSICHTSWECHSEL INNERHALB EINER SEITE** (`_ansichtWechsel(behaelter,
+  zeichnen)`, 18.09.2026, Leonard-Wunsch): der Katalogfilter „nur aus dem aktiven Plan" auf der
+  Seite „Übungen" (`toggleExPlanFilter`, Behaelter `#exercises-groups`) und Liste ↔ Zeitstrahl der
+  Wettkaempfe (`toggleWettkampfAnsicht`, `#races-list`). Nur der BEHAELTER blendet aus (120ms)
+  und kommt gestaffelt wieder — Kopfzeile, Suchfeld und der Knopf bleiben stehen, und der Knopf
+  zeigt seinen neuen Zustand SOFORT (der Aufrufer setzt ihn vor dem Wechsel). KEIN Sprung nach
+  oben, man bleibt auf derselben Seite. Die Karten sucht `_staffelKarten` (der Kern von
+  `_staffelElemente`, jetzt mit beliebigen Wurzeln); der Zeitstrahl ist EINE Karte.
+  TOKEN `_ansichtNr`; ein neuer Wechsel blendet von der aktuellen Deckkraft aus.
+  GEMESSEN: Filter an → eine Gruppe, aus → sechs Gruppen, die sichtbaren mit 0/80/160ms; Wechsel
+  zur Liste → zwei Karten mit 0/80ms; dreimal in 50ms-Abstand → Endzustand stimmt, Deckkraft 1,
+  keine Restanimation.
   NICHT ANGETASTET: die Wischgeste. Seiten wechselt man weiterhin nur ueber den Schalter unten;
   ein seitlicher Wisch gehoert den Tabs (siehe „AM WISCHEN NICHTS AENDERN").
   **DIESELBE STAFFEL BEIM WOCHENTAG-WECHSEL auf der Seite „Gym"** (`selectWorkoutDay` →
@@ -2344,9 +2416,11 @@ QUERFORMAT: Die Karte spannt ueber beide Spalten wie die Herocard, das Wochenras
 VOLLE Breite. Eine erste Fassung kappte es bei 480px (die Marken stehen sonst weit
 auseinander); Leonard hat das am 07.09.2026 zurueckgenommen — die Breite soll ausgenutzt
 werden, die Wochentagsbeschriftung darueber haelt die Zeile lesbar.
-TRANSPARENZ-MODUS: Die Sportfarben bleiben, nur der LEERE Kreis wird weiss. Die Glas-Regel muss
-dafuer auf `:not(.training):not(.done)` eingeengt sein — ungefiltert schlaegt sie (id-Selektor
-im `:not()`) jede Sportfarbe, und geplant sah aus wie leer.
+TRANSPARENZ-MODUS: Seit dem 18.09.2026 KEINE Sportfarben mehr — absolviert ist in beiden Reihen
+weiss gefuellt, offen weiss umrandet, leer 22-%-Weiss (siehe „Keine Sportfarben im
+Transparenz-Modus“). Vorher blieben die Sportfarben und nur der leere Kreis wurde weiss. Die
+Glas-Regel fuer den LEEREN Kreis muss auf `:not(.training):not(.done)` eingeengt sein —
+ungefiltert schlaegt sie (id-Selektor im `:not()`) jede andere Regel, und geplant sah aus wie leer.
 
 ### Herocard „Heute"
 `buildHeuteHero(planDay, selDay, opts)` ersetzt seit dem 06.09.2026 die frueheren Vorschau- und

@@ -684,6 +684,14 @@ body.theme-plans .hist-action-dd {
 /* … der Archiv-Knopf holt sich seine halbe Breite danach zurueck (siehe dort). Die Regel
    MUSS hinter der Zeile darueber stehen, beide haben dieselbe Spezifitaet. */
 #libdays-list > .plans-list-archive-header { width: 50%; margin-left: auto; margin-right: auto; }
+/* Die archivierten Kacheln stehen seit dem 18.09.2026 in einer eigenen Huelle (sie klappt als
+   Ganzes auf und zu, `_archivKlappen`). Sie spannt ueber alle drei Spalten und baut darin
+   DASSELBE Raster noch einmal — Spaltenbreiten und Abstaende sind damit unveraendert, und der
+   Abstand zum Knopf kommt weiter aus dem `gap` der Liste. */
+#libdays-list > .archiv-inhalt {
+  grid-column: 1 / -1;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
+}
 
 .pld-kachel {
   position: relative;
@@ -1265,6 +1273,15 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .ex-group-btn .ex-group-name { min-width: 0; }
 .ex-group-btn .count { opacity: .7; font-weight: 600; }
 
+/* Wechsel zwischen normalem Modus und Glas-Modus: Der NEUE Zustand wird als wachsender Kreis
+   aus dem Glas-Knopf aufgedeckt (18.09.2026, `toggleGlasModus`). Die Standard-Kreuzblende der
+   View Transition muss dafuer weg — sonst blendete der alte Zustand zugleich aus, und der Kreis
+   laege auf einer halb durchsichtigen Flaeche. `mix-blend-mode: normal`, weil der Browser die
+   beiden Bilder fuer seine Blende sonst additiv mischt. Nur solange `glas-kreis` am Dokument
+   haengt, also nur fuer diesen einen Wechsel. */
+html.glas-kreis::view-transition-old(root),
+html.glas-kreis::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+
 /* ─── Glas-Modus ────────────────────────────────────────────────────────────────
    Schaltet alle Karten auf denselben 12-%-Weiss-Schleier wie `.weitere-btn`.
    Die Farbtoken werden AUF DEN KARTEN neu gesetzt, nicht global auf :root — dadurch
@@ -1327,6 +1344,32 @@ html.glas .screen:not(#screen-mehr) .cal-day.leer-woche { background: rgba(248,1
    wie im hellen Modus, wo `.wettkampf` ebenfalls spaeter kommt).
    Dieselbe Deckkraft wie das Rot: Voll deckend uebertoente das Gruen die Marken darin. */
 html.glas .screen:not(#screen-mehr) .cal-day.wettkampf { background: rgba(74,222,128,.55); }
+/* KEINE SPORTFARBEN IN DEN MARKEN (18.09.2026, Leonard-Wunsch „um die Sichtbarkeit zu
+   erhoehen"): Das dunkelgruene Gym-Quadrat und der hellgruene Laufkreis werden weiss —
+   Gym und Lauf unterscheidet weiterhin die FORM (Quadrat gegen Kreis), geplant und absolviert
+   weiterhin Umriss gegen Fuellung. Wettkampftag und rote Woche bleiben FARBIG (Leonard-
+   Entscheidung): Sie faerben das ganze Kaestchen und tragen eine eigene Aussage.
+   Das Quadrat ist HALB weiss, der Kreis ganz: Der Laufkreis sitzt MITTEN im Quadrat — beide
+   voll weiss, und ein Tag mit Gym UND Lauf saehe aus wie ein reiner Gymtag. Dieselbe
+   Abstufung wie im hellen Modus, wo der Kreis heller ist als das Quadrat. Der Umriss des
+   geplanten Gymtags bekommt denselben Wert wie die Fuellung. */
+html.glas .screen:not(#screen-mehr) .cal-day.planned::before { box-shadow: inset 0 0 0 2.52px rgba(255,255,255,.6); }
+/* Ein absolvierter Tag ist meist AUCH geplant — beide Regeln treffen dasselbe `::before`. Im
+   hellen Modus faellt der Ring in derselben Farbe nicht auf, hier laege er als hellerer Rand
+   auf der halbweissen Flaeche. */
+html.glas .screen:not(#screen-mehr) .cal-day.done::before    { background: rgba(255,255,255,.6); box-shadow: none; }
+html.glas .screen:not(#screen-mehr) .cal-day.run::after      { background: #fff; }
+html.glas .screen:not(#screen-mehr) .cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 1.68px #fff; }
+/* Planname und Planbalken ueber und unter dem Raster ebenso weiss (Leonard-Entscheidung
+   18.09.2026). Im gemeinsamen Trainingskalender unterscheidet die beiden Balken dann nur ihre
+   Lage — die Gym-Spur steht immer ueber der Lauf-Spur. Archivierte bleiben halb durchsichtig. */
+html.glas .screen:not(#screen-mehr) .cal-scroll { --cal-plan-color: #fff; }
+html.glas .screen:not(#screen-mehr) .cal-planname.lauf,
+html.glas .screen:not(#screen-mehr) .cal-planspur.lauf { color: #fff; }
+html.glas .screen:not(#screen-mehr) .cal-planspur.lauf { background: #fff; }
+/* Die beiden Spalten der Fusszeile tragen im hellen Modus die Sportfarben — hier weiss. */
+html.glas .screen:not(#screen-mehr) .cal-detail-spalte.gym,
+html.glas .screen:not(#screen-mehr) .cal-detail-spalte.lauf { color: #fff; }
 /* Plan-Umrandungen im Transparenz-Modus: Das Gruen verschwindet auf dem Schleier, also
    Weiss. Damit trotzdem erkennbar bleibt, welcher Plan gerade laeuft, wird abgestuft —
    der laufende Plan bekommt eine kraeftige, durchgezogene Linie, die uebrigen (archiviert
@@ -1954,18 +1997,24 @@ html.wo-running #wo-week-card.wo-woche-faehrt,
 .ppv-filter-btn:active { opacity: .6; }
 /* Transparenz-Modus: Die Karte liegt auf dem Farbverlauf. Kreise ohne Plan und die
    Reihen-Rueckmeldung brauchen dort eigene Werte, sonst verschwinden sie. */
-/* NUR der LEERE Kreis wird hier weiss. Ungefiltert traf die Regel auch die geplanten —
-   sie hat einen id-Selektor im `:not()` und schlaegt damit jede Sportfarbe, geplant und
-   leer sahen dadurch gleich aus. Die Sportfarben MUESSEN im Transparenz-Modus bleiben:
-   Sie sind das Einzige, was die beiden Reihen unterscheidet (dieselbe Ueberlegung wie bei
-   den Plan-Balken im Kalender, die dort ebenfalls farbig bleiben). */
+/* Der LEERE Kreis: 22-%-Weiss. Die Regel ist auf `:not(.training):not(.done)` eingeengt —
+   ungefiltert traf sie auch die geplanten (id-Selektor im `:not()`), und geplant und leer
+   sahen gleich aus. */
 html.glas .screen:not(#screen-mehr) .ppv-k-col:not(.training):not(.done) .ppv-k-dot {
   background: rgba(255,255,255,.22);
 }
-/* Kuenftige Marken bleiben auch im Transparenz-Modus nur umrandet — die Sportfarbe traegt
-   dort der Ring statt der Flaeche. */
-html.glas .screen:not(#screen-mehr) .ppv-k-reihe.gym  .training.offen:not(.done) .ppv-k-dot { background: rgba(255,255,255,.22); }
-html.glas .screen:not(#screen-mehr) .ppv-k-reihe.lauf .training.offen:not(.done) .ppv-k-dot { background: rgba(255,255,255,.22); }
+/* KEINE SPORTFARBEN IM TRANSPARENZ-MODUS (18.09.2026, Leonard-Wunsch „um die Sichtbarkeit zu
+   erhoehen"): Dunkelgruen und Hellgruen gingen auf dem Farbverlauf unter. Absolviert ist jetzt
+   in BEIDEN Reihen weiss gefuellt, offen weiss umrandet — dieselben Werte wie die Kreise der
+   Einzelkarten (`.ppv-col.training .ppv-wd`). Welche Reihe welcher Sport ist, sagen die
+   Symbole davor; vorher stand hier, die Farbe sei das Einzige, was die Reihen unterscheide. */
+html.glas .screen:not(#screen-mehr) .ppv-k-reihe .training .ppv-k-dot,
+html.glas .screen:not(#screen-mehr) .ppv-k-reihe .done .ppv-k-dot { background: rgba(255,255,255,.92); }
+/* Kuenftige Marken bleiben auch im Transparenz-Modus nur umrandet — der Ring ist weiss. */
+html.glas .screen:not(#screen-mehr) .ppv-k-reihe.gym  .training.offen:not(.done) .ppv-k-dot,
+html.glas .screen:not(#screen-mehr) .ppv-k-reihe.lauf .training.offen:not(.done) .ppv-k-dot {
+  background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 3.96px rgba(255,255,255,.92);
+}
 /* Verschoben im Transparenz-Modus: dieselbe Flaeche wie ein Tag ohne Training, der Haken
    bleibt gedaempft weiss — Grau auf dem Schleier waere kaum zu sehen. */
 html.glas .screen:not(#screen-mehr) .ppv-k-reihe.gym  .verschoben .ppv-k-dot,

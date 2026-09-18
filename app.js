@@ -2839,6 +2839,52 @@ function _gruppeKlappAnimieren(gruppe, auf, danach) {
   _klappBewegung(liste, auf ? [zu, offen] : [offen, zu], danach);
 }
 
+// ─── Die drei Archive im Plan-Tab klappen ebenso (18.09.2026, Leonard-Wunsch) ────────
+// „Archivierte Gympläne", „Archivierte Gymtage" und „Archivierte Laufpläne": gleiche 200ms,
+// gleiche Kurve, gleiche Notbremse wie Muskelgruppen und Uebungskarten. Die archivierten
+// Eintraege stehen dafuer in EINER Huelle hinter dem Knopf (`.archiv-inhalt`), gefahren wird
+// deren Hoehe.
+// BESCHNITTEN WIRD PER `clip-path`, NICHT per `overflow: hidden`: Die Karten und Kacheln haben
+// weiche Schatten, und die Gymtag-Kacheln stossen seitlich direkt an die Huelle — mit
+// `overflow: hidden` waeren die Schatten waehrend der Bewegung abgeschnitten und am Ende
+// aufgeblitzt. Der Ausschnitt reicht seitlich und oben ueber die Huelle hinaus, nur seine
+// Unterkante folgt der wachsenden Hoehe.
+// Das Archiv steht immer ZULETZT in seiner Liste, darunter liegt nichts, was mitwandern
+// muesste. Die Hoehe faehrt trotzdem mit: Beim Zuklappen weit unten zieht die Seite so
+// gleichmaessig nach, statt am Ende um die ganze Archivhoehe zu springen.
+// Der KNOPF springt sofort in den neuen Zustand, sein Pfeil dreht sich mit der Bewegung. Beim
+// AUFklappen steht er nach dem Neuzeichnen schon gedreht da — er wird deshalb kurz in die alte
+// Lage zurueckgesetzt, damit die Drehung laeuft.
+// TOKEN (`_archivNr` an der Liste): Ein zweiter Tipp waehrend des Zuklappens entwertet dessen
+// Neuzeichnen am Ende — sonst raeumte es das inzwischen wieder geoeffnete Archiv ab.
+function _archivKlappen(listeId, auf, zeichnen) {
+  const liste = document.getElementById(listeId);
+  const nr = liste ? (liste._archivNr = (liste._archivNr || 0) + 1) : 0;
+  if (!liste || _bewegungReduziert() || !liste.animate || !liste.clientWidth) { zeichnen(); return; }
+  const zu = { height: '0px', clipPath: 'inset(-12px -24px 0px -24px)' };
+  const offen = (h) => ({ height: h + 'px', clipPath: 'inset(-12px -24px -12px -24px)' });
+  const kopfSetzen = (kopf, an) => {
+    kopf.classList.toggle('expanded', an);
+    kopf.setAttribute('aria-expanded', an ? 'true' : 'false');
+  };
+  if (auf) {
+    zeichnen();
+    const kopf = liste.querySelector(':scope > .plans-list-archive-header');
+    const inhalt = liste.querySelector(':scope > .archiv-inhalt');
+    if (kopf) { kopfSetzen(kopf, false); void kopf.offsetWidth; kopfSetzen(kopf, true); }
+    const h = inhalt ? inhalt.getBoundingClientRect().height : 0;
+    if (h < 1) return;
+    _klappBewegung(inhalt, [zu, offen(h)], () => {});
+    return;
+  }
+  const kopf = liste.querySelector(':scope > .plans-list-archive-header');
+  const inhalt = liste.querySelector(':scope > .archiv-inhalt');
+  if (kopf) kopfSetzen(kopf, false);
+  const h = inhalt ? inhalt.getBoundingClientRect().height : 0;
+  if (h < 1) { zeichnen(); return; }
+  _klappBewegung(inhalt, [offen(h), zu], () => { if (liste._archivNr === nr) zeichnen(); });
+}
+
 function toggleAexCollapse(exId, ev) {
   if (ev) {
     // Klick auf die Erledigt-Box soll NICHT togglen. (Der frueher hier mitgeprüfte
@@ -3225,11 +3271,43 @@ function applyGlasModus() {
   if (btn) btn.setAttribute('aria-pressed', an ? 'true' : 'false');
 }
 
+// DER WECHSEL BREITET SICH ALS KREIS AUS DEM KNOPF AUS (18.09.2026, Leonard-Wunsch; vorher
+// sprang die ganze App schlagartig um). Gebaut mit der View Transitions API: Der Browser
+// fotografiert den alten Zustand, `umschalten` baut den neuen, und der NEUE wird ueber dem alten
+// per `clip-path` als wachsender Kreis aufgedeckt — Mittelpunkt ist die Mitte des Glas-Knopfs,
+// der Radius reicht bis in die entfernteste Bildschirmecke.
+// Das Aufdecken ist die EINZIGE Bewegung: Die Standard-Kreuzblende des Browsers ist per CSS
+// abgeschaltet (`html.glas-kreis::view-transition-*`). Die Klasse haengt nur fuer die Dauer des
+// Wechsels am Dokument — eine kuenftige andere View Transition bekaeme sonst ebenfalls keine
+// Blende.
+// Waehrenddessen nimmt die Seite keine Tipps an (die Browser-Ebene liegt darueber) — bei 0.5s
+// unerheblich.
+// OHNE die API (iOS vor 18) und bei `prefers-reduced-motion` springt es wie bisher.
+const GLAS_KREIS_MS = 500;
 function toggleGlasModus() {
-  try { localStorage.setItem(GLAS_KEY, glasAktiv() ? '0' : '1'); } catch {}
-  applyGlasModus();
-  // Diagramme neu zeichnen: Achsen- und Rasterfarben kommen aus JS, nicht aus dem CSS.
-  _zeichneAlleDiagrammeNeu();
+  const umschalten = () => {
+    try { localStorage.setItem(GLAS_KEY, glasAktiv() ? '0' : '1'); } catch {}
+    applyGlasModus();
+    // Diagramme neu zeichnen: Achsen- und Rasterfarben kommen aus JS, nicht aus dem CSS.
+    _zeichneAlleDiagrammeNeu();
+  };
+  const btn = document.getElementById('glas-btn');
+  const r = btn && btn.getBoundingClientRect();
+  if (!document.startViewTransition || _bewegungReduziert() || !r || !r.width) { umschalten(); return; }
+  const x = r.left + r.width / 2, y = r.top + r.height / 2;
+  const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+  const html = document.documentElement;
+  html.classList.add('glas-kreis');
+  let vt;
+  try { vt = document.startViewTransition(umschalten); }
+  catch (e) { html.classList.remove('glas-kreis'); umschalten(); return; }
+  vt.ready.then(() => {
+    html.animate(
+      { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+      { duration: GLAS_KREIS_MS, easing: 'cubic-bezier(.4,0,.2,1)',
+        pseudoElement: '::view-transition-new(root)' });
+  }).catch(() => {});
+  vt.finished.catch(() => {}).then(() => html.classList.remove('glas-kreis'));
 }
 
 // Chart.js liest Textfarben aus seiner eigenen Vorgabe — die muss dem Modus folgen,
@@ -4649,7 +4727,7 @@ function renderRunSourceCard() {
 let runplansArchiveExpanded = false;  // Ausklappzustand der Archiv-Sektion
 function toggleRunplansArchive() {
   runplansArchiveExpanded = !runplansArchiveExpanded;
-  renderLaufVerwaltung();
+  _archivKlappen('runplans-list', runplansArchiveExpanded, renderLaufVerwaltung);
 }
 
 // Aufbau eins zu eins wie `renderPlans()` fuer den Gymplan (04.09.2026, Leonard-Wunsch):
@@ -4678,7 +4756,7 @@ function renderLaufVerwaltung() {
       <span class="plan-day-collapse-count">${archiv.length}</span>
       <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
     </button>`;
-    if (auf) html += archiv.map(zeile).join('');
+    if (auf) html += `<div class="archiv-inhalt">${archiv.map(zeile).join('')}</div>`;
   }
   el.innerHTML = html;
 }
@@ -6326,7 +6404,7 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
 let plansArchiveExpanded = false; // Toggle für die kollabierbare "Archivierte Pläne"-Sektion
 function togglePlansArchive() {
   plansArchiveExpanded = !plansArchiveExpanded;
-  renderPlans();
+  _archivKlappen('plans-list', plansArchiveExpanded, renderPlans);
 }
 
 function renderPlans() {
@@ -6379,7 +6457,7 @@ function renderPlans() {
         <span class="plan-day-collapse-count">${archived.length}</span>
         <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
       </button>`;
-      if (expanded) html += archived.map(renderRow).join('');
+      if (expanded) html += `<div class="archiv-inhalt">${archived.map(renderRow).join('')}</div>`;
     }
   }
   document.getElementById('plans-list').innerHTML = html;
@@ -6876,8 +6954,10 @@ const WK_ICON_LISTE  = `<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2=
 function toggleWettkampfAnsicht() {
   _wkAnsicht = (_wkAnsicht === 'liste') ? 'strahl' : 'liste';
   _wkOffen = null;               // beim Wechsel nichts hervorgehoben stehen lassen
-  renderWettkaempfe();
+  // Das Symbol wechselt sofort, die Liste bzw. der Zeitstrahl kommt mit der Staffel herein
+  // (18.09.2026, siehe `_ansichtWechsel`).
   syncWkAnsichtBtn();
+  _ansichtWechsel(document.getElementById('races-list'), renderWettkaempfe);
 }
 
 // Knopf oben rechts: nur auf der Seite „Wettkämpfe" sichtbar, und sein Symbol zeigt, WOHIN
@@ -7118,7 +7198,10 @@ function _wettkampfNeuZeichnen() {
     renderTrainingCalendar('pcal', 'plans-cal-card');
 }
 
-function toggleLibDaysArchive() { libDaysArchiveExpanded = !libDaysArchiveExpanded; renderLibDays(); }
+function toggleLibDaysArchive() {
+  libDaysArchiveExpanded = !libDaysArchiveExpanded;
+  _archivKlappen('libdays-list', libDaysArchiveExpanded, renderLibDays);
+}
 
 function renderLibDays() {
   const days = DB.getTrainingDays();
@@ -7174,7 +7257,7 @@ function renderLibDays() {
         <span class="plan-day-collapse-count">${archived.length}</span>
         <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
       </button>`;
-      if (expanded) html += archived.map(renderRow).join('');
+      if (expanded) html += `<div class="archiv-inhalt">${archived.map(renderRow).join('')}</div>`;
     }
   }
   document.getElementById('libdays-list').innerHTML = html;
@@ -8120,7 +8203,10 @@ function toggleExPlanFilter() {
   // Beim Filtern die Gruppen mit aufklappen — sonst bleibt die verkürzte Liste hinter
   // zugeklappten Kopfzeilen verborgen und der Filter sieht wirkungslos aus.
   if (exPlanFilterAn) collapsedExGroups.clear();
-  renderExercises();
+  // Der Knopf zeigt den neuen Zustand SOFORT, die Liste folgt mit der Staffel (18.09.2026).
+  const filterBtn = document.getElementById('ex-plan-filter-btn');
+  if (filterBtn) filterBtn.classList.toggle('active', exPlanFilterAn);
+  _ansichtWechsel(document.getElementById('exercises-groups'), renderExercises);
 }
 
 function renderExercisesByMuscle() {
@@ -9969,16 +10055,56 @@ function _seitenInhalt(screen) {
 }
 // Die Karten der Seite, eine Ebene tiefer als die Flaeche (siehe Kommentar oben).
 function _staffelElemente(screen) {
+  return _staffelKarten(_seitenInhalt(screen));
+}
+// Dieselbe Suche ab beliebigen Wurzeln — der Ansichtswechsel (`_ansichtWechsel`) setzt beim
+// Behaelter an, nicht beim ganzen Screen.
+// Die Huelle der archivierten Eintraege (`.archiv-inhalt`) traegt eine Klasse, ist aber genauso
+// wenig eine Karte wie die klassenlosen Huellen: Die Karten darin kommen einzeln.
+function _staffelKarten(wurzeln) {
   const karten = [];
   const sammeln = (el) => {
     // Hoehe 0 = nicht zu sehen (leere Liste, ausgeblendeter Block) — so ein Element wuerde sonst
     // einen unsichtbaren Schritt in der Staffel kosten.
     if (!el.offsetHeight) return;
-    if (!el.getAttribute('class') && el.children.length) { [...el.children].forEach(sammeln); return; }
+    const huelle = !el.getAttribute('class') || el.classList.contains('archiv-inhalt');
+    if (huelle && el.children.length) { [...el.children].forEach(sammeln); return; }
     karten.push(el);
   };
-  _seitenInhalt(screen).forEach(sammeln);
+  wurzeln.forEach(sammeln);
   return karten;
+}
+
+// ── Ansichtswechsel innerhalb einer Seite (18.09.2026, Leonard-Wunsch) ──────────────────
+// Katalogfilter „nur aus dem aktiven Plan" (Seite „Übungen") und Liste ↔ Zeitstrahl der
+// Wettkaempfe: dieselbe Staffel wie beim Seitenwechsel, aber nur fuer den BEHAELTER, dessen
+// Inhalt sich aendert. Kopfzeile, Suchfeld und der Knopf selbst bleiben stehen — der Knopf
+// zeigt seinen neuen Zustand sofort, der Aufrufer setzt ihn VOR dem Wechsel.
+// KEIN Sprung nach oben (anders als beim Seitenwechsel): Man bleibt auf derselben Seite.
+// TOKEN (`_ansichtNr`): Wer waehrend der Bewegung erneut tippt, bricht die laufende ab; die alte
+// Kette hoert vor dem Zeichnen auf. Die neue blendet von der AKTUELLEN Deckkraft aus, damit der
+// Behaelter nicht erst auf voll zurueckspringt.
+let _ansichtNr = 0;
+function _ansichtWechsel(behaelter, zeichnen) {
+  const nr = ++_ansichtNr;
+  if (!behaelter || _bewegungReduziert() || !behaelter.clientWidth) { zeichnen(); return; }
+  const abraeumen = () => {
+    behaelter.getAnimations().forEach(a => a.cancel());
+    behaelter.querySelectorAll('*').forEach(el => el.getAnimations().forEach(a => a.cancel()));
+  };
+  const von = parseFloat(getComputedStyle(behaelter).opacity);
+  abraeumen();
+  _animFahren(behaelter, [{ opacity: isNaN(von) ? 1 : von }, { opacity: 0 }],
+              { duration: SEITEN_AUS_MS, fill: 'forwards' })
+    .then(() => {
+      if (nr !== _ansichtNr) return;
+      behaelter.getAnimations().forEach(a => a.cancel());
+      zeichnen();
+      const karten = _staffelKarten([...behaelter.children])
+        .filter(el => el.getBoundingClientRect().top < window.innerHeight);
+      return _kartenStaffelFahren(karten.length ? karten : [behaelter]);
+    })
+    .then(() => { if (nr === _ansichtNr) abraeumen(); });
 }
 
 // Karten eines Behaelters gestaffelt einblenden — der gemeinsame Teil von Seitenwechsel und
