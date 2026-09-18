@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v353**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v354**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -552,12 +552,36 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   GEMESSEN: erster Satz abgehakt → eine Bewegung mit den Keyframes scale(1) → 1.18 → 1, danach
   `transform: none` ohne Restanimation; Haken zuruecknehmen → keine Bewegung.
 - **Bestleistungs-Moment:** `celebratePR(name, weight, prev)` läuft, sobald die ÜBUNG komplett abgehakt ist (in `toggleSetDone`, Zweig `allDone`) — nicht nach jedem Satz und nicht erst in der Abschlussansicht. Gewertet wird der schwerste Satz der Übung gegen `getExercisePR()` (gespeicherte Einheiten). Konfetti (`.pr-burst`, respektiert `prefers-reduced-motion`) + Vibration + Toast; `ex.prCelebrated` verhindert eine zweite Feier derselben Übung.
+- **PLAN-ZEITRAEUME ZAEHLEN IN KALENDERTAGEN, erster und letzter Tag eingeschlossen**
+  (18.09.2026). Vorher wurde in Millisekunden gegen `Date.now()` verglichen, und die beiden
+  Plan-Arten speichern verschieden: der Gymplan UTC-Mitternacht (`_dateToMs`, in Mitteleuropa
+  02:00 des Tags), der Laufplan lokale Mitternacht. DREI Fehler daraus (1 und 2 gemessen, 3 aus
+  dem Code abgeleitet):
+  1. Am LETZTEN Plantag galt ein Gymplan ab 02:00, ein Laufplan sogar ab 00:00 als beendet —
+     Chip „Beendet", kein laufender Plan in Uebersicht, Training und Herocard.
+  2. Der Kalender zaehlte den ERSTEN Tag eines Gymplans nicht zum Plan (00:00 lag vor 02:00).
+  3. Die Wochenserie liess die erste Planwoche aus, wenn der Plan an einem Montag begann.
+  Jetzt bilden `_planHatBegonnen`, `_planIstVorbei` und `_planEndetAm` beide Speicherformen ueber
+  `_calLokalTag` auf denselben lokalen Tag ab. Umgestellt: `_findActivePlanIn` und
+  `runPlanAktiv` (beide ueber `_laufenderPlanIn`), `planStatus` (`runPlanStatus` ruft es nur
+  noch auf), `_planBeendet`, `_calPlanIndex`, `_laufplanDeckt` und der Abbruch der beiden
+  Wochenserien. Die SPEICHERFORMATE sind unveraendert (Drive-Sicherung, Altdaten).
+  WECHSELTAG: Beginnt am letzten Tag eines Plans schon der naechste, gehoert der Tag dem NEUEN
+  — so war es auch vorher, als der alte um 02:00 bzw. 00:00 endete. Unabhaengig von der
+  Reihenfolge im Speicher (gemessen).
+  Ein Gymplan braucht weiterhin ein Ende, ein Laufplan darf offen enden — wie vorher.
+  Nicht angefasst: `getProgramWeek`/`_planProgramWeek` (rechneten schon in Tagen) und die
+  Sichtbarkeitspruefung der Planbalken im Kalender (`imBild`, grosszuegig genug).
+  GEMESSEN (heute Fr 18.09., 15:42): Gym- und Laufplan mit Ende heute → laufend, „Woche 3 / 3"
+  in Uebersicht und Training, kein Chip im Plan-Tab, beim Start NICHT archiviert; Ende gestern
+  → „Beendet"; Kalender: Tag vor Beginn und nach Ende ausserhalb, erster und letzter Tag drin.
 - **BEENDETE PLAENE WANDERN VON SELBST INS ARCHIV** (`autoArchivBeendetePlaene`, 18.09.2026,
   Leonard-Wunsch) — Gym- UND Laufplaene, sobald ihr letzter Tag vorbei ist. Vorher nur
   Gymplaene und erst 30 Tage nach dem Ende (`autoArchiveOldPlans`, entfallen); Laufplaene gar
   nicht. Laeuft beim App-Start und vor dem Zeichnen beider Planlisten (`renderPlans`,
   `renderLaufVerwaltung`).
-  „Beendet" rechnet in KALENDERTAGEN (`_planBeendet`): Der Gymplan speichert sein Ende als
+  „Beendet" rechnet in KALENDERTAGEN (`_planBeendet`, siehe auch „Plan-Zeitraeume in
+  Kalendertagen"): Der Gymplan speichert sein Ende als
   UTC-Mitternacht (in Mitteleuropa 02:00 des letzten Tags), der Laufplan als lokale Mitternacht;
   `_calLokalTag` macht aus beidem denselben Tag. Ein Vergleich mit `Date.now()` hielte den
   Gymplan schon am Morgen seines letzten Tags fuer beendet.

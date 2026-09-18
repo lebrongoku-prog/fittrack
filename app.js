@@ -142,9 +142,28 @@ function _resolveEditPlan() {
   if (editingPlanId) return plans.find(p => p.id === editingPlanId);
   return _findActivePlanIn(plans);
 }
+// ZEITRAUM EINES PLANS IN KALENDERTAGEN (18.09.2026). Vorher wurde in Millisekunden gegen
+// `Date.now()` verglichen — und die beiden Plan-Arten speichern ihre Daten verschieden: Der
+// Gymplan UTC-Mitternacht (`_dateToMs`, in Mitteleuropa 02:00 des Tags), der Laufplan lokale
+// Mitternacht. Folge: Am LETZTEN Plantag galt ein Gymplan ab 02:00 und ein Laufplan ab 00:00
+// schon als beendet (Chip „Beendet", kein laufender Plan in Uebersicht und Training), und der
+// Kalender zaehlte den ERSTEN Tag eines Gymplans nicht mit (00:00 lag vor 02:00).
+// `_calLokalTag` bildet beide Speicherformen auf denselben lokalen Tag ab; erster und letzter
+// Tag gehoeren jetzt zum Plan. Die SPEICHERFORMATE sind unveraendert (Drive-Sicherung, Altdaten).
+function _planHatBegonnen(p, heute) { return !!p.startDate && _calLokalTag(p.startDate) <= heute; }
+function _planIstVorbei(p, heute)   { return !!p.endDate && _calLokalTag(p.endDate) < heute; }
+function _planEndetAm(p, heute)     { return !!p.endDate && _calLokalTag(p.endDate).getTime() === heute.getTime(); }
+// Laufende Plaene einer Liste. Beginnt am letzten Tag eines Plans schon der naechste, gehoert der
+// Tag dem NEUEN — so war es auch vor der Umstellung, als der alte um 02:00 bzw. 00:00 endete.
+function _laufenderPlanIn(liste, mitEnde) {
+  const heute = _calLokalTag(Date.now());
+  const laufend = liste.filter(p => !p.archived && (!mitEnde || p.endDate)
+                                  && _planHatBegonnen(p, heute) && !_planIstVorbei(p, heute));
+  return laufend.find(p => !_planEndetAm(p, heute)) || laufend[0] || null;
+}
+// Ein Gymplan braucht ein Ende (wie vorher: `now <= undefined` war nie wahr).
 function _findActivePlanIn(plans) {
-  const now = Date.now();
-  return plans.find(p => !p.archived && p.startDate <= now && now <= p.endDate) || null;
+  return _laufenderPlanIn(plans, true);
 }
 // Aktiver Plan inkl. aufgelöster Tage. trainingDays wird live aus dem globalen
 // Tag-Store (ft_trainingdays) über plan.dayIds resolved — Referenz-Modell.
@@ -583,7 +602,7 @@ function getRunWeekStreak() {
   if (zaehleAb(mon) >= geplant) serie++;         // laufende Woche nur, wenn schon voll
   for (let i = 1; i <= 52; i++) {
     const start = new Date(mon); start.setDate(mon.getDate() - 7 * i);
-    if (start.getTime() < (plan.startDate || 0)) break;
+    if (start < _calLokalTag(plan.startDate || 0)) break;   // Kalendertage, siehe `_planHatBegonnen`
     if (zaehleAb(start) >= geplant) serie++;
     else break;
   }
@@ -614,7 +633,7 @@ function getWeekStreak() {
   if (countIn(mon) >= planned) streak++;
   for (let i = 1; i <= 52; i++) {
     const start = new Date(mon); start.setDate(mon.getDate() - 7 * i);
-    if (start.getTime() < (active.startDate || 0)) break;
+    if (start < _calLokalTag(active.startDate || 0)) break;   // Kalendertage, siehe `_planHatBegonnen`
     if (countIn(start) >= planned) streak++;
     else break;
   }
@@ -1671,12 +1690,9 @@ function runVerschobeneTage() {
   return out;
 }
 
+// Dieselbe Regel wie beim Gymplan, in Kalendertagen (siehe `_planHatBegonnen`).
 function runPlanStatus(p) {
-  if (p.archived) return 'archived';
-  const now = Date.now();
-  if (p.startDate > now) return 'future';
-  if (p.endDate < now) return 'past';
-  return 'active';
+  return planStatus(p);
 }
 
 // Gegenstueck zu `buildPlanCard`. Ohne `plan` zeichnet sie den LAUFENDEN Plan (Uebersicht und
@@ -4536,9 +4552,10 @@ function runEinheitDatum(plan, woche, dayIdx) {
   return a;
 }
 
+// Ein Laufplan darf offen enden (ohne `endDate` laeuft er weiter). Kalendertage, siehe
+// `_planHatBegonnen`.
 function runPlanAktiv() {
-  const jetzt = Date.now();
-  return DB.getRunPlans().find(p => !p.archived && p.startDate <= jetzt && (p.endDate || Infinity) >= jetzt) || null;
+  return _laufenderPlanIn(DB.getRunPlans(), false);
 }
 
 function runEinheit(plan, woche, dayIdx) {
@@ -5115,9 +5132,12 @@ function buildCalendarData() {
 function _calPlanIndex() {
   return DB.getPlans()
     .filter(p => p && p.startDate)
+    // In LOKALEN TAGEN (18.09.2026): Der Gymplan speichert UTC-Mitternacht, in Mitteleuropa also
+    // 02:00 — der Tag, der hier geprueft wird, beginnt aber um 00:00. Der erste Plantag fiel
+    // dadurch aus dem Plan heraus.
     .map(p => ({
-      start: p.startDate,
-      end: p.endDate || Infinity,
+      start: _calLokalTag(p.startDate).getTime(),
+      end: p.endDate ? _calLokalTag(p.endDate).getTime() : Infinity,
       wp: (p.weekPlan && p.weekPlan.length) ? p.weekPlan : DEFAULT_WEEKPLAN,
       days: resolvePlanDays(p),
       plan: p,
@@ -5947,7 +5967,8 @@ function showCalDay(key, id) {
 function _laufplanDeckt(key) {
   const [y, m, d] = key.split('-').map(Number);
   const t = new Date(y, m - 1, d).getTime();
-  return DB.getRunPlans().some(p => p.startDate && p.endDate && t >= p.startDate && t <= p.endDate);
+  return DB.getRunPlans().some(p => p.startDate && p.endDate
+    && t >= _calLokalTag(p.startDate).getTime() && t <= _calLokalTag(p.endDate).getTime());
 }
 
 // Muskel-Landkarte: zwei Silhouetten (vorne/hinten), deren Regionen nach Volumenanteil
@@ -6271,9 +6292,7 @@ function renderMehr() {
 // Kalendertag. Ein Vergleich mit `Date.now()` hielte den Gymplan schon am Morgen seines letzten
 // Tags fuer beendet.
 function _planBeendet(p) {
-  if (!p || !p.endDate) return false;
-  const heute = new Date(); heute.setHours(0, 0, 0, 0);
-  return _calLokalTag(p.endDate).getTime() < heute.getTime();
+  return !!p && _planIstVorbei(p, _calLokalTag(Date.now()));
 }
 
 // BEENDETE PLAENE WANDERN VON SELBST INS ARCHIV — Gym- UND Laufplaene, sobald ihr letzter Tag
@@ -6323,11 +6342,12 @@ function planMetaZeile(sport, p, text) {
 }
 
 // Status eines Plans relativ zu heute
+// In KALENDERTAGEN (18.09.2026, siehe `_planHatBegonnen`): am ersten und letzten Tag 'active'.
 function planStatus(p) {
   if (p.archived) return 'archived';
-  const now = Date.now();
-  if (p.startDate > now) return 'future';
-  if (p.endDate < now) return 'past';
+  const heute = _calLokalTag(Date.now());
+  if (p.startDate && !_planHatBegonnen(p, heute)) return 'future';
+  if (_planIstVorbei(p, heute)) return 'past';
   return 'active';
 }
 const PLAN_STATUS_LABEL = { active: 'Aktuell', future: 'Zukunft', past: 'Beendet', archived: 'Archiviert' };
