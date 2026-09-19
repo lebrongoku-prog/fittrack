@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v362**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v363**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2715,9 +2715,11 @@ Einheit, nicht die Tagesuebersicht.
   (`black`/`default`) verhindert ihn, weil die Web-Ansicht dann darunter beginnt.
   Genau das war in v360 eingebaut (`black`, `#statusbar-scrim` entfernt) und ist in v361 auf
   Leonards Wunsch wieder zurueckgenommen — der Farbverlauf laeuft wie vorher unter die Uhr.
-  **STATTDESSEN RUECKT DER INHALT 40px NACH UNTEN** (v362, `--schleier-t`, Leonard-Wunsch): Der
+  **STATTDESSEN RUECKT DER INHALT 30px NACH UNTEN** (`--schleier-t`; v362 mit 40px, seit v363
+  auf Leonards Wunsch 10px weniger — die Knoepfe stehen damit bei rund 116 App-px, im schwachen
+  Auslauf des Schleiers, der deutlich bis rund 118 px reicht). Der
   Schleier liegt dann nur noch ueber leerem Hintergrund. Die Variable ist 0 und wird NUR in der
-  installierten App im Hochformat 40px (`@media (display-mode: standalone) and (orientation:
+  installierten App im Hochformat 30px (`@media (display-mode: standalone) and (orientation:
   portrait)`); sie steckt im oberen Polster von `.screen` und `.plan-detail-overlay` (alle
   Vollbild-Ansichten). Im Safari-Tab zeichnet die Seite nicht unter die Statusleiste, im
   Querformat tritt der Schleier laut Berichten nicht auf.

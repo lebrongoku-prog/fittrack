@@ -91,14 +91,16 @@
    Abschalten laesst er sich nur mit einer deckenden Statusleiste — die hat Leonard verworfen
    (v360, zurueckgenommen in v361). Stattdessen rueckt der Inhalt so weit nach unten, dass der
    Schleier nur noch ueber leerem Hintergrund liegt.
-   40px AUS LEONARDS SCREENSHOT GEMESSEN: Der Schleier klingt bei rund 125 App-px aus (die
-   Knoepfe der Titelzeile begannen bei 86 px) — 38px, aufgerundet. Umrechnung ueber bekannte
-   Elementgroessen (Knopf 38px, Karte 157.3px, Kalenderspalte 28.8px), siehe CLAUDE.md.
+   30px (v363, Leonard-Wunsch: „10px wieder nach oben"). Aus seinem Screenshot gemessen waren
+   38px, eingebaut zuerst 40px (v362): Der Schleier klingt bei rund 125 App-px aus, die Knoepfe
+   der Titelzeile begannen bei 86 px; deutlich sichtbar ist er bis rund 118 px — mit 30px stehen
+   die Knoepfe bei 116 px, also im schwachen Auslauf. Umrechnung ueber bekannte Elementgroessen
+   (Knopf 38px, Karte 157.3px, Kalenderspalte 28.8px), siehe CLAUDE.md.
    NUR in der installierten App (`display-mode: standalone`) und NUR im Hochformat: Im
    Safari-Tab zeichnet die Seite nicht unter die Statusleiste, und im Querformat tritt der
    Schleier laut Berichten nicht auf. */
 @media (display-mode: standalone) and (orientation: portrait) {
-  :root { --schleier-t: 40px; }
+  :root { --schleier-t: 30px; }
 }
 
 /* ─── Per-tab themes (applied to body) ─── */
@@ -439,7 +441,7 @@ body.theme-plans .hist-action-dd {
   scroll-snap-stop: always;
   /* Safe-Top: Inhalt ruht unter der transparenten Status-Bar (black-translucent)
      und scrollt dahinter; +8px Atemraum, dazu der Abstand gegen den iOS-Schleier
-     (`--schleier-t`, 40px in der installierten App im Hochformat). */
+     (`--schleier-t`, 30px in der installierten App im Hochformat). */
   padding-top: calc(var(--safe-t) + var(--schleier-t) + 8px);
   /* Damit der Inhalt nicht unter der Bottom-Nav und der Seitenleiste verschwindet.
      `--sl-pad` ist 0, ausser in den drei Tabs mit Seitenleiste (Regel gleich darunter).
