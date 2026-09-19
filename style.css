@@ -2858,6 +2858,15 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .cal-jahr:active { opacity: .6; }
 .cal-titel-gym  { color: #0F766E; }
 .cal-titel-lauf { color: #4ADE80; }
+/* Die KENNZAHL oben rechts in der Uebersicht traegt dieselben Farben, je Teil (19.09.2026,
+   Leonard-Wunsch): „Gym 83 %" dunkelgruen, „Lauf 92 %" hellgruen, im Einzelkalender die ganze
+   Zahl in der Farbe seiner Sportart. Die Teile setzt `renderTrainingCalendar` als Spans.
+   Im Transparenz-Modus bleibt die Kennzahl, wie sie war (keine Sportfarben, siehe dort) — die
+   Glas-Regel setzt die Farbe zurueck. Der Kalender im Plan-Tab ist nicht betroffen. */
+#ov-cal-card .cal-stat-gym  { color: #0F766E; }
+#ov-cal-card .cal-stat-lauf { color: #4ADE80; }
+html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-gym,
+html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit; }
 .cal-filter-btn:active { opacity: .6; }
 .cal-day.future { opacity: .45; }
 /* Rand-Tage der ersten/letzten Woche, die noch ins Vor- bzw. Folgejahr fallen */

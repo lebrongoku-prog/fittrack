@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v358**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v359**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1127,6 +1127,17 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   dem Schleier kaum lesbar). Die CSS-Regeln MUESSEN hinter `.cal-filter-btn` stehen: Dessen
   `color: inherit` hat dieselbe Spezifitaet und gewaenne sonst allein durch die Reihenfolge.
   Gilt fuer beide Kalender, auch den im Plan-Tab.
+  **AUCH DIE KENNZAHL OBEN RECHTS TRAEGT DIE SPORTFARBEN — nur in der UEBERSICHT** (19.09.2026,
+  Leonard-Wunsch): je TEIL eine eigene Farbe — „Gym 83 %" dunkelgruen, „Lauf 92 %" hellgruen, der
+  Trennpunkt in der Grundfarbe; im Gym- bzw. Laufkalender die ganze Zahl in der Farbe seiner
+  Sportart, ebenso in der Jahresansicht („0 Einheiten · 1 Lauf"). `renderTrainingCalendar`
+  setzt die Teile dafuer als Spans (`.cal-stat-gym` / `.cal-stat-lauf`, `innerHTML` statt
+  `textContent`, die Texte laufen durch `escapeHtml`); gefaerbt wird nur in `#ov-cal-card`.
+  Der Kalender im PLAN-TAB bleibt grau — dort war es nicht verlangt, die Spans sind ohne Wirkung.
+  Im Transparenz-Modus setzt eine Glas-Regel die Farbe zurueck (`inherit`), die Kennzahl bleibt
+  dort wie vorher (keine Sportfarben, siehe „Keine Sportfarben im Transparenz-Modus").
+  GEMESSEN: alle drei Filter in „Aktuell" und 2025 — Text unveraendert, Gym rgb(15,118,110),
+  Lauf rgb(74,222,128); Plan-Tab grau; Glas 65-%-Weiss wie der Rest der Kennzahl.
 - **DER WECHSEL DER KALENDERANSICHT BLENDET EIN** (`_calRasterBlende`, 16.09.2026, seit dem
   18.09.2026 in dieser Form — Leonard-Entscheidung „Nur einblenden"): Ein Tipp auf den Titel
   (Filter) oder den Zeitraum zeichnet SOFORT neu, und alles UNTER der Kopfzeile blendet aus dem

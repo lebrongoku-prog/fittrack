@@ -5645,7 +5645,7 @@ function renderTrainingCalendar(id, cardId) {
   // Zeigt der Kalender BEIDE Sportarten, gehoeren auch beide Zahlen in die Kennzahl.
   const laeufeImJahr = DB.getRuns().filter(l => Number(l.date.slice(0, 4)) === jahr).length;
   const zusatzLauf = (modus.kraft && modus.lauf)
-    ? ` · ${laeufeImJahr} ${laeufeImJahr === 1 ? 'Lauf' : 'Läufe'}` : '';
+    ? `${laeufeImJahr} ${laeufeImJahr === 1 ? 'Lauf' : 'Läufe'}` : '';
   // Die Serie gehoert zu GENAU EINER Sportart und steht deshalb nur in deren Kalender
   // (Leonard-Wunsch 06.09.2026): Gymkalender = Serie der Krafteinheiten, Laufkalender = Serie
   // der Laeufe. Im gemeinsamen Trainingskalender stuenden zwei Serien nebeneinander, ohne dass
@@ -5675,12 +5675,18 @@ function renderTrainingCalendar(id, cardId) {
   const statsEl = document.getElementById(id + '-stats');
   if (statsEl) {
     const kombi = modus.kraft && modus.lauf;
+    // Jeder Teil traegt die Klasse SEINER Sportart (19.09.2026, Leonard-Wunsch): In der
+    // Uebersicht steht der Gym-Teil dunkelgruen, der Lauf-Teil hellgruen — dieselben Farben wie
+    // Titel und Fusszeile. Gefaerbt wird im CSS und nur in `#ov-cal-card`; der Trennpunkt und die
+    // Serie (nur im Plan-Tab) bleiben in der Grundfarbe.
+    const teil = (sport, text) => `<span class="cal-stat-${sport}">${escapeHtml(text)}</span>`;
     const kennzahl = aktuell
-      ? [modus.kraft ? _calPlanStandText('gym', _calPlanStand('gym', aktPlaene.gym, von, today), kombi) : null,
-         modus.lauf ? _calPlanStandText('lauf', _calPlanStand('lauf', aktPlaene.lauf, von, today), kombi) : null]
+      ? [modus.kraft ? teil('gym', _calPlanStandText('gym', _calPlanStand('gym', aktPlaene.gym, von, today), kombi)) : null,
+         modus.lauf ? teil('lauf', _calPlanStandText('lauf', _calPlanStand('lauf', aktPlaene.lauf, von, today), kombi)) : null]
           .filter(Boolean).join(' · ')
-      : `${inRange} ${einheitWort(inRange)}${zusatzLauf}`;
-    statsEl.textContent = kennzahl
+      : teil(modus.kraft ? 'gym' : 'lauf', `${inRange} ${einheitWort(inRange)}`)
+        + (zusatzLauf ? ' · ' + teil('lauf', zusatzLauf) : '');
+    statsEl.innerHTML = kennzahl
       + (streak > 0 ? ` · Serie ${streak} ${streak === 1 ? 'Woche' : 'Wochen'}` : '');
   }
 
