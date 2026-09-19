@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v361**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v362**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2714,8 +2714,27 @@ Einheit, nicht die Tagesuebersicht.
   `theme-color` helfen laut mehreren Projekten nicht. Nur eine DECKENDE Statusleiste
   (`black`/`default`) verhindert ihn, weil die Web-Ansicht dann darunter beginnt.
   Genau das war in v360 eingebaut (`black`, `#statusbar-scrim` entfernt) und ist in v361 auf
-  Leonards Wunsch wieder zurueckgenommen — der Farbverlauf laeuft wie vorher unter die Uhr, der
-  Schleier bleibt. Wer es erneut will: Commit 52339ab. Dabei beachten, dass iOS die Angabe nach
+  Leonards Wunsch wieder zurueckgenommen — der Farbverlauf laeuft wie vorher unter die Uhr.
+  **STATTDESSEN RUECKT DER INHALT 40px NACH UNTEN** (v362, `--schleier-t`, Leonard-Wunsch): Der
+  Schleier liegt dann nur noch ueber leerem Hintergrund. Die Variable ist 0 und wird NUR in der
+  installierten App im Hochformat 40px (`@media (display-mode: standalone) and (orientation:
+  portrait)`); sie steckt im oberen Polster von `.screen` und `.plan-detail-overlay` (alle
+  Vollbild-Ansichten). Im Safari-Tab zeichnet die Seite nicht unter die Statusleiste, im
+  Querformat tritt der Schleier laut Berichten nicht auf.
+  GEMESSEN AUS LEONARDS SCREENSHOT (923x2000 Bildpunkte): Den Tab-Verlauf der Uebersicht
+  (#0C4A6E → #0891B2, 135°, t = (x+y)/(Breite+Hoehe)) je Bildpunkt nachgerechnet und abgezogen —
+  an freien Stellen weiter unten stimmte er auf 1–2 Stufen. Der Rest ist der Schleier: deutlich
+  bis Bildzeile 206, ganz weg bei 218. Umrechnung ueber bekannte Groessen (Knopf 38px = 66,
+  Karte 157.3px = 274, Kalenderspalte 28.8px = 50.7 Bildpunkte) → 1 App-px ≈ 1.75 Bildpunkte.
+  Knoepfe der Titelzeile bei 86 App-px, Schleierende bei 125 → 38px, aufgerundet auf 40.
+  NEBENBEFUND: Mit diesem Massstab ist der Bildschirm rund 527 App-px breit — breiter als jedes
+  iPhone (390–440pt). Die App scheint auf Leonards Geraet verkleinert gerendert zu werden; die
+  Ursache ist nicht geklaert.
+  NICHT verschoben: die gruene Kopfleiste der laufenden Einheit (`#wo-sticky-bar`, fest oben mit
+  deckender Flaeche) und der Verlauf `#statusbar-scrim` der Einstellungen.
+  GEMESSEN im Browser mit von Hand gesetzter Variable: Kopf der Uebersicht, des Trainings-Tabs,
+  der Einstellungen und des Plan-Details 8 → 48px, erste Karte 72 → 112px, „Mo" im Kalender
+  weiter buendig; ohne installierte App bleibt alles bei 8px. Wer es erneut will: Commit 52339ab. Dabei beachten, dass iOS die Angabe nach
   Berichten nur beim Hinzufuegen zum Home-Bildschirm liest; eine Neuinstallation loescht den
   `localStorage` (vorher Drive-Sicherung pruefen, danach beim Konflikt „Cloud" waehlen).
 - **`currentColor` in den Nav-Symbolen:** Die drei Punkte im Uebungen-Symbol sind gefuellte Kreise
