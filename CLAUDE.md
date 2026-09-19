@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v359**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v360**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2706,6 +2706,28 @@ Einheit, nicht die Tagesuebersicht.
 ---
 
 ## Gotchas
+- **DIE STATUSLEISTE IST SEIT DEM 19.09.2026 DECKEND SCHWARZ** (`apple-mobile-web-app-status-bar-style`
+  = `black`, vorher `black-translucent`; Leonard-Entscheidung „Schwarzer Balken" gegen einen
+  farbigen Balken und gegen Beibehalten). ANLASS: Seit iOS 26 legt das System ueber alles, was
+  eine Web-App UNTER Uhrzeit und Akku zeichnet, einen „Liquid Glass"-Schleier; iOS 27 hat ihn
+  deutlich verstaerkt (Leonard-Screenshot: heller Verlauf ueber Kopf und „FitTrack", Symbole
+  der Statusleiste schwarz statt weiss). Es gibt KEINEN CSS- oder Meta-Schalter dagegen; ein
+  deckendes Element oben, `backdrop-filter`-Ueberlagerungen und `theme-color` helfen laut
+  mehreren Projekten nicht. Nur eine deckende Statusleiste verhindert ihn, weil die Web-Ansicht
+  dann darunter beginnt.
+  FOLGEN: `env(safe-area-inset-top)` ist in der installierten App 0 — `--safe-t` und damit alle
+  oberen Abstaende schrumpfen von selbst, der Kopf beginnt 8px unter der Statusleiste. Der
+  Farbverlauf des Tabs laeuft nicht mehr unter die Uhr. Der dunkle Verlauf fuer die hellen
+  Einstellungen (`#statusbar-scrim`) ist ersatzlos entfallen. `viewport-fit=cover` bleibt fuer
+  den unteren Rand. `theme-color`/`updateThemeColorMeta` sind fuer die Statusleiste jetzt ohne
+  Belang (im Safari-Tab wirken sie weiter).
+  MOEGLICHERWEISE MUSS DIE APP NEU AUF DEN HOME-BILDSCHIRM: iOS liest die Statusleisten-Angabe
+  nach Berichten beim Hinzufuegen. ACHTUNG: Entfernen loescht den `localStorage` der App —
+  vorher die Drive-Sicherung pruefen („Heute gesichert"). Nach dem Neuhinzufuegen Drive verbinden;
+  weil die frische App beim Start Grunddaten anlegt, meldet `driveSync` einen KONFLIKT — dort
+  „Cloud" waehlen. Laufdaten (Tabelle) neu verbinden, reine Anzeige-Einstellungen
+  (`ft_glas`, `ft_cal_ansicht`, `ft_ex_chart_modes`) stehen danach auf Standard.
+  NICHT pruefbar hier: das Aussehen auf dem Geraet (kein iOS-Simulator).
 - **`currentColor` in den Nav-Symbolen:** Die drei Punkte im Uebungen-Symbol sind gefuellte Kreise
   mit `fill="currentColor"`, alle uebrigen Formen sind Striche mit `stroke`. Wer nur `stroke`
   faerbt, laesst die Punkte die Textfarbe des Bodys erben — dunkel, im Transparenz-Modus also

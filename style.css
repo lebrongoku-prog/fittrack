@@ -122,8 +122,8 @@ body {
   background: transparent;
   display: flex; flex-direction: column;
   /* min-height:100vh erzwingt volle physische Viewport-Hoehe auf iOS-PWA (height:100%
-     ist dort teils unzuverlaessig). Safe-Top-Padding wandert auf .screen (s.u.), damit
-     der Inhalt unter die transparente Status-Bar scrollt (black-translucent). */
+     ist dort teils unzuverlaessig). Safe-Top-Padding sitzt auf .screen (s.u.). Seit dem
+     19.09.2026 ist die Statusleiste deckend schwarz, `--safe-t` ist in der installierten App 0. */
   min-height: 100vh;
   /* KEINE Akzent-Transition mehr (Leonard-Wunsch): beim Tabwechsel schalten Icons + Akzentfarben
      SOFORT um — nur der Tab-Hintergrund (fingergebundener .bg-fade-layer-Crossfade) animiert.
@@ -149,20 +149,10 @@ body {
 /* Startzustand = Übersicht, schon vor dem ersten JS-Frame sichtbar (kein Flash). */
 #bg-fade-a { background-image: linear-gradient(135deg, #0C4A6E, #0891B2); opacity: 1; }
 
-/* Status-Bar-Scrim: dunkler Verlauf hinter der iOS-Status-Bar. Nur auf dem hellen
-   Mehr-Tab eingeblendet — alle anderen Tabs haben oben einen dunklen Gradient, dort
-   sind die von black-translucent erzwungenen weissen Symbole ohnehin lesbar. */
-#statusbar-scrim {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: calc(var(--safe-t) + 14px);
-  z-index: 90;
-  pointer-events: none;
-  opacity: 0;
-  background: linear-gradient(to bottom, rgba(15, 23, 42, 0.55), rgba(15, 23, 42, 0));
-  transition: opacity 0.3s ease;
-}
-body.theme-mehr #statusbar-scrim { opacity: 1; }
+/* Der fruehere Status-Bar-Scrim (`#statusbar-scrim`, dunkler Verlauf hinter der Statusleiste
+   auf dem hellen Einstellungen-Screen) ist am 19.09.2026 ENTFALLEN: Seit die Statusleiste
+   deckend schwarz ist (siehe index.html), zeichnet die App nicht mehr darunter — der Verlauf
+   haette nur noch als dunkler Streifen am oberen Rand der Einstellungen gestanden. */
 
 /* ─── Aktives-Workout-Signale (app-weit) ───
    Status-Klasse `workout-active` liegt bewusst auf <html> (documentElement), weil
@@ -419,8 +409,9 @@ body.theme-plans .hist-action-dd {
   /* Natives Snap-Target (siehe #tab-container). scroll-snap-stop:always = pro Wisch nur EIN Tab. */
   scroll-snap-align: start;
   scroll-snap-stop: always;
-  /* Safe-Top: Inhalt ruht unter der transparenten Status-Bar (black-translucent)
-     und scrollt dahinter; +8px Atemraum. */
+  /* Safe-Top plus 8px Atemraum. Bis zum 19.09.2026 lief der Inhalt unter die transparente
+     Statusleiste (black-translucent); seit sie deckend schwarz ist, ist `--safe-t` 0 und nur
+     die 8px bleiben. Im Safari-Tab greift der Wert weiterhin. */
   padding-top: calc(var(--safe-t) + 8px);
   /* Damit der Inhalt nicht unter der Bottom-Nav und der Seitenleiste verschwindet.
      `--sl-pad` ist 0, ausser in den drei Tabs mit Seitenleiste (Regel gleich darunter).
@@ -458,7 +449,7 @@ body.theme-plans .hist-action-dd {
   z-index: 40;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  /* Safe-Top wie .screen (black-translucent). */
+  /* Safe-Top wie .screen. */
   padding-top: calc(var(--safe-t) + 8px);
   padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
   /* Versteckt-Zustand: rechts ausserhalb */

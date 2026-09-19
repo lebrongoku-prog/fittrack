@@ -8,7 +8,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- Statusleiste SCHWARZ und DECKEND (19.09.2026, Leonard-Entscheidung) — vorher
+       `black-translucent`: Die App zeichnete unter Uhrzeit und Akku, und seit iOS 26 legt das
+       System dort einen „Liquid Glass"-Schleier darueber, den iOS 27 deutlich verstaerkt hat
+       (Leonard-Meldung mit Screenshot). Es gibt KEINEN CSS- oder Meta-Schalter dagegen; nur
+       wenn die Web-Ansicht UNTER einer deckenden Statusleiste beginnt, entsteht er nicht.
+       Folge: `env(safe-area-inset-top)` ist in der installierten App 0 — die Abstaende oben
+       (`--safe-t`) schrumpfen von selbst. `viewport-fit=cover` bleibt fuer den unteren Rand. -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="FitTrack">
   <meta name="theme-color" content="#f5f5f7">
   <title>FitTrack</title>
@@ -33,9 +40,6 @@
 <div class="bg-fade-layer" id="bg-fade-a"></div>
 <div class="bg-fade-layer" id="bg-fade-b"></div>
 
-<!-- Status-Bar-Scrim: dunkler Verlauf hinter der iOS-Status-Bar, nur auf dem hellen
-     Mehr-Tab sichtbar (black-translucent erzwingt weisse Symbole — sonst unlesbar auf hell). -->
-<div id="statusbar-scrim"></div>
 
 <!-- Aktives-Workout-Glow: pulsierende Akzentlinie unter der Status-Bar (nur bei laufendem Workout). -->
 
