@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v372**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v373**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -229,7 +229,30 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
      Verlaufsdiagramm (auch im Katalog), Satzpause, Kopfleiste der Einheit, Laufanzeige-Pille,
      Seite „Laufen", Tableiste, Toast, Sicherungs-Chip, `.btn`/`.btn-sm`, zweiseitiger
      Seitenschalter. Achsenschrift des Uebungsdiagramms (Chart.js, fest im JS) 10 → 11px.
-  2. Uebungen und Plan — offen. 3. Dialoge und Einstellungen — offen.
+  2. **Uebungen und Plan** (v373): Katalog (Muskelgruppen-Knopf, Uebungszeilen, Kennzahlen,
+     Verwendung, Aktionsknoepfe), Stats-Seite (PR-Liste, Letzte Einheiten, Muskel-Landkarte,
+     Zeitraum-Knopf, Leermeldungen auch inline im JS/HTML), Gymplan- und Laufplan-Liste,
+     Gymtage-Kacheln, Archiv-Knoepfe, Statuschips, Wettkaempfe (Liste und Zeitstrahl) und die
+     drei Vollbild-Ansichten Plan-Detail, Gymtag-Detail, Laufplan-Detail (Wochenplan-Editor,
+     Loesch-Modus, Formularbeschriftungen, Laufplan-Einheiten).
+     MIT DRIN, weil dieselben Klassen: `.mehr-section-title` (Abschnittsbeschriftung in
+     Grossbuchstaben, 12 → 11px) und `.mehr-row-label`/`-sub` — die stehen auch in den
+     EINSTELLUNGEN, dort hat sich das also schon mit geaendert.
+     ROLLE VOR ZAHL: Chips werden Etikett (Tag-Chip in der Uebungszeile und Pille „Steht noch an"
+     12 → 11px), Beschriftungen in Grossbuchstaben ebenso (`.ex-item-body-label`).
+     AUSNAHME: Der Seitenschalter mit VIER Seiten bleibt bei 12px (`.seg-vier`). „Wettkämpfe"
+     misst bei 13px 77px, der Knopf hat auf 375px 79px — mit zusammengerueckten Knoepfen blieben
+     2px Luft je Seite, im hervorgehobenen Knopf sah das gedraengt aus.
+     NACHGEZOGEN: In den Einheiten des Laufplans (`.lp-einheit`) liefen Datum („28.09.26" =
+     46.8px) und „km" (15.7px) bei 11 statt 10px ueber — Tages- und km-Spalte sind jetzt 48/16
+     statt 44/14px, die Notiz-Vorschau 75 statt 81px. Datum und Wochenzahl in der Datenzeile
+     des Laufplans (`.lp-datenzeile`) sind 13px statt 14 (15 passt nicht, siehe dort).
+     GEMESSEN (375px und 1100px, Vorher/Nachher): Gymtage-Kacheln bleiben 113px, „Ganzkörper"
+     einzeilig; Seiten und Karten wachsen nur um Bruchteile (Plan-Detail +10px Gesamthoehe).
+     VORHER SCHON DA, nicht angefasst: „+ Zu Trainingstag"/„+ Zu Trainingsplan" (Katalog und
+     Gymtag-Detail) laufen 3 bzw. 6px ueber ihren Knopf, „Schultern" in der Legende der
+     Muskel-Landkarte 5px.
+  3. Dialoge und Einstellungen — offen.
   Was noch feste px-Werte traegt, ist noch nicht umgestellt. Aeltere Groessenangaben in dieser
   Datei (17.6, 15.84, 15.6, 15.4, 14.3, 12.1px …) sind fuer die umgestellten Stellen Vorgeschichte.
   SICHTBARSTE AENDERUNGEN in Etappe 1: Nebentexte 12 → 13px (Zuletzt-Zeile, Satzkoepfe, Notizen,
@@ -2337,7 +2360,8 @@ Liste, mal die Detailseite. Das entscheidet `_laufNeuZeichnen()`; ein direkter A
   vier Spalten auf den Punkt aufgehen muessen:
   323px Zeile − 46px − 3×6px = 86,3px je Datumsfeld, abzueglich 2×3px Polster und 2×1px Rand
   bleiben 78,3px Text. „03.09.2026" misst bei 14px 75px, bei 15px schon 79,6px — deshalb sind
-  Datum und Wochenzahl in dieser Zeile 14px. Das UNSICHTBARE Eingabefeld darunter bleibt bei
+  Datum und Wochenzahl in dieser Zeile NICHT 15px (seit 21.09.2026 13px = Stufe „Nebentext" der
+  Schriftskala, vorher 14px). Das UNSICHTBARE Eingabefeld darunter bleibt bei
   16px, sonst zoomt iOS hinein. Die Beschriftungen laufen auf 11px: „Wochen" misst bei 12px 47px
   und stiess ohne Luecke an „Wettkampf".
 - **Datum und Herzzone sind KEINE nativen Bedienelemente mehr** (04.09.2026). Sichtbar ist je ein

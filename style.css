@@ -81,7 +81,7 @@
      FUENF Stufen fuer allen Text; wer etwas groesser haben will, geht EINE STUFE hoeher, statt
      um Prozente zu skalieren. Ausnahmen sind nur grosse Einzelanzeigen (Tabtitel, Uhr der
      Einheit, Zahlenblock, Bestleistungskarte, Kacheln der Abschlussansicht, Leer-Symbol).
-     Umgestellt in Etappen: 1 = Uebersicht und Training (v372), 2 = Uebungen und Plan,
+     Umgestellt in Etappen: 1 = Uebersicht und Training (v372), 2 = Uebungen und Plan (v373),
      3 = Dialoge und Einstellungen. Was noch feste px-Werte traegt, ist noch nicht dran. */
   --fs-etikett: 11px;   /* Chips, Pillen, Grossbuchstaben-Beschriftungen, Tableiste, Achsen */
   --fs-neben:   13px;   /* Metazeilen, Hinweise, Notizen, kleine Knoepfe, Seitenschalter */
@@ -631,7 +631,7 @@ body.theme-plans .hist-action-dd {
    SCREEN: MEHR
 ══════════════════════════════════════ */
 .mehr-section { margin: 0 12px 14px; }
-.mehr-section-title { font-size: 12px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin: 0 2px 8px; }
+.mehr-section-title { font-size: var(--fs-etikett); font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin: 0 2px 8px; }
 /* Im Plan-Detail stehen die Titel auf dem farbigen Tab-Hintergrund, nicht auf einer Karte —
    grau ginge dort unter. Bewusst nur hier, die Einstellungen behalten ihr Grau. */
 #screen-plan-detail .mehr-section-title,
@@ -648,7 +648,7 @@ body.theme-plans .hist-action-dd {
   display: inline-flex; align-items: center; gap: 2px;
   padding: 4px 4px 4px 10px; border: 0; border-radius: 999px;
   background: rgba(255,255,255,.18); color: #fff;
-  font: inherit; font-size: 12px; font-weight: 700;
+  font: inherit; font-size: var(--fs-neben); font-weight: 700;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   user-select: none; -webkit-user-select: none;
 }
@@ -668,7 +668,7 @@ body.theme-plans .hist-action-dd {
 .pdr-day-chip {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 24px; height: 22px; padding: 0 7px;
-  font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+  font-size: var(--fs-etikett); font-weight: 700; letter-spacing: 0.3px;
   background: #D1FAE5; color: #059669;
   border-radius: 6px;
 }
@@ -680,7 +680,7 @@ body.theme-plans .hist-action-dd {
 .plans-list-archive-header.expanded .aex-v2-chev,
 .plans-list-archive-header[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
 .plan-day-collapse-count {
-  font-size: 11px; font-weight: 700;
+  font-size: var(--fs-etikett); font-weight: 700;
   color: var(--text3);
   background: var(--card);
   padding: 2px 8px;
@@ -690,7 +690,7 @@ body.theme-plans .hist-action-dd {
 .plan-day-empty {
   padding: 20px 14px;
   text-align: center;
-  font-size: 13px; color: var(--text3);
+  font-size: var(--fs-neben); color: var(--text3);
   font-style: italic;
 }
 
@@ -769,7 +769,7 @@ body.theme-plans .hist-action-dd {
    Zeilen, danach Auslassungspunkte — `-webkit-line-clamp` ist dafuer das einzige Mittel,
    das MITTEN in der zweiten Zeile abschneidet statt die dritte anzuhaengen. */
 .pld-kachel .plan-list-name {
-  font-size: 14.4px; line-height: 1.3;
+  font-size: var(--fs-text); line-height: 1.3;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 /* `.pd-name` (der Balken vor dem Namen) ist `inline-block` — ein Wort, das breiter ist als
@@ -800,7 +800,7 @@ body.theme-plans .hist-action-dd {
 /* Der Punkt sitzt UNTEN rechts, nicht oben: Oben nahm er dem Namen 12px, und damit blieben
    genau 74px — „Ganzkörper" misst bei 13px ebenfalls 74px und brach dadurch mitten im Wort
    um. Unten steht er neben der kurzen Meta-Zeile („9 Sätze", rund 45px) und kostet nichts. */
-.pld-kachel .plan-list-meta { font-size: 13.2px; line-height: 1.35; margin-top: auto; }
+.pld-kachel .plan-list-meta { font-size: var(--fs-neben); line-height: 1.35; margin-top: auto; }
 /* „Im aktuellen Plan" als PUNKT statt als Chip — der Text misst bei 11px rund 95px und
    passte nicht. Absolut gesetzt, damit er dem Namen keine Breite nimmt. */
 .pld-dot {
@@ -812,7 +812,7 @@ body.theme-plans .hist-action-dd {
 /* Status-Chips für Pläne */
 .plan-status-chip {
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+  font-size: var(--fs-etikett); font-weight: 700; letter-spacing: 0.3px;
   padding: 4px 9px; border-radius: 6px; flex-shrink: 0;
   text-transform: none;
 }
@@ -1080,7 +1080,7 @@ body.theme-plans .hist-action-dd {
   padding: 12px 16px;
   display: flex; align-items: center; gap: 10px;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
-  font-size: 13px; font-weight: 600; color: var(--text2);
+  font-size: var(--fs-neben); font-weight: 600; color: var(--text2);
   box-shadow: var(--shadow);
   user-select: none; -webkit-user-select: none;
 }
@@ -1111,18 +1111,18 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 
 /* ── Bearbeiten-Modus / Lösch-Auswahl (Auswählen-dann-Löschen) ── */
 .del-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.del-edit-toggle { background: var(--card); border: 1px solid var(--border); font-size: 12.5px; font-weight: 700; color: var(--accent-dark); padding: 5px 12px; border-radius: 999px; cursor: pointer; text-transform: none; -webkit-tap-highlight-color: transparent; }
+.del-edit-toggle { background: var(--card); border: 1px solid var(--border); font-size: var(--fs-neben); font-weight: 700; color: var(--accent-dark); padding: 5px 12px; border-radius: 999px; cursor: pointer; text-transform: none; -webkit-tap-highlight-color: transparent; }
 .del-edit-toggle.active { background: var(--red); border-color: var(--red); color: #fff; }
 .del-edit-list { display: flex; flex-direction: column; gap: 8px; }
 .del-row { display: flex; align-items: center; gap: 11px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 13px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .del-row.sel { border-color: var(--red); background: var(--red-bg); }
-.del-check { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--text3); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; }
+.del-check { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--text3); display: flex; align-items: center; justify-content: center; font-size: var(--fs-neben); font-weight: 700; color: #fff; }
 .del-row.sel .del-check { background: var(--red); border-color: var(--red); }
 .del-row-stripe { flex: 0 0 auto; width: 4px; height: 28px; border-radius: 2px; }
-.del-row-name { flex: 1; min-width: 0; font-size: 15px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.del-confirm-btn { width: 100%; margin-top: 12px; background: var(--red); color: #fff; border: none; border-radius: 12px; padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.del-row-name { flex: 1; min-width: 0; font-size: var(--fs-text); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.del-confirm-btn { width: 100%; margin-top: 12px; background: var(--red); color: #fff; border: none; border-radius: 12px; padding: 13px; font-size: var(--fs-text); font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .del-confirm-btn:active { transform: scale(0.98); }
-.del-edit-hint { text-align: center; font-size: 13px; color: var(--text3); padding: 12px 8px 4px; }
+.del-edit-hint { text-align: center; font-size: var(--fs-neben); color: var(--text3); padding: 12px 8px 4px; }
 /* Plan-Detail: Trainingstage im Bearbeiten-Modus = SELBE Pillen-Darstellung + Kästchen (kein Layout-Wechsel) */
 .plan-day-row.del-select { cursor: pointer; }
 .plan-day-row.del-select.sel { background: var(--red-bg); }
@@ -1190,13 +1190,13 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   font-size: 12px; color: var(--text3); font-style: italic;
   text-align: center;
 }.pdr-info { flex: 1; }
-.pdr-name { font-size: 15px; font-weight: 600; }
-.pdr-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }.mehr-row { display: flex; align-items: center; padding: 14px; gap: 12px; }
+.pdr-name { font-size: var(--fs-text); font-weight: 600; }
+.pdr-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }.mehr-row { display: flex; align-items: center; padding: 14px; gap: 12px; }
 .mehr-row + .mehr-row { border-top: 1px solid var(--border); }
 .mehr-row-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
 .mehr-row-info { flex: 1; }
-.mehr-row-label { font-size: 15px; font-weight: 500; }
-.mehr-row-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.mehr-row-label { font-size: var(--fs-text); font-weight: 500; }
+.mehr-row-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
 .mehr-row-action { color: var(--text3); font-size: 16px; }
 
 /* ══════════════════════════════════════
@@ -1317,7 +1317,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   border:0; border-radius:var(--radius);
   padding:.6rem .75rem; margin-bottom:.7rem;
   cursor:pointer;
-  font:inherit; font-size:.79rem; font-weight:600; color:#fff;
+  font:inherit; font-size:var(--fs-neben); font-weight:600; color:#fff;
   box-shadow:0 1px 6px rgba(0,0,0,.18);
   -webkit-tap-highlight-color:transparent;
 }
@@ -1330,7 +1330,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
    gleiches seitliches Polster (14px, damit der Pfeil an derselben Stelle steht) und
    derselbe Abstand zwischen Farbmarke und Name. */
 .ex-group-btn {
-  justify-content: flex-start; font-size: 16px; min-height: var(--ex-row-h);
+  justify-content: flex-start; font-size: var(--fs-titel); min-height: var(--ex-row-h);
   padding-left: 14px; padding-right: 14px; gap: 12px;
 }
 /* 12px statt 8px — um die Haelfte groesser (Leonard-Wunsch 01.09.2026). */
@@ -1921,8 +1921,8 @@ html.wo-running #wo-week-card.wo-woche-faehrt,
   padding: 14px;
 }
 .plan-section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.plan-section-head h3 { font-size: 16px; font-weight: 700; }
-.plan-section-head a { font-size: 14px; color: var(--accent); font-weight: 500; cursor: pointer; }
+.plan-section-head h3 { font-size: var(--fs-titel); font-weight: 700; }
+.plan-section-head a { font-size: var(--fs-text); color: var(--accent); font-weight: 500; cursor: pointer; }
 /* Ausgewaehlter Tag im Wochenplan des Trainings-Tabs: Die Auswahl steuert dort, welcher
    Tag unten angezeigt wird — ohne Markierung waere nicht erkennbar, welcher das ist.
    („Heute" traegt dagegen den Ring um den Kreis, beide bleiben unterscheidbar.) */
@@ -2407,7 +2407,7 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 12px; border-radius: 12px;
   background: var(--card); border: 1px solid var(--border);
-  font-size: 13px; color: var(--accent); font-weight: 600;
+  font-size: var(--fs-neben); color: var(--accent); font-weight: 600;
   cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: var(--shadow);
 }
 .hist-action-dd svg { width: 14px; height: 14px; }.chart-card-v2 {
@@ -2420,7 +2420,7 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .info-btn {
   width: 19px; height: 19px; flex-shrink: 0; margin-right: auto;
   border: 1.5px solid var(--text3); border-radius: 50%; background: none;
-  color: var(--text3); font-size: 12px; font-weight: 700; line-height: 1;
+  color: var(--text3); font-size: var(--fs-neben); font-weight: 700; line-height: 1;
   font-family: Georgia, serif; cursor: pointer; padding: 0;
   display: flex; align-items: center; justify-content: center;
   -webkit-tap-highlight-color: transparent;
@@ -2499,14 +2499,14 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
    waechst der Inhalt in ihn hinein und sitzt senkrecht mittig. */
 .muscle-card { display: flex; flex-direction: column; }
 .muscle-card > #muscle-bars { flex: 1; display: flex; align-items: center; }
-.mmap-cap { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: .3px; }
+.mmap-cap { font-size: var(--fs-etikett); font-weight: 600; color: var(--text3); letter-spacing: .3px; }
 /* Eine Spalte neben den Figuren statt eines mehrspaltigen Rasters darunter. */
 .mmap-legend { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .mmap-legend-row { display: flex; align-items: center; gap: 7px; padding: 3px 0; }
 .mmap-legend-row.mmap-legend-off { opacity: .45; }
 .mmap-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
-.mmap-legend-name { flex: 1; min-width: 0; font-size: 13px; color: var(--text2); }
-.mmap-legend-val { font-size: 13px; font-weight: 600; color: var(--text); }
+.mmap-legend-name { flex: 1; min-width: 0; font-size: var(--fs-neben); color: var(--text2); }
+.mmap-legend-val { font-size: var(--fs-neben); font-weight: 600; color: var(--text); }
 
 /* ─── Laufen (Tab 5) ─── */
 .lauf-quelle { display: flex; align-items: center; gap: 12px; }
@@ -2567,7 +2567,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
   display: flex; align-items: center; justify-content: space-between; width: 100%;
   padding: 9px 12px; margin-bottom: 6px; border: none; border-radius: 10px;
   background: rgba(0,0,0,.06); color: var(--text);
-  font: inherit; font-size: 14px; font-weight: 700;
+  font: inherit; font-size: var(--fs-text); font-weight: 700;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 /* Kein eigenes Zeichen mehr — der Pfeil kommt als SVG aus dem JS, wie ueberall sonst. */
@@ -2580,15 +2580,18 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
    Tagesspalte ist entfallen; fuer beides zusammen reicht der Platz auf 375px nicht.
    Die festen Werte sind gemessen: „01.09.26" braucht 41,7px, eine Zahl wie „12.5" bei 16px
    31,8px, „Zone" bei 13px 31,9px. */
+/* Tages- und km-Spalte seit dem 21.09.2026 48 bzw. 16px (vorher 44/14): Mit der Schriftskala
+   stehen Datum und Einheit bei 11 statt 10px — „28.09.26" misst dann 46.8px, „km" 15.7px. Die
+   6px gehen von der Notiz-Vorschau ab (81 → 75px), die ohnehin gekuerzt wird. */
 .lp-einheit {
-  display: grid; grid-template-columns: 44px 44px 14px 44px 20px 46px 1fr;
+  display: grid; grid-template-columns: 48px 44px 16px 44px 20px 46px 1fr;
   gap: 5px; align-items: center; padding: 4px 0;
 }
 /* Wochentag und Datum stehen MITTIG ueber ihrer Spalte (Leonard-Wunsch 04.09.2026) —
    linksbuendig sassen die kurzen Kuerzel weit weg von den Feldern daneben. */
 .lp-tag { display: flex; flex-direction: column; line-height: 1.15; text-align: center; }
-.lp-tag strong { font-size: 13px; color: var(--text); }
-.lp-tag span { font-size: 10px; color: var(--text3); }
+.lp-tag strong { font-size: var(--fs-neben); color: var(--text); }
+.lp-tag span { font-size: var(--fs-etikett); color: var(--text3); }
 /* km/min/Zone haben eine FESTE, gemeinsame Hoehe. Ohne die war die Zone 2px hoeher:
    Ein <select> rechnet seine Zeilenhoehe anders als ein <input> (Leonard-Meldung
    04.09.2026). Mit `box-sizing: border-box` gilt der Wert einschliesslich Rand. */
@@ -2599,14 +2602,14 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
   font-family: inherit; font-weight: 600;
 }
 .lp-feld:focus { outline: none; border-color: var(--accent); }
-.lp-eh { font-size: 10px; color: var(--text3); }
+.lp-eh { font-size: var(--fs-etikett); color: var(--text3); }
 /* Die Zone ist ein gewoehnlicher Kasten mit einem unsichtbaren <select> darueber — ein
    sichtbares <select> bringt auf jeder Plattform eigene Masse mit (Pfeil, Mindestbreite)
    und sprengte die Spalte. Dasselbe Muster wie `.wpe-select` im Plan-Detail. */
 .lp-zone {
   position: relative; display: flex; align-items: center; justify-content: center;
   width: 100%; min-width: 0; padding: 0 2px; border-radius: 9px; border: 1px solid var(--border);
-  background: var(--card2); color: var(--text); font-family: inherit; font-size: 13px; font-weight: 600;
+  background: var(--card2); color: var(--text); font-family: inherit; font-size: var(--fs-neben); font-weight: 600;
 }
 .lp-zone.leer { color: var(--text3); }
 /* Notiz: In der Zeile steht nur eine gekuerzte VORSCHAU — geschrieben wird im eigenen
@@ -2615,7 +2618,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
    Tastatur wuerde ueber der einen sichtbaren Zeile aufgehen. */
 .lp-notiz {
   width: 100%; min-width: 0; padding: 0 8px; border-radius: 9px; border: 1px solid var(--border);
-  background: var(--card2); color: var(--text); font-family: inherit; font-size: 12px; font-weight: 600;
+  background: var(--card2); color: var(--text); font-family: inherit; font-size: var(--fs-neben); font-weight: 600;
   text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none; user-select: none;
@@ -2634,7 +2637,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
 .lp-tagwahl-reihe { display: flex; gap: 4px; flex-wrap: nowrap; }
 .lp-tagwahl {
   flex: 1 1 0; min-width: 0; padding: 8px 0; border-radius: 9px; border: 1px solid var(--border);
-  background: var(--card2); color: var(--text3); font-family: inherit; font-size: 12px; font-weight: 700;
+  background: var(--card2); color: var(--text3); font-family: inherit; font-size: var(--fs-neben); font-weight: 700;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .lp-tagwahl.an { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -2662,9 +2665,9 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
 .plan-form-card .lp-datenzeile.sp3 { grid-template-columns: 1fr 1fr 46px; }
 .plan-form-card .lp-datenzeile.sp4 { grid-template-columns: 1fr 1fr 46px 1fr; }
 .plan-form-card .lp-datenzeile > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.plan-form-card .lp-datenzeile > div > label { font-size: 11px; }
+.plan-form-card .lp-datenzeile > div > label { font-size: var(--fs-etikett); }
 .plan-form-card .lp-datenzeile .lp-datum-txt,
-.plan-form-card .lp-datenzeile .lp-wochen-v { font-size: 14px; text-align: center; }
+.plan-form-card .lp-datenzeile .lp-wochen-v { font-size: var(--fs-neben); text-align: center; }
 .plan-form-card .lp-datenzeile .lp-datum { padding-left: 3px; padding-right: 3px; }
 /* Datumsfeld und Wochenzahl sind gewoehnliche Kaesten — dieselbe Hoehe wie ein Textfeld
    (10px Polster + 19px Zeile + 1px Rand = 41px). Beim Datum liegt das native
@@ -2673,7 +2676,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
    lief ueber den Kartenrand hinaus (Leonard-Meldung 04.09.2026). */
 .lp-datum, .lp-wochen-v {
   background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-  padding: 10px 12px; font-size: 15px; line-height: 19px; color: var(--text);
+  padding: 10px 12px; font-size: var(--fs-text); line-height: 19px; color: var(--text);
   box-sizing: border-box; min-width: 0;
 }
 .lp-datum { position: relative; overflow: hidden; }
@@ -3018,27 +3021,27 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .pr-v2-row.no-icon { grid-template-columns: 22px 1fr auto auto; }
 .pr-v2-row:last-child { border-bottom: none; }.pr-v2-num {
   width: 22px; height: 22px; border-radius: 50%; background: var(--border);
-  color: var(--text2); font-size: 11px; font-weight: 700;
+  color: var(--text2); font-size: var(--fs-etikett); font-weight: 700;
   display: flex; align-items: center; justify-content: center;
 }
 /* `color: var(--text)` ist noetig, obwohl die Karte die Variable im Glas-Modus auf Weiss
    setzt: Eine Farbe wird als FERTIGER Wert vererbt. Ohne eigene Angabe erbt der Name die
    am <body> ausgerechnete dunkle Farbe, und das Umdefinieren von --text auf der Karte
    erreicht ihn gar nicht. */
-.pr-v2-name { font-size: 14px; font-weight: 600; color: var(--text); }
-.pr-v2-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.pr-v2-name { font-size: var(--fs-text); font-weight: 600; color: var(--text); }
+.pr-v2-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
 /* Steigerung gegenüber der vorherigen Bestleistung — bewusst zurückgenommen, die
    Bestleistung selbst steht hervorgehoben rechts. */
 .pr-v2-delta { color: var(--text3); font-weight: 500; }
-.pr-v2-val { font-size: 14px; font-weight: 700; color: var(--green); }
-.pr-v2-arrow { color: var(--text3); font-size: 18px; line-height: 1; }.sess-v2-row {
+.pr-v2-val { font-size: var(--fs-text); font-weight: 700; color: var(--green); }
+.pr-v2-arrow { color: var(--text3); font-size: var(--fs-betont); line-height: 1; }.sess-v2-row {
   display: flex; align-items: center; gap: 12px; padding: 12px 0;
   border-bottom: 1px solid var(--border); cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .sess-v2-row:last-child { border-bottom: none; }.sess-v2-info { flex: 1; min-width: 0; }
-.sess-v2-name { font-size: 14px; font-weight: 600; }
-.sess-v2-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
-.sess-v2-arrow { color: var(--text3); font-size: 18px; }
+.sess-v2-name { font-size: var(--fs-text); font-weight: 600; }
+.sess-v2-meta { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
+.sess-v2-arrow { color: var(--text3); font-size: var(--fs-betont); }
 
 /* ═══════════════════════════════════
    ÜBUNGEN – Catalog tab
@@ -3112,7 +3115,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
   padding: 13px 14px; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .ex-item-stripe { width: 4px; align-self: stretch; border-radius: 2px; background: var(--mc, var(--accent)); flex-shrink: 0; }
-.ex-item-name { flex: 1; font-size: 15px; font-weight: 500; color: var(--text); }
+.ex-item-name { flex: 1; font-size: var(--fs-text); font-weight: 500; color: var(--text); }
 /* Der Pfeil steht ganz rechts; 20px statt 32px, damit die Zeile ihre 44px behaelt. */
 .ex-item-head > .aex-v2-chev { margin-left: auto; width: 20px; height: 20px; }
 .ex-item-head > .aex-v2-chev svg { width: 17px; height: 17px; }
@@ -3121,17 +3124,17 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
    schrumpfen) — der Pfeil dreht sich trotzdem sofort zurueck (`_exItemKlappen`). */
 .ex-item.open.zuklappend > .ex-item-head > .aex-v2-chev { transform: none; }
 .ex-item-plan-tag {
-  font-size: 11px; padding: 2px 7px; border-radius: 10px;
+  font-size: var(--fs-etikett); padding: 2px 7px; border-radius: 10px;
   background: var(--green-bg); color: var(--green); font-weight: 600;
 }
 .ex-item-using { margin-top: 12px; }
-.ex-item-using-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; font-weight: 600; }
+.ex-item-using-label { font-size: var(--fs-neben); color: var(--text2); margin-bottom: 6px; font-weight: 600; }
 .ex-item-using-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .ex-item-day-chip {
   padding: 4px 10px; border-radius: 10px;
-  background: var(--accent-bg); color: var(--accent); font-size: 12px; font-weight: 600;
+  background: var(--accent-bg); color: var(--accent); font-size: var(--fs-etikett); font-weight: 600;
 }
-.ex-item-using-empty { font-size: 12px; color: var(--text3); font-style: italic; }
+.ex-item-using-empty { font-size: var(--fs-neben); color: var(--text3); font-style: italic; }
 
 /* Stats-Block: 2-Spalten-Karten (PR links, Letzte Ausführung rechts) */
 .ex-item-stats { display: flex; gap: 8px; margin-bottom: 14px; }
@@ -3142,12 +3145,12 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .ex-stat.ex-stat-pr   { flex: 0 0 auto; min-width: 88px; }
 .ex-stat.ex-stat-last { flex: 1; min-width: 0; }
 .ex-stat-key {
-  font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  font-size: var(--fs-etikett); font-weight: 700; letter-spacing: 0.5px;
   text-transform: uppercase; color: var(--text3);
 }
-.ex-stat-val { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
+.ex-stat-val { font-size: var(--fs-text); font-weight: 700; color: var(--text); line-height: 1.3; }
 .ex-stat-val.muted { color: var(--text3); font-weight: 500; }
-.ex-stat-val .date { color: var(--text3); font-weight: 500; font-size: 12px; margin-left: 4px; }
+.ex-stat-val .date { color: var(--text3); font-weight: 500; font-size: var(--fs-neben); margin-left: 4px; }
 
 /* Plan-Add-Modal: gruppierter Übungen-Katalog (analog Übungen-Tab) */
 .sheet .ex-group { margin: 8px 0 14px; max-width: none; }
@@ -3211,7 +3214,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
   display: none;
 }
 .ex-item.open .ex-item-body { display: block; }
-.ex-item-body-label { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+.ex-item-body-label { font-size: var(--fs-etikett); font-weight: 700; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
 .ex-notes-area {
   width: 100%; background: var(--card2); border: 1px solid transparent; border-radius: 8px;
   padding: 10px 12px; font-size: 14px; min-height: 70px; font-family: inherit; line-height: 1.4;
@@ -3225,7 +3228,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 }
 .ex-item-actions button {
   flex: 1; min-width: 0; padding: 8px 8px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--card); color: var(--text2); font-size: 13px; font-weight: 600;
+  background: var(--card); color: var(--text2); font-size: var(--fs-neben); font-weight: 600;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   display: inline-flex; align-items: center; justify-content: center; gap: 4px;
   white-space: nowrap;
@@ -3260,14 +3263,14 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 /* Der heutige Wochentag wird in der Plan-Detailansicht NICHT hervorgehoben
    (Leonard-Wunsch 01.09.2026) — hier wird ein Plan bearbeitet, das aktuelle Datum spielt
    dabei keine Rolle und die eingefaerbte Zeile las sich wie eine Auswahl. */
-.wpe-day { flex: 0 0 32px; font-size: 13px; font-weight: 700; color: var(--text3); }
+.wpe-day { flex: 0 0 32px; font-size: var(--fs-neben); font-weight: 700; color: var(--text3); }
 .wpe-row.training .wpe-day { color: var(--text); }
-.wpe-name { flex: 1; min-width: 0; font-size: 13px; white-space: normal; overflow-wrap: anywhere; }
-.wpe-rest { flex: 1; min-width: 0; font-size: 13px; color: var(--text3); opacity: 0.6; }
-.wpe-chev { flex: 0 0 auto; font-size: 17px; line-height: 1; color: var(--text3); }
+.wpe-name { flex: 1; min-width: 0; font-size: var(--fs-neben); white-space: normal; overflow-wrap: anywhere; }
+.wpe-rest { flex: 1; min-width: 0; font-size: var(--fs-neben); color: var(--text3); opacity: 0.6; }
+.wpe-chev { flex: 0 0 auto; font-size: var(--fs-betont); line-height: 1; color: var(--text3); }
 .wpe-select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer; font-size: 16px; }.program-form-row { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
 .program-form-row + .program-form-row { border-top: 1px solid var(--border); }
-.program-form-row label { font-size: 12px; color: var(--text3); font-weight: 600; }
+.program-form-row label { font-size: var(--fs-neben); color: var(--text3); font-weight: 600; }
 /* color MUSS gesetzt sein: <input> erbt die Textfarbe nicht, sonst bleibt sie beim
    Browser-Schwarz — im Glas-Modus auf dem Schleier unlesbar. */
 .program-form-row input { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 15px; color: var(--text); }
@@ -3306,7 +3309,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
    ab, damit sie nicht durch die Ziffern laeuft. */
 .wk-jahr {
   position: relative; margin: 14px 0 10px -30px;
-  font-size: 13px; font-weight: 800; color: #fff;
+  font-size: var(--fs-neben); font-weight: 800; color: #fff;
   background: rgba(255,255,255,.22); border-radius: 999px;
   padding: 3px 10px; display: inline-block;
 }
@@ -3333,7 +3336,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .wk-punkt.kuenftig  .wk-punkt-marke { background: transparent; border: 2.5px solid #fff; }
 .wk-punkt.fehlt     .wk-punkt-marke { background: rgba(255,255,255,.45); }
 .wk-punkt.offen     .wk-punkt-marke { box-shadow: 0 0 0 3px rgba(255,255,255,.55); }
-.wk-punkt-name  { font-size: 14.5px; font-weight: 700; color: #fff; flex: 1; min-width: 0;
+.wk-punkt-name  { font-size: var(--fs-text); font-weight: 700; color: #fff; flex: 1; min-width: 0;
                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Die Karte steht IMMER im Markup und wird nur ein- und ausgeblendet — so ist das Oeffnen
    ein Klassenwechsel statt eines Neuaufbaus (siehe `wettkampfStrahl`). */
@@ -3537,6 +3540,9 @@ html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
    „Wettkämpfe" misst bei 13px 84px und waere gekuerzt worden — 12px und ein schmaleres
    seitliches Polster bringen es auf 78px. Nur dieser Umschalter ist betroffen, die
    zweiteiligen behalten ihre 13px (sie sind dafuer schmaler, siehe `.seg-zwei`). */
+/* AUSNAHME VON DER SCHRIFTSKALA (21.09.2026): 12px statt der 13px des zweiseitigen Schalters.
+   „Wettkämpfe" misst bei 13px 77px, der Knopf hat auf 375px 79px — es passte nur mit 2px
+   Luft je Seite und zusammengerueckten Knoepfen, im hervorgehobenen Knopf sah das gedraengt aus. */
 .seg-vier .seg-btn { font-size: 12px; padding-left: 2px; padding-right: 2px; }
 /* KEINE Glas-Sonderregel mehr fuer die aktive Pille. Frueher war sie noetig, weil die
    weisse Pille im Transparenz-Modus auf dem durchscheinenden Schalter ein Fremdkoerper
@@ -3557,11 +3563,11 @@ html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
 .wk-card .wk-stats { margin-bottom: 0; }
 /* Vier Kacheln in drei Spalten lassen unten eine halbe Zeile stehen. Auf iPhone-Breite passen
    die 6 Werte in zwei Zeilen zu drei — genau das Raster der Laufdetailansicht. */
-.wk-datum { font-size: 12px; font-weight: 600; color: var(--text3); margin-top: 3px; }
-.wk-leer { font-size: 13px; color: var(--text3); line-height: 1.45; }
+.wk-datum { font-size: var(--fs-neben); font-weight: 600; color: var(--text3); margin-top: 3px; }
+.wk-leer { font-size: var(--fs-neben); color: var(--text3); line-height: 1.45; }
 /* Ein Termin in der Zukunft hat noch keine Werte: gedaempfte Karte, „Steht noch an" als
    Pille statt Kacheln. Sie steht durch die aufsteigende Sortierung am Ende der Seite. */
-.wk-anstehend { display: inline-block; font-weight: 700; font-size: 12px; letter-spacing: .03em;
+.wk-anstehend { display: inline-block; font-weight: 700; font-size: var(--fs-etikett); letter-spacing: .03em;
   text-transform: uppercase; color: var(--text3);
   background: var(--card2); border-radius: 999px; padding: 5px 12px; }
 .wk-kuenftig .wk-name { color: var(--text2); }
@@ -3573,8 +3579,8 @@ html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
 .wk-wartet .wk-leer { flex: 1; min-width: 120px; }
 .wk-fehlt { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   background: var(--red-bg); border-radius: 12px; padding: 12px 14px; }
-.wk-fehlt-txt { flex: 1; min-width: 150px; font-size: 13px; line-height: 1.4; color: var(--text2); }
-.wk-fehlt-txt strong { display: block; color: var(--red); font-size: 13px; }
+.wk-fehlt-txt { flex: 1; min-width: 150px; font-size: var(--fs-neben); line-height: 1.4; color: var(--text2); }
+.wk-fehlt-txt strong { display: block; color: var(--red); font-size: var(--fs-neben); }
 .wk-hol-btn { flex-shrink: 0; background: var(--card2); color: var(--text); border: none; }
 .wk-fehlt .wk-hol-btn { background: #fff; color: var(--red); }
 /* Im Transparenz-Modus liegt die Karte auf dem Farbverlauf: Das zarte Rot verschwaende, und

@@ -1314,7 +1314,7 @@ function renderRecentSessions() {
   const ws = DB.getWorkouts()
     .slice(0, 3);
   if (!ws.length) {
-    container.innerHTML = '<p style="font-size:13px;color:var(--text3);padding:8px 0;text-align:center;margin:0">Noch keine Einheiten</p>';
+    container.innerHTML = '<p style="font-size:var(--fs-neben);color:var(--text3);padding:8px 0;text-align:center;margin:0">Noch keine Einheiten</p>';
     return;
   }
   // Tagname vergangener Sessions aus dem GLOBALEN Tag-Store auflösen (nicht aus dem aktiven
@@ -4114,7 +4114,7 @@ function renderStatsPage() {
   const volEl = document.getElementById('muscle-bars');
   if (volEl) {
     if (ws.length) renderMuscleMap(calcMuscleVolume(ws), volEl);
-    else volEl.innerHTML = '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>';
+    else volEl.innerHTML = '<p style="font-size:var(--fs-neben);color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>';
   }
 
   // ── Karte 3: Letzte Einheiten ──
@@ -4126,7 +4126,7 @@ function renderStatsPage() {
     const prs = getAllPRs();
     prEl.innerHTML = prs.length
       ? prs.slice(0,10).map((pr, idx) => prHTML(pr, idx+1)).join('')
-      : '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine PRs</p>';
+      : '<p style="font-size:var(--fs-neben);color:var(--text3);text-align:center;padding:8px 0">Noch keine PRs</p>';
   }
 
   _gleicheHoeheStatsKarten();
@@ -6042,7 +6042,7 @@ function renderMuscleMap(vol, container) {
   const values = MUSCLE_ORDER.map(m => vol[m] || 0);
   const maxVol = Math.max(0, ...values);
   if (!maxVol) {
-    container.innerHTML = '<p style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>';
+    container.innerHTML = '<p style="font-size:var(--fs-neben);color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>';
     return;
   }
   const legend = MUSCLE_ORDER.map(m => {
