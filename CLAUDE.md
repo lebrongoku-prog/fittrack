@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v374**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v375**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1794,6 +1794,34 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Waehrend des Abtauchens nimmt der Schalter keine Tipps mehr an (`pointer-events: none`) —
   er gehoert schon zum verlassenen Tab, ein Tipp wuerde dort eine Seite umschalten, die man
   gar nicht mehr sieht.
+  **TIPP AUF EINE ANDERE SEITE: DIE PILLE GLEITET HINUEBER** (`_slSchalterGleiten`, 21.09.2026,
+  Leonard-Wunsch). Vorher sprang die Markierung, und zwar erst nach dem Ausblenden der alten Seite
+  (120ms) — `seitenleisteAktualisieren` laeuft erst, wenn die `set*View` die neue Seite gesetzt
+  haben. Jetzt verschiebt der Klick-Handler die Klasse `.active` SOFORT (ohne neu zu fuellen), und
+  eine eigene Flaeche `.seg-gleiter` in der Farbe der aktiven Pille faehrt HINTER den
+  Beschriftungen von der alten zur neuen Stelle (`SL_GLEIT_MS` 260ms, dieselbe Kurve wie die
+  uebrigen Bewegungen). Die Seite wechselt unveraendert mit ihrer Staffel darunter.
+  VIER Dinge, die daran haengen:
+  1. Die KENNUNG des Schalters wird im selben Moment auf die neue Seite gesetzt — sonst saehe der
+     spaetere Aufruf aus `_setXView` einen Unterschied und fuellte den Schalter neu (Pille weg).
+     Aus demselben Grund ruft der Klick-Handler NICHT mehr selbst `seitenleisteAktualisieren()`
+     hinter `tab.setzen(...)`: Das lief, solange die Seite noch die alte war.
+  2. Waehrend der Bewegung hat der neue Knopf keinen eigenen Grund (`.seg-gleitet`), und
+     `.seg-toggle.gleitet` schaltet die Hintergrund-Transition der Knoepfe ab (sonst blendete der
+     alte Grund 0.15s neben der gleitenden Pille aus) und laesst die Schriftfarben in 0.26s
+     umblenden. Am Ende kehrt ERST der Grund des Knopfs zurueck (erzwungener Reflow), DANN wird
+     aufgeraeumt — in einem Rutsch blendete der Grund sonst noch einmal ein.
+  3. Die Knoepfe liegen eine Ebene ueber der Pille (`.seg-toggle > .seg-btn { z-index: 1 }`).
+  4. Ein zweiter Tipp waehrend der Bewegung beginnt dort, wo die Pille gerade steht (Token
+     `_slGleitNr`); gerechnet in LAYOUT-Koordinaten, damit der passive Modus (`scale(.7)`) nicht
+     hineinspielt.
+  GEMESSEN (echte Klicks): Gymplan → Laufplan: `.active` und Kennung sofort neu, Seite noch die
+  alte; Pille von 4px um 171px; nach 130ms bei 132.6px (Ease-out); danach eigener Grund
+  rgb(245,158,11), keine Pille, kein Rest, derselbe Knopf-Knoten (nicht neu gefuellt). Zweiter
+  Tipp nach 60ms startet exakt an der aktuellen Stelle (25.43px); Endzustand Wettkaempfe. Seite
+  „Gym" → „Laufen" 118px. Ueberblenden zwischen Tabs unveraendert ohne Reste.
+  NICHT gesehen: das Umblenden der Schriftfarben — CSS-Transitionen laufen in der verdeckten
+  Browser-Ansicht nicht (die Angabe `color 0.26s` greift, gemessen).
   **AKTIVER und PASSIVER Modus:** Der Schalter schrumpft auf **70 %** und geht auf **50 %
   Deckkraft**, sobald man scrollt (in BEIDE Richtungen, Schwelle 2px gegen iOS'
   Nachfedern), **in einen anderen Tab wischt** oder irgendwo neben ihn tippt. Ein Tipp auf

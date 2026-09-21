@@ -10463,6 +10463,61 @@ function _slUeberblenden(box, fuellen) {
   });
 }
 
+// ── Tipp auf eine andere Seite: die PILLE GLEITET hinueber (21.09.2026, Leonard-Wunsch) ──
+// Vorher sprang die Markierung — und das erst nach dem Ausblenden der alten Seite (120ms), weil
+// `seitenleisteAktualisieren` erst laeuft, wenn die neue Seite gesetzt ist.
+// Jetzt verschiebt der Tipp die Klasse `.active` SOFORT, ohne den Schalter neu zu fuellen, und
+// eine eigene Flaeche (`.seg-gleiter`, in der Farbe der aktiven Pille, HINTER den Beschriftungen)
+// gleitet von der alten zur neuen Stelle. Der neue Knopf traegt so lange keinen eigenen Grund
+// (`.seg-gleitet`), die Schriftfarben blenden in derselben Zeit um (`.seg-toggle.gleitet`).
+// Die KENNUNG des Schalters wird gleich auf den neuen Stand gesetzt — sonst saehe der spaetere
+// Aufruf von `seitenleisteAktualisieren` einen Unterschied und fuellte neu (Bewegung weg).
+// Ein zweiter Tipp waehrend der Bewegung startet an der Stelle, an der die Pille gerade steht
+// (Token `_slGleitNr`). Gerechnet wird in LAYOUT-Koordinaten (`offsetLeft`, berechnetes
+// `transform`), damit der passive Modus (`scale(.7)`) nicht hineinspielt.
+const SL_GLEIT_MS = 260;
+let _slGleitNr = 0;
+function _slSchalterGleiten(box, knopf) {
+  const alt = box && box.querySelector(':scope > .seg-btn.active');
+  if (!alt || alt === knopf) return;
+  const nr = ++_slGleitNr;
+  if (box.dataset.kennung) box.dataset.kennung = box.dataset.kennung.replace(/\|[^|]*$/, '|' + knopf.dataset.seite);
+  // Start: dort, wo eine noch laufende Pille gerade steht — sonst am alten Knopf.
+  let x0 = alt.offsetLeft, w0 = alt.offsetWidth;
+  const vorige = box.querySelector(':scope > .seg-gleiter');
+  if (vorige) {
+    const cs = getComputedStyle(vorige);
+    x0 = vorige.offsetLeft + new DOMMatrix(cs.transform === 'none' ? undefined : cs.transform).m41;
+    w0 = parseFloat(cs.width) || w0;
+    vorige.getAnimations().forEach(a => a.cancel());
+    vorige.remove();
+  }
+  box.querySelectorAll(':scope > .seg-btn.seg-gleitet').forEach(b => b.classList.remove('seg-gleitet'));
+  const bewegt = !_bewegungReduziert() && box.animate && box.offsetWidth;
+  if (bewegt) { box.classList.add('gleitet'); knopf.classList.add('seg-gleitet'); }
+  alt.classList.remove('active');
+  knopf.classList.add('active');
+  if (!bewegt) { box.classList.remove('gleitet'); return; }
+  const g = document.createElement('span');
+  g.className = 'seg-gleiter';
+  g.setAttribute('aria-hidden', 'true');
+  Object.assign(g.style, { left: x0 + 'px', top: knopf.offsetTop + 'px',
+                           width: w0 + 'px', height: knopf.offsetHeight + 'px' });
+  box.insertBefore(g, box.firstChild);
+  _animFahren(g, [{ transform: 'translateX(0)', width: w0 + 'px' },
+                  { transform: `translateX(${knopf.offsetLeft - x0}px)`, width: knopf.offsetWidth + 'px' }],
+              { duration: SL_GLEIT_MS, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' })
+    .then(() => {
+      if (nr !== _slGleitNr) return;
+      // Reihenfolge: erst den eigenen Grund des Knopfs zurueck (solange `.gleitet` die
+      // Hintergrund-Transition noch abschaltet — sonst blendete er 0.15s nach), dann aufraeumen.
+      knopf.classList.remove('seg-gleitet');
+      void knopf.offsetWidth;
+      g.remove();
+      box.classList.remove('gleitet');
+    });
+}
+
 // PASSIVER MODUS. Der Schalter steht dauerhaft ueber dem Inhalt; wer gerade liest,
 // scrollt oder in einen anderen Tab wischt, braucht ihn nicht — dann schrumpft er auf
 // 70 %, bleibt aber sichtbar, bedienbar und an derselben Unterkante stehen. Ein Tipp
@@ -10492,7 +10547,13 @@ function initSeitenleiste() {
     const knopf = t.closest('#seitenleiste .seg-btn');
     if (!knopf) return;
     const tab = SEITEN_LEISTE[currentScreen];
-    if (tab) { tab.setzen(knopf.dataset.seite); seitenleisteAktualisieren(); }
+    if (!tab) return;
+    // Die Pille gleitet SOFORT zum getippten Knopf (21.09.2026) — die Seite selbst wechselt erst
+    // nach ihrem Ausblenden. Kein eigenes `seitenleisteAktualisieren()` mehr hinter `setzen`: Das
+    // lief, solange die Seite noch die alte war, und haette den Schalter mitten in der Bewegung
+    // neu gefuellt. Die `set*View` rufen es selbst, sobald die neue Seite gesetzt ist.
+    if (!knopf.classList.contains('active')) _slSchalterGleiten(knopf.closest('.seg-toggle'), knopf);
+    tab.setzen(knopf.dataset.seite);
   });
 }
 

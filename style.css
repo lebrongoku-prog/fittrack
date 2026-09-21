@@ -3550,6 +3550,19 @@ html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
 /* Die aktuelle Seite in der Tabfarbe mit weisser Schrift — HCCs `.zl-opt.aktiv`.
    Der durchsichtige Rahmen oben haelt die Knoepfe dabei gleich hoch. */
 .seg-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+/* GLEITENDE PILLE beim Tipp auf eine andere Seite (21.09.2026, `_slSchalterGleiten`): Eine eigene
+   Flaeche in der Farbe der aktiven Pille faehrt HINTER den Beschriftungen zur neuen Stelle.
+   Die Knoepfe liegen dafuer eine Ebene hoeher (`z-index: 1`). Waehrend der Bewegung hat der neue
+   Knopf keinen eigenen Grund, die Hintergrund-Transition ist aus (sonst blendete der alte Grund
+   0.15s lang neben der gleitenden Pille aus), und die Schriftfarben blenden in derselben Zeit um
+   wie die Pille faehrt (0.26s = `SL_GLEIT_MS`). */
+.seg-toggle > .seg-btn { position: relative; z-index: 1; }
+.seg-gleiter {
+  position: absolute; z-index: 0; pointer-events: none;
+  background: var(--accent); border-radius: 9px;
+}
+.seg-toggle.gleitet > .seg-btn { transition: color .26s cubic-bezier(.4,0,.2,1); }
+.seg-toggle > .seg-btn.active.seg-gleitet { background: transparent; border-color: transparent; }
 /* VIER Seiten (Plan-Tab seit 06.09.2026) statt zwei: Auf 375px bleiben je Knopf 82px.
    „Wettkämpfe" misst bei 13px 84px und waere gekuerzt worden — 12px und ein schmaleres
    seitliches Polster bringen es auf 78px. Nur dieser Umschalter ist betroffen, die
