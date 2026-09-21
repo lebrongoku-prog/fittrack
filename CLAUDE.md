@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v369**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v370**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1616,7 +1616,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `.seg-vier` — eine kuenftige dreiseitige Leiste bekaeme also automatisch keine von
   beiden.
   **SIE TAUCHT VON UNTEN AUF UND WIEDER AB** (`.sl-rein`/`.sl-raus` +
-  `@keyframes sl-auftauchen`/`sl-abtauchen`, je 0,2s — bis zum 21.09.2026 0,3s —, dieselbe
+  `@keyframes sl-auftauchen`/`sl-abtauchen`, je 0,25s — bis zum 21.09.2026 0,3s, dann kurz
+  0,2s, auf Leonards Wunsch wieder „etwas langsamer" —, dieselbe
   Kurve; Leonard-Wunsch 08.09.2026). Kommt man aus einem Tab OHNE Leiste (Uebersicht, Vollbild-Overlays), faehrt
   sie vom unteren Bildschirmrand herein; geht man dorthin zurueck, faehrt sie ebenso wieder
   hinaus — dieselbe Bewegungsrichtung, mit der die Bottom-Nav ein- und ausgleitet.
@@ -1637,7 +1638,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   1. `seitenleisteAktualisieren` laeuft in `_applyTabState` VOR dem Renderer statt danach —
      vorher wartete die Leiste zusaetzlich auf das Neuzeichnen des ganzen Tabs. Sie braucht
      nichts davon (nur Seiten-Tabelle und gewaehlte Seite, die kein Renderer setzt).
-  2. Alle Dauern rund 30 % kuerzer: Auf-/Abtauchen 300 → 200ms (`SL_ANIM_MS` und CSS),
+  2. Alle Dauern rund 30 % kuerzer: Auf-/Abtauchen 300 → 200ms (`SL_ANIM_MS` und CSS; noch am
+     selben Tag auf 250ms zurueck, Leonard: „etwas langsamer"),
      Ueberblenden 260/160/200/60 → 180/110/140/40ms (Breite/aus/ein/Vorlauf).
   3. **UMSCHALTEN AN DER 50-%-SCHWELLE** (v368, am selben Tag auf Leonards AUSDRUECKLICHEN
      Auftrag, EINZELN ausgeliefert): Der Scroll-Handler von `initTabScrollSync` ruft
@@ -1693,7 +1695,7 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   die Animation startet von selbst.
   VIER Dinge am ABTAUCHEN, die leicht schiefgehen:
   1. `hidden` darf erst NACH der Bewegung gesetzt werden, sonst ist die Leiste sofort weg.
-     Dafuer `SL_ANIM_MS` (200, bis 21.09.2026 300) und `_slAusTimer` — die Zahl MUSS zur `animation`-Angabe von
+     Dafuer `SL_ANIM_MS` (250, bis 21.09.2026 300) und `_slAusTimer` — die Zahl MUSS zur `animation`-Angabe von
      `.sl-raus` passen, sonst springt sie am Ende oder bleibt kurz stehen.
   2. KEIN `animationend`: Bei `prefers-reduced-motion` laeuft gar keine Animation, das
      Ereignis kaeme nie und die Leiste bliebe fuer immer stehen. Dort setzt das CSS
