@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v373**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v374**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -252,9 +252,34 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
      VORHER SCHON DA, nicht angefasst: „+ Zu Trainingstag"/„+ Zu Trainingsplan" (Katalog und
      Gymtag-Detail) laufen 3 bzw. 6px ueber ihren Knopf, „Schultern" in der Legende der
      Muskel-Landkarte 5px.
-  3. Dialoge und Einstellungen — offen.
-  Was noch feste px-Werte traegt, ist noch nicht umgestellt. Aeltere Groessenangaben in dieser
-  Datei (17.6, 15.84, 15.6, 15.4, 14.3, 12.1px …) sind fuer die umgestellten Stellen Vorgeschichte.
+  3. **Dialoge und Einstellungen** (v374): alle Blaetter (Titel 17 → 18px, Eintraege,
+     Formularbeschriftungen), Abschlussansicht samt Bestleistungskarte, Einheiten-Detail
+     (Zeitstrahl, Satz-Chips, Kacheln), Lauf-Detail, Zahlenblock (Titel, Unterzeile,
+     Schnellschritt-Tasten), Lesehilfen, Papierkorb, Cloud-Sync, Laufdaten-Karte, die
+     Absatztexte der Dialoge (inline in index.html) und die Leermeldungen.
+     `.hd-stat` (Kachel: Wert 16 → 18px, Beschriftung 9.5 → 11px) steckt AUCH in den
+     Wettkampf-Karten des Plan-Tabs — die Karte mit Werten ist dadurch 4.5px hoeher.
+     Bei Eingabefeldern (`.ex-notes-area`, `.ex-search-bar`, `.program-form-row input/textarea`)
+     standen 14/15px, die nie wirkten (die Regel `input, select, textarea` erzwingt 16px) —
+     dort steht jetzt 16px, sichtbar aendert sich nichts.
+  ERGEBNIS: Von 32 verschiedenen Groessen sind 15 uebrig. Davon sind Text: die fuenf Stufen
+  plus 12px im vierseitigen Seitenschalter. Der Rest: Symbolzeichen (14px in zwei 30px-Knoepfen,
+  16/18/22px ✕ › + ✓), Eingabefelder (16px Pflicht) und die grossen Einzelanzeigen
+  (20/24/26/28/38/40/44px). FESTE px-WERTE SIND DAMIT NUR NOCH AUSNAHMEN — wer eine neue Groesse
+  braucht, nimmt eine Stufe.
+  UEBERLAEUFE, die schon VOR der Skala da waren und mit Etappe 3 behoben sind:
+  - „+ Zu Trainingstag" (Katalog, 3px) und „+ Zu Trainingsplan" (Gymtag-Detail, 6px):
+    `.ex-item-actions button` hat `flex: 1 1 auto` statt `flex: 1` — die Knoepfe sind nicht
+    mehr gleich breit, sondern so breit wie ihre Beschriftung plus einem gleichen Anteil am Rest.
+  - „Schultern" in der Legende der Muskel-Landkarte (5px): Einzug der Figuren 2 statt 10px,
+    dazu „…" als Notbremse am Namen.
+  - Knopfzeile im Wettkampf-Dialog (Loeschen · Abbrechen · Speichern, 2px): Innenabstand 10
+    statt 18px, alle drei gleich breit.
+  GEMESSEN (375px, Vorher/Nachher): 24 Dialoge und die Einstellungen ohne Ueberlauf, Blaetter
+  0–23px hoeher bzw. die beiden Lesehilfen 33/38px flacher (Fliesstext 13.5 → 13px); Etappe 1
+  und 2 nachgemessen unveraendert sauber; keine Konsolenfehler.
+  Aeltere Groessenangaben in dieser Datei (17.6, 15.84, 15.6, 15.4, 14.3, 12.1px …) sind
+  Vorgeschichte.
   SICHTBARSTE AENDERUNGEN in Etappe 1: Nebentexte 12 → 13px (Zuletzt-Zeile, Satzkoepfe, Notizen,
   Kennzahl des Kalenders, Laufliste), Tableiste 10 → 11px, Herocard-Knoepfe 17.6 → 18px,
   Kalender-Fusszeile 16 → 15px (sie ist Text, kein Titel), Statuschip der Planliste 12.1 → 11px.

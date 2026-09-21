@@ -82,7 +82,9 @@
      um Prozente zu skalieren. Ausnahmen sind nur grosse Einzelanzeigen (Tabtitel, Uhr der
      Einheit, Zahlenblock, Bestleistungskarte, Kacheln der Abschlussansicht, Leer-Symbol).
      Umgestellt in Etappen: 1 = Uebersicht und Training (v372), 2 = Uebungen und Plan (v373),
-     3 = Dialoge und Einstellungen. Was noch feste px-Werte traegt, ist noch nicht dran. */
+     3 = Dialoge und Einstellungen (v374). FESTE px-WERTE stehen seither nur noch bei den
+     Ausnahmen oben, bei Symbolzeichen (✕, ›, +, ✓ — keine Schrift), bei Eingabefeldern
+     (16px Pflicht, sonst zoomt iOS) und beim vierseitigen Seitenschalter (12px, siehe dort). */
   --fs-etikett: 11px;   /* Chips, Pillen, Grossbuchstaben-Beschriftungen, Tableiste, Achsen */
   --fs-neben:   13px;   /* Metazeilen, Hinweise, Notizen, kleine Knoepfe, Seitenschalter */
   --fs-text:    15px;   /* Listen, Werte, Knoepfe, Wochentage, Kalender */
@@ -595,7 +597,7 @@ body.theme-plans .hist-action-dd {
 .ph-gear:active { transform: scale(.94); }
 
 /* ─── Cards ─── */
-.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin: 0 12px 12px; overflow: hidden; }.section-title { font-size: 17px; font-weight: 700; }/* ─── Buttons ─── */
+.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin: 0 12px 12px; overflow: hidden; }.section-title { font-size: var(--fs-betont); font-weight: 700; }/* ─── Buttons ─── */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 13px 18px; border: none; border-radius: var(--radius-sm); font-size: var(--fs-text); font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: opacity .15s, transform .1s; }
 .btn:active { opacity: .75; transform: scale(.97); }
 .btn-primary { background: var(--accent); color: #fff; }
@@ -612,8 +614,8 @@ body.theme-plans .hist-action-dd {
 /* ─── Empty State ─── */
 .empty { text-align: center; padding: 48px 24px; color: var(--text3); }
 .empty .ei { font-size: 44px; margin-bottom: 12px; }
-.empty h3 { font-size: 17px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
-.empty p { font-size: 14px; line-height: 1.5; }
+.empty h3 { font-size: var(--fs-betont); font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+.empty p { font-size: var(--fs-text); line-height: 1.5; }
 
 /* ══════════════════════════════════════
    SCREEN: ÜBERSICHT
@@ -708,10 +710,10 @@ body.theme-plans .hist-action-dd {
 }
 .plan-list-row.active { box-shadow: var(--shadow); }
 .plan-list-info { flex: 1; min-width: 0; }
-.plan-list-name { font-size: 16px; font-weight: 700; color: var(--text); }
-.plan-list-meta { font-size: 12px; color: var(--text3); margin-top: 3px; line-height: 1.4; }
+.plan-list-name { font-size: var(--fs-text); font-weight: 700; color: var(--text); }
+.plan-list-meta { font-size: var(--fs-neben); color: var(--text3); margin-top: 3px; line-height: 1.4; }
 .plan-list-tags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
-.plan-list-action { color: var(--text3); font-size: 18px; flex-shrink: 0; }
+.plan-list-action { color: var(--text3); font-size: var(--fs-betont); flex-shrink: 0; }
 
 /* ─── Gymtage: DREI Kacheln pro Zeile (Leonard-Wunsch 07.09.2026) ───
    Vorher lag jeder Tag als volle Zeile da. Das Raster sitzt auf der LISTE, die Kacheln
@@ -1149,8 +1151,8 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   user-select: none; -webkit-user-select: none;
 }
 .copy-day-info { flex: 1; min-width: 0; }
-.copy-day-name { font-size: 15px; font-weight: 600; color: var(--text); }
-.copy-day-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.copy-day-name { font-size: var(--fs-text); font-weight: 600; color: var(--text); }
+.copy-day-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
 .copy-day-expand {
   width: 30px; height: 30px;
   border-radius: 8px; border: none;
@@ -1175,7 +1177,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   border-radius: 10px;
   padding: 8px 12px;
   margin: 0 4px 10px;
-  font-size: 13px;
+  font-size: var(--fs-neben);
 }
 .copy-day-ex-row {
   display: flex; align-items: center; justify-content: space-between;
@@ -1184,10 +1186,10 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 }
 .copy-day-ex-row:last-child { border-bottom: none; }
 .copy-day-ex-name { color: var(--text2); font-weight: 500; }
-.copy-day-ex-meta { color: var(--text3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.copy-day-ex-meta { color: var(--text3); font-size: var(--fs-neben); font-variant-numeric: tabular-nums; }
 .copy-day-ex-empty {
   padding: 8px 0;
-  font-size: 12px; color: var(--text3); font-style: italic;
+  font-size: var(--fs-neben); color: var(--text3); font-style: italic;
   text-align: center;
 }.pdr-info { flex: 1; }
 .pdr-name { font-size: var(--fs-text); font-weight: 600; }
@@ -1214,7 +1216,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .sheet { background: var(--card); border-radius: 20px 20px 0 0; width: 100%; max-width: 600px; padding-bottom: calc(var(--safe-b) + 20px); max-height: 88vh; overflow-y: auto; -webkit-overflow-scrolling: touch; animation: slideUp .25s ease; }
 @keyframes slideUp { from { transform: translateY(60px); opacity: .6; } to { transform: translateY(0); opacity: 1; } }
 .sheet-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--border); margin: 10px auto 14px; }
-.sheet-title { font-size: 17px; font-weight: 700; padding: 0 20px 14px; border-bottom: 1px solid var(--border); }
+.sheet-title { font-size: var(--fs-betont); font-weight: 700; padding: 0 20px 14px; border-bottom: 1px solid var(--border); }
 .sheet-title.with-back { display: flex; align-items: center; gap: 10px; padding-left: 14px; }
 .sheet-back-btn {
   width: 32px; height: 32px; flex-shrink: 0;
@@ -1229,8 +1231,8 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .sheet-item { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid var(--border); cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .sheet-item:last-child { border-bottom: none; }
 .sheet-item:active { opacity: .6; }
-.sheet-item-name { font-size: 15px; font-weight: 500; }
-.sheet-item-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.sheet-item-name { font-size: var(--fs-text); font-weight: 500; }
+.sheet-item-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
 /* Muscle-color left stripe for exercise catalog items */
 .sheet-item.muscle-coded {
   border-left: 4px solid var(--c, var(--border));
@@ -1240,15 +1242,15 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .sheet-search { width: 100%; background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 14px; font-size: 16px; color: var(--text); margin-bottom: 10px; }
 .sheet-search:focus { outline: none; border-color: var(--accent); }
 .form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-.form-label { font-size: 13px; font-weight: 600; color: var(--text2); }
+.form-label { font-size: var(--fs-neben); font-weight: 600; color: var(--text2); }
 .form-input { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 16px; color: var(--text); width: 100%; }
 .form-input:focus { outline: none; border-color: var(--accent); }
 .form-select { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 16px; color: var(--text); width: 100%; -webkit-appearance: none; }/* ─── Detailansicht einer vergangenen Einheit (Zeitstrahl) ─── */
 /* Kennzahlen der Einheit als drei Kacheln über der Übungsliste. */
 .hd-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-bottom: 16px; }
 .hd-stat { background: var(--card2); border-radius: 12px; padding: 10px 6px; text-align: center; }
-.hd-stat b { display: block; font-size: 16px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
-.hd-stat span { display: block; font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text3); margin-top: 2px; }
+.hd-stat b { display: block; font-size: var(--fs-betont); font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.hd-stat span { display: block; font-size: var(--fs-etikett); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text3); margin-top: 2px; }
 
 /* Senkrechte Linie hinter den Nummernscheiben. Der Einzug muss zur Position der Scheiben
    passen (left: -30px im Schritt), sonst hängen sie neben der Linie. */
@@ -1262,15 +1264,15 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .hd-step-num {
   position: absolute; left: -30px; top: 0; width: 22px; height: 22px; border-radius: 50%;
   background: var(--mc, var(--accent)); color: #fff;
-  font-size: 11px; font-weight: 800;
+  font-size: var(--fs-etikett); font-weight: 800;
   display: flex; align-items: center; justify-content: center;
 }
-.hd-step-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-.hd-pr { background: var(--accent-bg); color: var(--accent); padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.hd-step-title { font-size: var(--fs-text); font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.hd-pr { background: var(--accent-bg); color: var(--accent); padding: 2px 8px; border-radius: 999px; font-size: var(--fs-etikett); font-weight: 700; }
 /* Einordnung gegenüber der letzten Einheit derselben Übung. */
 /* Abstand liegt oben statt unten, damit die Chips auch dann sauber sitzen, wenn die
    Zeile fehlt (Übung unverändert oder ohne Gewicht). */
-.hd-delta { font-size: 11.5px; font-weight: 700; margin: 5px 0 0; }
+.hd-delta { font-size: var(--fs-neben); font-weight: 700; margin: 5px 0 0; }
 .hd-delta-up   { color: var(--green); }
 .hd-delta-down { color: var(--text3); }
 .hd-delta-flat { color: var(--text3); font-weight: 600; }
@@ -1280,14 +1282,14 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .hd-chips { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; flex: 0 0 auto; }
 .hd-chip {
   background: var(--card2); border-radius: 7px; padding: 4px 8px;
-  font-size: 12.5px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums;
+  font-size: var(--fs-neben); font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums;
 }
 .hd-chip i { font-style: normal; color: var(--text3); font-weight: 600; }
 /* Rechte Spalte: Notiz (falls vorhanden) und darunter das Verlaufsdiagramm. Ohne Notiz
    beginnt das Diagramm genau dort, wo sonst die Notiz staende. */
 .hd-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .hd-note {
-  font-size: 12px; color: var(--text3); line-height: 1.45;
+  font-size: var(--fs-neben); color: var(--text3); line-height: 1.45;
   background: var(--card2); border-radius: 10px; padding: 10px 12px;
 }
 @media (max-width: 460px) {
@@ -1592,23 +1594,23 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 .toast-undo:active { transform: scale(.95); }
 
 /* ─── Papierkorb (Einstellungen) ─── */
-.trash-empty { padding: 14px; font-size: 13px; color: var(--text3); line-height: 1.45; }
+.trash-empty { padding: 14px; font-size: var(--fs-neben); color: var(--text3); line-height: 1.45; }
 .trash-row {
   display: flex; align-items: center; gap: 10px;
   padding: 11px 14px; border-bottom: 1px solid var(--border);
 }
 .trash-row:last-child { border-bottom: none; }
 .trash-info { flex: 1; min-width: 0; }
-.trash-name { font-size: 14px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
-.trash-meta { font-size: 12px; color: var(--text3); margin-top: 2px; line-height: 1.35; }
+.trash-name { font-size: var(--fs-text); font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.trash-meta { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; line-height: 1.35; }
 .trash-btn {
   flex-shrink: 0; border: none; border-radius: 9px;
   background: var(--card2); color: var(--accent-dark);
-  padding: 8px 11px; font-size: 13px; font-weight: 700;
+  padding: 8px 11px; font-size: var(--fs-neben); font-weight: 700;
   font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .trash-btn:active { transform: scale(.95); }
-.trash-btn-del { background: transparent; color: var(--text3); padding: 8px 6px; font-size: 15px; }
+.trash-btn-del { background: transparent; color: var(--text3); padding: 8px 6px; font-size: var(--fs-text); }
 
 /* Gewichtsentwicklung im Übungs-Detail */
 .ex-chart-wrap { height: 150px; margin: 2px 0 12px; }
@@ -2344,40 +2346,40 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .aex-skip-btn { margin-left: auto; }
 
 /* ─── Abschluss einer Einheit ─── */
-.sum-day { margin-bottom: 14px; font-size: 15px; }
+.sum-day { margin-bottom: 14px; font-size: var(--fs-text); }
 .sum-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .sum-stat {
   background: var(--card2); border-radius: 12px; padding: 12px 14px;
   display: flex; flex-direction: column; gap: 2px;
 }
 .sum-stat-val { font-size: 20px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
-.sum-stat-lbl { font-size: 12px; color: var(--text3); }
-.sum-delta { margin-top: 12px; font-size: 14px; font-weight: 600; }
+.sum-stat-lbl { font-size: var(--fs-neben); color: var(--text3); }
+.sum-delta { margin-top: 12px; font-size: var(--fs-text); font-weight: 600; }
 .sum-delta.up   { color: var(--green); }
 .sum-delta.down { color: var(--text2); }
 .sum-delta.flat { color: var(--text3); font-weight: 500; }
-.sum-pr-head { margin-top: 18px; font-size: 12px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--accent); }
+.sum-pr-head { margin-top: 18px; font-size: var(--fs-etikett); font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--accent); }
 .sum-pr-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .sum-pr-row {
   display: flex; align-items: baseline; gap: 10px;
   background: var(--green-bg); border-radius: 10px; padding: 9px 12px;
 }
-.sum-pr-name { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--text); }
-.sum-pr-val { font-size: 14px; font-weight: 800; color: var(--green); white-space: nowrap; }
-.sum-pr-prev { font-size: 12px; font-weight: 500; color: var(--text3); }
+.sum-pr-name { flex: 1; min-width: 0; font-size: var(--fs-text); font-weight: 600; color: var(--text); }
+.sum-pr-val { font-size: var(--fs-text); font-weight: 800; color: var(--green); white-space: nowrap; }
+.sum-pr-prev { font-size: var(--fs-neben); font-weight: 500; color: var(--text3); }
 /* ─── Bestleistungs-Moment ─── */
 .pr-card {
   margin: 18px 0 6px; padding: 20px 16px; border-radius: 16px;
   background: #0F172A; text-align: center;
 }
-.pr-card-lbl { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #5DBBA8; }
+.pr-card-lbl { font-size: var(--fs-etikett); font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #5DBBA8; }
 .pr-card-val { font-size: 38px; font-weight: 800; color: #fff; line-height: 1.1; margin-top: 10px; letter-spacing: -1px; }
-.pr-card-name { font-size: 14px; color: #CBD5E1; margin-top: 6px; line-height: 1.35; }
-.pr-card-foot { font-size: 12px; color: #94A3B8; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.12); }
+.pr-card-name { font-size: var(--fs-text); color: #CBD5E1; margin-top: 6px; line-height: 1.35; }
+.pr-card-foot { font-size: var(--fs-neben); color: #94A3B8; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.12); }
 .pr-card-btn {
   margin-top: 14px; padding: 10px 18px; border-radius: 10px; border: none;
   background: rgba(255,255,255,0.14); color: #fff;
-  font-size: 13px; font-weight: 700; font-family: inherit;
+  font-size: var(--fs-neben); font-weight: 700; font-family: inherit;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .pr-card-btn:active { transform: scale(.96); }
@@ -2395,8 +2397,8 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 @media (prefers-reduced-motion: reduce) { .pr-burst { display: none; } }
 
 .sum-planupd { margin-top: 18px; padding: 11px 13px; background: var(--card2); border-radius: 12px; }
-.sum-planupd-head { font-size: 12px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--text3); margin-bottom: 5px; }
-.sum-planupd-row { font-size: 13px; color: var(--text2); line-height: 1.45; }
+.sum-planupd-head { font-size: var(--fs-etikett); font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--text3); margin-bottom: 5px; }
+.sum-planupd-row { font-size: var(--fs-neben); color: var(--text2); line-height: 1.45; }
 .sum-planupd-row strong { color: var(--text); }
 
 /* ═══════════════════════════════════
@@ -2427,7 +2429,7 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 }
 .info-btn:active { border-color: var(--accent); color: var(--accent); }
 /* Fließtext in Erklär-Dialogen */
-.info-text { font-size: 13.5px; line-height: 1.55; color: var(--text2); }
+.info-text { font-size: var(--fs-neben); line-height: 1.55; color: var(--text2); }
 .info-text p { margin: 0 0 12px; }
 .info-text b { color: var(--text); }
 /* Kennzahl rechts im Kalenderkopf. Bricht bei schmalem Bildschirm als Ganzes um,
@@ -2440,8 +2442,8 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .muscle-bars-v2 { padding: 4px 0 8px; }/* ─── Zahlenblock ─── */
 .np-sheet { padding-bottom: calc(12px + var(--safe-b)); }
 .np-head { padding: 2px 18px 0; }
-.np-title { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.3; }
-.np-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.np-title { font-size: var(--fs-text); font-weight: 700; color: var(--text); line-height: 1.3; }
+.np-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
 .np-display {
   display: flex; align-items: baseline; justify-content: center; gap: 6px;
   padding: 14px 18px 12px;
@@ -2467,7 +2469,7 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .np-quick-btn {
   padding: 11px 4px; border-radius: 11px; border: none;
   background: var(--accent-bg); color: var(--accent-dark);
-  font-size: 14px; font-weight: 700; font-family: inherit;
+  font-size: var(--fs-text); font-weight: 700; font-family: inherit;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .np-quick-btn:active { transform: scale(.95); }
@@ -2489,7 +2491,10 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .mmap-body { display: flex; align-items: center; gap: 14px; width: 100%; }
 /* Die Figuren sind eingerueckt (`padding-left`): Das nimmt der Legende Breite weg, wodurch
    Muskelname und Wert enger zusammenruecken (Leonard-Wunsch 01.09.2026). */
-.mmap-figures { display: flex; justify-content: center; gap: 10px; padding: 6px 0 2px 10px; flex-shrink: 0; }
+/* Einzug links 2px statt 10px (21.09.2026): Mit 10px wurde „Schultern" in der Legende um 5px
+   abgeschnitten. Die Legende rueckt dadurch 8px nach links; Name und Wert stehen weiter nah
+   beieinander. */
+.mmap-figures { display: flex; justify-content: center; gap: 10px; padding: 6px 0 2px 2px; flex-shrink: 0; }
 .mmap-fig { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 /* 84px ist praktisch das Maximum: Groesser fressen die beiden Figuren der Legende so viel
    Breite weg, dass „Schultern" und der Wert daneben umbrechen. */
@@ -2505,16 +2510,18 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .mmap-legend-row { display: flex; align-items: center; gap: 7px; padding: 3px 0; }
 .mmap-legend-row.mmap-legend-off { opacity: .45; }
 .mmap-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
-.mmap-legend-name { flex: 1; min-width: 0; font-size: var(--fs-neben); color: var(--text2); }
+.mmap-legend-name { flex: 1; min-width: 0; font-size: var(--fs-neben); color: var(--text2);
+  /* Notbremse bei ungewoehnlich breiten Werten: lieber „Schult…" als ein Name, der in den Wert laeuft. */
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mmap-legend-val { font-size: var(--fs-neben); font-weight: 600; color: var(--text); }
 
 /* ─── Laufen (Tab 5) ─── */
 .lauf-quelle { display: flex; align-items: center; gap: 12px; }
 /* Die Karte steht in den Einstellungen; .mehr-card bringt kein Polster mit. */
 #run-source-card .lauf-quelle { padding: 14px; }
-.lauf-quelle-txt { flex: 1; min-width: 0; font-size: 13px; color: var(--text2); line-height: 1.45; }
-.lauf-dim { color: var(--text3); font-size: 12px; }
-.lauf-fehler { margin-top: 6px; color: var(--red); font-size: 12px; line-height: 1.4; }
+.lauf-quelle-txt { flex: 1; min-width: 0; font-size: var(--fs-neben); color: var(--text2); line-height: 1.45; }
+.lauf-dim { color: var(--text3); font-size: var(--fs-neben); }
+.lauf-fehler { margin-top: 6px; color: var(--red); font-size: var(--fs-neben); line-height: 1.4; }
 .lauf-woche { display: flex; gap: 10px; }
 .lauf-kennz { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .lauf-kennz-v { font-size: var(--fs-betont); font-weight: 700; color: var(--text); }
@@ -2628,6 +2635,10 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
 /* Knopfzeile im Notizfenster. */
 .run-note-actions { display: flex; gap: 8px; margin-top: 12px; }
 .run-note-actions .btn { flex: 1; }
+/* Drei Knoepfe (Wettkampf-Dialog: Loeschen · Abbrechen · Speichern) liefen mit dem normalen
+   18px-Innenabstand 2px ueber die Zeile (gemessen 21.09.2026). Mit 10px sind alle drei gleich
+   breit (106px auf 375px) und passen. */
+.run-note-actions .btn { min-width: 0; padding-left: 10px; padding-right: 10px; }
 /* Das unsichtbare Bedienelement MUSS 16px tragen — sonst zoomt iOS beim Fokussieren hinein. */
 .lp-zone-sel {
   position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 16px;
@@ -2852,14 +2863,14 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
 .run-detail-stats { grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); }
 .run-detail-zeile {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-  padding: 9px 0; font-size: 14px; color: var(--text3);
+  padding: 9px 0; font-size: var(--fs-text); color: var(--text3);
 }
 .run-detail-zeile + .run-detail-zeile { border-top: 1px solid var(--border); }
 .run-detail-zeile strong { color: var(--text); font-weight: 600; text-align: right; }
-.run-detail-notiz { padding: 9px 0; border-top: 1px solid var(--border); font-size: 14px; }
+.run-detail-notiz { padding: 9px 0; border-top: 1px solid var(--border); font-size: var(--fs-text); }
 .run-detail-notiz span { color: var(--text3); }
 .run-detail-notiz p { margin: 4px 0 0; color: var(--text); line-height: 1.45; white-space: pre-wrap; }
-.run-detail-quelle { margin: 12px 0 0; font-size: 12px; color: var(--text3); line-height: 1.45; }
+.run-detail-quelle { margin: 12px 0 0; font-size: var(--fs-neben); color: var(--text3); line-height: 1.45; }
 .cal-detail-run.geplant { color: var(--text3); }
 /* Fusszeile: Datum in Zeile 1, Trainingstag in Zeile 2. Ist der Tag aufgezeichnet, ist die
    zweite Zeile ein Ausklapp-Knopf mit den Eckdaten der Einheit darunter. */
@@ -2985,8 +2996,8 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .cal-reset-btn svg { width: 11px; height: 11px; display: block; }
 .cal-head-right .cal-stats { margin-left: 0; }
 /* Legende steht nur noch im Erklaer-Dialog, nicht mehr in der Karte. */
-.cal-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 11px; color: var(--text3); }
-.cal-legend-modal { gap: 10px 18px; margin: 14px 0 0; font-size: 12.5px; color: var(--text2); }
+.cal-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: var(--fs-etikett); color: var(--text3); }
+.cal-legend-modal { gap: 10px 18px; margin: 14px 0 0; font-size: var(--fs-neben); color: var(--text2); }
 .cal-legend > span { display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
 .cal-legend i { position: relative; flex: 0 0 13px; width: 13px; height: 13px; border-radius: 3px; display: inline-block; background: var(--border); }
 /* Die Muster der Legende bilden die Kaestchen nach — sie muessen mitwandern, wenn sich der
@@ -3075,7 +3086,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 
 .ex-group { margin: 0 12px 14px; }
 .ex-group-title {
-  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+  font-size: var(--fs-etikett); font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
   margin: 0 4px 8px;
   color: rgba(255,255,255,0.92);
   display: flex; align-items: center; gap: 6px;
@@ -3166,7 +3177,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
   width: 22px; height: 22px; flex-shrink: 0;
   border: 2px solid var(--border); border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 800; color: transparent; line-height: 1;
+  font-size: var(--fs-neben); font-weight: 800; color: transparent; line-height: 1;
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 .plan-add-check.checked { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -3195,8 +3206,8 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 }
 #modal-day-to-plan .day-pick-row.in-day .day-pick-info { opacity: 1; }
 .day-pick-info { flex: 1; min-width: 0; }
-.day-pick-name { font-size: 15px; font-weight: 600; color: var(--text); }
-.day-pick-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.day-pick-name { font-size: var(--fs-text); font-weight: 600; color: var(--text); }
+.day-pick-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
 .day-pick-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .day-pick-icon { color: var(--accent); font-size: 22px; font-weight: 700; line-height: 1; }
 .day-pick-icon.done { color: var(--green); }
@@ -3217,7 +3228,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .ex-item-body-label { font-size: var(--fs-etikett); font-weight: 700; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
 .ex-notes-area {
   width: 100%; background: var(--card2); border: 1px solid transparent; border-radius: 8px;
-  padding: 10px 12px; font-size: 14px; min-height: 70px; font-family: inherit; line-height: 1.4;
+  padding: 10px 12px; font-size: 16px; min-height: 70px; font-family: inherit; line-height: 1.4;
   color: var(--text); resize: vertical;
 }
 .ex-notes-area:focus { outline: none; border-color: var(--accent); background: #fff; }
@@ -3227,7 +3238,10 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
   display: flex; gap: 6px; margin-top: 10px;
 }
 .ex-item-actions button {
-  flex: 1; min-width: 0; padding: 8px 8px; border-radius: 8px; border: 1px solid var(--border);
+  /* `1 1 auto` statt `flex: 1` (21.09.2026): Bei gleich breiten Knoepfen lief „+ Zu Trainingstag"
+     (Katalog) 3px und „+ Zu Trainingsplan" (Gymtag-Detail) 6px ueber. Jetzt richtet sich die
+     Breite nach der Beschriftung, der Rest der Zeile wird verteilt. */
+  flex: 1 1 auto; min-width: 0; padding: 8px 8px; border-radius: 8px; border: 1px solid var(--border);
   background: var(--card); color: var(--text2); font-size: var(--fs-neben); font-weight: 600;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   display: inline-flex; align-items: center; justify-content: center; gap: 4px;
@@ -3241,7 +3255,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .ex-search-wrap { padding: 0 var(--screen-pad, 14px) 10px; }
 .ex-search-bar {
   width: 100%; background: rgba(255,255,255,0.92); border: 1px solid rgba(255,255,255,0.5);
-  border-radius: 10px; padding: 10px 12px; font-size: 15px; font-family: inherit; color: var(--text);
+  border-radius: 10px; padding: 10px 12px; font-size: 16px; font-family: inherit; color: var(--text);
   -webkit-appearance: none; box-shadow: 0 1px 4px rgba(15,23,42,0.06);
 }
 .ex-search-bar:focus { outline: none; border-color: var(--accent); background: #fff; }
@@ -3273,7 +3287,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .program-form-row label { font-size: var(--fs-neben); color: var(--text3); font-weight: 600; }
 /* color MUSS gesetzt sein: <input> erbt die Textfarbe nicht, sonst bleibt sie beim
    Browser-Schwarz — im Glas-Modus auf dem Schleier unlesbar. */
-.program-form-row input { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 15px; color: var(--text); }
+.program-form-row input { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 16px; color: var(--text); }
 /* Datumsfelder erben die Schrift NICHT von selbst — der Browser setzt sie auf Monospace.
    Das ist nicht nur ein Bruch gegenueber den uebrigen Feldern, es kostet auch Breite:
    „03.09.2026" misst in Monospace 97px, in der App-Schrift 85px. Erst damit passen Start
@@ -3282,11 +3296,11 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .program-form-row input:focus { outline: none; border-color: var(--accent); }
 .program-form-row textarea, .program-form-textarea {
   background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-  padding: 10px 12px; font-size: 15px; font-family: inherit; color: var(--text);
+  padding: 10px 12px; font-size: 16px; font-family: inherit; color: var(--text);
   resize: vertical; min-height: 60px; line-height: 1.4; width: 100%;
 }
 .program-form-row textarea:focus, .program-form-textarea:focus { outline: none; border-color: var(--accent); }
-.day-addto-sub { font-size: 12px; color: var(--text3); padding: 10px 16px 4px; line-height: 1.4; }
+.day-addto-sub { font-size: var(--fs-neben); color: var(--text3); padding: 10px 16px 4px; line-height: 1.4; }
 
 /* ── Zeitstrahl der Wettkaempfe (09.09.2026, Leonard-Wunsch) ───────────────────
    Zweite Ansicht der Seite „Wettkämpfe", umgeschaltet ueber den Knopf links neben dem „+".
@@ -3627,7 +3641,7 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
 /* Verlauf-Zeitraum-Dropdown-Optionen */
 .hist-range-option {
   padding: 14px 16px; border-radius: 10px;
-  font-size: 15px; font-weight: 600; color: var(--text);
+  font-size: var(--fs-text); font-weight: 600; color: var(--text);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   background: var(--card2); margin-bottom: 8px;
   display: flex; align-items: center; justify-content: space-between;
@@ -3673,8 +3687,8 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
   box-shadow: 0 0 0 3px rgba(22,163,74,.15);
 }
 .drive-status-text { flex: 1; min-width: 0; }
-.drive-status-label { font-size: 15px; font-weight: 700; color: var(--text); }
-.drive-status-sub { font-size: 12px; color: var(--text3); margin-top: 2px; line-height: 1.4; word-break: break-word; }
+.drive-status-label { font-size: var(--fs-text); font-weight: 700; color: var(--text); }
+.drive-status-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; line-height: 1.4; word-break: break-word; }
 
 /* Spinner während aktivem Sync */
 .drive-sync-indicator {
@@ -3704,8 +3718,8 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
   display: flex; align-items: center; padding: 8px 0;
   -webkit-tap-highlight-color: transparent;
 }
-.drive-row-label { flex: 1; font-size: 14px; font-weight: 600; color: var(--text); }
-.drive-row-toggle { font-size: 14px; color: var(--text3); display: flex; align-items: center; }
+.drive-row-label { flex: 1; font-size: var(--fs-text); font-weight: 600; color: var(--text); }
+.drive-row-toggle { font-size: var(--fs-text); color: var(--text3); display: flex; align-items: center; }
 .drive-row-toggle .aex-v2-chev { width: 20px; height: 20px; color: inherit; }
 .drive-row-toggle .aex-v2-chev svg { width: 17px; height: 17px; }
 .drive-row[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
@@ -3718,7 +3732,7 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
 }
 .drive-debug-row {
   display: flex; justify-content: space-between; gap: 10px;
-  padding: 5px 0; font-size: 12px;
+  padding: 5px 0; font-size: var(--fs-neben);
   border-bottom: 1px solid var(--border);
 }
 .drive-debug-row:last-child { border-bottom: none; }
@@ -3728,7 +3742,7 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
 /* Log */
 .drive-log-head {
   display: flex; align-items: center; justify-content: space-between;
-  font-size: 13px; font-weight: 700; color: var(--text2);
+  font-size: var(--fs-neben); font-weight: 700; color: var(--text2);
   margin-bottom: 8px;
 }
 .drive-log {
@@ -3736,7 +3750,7 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
   padding: 8px 10px;
   max-height: 220px; overflow-y: auto;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11.5px; line-height: 1.5;
+  font-size: var(--fs-etikett); line-height: 1.5;
 }
 .drive-log-empty { color: var(--text3); text-align: center; padding: 8px 0; font-style: italic; }
 .drive-log-entry {
@@ -3952,8 +3966,8 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
 .drive-conflict-side {
   background: var(--card2); border-radius: 12px; padding: 12px;
 }
-.drive-conflict-head { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
-.drive-conflict-meta { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.drive-conflict-head { font-size: var(--fs-neben); font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.drive-conflict-meta { font-size: var(--fs-neben); color: var(--text2); line-height: 1.5; }
 @media (max-width: 480px) {
   .drive-conflict-compare { grid-template-columns: 1fr; }
 }
@@ -4010,7 +4024,7 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
      darueber und schluckt den Tipp. */
   position: absolute; top: 0; right: 0; z-index: 1;
   background: none; border: none; padding: 0; font-family: inherit;
-  font-size: 11.5px; font-weight: 700; color: var(--accent);
+  font-size: var(--fs-etikett); font-weight: 700; color: var(--accent);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .hd-toggle-all:active { opacity: .6; }

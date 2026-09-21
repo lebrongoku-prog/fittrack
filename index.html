@@ -424,7 +424,7 @@
             <div class="divider" style="margin:14px 0"></div>
             <div class="drive-log-head">
               <span>Sync-Log</span>
-              <a onclick="clearDriveLog()" style="font-size:12px;color:var(--text3);cursor:pointer">Leeren</a>
+              <a onclick="clearDriveLog()" style="font-size:var(--fs-neben);color:var(--text3);cursor:pointer">Leeren</a>
             </div>
             <div class="drive-log" id="drive-log"></div>
             <div class="divider" style="margin:14px 0"></div>
@@ -724,7 +724,7 @@
     <div class="sheet-handle"></div>
     <div class="sheet-title" id="confirm-action-title">Wirklich?</div>
     <div class="sheet-body">
-      <p id="confirm-action-msg" style="font-size:15px;color:var(--text2);margin-bottom:18px;line-height:1.5"></p>
+      <p id="confirm-action-msg" style="font-size:var(--fs-text);color:var(--text2);margin-bottom:18px;line-height:1.5"></p>
       <div style="display:flex;flex-direction:column;gap:10px">
         <button class="btn btn-full" id="confirm-action-yes" onclick="confirmActionYes()">Bestätigen</button>
         <button class="btn btn-ghost btn-full" onclick="confirmActionNo()">Abbrechen</button>
@@ -781,7 +781,7 @@
     <div class="sheet-handle"></div>
     <div class="sheet-title">Nächste Einheit starten?</div>
     <div class="sheet-body">
-      <p id="modal-confirm-start-info" style="font-size:14px;color:var(--text2);margin-bottom:18px;line-height:1.5"></p>
+      <p id="modal-confirm-start-info" style="font-size:var(--fs-text);color:var(--text2);margin-bottom:18px;line-height:1.5"></p>
       <div style="display:flex;flex-direction:column;gap:10px">
         <button class="btn btn-primary btn-full" onclick="confirmStartYes()">Ja, jetzt starten</button>
         <button class="btn btn-ghost btn-full" onclick="confirmStartNo()">Nein</button>
@@ -827,7 +827,7 @@
     <div class="sheet-handle"></div>
     <div class="sheet-title">Einheit beenden?</div>
     <div class="sheet-body">
-      <p style="font-size:15px;color:var(--text2);margin-bottom:20px;line-height:1.5">Deine Einheit wird gespeichert. Neue Bestleistungen werden erkannt und angezeigt.</p>
+      <p style="font-size:var(--fs-text);color:var(--text2);margin-bottom:20px;line-height:1.5">Deine Einheit wird gespeichert. Neue Bestleistungen werden erkannt und angezeigt.</p>
       <div style="display:flex;flex-direction:column;gap:10px">
         <button class="btn btn-primary btn-full" onclick="finishWorkout()">Einheit speichern</button>
         <button class="btn btn-ghost btn-full" onclick="closeModal('modal-finish')">Weiter trainieren</button>
@@ -917,7 +917,7 @@
     <div class="sheet-handle"></div>
     <div class="sheet-title">Neuen Trainingsplan</div>
     <div class="sheet-body">
-      <p style="font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.5">Wie möchtest du starten?</p>
+      <p style="font-size:var(--fs-text);color:var(--text2);margin-bottom:16px;line-height:1.5">Wie möchtest du starten?</p>
       <div style="display:flex;flex-direction:column;gap:10px">
         <button class="btn btn-primary btn-full" onclick="openPlanTemplateModal()">⚡ Aus Vorlage</button>
         <button class="btn btn-outline btn-full" onclick="openPlanCopyModal()">📋 Bestehenden Plan kopieren</button>
@@ -956,7 +956,7 @@
       <span>Plan zum Kopieren wählen</span>
     </div>
     <div class="sheet-body">
-      <p style="font-size:13px;color:var(--text3);margin-bottom:12px;line-height:1.4">Erstellt eine unabhängige Kopie (eigene Trainingstage) — das Original bleibt unberührt.</p>
+      <p style="font-size:var(--fs-neben);color:var(--text3);margin-bottom:12px;line-height:1.4">Erstellt eine unabhängige Kopie (eigene Trainingstage) — das Original bleibt unberührt.</p>
       <div class="sheet-list" id="plan-copy-list"></div>
       <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="closeModal('modal-plan-copy')">Abbrechen</button>
     </div>
@@ -970,7 +970,7 @@
     <div class="sheet-handle"></div>
     <div class="sheet-title">Trainingstag hinzufügen</div>
     <div class="sheet-body">
-      <p style="font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.5">Wie möchtest du den Trainingstag anlegen?</p>
+      <p style="font-size:var(--fs-text);color:var(--text2);margin-bottom:16px;line-height:1.5">Wie möchtest du den Trainingstag anlegen?</p>
       <div style="display:flex;flex-direction:column;gap:10px">
         <button class="btn btn-primary btn-full" onclick="openCopyPlanDayPicker()" id="copy-plan-day-btn">Aus Bibliothek hinzufügen</button>
         <button class="btn btn-outline btn-full" onclick="addNewPlanDayFromScratch()">Neuen Trainingstag erstellen</button>
@@ -1006,7 +1006,7 @@
     <div class="sheet-handle"></div>
     <div class="sheet-title">Trainingsplan importieren?</div>
     <div class="sheet-body">
-      <p id="plan-import-summary" style="font-size:14px;color:var(--text2);margin-bottom:18px;line-height:1.5"></p>
+      <p id="plan-import-summary" style="font-size:var(--fs-text);color:var(--text2);margin-bottom:18px;line-height:1.5"></p>
       <div style="display:flex;flex-direction:column;gap:10px">
         <button class="btn btn-primary btn-full" onclick="confirmPlanImport()">Importieren</button>
         <button class="btn btn-ghost btn-full" onclick="cancelPlanImport()">Abbrechen</button>
@@ -1021,7 +1021,7 @@
     <div class="sheet-handle"></div>
     <div class="sheet-title">Übungen importieren?</div>
     <div class="sheet-body">
-      <p id="exercises-import-summary" style="font-size:14px;color:var(--text2);margin-bottom:18px;line-height:1.5"></p>
+      <p id="exercises-import-summary" style="font-size:var(--fs-text);color:var(--text2);margin-bottom:18px;line-height:1.5"></p>
       <div style="display:flex;flex-direction:column;gap:10px">
         <button class="btn btn-primary btn-full" onclick="confirmExercisesImport()">Importieren</button>
         <button class="btn btn-ghost btn-full" onclick="cancelExercisesImport()">Abbrechen</button>
@@ -1036,7 +1036,7 @@
     <div class="sheet-handle"></div>
     <div class="sheet-title">Sync-Konflikt erkannt</div>
     <div class="sheet-body">
-      <p style="font-size:14px;color:var(--text2);margin-bottom:14px;line-height:1.5">
+      <p style="font-size:var(--fs-text);color:var(--text2);margin-bottom:14px;line-height:1.5">
         Die Daten in der Cloud und auf diesem Gerät unterscheiden sich. Welche Version möchtest du behalten?
       </p>
       <div class="drive-conflict-compare">

@@ -9306,7 +9306,7 @@ function renderTrash() {
   if (!wrap) return;
   const trash = DB.getTrash();
   if (head) head.innerHTML = trash.length
-    ? `<a onclick="emptyTrash()" style="font-size:13px;color:var(--red);cursor:pointer">Leeren</a>` : '';
+    ? `<a onclick="emptyTrash()" style="font-size:var(--fs-neben);color:var(--red);cursor:pointer">Leeren</a>` : '';
   if (!trash.length) {
     wrap.innerHTML = `<div class="trash-empty">Nichts gelöscht. Was du löschst, liegt hier ${TRASH_KEEP_DAYS} Tage lang und lässt sich zurückholen.</div>`;
     return;
