@@ -10297,10 +10297,14 @@ function seitenleisteBauen() {
 
 // Fuellt den Schalter mit den Seiten des GERADE sichtbaren Tabs. Laeuft bei jedem
 // Tabwechsel (`_applyTabState`) und bei jedem Seitenwechsel (`set*View`).
-function seitenleisteAktualisieren() {
+// `ziel` (21.09.2026): Beim WISCH laeuft sie schon an der 50-%-Schwelle, wenn `currentScreen`
+// noch der alte Tab ist (gesetzt wird er erst beim Einrasten) — der Scroll-Handler nennt den
+// kommenden Tab deshalb ausdruecklich. Ohne Angabe gilt `currentScreen`.
+function seitenleisteAktualisieren(ziel) {
   const el = document.getElementById('seitenleiste');
   if (!el) return;
-  const tab = SEITEN_LEISTE[currentScreen];
+  const tabName = ziel || currentScreen;
+  const tab = SEITEN_LEISTE[tabName];
 
   // AUF- UND ABTAUCHEN am unteren Bildschirmrand (Leonard-Wunsch 08.09.2026). Nur beim
   // UEBERGANG zwischen „Tab ohne Leiste" und „Tab mit Leiste" — zwischen zwei Tabs MIT
@@ -10349,7 +10353,13 @@ function seitenleisteAktualisieren() {
   if (!box) return;
   // Vier Knoepfe brauchen die engere Schrift — genau wie frueher im Kopf. Zwei Knoepfe
   // brauchen umgekehrt die Breite nicht und stehen 30 % schmaler mittig (`.seg-zwei`).
+  // KENNUNG des Inhalts: Beim Wisch hat die 50-%-Schwelle den Schalter schon umgestellt, und das
+  // Einrasten ruft diese Funktion ueber `_applyTabState` NOCHMAL mit demselben Stand. Ein zweites
+  // Fuellen braeche die laufende Einblendung der neuen Beschriftungen ab (sie stuenden
+  // schlagartig da) — bei gleicher Kennung bleibt der Schalter deshalb, wie er ist.
+  const kennung = tabName + '|' + seiten.map(([k, t]) => k + ':' + t).join(',') + '|' + jetzt;
   const fuellen = () => {
+    box.dataset.kennung = kennung;
     box.classList.toggle('seg-vier', seiten.length >= 4);
     box.classList.toggle('seg-zwei', seiten.length === 2);
     // Eine noch ausblendende alte Beschriftung (`.sl-alt`, siehe `_slUeberblenden`) bleibt stehen.
@@ -10362,10 +10372,10 @@ function seitenleisteAktualisieren() {
   // Wechsel zwischen zwei Tabs, die BEIDE eine Leiste haben: ueberblenden statt springen.
   // Nur wenn die Leiste schon stand (nicht beim Auftauchen) und der Tab ein anderer ist — ein
   // Seitenwechsel im selben Tab schaltet nur die aktive Pille um.
-  const blenden = !tauchtAuf && _slTab && _slTab !== currentScreen;
-  _slTab = currentScreen;
+  const blenden = !tauchtAuf && _slTab && _slTab !== tabName;
+  _slTab = tabName;
   if (blenden) _slUeberblenden(box, fuellen);
-  else fuellen();
+  else if (box.dataset.kennung !== kennung) fuellen();
 }
 
 // ── Wechsel der Seitenleiste zwischen zwei Tabs: UEBERBLENDEN (18.09.2026, Leonard-Wunsch) ──
@@ -10524,6 +10534,17 @@ function initTabScrollSync() {
       // Theme + Nav-Highlight schon WAEHREND des Snaps wechseln (responsiv);
       // der "schwere" Renderer kommt erst im Settle.
       if (name !== lastReported) {
+        // SEITENLEISTE SCHON HIER UMSCHALTEN, nicht erst beim Einrasten (21.09.2026, auf
+        // Leonards ausdruecklichen Auftrag, EINZELN ausgeliefert — siehe „AM WISCHEN NICHTS
+        // AENDERN"). Auftauchen, Abtauchen und Ueberblenden beginnen damit mitten im Wisch.
+        // BEWUSST VOR dem Wechsel der Theme-Klasse: Die Leiste misst ihre Breite
+        // (`offsetWidth`) und erzwingt damit ein Layout. Vorher ist das Dokument noch sauber und
+        // das Messen billig; nach dem Klassenwechsel am body muesste der Browser dafuer sofort
+        // die Stile der ganzen Seite neu rechnen — mitten in der Geste.
+        // Das Einrasten ruft sie ueber `_applyTabState` noch einmal; die Kennung in
+        // `seitenleisteAktualisieren` laesst den Schalter dann stehen.
+        // ZURUECKNEHMEN: diese eine Zeile entfernen.
+        seitenleisteAktualisieren(name);
         // Der Wisch blendet die Tableiste aus (Leonard-Wunsch 12.09.2026) — hier, weil der
         // Handler die Schwelle von 50 % ohnehin schon kennt. Deckt den Fingerwisch UND die
         // programmatische Fahrt aus `wischeZuTab` ab; der harte Wechsel ueber die Tableiste

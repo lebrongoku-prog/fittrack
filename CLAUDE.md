@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v367**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v368**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1627,8 +1627,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   bleibt er stehen, die alten Beschriftungen blenden aus (110ms), die neuen nach 40ms ein
   (140ms), und die BREITE gleitet auf die neue Knopfzahl (180ms; zweiseitig 243px ↔ vierseitig
   347px auf 375px). Welcher Tab zuletzt im Schalter stand, merkt `_slTab`.
-  AUSGELOEST BEIM EINRASTEN des Wischs (Settle → `_applyTabState`), ebenso beim Tipp auf die
-  Tableiste. Die Geste selbst ist unangetastet (siehe „AM WISCHEN NICHTS AENDERN").
+  AUSGELOEST beim WISCH seit dem 21.09.2026 an der 50-%-SCHWELLE (siehe unten), beim Tipp auf
+  die Tableiste ueber `_applyTabState`.
   **SEIT DEM 21.09.2026 SCHNELLER** (Leonard-Wunsch „schneller auftauchen bzw. schneller an den
   naechsten Tab anpassen"), zwei Hebel, beide ohne Eingriff in die Geste:
   1. `seitenleisteAktualisieren` laeuft in `_applyTabState` VOR dem Renderer statt danach —
@@ -1636,11 +1636,28 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
      nichts davon (nur Seiten-Tabelle und gewaehlte Seite, die kein Renderer setzt).
   2. Alle Dauern rund 30 % kuerzer: Auf-/Abtauchen 300 → 200ms (`SL_ANIM_MS` und CSS),
      Ueberblenden 260/160/200/60 → 180/110/140/40ms (Breite/aus/ein/Vorlauf).
-  NICHT angefasst: der Zeitpunkt. Die Leiste reagiert weiter erst beim Einrasten (Settle, 90ms
-  nach dem letzten Scroll-Ereignis). Sie schon an der 50-%-Schwelle umzuschalten hiesse, im
-  Scroll-Handler waehrend der Geste Layout-Arbeit anzustossen (die Breite) — genau die Art
-  Eingriff, die am 08.09.2026 das Wischen verschlechtert hat. Nur mit Leonards ausdruecklichem
-  Auftrag und einzeln ausgeliefert.
+  3. **UMSCHALTEN AN DER 50-%-SCHWELLE** (v368, am selben Tag auf Leonards AUSDRUECKLICHEN
+     Auftrag, EINZELN ausgeliefert): Der Scroll-Handler von `initTabScrollSync` ruft
+     `seitenleisteAktualisieren(name)` dort, wo er schon Theme, Nav und das Ausblenden der
+     Tableiste umschaltet — Auftauchen, Abtauchen und Ueberblenden beginnen mitten im Wisch statt
+     nach dem Einrasten. Die Funktion nimmt dafuer den kommenden Tab als Parameter (`ziel`),
+     weil `currentScreen` erst beim Einrasten wechselt.
+     Der Aufruf steht BEWUSST VOR dem Wechsel der Theme-Klasse am body: Die Leiste misst ihre
+     Breite und erzwingt damit ein Layout — auf dem noch sauberen Dokument ist das billig, nach
+     dem Klassenwechsel muesste der Browser dafuer sofort die Stile der ganzen Seite rechnen.
+     Das Einrasten ruft die Funktion ueber `_applyTabState` NOCHMAL mit demselben Stand. Damit
+     die laufende Einblendung dann nicht abbricht, traegt der Schalter eine KENNUNG
+     (`box.dataset.kennung` = Tab, Seiten, gewaehlte Seite); bei gleicher Kennung wird nicht neu
+     gefuellt. Wisch ueber 50 % und wieder zurueck blendet einfach zurueck (Token `_slBlendeNr`).
+     GEMESSEN mit dem ECHTEN Scroll-Handler (rAF synchron, Snap aus, Scroll-Ereignis von Hand):
+     30 % = nichts; 60 % Uebersicht → Training taucht auf, waehrend `currentScreen` noch
+     'overview' ist; Training → Uebungen blendet an der Schwelle, beim Einrasten derselbe
+     Knopf-Knoten (kein zweites Fuellen); Uebungen → Plan ueber 50 % und zurueck endet bei
+     „Übungen | Stats", 243px, ohne Reste; rueckwaerts in die Uebersicht taucht an der Schwelle
+     ab; Seitenwechsel im Plan-Tab setzt die Pille weiter um; keine Fehler.
+     NICHT PRUEFBAR HIER: ob das Wischen auf dem iPhone fluessig bleibt. ZURUECKNEHMEN: die eine
+     Zeile `seitenleisteAktualisieren(name);` im Scroll-Handler entfernen — der Rest (Parameter,
+     Kennung) ist harmlos und kann stehen bleiben.
   GEMESSEN: Reihenfolge „Leiste, dann Renderer"; Auftauchen und Abtauchen 0.2s, `hidden` danach;
   Training → Uebungen Blenden 110/140ms (+40ms Vorlauf); Uebungen → Plan Breite 180ms, Ende
   347px ohne Reste.
@@ -2067,6 +2084,9 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   3. Den Neuaufbau des angekommenen Tabs ueberspringen, wenn sich nichts geaendert hat.
   Welcher der drei es war, ist NICHT geklaert — sie wurden zusammen ausgeliefert und zusammen
   zurueckgenommen. Wer einen davon erneut versucht, liefert ihn EINZELN aus.
+  EIN NEUER EINGRIFF IM SCROLL-HANDLER seit dem 21.09.2026 (v368, einzeln, auf Leonards Auftrag):
+  Die Seitenleiste schaltet an der 50-%-Schwelle um (siehe Seitenleiste, Punkt 3). Meldet
+  Leonard danach ein schlechteres Wischgefuehl, ist das der erste Verdaechtige.
   **Das Loslassen selbst zu fuehren ist ZWEIMAL gescheitert** (08.09.2026, beide Male von
   Leonard zurueckgewiesen) — mit zwei verschiedenen Mechanismen:
     1. Fassung: Scrollposition Bild fuer Bild selbst schreiben, `scroll-snap-type` waehrend
