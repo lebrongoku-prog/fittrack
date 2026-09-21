@@ -2840,8 +2840,9 @@ function _aexKlappAnimieren(el, auf, danach) {
 // haelt die 11.2px dagegen fest: Es sprang am Anfang des Aufklappens und am Ende des Zuklappens
 // um genau diesen Betrag. Deshalb faehrt die Liste ihren `margin-top` mit, von −11.2px (hebt den
 // Knopfabstand auf) bis 0. Gelesen wird der Wert am Knopf, nicht fest verdrahtet.
-// Der KOPF springt sofort in den neuen Zustand (`aria-expanded` dreht den Pfeil, die Anzahl
-// erscheint bzw. verschwindet) — so dreht sich der Pfeil mit der Bewegung statt danach.
+// Der KOPF springt sofort in den neuen Zustand (`aria-expanded` dreht den Pfeil) — so dreht
+// sich der Pfeil mit der Bewegung statt danach. (Die Anzahl „(4)", die bis zum 21.09.2026 dabei
+// erschien bzw. verschwand, ist entfallen.)
 function _exGruppe(key) {
   return document.querySelector(`#ex-view-list .ex-group[data-gruppe="${CSS.escape(key)}"]`);
 }
@@ -2850,13 +2851,6 @@ function _gruppeKlappAnimieren(gruppe, auf, danach) {
   const knopf = gruppe && gruppe.querySelector(':scope > .ex-group-btn');
   if (!liste || !knopf || _bewegungReduziert() || !liste.animate) { danach(); return; }
   knopf.setAttribute('aria-expanded', auf ? 'true' : 'false');
-  const name = knopf.querySelector('.ex-group-name');
-  const anzahl = name && name.querySelector('.count');
-  if (name && auf && !anzahl) {
-    name.insertAdjacentHTML('beforeend', ` <span class="count">(${liste.querySelectorAll(':scope > .ex-item').length})</span>`);
-  } else if (name && !auf && anzahl) {
-    anzahl.remove(); name.textContent = name.textContent.trimEnd();
-  }
   const luecke = parseFloat(getComputedStyle(knopf).marginBottom) || 0;
   gruppe.classList.remove('collapsed');   // Liste in BEIDE Richtungen sichtbar halten
   const hoehe = liste.getBoundingClientRect().height;
@@ -8308,7 +8302,7 @@ function renderExercisesByMuscle() {
       <button type="button" class="weitere-btn ex-group-btn" aria-expanded="${!isCollapsed}"
               onclick="toggleExGroup('muscle:${m}')">
         <span class="dot"></span>
-        <span class="ex-group-name">${meta.name}${isCollapsed ? '' : ` <span class="count">(${items.length})</span>`}</span>
+        <span class="ex-group-name">${meta.name}</span>
         <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
       </button>
       <div class="ex-list">${itemsHTML}</div>

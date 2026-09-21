@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v368**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v369**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -217,8 +217,10 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `.ex-item-head`): gleiche Hoehe (`--ex-row-h`, 44px als `min-height` auf beiden), gleiches
   seitliches Polster (14px — davon haengt ab, wie weit der Pfeil vom Rand steht) und gleicher
   Abstand zur Farbmarke (12px). Der Farbpunkt ist 12px (01.09.2026 um die Haelfte vergroessert).
-  Die Anzahl in Klammern erscheint NUR im ausgeklappten Zustand; eingeklappt steht dort nur der
-  Name (Leonard-Wunsch 01.09.2026). Dasselbe gilt fuer „Archivierte Plaene" im Plaene-Tab, der
+  **Der Knopf zeigt NUR den Namen, auch ausgeklappt** (21.09.2026, Leonard-Wunsch). Vom
+  01.09. bis 21.09.2026 erschien im ausgeklappten Zustand die Anzahl in Klammern („(4)"); sie ist
+  samt ihrer Regel `.ex-group-btn .count` entfallen. NICHT betroffen: die Muskelgruppen-Titel in
+  den Dialogen „Uebung hinzufuegen" (`.ex-group-title`) — dort steht die Anzahl weiter. Dasselbe gilt fuer „Archivierte Plaene" im Plaene-Tab, der
   ausserdem die Tipp-Animation der Karten traegt und dasselbe 14px-Polster bekommen hat.
   **Der Muskelgruppen-Knopf hat KEINEN Ausklapp-Pfeil** (01.09.2026) — ebensowenig die Uebungen im
   Katalog. Ob eine Gruppe offen ist, zeigt die Liste darunter. Damit sind `.weitere-pfeil` und
@@ -304,7 +306,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   bei t=0 genau 14px (= eingeklappt), am Ende genau 212.2px (= aufgeklappt), in beiden
   Richtungen.
   Der KOPF springt sofort in den neuen Zustand (`aria-expanded` → der Pfeil dreht sich mit der
-  Bewegung, die Anzahl „(4)" erscheint bzw. verschwindet), der Rest folgt mit dem Neuaufbau.
+  Bewegung), der Rest folgt mit dem Neuaufbau. (Bis zum 21.09.2026 erschien bzw. verschwand
+  dabei auch die Anzahl „(4)".)
   „Alle ein-/ausklappen" (`toggleAllExGroups`) bewegt alle Gruppen, deren Zustand sich aendert,
   GLEICHZEITIG und zeichnet EINMAL neu, wenn alle fertig sind.
   KEINE Bewegung waehrend einer Suche: Dort sind alle Treffergruppen zwangsweise offen, der

@@ -1323,10 +1323,9 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 }
 /* 12px statt 8px — um die Haelfte groesser (Leonard-Wunsch 01.09.2026). */
 .ex-group-btn .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--mc, var(--accent)); flex-shrink: 0; }
-/* Name und Anzahl bilden EIN Flex-Kind: Sonst trennt sie der 12px-Abstand des Knopfes,
-   statt eines gewoehnlichen Leerzeichens (Leonard-Meldung 01.09.2026). */
+/* Der Name ist EIN Flex-Kind. Bis zum 21.09.2026 stand im ausgeklappten Zustand die Anzahl
+   „(4)" mit darin (Regel `.ex-group-btn .count`, entfallen, Leonard-Wunsch). */
 .ex-group-btn .ex-group-name { min-width: 0; }
-.ex-group-btn .count { opacity: .7; font-weight: 600; }
 
 /* Wechsel zwischen normalem Modus und Glas-Modus: UEBERBLENDUNG des ganzen
    Bildschirms (21.09.2026, `toggleGlasModus`; vom 18. bis 21.09.2026 ein wachsender Kreis aus
