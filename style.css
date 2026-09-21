@@ -3388,9 +3388,9 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
    selbst, sobald die Klasse gesetzt wird. */
 #seitenleiste            { --sl-weg: calc(var(--sl-h) + var(--nav-h) + var(--safe-b) + 6px); }
 #seitenleiste.nav-hidden { --sl-weg: calc(var(--sl-h) + var(--safe-b) + 8px); }
-/* 0.25s seit dem 21.09.2026 (vorher 0.3s; am selben Tag erst 0.2s, dann auf Leonards Wunsch
-   wieder „etwas langsamer") — `SL_ANIM_MS` im JS muss zu `.sl-raus` passen. */
-#seitenleiste.sl-rein { animation: sl-auftauchen .25s cubic-bezier(0.2, 0.7, 0.2, 1); }
+/* 0.3s — am 21.09.2026 kurz 0.2s und 0.25s, auf Leonards Wunsch („noch langsamer") zurueck.
+   `SL_ANIM_MS` im JS muss zu `.sl-raus` passen. */
+#seitenleiste.sl-rein { animation: sl-auftauchen .3s cubic-bezier(0.2, 0.7, 0.2, 1); }
 @keyframes sl-auftauchen {
   from { transform: translateY(var(--sl-weg)); }
   to   { transform: translateY(0); }
@@ -3400,7 +3400,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
    nach `SL_ANIM_MS` auf `hidden` setzt; ohne das schnellte sie im letzten Bild kurz zurueck.
    Waehrend sie abtaucht, nimmt sie KEINE Tipps mehr an: Sie gehoert schon zum verlassenen
    Tab, ein Tipp wuerde dort eine Seite umschalten, die man gar nicht mehr sieht. */
-#seitenleiste.sl-raus { animation: sl-abtauchen .25s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
+#seitenleiste.sl-raus { animation: sl-abtauchen .3s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
 #seitenleiste.sl-raus .seg-toggle { pointer-events: none; }
 @keyframes sl-abtauchen {
   from { transform: translateY(0); }
@@ -3408,7 +3408,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 }
 @media (prefers-reduced-motion: reduce) {
   #seitenleiste.sl-rein { animation: none; }
-  /* Ohne Bewegung soll sie auch nicht 0,25s stehen bleiben — das JS blendet sie danach aus,
+  /* Ohne Bewegung soll sie auch nicht 0,3s stehen bleiben — das JS blendet sie danach aus,
      sichtbar bleibt sie in dieser Zeit nicht. */
   #seitenleiste.sl-raus { animation: none; visibility: hidden; }
 }

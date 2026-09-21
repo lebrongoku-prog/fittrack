@@ -10275,9 +10275,10 @@ let _slPassiv = false;   // Schalter geschrumpft?
 // Laufendes Abtauchen. Die Dauer MUSS zur `animation`-Angabe von `.sl-raus` im CSS passen —
 // stehen die beiden auseinander, verschwindet die Leiste entweder zu frueh (Sprung) oder
 // bleibt nach der Bewegung noch einen Moment stehen.
-// 250ms seit dem 21.09.2026 (vorher 300, am selben Tag erst 200 — „schneller" — und danach auf
-// Leonards Wunsch wieder „etwas langsamer").
-const SL_ANIM_MS = 250;
+// 300ms — am 21.09.2026 erst auf 200 („schneller"), dann auf 250 und schliesslich zurueck auf
+// 300 („noch langsamer"). Seither beginnt die Bewegung beim Wisch aber schon an der
+// 50-%-Schwelle und nicht mehr nach dem Einrasten und Neuzeichnen.
+const SL_ANIM_MS = 300;
 let _slAusTimer = null;
 
 function seitenleisteBauen() {
