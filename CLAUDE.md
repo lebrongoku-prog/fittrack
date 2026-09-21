@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v364**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v365**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1528,8 +1528,9 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   GEMESSEN (echte Tipps auf die Wochentage): Donnerstag = 5 Karten mit 0/80/160/240/320ms,
   Wochentag sofort markiert; drei Tipps in 60ms-Abstand enden sauber (Deckkraft 1, keine
   Restanimation); ein Tag OHNE Training hat keine Karten und wirft nichts.
-  **DASSELBE AUF DER SEITE „LAUFEN"** (`selectRunDay`, 16.09.2026): Die Tageskarte unter „Diese
-  Woche" kommt ebenso von unten herein. Es ist EINE Karte, die Staffel hat dort also nur einen
+  **DASSELBE AUF DER SEITE „LAUFEN"** (`selectRunDay`, 16.09.2026) — SEIT DEM 21.09.2026
+  ENTFALLEN, mit der Tageskarte selbst (siehe „Laeufe dieser Woche" im Abschnitt Laufen).
+  Vorgeschichte: Die Tageskarte unter „Diese Woche" kam ebenso von unten herein. Es ist EINE Karte, die Staffel hat dort also nur einen
   Schritt. Die Huelle `#wo-lauftag-card` wird bei jedem Zeichnen neu gebaut — sie muss deshalb
   NACH dem Zeichnen frisch gesucht werden.
   GEMESSEN (echter Tipp auf Freitag): eine Karte (`.aex-v2.lauf-tag-karte`) ohne Verzoegerung,
@@ -2286,7 +2287,38 @@ Liste, mal die Detailseite. Das entscheidet `_laufNeuZeichnen()`; ein direkter A
 **Die Seite „Laufen" hat eine Tagesauswahl wie die Seite „Gym"** (04.09.2026, Leonard-Wunsch):
 Ein Tipp auf einen Wochentag im Laufwochenplan waehlt ihn aus (`selectRunDay`,
 `selectedRunDayIdx`, vorbelegt mit heute) — `buildRunPlanCard` nimmt dafuer `opts.selectedIdx`
-und `opts.dayOnTap` entgegen, genau wie `buildPlanCard`. Unter „Diese Woche" erscheint dann
+und `opts.dayOnTap` entgegen, genau wie `buildPlanCard`. Die Auswahl steuert seit dem
+21.09.2026 NUR NOCH DIE HEROCARD.
+
+**LAEUFE DIESER WOCHE als Liste in der Karte „Diese Woche"** (`laufWochenListe(mo)`,
+21.09.2026, Leonard-Entscheidung „Variante A" aus vier gezeichneten Vorschlaegen — Zeitstrahl,
+Kacheln und Strecke im Wochenplan waren die anderen). Unter den drei Summen steht eine Zeile je
+Tag der laufenden Woche mit geplantem ODER gelaufenem Lauf — UNABHAENGIG vom gewaehlten Tag.
+Auch schon gelaufene Tage und Laeufe an ungeplanten Tagen stehen drin (Leonard-Entscheidung).
+Aufbau einer Zeile: Scheibe mit dem Wochentag · Vorgabe („8 km · 45min") mit Zonen-Pille,
+darunter die Notiz der Einheit · rechts das Ist („8.1 km gelaufen", beim Intervalltraining
+„HIIT 28min"), sonst „heute" bzw. „verschoben". Ohne Vorgabe steht „Ohne Vorgabe", ein Lauf an
+einem ungeplanten Tag heisst „Nicht geplant".
+Die Scheibe traegt DIESELBEN Zustaende wie der Wochentagskreis der Karte darueber: gefuellt
+(#4ADE80) = gelaufen, hellgrau mit Ring = geplant und offen, grau = verschoben
+(`runVerschobeneTage`). Die Vorgabe kommt aus `runGeplanteTage` — derselben Quelle wie die
+Kennzahl „geplant" daneben.
+Ein GELAUFENER Tag ist ein `<button>` und oeffnet `showRunDetail(key)`; er traegt denselben
+kleinen Pfeil-Knopf wie die Kalender-Fusszeile (`.cal-detail-chev`, die Regel gilt jetzt fuer
+beide). Ein Tipp auf eine Zeile waehlt den Tag NICHT aus.
+Transparenz-Modus: keine Sportfarben — gelaufen weiss gefuellt, offen weiss umrandet, wie die
+Wochentagskreise der Einzelkarten. Der Wochentag im weissen Kreis ist FEST #059669 (das
+`--accent-dark` des Trainings-Tabs), weil `--accent-dark` auf der Glas-Karte selbst weiss ist.
+DIE TAGESKARTE DES GEWAEHLTEN TAGS IST ENTFALLEN (Leonard-Wunsch): `buildLaufTagKarte`,
+`#wo-lauftag-card`, ihre Staffel in `selectRunDay` und die Regeln `.lauf-tag-*`. Ihre Angaben
+(Vorgabe, Zone, Notiz, Ist, Weg zur Detailansicht) stehen jetzt in der Liste.
+`.aex-v2:not(.lauf-tag-karte)` bleibt BEWUSST stehen — das `:not()` traegt die Spezifitaet.
+GEMESSEN (375px, Datum kuenstlich auf Do gesetzt): Mo verschoben, Di HIIT an ungeplantem Tag,
+Mi gelaufen mit Notiz, Fr ohne Vorgabe, So offen — Zustaende identisch mit den Kreisen der
+Wochenkarte; Tipp auf Mi oeffnet die Detailansicht; mit echtem Datum (Mo) steht „heute";
+Glas-Modus ohne Sportfarben; Querformat 1100px: Karte ueber beide Spalten; keine
+Konsolenfehler.
+VORGESCHICHTE der Tageskarte (04.09.–21.09.2026): Unter „Diese Woche" erschien
 `buildLaufTagKarte(idx)`: Sie borgt sich die Klassen der AUSGEKLAPPTEN UEBUNGSKARTE (`.aex-v2`
 mit Kopf, Scheibe, Tabelle und Notizspalte), damit beide Seiten des Trainings-Tabs gleich
 aussehen. Angepasst ist nur, was die Laufwerte brauchen: drei gleich breite Spalten statt
@@ -2360,7 +2392,8 @@ Steht ausserdem in der **Uebersicht** unter dem Gymwochenplan (`#ov-runplan-card
 teilen sich beide eine Zeile, die Herocard rutscht darunter ueber die volle Breite) und im
 **Trainings-Tab auf der Seite „Laufen" zuoberst**. Im QUERFORMAT teilen sich dort Wochenplan
 und Herocard eine Zeile — dieselbe Aufteilung wie auf der Seite „Gym" (`#wo-view-laufen` als
-Grid, 06.09.2026); „Diese Woche" und die Tageskarte spannen darunter ueber beide Spalten.
+Grid, 06.09.2026); „Diese Woche" spannt darunter ueber beide Spalten (die Tageskarte ist
+am 21.09.2026 entfallen).
 DREI ZUSTAENDE eines Wochentagskreises (praezisiert 08.09.2026, Leonard-Wunsch):
 gefuellt = war schon (Vergangenheit oder erledigt) · nur UMRANDET = steht in dieser Woche
 noch an (`.zukunft`, gesetzt fuer `i > todayIdx`) · leer = nichts geplant. HEUTE zaehlt

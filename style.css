@@ -2119,6 +2119,9 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
    AUSGENOMMEN die Tageskarte der Seite „Laufen" (`.lauf-tag-karte`): Sie borgt sich nur die
    Klassen der Uebungskarte, ist aber keine — Leonard hat ausdruecklich die Seite „Gym" und
    die Gymtag-Detailansicht genannt.
+   Die Tageskarte gibt es seit dem 21.09.2026 nicht mehr. Das `:not()` bleibt trotzdem stehen:
+   Es hebt die Spezifitaet dieser Regel an, und ohne es koennte eine spaetere Regel mit einer
+   Klasse die Breite ueberstimmen.
    Ueber `width` + `margin: auto` statt ueber groessere Raender: Im Querformat ist
    `#active-ex-list` ein zweispaltiges Grid, dort bezieht sich die Prozentangabe sauber auf
    die Spalte statt auf den ganzen Screen. */
@@ -2495,6 +2498,41 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .lauf-kennz { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .lauf-kennz-v { font-size: 17px; font-weight: 700; color: var(--text); }
 .lauf-kennz-l { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
+/* LAEUFE DIESER WOCHE unter den Summen (`laufWochenListe`, 21.09.2026, Leonard-Wunsch).
+   Eine Zeile je Tag: Scheibe mit dem Wochentag, Vorgabe mit Zone, darunter die Notiz, rechts
+   das Ist bzw. „heute". Die Scheibe traegt dieselben Zustaende wie der Wochentagskreis der
+   Laufwochenplan-Karte: gefuellt = gelaufen, Ring = offen, grau = verschoben. */
+.lauf-wochenliste { margin-top: 12px; }
+.lauf-wz {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 8px 0 0; margin-top: 8px; border: none; border-top: 1px solid var(--border);
+  background: none; font: inherit; color: inherit; text-align: left;
+  -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
+}
+button.lauf-wz { cursor: pointer; }
+button.lauf-wz:active { opacity: .6; }
+.lauf-wz-tag {
+  width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+}
+.lauf-wz-tag.gelaufen   { background: #4ADE80; color: #fff; }
+.lauf-wz-tag.offen      { background: var(--card2); box-shadow: inset 0 0 0 2px #4ADE80; color: #22A05B; }
+.lauf-wz-tag.verschoben { background: var(--card2); color: var(--text2); }
+.lauf-wz-mitte { flex: 1; min-width: 0; }
+.lauf-wz-soll { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 14px; font-weight: 600; color: var(--text); }
+.lauf-wz-leer { font-weight: 400; color: var(--text3); }
+.lauf-wz-zone { font-size: 11px; font-weight: 700; color: #166534; background: #DCFCE7; border-radius: 999px; padding: 1px 7px; }
+.lauf-wz-notiz { margin-top: 2px; font-size: 12px; color: var(--text3); line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.lauf-wz-ist { flex-shrink: 0; font-size: 12px; font-weight: 600; color: var(--text2); white-space: nowrap; }
+/* Transparenz-Modus: keine Sportfarben, dieselben Werte wie die Wochentagskreise der
+   Einzelkarten (gelaufen weiss gefuellt, offen weiss umrandet). Der Wochentag im weissen
+   Kreis bleibt farbig — `--accent-dark` ist auf der Glas-Karte selbst weiss, deshalb fest
+   das Gruen des Trainings-Tabs. */
+html.glas .screen:not(#screen-mehr) .lauf-wz-tag.gelaufen   { background: rgba(255,255,255,.92); color: #059669; }
+html.glas .screen:not(#screen-mehr) .lauf-wz-tag.offen      { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 2px rgba(255,255,255,.92); color: #fff; }
+html.glas .screen:not(#screen-mehr) .lauf-wz-tag.verschoben { background: rgba(255,255,255,.22); color: rgba(255,255,255,.85); }
+html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(255,255,255,.22); color: #fff; }
 .lauf-leer { font-size: 13px; color: var(--text3); text-align: center; padding: 10px 0; }
 /* Eingeklappte Plan-Karte: wie eine Listenzeile, aufgeklappt wird sie zum Formular. */
 /* Wochenbloecke: Der Kopf nutzt den transparenten Ausklapp-Knopf, der Inhalt bleibt IMMER
@@ -2771,30 +2809,6 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
    Nur abgelaufene Wochen mit laufendem Plan bekommen sie, das entscheidet das JS. */
 .cal-day.leer-woche { background: #FECACA; }
 .cal-day.wettkampf { background: #4ADE80; }
-/* Detailkarte zum gewaehlten Lauftag (Seite „Laufen"). Sie borgt sich die Klassen der
-   ausgeklappten Uebungskarte, damit beide Seiten des Trainings-Tabs gleich aussehen
-   (Leonard-Wunsch 04.09.2026). Angepasst ist nur, was die Laufwerte brauchen:
-   drei gleich breite Spalten statt Satz|Wdh|kg|Haken, und die Scheibe traegt den
-   Wochentag statt einer Nummer — in Hellgruen, der Farbe der Laufdomaene. */
-/* KEIN eigener oberer Abstand: Im Hochformat kollabiert er mit dem unteren Abstand der Karte
-   darueber zu einem einzigen 12px-Zwischenraum, im Querformat-GRID aber NICHT — dort addierten
-   sich beide zu 24px, waehrend alle anderen Karten 12px auseinanderstanden
-   (Leonard-Meldung 06.09.2026). Der Abstand kommt jetzt allein von der Karte darueber. */
-.lauf-tag-karte { margin-top: 0; }
-.lauf-tag-karte .aex-v2-num { background: #4ADE80; font-size: 12px; }
-.lauf-tag-srow { grid-template-columns: 1fr 1fr 1fr; }
-.lauf-tag-wert { font-size: 15px; font-weight: 700; color: var(--text); text-align: center; }
-.lauf-tag-leer { margin: 2px 0 0; font-size: 13px; color: var(--text3); line-height: 1.45; }
-/* Eigene Zeile unter den Werten — Aussehen wie das Notizfeld der Uebungskarte
-   (`.aex-v2-notes`), aber ueber die volle Breite. */
-.lauf-tag-notiz {
-  margin: 0 14px 14px; padding: 8px 10px; border-radius: 10px;
-  background: var(--bg); border: 1px solid var(--border);
-  font-size: 12px; color: var(--text2); line-height: 1.45; white-space: pre-wrap;
-}
-/* „Gelaufen"-Zeile in der Aktionsleiste: Text links, der Details-Knopf traegt sein
-   `margin-left:auto` schon selbst. */
-.lauf-tag-erledigt { font-size: 13px; font-weight: 600; color: var(--text2); align-self: center; }
 /* Fusszeile zum Lauf: gleiche Groesse UND gleiche Schriftfarbe wie die Angaben zur
    Trainingseinheit darueber — sie erbt beides von `.cal-detail`. */
 /* Fusszeile in ZWEI Spalten: links Gym, rechts Laufen (Leonard-Wunsch 06.09.2026).
@@ -2838,7 +2852,8 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 /* Der Name nimmt die Breite, der Knopf sitzt direkt dahinter statt am Zeilenende. */
 .cal-detail-tagname { min-width: 0; }
 /* Kleiner quadratischer Knopf statt eines blossen Zeichens. */
-.cal-detail-tag .cal-detail-chev {
+.cal-detail-tag .cal-detail-chev,
+.lauf-wz .cal-detail-chev {
   display: inline-flex; align-items: center; justify-content: center;
   width: 20px; height: 20px; flex-shrink: 0;
   border-radius: 5px; background: var(--card2); color: var(--text2);
@@ -3826,8 +3841,8 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
   html.wo-running #wo-view-gym > #wo-week-card { display: none; }
 
   /* LAUFEN — dieselbe Aufteilung wie auf der Seite „Gym": Wochenplan links, Herocard rechts
-     in EINER Zeile (Leonard-Wunsch 06.09.2026). „Diese Woche" und die Tageskarte spannen
-     darunter ueber beide Spalten. Wie drueben KEIN `align-items: start` — `stretch` haelt
+     in EINER Zeile (Leonard-Wunsch 06.09.2026). „Diese Woche" spannt darunter ueber beide
+     Spalten (die Tageskarte ist am 21.09.2026 entfallen). Wie drueben KEIN `align-items: start` — `stretch` haelt
      die beiden Karten gleich hoch; die Wrapper reichen die Hoehe an die Karte darin weiter. */
   #wo-view-laufen {
     display: grid;
@@ -3844,8 +3859,7 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
   }
   #wo-view-laufen > #wo-runplan-card { grid-column: 1; }
   #wo-view-laufen > #wo-lauf-hero { grid-column: 2; }
-  #wo-view-laufen > .chart-card-v2,
-  #wo-view-laufen > #wo-lauftag-card { grid-column: 1 / -1; }
+  #wo-view-laufen > .chart-card-v2 { grid-column: 1 / -1; }
 
   /* STATS — Volumenentwicklung und Volumen pro Muskelgruppe teilen sich die erste Zeile
      (Leonard-Wunsch 01.09.2026). Ohne `align-items` bleibt die Grid-Vorgabe `stretch`, und

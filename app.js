@@ -4618,61 +4618,53 @@ let _laufOffeneWochen = new Set();  // mehrere Wochen duerfen gleichzeitig offen
 let selectedRunDayIdx = null;
 function selectRunDay(idx) {
   selectedRunDayIdx = idx;
+  // Die Auswahl steuert nur noch die Herocard. Die Tageskarte darunter (samt ihrer Staffel)
+  // ist am 21.09.2026 entfallen — die Laeufe der ganzen Woche stehen in „Diese Woche".
   mitHeroFarbwechsel('#wo-lauf-hero', renderLaufKalenderSeite);
-  // Die Tageskarte kommt wie die Uebungskarten auf der Seite „Gym" von unten herein
-  // (16.09.2026, Leonard-Wunsch). Wochenplan-Karte und Herocard bleiben stehen — dieselbe
-  // Aufteilung wie dort. `renderLaufKalenderSeite` baut die Huelle jedes Mal neu, deshalb wird
-  // sie hier frisch gesucht.
-  _kartenStaffelEin(document.getElementById('wo-lauftag-card'));
 }
 
-// Detailkarte zum gewaehlten Lauftag. Gebaut aus den Klassen der ausgeklappten
-// Uebungskarte (`.aex-v2`), damit sie auf der Nachbarseite „Gym" nicht wie ein Fremdkoerper
-// wirkt (Leonard-Wunsch 04.09.2026) — Kopf mit Scheibe und Name, darunter die Werte als
-// Tabelle und die Notiz rechts daneben.
-function buildLaufTagKarte(idx) {
-  const mo = new Date(); mo.setHours(0, 0, 0, 0);
-  mo.setDate(mo.getDate() - ((mo.getDay() + 6) % 7) + idx);
-  const key = _dayKeyOf(mo.getTime());
-  const gepl = runGeplanteTage()[key];
-  const u = gepl && gepl.einheit;
-  const lauf = runNachTag()[key];
-  const datum = mo.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
-
-  const werte = u
-    ? `<div class="aex-v2-table">
-         <div class="aex-v2-srow head lauf-tag-srow"><span>Strecke</span><span>Zeit</span><span>Zone</span></div>
-         <div class="aex-v2-srow lauf-tag-srow">
-           <span class="lauf-tag-wert">${u.km ? fmtKm(u.km) : '–'}</span>
-           <span class="lauf-tag-wert">${u.minutes ? fmtMin(u.minutes) : '–'}</span>
-           <span class="lauf-tag-wert">${u.zone || '–'}</span>
-         </div>
-       </div>`
-    : `<div class="aex-v2-table"><p class="lauf-tag-leer">${gepl ? 'Lauftag ohne Vorgabe.' : 'Kein Lauf geplant.'}</p></div>`;
-  // Die Notiz steht auf einer EIGENEN Zeile unter Strecke, Zeit und Zone (Leonard-Wunsch
-  // 04.09.2026) — nicht in der rechten Spalte wie bei den Uebungskarten, wo sie neben einer
-  // mehrzeiligen Satztabelle steht. Hier ist die Tabelle nur eine Zeile hoch.
-  const notiz = u && u.note
-    ? `<div class="lauf-tag-notiz">${escapeHtml(u.note)}</div>`
-    : '';
-  const gelaufen = lauf
-    ? `<div class="aex-v2-actions">
-         <span class="lauf-tag-erledigt">Gelaufen: ${lauf.art === 'hiit' ? fmtMin(lauf.minutes) : `${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}`}</span>
-         <button class="btn btn-ghost btn-sm aex-v2-details" onclick="showRunDetail('${key}')">Details</button>
-       </div>`
-    : '';
-  return `<div class="aex-v2 lauf-tag-karte">
-    <div class="aex-v2-header">
-      <div class="aex-v2-num">${WOCHENTAGE_KURZ[idx]}</div>
-      <div class="aex-v2-info">
-        <div class="aex-v2-name">${gepl ? 'Geplanter Lauf' : 'Kein Lauf geplant'}</div>
-        <div class="aex-v2-last">${datum}${gepl ? ` · ${escapeHtml(gepl.plan.name || 'Laufplan')}` : ''}</div>
-      </div>
-    </div>
-    <div class="aex-v2-body">${werte}</div>
-    ${notiz}
-    ${gelaufen}
-  </div>`;
+// Die LAEUFE DIESER WOCHE als Liste unter den Summen der Karte „Diese Woche"
+// (21.09.2026, Leonard-Wunsch „Variante A"): auf einen Blick, was die Woche bringt —
+// UNABHAENGIG vom gewaehlten Tag im Laufwochenplan. Ersetzt die fruehere Tageskarte des
+// gewaehlten Tags (`buildLaufTagKarte`), ihre Angaben stehen jetzt hier: Vorgabe, Zone,
+// Notiz und — bei einem gelaufenen Tag — das Ist samt Weg in die Detailansicht.
+// Eine Zeile je Tag mit geplantem ODER gelaufenem Lauf; auch schon gelaufene und Laeufe an
+// ungeplanten Tagen stehen drin (Leonard-Entscheidung), sonst behauptete die Liste weniger,
+// als die Summe darueber zaehlt.
+// Die Scheibe traegt DIESELBEN Zustaende wie der Wochentagskreis der Karte darueber
+// (`buildRunPlanCard`): gefuellt = gelaufen, Ring = geplant und offen, grau = verschoben
+// (`runVerschobeneTage`). Die Vorgabe kommt aus derselben Quelle wie die Kennzahl „geplant"
+// (`runGeplanteTage`).
+function laufWochenListe(mo) {
+  const geplant = runGeplanteTage();
+  const gelaufen = runNachTag();
+  const verschoben = runVerschobeneTage();
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const zeilen = WOCHENTAGE_KURZ.map((label, i) => {
+    const d = new Date(mo); d.setDate(mo.getDate() + i);
+    const key = _dayKeyOf(d.getTime());
+    const gepl = geplant[key], lauf = gelaufen[key];
+    if (!gepl && !lauf) return '';
+    const u = gepl && gepl.einheit;
+    const zustand = lauf ? 'gelaufen' : (verschoben[i] ? 'verschoben' : 'offen');
+    const vorgabe = u ? [u.km ? fmtKm(u.km) : '', u.minutes ? fmtMin(u.minutes) : ''].filter(Boolean).join(' · ') : '';
+    const soll = !gepl ? '<span class="lauf-wz-leer">Nicht geplant</span>'
+      : vorgabe || '<span class="lauf-wz-leer">Ohne Vorgabe</span>';
+    const zone = u && u.zone ? `<span class="lauf-wz-zone">${escapeHtml(u.zone)}</span>` : '';
+    const notiz = u && u.note ? `<div class="lauf-wz-notiz">${escapeHtml(u.note)}</div>` : '';
+    const ist = lauf ? (lauf.art === 'hiit' ? `HIIT ${fmtMin(lauf.minutes)}` : `${fmtKm(lauf.km)} gelaufen`)
+      : verschoben[i] ? 'verschoben' : (i === todayIdx ? 'heute' : '');
+    const inhalt = `<span class="lauf-wz-tag ${zustand}">${label}</span>
+      <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${soll}${zone}</div>${notiz}</div>
+      ${ist ? `<span class="lauf-wz-ist">${ist}</span>` : ''}`;
+    // Ein gelaufener Tag ist ein KNOPF in die Detailansicht des Laufs — derselbe kleine
+    // Pfeil-Knopf wie in der Kalender-Fusszeile. Ein `<button>`, damit `initScrollHideNav`
+    // ihn als Bedienelement erkennt.
+    return lauf
+      ? `<button type="button" class="lauf-wz" onclick="showRunDetail('${key}')">${inhalt}<span class="cal-detail-chev">▾</span></button>`
+      : `<div class="lauf-wz">${inhalt}</div>`;
+  }).filter(Boolean);
+  return zeilen.length ? `<div class="lauf-wochenliste">${zeilen.join('')}</div>` : '';
 }
 
 // ── Seite 1: Überblick über die gelaufenen Einheiten ───────────────
@@ -4719,11 +4711,12 @@ function renderLaufKalenderSeite() {
       <div class="lauf-kennz"><span class="lauf-kennz-v">${fmtMin(minWoche)}</span><span class="lauf-kennz-l">Zeit</span></div>
       <div class="lauf-kennz"><span class="lauf-kennz-v">${sollKm ? fmtKm(sollKm) : '–'}</span><span class="lauf-kennz-l">geplant</span></div>
     </div>
+    ${laufWochenListe(mo)}
   </div>`;
 
-  // Der gewaehlte Tag steht UNTER „Diese Woche" (Leonard-Wunsch 04.09.2026).
-  const tagKarte = runPlanAktiv() ? `<div id="wo-lauftag-card">${buildLaufTagKarte(selectedRunDayIdx)}</div>` : '';
-  el.innerHTML = wochenplan + hero + woche + tagKarte;
+  // Die Tageskarte des gewaehlten Tags ist am 21.09.2026 entfallen (Leonard-Wunsch) — die
+  // Laeufe der ganzen Woche stehen jetzt in „Diese Woche" (`laufWochenListe`).
+  el.innerHTML = wochenplan + hero + woche;
 }
 
 // Verbindung zur Tabelle „Workout Data". Steht seit dem 04.09.2026 in den EINSTELLUNGEN
