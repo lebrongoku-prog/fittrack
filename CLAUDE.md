@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v371**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v372**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -209,6 +209,42 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   — mit einer 65-%-weissen Ziffer darin, also ein leerer weisser Fleck (Leonard-Meldung
   09.09.2026 mit Screenshot). Jetzt `rgba(255,255,255,.25)` mit weisser Ziffer. Betraf
   ALLE DREI Knoepfe, sie teilen sich die Klasse.
+- **SCHRIFTSKALA: FUENF STUFEN FUER ALLEN TEXT** (21.09.2026, Leonard-Wunsch „zu viele
+  verschiedene Schriftgroessen"). Vorher standen im Stylesheet 32 Werte: jeder Pixel von 10 bis
+  18 belegt, dazu krumme Werte aus den 10-/20-%-Vergroesserungen (12.1, 14.3, 15.4, 15.6, 15.84,
+  17.6 …), die neben ihrem runden Nachbarn nicht zu unterscheiden waren.
+  Die Stufen stehen als Variablen in `:root`:
+  `--fs-etikett` 11px (Chips, Pillen, Grossbuchstaben-Beschriftungen, Tableiste, Achsen) ·
+  `--fs-neben` 13px (Metazeilen, Hinweise, Notizen, kleine Knoepfe, Seitenschalter) ·
+  `--fs-text` 15px (Listen, Werte, Knoepfe, Wochentage, Kalender) ·
+  `--fs-titel` 16px (Kartentitel) · `--fs-betont` 18px (Kennzahlen, Herocard-Knoepfe).
+  AUSNAHMEN nur fuer grosse Einzelanzeigen: Tabtitel (26/28), Uhr der Einheit (24px, vorher
+  24.2), Zahlenblock, Bestleistungskarte, Kacheln der Abschlussansicht, Leer-Symbol.
+  REGELN: Keine neuen Groessen ausserhalb der Skala. Wer etwas groesser will, geht EINE STUFE
+  hoeher, statt um Prozente zu skalieren. Die Rolle entscheidet, nicht der alte Zahlenwert —
+  Chips sind Etikett, auch wenn sie vorher 12.1px hatten.
+  UMSTELLUNG IN ETAPPEN, je einzeln ausgeliefert:
+  1. **Uebersicht und Training** (v372): Wochenplan- und Kombi-Karte, Herocard (auch laufende
+     Einheit), Kalender (auch der im Plan-Tab — dieselben Klassen), Uebungskarten samt
+     Verlaufsdiagramm (auch im Katalog), Satzpause, Kopfleiste der Einheit, Laufanzeige-Pille,
+     Seite „Laufen", Tableiste, Toast, Sicherungs-Chip, `.btn`/`.btn-sm`, zweiseitiger
+     Seitenschalter. Achsenschrift des Uebungsdiagramms (Chart.js, fest im JS) 10 → 11px.
+  2. Uebungen und Plan — offen. 3. Dialoge und Einstellungen — offen.
+  Was noch feste px-Werte traegt, ist noch nicht umgestellt. Aeltere Groessenangaben in dieser
+  Datei (17.6, 15.84, 15.6, 15.4, 14.3, 12.1px …) sind fuer die umgestellten Stellen Vorgeschichte.
+  SICHTBARSTE AENDERUNGEN in Etappe 1: Nebentexte 12 → 13px (Zuletzt-Zeile, Satzkoepfe, Notizen,
+  Kennzahl des Kalenders, Laufliste), Tableiste 10 → 11px, Herocard-Knoepfe 17.6 → 18px,
+  Kalender-Fusszeile 16 → 15px (sie ist Text, kein Titel), Statuschip der Planliste 12.1 → 11px.
+  NACHGEZOGEN: Die Aktionsleiste der Uebungskarte (vier Knoepfe) passte bei 13px nicht mehr —
+  „» Überspringen" lief um 2px ueber. Ihr seitlicher Innenabstand ist deshalb 7 statt 9px.
+  GEMESSEN (375px, Vorher/Nachher aller Karten): Wochenplan-, Kombi- und Herocards bleiben
+  157.3px, nirgends Ueberlauf (auch Querformat 1100px); „Freies Training" und „Einheit starten"
+  passen bei 18px zweizeilig in den 155x64-Knopf, „Lauf erledigt" einzeilig; „Mo" steht weiter
+  buendig zur ersten Rasterzeile.
+  FOLGE fuer die Kopfzeile des Uebersichts-Kalenders: Die Kennzahl ist breiter, der Gymkalender
+  bricht jetzt auch mit kleinen Zahlen („2/9 Einheiten (22 %)") zweizeilig um. Mit realistischen
+  Zahlen gemessen: Trainings- und Gymkalender zweizeilig (46px Kopf), Laufkalender
+  („12/15 Läufe (80 %)") weiter einzeilig (19px) — dasselbe Muster wie vorher.
 - **Alle Kartentitel sind 16px** (01.09.2026, Vorbild „Trainingskalender"): `.chart-card-v2-title`,
   `.plan-section-head h3`, `.ppv-name`, `.scv2-title`, `.hero-v2-title` (auch in `rest-mode` und
   `active-mode` — deren eigene Groessenangaben sind entfallen). `.mehr-section-title` ist KEIN
@@ -1999,7 +2035,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   auch, waere „Freies Training starten" wieder hoeher und die Gleichheit dahin. Die Sonderregel `hero-mit-meta` hat ihre Titelzeile dabei verloren (sie setzte
   dieselben 2px noch einmal); der Rest des Blocks bleibt, er haelt den Textblock der Seite
   „Gym" zusammen und laesst dem Knopf dort dieselbe Hoehe wie auf „Laufen".
-- **Die Knopfschrift der Gym- und Lauf-Herocard ist 17.6px** (`.hero-heute:not(.hero-aktiv)
+- **Die Knopfschrift der Gym- und Lauf-Herocard ist 18px** (seit 21.09.2026 Stufe `--fs-betont`,
+  vorher 17.6px; nachgemessen, siehe Schriftskala) (`.hero-heute:not(.hero-aktiv)
   .hero-v2-btn`) — in ALLEN Tabs derselbe Wert. Am 12.09.2026 war sie auf die Titelgroesse
   (16px) gesetzt worden, am 13.09.2026 ist sie mit der Karte um 10 % gewachsen, der Titel aber
   NICHT (beides Leonard-Entscheidung). Knopf und Titel sind seither verschieden gross.

@@ -76,6 +76,18 @@
      ihres Tabs, haben aber keine Leiste). */
   --sl-off:    0px;
   --safe-b:    env(safe-area-inset-bottom, 0px);
+  /* SCHRIFTSKALA (21.09.2026, Leonard-Wunsch „zu viele verschiedene Schriftgroessen" — vorher
+     32 Werte, jeder Pixel von 10 bis 18 belegt, dazu krumme Werte aus den 10-/20-%-Vergroesserungen).
+     FUENF Stufen fuer allen Text; wer etwas groesser haben will, geht EINE STUFE hoeher, statt
+     um Prozente zu skalieren. Ausnahmen sind nur grosse Einzelanzeigen (Tabtitel, Uhr der
+     Einheit, Zahlenblock, Bestleistungskarte, Kacheln der Abschlussansicht, Leer-Symbol).
+     Umgestellt in Etappen: 1 = Uebersicht und Training (v372), 2 = Uebungen und Plan,
+     3 = Dialoge und Einstellungen. Was noch feste px-Werte traegt, ist noch nicht dran. */
+  --fs-etikett: 11px;   /* Chips, Pillen, Grossbuchstaben-Beschriftungen, Tableiste, Achsen */
+  --fs-neben:   13px;   /* Metazeilen, Hinweise, Notizen, kleine Knoepfe, Seitenschalter */
+  --fs-text:    15px;   /* Listen, Werte, Knoepfe, Wochentage, Kalender */
+  --fs-titel:   16px;   /* Kartentitel (Leonard-Entscheidung 01.09.2026) */
+  --fs-betont:  18px;   /* Kennzahlen, Herocard-Knoepfe, Uhr der Satzpause */
   --safe-t:    env(safe-area-inset-top, 0px);
   /* Zusaetzlicher Abstand OBEN gegen den Schleier von iOS 27 — siehe die Media-Query direkt
      unter diesem Block. Ausserhalb der installierten App im Hochformat 0. */
@@ -248,7 +260,7 @@ html.workout-active.wo-running body.theme-workouts #workout-active-bar {
   max-width: calc(100% - 32px);
   background: #10B981; color: #fff;   /* feste Workouts-Akzentfarbe (Emerald) */
   border-radius: 999px; padding: 9px 15px;
-  font-size: 13.5px; font-weight: 700;
+  font-size: var(--fs-neben); font-weight: 700;
   box-shadow: 0 8px 20px -7px rgba(16, 185, 129, 0.75), 0 2px 6px rgba(0,0,0,0.12);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
@@ -260,7 +272,7 @@ html.workout-active.wo-running body.theme-workouts #workout-active-bar {
 .wab-colon { animation: wab-blink 1s steps(1, end) infinite; }
 @keyframes wab-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.2; } }
 .wab-sets { font-weight: 500; opacity: 0.85; white-space: nowrap; }
-.wab-chev { font-size: 18px; line-height: 1; opacity: 0.9; }
+.wab-chev { font-size: var(--fs-betont); line-height: 1; opacity: 0.9; }
 @media (prefers-reduced-motion: reduce) { .wab-colon { animation: none; } }
 
 /* ─── Satzpause (Countdown über der Bottom-Nav) ─── */
@@ -320,7 +332,7 @@ html.workout-active #rest-bar.show ~ #workout-active-bar { --rest-off: var(--nav
   position: relative; height: var(--nav-h);
   display: flex; align-items: center; gap: 8px; padding: 0 14px;
 }
-.rest-bar-time { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; margin-right: auto; }
+.rest-bar-time { font-size: var(--fs-betont); font-weight: 800; font-variant-numeric: tabular-nums; margin-right: auto; }
 /* Abgelaufene Pause: Der Text steht mittig im Balken. Das ✕ liegt absolut rechts, damit
    es die Mitte nicht verschiebt — mit `margin-left:auto` saesse der Text sonst links davon. */
 .rest-bar-done-row { justify-content: center; }
@@ -331,7 +343,7 @@ html.workout-active #rest-bar.show ~ #workout-active-bar { --rest-off: var(--nav
 .rest-bar-btn {
   background: rgba(255,255,255,0.18); color: #fff; border: none;
   border-radius: 10px; min-width: 62px; padding: 9px 12px;
-  font-size: 13px; font-weight: 700;
+  font-size: var(--fs-neben); font-weight: 700;
   font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
 }
@@ -352,11 +364,11 @@ html.workout-active #rest-bar.show ~ #workout-active-bar { --rest-off: var(--nav
    Sekundentakt. */
 body.theme-workouts #wo-sticky-bar.show { display: flex; }
 .wsb-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; flex-shrink: 0; animation: wo-pulse 1.4s ease-in-out infinite; }
-.wsb-title { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wsb-timer { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.wsb-title { flex: 1; min-width: 0; font-size: var(--fs-text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wsb-timer { font-size: var(--fs-text); font-weight: 800; font-variant-numeric: tabular-nums; }
 .wsb-finish {
   background: rgba(255,255,255,0.2); color: #fff; border: none;
-  border-radius: 9px; padding: 7px 12px; font-size: 13px; font-weight: 700;
+  border-radius: 9px; padding: 7px 12px; font-size: var(--fs-neben); font-weight: 700;
   font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .wsb-finish:active { transform: scale(.95); }
@@ -538,7 +550,7 @@ body.theme-plans .hist-action-dd {
    Kreise mit `fill="currentColor"`. Ohne eigene Farbe erben sie die Textfarbe des Bodys und
    blieben dunkel — im Transparenz-Modus schwarz auf farbigem Grund (gemeldet 04.09.2026). */
 .nav-btn svg { width: 24px; height: 24px; stroke: var(--text3); color: var(--text3); stroke-width: 1.8; fill: none; }
-.nav-btn span { font-size: 10px; font-weight: 500; color: var(--text3); letter-spacing: 0.1px; }
+.nav-btn span { font-size: var(--fs-etikett); font-weight: 500; color: var(--text3); letter-spacing: 0.1px; }
 .nav-btn.active svg { stroke: var(--accent); color: var(--accent); }
 .nav-btn.active span { color: var(--accent); font-weight: 600; }
 
@@ -567,7 +579,7 @@ body.theme-plans .hist-action-dd {
 .ph-with-back { justify-content: flex-start; gap: 10px; align-items: center; }
 .ph-with-back .ph-left { flex: 1; min-width: 0; }
 .ph-left h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
-.ph-left .ph-sub { font-size: 13px; color: var(--text3); margin-top: 2px; }/* Zahnrad in der Übersicht: Zugang zu den Einstellungen, seit „Mehr" kein Tab mehr ist.
+.ph-left .ph-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }/* Zahnrad in der Übersicht: Zugang zu den Einstellungen, seit „Mehr" kein Tab mehr ist.
    Auf dem farbigen Tab-Hintergrund → helle Fläche, damit es sich abhebt. */
 /* KEIN eigenes `margin-top` mehr: Den Abstand nach oben setzt `.ph-right` fuer alle drei
    Elemente gemeinsam. Mit einem zusaetzlichen Rand nur an den Knoepfen sassen sie 1px
@@ -584,13 +596,13 @@ body.theme-plans .hist-action-dd {
 
 /* ─── Cards ─── */
 .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin: 0 12px 12px; overflow: hidden; }.section-title { font-size: 17px; font-weight: 700; }/* ─── Buttons ─── */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 13px 18px; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: opacity .15s, transform .1s; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 13px 18px; border: none; border-radius: var(--radius-sm); font-size: var(--fs-text); font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: opacity .15s, transform .1s; }
 .btn:active { opacity: .75; transform: scale(.97); }
 .btn-primary { background: var(--accent); color: #fff; }
 .btn-outline { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
 .btn-ghost { background: var(--card2); color: var(--text2); }
 .btn-danger { background: var(--red-bg); color: var(--red); }
-.btn-sm { padding: 8px 14px; font-size: 13px; }
+.btn-sm { padding: 8px 14px; font-size: var(--fs-neben); }
 .btn-full { width: 100%; }
 /* „Verstanden" in den Lesehilfe-Fenstern: genau 44px hoch (Leonard-Wunsch 01.09.2026).
    Aus Polster und Schrift ergaeben sich 43px — die Angabe hebt ihn auf das runde Mass. */
@@ -927,7 +939,7 @@ body.theme-plans .hist-action-dd {
    EINER Ausnahme: Der TITEL bleibt bei 16px wie jeder andere Kartentitel der App
    (Leonard-Entscheidung am selben Tag), samt Sportsymbol und dessen Abstand. */
 .ppv-head { display: flex; align-items: flex-start; gap: 8.8px; }
-.ppv-name { flex: 1; min-width: 0; font-size: 16px; font-weight: 700; color: var(--text);
+.ppv-name { flex: 1; min-width: 0; font-size: var(--fs-titel); font-weight: 700; color: var(--text);
   display: flex; align-items: center; gap: 8px; }
 /* Symbol der Sportart vor dem Titel (Leonard-Wunsch 06.09.2026), in TITELgroesse: `1em`
    bindet es an die 16px des Namens. Es darf nicht schrumpfen, wenn der Name lang wird. */
@@ -937,7 +949,7 @@ body.theme-plans .hist-action-dd {
    `inherit` heisst hier automatisch auch: im Transparenz-Modus weiss wie der Titel. */
 .ppv-name-ic { color: inherit; }
 .plan-status-past .ppv-name, .plan-status-archived .ppv-name { color: var(--text2); }
-.ppv-meta { font-size: 13.2px; color: var(--text3); margin-top: 4.4px; }
+.ppv-meta { font-size: var(--fs-neben); color: var(--text3); margin-top: 4.4px; }
 /* BESCHREIBUNGSZEILE MIT QUOTE (beendete Plaene, 18.09.2026, `planMetaZeile`): Laufzeit und
    Quote sind zwei eigene Teile. Passt die Quote nicht mehr in die Zeile — auf 375px ist das
    die Regel —, rutscht sie als GANZES in die zweite Zeile, statt mitten in „der Einheiten"
@@ -952,7 +964,7 @@ body.theme-plans .hist-action-dd {
 .ppv-meta-teil { display: inline-block; white-space: nowrap; }
 .ppv-meta-teil::before { content: '·'; display: inline-block; width: .9em; text-align: center; }
 .ppv-progress { display: flex; align-items: center; gap: 11px; margin-top: 13.2px; }
-.ppv-wk { font-size: 14.3px; font-weight: 600; color: var(--text2); white-space: nowrap; }
+.ppv-wk { font-size: var(--fs-text); font-weight: 600; color: var(--text2); white-space: nowrap; }
 .ppv-bar { flex: 1; height: 6.6px; background: var(--border); border-radius: 3.3px; overflow: hidden; }
 .ppv-bar-fill { height: 100%; background: var(--accent); border-radius: 3.3px; }
 /* Der Balken traegt die Farbe der SPORTART, nicht die des Tabs (Leonard-Wunsch 04.09.2026):
@@ -961,10 +973,10 @@ body.theme-plans .hist-action-dd {
    er weiss — das regelt die Glas-Regel weiter unten, die hier gewinnt. */
 .plan-card-v2 .ppv-bar-fill          { background: #0F766E; }
 .plan-card-v2.run-plan .ppv-bar-fill { background: #4ADE80; }
-.ppv-adh { font-size: 14.3px; font-weight: 600; color: var(--accent-dark); white-space: nowrap; }
+.ppv-adh { font-size: var(--fs-text); font-weight: 600; color: var(--accent-dark); white-space: nowrap; }
 /* Der Statuschip IN der Karte waechst mit (13.09.2026, +10 %). Nur hier — derselbe Chip
    steht auch in den Detailansichten der Plaene, und die sind nicht gemeint. */
-.plan-card-v2 .plan-status-chip { font-size: 12.1px; padding: 4.4px 9.9px; border-radius: 6.6px; letter-spacing: .33px; }
+.plan-card-v2 .plan-status-chip { font-size: var(--fs-etikett); padding: 4.4px 9.9px; border-radius: 6.6px; letter-spacing: .33px; }
 /* Wochenplan-Strip der Plan-Karte: nur Wochentage, Trainingstage als eingefärbter Kreis.
    Akzentfarbe = geplant, grün = diese Woche erledigt, Ring (::after) = heute. */
 /* Der Abstand ueber den Kreisen bleibt bei 14px (Leonard-Wunsch 09.09.2026 — eine erste
@@ -984,7 +996,7 @@ body.theme-plans .hist-action-dd {
   display: flex; align-items: center; justify-content: center;
   width: 39.6px; height: 39.6px; box-sizing: border-box;   /* 36 → 39.6px, +10 % am 13.09.2026 */
   border-radius: 50%;
-  font-size: 15.4px; font-weight: 600; color: var(--text3);
+  font-size: var(--fs-text); font-weight: 600; color: var(--text3);
 }
 /* Geplante wie erledigte Tage tragen die Farbe der SPORTART, nicht die des Tabs
    (Leonard-Wunsch 04.09.2026): Gym im Dunkelgruen der trainierten Kalender-Kaestchen, Lauf im
@@ -1568,13 +1580,13 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 #glas-btn[aria-pressed="true"] { background: rgba(255,255,255,.42); }
 
 /* ─── Toast ─── */
-#toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 14px + var(--sl-off)); left: 50%; transform: translateX(-50%) translateY(16px); background: #111; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 500; opacity: 0; transition: all .28s; z-index: 500; white-space: nowrap; pointer-events: none; }
+#toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 14px + var(--sl-off)); left: 50%; transform: translateX(-50%) translateY(16px); background: #111; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: var(--fs-text); font-weight: 500; opacity: 0; transition: all .28s; z-index: 500; white-space: nowrap; pointer-events: none; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 /* Variante mit Rückgängig-Knopf: muss anklickbar sein (der normale Toast ist es nicht). */
 #toast.with-undo { pointer-events: auto; display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 18px; }
 .toast-undo {
   background: rgba(255,255,255,0.16); color: #fff; border: none;
-  border-radius: 14px; padding: 7px 13px; font-size: 13px; font-weight: 700;
+  border-radius: 14px; padding: 7px 13px; font-size: var(--fs-neben); font-weight: 700;
   font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .toast-undo:active { transform: scale(.95); }
@@ -1600,7 +1612,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 
 /* Gewichtsentwicklung im Übungs-Detail */
 .ex-chart-wrap { height: 150px; margin: 2px 0 12px; }
-.ex-chart-empty { font-size: 12px; color: var(--text3); line-height: 1.4; margin-bottom: 12px; }
+.ex-chart-empty { font-size: var(--fs-neben); color: var(--text3); line-height: 1.4; margin-bottom: 12px; }
 
 
 /* Einstieg ins freie Training */
@@ -1618,7 +1630,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
   min-height: var(--ph-btn); box-sizing: border-box;
   max-width: 168px; padding: 7px 10px;
   border-radius: 11px; background: rgba(255,255,255,0.18);
-  font-size: 11.5px; font-weight: 600; color: #fff;
+  font-size: var(--fs-etikett); font-weight: 600; color: #fff;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .backup-chip:active { transform: scale(.96); }
@@ -1696,7 +1708,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
      Linie um die Karte. Abgegrenzt wird sie allein ueber den Schatten. Die gleichnamige
      Abgegrenzt wird allein ueber den Schatten. */
 }
-.hero-v2-btn { align-self: flex-start; padding: 13px 22px; border-radius: 12px; background: var(--gradient); color: #fff; border: none; font-size: 15px; font-weight: 700; display: inline-flex; gap: 8px; align-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
+.hero-v2-btn { align-self: flex-start; padding: 13px 22px; border-radius: 12px; background: var(--gradient); color: #fff; border: none; font-size: var(--fs-text); font-weight: 700; display: inline-flex; gap: 8px; align-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
 /* ─── Herocard „Heute" (06.09.2026, Leonard-Vorgabe) ───────────────────────────────
    Titel „Heute" an derselben Stelle wie jeder andere Kartentitel, darunter je Sportart eine
    Spalte aus mittiger Beschriftung und Knopf. Kein Ober-/Untertitel, kein Symbol.
@@ -1720,7 +1732,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    genau dort, wo Leonard sie haben wollte. */
 /* Der Titel bleibt bei 16px wie jeder Kartentitel der App (Leonard-Entscheidung 13.09.2026) —
    nur sein Abstand nach unten ist mit der Karte um 10 % gewachsen. */
-.hero-heute-titel { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 2.2px; }
+.hero-heute-titel { font-size: var(--fs-titel); font-weight: 700; color: var(--text); margin-bottom: 2.2px; }
 /* Laufende Einheit: Trainingstag links, Uhr rechts in derselben Zeile. */
 .hero-aktiv-titel { display: flex; align-items: baseline; gap: 11px; }
 .hero-aktiv-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1736,7 +1748,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 /* Die Einheit steht MITTIG ueber ihrem Knopf und wird gekuerzt statt umzubrechen — sonst
    stuenden die beiden Knoepfe auf verschiedenen Hoehen. */
 .hero-heute-einheit {
-  text-align: center; font-size: 14.3px; font-weight: 600; color: var(--text3);
+  text-align: center; font-size: var(--fs-text); font-weight: 600; color: var(--text3);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* Zweite Zeile unter dem Trainingstag: Uebungen, Saetze und mittlere Dauer (Leonard-Wunsch
@@ -1750,7 +1762,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    schrumpft sonst nicht unter seinen Inhalt. */
 .hero-heute-kopf { min-width: 0; display: flex; flex-direction: column; gap: 2.2px; }
 .hero-heute-meta {
-  text-align: center; font-size: 12.1px; font-weight: 600; color: var(--text3); opacity: .8;
+  text-align: center; font-size: var(--fs-neben); font-weight: 600; color: var(--text3); opacity: .8;
   line-height: 1.1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -1790,7 +1802,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
      dann gar nicht gewachsen. Polster wirkt in beiden Faellen.
      Gemessen: Trainings-Tab 123.5 → 136.5px (+10.5 %), Uebersicht 141 → 154px (+9.2 %).
      Ein einzelner Wert kann beide nicht exakt auf 10 % bringen; das hier ist die Mitte. */
-  padding: 8.8px; font-size: 15.4px; gap: 7.7px; line-height: 1.25; border-radius: 13.2px;
+  padding: 8.8px; font-size: var(--fs-text); gap: 7.7px; line-height: 1.25; border-radius: 13.2px;
   min-width: 0; text-align: center; flex: 1;
 }
 /* Symbol in TEXTGROESSE vor der Beschriftung (Leonard-Vorgabe). `1em` bindet es an die
@@ -1813,7 +1825,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    ragte unten aus der Karte, und „abgeschlossen" (126.7px) stiess an den Knopfrand. Deshalb
    heissen die Knoepfe seit dem 13.09.2026 „Freies Training" und „Lauf erledigt"
    (Leonard-Entscheidung, in allen Tabs). Beim Anheben der Schrift hier nachmessen. */
-.hero-heute:not(.hero-aktiv) .hero-v2-btn { font-size: 17.6px; }
+.hero-heute:not(.hero-aktiv) .hero-v2-btn { font-size: var(--fs-betont); }
 .hero-btn-ic { width: 1em; height: 1em; flex-shrink: 0; display: inline-flex; }
 .hero-btn-ic svg { width: 100%; height: 100%; fill: currentColor; }
 /* Die Knoepfe tragen die Farbe der SPORTART statt der Tabfarbe (Leonard-Wunsch 06.09.2026) —
@@ -1872,7 +1884,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 
 .hero-v2-timer {
   flex-shrink: 0; white-space: nowrap;
-  font-size: 24.2px; font-weight: 800; line-height: 1.15;
+  font-size: 24px; font-weight: 800; line-height: 1.15;
   letter-spacing: 0.44px;
   color: var(--accent-dark);
   font-variant-numeric: tabular-nums;
@@ -1897,7 +1909,7 @@ html.wo-running #wo-week-card.wo-woche-faehrt,
 .hero-v2-btn-danger {
   padding: 13px 14px; border-radius: 12px; border: none;
   background: var(--red); color: #fff;
-  font-size: 15px; font-weight: 700;
+  font-size: var(--fs-text); font-weight: 700;
   display: inline-flex; gap: 6px; align-items: center; justify-content: center;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
@@ -1939,7 +1951,7 @@ html.wo-running #wo-week-card.wo-woche-faehrt,
      wehtut. Die Alternative waere eine hoehere Karte gewesen; alle Wochenplan-Karten und
      Herocards sind aber genau 143px (09.09.2026). */
   margin: 5.5px -6px 0; padding: 0 6px;
-  font-size: 15.84px; font-weight: 600; color: var(--text3); text-align: center;
+  font-size: var(--fs-text); font-weight: 600; color: var(--text3); text-align: center;
 }
 /* Die Reihe ist seit dem 12.09.2026 STUMM (Leonard-Entscheidung): Antippbar sind jetzt die
    einzelnen Wochentage darin, und zwei Ziele in einer Kachel hat Leonard am 06.09.2026
@@ -2050,7 +2062,7 @@ html.wo-running #wo-week-card.wo-woche-faehrt,
 /* Der Filtertitel sieht aus wie jeder Kartentitel, ist aber ein Knopf. */
 .ppv-filter-btn {
   border: none; background: none; padding: 0; margin: 0; text-align: left;
-  font: inherit; font-size: 16px; font-weight: 700; color: var(--text);   /* = .ppv-name, Kartentitel */
+  font: inherit; font-size: var(--fs-titel); font-weight: 700; color: var(--text);   /* = .ppv-name, Kartentitel */
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none; user-select: none;
 }
@@ -2185,14 +2197,14 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .aex-v2-num {
   width: 32px; height: 32px; border-radius: 50%;
   background: var(--c, var(--accent)); color: #fff;
-  font-size: 14px; font-weight: 700;
+  font-size: var(--fs-text); font-weight: 700;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .aex-v2-info { flex: 1; min-width: 0; }
 /* Name kürzen statt in das Erledigt-Kästchen laufen zu lassen */
-.aex-v2-name { font-size: 16px; font-weight: 700; color: var(--c, var(--text)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aex-v2-name { font-size: var(--fs-titel); font-weight: 700; color: var(--c, var(--text)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Einordnung unter dem „Zuletzt"-Wert: Bestleistung und Differenz zur letzten Einheit */
-.aex-v2-cmp { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 2px; font-size: 12px; font-weight: 600; }
+.aex-v2-cmp { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 2px; font-size: var(--fs-neben); font-weight: 600; }
 .aex-cmp-pr   { color: var(--text3); }
 .aex-cmp-up   { color: var(--green); }
 .aex-cmp-down { color: var(--text3); }
@@ -2212,7 +2224,7 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
    dadurch 4px ueber der Kartenmitte (Leonard-Meldung 05.09.2026). Aufgeklappt bleibt es bei
    `flex-start`, sonst wandert die Scheibe beim Aufklappen mit den neuen Textzeilen nach unten. */
 .aex-v2.collapsed .aex-v2-header { align-items: center; }
-.aex-v2-last { font-size: 12px; color: var(--text3); margin-top: 1px; }
+.aex-v2-last { font-size: var(--fs-neben); color: var(--text3); margin-top: 1px; }
 
 .aex-v2-body { display: flex; gap: 12px; padding: 0 14px 14px; }
 .aex-v2-table { flex: 1; }
@@ -2222,7 +2234,7 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
   width: 100%; height: 38px; line-height: 38px;
   padding: 0 4px; box-sizing: border-box;
   background: var(--card2); border: 1px solid transparent;
-  border-radius: 10px; font-size: 15px; font-weight: 600; text-align: center;
+  border-radius: 10px; font-size: var(--fs-text); font-weight: 600; text-align: center;
   color: var(--text); -webkit-appearance: none;
   vertical-align: middle;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
@@ -2241,8 +2253,8 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 /* Pro-Satz-Tabelle als ZEILEN (eine Zeile pro Satz): Satznr | Wdh. | kg | Haken */
 .aex-v2-srow { display: grid; grid-template-columns: 34px 1fr 1fr 40px; gap: 7px; align-items: center; margin-bottom: 8px; }
 .aex-v2-srow.head { margin-bottom: 6px; line-height: 16px; }
-.aex-v2-srow.head span { font-size: 12px; color: var(--text3); font-weight: 600; text-align: center; }
-.aex-v2-snum { font-size: 13px; font-weight: 700; text-align: center; color: var(--text3); }
+.aex-v2-srow.head span { font-size: var(--fs-neben); color: var(--text3); font-weight: 600; text-align: center; }
+.aex-v2-snum { font-size: var(--fs-neben); font-weight: 700; text-align: center; color: var(--text3); }
 
 /* Satz-Haken: erledigte Sätze treten zurück, der nächste offene bleibt der auffälligste
    Punkt der Karte. Trefferfläche bewusst 40x40 — wird mit feuchten Händen bedient. */
@@ -2286,8 +2298,12 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .aex-v2-details { color: var(--accent); margin-left: auto; }
 /* Vier Knoepfe muessen auf iPhone-Breite in EINE Zeile passen (Leonard-Entscheidung
    28.08.2026): weniger Innenabstand, kleinere Schrift, kein Umbruch. Ohne das liefen
-   „+ Satz / − Satz / Überspringen / Details" rechts aus der Karte. */
-.aex-v2-actions .btn-sm { padding: 8px 9px; font-size: 12px; white-space: nowrap; min-width: 0; }
+   „+ Satz / − Satz / Überspringen / Details" rechts aus der Karte.
+   Seit dem 21.09.2026 13px statt 12px (Schriftskala, Stufe „Nebentext") und dafuer 7px statt 9px
+   seitlicher Innenabstand: Bei 12px/9px fuellten die vier Knoepfe die 263px der Zeile auf den
+   Pixel, bei 13px/9px lief „» Überspringen" um 2px ueber. GEMESSEN bei 13px/7px auf 375px:
+   alle vier ohne Ueberlauf, 2px Luft. */
+.aex-v2-actions .btn-sm { padding: 8px 7px; font-size: var(--fs-neben); white-space: nowrap; min-width: 0; }
 /* Verlaufsdiagramm am Ende der Uebungskarte. */
 .aex-v2-chart { padding: 0 14px 14px; }
 .aex-v2-chart .ex-chart-wrap { height: 140px; margin: 2px 0 0; }
@@ -2295,7 +2311,7 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .aex-v2.collapsed .aex-v2-chart { display: none; }
 .aex-v2-notes-area {
   flex: 1; min-height: 60px; background: transparent; border: none;
-  font-size: 12px; color: var(--text2); line-height: 1.4;
+  font-size: var(--fs-neben); color: var(--text2); line-height: 1.4;
   resize: none; font-family: inherit; padding: 0;
 }
 .aex-v2-notes-area::placeholder { color: var(--text3); }
@@ -2304,7 +2320,7 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .aex-v2-done {
   display: flex; align-items: center; gap: 6px; cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  font-size: 13px; color: var(--text3); font-weight: 500; flex-shrink: 0;
+  font-size: var(--fs-neben); color: var(--text3); font-weight: 500; flex-shrink: 0;
 }
 .aex-v2-done input { display: none; }
 /* Gleiche Größe und Optik wie der Satz-Haken (.aex-v2-setcheck) — beide markieren
@@ -2416,8 +2432,8 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .info-text b { color: var(--text); }
 /* Kennzahl rechts im Kalenderkopf. Bricht bei schmalem Bildschirm als Ganzes um,
    statt sich zwischen die Buchstaben des Titels zu schieben. */
-.cal-stats { font-size: 12px; color: var(--text3); white-space: nowrap; margin-left: auto; }
-.chart-card-v2-title { font-size: 16px; font-weight: 700; }
+.cal-stats { font-size: var(--fs-neben); color: var(--text3); white-space: nowrap; margin-left: auto; }
+.chart-card-v2-title { font-size: var(--fs-titel); font-weight: 700; }
 /* Muscle bars v2 (with icons + colors) */
 /* Liegt in einer `.chart-card-v2`, die bereits 14px polstert — seitlich also 0, sonst
    staende der Inhalt 30px vom Kartenrand und damit weiter innen als der Titel darueber. */
@@ -2501,8 +2517,8 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .lauf-fehler { margin-top: 6px; color: var(--red); font-size: 12px; line-height: 1.4; }
 .lauf-woche { display: flex; gap: 10px; }
 .lauf-kennz { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.lauf-kennz-v { font-size: 17px; font-weight: 700; color: var(--text); }
-.lauf-kennz-l { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
+.lauf-kennz-v { font-size: var(--fs-betont); font-weight: 700; color: var(--text); }
+.lauf-kennz-l { font-size: var(--fs-etikett); font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
 /* LAEUFE DIESER WOCHE unter den Summen (`laufWochenListe`, 21.09.2026, Leonard-Wunsch).
    Eine Zeile je Tag: Scheibe mit dem Wochentag, Vorgabe mit Zone, darunter die Notiz, rechts
    das Ist bzw. „heute". Die Scheibe traegt dieselben Zustaende wie der Wochentagskreis der
@@ -2519,17 +2535,17 @@ button.lauf-wz:active { opacity: .6; }
 .lauf-wz-tag {
   width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; box-sizing: border-box;
   display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700;
+  font-size: var(--fs-neben); font-weight: 700;
 }
 .lauf-wz-tag.gelaufen   { background: #4ADE80; color: #fff; }
 .lauf-wz-tag.offen      { background: var(--card2); box-shadow: inset 0 0 0 2px #4ADE80; color: #22A05B; }
 .lauf-wz-tag.verschoben { background: var(--card2); color: var(--text2); }
 .lauf-wz-mitte { flex: 1; min-width: 0; }
-.lauf-wz-soll { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 14px; font-weight: 600; color: var(--text); }
+.lauf-wz-soll { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: var(--fs-text); font-weight: 600; color: var(--text); }
 .lauf-wz-leer { font-weight: 400; color: var(--text3); }
-.lauf-wz-zone { font-size: 11px; font-weight: 700; color: #166534; background: #DCFCE7; border-radius: 999px; padding: 1px 7px; }
-.lauf-wz-notiz { margin-top: 2px; font-size: 12px; color: var(--text3); line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
-.lauf-wz-ist { flex-shrink: 0; font-size: 12px; font-weight: 600; color: var(--text2); white-space: nowrap; }
+.lauf-wz-zone { font-size: var(--fs-etikett); font-weight: 700; color: #166534; background: #DCFCE7; border-radius: 999px; padding: 1px 7px; }
+.lauf-wz-notiz { margin-top: 2px; font-size: var(--fs-neben); color: var(--text3); line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.lauf-wz-ist { flex-shrink: 0; font-size: var(--fs-neben); font-weight: 600; color: var(--text2); white-space: nowrap; }
 /* Transparenz-Modus: keine Sportfarben, dieselben Werte wie die Wochentagskreise der
    Einzelkarten (gelaufen weiss gefuellt, offen weiss umrandet). Der Wochentag im weissen
    Kreis bleibt farbig — `--accent-dark` ist auf der Glas-Karte selbst weiss, deshalb fest
@@ -2538,7 +2554,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-tag.gelaufen   { background: rgba(2
 html.glas .screen:not(#screen-mehr) .lauf-wz-tag.offen      { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 2px rgba(255,255,255,.92); color: #fff; }
 html.glas .screen:not(#screen-mehr) .lauf-wz-tag.verschoben { background: rgba(255,255,255,.22); color: rgba(255,255,255,.85); }
 html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(255,255,255,.22); color: #fff; }
-.lauf-leer { font-size: 13px; color: var(--text3); text-align: center; padding: 10px 0; }
+.lauf-leer { font-size: var(--fs-neben); color: var(--text3); text-align: center; padding: 10px 0; }
 /* Eingeklappte Plan-Karte: wie eine Listenzeile, aufgeklappt wird sie zum Formular. */
 /* Wochenbloecke: Der Kopf nutzt den transparenten Ausklapp-Knopf, der Inhalt bleibt IMMER
    im DOM und wird nur ein-/ausgeblendet — ein Neuaufbau naehme den Kopffeldern darueber
@@ -2715,7 +2731,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
   display: flex; gap: var(--cal-gap); margin-bottom: var(--cal-months-gap);
   height: var(--cal-months-h);
 }
-.cal-month { width: var(--cal-cell, 19px); flex: 0 0 var(--cal-cell, 19px); font-size: 15.6px; line-height: var(--cal-months-h); color: var(--text3); white-space: nowrap; }
+.cal-month { width: var(--cal-cell, 19px); flex: 0 0 var(--cal-cell, 19px); font-size: var(--fs-text); line-height: var(--cal-months-h); color: var(--text3); white-space: nowrap; }
 /* Liegt absolut ueber dem linken Rand von `.cal-body` — bewusst NICHT als Flex-/Grid-Spalte,
    damit `.cal-scroll` ein gewoehnlicher Block bleiben kann (siehe oben).
    Der obere Abstand bildet die Monatszeile im Scroller nach, damit „Mo" auf einer Linie mit
@@ -2730,7 +2746,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
   width: var(--cal-label-w);
   display: flex; flex-direction: column; gap: var(--cal-gap);
 }
-.cal-daylabels span { height: var(--cal-cell, 19px); font-size: 15.6px; line-height: var(--cal-cell, 19px); color: var(--text3); }
+.cal-daylabels span { height: var(--cal-cell, 19px); font-size: var(--fs-text); line-height: var(--cal-cell, 19px); color: var(--text3); }
 .cal-grid { display: flex; gap: var(--cal-gap); }
 .cal-week { display: flex; flex-direction: column; gap: var(--cal-gap); }
 /* Zwei Schichten pro Tag: die Fläche sagt, ob laut Plan ein Training vorgesehen war,
@@ -2862,14 +2878,14 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
   display: inline-flex; align-items: center; justify-content: center;
   width: 20px; height: 20px; flex-shrink: 0;
   border-radius: 5px; background: var(--card2); color: var(--text2);
-  font-size: 11px; line-height: 1; font-weight: 700;
+  font-size: var(--fs-etikett); line-height: 1; font-weight: 700;
 }
 
 /* Titel des Uebersichts-Kalenders ist ein Filter (Training | Laeufe | beides). Sieht aus
    wie die uebrigen Kartentitel, ist aber ein Knopf. */
 .cal-filter-btn {
   border: none; background: none; padding: 0; margin: 0;
-  font: inherit; font-size: 16px; font-weight: 700; color: inherit; text-align: left;
+  font: inherit; font-size: var(--fs-titel); font-weight: 700; color: inherit; text-align: left;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   /* Siehe `.seg-btn`: verhindert die Auswahl-Striche unter einzelnen Buchstaben. */
   -webkit-user-select: none; user-select: none;
@@ -2892,7 +2908,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
    Gilt fuer BEIDE Kalender. */
 .cal-jahr {
   border: none; background: none; margin: -10px -8px; padding: 10px 8px;
-  font: inherit; font-size: 16px; font-weight: 700; color: var(--text3);
+  font: inherit; font-size: var(--fs-titel); font-weight: 700; color: var(--text3);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none; user-select: none;
   white-space: nowrap;
@@ -2930,7 +2946,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .cal-plannames, .cal-planlanes { position: relative; }
 .cal-planname {
   position: absolute; height: 15px; line-height: 15px;
-  font-size: 11px; font-weight: 700; color: var(--cal-plan-color);
+  font-size: var(--fs-etikett); font-weight: 700; color: var(--cal-plan-color);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .cal-planspur {
@@ -2950,7 +2966,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .cal-foot { padding: 0; }
 /* Kein Polster nach unten: Der Abstand zum Kartenrand kommt allein aus der Karte selbst,
    damit er mit und ohne eingeblendete Beschreibung gleich gross ausfaellt. */
-.cal-detail { font-size: 16px; color: var(--text2); line-height: 1.4; padding: 12px var(--cal-pad-x) 0; }
+.cal-detail { font-size: var(--fs-text); color: var(--text2); line-height: 1.4; padding: 12px var(--cal-pad-x) 0; }
 /* Ohne ausgewaehlten Tag ist die Zeile leer — dann darf sie auch keinen Platz belegen.
    (Frueher stand hier dauerhaft ein Hinweistext, der den Raum gefuellt hat.) */
 .cal-detail:empty { display: none; }
@@ -3508,7 +3524,7 @@ html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
   min-width: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   border: 1px solid transparent; background: transparent;
-  font-size: 13px; font-weight: 600;
+  font-size: var(--fs-neben); font-weight: 600;
   color: var(--text2);
   padding: 8px 6px; border-radius: 9px; cursor: pointer; -webkit-tap-highlight-color: transparent;
   font-family: inherit; transition: background 0.15s, color 0.15s;
@@ -3945,7 +3961,7 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
 }
 .stats-mode-pill {
   padding: 4px 9px; border-radius: 999px;
-  font-size: 11px; font-weight: 700; letter-spacing: 0.2px;
+  font-size: var(--fs-etikett); font-weight: 700; letter-spacing: 0.2px;
   color: var(--text3); cursor: pointer; user-select: none;
   transition: color .15s, background .15s;
 }
@@ -3954,13 +3970,13 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
 /* Der Gewicht/Wdh.-Umschalter steht DIREKT hinter „Entwicklung", nicht rechtsbuendig
    (Leonard-Wunsch 01.09.2026) — deshalb `flex-start` statt `space-between`. */
 .ex-chart-head { display: flex; align-items: center; justify-content: flex-start; gap: 10px;
-  font-size: 10.5px; font-weight: 500; min-height: 18px; }
+  font-size: var(--fs-etikett); font-weight: 500; min-height: 18px; }
 /* Kompakter Umschalter, NUR in dieser Ueberschrift (der Kg/Saetze-Umschalter der
    Volumenkarte bleibt unveraendert). Seine Hoehe bestimmt die Zeilenhoehe: War er hoeher
    als der Text, sprang „Entwicklung" beim Aufklappen nach unten. Zusammen mit der festen
    min-height bleibt die Zeile in beiden Zustaenden exakt gleich hoch. */
 .ex-chart-head .stats-mode-toggle { padding: 1px; }
-.ex-chart-head .stats-mode-pill { padding: 1px 8px; font-size: 10px; }
+.ex-chart-head .stats-mode-pill { padding: 1px 8px; font-size: var(--fs-etikett); }
 /* Einklappbare Ueberschrift des Diagramms (Einheiten-Detailansicht). */
 .ex-chart-collapse {
   display: inline-flex; align-items: center; gap: 5px;
@@ -4013,4 +4029,4 @@ input, select, textarea { font-size: 16px !important; }
 /* Ausnahme Notizfeld in den Übungskarten: 16px wirkten dort zu wuchtig (Leonard-Wunsch).
    Vertretbar, weil die viewport-Sperre oben den Fokus-Zoom in der installierten PWA
    abfängt — im Safari-Tab würde dieses eine Feld beim Antippen zoomen. */
-.aex-v2-notes-area { font-size: 12px !important; }
+.aex-v2-notes-area { font-size: var(--fs-neben) !important; }

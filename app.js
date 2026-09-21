@@ -8247,9 +8247,11 @@ function _zeichneExDiagramm(canvas, exId) {
           },
         } },
       },
+      // Achsenschrift = Stufe „Etikett" der Schriftskala (`--fs-etikett`, 11px; bis 21.09.2026 10px).
+      // Chart.js zeichnet auf ein Canvas und liest keine CSS-Variablen — der Wert steht deshalb fest.
       scales: {
-        x: { grid: { display: false }, ticks: { color: schrift, font: { size: 10 }, maxRotation: 0, autoSkipPadding: 12 } },
-        y: { grid: { color: raster }, ticks: { color: schrift, font: { size: 10 }, precision: 0, callback: (v) => v + ' ' + unit } },
+        x: { grid: { display: false }, ticks: { color: schrift, font: { size: 11 }, maxRotation: 0, autoSkipPadding: 12 } },
+        y: { grid: { color: raster }, ticks: { color: schrift, font: { size: 11 }, precision: 0, callback: (v) => v + ' ' + unit } },
       },
     },
   });
