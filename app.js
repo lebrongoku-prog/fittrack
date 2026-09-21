@@ -3295,19 +3295,18 @@ function applyGlasModus() {
   if (btn) btn.setAttribute('aria-pressed', an ? 'true' : 'false');
 }
 
-// DER WECHSEL BREITET SICH ALS KREIS AUS DEM KNOPF AUS (18.09.2026, Leonard-Wunsch; vorher
-// sprang die ganze App schlagartig um). Gebaut mit der View Transitions API: Der Browser
-// fotografiert den alten Zustand, `umschalten` baut den neuen, und der NEUE wird ueber dem alten
-// per `clip-path` als wachsender Kreis aufgedeckt — Mittelpunkt ist die Mitte des Glas-Knopfs,
-// der Radius reicht bis in die entfernteste Bildschirmecke.
-// Das Aufdecken ist die EINZIGE Bewegung: Die Standard-Kreuzblende des Browsers ist per CSS
-// abgeschaltet (`html.glas-kreis::view-transition-*`). Die Klasse haengt nur fuer die Dauer des
-// Wechsels am Dokument — eine kuenftige andere View Transition bekaeme sonst ebenfalls keine
-// Blende.
-// Waehrenddessen nimmt die Seite keine Tipps an (die Browser-Ebene liegt darueber) — bei 0.5s
+// DER WECHSEL BLENDET UEBER (21.09.2026, Leonard-Wunsch): Der ganze Bildschirm blendet in 0.3s
+// vom alten in den neuen Modus — die Variante „Ueberblendung", die am 18.09.2026 neben dem
+// wachsenden Kreis aus dem Glas-Knopf zur Wahl stand. Der Kreis (`glas-kreis`, clip-path) ist
+// damit entfallen.
+// Gebaut mit der View Transitions API: Der Browser fotografiert den alten Zustand, `umschalten`
+// baut den neuen, und die STANDARD-Kreuzblende des Browsers blendet vom einen ins andere. Die
+// Klasse `glas-blende` setzt nur deren Dauer (CSS, `html.glas-blende::view-transition-*`) und
+// haengt nur fuer diesen einen Wechsel am Dokument.
+// Waehrenddessen nimmt die Seite keine Tipps an (die Browser-Ebene liegt darueber) — bei 0.3s
 // unerheblich.
-// OHNE die API (iOS vor 18) und bei `prefers-reduced-motion` springt es wie bisher.
-const GLAS_KREIS_MS = 500;
+// OHNE die API (iOS vor 18) und bei `prefers-reduced-motion` springt es wie frueher.
+const GLAS_BLENDE_MS = 300;   // muss zur `animation-duration` in style.css passen
 function toggleGlasModus() {
   const umschalten = () => {
     try { localStorage.setItem(GLAS_KEY, glasAktiv() ? '0' : '1'); } catch {}
@@ -3315,23 +3314,21 @@ function toggleGlasModus() {
     // Diagramme neu zeichnen: Achsen- und Rasterfarben kommen aus JS, nicht aus dem CSS.
     _zeichneAlleDiagrammeNeu();
   };
-  const btn = document.getElementById('glas-btn');
-  const r = btn && btn.getBoundingClientRect();
-  if (!document.startViewTransition || _bewegungReduziert() || !r || !r.width) { umschalten(); return; }
-  const x = r.left + r.width / 2, y = r.top + r.height / 2;
-  const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+  if (!document.startViewTransition || _bewegungReduziert()) { umschalten(); return; }
   const html = document.documentElement;
-  html.classList.add('glas-kreis');
+  html.classList.add('glas-blende');
   let vt;
   try { vt = document.startViewTransition(umschalten); }
-  catch (e) { html.classList.remove('glas-kreis'); umschalten(); return; }
-  vt.ready.then(() => {
-    html.animate(
-      { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
-      { duration: GLAS_KREIS_MS, easing: 'cubic-bezier(.4,0,.2,1)',
-        pseudoElement: '::view-transition-new(root)' });
-  }).catch(() => {});
-  vt.finished.catch(() => {}).then(() => html.classList.remove('glas-kreis'));
+  catch (e) { html.classList.remove('glas-blende'); umschalten(); return; }
+  // NOTBREMSE: Die Zeitleiste steht, solange die Seite nicht sichtbar ist — `finished` kaeme
+  // dann erst spaet. Die Klasse wirkt nur auf die Blende und ist harmlos, wird aber in jedem
+  // Fall abgeraeumt.
+  const weg = () => html.classList.remove('glas-blende');
+  // `ready` scheitert, wenn der Browser den Uebergang ueberspringt (z. B. bei verdeckter Seite) —
+  // unbehandelt stuende das als Fehler in der Konsole. Umgeschaltet wird trotzdem.
+  vt.ready.catch(() => {});
+  vt.finished.catch(() => {}).then(weg);
+  setTimeout(weg, GLAS_BLENDE_MS + 400);
 }
 
 // Chart.js liest Textfarben aus seiner eigenen Vorgabe — die muss dem Modus folgen,

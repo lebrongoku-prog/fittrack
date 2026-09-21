@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v365**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v366**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1235,23 +1235,26 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   zu fuehren kostet nichts, seit sie keine Animation mehr hat.
 - **Kopf der Uebersicht:** Reihenfolge rechts = Sicherungs-Chip, Zahnrad (Einstellungen), Glas-Knopf
   (Leonard-Wunsch 01.09.2026, vorher umgekehrt). Beide Knoepfe sind `.ph-gear`.
-- **DER WECHSEL IN DEN TRANSPARENZ-MODUS UND ZURUECK BREITET SICH ALS KREIS AUS DEM GLAS-KNOPF AUS**
-  (`toggleGlasModus`, 18.09.2026, Leonard-Entscheidung „Kreis aus dem Knopf" gegen eine schlichte
-  Ueberblendung). Vorher sprang die ganze App schlagartig um.
+- **DER WECHSEL IN DEN TRANSPARENZ-MODUS UND ZURUECK BLENDET UEBER** (`toggleGlasModus`,
+  21.09.2026, Leonard-Wunsch): Der ganze Bildschirm blendet in 0.3s vom alten in den neuen Modus
+  — die Variante „Ueberblendung", die am 18.09.2026 neben dem Kreis zur Wahl stand.
   GEBAUT MIT DER VIEW TRANSITIONS API: `document.startViewTransition(umschalten)` fotografiert den
-  alten Zustand, `umschalten` setzt den Modus und zeichnet die Diagramme neu, und der NEUE Zustand
-  wird per `clip-path: circle()` auf `::view-transition-new(root)` aufgedeckt — Mittelpunkt ist die
-  Mitte des Glas-Knopfs, der Radius reicht bis in die entfernteste Bildschirmecke (`GLAS_KREIS_MS`,
-  500ms). Die Standard-Kreuzblende des Browsers ist abgeschaltet
-  (`html.glas-kreis::view-transition-old/new(root) { animation: none; mix-blend-mode: normal }`);
-  die Klasse `glas-kreis` haengt NUR fuer die Dauer dieses Wechsels am Dokument, damit eine
-  kuenftige andere View Transition ihre Blende behaelt.
-  Waehrend der 0.5s nimmt die Seite keine Tipps an (die Ebene des Browsers liegt darueber).
-  RUECKFALL: Ohne die API (iOS vor 18) und bei `prefers-reduced-motion` springt es wie bisher.
-  GEMESSEN: Kreis beginnt bei (342, 45) = Knopfmitte, Radius 840px auf 375x812; Standbild bei
-  220ms zeigt oben rechts schon den neuen Modus, unten links noch den alten; danach keine Reste
-  (Klasse weg, keine Animation auf den Pseudo-Elementen), Diagrammfarben folgen dem Modus.
-  NICHT pruefbar hier: ob Safari auf Leonards iPhone die API kennt (ab iOS 18).
+  alten Zustand, `umschalten` setzt den Modus und zeichnet die Diagramme neu, und die
+  STANDARD-Kreuzblende des Browsers blendet vom einen ins andere. Die Klasse `glas-blende` setzt
+  nur deren Dauer (`html.glas-blende::view-transition-old/new(root) { animation-duration: 300ms;
+  animation-timing-function: ease }`, `GLAS_BLENDE_MS` im JS muss dazu passen) und haengt nur
+  fuer diesen einen Wechsel am Dokument; eine Notbremse raeumt sie spaetestens nach 700ms ab.
+  `vt.ready.catch(() => {})` ist Pflicht: Ueberspringt der Browser den Uebergang (verdeckte
+  Seite), scheitert `ready`, und unbehandelt stuende das als Fehler in der Konsole.
+  Waehrend der 0.3s nimmt die Seite keine Tipps an (die Ebene des Browsers liegt darueber).
+  RUECKFALL: Ohne die API (iOS vor 18) und bei `prefers-reduced-motion` springt es.
+  VORGESCHICHTE (18.–21.09.2026): Der neue Modus breitete sich als wachsender Kreis aus dem
+  Glas-Knopf aus (`clip-path: circle()` auf `::view-transition-new(root)`, `GLAS_KREIS_MS` 500ms,
+  Klasse `glas-kreis` mit abgeschalteter Standard-Blende). Wer ihn zurueck will: Commit 7fb92af.
+  GEPRUEFT: Regel greift, Modus schaltet hin und zurueck, Knopf und Speicher folgen, Klasse danach
+  weg, keine Konsolenfehler. NICHT gesehen: die Blende selbst — die Browser-Ansicht war verdeckt,
+  und dann ueberspringt der Browser jede View Transition (TESTHINWEIS: `document.visibilityState`
+  pruefen; bei 'hidden' laeuft keine).
 - **KEINE SPORTFARBEN IM TRANSPARENZ-MODUS in Wochenplan- und Kalenderkarten** (18.09.2026,
   Leonard-Wunsch „um die Sichtbarkeit zu erhoehen" — Dunkelgruen und Hellgruen gingen auf dem
   Farbverlauf unter). Im EINZELNEN:
@@ -1260,6 +1263,13 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
     ist, sagen die Symbole davor.
   - Die EINZELKARTEN (Gym-/Laufwoche, Plan-Tab) waren schon weiss. Der Wochentag IM weissen
     Kreis bleibt farbig (`--accent-dark`) — weiss auf weiss waere er unlesbar.
+    NACHTRAG 21.09.2026 (Leonard-Wunsch): Auch ein absolvierter Tag OHNE Plan (Lauf oder freies
+    Training an einem ungeplanten Tag, nur `.done`, kein `.training`) ist jetzt weiss — er blieb
+    als einziger Kreis hell- bzw. dunkelgruen. Dabei fiel ein zweiter Fehler auf: Ist dieser Tag
+    HEUTE, setzte `.ppv-col.today:not(.training) .ppv-wd` seine Schriftfarbe — hell Akzentgruen
+    auf der gruenen Scheibe, im Glas-Modus weiss auf weiss. Beide Fassungen tragen jetzt
+    zusaetzlich `:not(.done)`. GEMESSEN (Datum auf Di gesetzt, Di ungeplant und gelaufen): hell
+    #4ADE80 mit weisser Schrift, Glas 92-%-Weiss mit #059669.
   - KALENDER: Gym-Quadrat (geplant = Umriss, absolviert = Fuellung) HALBWEISS (60 %), Laufkreis
     (gelaufen = Fuellung, geplant = Ring) VOLL weiss. Die Abstufung ist Pflicht: Der Laufkreis
     sitzt MITTEN im Quadrat — beide voll weiss, und ein Tag mit Gym UND Lauf saehe aus wie ein

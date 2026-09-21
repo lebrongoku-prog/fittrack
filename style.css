@@ -1002,7 +1002,7 @@ body.theme-plans .hist-action-dd {
    Der fruehere Ring (`.ppv-wd::after`, 2px in der Akzentfarbe, mit Sonderfaellen fuer erledigte
    Gym- und Lauftage) ist damit ersatzlos entfallen. */
 .ppv-col.today { background: var(--accent-bg); border-radius: 9.9px; }
-.ppv-col.today:not(.training) .ppv-wd { color: var(--accent-dark); font-weight: 700; }
+.ppv-col.today:not(.training):not(.done) .ppv-wd { color: var(--accent-dark); font-weight: 700; }
 /* GEPLANT, ABER NOCH NICHT ABSOLVIERT: hellgrau mit Ring in der Sportfarbe — das Aussehen der
    Kombi-Karte (Leonard-Wunsch 13.09.2026, in Uebersicht und Trainings-Tab). Der Wochentag
    bleibt im Kreis stehen, in der Sportfarbe. GEFUELLT heisst damit auch hier „absolviert".
@@ -1328,14 +1328,13 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .ex-group-btn .ex-group-name { min-width: 0; }
 .ex-group-btn .count { opacity: .7; font-weight: 600; }
 
-/* Wechsel zwischen normalem Modus und Glas-Modus: Der NEUE Zustand wird als wachsender Kreis
-   aus dem Glas-Knopf aufgedeckt (18.09.2026, `toggleGlasModus`). Die Standard-Kreuzblende der
-   View Transition muss dafuer weg — sonst blendete der alte Zustand zugleich aus, und der Kreis
-   laege auf einer halb durchsichtigen Flaeche. `mix-blend-mode: normal`, weil der Browser die
-   beiden Bilder fuer seine Blende sonst additiv mischt. Nur solange `glas-kreis` am Dokument
-   haengt, also nur fuer diesen einen Wechsel. */
-html.glas-kreis::view-transition-old(root),
-html.glas-kreis::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+/* Wechsel zwischen normalem Modus und Glas-Modus: UEBERBLENDUNG des ganzen
+   Bildschirms (21.09.2026, `toggleGlasModus`; vom 18. bis 21.09.2026 ein wachsender Kreis aus
+   dem Glas-Knopf). Die Kreuzblende selbst ist die STANDARD-Blende der View Transition — hier
+   wird nur ihre Dauer von 250 auf 300ms gesetzt (`GLAS_BLENDE_MS` im JS muss dazu passen).
+   Nur solange `glas-blende` am Dokument haengt, also nur fuer diesen einen Wechsel. */
+html.glas-blende::view-transition-old(root),
+html.glas-blende::view-transition-new(root) { animation-duration: 300ms; animation-timing-function: ease; }
 
 /* ─── Glas-Modus ────────────────────────────────────────────────────────────────
    Schaltet alle Karten auf denselben 12-%-Weiss-Schleier wie `.weitere-btn`.
@@ -1451,8 +1450,12 @@ html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-adh   { color: #fff; }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-bar      { background: rgba(255,255,255,.25); }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-bar-fill { background: #fff; }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-wd       { color: rgba(255,255,255,.75); }
-/* Geplante Tage weiss gefuellt: Die Akzentfarbe liegt zu nah am Tab-Hintergrund. */
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.training .ppv-wd { background: rgba(255,255,255,.92); color: var(--accent-dark); }
+/* Geplante Tage weiss gefuellt: Die Akzentfarbe liegt zu nah am Tab-Hintergrund.
+   `.done` gehoert seit dem 21.09.2026 dazu (Leonard-Wunsch): Ein Lauf oder freies Training an
+   einem UNGEPLANTEN Tag traegt nur `.done`, nicht `.training`, und blieb im Transparenz-Modus als
+   einziger Kreis in der Sportfarbe (Hell- bzw. Dunkelgruen) stehen. */
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.training .ppv-wd,
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.done .ppv-wd { background: rgba(255,255,255,.92); color: var(--accent-dark); }
 /* Heute traegt seit dem 08.09.2026 ein Feld statt eines Rings — im Transparenz-Modus
    dieselbe Weissflaeche wie ein ausgewaehlter Tag (`.selected`, weiter unten). */
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today { background: rgba(255,255,255,.18); }
@@ -1464,7 +1467,10 @@ html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today { background: r
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.training.offen .ppv-wd {
   background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 2.2px rgba(255,255,255,.92); color: #fff;
 }
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today:not(.training) .ppv-wd { color: #fff; }
+/* `:not(.done)` (21.09.2026): Ein heute absolvierter, ungeplanter Tag ist weiss GEFUELLT — die
+   weisse Schrift dieser Regel stuende sonst weiss auf weiss. Dasselbe `:not(.done)` steht in der
+   hellen Fassung weiter oben (dort Akzentgruen auf der gruenen Scheibe). */
+html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today:not(.training):not(.done) .ppv-wd { color: #fff; }
 /* Ausgewaehlter Tag im Trainings-Tab: KEIN weisser Ring um den Kreis mehr, und die Flaeche
    dahinter in transparentem Weiss statt in der Tab-Farbe (Leonard-Wunsch 01.09.2026).
    `.ppv-col.selected` greift sonst auf `--accent-bg` zu, und das ist auf der Plan-Karte
