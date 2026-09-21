@@ -890,6 +890,13 @@ function _applyTabState(name) {
   // zuruecksetzen, damit sie beim Zurueckkehren nicht faelschlich sofort wieder steht.
   if (name !== 'workouts') updateStickyBar(false);
 
+  // Seitenleiste unten: zeigt die Seiten des NEUEN Tabs (oder verschwindet, wenn er
+  // keine hat). Seit dem 21.09.2026 VOR dem Renderer (Leonard-Wunsch „schneller"): Vorher
+  // wartete ihr Auftauchen bzw. Ueberblenden zusaetzlich auf das Neuzeichnen des ganzen Tabs.
+  // Sie braucht nichts davon — nur die Seiten-Tabelle und die gewaehlte Seite, und die setzt
+  // kein Renderer.
+  seitenleisteAktualisieren();
+
   if (name === 'overview') renderOverview();
   else if (name === 'workouts') renderWorkoutsScreen();
   else if (name === 'exercises') renderExercisesScreen();
@@ -898,10 +905,6 @@ function _applyTabState(name) {
   else if (name === 'day-detail') renderLibDayDetail();
   else if (name === 'runplan-detail') renderRunPlanDetail();
   else if (name === 'mehr') renderMehr();
-
-  // Seitenleiste unten: zeigt die Seiten des NEUEN Tabs (oder verschwindet, wenn er
-  // keine hat).
-  seitenleisteAktualisieren();
 
   ensureTimerActive();
 
@@ -10278,7 +10281,8 @@ let _slPassiv = false;   // Schalter geschrumpft?
 // Laufendes Abtauchen. Die Dauer MUSS zur `animation`-Angabe von `.sl-raus` im CSS passen —
 // stehen die beiden auseinander, verschwindet die Leiste entweder zu frueh (Sprung) oder
 // bleibt nach der Bewegung noch einen Moment stehen.
-const SL_ANIM_MS = 300;
+// 200ms seit dem 21.09.2026 (vorher 300, Leonard-Wunsch „schneller").
+const SL_ANIM_MS = 200;
 let _slAusTimer = null;
 
 function seitenleisteBauen() {
@@ -10384,12 +10388,13 @@ function seitenleisteAktualisieren() {
 // TOKEN `_slBlendeNr`: Ein zweiter Wechsel waehrend der Bewegung raeumt die alte Ebene ab und
 // startet von der aktuellen Breite; nur die neueste Kette raeumt am Ende auf.
 // Bei `prefers-reduced-motion` und ohne Breite (Leiste nicht sichtbar) wird nur umgeschaltet.
-const SL_BLENDE_MS = 260;      // Breite
+// Seit dem 21.09.2026 rund 30 % schneller (Leonard-Wunsch; vorher 260/160/200/60ms).
+const SL_BLENDE_MS = 180;      // Breite
 // Die beiden Blenden UEBERLAPPEN: Die neue beginnt, solange die alte noch zu sehen ist — sonst
 // stuende der Schalter kurz leer da.
-const SL_BLENDE_AUS_MS = 160;  // alte Beschriftungen
-const SL_BLENDE_EIN_MS = 200;  // neue Beschriftungen, nach kurzem Vorlauf
-const SL_BLENDE_VORLAUF_MS = 60;
+const SL_BLENDE_AUS_MS = 110;  // alte Beschriftungen
+const SL_BLENDE_EIN_MS = 140;  // neue Beschriftungen, nach kurzem Vorlauf
+const SL_BLENDE_VORLAUF_MS = 40;
 let _slTab = null;             // Tab, dessen Seiten gerade im Schalter stehen
 let _slBlendeNr = 0;
 let _slBreiteAnim = null;

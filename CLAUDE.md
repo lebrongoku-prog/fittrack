@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v366**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v367**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1613,8 +1613,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `.seg-vier` — eine kuenftige dreiseitige Leiste bekaeme also automatisch keine von
   beiden.
   **SIE TAUCHT VON UNTEN AUF UND WIEDER AB** (`.sl-rein`/`.sl-raus` +
-  `@keyframes sl-auftauchen`/`sl-abtauchen`, je 0,3s, dieselbe Kurve; Leonard-Wunsch
-  08.09.2026). Kommt man aus einem Tab OHNE Leiste (Uebersicht, Vollbild-Overlays), faehrt
+  `@keyframes sl-auftauchen`/`sl-abtauchen`, je 0,2s — bis zum 21.09.2026 0,3s —, dieselbe
+  Kurve; Leonard-Wunsch 08.09.2026). Kommt man aus einem Tab OHNE Leiste (Uebersicht, Vollbild-Overlays), faehrt
   sie vom unteren Bildschirmrand herein; geht man dorthin zurueck, faehrt sie ebenso wieder
   hinaus — dieselbe Bewegungsrichtung, mit der die Bottom-Nav ein- und ausgleitet.
   Zwischen zwei Tabs MIT Leiste taucht sie NICHT ab — dort BLENDET der Schalter seit dem
@@ -1624,11 +1624,26 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   **UEBERBLENDEN ZWISCHEN ZWEI TABS MIT LEISTE** (`_slUeberblenden`, 18.09.2026, Leonard-
   Entscheidung „Ueberblenden" gegen „Ab- und Auftauchen" und „Mitschieben"): Vorher sprang der
   Schalter beim Wischen z. B. von „Gym | Laufen" auf „Übungen | Stats" schlagartig um. Jetzt
-  bleibt er stehen, die alten Beschriftungen blenden aus (160ms), die neuen nach 60ms ein
-  (200ms), und die BREITE gleitet auf die neue Knopfzahl (260ms; zweiseitig 243px ↔ vierseitig
+  bleibt er stehen, die alten Beschriftungen blenden aus (110ms), die neuen nach 40ms ein
+  (140ms), und die BREITE gleitet auf die neue Knopfzahl (180ms; zweiseitig 243px ↔ vierseitig
   347px auf 375px). Welcher Tab zuletzt im Schalter stand, merkt `_slTab`.
   AUSGELOEST BEIM EINRASTEN des Wischs (Settle → `_applyTabState`), ebenso beim Tipp auf die
   Tableiste. Die Geste selbst ist unangetastet (siehe „AM WISCHEN NICHTS AENDERN").
+  **SEIT DEM 21.09.2026 SCHNELLER** (Leonard-Wunsch „schneller auftauchen bzw. schneller an den
+  naechsten Tab anpassen"), zwei Hebel, beide ohne Eingriff in die Geste:
+  1. `seitenleisteAktualisieren` laeuft in `_applyTabState` VOR dem Renderer statt danach —
+     vorher wartete die Leiste zusaetzlich auf das Neuzeichnen des ganzen Tabs. Sie braucht
+     nichts davon (nur Seiten-Tabelle und gewaehlte Seite, die kein Renderer setzt).
+  2. Alle Dauern rund 30 % kuerzer: Auf-/Abtauchen 300 → 200ms (`SL_ANIM_MS` und CSS),
+     Ueberblenden 260/160/200/60 → 180/110/140/40ms (Breite/aus/ein/Vorlauf).
+  NICHT angefasst: der Zeitpunkt. Die Leiste reagiert weiter erst beim Einrasten (Settle, 90ms
+  nach dem letzten Scroll-Ereignis). Sie schon an der 50-%-Schwelle umzuschalten hiesse, im
+  Scroll-Handler waehrend der Geste Layout-Arbeit anzustossen (die Breite) — genau die Art
+  Eingriff, die am 08.09.2026 das Wischen verschlechtert hat. Nur mit Leonards ausdruecklichem
+  Auftrag und einzeln ausgeliefert.
+  GEMESSEN: Reihenfolge „Leiste, dann Renderer"; Auftauchen und Abtauchen 0.2s, `hidden` danach;
+  Training → Uebungen Blenden 110/140ms (+40ms Vorlauf); Uebungen → Plan Breite 180ms, Ende
+  347px ohne Reste.
   BAUART: Die alten Knoepfe wandern in eine Ebene ueber dem Schalter (`.sl-alt`, absolut, in
   ihrer ALTEN Breite und mittig) — so stehen sie beim Ausblenden still, waehrend der Schalter
   um sie herum seine Breite aendert. Ihre Schrift und ihr seitliches Polster werden eingefroren
@@ -1658,7 +1673,7 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   die Animation startet von selbst.
   VIER Dinge am ABTAUCHEN, die leicht schiefgehen:
   1. `hidden` darf erst NACH der Bewegung gesetzt werden, sonst ist die Leiste sofort weg.
-     Dafuer `SL_ANIM_MS` (300) und `_slAusTimer` — die Zahl MUSS zur `animation`-Angabe von
+     Dafuer `SL_ANIM_MS` (200, bis 21.09.2026 300) und `_slAusTimer` — die Zahl MUSS zur `animation`-Angabe von
      `.sl-raus` passen, sonst springt sie am Ende oder bleibt kurz stehen.
   2. KEIN `animationend`: Bei `prefers-reduced-motion` laeuft gar keine Animation, das
      Ereignis kaeme nie und die Leiste bliebe fuer immer stehen. Dort setzt das CSS
