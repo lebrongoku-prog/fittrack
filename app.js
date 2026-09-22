@@ -4633,7 +4633,42 @@ function selectRunDay(idx) {
 // (`buildRunPlanCard`): gefuellt = gelaufen, Ring = geplant und offen, grau = verschoben
 // (`runVerschobeneTage`). Die Vorgabe kommt aus derselben Quelle wie die Kennzahl „geplant"
 // (`runGeplanteTage`).
-function laufWochenListe(mo, istAktuell) {
+// BEZUGSGROESSE DER LAENGENBALKEN: der laengste Lauf des GANZEN Plans (Leonard-Entscheidung
+// 22.09.2026) — so sind die Wochen beim Wischen untereinander vergleichbar; in einer lockeren
+// Woche sind dann eben alle Balken kurz. Die tatsaechlich gelaufenen Strecken zaehlen mit, sonst
+// stiesse ein Lauf, der laenger war als jede Vorgabe, an den Rand des Balkens.
+function _laufBezugKm() {
+  const p = runPlanAktiv();
+  let max = 0;
+  const merke = km => { const k = Number(km) || 0; if (k > max) max = k; };
+  if (p) {
+    (p.units || []).forEach(u => merke(u.km));
+    const wochen = runPlanWochen(p);
+    const von = runEinheitDatum(p, 1, 0).getTime();
+    const bis = runEinheitDatum(p, wochen, 6).getTime() + 864e5 - 1;
+    DB.getRuns().forEach(l => {
+      const [y, m, d] = l.date.split('-').map(Number);
+      const t = new Date(y, m - 1, d).getTime();
+      if (t >= von && t <= bis) merke(l.km);
+    });
+  } else {
+    DB.getRuns().forEach(l => merke(l.km));
+  }
+  return max;
+}
+// Laengenbalken einer Zeile: heller Teil = Vorgabe, kraeftiger = tatsaechlich gelaufen
+// (Leonard-Entscheidung). Ohne Kilometer (Intervalltraining, Tag ohne Vorgabe) gibt es keinen.
+function _laufWzBalken(sollKm, istKm, maxKm) {
+  const soll = Number(sollKm) || 0, ist = Number(istKm) || 0;
+  if (!maxKm || (!soll && !ist)) return '';
+  const breit = km => Math.max(3, Math.min(100, km / maxKm * 100));
+  return `<div class="lauf-wz-balken" aria-hidden="true">
+    ${soll ? `<i class="soll" style="width:${breit(soll).toFixed(1)}%"></i>` : ''}
+    ${ist ? `<i class="ist" style="width:${breit(ist).toFixed(1)}%"></i>` : ''}
+  </div>`;
+}
+
+function laufWochenListe(mo, istAktuell, maxKm) {
   const geplant = runGeplanteTage();
   const gelaufen = runNachTag();
   // „verschoben" und „heute" gibt es nur in der LAUFENDEN Woche: `runVerschobeneTage` rechnet
@@ -4654,15 +4689,20 @@ function laufWochenListe(mo, istAktuell) {
     const notiz = u && u.note ? `<div class="lauf-wz-notiz">${escapeHtml(u.note)}</div>` : '';
     const ist = lauf ? (lauf.art === 'hiit' ? `HIIT ${fmtMin(lauf.minutes)}` : `${fmtKm(lauf.km)} gelaufen`)
       : verschoben[i] ? 'verschoben' : (i === todayIdx ? 'heute' : '');
-    const inhalt = `<span class="lauf-wz-tag ${zustand}">${label}</span>
-      <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${soll}${zone}</div>${notiz}</div>
-      ${ist ? `<span class="lauf-wz-ist">${ist}</span>` : ''}`;
+    // Die Zeile hat ZWEI Ebenen: oben Scheibe, Vorgabe und Ist, darunter der Laengenbalken.
+    const inhalt = `<div class="lauf-wz-oben">
+        <span class="lauf-wz-tag ${zustand}">${label}</span>
+        <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${soll}${zone}</div>${notiz}</div>
+        ${ist ? `<span class="lauf-wz-ist">${ist}</span>` : ''}
+        {{CHEV}}
+      </div>
+      ${_laufWzBalken(u && u.km, lauf && lauf.km, maxKm)}`;
     // Ein gelaufener Tag ist ein KNOPF in die Detailansicht des Laufs — derselbe kleine
     // Pfeil-Knopf wie in der Kalender-Fusszeile. Ein `<button>`, damit `initScrollHideNav`
     // ihn als Bedienelement erkennt.
     return lauf
-      ? `<button type="button" class="lauf-wz" onclick="showRunDetail('${key}')">${inhalt}<span class="cal-detail-chev">▾</span></button>`
-      : `<div class="lauf-wz">${inhalt}</div>`;
+      ? `<button type="button" class="lauf-wz" onclick="showRunDetail('${key}')">${inhalt.replace('{{CHEV}}', '<span class="cal-detail-chev">▾</span>')}</button>`
+      : `<div class="lauf-wz">${inhalt.replace('{{CHEV}}', '')}</div>`;
   }).filter(Boolean);
   return zeilen.length ? `<div class="lauf-wochenliste">${zeilen.join('')}</div>` : '';
 }
@@ -4719,7 +4759,7 @@ function _laufWochenWerte(mo) {
   });
   return { km, min, sollKm };
 }
-function laufWochenSeite(mo, istAktuell) {
+function laufWochenSeite(mo, istAktuell, maxKm) {
   const w = _laufWochenWerte(mo);
   return `<div class="lauf-wochen-seite">
     <div class="lauf-woche">
@@ -4727,7 +4767,7 @@ function laufWochenSeite(mo, istAktuell) {
       <div class="lauf-kennz"><span class="lauf-kennz-v">${fmtMin(w.min)}</span><span class="lauf-kennz-l">Zeit</span></div>
       <div class="lauf-kennz"><span class="lauf-kennz-v">${w.sollKm ? fmtKm(w.sollKm) : '–'}</span><span class="lauf-kennz-l">geplant</span></div>
     </div>
-    ${laufWochenListe(mo, istAktuell)}
+    ${laufWochenListe(mo, istAktuell, maxKm)}
   </div>`;
 }
 // Kopf und Seitenanzeige auf die Seite `idx` setzen.
@@ -4843,7 +4883,8 @@ function renderLaufKalenderSeite() {
     if (aktIdx < 0) { montage.push(heuteMo); montage.sort((a, b) => a - b); aktIdx = montage.findIndex(m => m.getTime() === heuteMo.getTime()); }
   }
   const startIdx = Math.max(0, Math.min(montage.length - 1, (_laufWochenNr || aktIdx + 1) - 1));
-  const seitenHTML = montage.map(m => laufWochenSeite(m, m.getTime() === heuteMo.getTime())).join('');
+  const bezugKm = _laufBezugKm();
+  const seitenHTML = montage.map(m => laufWochenSeite(m, m.getTime() === heuteMo.getTime(), bezugKm)).join('');
   // Viele Wochen ergaeben zu viele Punkte (auf 375px passen rund 14) — dann zeigt ein schmaler
   // Strich mit Marke, wo man steht.
   const anzeige = montage.length < 2 ? ''

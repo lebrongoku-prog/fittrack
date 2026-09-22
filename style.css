@@ -2572,13 +2572,30 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,2
    Laufwochenplan-Karte: gefuellt = gelaufen, Ring = offen, grau = verschoben. */
 .lauf-wochenliste { margin-top: 12px; }
 .lauf-wz {
-  display: flex; align-items: center; gap: 10px; width: 100%;
+  display: block; width: 100%;
   padding: 8px 0 0; margin-top: 8px; border: none; border-top: 1px solid var(--border);
   background: none; font: inherit; color: inherit; text-align: left;
   -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
 }
 button.lauf-wz { cursor: pointer; }
 button.lauf-wz:active { opacity: .6; }
+/* ZWEI Ebenen je Zeile seit dem 22.09.2026: oben die Angaben, darunter der Laengenbalken. */
+.lauf-wz-oben { display: flex; align-items: center; gap: 10px; }
+/* LAENGENBALKEN (Leonard-Wunsch 22.09.2026): Der helle Teil ist die Vorgabe, der kraeftige die
+   tatsaechlich gelaufene Strecke — ist er laenger, war der Lauf laenger als geplant. Bezug ist
+   der laengste Lauf des ganzen Plans (`_laufBezugKm`), damit sich die Wochen beim Wischen
+   vergleichen lassen. Der Einzug entspricht Scheibe (30px) plus Abstand (10px), der Balken
+   beginnt also unter der Vorgabe. */
+.lauf-wz-balken {
+  position: relative; height: 4px; border-radius: 99px;
+  background: var(--card2); margin: 6px 0 0 40px;
+}
+.lauf-wz-balken > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; }
+.lauf-wz-balken > .soll { background: rgba(74, 222, 128, .38); }
+.lauf-wz-balken > .ist  { background: #4ADE80; }
+html.glas .screen:not(#screen-mehr) .lauf-wz-balken { background: rgba(255,255,255,.20); }
+html.glas .screen:not(#screen-mehr) .lauf-wz-balken > .soll { background: rgba(255,255,255,.45); }
+html.glas .screen:not(#screen-mehr) .lauf-wz-balken > .ist  { background: rgba(255,255,255,.92); }
 .lauf-wz-tag {
   width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; box-sizing: border-box;
   display: flex; align-items: center; justify-content: center;

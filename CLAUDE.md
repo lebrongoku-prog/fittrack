@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v376**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v377**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2468,6 +2468,21 @@ Die Scheibe traegt DIESELBEN Zustaende wie der Wochentagskreis der Karte daruebe
 (#4ADE80) = gelaufen, hellgrau mit Ring = geplant und offen, grau = verschoben
 (`runVerschobeneTage`). Die Vorgabe kommt aus `runGeplanteTage` — derselben Quelle wie die
 Kennzahl „geplant" daneben.
+**JEDE ZEILE HAT EINEN LAENGENBALKEN** (`_laufWzBalken`, 22.09.2026, Leonard-Entscheidung
+„Variante A" gegen eine kurze Saeule in der Zeile und einen Balken hinter dem Text): eine 4px
+hohe Leiste UNTER den Angaben, eingerueckt auf die Textspalte (30px Scheibe + 10px Abstand), in
+voller Zeilenbreite. HELL = die Vorgabe, KRAEFTIG = die tatsaechlich gelaufene Strecke; ist der
+kraeftige Teil laenger, war der Lauf laenger als geplant.
+BEZUG ist der laengste Lauf des GANZEN Plans (`_laufBezugKm`, Leonard-Entscheidung) — so lassen
+sich die Wochen beim Wischen vergleichen; in einer lockeren Woche sind eben alle Balken kurz.
+Die tatsaechlich gelaufenen Strecken zaehlen in den Bezug mit, sonst stiesse ein Lauf, der laenger
+war als jede Vorgabe, an den Rand. Mindestbreite 3 %, damit ein sehr kurzer Lauf sichtbar bleibt.
+KEIN Balken ohne Kilometer: Intervalltraining (`art: 'hiit'`) und Lauftage ohne Vorgabe.
+Die Zeile hat dafuer zwei Ebenen (`.lauf-wz-oben` + Balken); `.lauf-wz` ist kein Flex mehr.
+GEMESSEN (Bezug 21 km): 6 km = 28.6 %, Ist 6.2 km = 29.5 %, 8 km = 38.1 %, 14 km = 66.7 %, „Ohne
+Vorgabe" ohne Balken; ein Lauf UNTER der Vorgabe (8 km geplant, 5.4 km gelaufen) zeigt beide
+Teile (108px hell, 73px kraeftig). Glas-Modus: Spur 20-%-, Vorgabe 45-%-, Ist 92-%-Weiss.
+
 Ein GELAUFENER Tag ist ein `<button>` und oeffnet `showRunDetail(key)`; er traegt denselben
 kleinen Pfeil-Knopf wie die Kalender-Fusszeile (`.cal-detail-chev`, die Regel gilt jetzt fuer
 beide). Ein Tipp auf eine Zeile waehlt den Tag NICHT aus.
