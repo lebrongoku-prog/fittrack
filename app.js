@@ -4875,14 +4875,18 @@ function _laufWochenWischEinrichten(sc, montage, aktIdx, startIdx) {
 // (Intervalltraining) zaehlen mit 0.
 // Zugeklappt ist der Ausgangszustand; der Zustand haelt, solange die App laeuft (wie der
 // Gewicht/Wdh.-Umschalter der Uebungen, bewusst nicht gespeichert).
-let _laufKmOffen = false;
-let _laufKmChart = null;
+let _laufKmOffen = false;      // Karte „Diese Woche" — zugeklappt
+let _lpKmOffen = true;         // Laufplan-Detailansicht — AUFGEKLAPPT (Leonard-Wunsch 22.09.2026)
+let _laufKmChart = null;       // Instanz in der Wochenkarte
+let _lpKmChart = null;         // Instanz in der Detailansicht
 
 // Je Planwoche: geplante Kilometer, tatsaechlich gelaufene und ob die Woche VORBEI ist.
 // Eine abgeschlossene Woche zeigt im Diagramm das IST statt des Solls (Leonard-Wunsch
 // 22.09.2026) — was einmal gelaufen ist, ist die interessantere Zahl; der Plan steht weiter
 // im Tooltip.
-function _laufKmDaten(plan) {
+// `nurPlan` (Laufplan-Detailansicht): Dort stehen IMMER die geplanten Kilometer, nie das Ist
+// (Leonard-Wunsch) — die Ansicht dient dem Planen, nicht dem Nachschauen.
+function _laufKmDaten(plan, nurPlan) {
   const wochen = runPlanWochen(plan);
   const heuteMo = _laufWochenMontag(new Date()).getTime();
   const runs = DB.getRuns();
@@ -4896,35 +4900,52 @@ function _laufKmDaten(plan) {
       const t = new Date(y, m - 1, d).getTime();
       if (t >= von && t <= bis) gelaufen += Number(l.km) || 0;
     });
-    return { mo, geplant, gelaufen, vorbei: von < heuteMo };
+    return { mo, geplant, gelaufen, vorbei: !nurPlan && von < heuteMo };
   });
 }
 
-function laufKmDiagrammHTML(plan) {
+// DASSELBE DIAGRAMM AN ZWEI STELLEN (22.09.2026): in der Karte „Diese Woche" (zugeklappt, mit
+// Ist-Werten und wandernder Hervorhebung) und in der LAUFPLAN-DETAILANSICHT unter dem Abschnitt
+// „Einheiten" (aufgeklappt, immer nur die geplanten Kilometer). `welches` = 'lauf' | 'lp'.
+const KM_DIAGRAMM = {
+  lauf: { block: 'lauf-km-block', canvas: 'lauf-km-chart', nurPlan: false },
+  lp:   { block: 'lp-km-block',   canvas: 'lp-km-chart',   nurPlan: true  },
+};
+function _kmOffen(welches) { return welches === 'lp' ? _lpKmOffen : _laufKmOffen; }
+
+function laufKmDiagrammHTML(plan, welches) {
+  welches = welches || 'lauf';
+  const cfg = KM_DIAGRAMM[welches];
   if (!plan) return '';
-  const daten = _laufKmDaten(plan);
+  const daten = _laufKmDaten(plan, cfg.nurPlan);
   if (!daten.some(d => d.geplant > 0 || d.gelaufen > 0)) return '';   // nichts zu zeigen
-  return `<div class="ex-chart-block${_laufKmOffen ? '' : ' collapsed'}" id="lauf-km-block">
+  const offen = _kmOffen(welches);
+  return `<div class="ex-chart-block${offen ? '' : ' collapsed'}" id="${cfg.block}">
       <div class="ex-item-body-label ex-chart-head">
-        <button type="button" class="ex-chart-collapse" onclick="toggleLaufKmDiagramm()"
-                aria-expanded="${_laufKmOffen ? 'true' : 'false'}">Wochenkilometer<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
+        <button type="button" class="ex-chart-collapse" onclick="toggleKmDiagramm('${welches}')"
+                aria-expanded="${offen ? 'true' : 'false'}">Wochenkilometer<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
       </div>
       <div class="ex-chart-body">
-        <div class="ex-chart-wrap"><canvas id="lauf-km-chart"></canvas></div>
+        <div class="ex-chart-wrap"><canvas id="${cfg.canvas}"></canvas></div>
       </div>
     </div>`;
 }
 
-function toggleLaufKmDiagramm() {
-  _laufKmOffen = !_laufKmOffen;
-  const block = document.getElementById('lauf-km-block');
+function toggleKmDiagramm(welches) {
+  welches = welches || 'lauf';
+  const cfg = KM_DIAGRAMM[welches];
+  const offen = !_kmOffen(welches);
+  if (welches === 'lp') _lpKmOffen = offen; else _laufKmOffen = offen;
+  const block = document.getElementById(cfg.block);
   if (!block) return;
-  block.classList.toggle('collapsed', !_laufKmOffen);
+  block.classList.toggle('collapsed', !offen);
   const knopf = block.querySelector('.ex-chart-collapse');
-  if (knopf) knopf.setAttribute('aria-expanded', _laufKmOffen ? 'true' : 'false');
+  if (knopf) knopf.setAttribute('aria-expanded', offen ? 'true' : 'false');
   // Erst beim Aufklappen zeichnen: Ein verstecktes Canvas hat keine Breite, Chart.js behielte
   // sonst die alten Masse (dieselbe Regel wie bei `toggleChartBlock`).
-  if (_laufKmOffen) {
+  if (!offen) return;
+  if (welches === 'lp') _zeichneLpKmDiagramm();
+  else {
     const sc = document.getElementById('lauf-wochen-scroll');
     _zeichneLaufKmDiagramm(sc && sc._montage ? sc._montage[Math.max(0, _laufWochenIdx)] : null);
   }
@@ -4944,6 +4965,9 @@ function _laufKmPalette(aufGlas) {
 }
 function _laufKmVoll(daten, p) { return daten.map(d => d.vorbei ? p.vorbei : p.plan); }
 function _laufKmFarben(daten, hervorIdx, p) {
+  // OHNE hervorgehobene Woche (Laufplan-Detailansicht) stehen ALLE Saeulen in voller Farbe —
+  // durchgehend gedaempft saehe das Diagramm dort nur blass aus.
+  if (hervorIdx < 0) return _laufKmVoll(daten, p);
   return daten.map((d, i) => i === hervorIdx ? (d.vorbei ? p.vorbei : p.plan)
                                              : (d.vorbei ? p.vorbeiMatt : p.planMatt));
 }
@@ -4958,20 +4982,34 @@ function _laufKmHervorheben(mo) {
   c.update('none');
 }
 
+// Die Wochenkarte („Diese Woche") und die Detailansicht teilen sich den Kern.
 function _zeichneLaufKmDiagramm(mo) {
-  if (_laufKmChart) { _laufKmChart.destroy(); _laufKmChart = null; }
-  const canvas = document.getElementById('lauf-km-chart');
-  const plan = runPlanAktiv();
-  if (!canvas || !plan || typeof Chart === 'undefined' || !_laufKmOffen) return;
-  const daten = _laufKmDaten(plan);
-  // Farben wie beim Uebungsdiagramm: weiss NUR auf dem Schleier, nicht in Modalfenstern.
-  const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)');
+  _laufKmChart = _zeichneKmDiagramm('lauf', runPlanAktiv(), mo, _laufKmChart);
+}
+function _zeichneLpKmDiagramm() {
+  const p = DB.getRunPlans().find(x => x.id === editingRunPlanId);
+  _lpKmChart = _zeichneKmDiagramm('lp', p, null, _lpKmChart);
+}
+
+function _zeichneKmDiagramm(welches, plan, mo, alt) {
+  if (alt) alt.destroy();
+  const cfg = KM_DIAGRAMM[welches];
+  const canvas = document.getElementById(cfg.canvas);
+  if (!canvas || !plan || typeof Chart === 'undefined' || !_kmOffen(welches)) return null;
+  const daten = _laufKmDaten(plan, cfg.nurPlan);
+  // Weiss NUR dort, wo die Karte im Transparenz-Modus wirklich durchscheint. Die Detailansicht
+  // des Laufplans steht auf `.mehr-card` und bleibt IMMER weiss — dort waeren weisse Saeulen
+  // unsichtbar (siehe „Die Detailseite nimmt den Transparenz-Modus NICHT an").
+  const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)')
+                  && !!canvas.closest('.chart-card-v2, .card, .aex-v2, .ex-list, .plan-section-card, .hero-v2');
   const pal = _laufKmPalette(aufGlas);
   const schrift = aufGlas ? 'rgba(255,255,255,0.8)' : '#64748B';
   const raster  = aufGlas ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.06)';
-  const zeigt = mo || _laufWochenMontag(new Date());
-  const hervorIdx = daten.findIndex(d => d.mo.getTime() === zeigt.getTime());
-  _laufKmChart = new Chart(canvas.getContext('2d'), {
+  // Hervorgehoben wird die gezeigte Woche; in der Detailansicht gibt es keine — dort steht
+  // `hervorIdx` auf -1 und alle Saeulen sind gleich.
+  const zeigt = mo || (cfg.nurPlan ? null : _laufWochenMontag(new Date()));
+  const hervorIdx = zeigt ? daten.findIndex(d => d.mo.getTime() === zeigt.getTime()) : -1;
+  const chart = new Chart(canvas.getContext('2d'), {
     type: 'bar',
     data: {
       labels: daten.map((_, i) => 'W' + (i + 1)),
@@ -4994,6 +5032,9 @@ function _zeichneLaufKmDiagramm(mo) {
           // wurde. „Gelaufen" bleibt weg, solange die Woche laeuft und noch nichts drin steht.
           label: (c) => 'Geplant: ' + fmtKm(daten[c.dataIndex].geplant),
           afterLabel: (c) => {
+            // In der Detailansicht geht es nur um den PLAN — dort bleibt das Ist auch im
+            // Tooltip weg (Leonard-Wunsch).
+            if (cfg.nurPlan) return '';
             const d = daten[c.dataIndex];
             return (d.vorbei || d.gelaufen) ? 'Gelaufen: ' + fmtKm(d.gelaufen) : '';
           },
@@ -5006,8 +5047,9 @@ function _zeichneLaufKmDiagramm(mo) {
     },
   });
   // Fuer das Nachfuehren beim Wischen am Diagramm merken.
-  _laufKmChart._daten = daten;
-  _laufKmChart._pal = pal;
+  chart._daten = daten;
+  chart._pal = pal;
+  return chart;
 }
 
 // ── Seite 1: Überblick über die gelaufenen Einheiten ───────────────
@@ -5246,6 +5288,10 @@ function renderRunPlanDetail() {
       <div class="mehr-card plan-form-card lp-wochen-karte">${wochenBlocks.join('')}</div>
     </div>
 
+    ${laufKmDiagrammHTML(p, 'lp') ? `<div class="mehr-section">
+      <div class="mehr-card lp-km-karte">${laufKmDiagrammHTML(p, 'lp')}</div>
+    </div>` : ''}
+
     <div class="mehr-section">
       <div class="mehr-section-title">Aktionen</div>
       <div class="mehr-card">
@@ -5268,6 +5314,7 @@ function renderRunPlanDetail() {
         </div>
       </div>
     </div>`;
+  _zeichneLpKmDiagramm();
 }
 
 // Auf- und Zuklappen einer Woche laeuft OHNE Neuaufbau: Ein Re-Render naehme den Kopffeldern
@@ -5379,6 +5426,9 @@ function setRunUnit(id, woche, dayIdx, feld, wert) {
     else { const v = parseFloat(String(wert).replace(',', '.')); u[feld] = isFinite(v) ? v : null; }
   });
   if (currentScreen === 'overview') renderOverview();
+  // Das Diagramm der Detailansicht zeigt genau diese Zahlen — es wird von Hand nachgezogen,
+  // weil die Felder bewusst OHNE Neuaufbau speichern (sonst verlieren sie den Fokus).
+  if (feld === 'km' && currentScreen === 'runplan-detail') _zeichneLpKmDiagramm();
 }
 
 // Loeschen ist zweifach abgesichert wie bei den Trainingsplaenen: „Rueckgaengig" fuer 6

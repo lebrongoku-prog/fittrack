@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v384**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v386**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2605,6 +2605,25 @@ ZWEI UNTERSCHEIDUNGEN ZUGLEICH (`_laufKmPalette`, `_laufKmFarben`):
 Gerechnet wird ueber den MONTAG der gezeigten Seite, nicht ueber den Seitenindex: Liegt heute
 ausserhalb des Plans, hat der Scroller eine Seite mehr als das Diagramm Saeulen.
 Das Diagramm erscheint nur, wenn ein Laufplan laeuft UND er ueberhaupt Kilometer nennt.
+**DASSELBE DIAGRAMM STEHT EIN ZWEITES MAL IN DER LAUFPLAN-DETAILANSICHT**, unter dem Abschnitt
+„Einheiten" in einer eigenen `.mehr-card` (22.09.2026, Leonard-Wunsch). Gesteuert ueber die
+Tabelle `KM_DIAGRAMM` mit dem Schluessel `welches` ('lauf' | 'lp'); Markup, Umschalten und
+Zeichnen teilen sich beide (`laufKmDiagrammHTML(plan, welches)`, `toggleKmDiagramm(welches)`,
+`_zeichneKmDiagramm`). UNTERSCHIEDE der Detailansicht:
+  - AUFGEKLAPPT als Ausgangszustand (`_lpKmOffen = true`).
+  - IMMER nur die GEPLANTEN Kilometer (`_laufKmDaten(plan, nurPlan)` setzt `vorbei` auf false) —
+    auch im Tooltip steht dort kein „Gelaufen". Die Ansicht dient dem Planen, nicht dem
+    Nachschauen.
+  - KEINE hervorgehobene Woche, und weil es keine gibt, stehen ALLE Saeulen in voller Farbe
+    (`_laufKmFarben` bei `hervorIdx < 0`) — durchgehend gedaempft saehe es nur blass aus.
+  - Sie zeigt den BEARBEITETEN Plan (`editingRunPlanId`), nicht den laufenden.
+  - Aendert man eine Kilometerangabe, zieht `setRunUnit` das Diagramm von Hand nach: Die Felder
+    speichern bewusst OHNE Neuaufbau, sonst verloeren sie den Fokus.
+GLAS-FALLE: Die Detailansicht steht auf `.mehr-card` und bleibt im Transparenz-Modus WEISS —
+weisse Saeulen waeren dort unsichtbar. `_zeichneKmDiagramm` prueft deshalb nicht nur
+`.screen:not(#screen-mehr)`, sondern zusaetzlich, ob das Canvas in einer Karte haengt, die der
+Glas-Modus wirklich durchscheinend macht (`.chart-card-v2, .card, .aex-v2, .ex-list,
+.plan-section-card, .hero-v2`). GEMESSEN: Detailansicht im Glas-Modus weiter gruene Saeulen.
 ZUSTAND: `_laufKmOffen`, Ausgangszustand zugeklappt, haelt solange die App laeuft (wie der
 Gewicht/Wdh.-Umschalter der Uebungen; bewusst nicht gespeichert). Gezeichnet wird ERST beim
 Aufklappen — ein verstecktes Canvas hat keine Breite, Chart.js behielte sonst die alten Masse
