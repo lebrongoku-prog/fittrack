@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v381**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v382**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2578,6 +2578,28 @@ zurueck; Querformat 1100px ohne Ueberlauf; Glas-Modus: Punkte 28-%-Weiss, aktive
 NICHT PRUEFBAR HIER: die Geste selbst und beide Resize-Ausloeser — in der verdeckten
 Browser-Ansicht liefert weder `ResizeObserver` noch das `resize`-Ereignis. Mit einem von Hand
 ausgeloesten `resize` stimmt das Ergebnis (Seite und Hoehe wieder richtig).
+
+**AUSKLAPPBARES DIAGRAMM DER GEPLANTEN WOCHENKILOMETER** (`laufKmDiagrammHTML`,
+`_zeichneLaufKmDiagramm`, 22.09.2026, Leonard-Wunsch). Eigene Karte UNTER der Wochenkarte,
+im Aufbau dem Diagramm „Entwicklung" der Uebungen nachempfunden (Leonard-Vorgabe): dieselbe
+Ueberschrift in Grossbuchstaben mit Ausklapp-Pfeil (`.ex-chart-block` / `.ex-chart-collapse` /
+`.ex-chart-wrap`, 150px hoch), zugeklappt bleibt nur die Zeile „WOCHENKILOMETER" stehen.
+SAEULEN statt einer Linie: Der Wert gehoert zu je einer WOCHE, nicht zu einem Zeitpunkt. Gezeigt
+wird die Summe der GEPLANTEN Kilometer je Planwoche (`_laufKmProWoche`); Einheiten ohne
+Kilometer (Intervalltraining) zaehlen mit 0. Die laufende Woche steht kraeftig, die uebrigen
+gedaempft (55 % bzw. im Glas-Modus 45 %).
+Die Karte erscheint nur, wenn ein Laufplan laeuft UND er ueberhaupt Kilometer nennt.
+ZUSTAND: `_laufKmOffen`, Ausgangszustand zugeklappt, haelt solange die App laeuft (wie der
+Gewicht/Wdh.-Umschalter der Uebungen; bewusst nicht gespeichert). Gezeichnet wird ERST beim
+Aufklappen — ein verstecktes Canvas hat keine Breite, Chart.js behielte sonst die alten Masse
+(dieselbe Regel wie `toggleChartBlock`).
+Farben wie beim Uebungsdiagramm ueber `glasAktiv() && canvas.closest('.screen:not(#screen-mehr)')`
+— weiss NUR auf dem Schleier.
+GEMESSEN (Plan mit 8 Wochen): zugeklappt 46px hohe Karte, aufgeklappt 202px; Werte
+0/12/28/36/10/25/0/21 km = die Summen des Plans, W3 (laufende Woche) kraeftig; bleibt beim
+Neuzeichnen und beim Seitenwechsel offen; Glas-Modus Balken weiss, Achsen 80-%-Weiss.
+TESTHINWEIS: `glasAktiv()` liest den SPEICHER, nicht die Klasse am `<html>` — zum Pruefen
+`localStorage.setItem(GLAS_KEY, '1'); applyGlasModus();` statt die Klasse von Hand zu setzen.
 
 **„Alle aufklappen / Alle zuklappen" ueber dem Abschnitt „Einheiten"** (`toggleAlleRunWochen`,
 `#lp-alle-btn`, 13.09.2026, Leonard-Wunsch). Sind ALLE Wochen offen, klappt er alle zu, sonst

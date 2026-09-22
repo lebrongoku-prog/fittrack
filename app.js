@@ -4864,6 +4864,97 @@ function _laufWochenWischEinrichten(sc, montage, aktIdx, startIdx) {
   }, { passive: true });
 }
 
+// ── AUSKLAPPBARES DIAGRAMM DER GEPLANTEN WOCHENKILOMETER (22.09.2026, Leonard-Wunsch) ──
+// Steht als eigene Karte UNTER der Wochenkarte und ist im Aufbau dem Diagramm „Entwicklung"
+// der Uebungen nachempfunden (`exChartHTML`): dieselbe Ueberschrift in Grossbuchstaben mit
+// Ausklapp-Pfeil (`.ex-chart-block` / `.ex-chart-collapse` / `.ex-chart-wrap`), dieselbe Hoehe.
+// SAEULEN statt einer Linie: Der Wert gehoert zu je einer Woche, nicht zu einem Zeitpunkt.
+// Die laufende Woche steht kraeftig, die uebrigen gedaempft.
+// Gezeigt wird die SUMME DER GEPLANTEN Kilometer je Planwoche — Einheiten ohne Kilometer
+// (Intervalltraining) zaehlen mit 0.
+// Zugeklappt ist der Ausgangszustand; der Zustand haelt, solange die App laeuft (wie der
+// Gewicht/Wdh.-Umschalter der Uebungen, bewusst nicht gespeichert).
+let _laufKmOffen = false;
+let _laufKmChart = null;
+
+function _laufKmProWoche(plan) {
+  const wochen = runPlanWochen(plan);
+  const werte = Array.from({ length: wochen }, () => 0);
+  (plan.units || []).forEach(u => {
+    const w = Number(u.week);
+    if (w >= 1 && w <= wochen) werte[w - 1] += Number(u.km) || 0;
+  });
+  return werte;
+}
+
+function laufKmDiagrammHTML(plan) {
+  if (!plan) return '';
+  const werte = _laufKmProWoche(plan);
+  if (!werte.some(v => v > 0)) return '';   // ein Plan ohne Kilometerangaben hat nichts zu zeigen
+  return `<div class="chart-card-v2 lauf-km-karte">
+    <div class="ex-chart-block${_laufKmOffen ? '' : ' collapsed'}" id="lauf-km-block">
+      <div class="ex-item-body-label ex-chart-head">
+        <button type="button" class="ex-chart-collapse" onclick="toggleLaufKmDiagramm()"
+                aria-expanded="${_laufKmOffen ? 'true' : 'false'}">Wochenkilometer<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
+      </div>
+      <div class="ex-chart-body">
+        <div class="ex-chart-wrap"><canvas id="lauf-km-chart"></canvas></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleLaufKmDiagramm() {
+  _laufKmOffen = !_laufKmOffen;
+  const block = document.getElementById('lauf-km-block');
+  if (!block) return;
+  block.classList.toggle('collapsed', !_laufKmOffen);
+  const knopf = block.querySelector('.ex-chart-collapse');
+  if (knopf) knopf.setAttribute('aria-expanded', _laufKmOffen ? 'true' : 'false');
+  // Erst beim Aufklappen zeichnen: Ein verstecktes Canvas hat keine Breite, Chart.js behielte
+  // sonst die alten Masse (dieselbe Regel wie bei `toggleChartBlock`).
+  if (_laufKmOffen) _zeichneLaufKmDiagramm();
+}
+
+function _zeichneLaufKmDiagramm() {
+  if (_laufKmChart) { _laufKmChart.destroy(); _laufKmChart = null; }
+  const canvas = document.getElementById('lauf-km-chart');
+  const plan = runPlanAktiv();
+  if (!canvas || !plan || typeof Chart === 'undefined' || !_laufKmOffen) return;
+  const werte = _laufKmProWoche(plan);
+  // Farben wie beim Uebungsdiagramm: weiss NUR auf dem Schleier, nicht in Modalfenstern.
+  const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)');
+  const gruen = aufGlas ? '#ffffff' : '#4ADE80';
+  const schrift = aufGlas ? 'rgba(255,255,255,0.8)' : '#64748B';
+  const raster  = aufGlas ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.06)';
+  // Die laufende Woche steht kraeftig, die uebrigen gedaempft.
+  const heuteMo = _laufWochenMontag(new Date()).getTime();
+  const aktIdx = werte.findIndex((_, i) => runEinheitDatum(plan, i + 1, 0).getTime() === heuteMo);
+  const farben = werte.map((_, i) => i === aktIdx ? gruen : _withAlpha(gruen, aufGlas ? 0.45 : 0.55));
+  _laufKmChart = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: werte.map((_, i) => 'W' + (i + 1)),
+      datasets: [{ data: werte, backgroundColor: farben, borderRadius: 4, borderWidth: 0, maxBarThickness: 34 }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          title: (c) => 'Woche ' + (c[0].dataIndex + 1),
+          label: (c) => fmtKm(c.parsed.y) + ' geplant',
+        } },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: schrift, font: { size: 11 }, maxRotation: 0, autoSkipPadding: 8 } },
+        y: { beginAtZero: true, grid: { color: raster }, ticks: { color: schrift, font: { size: 11 }, precision: 0, callback: (v) => v + ' km' } },
+      },
+    },
+  });
+}
+
 // ── Seite 1: Überblick über die gelaufenen Einheiten ───────────────
 function renderLaufKalenderSeite() {
   const el = document.getElementById('wo-view-laufen');
@@ -4926,8 +5017,9 @@ function renderLaufKalenderSeite() {
 
   // Die Tageskarte des gewaehlten Tags ist am 21.09.2026 entfallen (Leonard-Wunsch) — die
   // Laeufe der ganzen Woche stehen jetzt in „Diese Woche" (`laufWochenListe`).
-  el.innerHTML = wochenplan + hero + woche;
+  el.innerHTML = wochenplan + hero + woche + laufKmDiagrammHTML(plan);
   _laufWochenWischEinrichten(document.getElementById('lauf-wochen-scroll'), montage, aktIdx, startIdx);
+  _zeichneLaufKmDiagramm();
 }
 
 // Verbindung zur Tabelle „Workout Data". Steht seit dem 04.09.2026 in den EINSTELLUNGEN
