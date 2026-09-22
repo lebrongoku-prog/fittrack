@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v379**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v380**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2537,6 +2537,12 @@ EIN Zeichen fuer „zurueck zur aktuellen Ansicht". Beim Erscheinen waechst er k
 FALLE: `hidden` allein blendet ihn NICHT aus — `.info-btn` setzt `display: flex`, und eine
 Autoren-Regel schlaegt das `display: none` des Browsers. Dafuer gibt es
 `.lauf-wochen-zurueck[hidden] { display: none }`.
+POLSTER 18px statt der ueblichen 14px (22.09.2026, Leonard: „das Polster wirkt hier zu klein").
+GEMESSEN vorher: Die Karte hatte auf allen vier Seiten dieselben 14px wie der Kalender und die
+uebrigen `.chart-card-v2` (Wochenplan- und Herocard: 14px seitlich, 15.4px oben/unten) — es war
+also kein Unterschied, sondern der Inhalt: Kennzahlen, Trennlinien und Laengenbalken enden
+buendig an der Polsterkante, waehrend in den Nachbarkarten Kreise und Knoepfe sichtbar
+eingerueckt sitzen. NUR diese Karte traegt deshalb `.lauf-wochen-karte { padding: 18px }`.
 SEITENANZEIGE: Punkte bis 14 Wochen, darueber ein schmaler Strich mit Marke — 30 Punkte passen
 auf 375px nicht nebeneinander.
 DIE HOEHE FOLGT DER GEZEIGTEN WOCHE (Leonard-Entscheidung „darf springen"): Der Scroller braucht

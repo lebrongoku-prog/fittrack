@@ -2534,6 +2534,13 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
    Seiten oben, damit eine kurze Woche nicht auf die Hoehe der langen gezogen wird.
    `.cal-sticky-anchor` steckt auch hier im Scroller — siehe Kalender: ein klebendes Kind zwingt
    WebKit, den Scrollbereich auf der Compositor-Ebene zu fuehren. */
+/* MEHR LUFT ALS IN DEN UEBRIGEN KARTEN (22.09.2026, Leonard: „das Polster wirkt hier zu klein").
+   GEMESSEN: Die Karte hatte auf allen vier Seiten dieselben 14px wie der Kalender und die
+   uebrigen `.chart-card-v2` (Wochenplan- und Herocard: 14px seitlich, 15.4px oben/unten). Der
+   Eindruck kommt vom Inhalt: Kennzahlen, Trennlinien und Laengenbalken enden buendig an der
+   Polsterkante, waehrend in den Nachbarkarten Kreise und Knoepfe sichtbar eingerueckt sitzen.
+   Deshalb traegt NUR diese Karte 18px. */
+.lauf-wochen-karte { padding: 18px; }
 .lauf-wochen-scroll {
   display: flex; align-items: flex-start;
   overflow-x: auto; overflow-y: hidden;
