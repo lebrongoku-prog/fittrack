@@ -889,6 +889,7 @@ function _applyTabState(name) {
   // Kopfzeile der laufenden Einheit gehoert zum Trainings-Tab: Zustand beim Verlassen
   // zuruecksetzen, damit sie beim Zurueckkehren nicht faelschlich sofort wieder steht.
   if (name !== 'workouts') updateStickyBar(false);
+  if (name !== 'workouts') _laufWochenNr = null;   // gewischte Woche der Laufseite, siehe `_setWorkoutsView`
 
   // Seitenleiste unten: zeigt die Seiten des NEUEN Tabs (oder verschwindet, wenn er
   // keine hat). Seit dem 21.09.2026 VOR dem Renderer (Leonard-Wunsch „schneller"): Vorher
@@ -2168,6 +2169,9 @@ function setWorkoutsView(mode) {
   _setWorkoutsView(neu);
 }
 function _setWorkoutsView(mode) {
+  // Die gewischte Woche der Laufseite gilt nur, solange man dort steht (Leonard-Entscheidung):
+  // Beim Verlassen steht die Karte wieder auf dieser Woche.
+  if (mode !== 'laufen') _laufWochenNr = null;
   workoutsViewMode = mode;
   renderWorkoutsScreen();
   // Der Tabhintergrund haengt an der gewaehlten SEITE (grau, wenn dort heute nichts ansteht) —
@@ -4629,11 +4633,13 @@ function selectRunDay(idx) {
 // (`buildRunPlanCard`): gefuellt = gelaufen, Ring = geplant und offen, grau = verschoben
 // (`runVerschobeneTage`). Die Vorgabe kommt aus derselben Quelle wie die Kennzahl „geplant"
 // (`runGeplanteTage`).
-function laufWochenListe(mo) {
+function laufWochenListe(mo, istAktuell) {
   const geplant = runGeplanteTage();
   const gelaufen = runNachTag();
-  const verschoben = runVerschobeneTage();
-  const todayIdx = (new Date().getDay() + 6) % 7;
+  // „verschoben" und „heute" gibt es nur in der LAUFENDEN Woche: `runVerschobeneTage` rechnet
+  // ausschliesslich fuer sie, und in einer anderen Woche gibt es kein Heute.
+  const verschoben = istAktuell ? runVerschobeneTage() : {};
+  const todayIdx = istAktuell ? (new Date().getDay() + 6) % 7 : -1;
   const zeilen = WOCHENTAGE_KURZ.map((label, i) => {
     const d = new Date(mo); d.setDate(mo.getDate() + i);
     const key = _dayKeyOf(d.getTime());
@@ -4661,6 +4667,153 @@ function laufWochenListe(mo) {
   return zeilen.length ? `<div class="lauf-wochenliste">${zeilen.join('')}</div>` : '';
 }
 
+// ── DIE WOCHENKARTE IST WAAGERECHT WISCHBAR (22.09.2026, Leonard-Wunsch „Variante A") ──
+// Alle Wochen des laufenden Laufplans liegen nebeneinander in EINEM Scroller mit CSS-Scroll-Snap
+// — dieselbe Machart wie der Trainingskalender, die auf dem iPhone erprobt ist. Die Geste fuehrt
+// allein der Browser; jede selbst gefahrene Wischbewegung ist in dieser App zweimal gescheitert
+// (siehe „AM WISCHEN NICHTS AENDERN").
+// PREIS, bekannt vom Kalender: `overscroll-behavior-x: contain` verhindert, dass die Geste an den
+// Tab-Scroller durchschlaegt — ueber dieser Karte laesst sich der Tab also nicht per Wisch
+// wechseln. Ohne das wandert der Tab mit und die Kartenbewegung bricht ab.
+// DIE HOEHE FOLGT DER GEZEIGTEN WOCHE (Leonard-Entscheidung „darf springen"): Der Scroller
+// braucht eine feste Hoehe, weil `overflow-x: auto` die Y-Achse mit beschneidet. Waehrend der
+// Geste gilt die GROESSERE der beiden sichtbaren Wochen (sonst wird die naechste angeschnitten),
+// nach dem Einrasten die der gezeigten.
+// Ein Tipp auf den Titel fuehrt zurueck zur laufenden Woche.
+let _laufWochenNr = null;        // angezeigte Planwoche (1..N); null = die laufende
+let _laufWochenIdx = -1;         // zuletzt angezeigte Seite, damit Kopf und Punkte nur bei Wechsel neu gesetzt werden
+const MONATE_KURZ = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+
+function _laufWochenMontag(d) {
+  const m = new Date(d); m.setHours(0, 0, 0, 0);
+  m.setDate(m.getDate() - ((m.getDay() + 6) % 7));
+  return m;
+}
+// „21.–27. Sep" bzw. ueber den Monatswechsel „28. Sep – 4. Okt".
+function _laufWochenSpanne(mo) {
+  const so = new Date(mo); so.setDate(so.getDate() + 6);
+  return mo.getMonth() === so.getMonth()
+    ? `${mo.getDate()}.–${so.getDate()}. ${MONATE_KURZ[so.getMonth()]}`
+    : `${mo.getDate()}. ${MONATE_KURZ[mo.getMonth()]} – ${so.getDate()}. ${MONATE_KURZ[so.getMonth()]}`;
+}
+function _laufWochenTitel(abstand, nr) {
+  if (abstand === 0) return 'Diese Woche';
+  if (abstand === 1) return 'Nächste Woche';
+  if (abstand === -1) return 'Letzte Woche';
+  return 'Woche ' + nr;
+}
+// Summen einer Woche: gelaufen (Ist) und geplant (Soll) — dieselben Quellen wie die Liste.
+function _laufWochenWerte(mo) {
+  const von = mo.getTime();
+  const bis = von + 7 * 864e5 - 1;
+  const imZeitraum = (datum) => {
+    const [y, m, d] = datum.split('-').map(Number);
+    const t = new Date(y, m - 1, d).getTime();
+    return t >= von && t <= bis;
+  };
+  let km = 0, min = 0, sollKm = 0;
+  DB.getRuns().forEach(l => { if (imZeitraum(l.date)) { km += l.km || 0; min += l.minutes || 0; } });
+  const geplant = runGeplanteTage();
+  Object.keys(geplant).forEach(k => {
+    if (imZeitraum(k) && geplant[k].einheit) sollKm += Number(geplant[k].einheit.km) || 0;
+  });
+  return { km, min, sollKm };
+}
+function laufWochenSeite(mo, istAktuell) {
+  const w = _laufWochenWerte(mo);
+  return `<div class="lauf-wochen-seite">
+    <div class="lauf-woche">
+      <div class="lauf-kennz"><span class="lauf-kennz-v">${fmtKm(w.km)}</span><span class="lauf-kennz-l">gelaufen</span></div>
+      <div class="lauf-kennz"><span class="lauf-kennz-v">${fmtMin(w.min)}</span><span class="lauf-kennz-l">Zeit</span></div>
+      <div class="lauf-kennz"><span class="lauf-kennz-v">${w.sollKm ? fmtKm(w.sollKm) : '–'}</span><span class="lauf-kennz-l">geplant</span></div>
+    </div>
+    ${laufWochenListe(mo, istAktuell)}
+  </div>`;
+}
+// Kopf und Seitenanzeige auf die Seite `idx` setzen.
+function _laufWochenAnzeige(sc, idx) {
+  const titelEl = document.getElementById('lauf-wochen-titel');
+  const datumEl = document.getElementById('lauf-wochen-datum');
+  const mo = sc._montage[idx];
+  if (!mo) return;
+  const abstand = idx - sc._aktIdx;
+  if (titelEl) titelEl.textContent = _laufWochenTitel(abstand, idx + 1);
+  if (datumEl) datumEl.textContent = _laufWochenSpanne(mo);
+  sc.parentElement.querySelectorAll('.lauf-wochen-punkte > i').forEach((p, i) =>
+    p.classList.toggle('an', i === idx));
+  const marke = sc.parentElement.querySelector('.lauf-wochen-leiste > i');
+  if (marke) marke.style.left = (idx / Math.max(1, sc._montage.length - 1) * 100) + '%';
+}
+// Nach einer Breitenaenderung Hoehen und Position nachziehen (Drehen, Querformat-Grid).
+function _laufWochenBreitePruefen() {
+  const sc = document.getElementById('lauf-wochen-scroll');
+  if (!sc || !sc._neuMessen) return;
+  const w = sc.clientWidth;
+  if (!w || w === sc._breite) return;   // nur die BREITE zaehlt — die Hoehe setzen wir selbst
+  sc._breite = w;
+  sc._neuMessen();
+}
+
+// Zurueck zur laufenden Woche — der Kartentitel ist dafuer ein Knopf.
+function laufWocheZurueck() {
+  const sc = document.getElementById('lauf-wochen-scroll');
+  if (!sc || !sc.clientWidth) return;
+  sc.scrollTo({ left: sc._aktIdx * sc.clientWidth, behavior: _bewegungReduziert() ? 'auto' : 'smooth' });
+}
+// Scroller einrichten: Hoehen messen, Startseite anfahren, Kopf mitfuehren.
+function _laufWochenWischEinrichten(sc, montage, aktIdx, startIdx) {
+  sc._montage = montage;
+  sc._aktIdx = aktIdx;
+  const seiten = [...sc.querySelectorAll(':scope > .lauf-wochen-seite')];
+  let hoehen = seiten.map(s => s.offsetHeight);            // gemessen, solange die Hoehe noch `auto` ist
+  const setzeHoehe = (a, b) => { sc.style.height = Math.max(hoehen[a] || 0, hoehen[b] || 0) + 'px'; };
+  // Nach einer Breitenaenderung (Drehen) stimmen weder die Hoehen noch die Position: Der Browser
+  // fuehrt `scrollLeft` in PIXELN, eine Seite ist danach aber anders breit — ohne das steht auf
+  // einmal eine andere Woche da. Beides wird deshalb neu gesetzt; die SEITE bleibt dieselbe.
+  const neuMessen = () => {
+    sc.style.height = 'auto';
+    hoehen = seiten.map(s => s.offsetHeight);
+    const i = Math.max(0, Math.min(seiten.length - 1, _laufWochenIdx));
+    setzeHoehe(i, i);
+    if (sc.clientWidth) sc.scrollLeft = i * sc.clientWidth;
+  };
+  sc._neuMessen = neuMessen;
+  sc._breite = sc.clientWidth;
+  // ZWEI Ausloeser, weil keiner allein reicht: Der ResizeObserver merkt auch eine Aenderung, die
+  // nicht am Fenster haengt (Seitenwechsel, Querformat-Grid); das `resize`-Ereignis greift, wo
+  // der Observer nicht liefert. Beide gehen durch dieselbe Pruefung auf die BREITE.
+  if (window.ResizeObserver) new ResizeObserver(() => _laufWochenBreitePruefen()).observe(sc);
+  setzeHoehe(startIdx, startIdx);
+  _laufWochenIdx = startIdx;
+  _laufWochenAnzeige(sc, startIdx);
+  if (sc.clientWidth) sc.scrollLeft = startIdx * sc.clientWidth;
+  if (seiten.length < 2) return;
+  let ticking = false, settle = null;
+  sc.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      const w = sc.clientWidth;
+      if (!w) return;
+      const x = sc.scrollLeft / w;
+      const grenze = seiten.length - 1;
+      const i0 = Math.max(0, Math.min(grenze, Math.floor(x)));
+      const i1 = Math.max(0, Math.min(grenze, Math.ceil(x)));
+      setzeHoehe(i0, i1);
+      const idx = Math.max(0, Math.min(grenze, Math.round(x)));
+      if (idx !== _laufWochenIdx) { _laufWochenIdx = idx; _laufWochenAnzeige(sc, idx); }
+      // Einrasten: ~90ms nach dem letzten Scroll-Tick, wie beim Tabwechsel.
+      clearTimeout(settle);
+      settle = setTimeout(() => {
+        const j = Math.max(0, Math.min(grenze, Math.round(sc.scrollLeft / Math.max(1, sc.clientWidth))));
+        _laufWochenNr = j + 1;
+        setzeHoehe(j, j);
+      }, 90);
+    });
+  }, { passive: true });
+}
+
 // ── Seite 1: Überblick über die gelaufenen Einheiten ───────────────
 function renderLaufKalenderSeite() {
   const el = document.getElementById('wo-view-laufen');
@@ -4676,41 +4829,47 @@ function renderLaufKalenderSeite() {
   // (Leonard-Wunsch 06.09.2026).
   const hero = `<div id="wo-lauf-hero">${buildHeuteHero(null, null,
     { sport: 'lauf', runIdx: selectedRunDayIdx })}</div>`;
-  const laeufe = DB.getRuns();
-  const stand = DB.getRunsStand();
-
-  // Diese Woche: Umfang gegen den Plan.
-  const mo = new Date(); mo.setHours(0, 0, 0, 0);
-  mo.setDate(mo.getDate() - ((mo.getDay() + 6) % 7));
-  const so = new Date(mo); so.setDate(so.getDate() + 6); so.setHours(23, 59, 59, 999);
-  const inWoche = laeufe.filter(l => { const [y, m, d] = l.date.split('-').map(Number);
-    const t = new Date(y, m - 1, d).getTime(); return t >= mo.getTime() && t <= so.getTime(); });
-  const kmWoche = inWoche.reduce((a, l) => a + (l.km || 0), 0);
-  const minWoche = inWoche.reduce((a, l) => a + (l.minutes || 0), 0);
-
+  // Die Wochenkarte: eine Seite je Woche des laufenden Laufplans, waagerecht wischbar.
   const plan = runPlanAktiv();
-  let sollKm = 0;
+  const heuteMo = _laufWochenMontag(new Date());
+  let montage = [heuteMo], aktIdx = 0;
   if (plan) {
-    const geplant = runGeplanteTage();
-    Object.keys(geplant).forEach(k => {
-      const [y, m, d] = k.split('-').map(Number);
-      const t = new Date(y, m - 1, d).getTime();
-      if (t >= mo.getTime() && t <= so.getTime() && geplant[k].einheit) sollKm += Number(geplant[k].einheit.km) || 0;
-    });
+    const wochen = runPlanWochen(plan);
+    montage = [];
+    for (let w = 1; w <= wochen; w++) montage.push(runEinheitDatum(plan, w, 0));
+    aktIdx = montage.findIndex(m => m.getTime() === heuteMo.getTime());
+    // Liegt heute ausserhalb des Plans (kann bei einem offen endenden Plan vorkommen), kommt die
+    // laufende Woche als eigene Seite ans Ende — sonst gaebe es keine Seite fuer „Diese Woche".
+    if (aktIdx < 0) { montage.push(heuteMo); montage.sort((a, b) => a - b); aktIdx = montage.findIndex(m => m.getTime() === heuteMo.getTime()); }
   }
-  const woche = `<div class="chart-card-v2">
-    <div class="chart-card-v2-head"><span class="chart-card-v2-title">Diese Woche</span></div>
-    <div class="lauf-woche">
-      <div class="lauf-kennz"><span class="lauf-kennz-v">${fmtKm(kmWoche)}</span><span class="lauf-kennz-l">gelaufen</span></div>
-      <div class="lauf-kennz"><span class="lauf-kennz-v">${fmtMin(minWoche)}</span><span class="lauf-kennz-l">Zeit</span></div>
-      <div class="lauf-kennz"><span class="lauf-kennz-v">${sollKm ? fmtKm(sollKm) : '–'}</span><span class="lauf-kennz-l">geplant</span></div>
+  const startIdx = Math.max(0, Math.min(montage.length - 1, (_laufWochenNr || aktIdx + 1) - 1));
+  const seitenHTML = montage.map(m => laufWochenSeite(m, m.getTime() === heuteMo.getTime())).join('');
+  // Viele Wochen ergaeben zu viele Punkte (auf 375px passen rund 14) — dann zeigt ein schmaler
+  // Strich mit Marke, wo man steht.
+  const anzeige = montage.length < 2 ? ''
+    : montage.length <= 14
+      ? `<div class="lauf-wochen-punkte" aria-hidden="true">${montage.map(() => '<i></i>').join('')}</div>`
+      : '<div class="lauf-wochen-leiste" aria-hidden="true"><i></i></div>';
+  const titelHTML = montage.length > 1
+    ? `<button type="button" class="chart-card-v2-title lauf-wochen-titel" id="lauf-wochen-titel"
+               onclick="laufWocheZurueck()">Diese Woche</button>`
+    : '<span class="chart-card-v2-title" id="lauf-wochen-titel">Diese Woche</span>';
+  const woche = `<div class="chart-card-v2 lauf-wochen-karte">
+    <div class="chart-card-v2-head">
+      ${titelHTML}
+      <span class="lauf-wochen-datum" id="lauf-wochen-datum"></span>
     </div>
-    ${laufWochenListe(mo)}
+    <div class="lauf-wochen-scroll" id="lauf-wochen-scroll">
+      <span class="cal-sticky-anchor" aria-hidden="true"></span>
+      ${seitenHTML}
+    </div>
+    ${anzeige}
   </div>`;
 
   // Die Tageskarte des gewaehlten Tags ist am 21.09.2026 entfallen (Leonard-Wunsch) — die
   // Laeufe der ganzen Woche stehen jetzt in „Diese Woche" (`laufWochenListe`).
   el.innerHTML = wochenplan + hero + woche;
+  _laufWochenWischEinrichten(document.getElementById('lauf-wochen-scroll'), montage, aktIdx, startIdx);
 }
 
 // Verbindung zur Tabelle „Workout Data". Steht seit dem 04.09.2026 in den EINSTELLUNGEN
@@ -10656,6 +10815,11 @@ let _navLastScrollY = 0;
 // Kalender bei Groessenaenderung (Drehen des Geraets) neu rechnen — die Kaestchengroesse
 // haengt an der verfuegbaren Breite.
 let _calResizeTimer = null;
+function initLaufWochenResize() {
+  let t = null;
+  window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(_laufWochenBreitePruefen, 150); });
+}
+
 function initCalendarResize() {
   window.addEventListener('resize', () => {
     if (_calResizeTimer) clearTimeout(_calResizeTimer);
@@ -10830,6 +10994,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Bottom-Nav versteckt sich beim Runterscrollen, taucht beim Hochscrollen wieder auf
   initScrollHideNav();
   // Kalender: Kaestchengroesse beim Drehen neu rechnen, Auswahl bei Tipp daneben aufheben
+  initLaufWochenResize();
   initCalendarResize();
   initCalendarDeselect();
   _initKeineTippAnimationAufDiagramm();

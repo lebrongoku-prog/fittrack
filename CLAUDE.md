@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v375**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v376**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2491,6 +2491,47 @@ Satz|Wdh|kg|Haken (`.lauf-tag-srow`), eine hellgruene Scheibe mit dem Wochentag 
 Nummer und die Notiz auf einer EIGENEN Zeile unter den Werten statt in der rechten Spalte —
 die Tabelle ist hier nur eine Zeile hoch, daneben saehe die Notiz verloren aus. Wurde der Tag gelaufen, steht das in der Aktionsleiste mit einem Knopf zu
 `showRunDetail`.
+
+**DIE WOCHENKARTE IST WAAGERECHT WISCHBAR** (`_laufWochenWischEinrichten`, 22.09.2026,
+Leonard-Entscheidung „Variante A" gegen Pfeile im Kopf). Alle Wochen des LAUFENDEN Laufplans
+liegen nebeneinander in einem Scroller mit CSS-Scroll-Snap; eine Seite = eine Woche, gebaut von
+`laufWochenSeite(mo, istAktuell)` (Summen `_laufWochenWerte` + Liste `laufWochenListe`).
+GEBAUT WIE DER TRAININGSKALENDER — die Geste fuehrt allein der Browser. Eine selbst gefahrene
+Wischbewegung ist in dieser App zweimal gescheitert (siehe „AM WISCHEN NICHTS AENDERN").
+PREIS, bekannt vom Kalender: `overscroll-behavior-x: contain` haelt die Geste in der Karte, also
+laesst sich ueber ihr der Tab nicht per Wisch wechseln. Ohne das wandert der Tab mit und die
+Bewegung bricht ab. Dazu `.lauf-wochen-karte:active { transform: none }` (ein transform am
+Vorfahren bricht die Geste auf iOS ab) und der `.cal-sticky-anchor` im Scroller.
+KOPF: Titel und Datum stehen AUSSERHALB des Scrollers und werden beim Scrollen mitgefuehrt
+(`_laufWochenAnzeige`, an der 50-%-Schwelle wie beim Tabwechsel): „Diese Woche" · „Nächste
+Woche" · „Letzte Woche", weiter weg „Woche 6"; daneben die Spanne „21.–27. Sep" bzw. ueber den
+Monatswechsel „28. Sep – 4. Okt" (`_laufWochenSpanne`). Der Titel ist ein KNOPF und fuehrt
+zurueck zur laufenden Woche.
+SEITENANZEIGE: Punkte bis 14 Wochen, darueber ein schmaler Strich mit Marke — 30 Punkte passen
+auf 375px nicht nebeneinander.
+DIE HOEHE FOLGT DER GEZEIGTEN WOCHE (Leonard-Entscheidung „darf springen"): Der Scroller braucht
+eine feste Hoehe, weil `overflow-x: auto` die Y-Achse mit beschneidet. WAEHREND der Geste gilt
+die GROESSERE der beiden sichtbaren Wochen — sonst wird die naechste angeschnitten —, nach dem
+Einrasten die der gezeigten.
+NACH EINER BREITENAENDERUNG (Drehen) werden Hoehen UND Position neu gesetzt
+(`_laufWochenBreitePruefen` → `sc._neuMessen`): `scrollLeft` fuehrt der Browser in PIXELN, eine
+Seite ist danach aber anders breit, und es stuende eine andere Woche da. ZWEI Ausloeser, weil
+keiner allein reicht: ein `ResizeObserver` am Scroller und das `resize`-Ereignis
+(`initLaufWochenResize`, 150ms entprellt).
+ZUSTAND: `_laufWochenNr` (Planwoche 1..N) gilt nur, solange man auf der Seite steht — der
+Seitenwechsel auf „Gym" und das Verlassen des Tabs setzen sie zurueck, die Karte steht dann
+wieder auf dieser Woche. Ein Neuzeichnen der Seite (Tagesauswahl, Laufdaten) behaelt sie.
+„heute" und „verschoben" gibt es NUR in der laufenden Woche (`laufWochenListe(mo, istAktuell)`):
+`runVerschobeneTage` rechnet ausschliesslich fuer sie.
+OHNE laufenden Laufplan bleibt es bei EINER Seite, ohne Punkte und mit dem Titel als Text.
+GEMESSEN (375px, Plan mit 8 Wochen, heute in Woche 3): Start auf Seite 3 mit „Diese Woche ·
+21.–27. Sep"; Wischen auf Seite 4 → „Nächste Woche · 28. Sep – 4. Okt", Seite 2 → „Letzte
+Woche", Seite 6 → „Woche 6"; Hoehe folgt (229/236px), zwischen zwei Seiten die groessere; Tipp
+auf den Titel springt auf Seite 3 zurueck; Tagesauswahl behaelt die Woche, Seitenwechsel setzt
+zurueck; Querformat 1100px ohne Ueberlauf; Glas-Modus: Punkte 28-%-Weiss, aktiver 92-%-Weiss.
+NICHT PRUEFBAR HIER: die Geste selbst und beide Resize-Ausloeser — in der verdeckten
+Browser-Ansicht liefert weder `ResizeObserver` noch das `resize`-Ereignis. Mit einem von Hand
+ausgeloesten `resize` stimmt das Ergebnis (Seite und Hoehe wieder richtig).
 
 **„Alle aufklappen / Alle zuklappen" ueber dem Abschnitt „Einheiten"** (`toggleAlleRunWochen`,
 `#lp-alle-btn`, 13.09.2026, Leonard-Wunsch). Sind ALLE Wochen offen, klappt er alle zu, sonst
