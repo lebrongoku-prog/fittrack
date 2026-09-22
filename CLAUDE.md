@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v380**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v381**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2537,12 +2537,22 @@ EIN Zeichen fuer „zurueck zur aktuellen Ansicht". Beim Erscheinen waechst er k
 FALLE: `hidden` allein blendet ihn NICHT aus — `.info-btn` setzt `display: flex`, und eine
 Autoren-Regel schlaegt das `display: none` des Browsers. Dafuer gibt es
 `.lauf-wochen-zurueck[hidden] { display: none }`.
-POLSTER 18px statt der ueblichen 14px (22.09.2026, Leonard: „das Polster wirkt hier zu klein").
+POLSTER: Die KARTE traegt die ueblichen 14px wie jede andere, die WOCHENTAGSZEILEN stehen aber
+18px vom Kartenrand (22.09.2026, Leonard-Wunsch — zuerst hatte die ganze Karte 18px, v380).
 GEMESSEN vorher: Die Karte hatte auf allen vier Seiten dieselben 14px wie der Kalender und die
 uebrigen `.chart-card-v2` (Wochenplan- und Herocard: 14px seitlich, 15.4px oben/unten) — es war
-also kein Unterschied, sondern der Inhalt: Kennzahlen, Trennlinien und Laengenbalken enden
-buendig an der Polsterkante, waehrend in den Nachbarkarten Kreise und Knoepfe sichtbar
-eingerueckt sitzen. NUR diese Karte traegt deshalb `.lauf-wochen-karte { padding: 18px }`.
+also kein Unterschied im Polster, sondern der Inhalt: Trennlinien, Laengenbalken und das gruene
+Heute-Feld enden buendig an der Polsterkante, waehrend in den Nachbarkarten Kreise und Knoepfe
+sichtbar eingerueckt sitzen.
+Die vier Pixel kommen aus dem seitlichen Polster der LISTE (`.lauf-wochenliste { padding: 0 4px }`);
+Kopf, Kennzahlen und Seitenanzeige bleiben bei 14px.
+DAS GRUENE HEUTE-FELD beginnt dabei GENAU an der Zeilenkante: Sein waagerechtes Polster wird
+NICHT mehr per negativem Aussenabstand herausgerechnet (senkrecht schon, sonst waere die Zeile
+hoeher), der Abstand zwischen Scheibe und Text liegt dafuer bei 5 statt 10px — zusammen mit den
+5px des Feldes sind es wieder die gewohnten 10. Der Laengenbalken beginnt entsprechend bei 45
+statt 40px.
+GEMESSEN (375px): Kopf und Kennzahlen 14px, Trennlinien und Balken 18px, gruenes Feld 18px,
+Scheibe 23px, Text und Balken 63px, Zeilenhoehen unveraendert.
 SEITENANZEIGE: Punkte bis 14 Wochen, darueber ein schmaler Strich mit Marke — 30 Punkte passen
 auf 375px nicht nebeneinander.
 DIE HOEHE FOLGT DER GEZEIGTEN WOCHE (Leonard-Entscheidung „darf springen"): Der Scroller braucht

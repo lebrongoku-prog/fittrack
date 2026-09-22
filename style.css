@@ -2534,13 +2534,6 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
    Seiten oben, damit eine kurze Woche nicht auf die Hoehe der langen gezogen wird.
    `.cal-sticky-anchor` steckt auch hier im Scroller — siehe Kalender: ein klebendes Kind zwingt
    WebKit, den Scrollbereich auf der Compositor-Ebene zu fuehren. */
-/* MEHR LUFT ALS IN DEN UEBRIGEN KARTEN (22.09.2026, Leonard: „das Polster wirkt hier zu klein").
-   GEMESSEN: Die Karte hatte auf allen vier Seiten dieselben 14px wie der Kalender und die
-   uebrigen `.chart-card-v2` (Wochenplan- und Herocard: 14px seitlich, 15.4px oben/unten). Der
-   Eindruck kommt vom Inhalt: Kennzahlen, Trennlinien und Laengenbalken enden buendig an der
-   Polsterkante, waehrend in den Nachbarkarten Kreise und Knoepfe sichtbar eingerueckt sitzen.
-   Deshalb traegt NUR diese Karte 18px. */
-.lauf-wochen-karte { padding: 18px; }
 .lauf-wochen-scroll {
   display: flex; align-items: flex-start;
   overflow-x: auto; overflow-y: hidden;
@@ -2590,7 +2583,12 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,2
    Eine Zeile je Tag: Scheibe mit dem Wochentag, Vorgabe mit Zone, darunter die Notiz, rechts
    das Ist bzw. „heute". Die Scheibe traegt dieselben Zustaende wie der Wochentagskreis der
    Laufwochenplan-Karte: gefuellt = gelaufen, Ring = offen, grau = verschoben. */
-.lauf-wochenliste { margin-top: 12px; }
+/* DIE ZEILEN SIND EINGEZOGEN (22.09.2026, Leonard-Wunsch): Die KARTE traegt wieder die ueblichen
+   14px wie jede andere, die Wochentagszeilen stehen aber 18px vom Kartenrand — Trennlinien,
+   Laengenbalken und das gruene Heute-Feld enden sonst buendig an der Polsterkante und die Karte
+   wirkt gedraengt. Die vier Pixel kommen aus dem seitlichen Polster der LISTE; Kopf, Kennzahlen
+   und Seitenanzeige bleiben bei 14px. */
+.lauf-wochenliste { margin-top: 12px; padding: 0 4px; }
 .lauf-wz {
   display: block; width: 100%;
   padding: 8px 0 0; margin-top: 8px; border: none; border-top: 1px solid var(--border);
@@ -2600,7 +2598,9 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,2
 button.lauf-wz { cursor: pointer; }
 button.lauf-wz:active { opacity: .6; }
 /* ZWEI Ebenen je Zeile seit dem 22.09.2026: oben die Angaben, darunter der Laengenbalken. */
-.lauf-wz-oben { display: flex; align-items: center; gap: 10px; }
+/* Abstand 5px statt 10: Das gruene Heute-Feld legt selbst 5px um die Scheibe, zusammen sind es
+   wieder die gewohnten 10px zwischen Scheibe und Text. */
+.lauf-wz-oben { display: flex; align-items: center; gap: 5px; }
 /* LAENGENBALKEN (Leonard-Wunsch 22.09.2026): Der helle Teil ist die Vorgabe, der kraeftige die
    tatsaechlich gelaufene Strecke — ist er laenger, war der Lauf laenger als geplant. Bezug ist
    der laengste Lauf des ganzen Plans (`_laufBezugKm`), damit sich die Wochen beim Wischen
@@ -2608,7 +2608,7 @@ button.lauf-wz:active { opacity: .6; }
    beginnt also unter der Vorgabe. */
 .lauf-wz-balken {
   position: relative; height: 4px; border-radius: 99px;
-  background: var(--card2); margin: 6px 0 0 40px;
+  background: var(--card2); margin: 6px 0 0 45px;   /* Feld (40px) + Abstand (5px) = unter dem Text */
 }
 .lauf-wz-balken > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; }
 .lauf-wz-balken > .soll { background: rgba(74, 222, 128, .62); }
@@ -2620,9 +2620,13 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-balken > .ist  { background: rgba(2
    (`.ppv-col.today`, 22.09.2026, Leonard-Wunsch — vorher stand rechts das Wort „heute").
    Das Polster waechst ueber die Scheibe hinaus und wird per negativem Aussenabstand wieder
    herausgerechnet: Die Zeile bleibt dadurch genauso hoch und die Scheibe steht, wo sie stand. */
+/* Das Feld beginnt GENAU an der Kante der Zeile (18px vom Kartenrand) und legt sich von dort um
+   die Scheibe. Senkrecht wird sein Polster per negativem Aussenabstand herausgerechnet, damit die
+   Zeile nicht hoeher wird; waagerecht NICHT — sonst stuende das Feld 5px weiter aussen als die
+   Trennlinie darueber. */
 .lauf-wz-feld {
   display: inline-flex; flex-shrink: 0;
-  padding: 4px 5px; margin: -4px -5px; border-radius: 9.9px;
+  padding: 4px 5px; margin: -4px 0; border-radius: 9.9px;
 }
 .lauf-wz-feld.heute { background: var(--accent-bg); }
 html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,255,255,.18); }
