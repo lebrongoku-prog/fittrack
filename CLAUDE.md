@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v382**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v383**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2579,25 +2579,37 @@ NICHT PRUEFBAR HIER: die Geste selbst und beide Resize-Ausloeser — in der verd
 Browser-Ansicht liefert weder `ResizeObserver` noch das `resize`-Ereignis. Mit einem von Hand
 ausgeloesten `resize` stimmt das Ergebnis (Seite und Hoehe wieder richtig).
 
-**AUSKLAPPBARES DIAGRAMM DER GEPLANTEN WOCHENKILOMETER** (`laufKmDiagrammHTML`,
-`_zeichneLaufKmDiagramm`, 22.09.2026, Leonard-Wunsch). Eigene Karte UNTER der Wochenkarte,
-im Aufbau dem Diagramm „Entwicklung" der Uebungen nachempfunden (Leonard-Vorgabe): dieselbe
-Ueberschrift in Grossbuchstaben mit Ausklapp-Pfeil (`.ex-chart-block` / `.ex-chart-collapse` /
-`.ex-chart-wrap`, 150px hoch), zugeklappt bleibt nur die Zeile „WOCHENKILOMETER" stehen.
-SAEULEN statt einer Linie: Der Wert gehoert zu je einer WOCHE, nicht zu einem Zeitpunkt. Gezeigt
-wird die Summe der GEPLANTEN Kilometer je Planwoche (`_laufKmProWoche`); Einheiten ohne
-Kilometer (Intervalltraining) zaehlen mit 0. Die laufende Woche steht kraeftig, die uebrigen
-gedaempft (55 % bzw. im Glas-Modus 45 %).
-Die Karte erscheint nur, wenn ein Laufplan laeuft UND er ueberhaupt Kilometer nennt.
+**AUSKLAPPBARES DIAGRAMM DER WOCHENKILOMETER** (`laufKmDiagrammHTML`, `_laufKmDaten`,
+`_zeichneLaufKmDiagramm`, 22.09.2026, Leonard-Wunsch). Es steht IN der Karte „Diese Woche",
+unter der Seitenanzeige und durch eine Trennlinie abgesetzt (v382 war es kurz eine eigene Karte
+darunter). Im Aufbau ist es dem Diagramm „Entwicklung" der Uebungen nachempfunden
+(Leonard-Vorgabe): dieselbe Ueberschrift in Grossbuchstaben mit Ausklapp-Pfeil
+(`.ex-chart-block` / `.ex-chart-collapse` / `.ex-chart-wrap`, 150px hoch), zugeklappt bleibt nur
+die Zeile „WOCHENKILOMETER" stehen.
+SAEULEN statt einer Linie: Der Wert gehoert zu je einer WOCHE, nicht zu einem Zeitpunkt.
+WAS EINE SAEULE ZEIGT: Eine ABGESCHLOSSENE Woche zeigt die tatsaechlich GELAUFENEN Kilometer,
+die laufende und alle kuenftigen die GEPLANTEN (Leonard-Wunsch). „Abgeschlossen" heisst: Der
+Montag der Woche liegt vor dem Montag dieser Woche.
+IM TOOLTIP stehen beide Zahlen — „Geplant: 28 km" und darunter „Gelaufen: 26.4 km"; die zweite
+Zeile bleibt weg, solange die Woche laeuft und noch nichts gelaufen ist.
+HERVORGEHOBEN ist die Woche, die im Scroller darueber gerade gezeigt wird: Sie traegt die volle
+Farbe (dieselbe, die auch ein angetippter Balken bekommt — `hoverBackgroundColor`), die uebrigen
+sind gedaempft (55 %, im Glas-Modus 45 %). Beim Wischen wandert die Hervorhebung mit
+(`_laufKmHervorheben` aus `_laufWochenAnzeige`, `chart.update('none')` — kein Neuaufbau).
+Gerechnet wird ueber den MONTAG der gezeigten Seite, nicht ueber den Seitenindex: Liegt heute
+ausserhalb des Plans, hat der Scroller eine Seite mehr als das Diagramm Saeulen.
+Das Diagramm erscheint nur, wenn ein Laufplan laeuft UND er ueberhaupt Kilometer nennt.
 ZUSTAND: `_laufKmOffen`, Ausgangszustand zugeklappt, haelt solange die App laeuft (wie der
 Gewicht/Wdh.-Umschalter der Uebungen; bewusst nicht gespeichert). Gezeichnet wird ERST beim
 Aufklappen — ein verstecktes Canvas hat keine Breite, Chart.js behielte sonst die alten Masse
 (dieselbe Regel wie `toggleChartBlock`).
 Farben wie beim Uebungsdiagramm ueber `glasAktiv() && canvas.closest('.screen:not(#screen-mehr)')`
 — weiss NUR auf dem Schleier.
-GEMESSEN (Plan mit 8 Wochen): zugeklappt 46px hohe Karte, aufgeklappt 202px; Werte
-0/12/28/36/10/25/0/21 km = die Summen des Plans, W3 (laufende Woche) kraeftig; bleibt beim
-Neuzeichnen und beim Seitenwechsel offen; Glas-Modus Balken weiss, Achsen 80-%-Weiss.
+GEMESSEN (Plan mit 8 Wochen, heute in Woche 3): Werte 0/12.5/28/36/10/25/0/21 — Woche 2 ist
+vorbei und zeigt deshalb ihre 12.5 gelaufenen statt der 12 geplanten Kilometer, Woche 3 die
+geplanten 28; Tooltip Woche 2 „Geplant: 12 km / Gelaufen: 12.5 km", Woche 4 ohne zweite Zeile;
+Hervorhebung springt beim Wischen von Saeule 3 auf 5; bleibt beim Neuzeichnen und beim
+Seitenwechsel offen; Glas-Modus Balken weiss, Achsen 80-%-Weiss.
 TESTHINWEIS: `glasAktiv()` liest den SPEICHER, nicht die Klasse am `<html>` — zum Pruefen
 `localStorage.setItem(GLAS_KEY, '1'); applyGlasModus();` statt die Klasse von Hand zu setzen.
 

@@ -2588,11 +2588,12 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,2
    Laengenbalken und das gruene Heute-Feld enden sonst buendig an der Polsterkante und die Karte
    wirkt gedraengt. Die vier Pixel kommen aus dem seitlichen Polster der LISTE; Kopf, Kennzahlen
    und Seitenanzeige bleiben bei 14px. */
-/* Diagramm der geplanten Wochenkilometer (22.09.2026): eigene Karte unter der Wochenkarte, im
-   Aufbau dem Diagramm „Entwicklung" der Uebungen nachempfunden. Zugeklappt bleibt nur die
-   Ueberschrift stehen, deshalb unten kein Polster fuer ein Diagramm, das nicht da ist. */
-.lauf-km-karte .ex-chart-wrap { margin-bottom: 0; }
-.lauf-km-karte .ex-chart-block.collapsed .ex-chart-head { margin-bottom: 0; }
+/* Diagramm der Wochenkilometer (22.09.2026): Es steht IN der Karte „Diese Woche", unter der
+   Seitenanzeige, und ist im Aufbau dem Diagramm „Entwicklung" der Uebungen nachempfunden.
+   Eine Trennlinie setzt es von der Wochenliste ab — dieselbe wie zwischen den Zeilen. */
+.lauf-wochen-karte .ex-chart-block { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.lauf-wochen-karte .ex-chart-wrap { margin-bottom: 0; }
+.lauf-wochen-karte .ex-chart-block.collapsed .ex-chart-head { margin-bottom: 0; }
 .lauf-wochenliste { margin-top: 12px; padding: 0 4px; }
 .lauf-wz {
   display: block; width: 100%;

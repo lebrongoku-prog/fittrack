@@ -4793,6 +4793,7 @@ function _laufWochenAnzeige(sc, idx) {
     p.classList.toggle('an', i === idx));
   const marke = sc.parentElement.querySelector('.lauf-wochen-leiste > i');
   if (marke) marke.style.left = (idx / Math.max(1, sc._montage.length - 1) * 100) + '%';
+  _laufKmHervorheben(mo);   // die Saeule der gezeigten Woche im Diagramm darunter
 }
 // Nach einer Breitenaenderung Hoehen und Position nachziehen (Drehen, Querformat-Grid).
 function _laufWochenBreitePruefen() {
@@ -4877,22 +4878,33 @@ function _laufWochenWischEinrichten(sc, montage, aktIdx, startIdx) {
 let _laufKmOffen = false;
 let _laufKmChart = null;
 
-function _laufKmProWoche(plan) {
+// Je Planwoche: geplante Kilometer, tatsaechlich gelaufene und ob die Woche VORBEI ist.
+// Eine abgeschlossene Woche zeigt im Diagramm das IST statt des Solls (Leonard-Wunsch
+// 22.09.2026) — was einmal gelaufen ist, ist die interessantere Zahl; der Plan steht weiter
+// im Tooltip.
+function _laufKmDaten(plan) {
   const wochen = runPlanWochen(plan);
-  const werte = Array.from({ length: wochen }, () => 0);
-  (plan.units || []).forEach(u => {
-    const w = Number(u.week);
-    if (w >= 1 && w <= wochen) werte[w - 1] += Number(u.km) || 0;
+  const heuteMo = _laufWochenMontag(new Date()).getTime();
+  const runs = DB.getRuns();
+  return Array.from({ length: wochen }, (_, i) => {
+    const mo = runEinheitDatum(plan, i + 1, 0);
+    const von = mo.getTime(), bis = von + 7 * 864e5 - 1;
+    let geplant = 0, gelaufen = 0;
+    (plan.units || []).forEach(u => { if (Number(u.week) === i + 1) geplant += Number(u.km) || 0; });
+    runs.forEach(l => {
+      const [y, m, d] = l.date.split('-').map(Number);
+      const t = new Date(y, m - 1, d).getTime();
+      if (t >= von && t <= bis) gelaufen += Number(l.km) || 0;
+    });
+    return { mo, geplant, gelaufen, vorbei: von < heuteMo };
   });
-  return werte;
 }
 
 function laufKmDiagrammHTML(plan) {
   if (!plan) return '';
-  const werte = _laufKmProWoche(plan);
-  if (!werte.some(v => v > 0)) return '';   // ein Plan ohne Kilometerangaben hat nichts zu zeigen
-  return `<div class="chart-card-v2 lauf-km-karte">
-    <div class="ex-chart-block${_laufKmOffen ? '' : ' collapsed'}" id="lauf-km-block">
+  const daten = _laufKmDaten(plan);
+  if (!daten.some(d => d.geplant > 0 || d.gelaufen > 0)) return '';   // nichts zu zeigen
+  return `<div class="ex-chart-block${_laufKmOffen ? '' : ' collapsed'}" id="lauf-km-block">
       <div class="ex-item-body-label ex-chart-head">
         <button type="button" class="ex-chart-collapse" onclick="toggleLaufKmDiagramm()"
                 aria-expanded="${_laufKmOffen ? 'true' : 'false'}">Wochenkilometer<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
@@ -4900,8 +4912,7 @@ function laufKmDiagrammHTML(plan) {
       <div class="ex-chart-body">
         <div class="ex-chart-wrap"><canvas id="lauf-km-chart"></canvas></div>
       </div>
-    </div>
-  </div>`;
+    </div>`;
 }
 
 function toggleLaufKmDiagramm() {
@@ -4913,29 +4924,54 @@ function toggleLaufKmDiagramm() {
   if (knopf) knopf.setAttribute('aria-expanded', _laufKmOffen ? 'true' : 'false');
   // Erst beim Aufklappen zeichnen: Ein verstecktes Canvas hat keine Breite, Chart.js behielte
   // sonst die alten Masse (dieselbe Regel wie bei `toggleChartBlock`).
-  if (_laufKmOffen) _zeichneLaufKmDiagramm();
+  if (_laufKmOffen) {
+    const sc = document.getElementById('lauf-wochen-scroll');
+    _zeichneLaufKmDiagramm(sc && sc._montage ? sc._montage[Math.max(0, _laufWochenIdx)] : null);
+  }
 }
 
-function _zeichneLaufKmDiagramm() {
+// Farben der Saeulen: die GEZEIGTE Woche kraeftig (dieselbe Farbe, die ein angetippter Balken
+// traegt), die uebrigen gedaempft.
+function _laufKmFarben(anzahl, hervorIdx, voll, matt) {
+  return Array.from({ length: anzahl }, (_, i) => i === hervorIdx ? voll : matt);
+}
+// Beim Wischen wandert die Hervorhebung mit — gerechnet ueber den MONTAG der gezeigten Seite,
+// nicht ueber den Seitenindex: Liegt heute ausserhalb des Plans, hat der Scroller eine Seite
+// mehr als das Diagramm Saeulen.
+function _laufKmHervorheben(mo) {
+  const c = _laufKmChart;
+  if (!c || !mo) return;
+  const idx = (c._montage || []).findIndex(m => m.getTime() === mo.getTime());
+  const d = c.data.datasets[0];
+  d.backgroundColor = _laufKmFarben(d.data.length, idx, c._voll, c._matt);
+  c.update('none');
+}
+
+function _zeichneLaufKmDiagramm(mo) {
   if (_laufKmChart) { _laufKmChart.destroy(); _laufKmChart = null; }
   const canvas = document.getElementById('lauf-km-chart');
   const plan = runPlanAktiv();
   if (!canvas || !plan || typeof Chart === 'undefined' || !_laufKmOffen) return;
-  const werte = _laufKmProWoche(plan);
+  const daten = _laufKmDaten(plan);
   // Farben wie beim Uebungsdiagramm: weiss NUR auf dem Schleier, nicht in Modalfenstern.
   const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)');
-  const gruen = aufGlas ? '#ffffff' : '#4ADE80';
+  const voll = aufGlas ? '#ffffff' : '#4ADE80';
+  const matt = _withAlpha(voll, aufGlas ? 0.45 : 0.55);
   const schrift = aufGlas ? 'rgba(255,255,255,0.8)' : '#64748B';
   const raster  = aufGlas ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.06)';
-  // Die laufende Woche steht kraeftig, die uebrigen gedaempft.
-  const heuteMo = _laufWochenMontag(new Date()).getTime();
-  const aktIdx = werte.findIndex((_, i) => runEinheitDatum(plan, i + 1, 0).getTime() === heuteMo);
-  const farben = werte.map((_, i) => i === aktIdx ? gruen : _withAlpha(gruen, aufGlas ? 0.45 : 0.55));
+  const zeigt = mo || _laufWochenMontag(new Date());
+  const hervorIdx = daten.findIndex(d => d.mo.getTime() === zeigt.getTime());
   _laufKmChart = new Chart(canvas.getContext('2d'), {
     type: 'bar',
     data: {
-      labels: werte.map((_, i) => 'W' + (i + 1)),
-      datasets: [{ data: werte, backgroundColor: farben, borderRadius: 4, borderWidth: 0, maxBarThickness: 34 }],
+      labels: daten.map((_, i) => 'W' + (i + 1)),
+      // ABGESCHLOSSENE Wochen zeigen das IST, laufende und kuenftige das SOLL.
+      datasets: [{
+        data: daten.map(d => d.vorbei ? d.gelaufen : d.geplant),
+        backgroundColor: _laufKmFarben(daten.length, hervorIdx, voll, matt),
+        hoverBackgroundColor: voll,
+        borderRadius: 4, borderWidth: 0, maxBarThickness: 34,
+      }],
     },
     options: {
       responsive: true, maintainAspectRatio: false,
@@ -4944,7 +4980,13 @@ function _zeichneLaufKmDiagramm() {
         legend: { display: false },
         tooltip: { callbacks: {
           title: (c) => 'Woche ' + (c[0].dataIndex + 1),
-          label: (c) => fmtKm(c.parsed.y) + ' geplant',
+          // Im Tooltip stehen BEIDE Zahlen (Leonard-Wunsch): was geplant war und was gelaufen
+          // wurde. „Gelaufen" bleibt weg, solange die Woche laeuft und noch nichts drin steht.
+          label: (c) => 'Geplant: ' + fmtKm(daten[c.dataIndex].geplant),
+          afterLabel: (c) => {
+            const d = daten[c.dataIndex];
+            return (d.vorbei || d.gelaufen) ? 'Gelaufen: ' + fmtKm(d.gelaufen) : '';
+          },
         } },
       },
       scales: {
@@ -4953,6 +4995,10 @@ function _zeichneLaufKmDiagramm() {
       },
     },
   });
+  // Fuer das Nachfuehren beim Wischen am Diagramm merken.
+  _laufKmChart._montage = daten.map(d => d.mo);
+  _laufKmChart._voll = voll;
+  _laufKmChart._matt = matt;
 }
 
 // ── Seite 1: Überblick über die gelaufenen Einheiten ───────────────
@@ -5013,13 +5059,14 @@ function renderLaufKalenderSeite() {
       ${seitenHTML}
     </div>
     ${anzeige}
+    ${laufKmDiagrammHTML(plan)}
   </div>`;
 
   // Die Tageskarte des gewaehlten Tags ist am 21.09.2026 entfallen (Leonard-Wunsch) — die
   // Laeufe der ganzen Woche stehen jetzt in „Diese Woche" (`laufWochenListe`).
-  el.innerHTML = wochenplan + hero + woche + laufKmDiagrammHTML(plan);
+  el.innerHTML = wochenplan + hero + woche;
   _laufWochenWischEinrichten(document.getElementById('lauf-wochen-scroll'), montage, aktIdx, startIdx);
-  _zeichneLaufKmDiagramm();
+  _zeichneLaufKmDiagramm(montage[startIdx]);
 }
 
 // Verbindung zur Tabelle „Workout Data". Steht seit dem 04.09.2026 in den EINSTELLUNGEN
