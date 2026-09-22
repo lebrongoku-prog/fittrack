@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v386**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v387**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2610,12 +2610,17 @@ Das Diagramm erscheint nur, wenn ein Laufplan laeuft UND er ueberhaupt Kilometer
 Tabelle `KM_DIAGRAMM` mit dem Schluessel `welches` ('lauf' | 'lp'); Markup, Umschalten und
 Zeichnen teilen sich beide (`laufKmDiagrammHTML(plan, welches)`, `toggleKmDiagramm(welches)`,
 `_zeichneKmDiagramm`). UNTERSCHIEDE der Detailansicht:
-  - AUFGEKLAPPT als Ausgangszustand (`_lpKmOffen = true`).
+  - IMMER OFFEN — nicht einklappbar (22.09.2026, Leonard-Wunsch; v385/386 war es aufklappbar mit
+    dem Ausgangszustand offen). `klappbar: false` in `KM_DIAGRAMM`: Die Ueberschrift ist dort
+    Text statt Knopf, ohne Pfeil, und `_kmOffen('lp')` gibt fest `true` zurueck.
   - IMMER nur die GEPLANTEN Kilometer (`_laufKmDaten(plan, nurPlan)` setzt `vorbei` auf false) —
     auch im Tooltip steht dort kein „Gelaufen". Die Ansicht dient dem Planen, nicht dem
     Nachschauen.
   - KEINE hervorgehobene Woche, und weil es keine gibt, stehen ALLE Saeulen in voller Farbe
     (`_laufKmFarben` bei `hervorIdx < 0`) — durchgehend gedaempft saehe es nur blass aus.
+  - FARBE ist die TABFARBE des Plan-Tabs (Amber #F59E0B, 22.09.2026, Leonard-Wunsch; vorher das
+    Lauf-Gruen). Gelesen aus `--accent` am Body, damit die Farbe an einer Stelle steht — die
+    Detailansicht traegt das Theme des Plan-Tabs.
   - Sie zeigt den BEARBEITETEN Plan (`editingRunPlanId`), nicht den laufenden.
   - Aendert man eine Kilometerangabe, zieht `setRunUnit` das Diagramm von Hand nach: Die Felder
     speichern bewusst OHNE Neuaufbau, sonst verloeren sie den Fokus.

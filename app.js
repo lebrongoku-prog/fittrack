@@ -4907,11 +4907,13 @@ function _laufKmDaten(plan, nurPlan) {
 // DASSELBE DIAGRAMM AN ZWEI STELLEN (22.09.2026): in der Karte „Diese Woche" (zugeklappt, mit
 // Ist-Werten und wandernder Hervorhebung) und in der LAUFPLAN-DETAILANSICHT unter dem Abschnitt
 // „Einheiten" (aufgeklappt, immer nur die geplanten Kilometer). `welches` = 'lauf' | 'lp'.
+// `klappbar: false` in der Detailansicht (22.09.2026, Leonard-Wunsch): Dort steht das Diagramm
+// immer offen, die Ueberschrift ist deshalb Text statt Knopf.
 const KM_DIAGRAMM = {
-  lauf: { block: 'lauf-km-block', canvas: 'lauf-km-chart', nurPlan: false },
-  lp:   { block: 'lp-km-block',   canvas: 'lp-km-chart',   nurPlan: true  },
+  lauf: { block: 'lauf-km-block', canvas: 'lauf-km-chart', nurPlan: false, klappbar: true  },
+  lp:   { block: 'lp-km-block',   canvas: 'lp-km-chart',   nurPlan: true,  klappbar: false },
 };
-function _kmOffen(welches) { return welches === 'lp' ? _lpKmOffen : _laufKmOffen; }
+function _kmOffen(welches) { return welches === 'lp' ? true : _laufKmOffen; }
 
 function laufKmDiagrammHTML(plan, welches) {
   welches = welches || 'lauf';
@@ -4920,10 +4922,13 @@ function laufKmDiagrammHTML(plan, welches) {
   const daten = _laufKmDaten(plan, cfg.nurPlan);
   if (!daten.some(d => d.geplant > 0 || d.gelaufen > 0)) return '';   // nichts zu zeigen
   const offen = _kmOffen(welches);
+  const kopf = cfg.klappbar
+    ? `<button type="button" class="ex-chart-collapse" onclick="toggleKmDiagramm('${welches}')"
+               aria-expanded="${offen ? 'true' : 'false'}">Wochenkilometer<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>`
+    : '<span>Wochenkilometer</span>';
   return `<div class="ex-chart-block${offen ? '' : ' collapsed'}" id="${cfg.block}">
       <div class="ex-item-body-label ex-chart-head">
-        <button type="button" class="ex-chart-collapse" onclick="toggleKmDiagramm('${welches}')"
-                aria-expanded="${offen ? 'true' : 'false'}">Wochenkilometer<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
+        ${kopf}
       </div>
       <div class="ex-chart-body">
         <div class="ex-chart-wrap"><canvas id="${cfg.canvas}"></canvas></div>
@@ -5002,7 +5007,13 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
   // unsichtbar (siehe „Die Detailseite nimmt den Transparenz-Modus NICHT an").
   const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)')
                   && !!canvas.closest('.chart-card-v2, .card, .aex-v2, .ex-list, .plan-section-card, .hero-v2');
-  const pal = _laufKmPalette(aufGlas);
+  // In der Laufplan-Detailansicht tragen die Saeulen die TABFARBE des Plan-Tabs (Amber,
+  // 22.09.2026, Leonard-Wunsch) — dort geht es um den Plan, nicht um die Sportart. Gelesen wird
+  // `--accent` vom Body, damit die Farbe an einer Stelle steht.
+  const tabFarbe = (getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#F59E0B');
+  const pal = cfg.nurPlan
+    ? { vorbei: tabFarbe, vorbeiMatt: _withAlpha(tabFarbe, 0.55), plan: tabFarbe, planMatt: _withAlpha(tabFarbe, 0.55) }
+    : _laufKmPalette(aufGlas);
   const schrift = aufGlas ? 'rgba(255,255,255,0.8)' : '#64748B';
   const raster  = aufGlas ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.06)';
   // Hervorgehoben wird die gezeigte Woche; in der Detailansicht gibt es keine — dort steht
