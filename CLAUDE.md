@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v377**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v378**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2471,7 +2471,8 @@ Kennzahl „geplant" daneben.
 **JEDE ZEILE HAT EINEN LAENGENBALKEN** (`_laufWzBalken`, 22.09.2026, Leonard-Entscheidung
 „Variante A" gegen eine kurze Saeule in der Zeile und einen Balken hinter dem Text): eine 4px
 hohe Leiste UNTER den Angaben, eingerueckt auf die Textspalte (30px Scheibe + 10px Abstand), in
-voller Zeilenbreite. HELL = die Vorgabe, KRAEFTIG = die tatsaechlich gelaufene Strecke; ist der
+voller Zeilenbreite. HELL = die Vorgabe (62 % der Lauffarbe; bis zum 22.09.2026 38 %, Leonard: „weniger blass"),
+KRAEFTIG = die tatsaechlich gelaufene Strecke; ist der
 kraeftige Teil laenger, war der Lauf laenger als geplant.
 BEZUG ist der laengste Lauf des GANZEN Plans (`_laufBezugKm`, Leonard-Entscheidung) — so lassen
 sich die Wochen beim Wischen vergleichen; in einer lockeren Woche sind eben alle Balken kurz.
@@ -2520,8 +2521,16 @@ Vorfahren bricht die Geste auf iOS ab) und der `.cal-sticky-anchor` im Scroller.
 KOPF: Titel und Datum stehen AUSSERHALB des Scrollers und werden beim Scrollen mitgefuehrt
 (`_laufWochenAnzeige`, an der 50-%-Schwelle wie beim Tabwechsel): „Diese Woche" · „Nächste
 Woche" · „Letzte Woche", weiter weg „Woche 6"; daneben die Spanne „21.–27. Sep" bzw. ueber den
-Monatswechsel „28. Sep – 4. Okt" (`_laufWochenSpanne`). Der Titel ist ein KNOPF und fuehrt
-zurueck zur laufenden Woche.
+Monatswechsel „28. Sep – 4. Okt" (`_laufWochenSpanne`).
+ZURUECK ZUR LAUFENDEN WOCHE fuehren ZWEI Wege: der Titel (er ist ein Knopf) und seit dem
+22.09.2026 ein eigener Knopf LINKS NEBEN DEM DATUM (Leonard-Wunsch). Er erscheint erst, sobald
+eine andere Woche im Bild ist, und traegt dieselbe runde Form mit Kreispfeil wie der Knopf im
+Kopf des Uebersichts-Kalenders (`.info-btn.cal-reset-btn`, `CAL_RESET_SVG`) — die App kennt nur
+EIN Zeichen fuer „zurueck zur aktuellen Ansicht". Beim Erscheinen waechst er kurz auf
+(`.kommt`, 180ms).
+FALLE: `hidden` allein blendet ihn NICHT aus — `.info-btn` setzt `display: flex`, und eine
+Autoren-Regel schlaegt das `display: none` des Browsers. Dafuer gibt es
+`.lauf-wochen-zurueck[hidden] { display: none }`.
 SEITENANZEIGE: Punkte bis 14 Wochen, darueber ein schmaler Strich mit Marke — 30 Punkte passen
 auf 375px nicht nebeneinander.
 DIE HOEHE FOLGT DER GEZEIGTEN WOCHE (Leonard-Entscheidung „darf springen"): Der Scroller braucht

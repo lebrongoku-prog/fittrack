@@ -4779,6 +4779,13 @@ function _laufWochenAnzeige(sc, idx) {
   const abstand = idx - sc._aktIdx;
   if (titelEl) titelEl.textContent = _laufWochenTitel(abstand, idx + 1);
   if (datumEl) datumEl.textContent = _laufWochenSpanne(mo);
+  // Der Zurueck-Knopf steht nur da, wenn eine andere Woche im Bild ist.
+  const zurueckEl = document.getElementById('lauf-wochen-zurueck');
+  if (zurueckEl) {
+    const zeigen = abstand !== 0;
+    if (zeigen && zurueckEl.hidden) { zurueckEl.hidden = false; zurueckEl.classList.remove('kommt'); void zurueckEl.offsetWidth; zurueckEl.classList.add('kommt'); }
+    else if (!zeigen) { zurueckEl.hidden = true; zurueckEl.classList.remove('kommt'); }
+  }
   sc.parentElement.querySelectorAll('.lauf-wochen-punkte > i').forEach((p, i) =>
     p.classList.toggle('an', i === idx));
   const marke = sc.parentElement.querySelector('.lauf-wochen-leiste > i');
@@ -4895,9 +4902,16 @@ function renderLaufKalenderSeite() {
     ? `<button type="button" class="chart-card-v2-title lauf-wochen-titel" id="lauf-wochen-titel"
                onclick="laufWocheZurueck()">Diese Woche</button>`
     : '<span class="chart-card-v2-title" id="lauf-wochen-titel">Diese Woche</span>';
+  // Zurueck-Knopf LINKS NEBEN DEM DATUM (22.09.2026, Leonard-Wunsch): Er erscheint erst, sobald
+  // eine andere als die laufende Woche im Bild ist. Dieselbe runde Form mit Kreispfeil wie im
+  // Kopf des Uebersichts-Kalenders (`.cal-reset-btn`) — die App kennt damit nur EIN Zeichen fuer
+  // „zurueck zur aktuellen Ansicht".
   const woche = `<div class="chart-card-v2 lauf-wochen-karte">
     <div class="chart-card-v2-head">
       ${titelHTML}
+      <button type="button" class="info-btn cal-reset-btn lauf-wochen-zurueck" id="lauf-wochen-zurueck"
+              onclick="laufWocheZurueck()" hidden
+              aria-label="Zur aktuellen Woche" title="Zur aktuellen Woche">${CAL_RESET_SVG}</button>
       <span class="lauf-wochen-datum" id="lauf-wochen-datum"></span>
     </div>
     <div class="lauf-wochen-scroll" id="lauf-wochen-scroll">

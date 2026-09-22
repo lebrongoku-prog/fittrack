@@ -2551,6 +2551,19 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 }
 .lauf-wochen-titel:active { opacity: .6; }
 .lauf-wochen-datum { font-size: var(--fs-neben); color: var(--text3); white-space: nowrap; }
+/* Zurueck-Knopf im Kopf: erscheint erst beim Wischen, steht LINKS NEBEN DEM DATUM
+   (22.09.2026, Leonard-Wunsch). `.info-btn` bringt `margin-right: auto` mit — das schoebe ihn
+   an den linken Rand; hier sitzt er direkt am Datum. */
+.lauf-wochen-zurueck { margin-right: 0; margin-left: auto; }
+/* `hidden` allein genuegt NICHT: `.info-btn` setzt `display: flex`, und eine Autoren-Regel
+   schlaegt das `display: none` des Browsers fuer `[hidden]`. */
+.lauf-wochen-zurueck[hidden] { display: none; }
+.lauf-wochen-zurueck.kommt { animation: lauf-wochen-zurueck-ein .18s cubic-bezier(.2,.7,.2,1); }
+@keyframes lauf-wochen-zurueck-ein {
+  from { opacity: 0; transform: scale(.6); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) { .lauf-wochen-zurueck.kommt { animation: none; } }
 /* Seitenanzeige: Punkte bis 14 Wochen, darueber ein schmaler Strich mit Marke. */
 .lauf-wochen-punkte { display: flex; gap: 5px; justify-content: center; padding-top: 10px; }
 .lauf-wochen-punkte > i { width: 5px; height: 5px; border-radius: 50%; background: var(--card2); display: block; transition: width .2s, background .2s; }
@@ -2591,10 +2604,10 @@ button.lauf-wz:active { opacity: .6; }
   background: var(--card2); margin: 6px 0 0 40px;
 }
 .lauf-wz-balken > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; }
-.lauf-wz-balken > .soll { background: rgba(74, 222, 128, .38); }
+.lauf-wz-balken > .soll { background: rgba(74, 222, 128, .62); }
 .lauf-wz-balken > .ist  { background: #4ADE80; }
 html.glas .screen:not(#screen-mehr) .lauf-wz-balken { background: rgba(255,255,255,.20); }
-html.glas .screen:not(#screen-mehr) .lauf-wz-balken > .soll { background: rgba(255,255,255,.45); }
+html.glas .screen:not(#screen-mehr) .lauf-wz-balken > .soll { background: rgba(255,255,255,.6); }
 html.glas .screen:not(#screen-mehr) .lauf-wz-balken > .ist  { background: rgba(255,255,255,.92); }
 .lauf-wz-tag {
   width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; box-sizing: border-box;
