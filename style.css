@@ -2609,6 +2609,16 @@ button.lauf-wz:active { opacity: .6; }
 html.glas .screen:not(#screen-mehr) .lauf-wz-balken { background: rgba(255,255,255,.20); }
 html.glas .screen:not(#screen-mehr) .lauf-wz-balken > .soll { background: rgba(255,255,255,.6); }
 html.glas .screen:not(#screen-mehr) .lauf-wz-balken > .ist  { background: rgba(255,255,255,.92); }
+/* HEUTE: dasselbe gruene Feld hinter der Scheibe wie in der Wochenplan-Karte
+   (`.ppv-col.today`, 22.09.2026, Leonard-Wunsch — vorher stand rechts das Wort „heute").
+   Das Polster waechst ueber die Scheibe hinaus und wird per negativem Aussenabstand wieder
+   herausgerechnet: Die Zeile bleibt dadurch genauso hoch und die Scheibe steht, wo sie stand. */
+.lauf-wz-feld {
+  display: inline-flex; flex-shrink: 0;
+  padding: 4px 5px; margin: -4px -5px; border-radius: 9.9px;
+}
+.lauf-wz-feld.heute { background: var(--accent-bg); }
+html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,255,255,.18); }
 .lauf-wz-tag {
   width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; box-sizing: border-box;
   display: flex; align-items: center; justify-content: center;

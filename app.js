@@ -4687,11 +4687,14 @@ function laufWochenListe(mo, istAktuell, maxKm) {
       : vorgabe || '<span class="lauf-wz-leer">Ohne Vorgabe</span>';
     const zone = u && u.zone ? `<span class="lauf-wz-zone">${escapeHtml(u.zone)}</span>` : '';
     const notiz = u && u.note ? `<div class="lauf-wz-notiz">${escapeHtml(u.note)}</div>` : '';
+    // HEUTE steht seit dem 22.09.2026 nicht mehr als Wort rechts, sondern als dasselbe gruene
+    // Feld hinter der Scheibe, das die Wochenplan-Karte fuer den heutigen Tag nutzt
+    // (`.ppv-col.today`, Leonard-Wunsch).
     const ist = lauf ? (lauf.art === 'hiit' ? `HIIT ${fmtMin(lauf.minutes)}` : `${fmtKm(lauf.km)} gelaufen`)
-      : verschoben[i] ? 'verschoben' : (i === todayIdx ? 'heute' : '');
+      : verschoben[i] ? 'verschoben' : '';
     // Die Zeile hat ZWEI Ebenen: oben Scheibe, Vorgabe und Ist, darunter der Laengenbalken.
     const inhalt = `<div class="lauf-wz-oben">
-        <span class="lauf-wz-tag ${zustand}">${label}</span>
+        <span class="lauf-wz-feld${i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag ${zustand}">${label}</span></span>
         <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${soll}${zone}</div>${notiz}</div>
         ${ist ? `<span class="lauf-wz-ist">${ist}</span>` : ''}
         {{CHEV}}

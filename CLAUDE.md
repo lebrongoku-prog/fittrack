@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v378**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v379**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2462,7 +2462,13 @@ Tag der laufenden Woche mit geplantem ODER gelaufenem Lauf — UNABHAENGIG vom g
 Auch schon gelaufene Tage und Laeufe an ungeplanten Tagen stehen drin (Leonard-Entscheidung).
 Aufbau einer Zeile: Scheibe mit dem Wochentag · Vorgabe („8 km · 45min") mit Zonen-Pille,
 darunter die Notiz der Einheit · rechts das Ist („8.1 km gelaufen", beim Intervalltraining
-„HIIT 28min"), sonst „heute" bzw. „verschoben". Ohne Vorgabe steht „Ohne Vorgabe", ein Lauf an
+„HIIT 28min"), sonst „verschoben".
+HEUTE steht seit dem 22.09.2026 NICHT mehr als Wort rechts, sondern als dasselbe gruene Feld
+hinter der Scheibe, das die Wochenplan-Karte darueber fuer den heutigen Tag nutzt (`.ppv-col.today`,
+Leonard-Wunsch): `.lauf-wz-feld.heute` mit `var(--accent-bg)`, im Transparenz-Modus 18-%-Weiss.
+Das Polster des Feldes reicht ueber die Scheibe hinaus und wird per negativem Aussenabstand wieder
+herausgerechnet — die Zeile bleibt genauso hoch und die Scheibe steht, wo sie stand (gemessen:
+alle Scheiben weiter bei 26px, Zeilenhoehen unveraendert). Ohne Vorgabe steht „Ohne Vorgabe", ein Lauf an
 einem ungeplanten Tag heisst „Nicht geplant".
 Die Scheibe traegt DIESELBEN Zustaende wie der Wochentagskreis der Karte darueber: gefuellt
 (#4ADE80) = gelaufen, hellgrau mit Ring = geplant und offen, grau = verschoben
