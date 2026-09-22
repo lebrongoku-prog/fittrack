@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v383**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v384**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2592,9 +2592,15 @@ die laufende und alle kuenftigen die GEPLANTEN (Leonard-Wunsch). „Abgeschlosse
 Montag der Woche liegt vor dem Montag dieser Woche.
 IM TOOLTIP stehen beide Zahlen — „Geplant: 28 km" und darunter „Gelaufen: 26.4 km"; die zweite
 Zeile bleibt weg, solange die Woche laeuft und noch nichts gelaufen ist.
-HERVORGEHOBEN ist die Woche, die im Scroller darueber gerade gezeigt wird: Sie traegt die volle
-Farbe (dieselbe, die auch ein angetippter Balken bekommt — `hoverBackgroundColor`), die uebrigen
-sind gedaempft (55 %, im Glas-Modus 45 %). Beim Wischen wandert die Hervorhebung mit
+ZWEI UNTERSCHEIDUNGEN ZUGLEICH (`_laufKmPalette`, `_laufKmFarben`):
+  TON — abgeschlossene Wochen (sie zeigen das Ist) in einem DUNKLEREN Gruen (#22A05B, dasselbe
+        wie die Schrift im offenen Wochentagskreis) als die geplanten (#4ADE80,
+        Leonard-Wunsch 22.09.2026). Ohne das sah eine gelaufene Woche aus wie eine geplante,
+        und nur der Tooltip verriet, welche Zahl man sieht.
+  KRAFT — die Woche, die im Scroller darueber gerade gezeigt wird, steht in voller Farbe
+        (dieselbe, die auch ein angetippter Balken bekommt — `hoverBackgroundColor` je Saeule),
+        die uebrigen bei 55 %.
+  Im Glas-Modus gibt es nur Weiss: abgeschlossen 95 %, geplant 75 %, gedaempft 55 bzw. 35 %. Beim Wischen wandert die Hervorhebung mit
 (`_laufKmHervorheben` aus `_laufWochenAnzeige`, `chart.update('none')` — kein Neuaufbau).
 Gerechnet wird ueber den MONTAG der gezeigten Seite, nicht ueber den Seitenindex: Liegt heute
 ausserhalb des Plans, hat der Scroller eine Seite mehr als das Diagramm Saeulen.
@@ -2609,7 +2615,10 @@ GEMESSEN (Plan mit 8 Wochen, heute in Woche 3): Werte 0/12.5/28/36/10/25/0/21 �
 vorbei und zeigt deshalb ihre 12.5 gelaufenen statt der 12 geplanten Kilometer, Woche 3 die
 geplanten 28; Tooltip Woche 2 „Geplant: 12 km / Gelaufen: 12.5 km", Woche 4 ohne zweite Zeile;
 Hervorhebung springt beim Wischen von Saeule 3 auf 5; bleibt beim Neuzeichnen und beim
-Seitenwechsel offen; Glas-Modus Balken weiss, Achsen 80-%-Weiss.
+Seitenwechsel offen; Achsen im Glas-Modus 80-%-Weiss.
+GEMESSEN (Farben): W1/W2 vorbei = dunkles Gruen (gedaempft rgba(34,160,91,.55), gezeigt
+#22A05B), W3–W8 geplant = helles Gruen; Glas 55/95 % gegen 35/75 % Weiss; `hoverBackgroundColor`
+je Saeule passend zum Ton.
 TESTHINWEIS: `glasAktiv()` liest den SPEICHER, nicht die Klasse am `<html>` — zum Pruefen
 `localStorage.setItem(GLAS_KEY, '1'); applyGlasModus();` statt die Klasse von Hand zu setzen.
 

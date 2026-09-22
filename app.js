@@ -4930,20 +4930,31 @@ function toggleLaufKmDiagramm() {
   }
 }
 
-// Farben der Saeulen: die GEZEIGTE Woche kraeftig (dieselbe Farbe, die ein angetippter Balken
-// traegt), die uebrigen gedaempft.
-function _laufKmFarben(anzahl, hervorIdx, voll, matt) {
-  return Array.from({ length: anzahl }, (_, i) => i === hervorIdx ? voll : matt);
+// Farben der Saeulen. ZWEI Unterscheidungen zugleich:
+//   TON  — abgeschlossene Wochen (sie zeigen das Ist) in einem dunkleren Gruen als die
+//          geplanten (Leonard-Wunsch 22.09.2026).
+//   KRAFT— die GEZEIGTE Woche voll, die uebrigen gedaempft. Die volle Farbe ist dieselbe, die
+//          ein angetippter Balken traegt (`hoverBackgroundColor`).
+function _laufKmPalette(aufGlas) {
+  return aufGlas
+    ? { vorbei: 'rgba(255,255,255,0.95)', vorbeiMatt: 'rgba(255,255,255,0.55)',
+        plan:   'rgba(255,255,255,0.75)', planMatt:   'rgba(255,255,255,0.35)' }
+    : { vorbei: '#22A05B', vorbeiMatt: 'rgba(34,160,91,0.55)',
+        plan:   '#4ADE80', planMatt:   'rgba(74,222,128,0.55)' };
+}
+function _laufKmVoll(daten, p) { return daten.map(d => d.vorbei ? p.vorbei : p.plan); }
+function _laufKmFarben(daten, hervorIdx, p) {
+  return daten.map((d, i) => i === hervorIdx ? (d.vorbei ? p.vorbei : p.plan)
+                                             : (d.vorbei ? p.vorbeiMatt : p.planMatt));
 }
 // Beim Wischen wandert die Hervorhebung mit — gerechnet ueber den MONTAG der gezeigten Seite,
 // nicht ueber den Seitenindex: Liegt heute ausserhalb des Plans, hat der Scroller eine Seite
 // mehr als das Diagramm Saeulen.
 function _laufKmHervorheben(mo) {
   const c = _laufKmChart;
-  if (!c || !mo) return;
-  const idx = (c._montage || []).findIndex(m => m.getTime() === mo.getTime());
-  const d = c.data.datasets[0];
-  d.backgroundColor = _laufKmFarben(d.data.length, idx, c._voll, c._matt);
+  if (!c || !mo || !c._daten) return;
+  const idx = c._daten.findIndex(d => d.mo.getTime() === mo.getTime());
+  c.data.datasets[0].backgroundColor = _laufKmFarben(c._daten, idx, c._pal);
   c.update('none');
 }
 
@@ -4955,8 +4966,7 @@ function _zeichneLaufKmDiagramm(mo) {
   const daten = _laufKmDaten(plan);
   // Farben wie beim Uebungsdiagramm: weiss NUR auf dem Schleier, nicht in Modalfenstern.
   const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)');
-  const voll = aufGlas ? '#ffffff' : '#4ADE80';
-  const matt = _withAlpha(voll, aufGlas ? 0.45 : 0.55);
+  const pal = _laufKmPalette(aufGlas);
   const schrift = aufGlas ? 'rgba(255,255,255,0.8)' : '#64748B';
   const raster  = aufGlas ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.06)';
   const zeigt = mo || _laufWochenMontag(new Date());
@@ -4968,8 +4978,8 @@ function _zeichneLaufKmDiagramm(mo) {
       // ABGESCHLOSSENE Wochen zeigen das IST, laufende und kuenftige das SOLL.
       datasets: [{
         data: daten.map(d => d.vorbei ? d.gelaufen : d.geplant),
-        backgroundColor: _laufKmFarben(daten.length, hervorIdx, voll, matt),
-        hoverBackgroundColor: voll,
+        backgroundColor: _laufKmFarben(daten, hervorIdx, pal),
+        hoverBackgroundColor: _laufKmVoll(daten, pal),
         borderRadius: 4, borderWidth: 0, maxBarThickness: 34,
       }],
     },
@@ -4996,9 +5006,8 @@ function _zeichneLaufKmDiagramm(mo) {
     },
   });
   // Fuer das Nachfuehren beim Wischen am Diagramm merken.
-  _laufKmChart._montage = daten.map(d => d.mo);
-  _laufKmChart._voll = voll;
-  _laufKmChart._matt = matt;
+  _laufKmChart._daten = daten;
+  _laufKmChart._pal = pal;
 }
 
 // ── Seite 1: Überblick über die gelaufenen Einheiten ───────────────
