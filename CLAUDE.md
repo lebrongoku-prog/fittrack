@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v390**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v391**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2592,8 +2592,9 @@ ausgeloesten `resize` stimmt das Ergebnis (Seite und Hoehe wieder richtig).
 
 **AUSKLAPPBARES DIAGRAMM DER WOCHENKILOMETER** (`laufKmDiagrammHTML`, `_laufKmDaten`,
 `_zeichneLaufKmDiagramm`, 22.09.2026, Leonard-Wunsch). Es steht IN der Karte „Diese Woche",
-unter der Seitenanzeige und durch eine Trennlinie abgesetzt (v382 war es kurz eine eigene Karte
-darunter). Im Aufbau ist es dem Diagramm „Entwicklung" der Uebungen nachempfunden
+unter der Seitenanzeige (v382 war es kurz eine eigene Karte darunter). Bis zum 23.09.2026 setzte
+eine Trennlinie es von der Wochenliste ab — dieselbe wie zwischen den Zeilen; sie ist auf
+Leonards Wunsch entfallen, der Abstand allein genuegt. Die Linien ZWISCHEN den Zeilen bleiben. Im Aufbau ist es dem Diagramm „Entwicklung" der Uebungen nachempfunden
 (Leonard-Vorgabe): dieselbe Ueberschrift in Grossbuchstaben mit Ausklapp-Pfeil
 (`.ex-chart-block` / `.ex-chart-collapse` / `.ex-chart-wrap`, 150px hoch), zugeklappt bleibt nur
 die Zeile „WOCHENKILOMETER" stehen.

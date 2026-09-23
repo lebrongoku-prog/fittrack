@@ -2588,8 +2588,9 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,2
    und Seitenanzeige bleiben bei 14px. */
 /* Diagramm der Wochenkilometer (22.09.2026): Es steht IN der Karte „Diese Woche", unter der
    Seitenanzeige, und ist im Aufbau dem Diagramm „Entwicklung" der Uebungen nachempfunden.
-   Eine Trennlinie setzt es von der Wochenliste ab — dieselbe wie zwischen den Zeilen. */
-.lauf-wochen-karte .ex-chart-block { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+   OHNE Trennlinie (23.09.2026, Leonard-Wunsch — bis dahin setzte dieselbe Linie wie zwischen
+   den Zeilen es von der Wochenliste ab); der Abstand allein genuegt. */
+.lauf-wochen-karte .ex-chart-block { margin-top: 10px; padding-top: 10px; }
 /* Dasselbe Diagramm in der Laufplan-Detailansicht (unter „Einheiten"): Dort sitzt es in einer
    `.mehr-card`, die KEIN Polster mitbringt. */
 .lp-km-karte { padding: 14px; }
