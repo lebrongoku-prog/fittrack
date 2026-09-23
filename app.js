@@ -4724,16 +4724,17 @@ function laufWochenListe(mo, istAktuell, maxKm) {
     const soll = !gepl ? '<span class="lauf-wz-leer">Nicht geplant</span>'
       : vorgabe || '<span class="lauf-wz-leer">Ohne Vorgabe</span>';
     const zone = u && u.zone ? `<span class="lauf-wz-zone">${escapeHtml(u.zone)}</span>` : '';
-    const notiz = u && u.note ? `<div class="lauf-wz-notiz">${escapeHtml(u.note)}</div>` : '';
     // HEUTE steht seit dem 22.09.2026 nicht mehr als Wort rechts, sondern als dasselbe gruene
     // Feld hinter der Scheibe, das die Wochenplan-Karte fuer den heutigen Tag nutzt
     // (`.ppv-col.today`, Leonard-Wunsch).
     const ist = lauf ? (lauf.art === 'hiit' ? `HIIT ${fmtMin(lauf.minutes)}` : `${fmtKm(lauf.km)} gelaufen`)
       : verschoben[i] ? 'verschoben' : '';
     // Die Zeile hat ZWEI Ebenen: oben Scheibe, Vorgabe und Ist, darunter der Laengenbalken.
+    // Die NOTIZ der Einheit stand bis zum 23.09.2026 unter der Vorgabe und ist entfallen
+    // (Leonard-Wunsch) — sie steht weiter in der Detailansicht des Laufs und im Laufplan.
     const inhalt = `<div class="lauf-wz-oben">
         <span class="lauf-wz-feld${i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag ${zustand}">${label}</span></span>
-        <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${soll}${zone}</div>${notiz}</div>
+        <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${soll}${zone}</div></div>
         ${ist ? `<span class="lauf-wz-ist">${ist}</span>` : ''}
         {{CHEV}}
       </div>
@@ -4783,31 +4784,12 @@ function _laufWochenTitel(abstand, nr) {
   if (abstand === -1) return 'Letzte Woche';
   return 'Woche ' + nr;
 }
-// Summen einer Woche: gelaufen (Ist) und geplant (Soll) — dieselben Quellen wie die Liste.
-function _laufWochenWerte(mo) {
-  const von = mo.getTime();
-  const bis = von + 7 * 864e5 - 1;
-  const imZeitraum = (datum) => {
-    const [y, m, d] = datum.split('-').map(Number);
-    const t = new Date(y, m - 1, d).getTime();
-    return t >= von && t <= bis;
-  };
-  let km = 0, min = 0, sollKm = 0;
-  DB.getRuns().forEach(l => { if (imZeitraum(l.date)) { km += l.km || 0; min += l.minutes || 0; } });
-  const geplant = runGeplanteTage();
-  Object.keys(geplant).forEach(k => {
-    if (imZeitraum(k) && geplant[k].einheit) sollKm += Number(geplant[k].einheit.km) || 0;
-  });
-  return { km, min, sollKm };
-}
+// Eine Seite des Scrollers ist NUR die Liste der Laeufe dieser Woche. Die drei Summen darueber
+// (gelaufene Kilometer, gelaufene Zeit, geplante Wochenkilometer) sind am 23.09.2026 entfallen
+// (Leonard-Wunsch) — mit ihnen `_laufWochenWerte`, das danach keinen Aufrufer mehr hatte, und die
+// Regeln `.lauf-woche` / `.lauf-kennz*`. Die Wochensumme steht weiter im Diagramm darunter.
 function laufWochenSeite(mo, istAktuell, maxKm) {
-  const w = _laufWochenWerte(mo);
   return `<div class="lauf-wochen-seite">
-    <div class="lauf-woche">
-      <div class="lauf-kennz"><span class="lauf-kennz-v">${fmtKm(w.km)}</span><span class="lauf-kennz-l">gelaufen</span></div>
-      <div class="lauf-kennz"><span class="lauf-kennz-v">${fmtMin(w.min)}</span><span class="lauf-kennz-l">Zeit</span></div>
-      <div class="lauf-kennz"><span class="lauf-kennz-v">${w.sollKm ? fmtKm(w.sollKm) : '–'}</span><span class="lauf-kennz-l">geplant</span></div>
-    </div>
     ${laufWochenListe(mo, istAktuell, maxKm)}
   </div>`;
 }

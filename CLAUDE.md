@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v389**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v390**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2457,12 +2457,23 @@ und `opts.dayOnTap` entgegen, genau wie `buildPlanCard`. Die Auswahl steuert sei
 
 **LAEUFE DIESER WOCHE als Liste in der Karte „Diese Woche"** (`laufWochenListe(mo)`,
 21.09.2026, Leonard-Entscheidung „Variante A" aus vier gezeichneten Vorschlaegen — Zeitstrahl,
-Kacheln und Strecke im Wochenplan waren die anderen). Unter den drei Summen steht eine Zeile je
-Tag der laufenden Woche mit geplantem ODER gelaufenem Lauf — UNABHAENGIG vom gewaehlten Tag.
-Auch schon gelaufene Tage und Laeufe an ungeplanten Tagen stehen drin (Leonard-Entscheidung).
-Aufbau einer Zeile: Scheibe mit dem Wochentag · Vorgabe („8 km · 45min") mit Zonen-Pille,
-darunter die Notiz der Einheit · rechts das Ist („8.1 km gelaufen", beim Intervalltraining
-„HIIT 28min"), sonst „verschoben".
+Kacheln und Strecke im Wochenplan waren die anderen). Die Liste ist seit dem 23.09.2026 der
+GANZE Inhalt einer Seite: eine Zeile je Tag der Woche mit geplantem ODER gelaufenem Lauf —
+UNABHAENGIG vom gewaehlten Tag. Auch schon gelaufene Tage und Laeufe an ungeplanten Tagen stehen
+drin (Leonard-Entscheidung).
+Aufbau einer Zeile: Scheibe mit dem Wochentag · Vorgabe („8 km · 45min") mit Zonen-Pille ·
+rechts das Ist („8.1 km gelaufen", beim Intervalltraining „HIIT 28min"), sonst „verschoben".
+**ZWEI DINGE SIND AM 23.09.2026 ENTFALLEN** (Leonard-Wunsch, beide ersatzlos):
+1. Die ZEILE MIT DEN DREI SUMMEN ueber der Liste (gelaufene Kilometer · gelaufene Zeit ·
+   geplante Wochenkilometer). Mit ihr sind `_laufWochenWerte` — es hatte danach keinen Aufrufer
+   mehr — und die Regeln `.lauf-woche` / `.lauf-kennz*` weg. `laufWochenSeite` besteht seither
+   nur noch aus `laufWochenListe`. Die Wochensumme steht weiter im Diagramm darunter.
+2. Die NOTIZ der Einheit unter der Vorgabe (`.lauf-wz-notiz`). Sie steht weiter in der
+   Detailansicht des Laufs (`showRunDetail`) und im Laufplan.
+FOLGE fuer die erste Zeile: Sie ist jetzt das Erste in der Karte. `.lauf-wochenliste` hat
+deshalb keinen oberen Abstand mehr, und `.lauf-wochenliste > .lauf-wz:first-child` verliert
+Trennlinie, `margin-top` und `padding-top` — sonst laege eine Linie unmittelbar unter dem
+Kartenpolster.
 HEUTE steht seit dem 22.09.2026 NICHT mehr als Wort rechts, sondern als dasselbe gruene Feld
 hinter der Scheibe, das die Wochenplan-Karte darueber fuer den heutigen Tag nutzt (`.ppv-col.today`,
 Leonard-Wunsch): `.lauf-wz-feld.heute` mit `var(--accent-bg)`, im Transparenz-Modus 18-%-Weiss.

@@ -2575,14 +2575,12 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-punkte > i { background: rgba(2
 html.glas .screen:not(#screen-mehr) .lauf-wochen-punkte > i.an,
 html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste > i { background: rgba(255,255,255,.92); }
 html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,255,255,.28); }
-.lauf-woche { display: flex; gap: 10px; }
-.lauf-kennz { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.lauf-kennz-v { font-size: var(--fs-betont); font-weight: 700; color: var(--text); }
-.lauf-kennz-l { font-size: var(--fs-etikett); font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
-/* LAEUFE DIESER WOCHE unter den Summen (`laufWochenListe`, 21.09.2026, Leonard-Wunsch).
-   Eine Zeile je Tag: Scheibe mit dem Wochentag, Vorgabe mit Zone, darunter die Notiz, rechts
-   das Ist bzw. „heute". Die Scheibe traegt dieselben Zustaende wie der Wochentagskreis der
-   Laufwochenplan-Karte: gefuellt = gelaufen, Ring = offen, grau = verschoben. */
+/* LAEUFE DIESER WOCHE (`laufWochenListe`, 21.09.2026, Leonard-Wunsch). Eine Zeile je Tag:
+   Scheibe mit dem Wochentag, Vorgabe mit Zone, rechts das Ist. Die Scheibe traegt dieselben
+   Zustaende wie der Wochentagskreis der Laufwochenplan-Karte: gefuellt = gelaufen, Ring = offen,
+   grau = verschoben.
+   Die drei SUMMEN darueber (`.lauf-woche` / `.lauf-kennz*`) und die NOTIZ in der Zeile
+   (`.lauf-wz-notiz`) sind am 23.09.2026 ersatzlos entfallen (Leonard-Wunsch). */
 /* DIE ZEILEN SIND EINGEZOGEN (22.09.2026, Leonard-Wunsch): Die KARTE traegt wieder die ueblichen
    14px wie jede andere, die Wochentagszeilen stehen aber 18px vom Kartenrand — Trennlinien,
    Laengenbalken und das gruene Heute-Feld enden sonst buendig an der Polsterkante und die Karte
@@ -2601,7 +2599,11 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,2
 .lp-km-karte .ex-chart-wrap { margin: 0; }
 .lauf-wochen-karte .ex-chart-wrap { margin-bottom: 0; }
 .lauf-wochen-karte .ex-chart-block.collapsed .ex-chart-head { margin-bottom: 0; }
-.lauf-wochenliste { margin-top: 12px; padding: 0 4px; }
+/* Die Liste ist seit dem 23.09.2026 das Erste auf der Seite (die Summen darueber sind weg),
+   deshalb kein eigener Abstand nach oben. Die erste Zeile verliert zudem ihre Trennlinie samt
+   Abstaenden — sonst stuende eine Linie unmittelbar unter dem Kartenpolster. */
+.lauf-wochenliste { padding: 0 4px; }
+.lauf-wochenliste > .lauf-wz:first-child { margin-top: 0; padding-top: 0; border-top: none; }
 .lauf-wz {
   display: block; width: 100%;
   padding: 8px 0 0; margin-top: 8px; border: none; border-top: 1px solid var(--border);
@@ -2655,7 +2657,6 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
 .lauf-wz-soll { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: var(--fs-text); font-weight: 600; color: var(--text); }
 .lauf-wz-leer { font-weight: 400; color: var(--text3); }
 .lauf-wz-zone { font-size: var(--fs-etikett); font-weight: 700; color: #166534; background: #DCFCE7; border-radius: 999px; padding: 1px 7px; }
-.lauf-wz-notiz { margin-top: 2px; font-size: var(--fs-neben); color: var(--text3); line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
 .lauf-wz-ist { flex-shrink: 0; font-size: var(--fs-neben); font-weight: 600; color: var(--text2); white-space: nowrap; }
 /* Transparenz-Modus: keine Sportfarben, dieselben Werte wie die Wochentagskreise der
    Einzelkarten (gelaufen weiss gefuellt, offen weiss umrandet). Der Wochentag im weissen
