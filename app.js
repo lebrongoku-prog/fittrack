@@ -4946,10 +4946,14 @@ function _laufKmDaten(plan, nurPlan) {
 // Ist-Werten und wandernder Hervorhebung) und in der LAUFPLAN-DETAILANSICHT unter dem Abschnitt
 // „Einheiten" (aufgeklappt, immer nur die geplanten Kilometer). `welches` = 'lauf' | 'lp'.
 // `klappbar: false` in der Detailansicht (22.09.2026, Leonard-Wunsch): Dort steht das Diagramm
-// immer offen, die Ueberschrift ist deshalb Text statt Knopf.
+// immer offen.
+// `titelAussen: true` (23.09.2026, Leonard-Wunsch): In der Detailansicht steht „Wochenkilometer"
+// als ABSCHNITTSTITEL ueber der Karte — genau wie „Laufplan-Daten", „Einheiten" und „Aktionen"
+// daneben. Die Karte selbst bekommt deshalb GAR KEINE Ueberschrift, sonst stuende sie zweimal
+// untereinander. In der Karte „Diese Woche" bleibt sie drin, dort ist sie der Ausklapp-Knopf.
 const KM_DIAGRAMM = {
-  lauf: { block: 'lauf-km-block', canvas: 'lauf-km-chart', nurPlan: false, klappbar: true  },
-  lp:   { block: 'lp-km-block',   canvas: 'lp-km-chart',   nurPlan: true,  klappbar: false },
+  lauf: { block: 'lauf-km-block', canvas: 'lauf-km-chart', nurPlan: false, klappbar: true,  titelAussen: false },
+  lp:   { block: 'lp-km-block',   canvas: 'lp-km-chart',   nurPlan: true,  klappbar: false, titelAussen: true  },
 };
 function _kmOffen(welches) { return welches === 'lp' ? true : _laufKmOffen; }
 
@@ -4960,14 +4964,12 @@ function laufKmDiagrammHTML(plan, welches) {
   const daten = _laufKmDaten(plan, cfg.nurPlan);
   if (!daten.some(d => d.geplant > 0 || d.gelaufen > 0)) return '';   // nichts zu zeigen
   const offen = _kmOffen(welches);
-  const kopf = cfg.klappbar
-    ? `<button type="button" class="ex-chart-collapse" onclick="toggleKmDiagramm('${welches}')"
-               aria-expanded="${offen ? 'true' : 'false'}">Wochenkilometer<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>`
-    : '<span>Wochenkilometer</span>';
+  const kopf = cfg.titelAussen ? '' : `<div class="ex-item-body-label ex-chart-head">
+        <button type="button" class="ex-chart-collapse" onclick="toggleKmDiagramm('${welches}')"
+               aria-expanded="${offen ? 'true' : 'false'}">Wochenkilometer<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
+      </div>`;
   return `<div class="ex-chart-block${offen ? '' : ' collapsed'}" id="${cfg.block}">
-      <div class="ex-item-body-label ex-chart-head">
-        ${kopf}
-      </div>
+      ${kopf}
       <div class="ex-chart-body">
         <div class="ex-chart-wrap"><canvas id="${cfg.canvas}"></canvas></div>
       </div>
@@ -5327,6 +5329,7 @@ function renderRunPlanDetail() {
     </div>
 
     ${laufKmDiagrammHTML(p, 'lp') ? `<div class="mehr-section">
+      <div class="mehr-section-title">Wochenkilometer</div>
       <div class="mehr-card lp-km-karte">${laufKmDiagrammHTML(p, 'lp')}</div>
     </div>` : ''}
 

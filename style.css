@@ -2595,6 +2595,10 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,2
 /* Dasselbe Diagramm in der Laufplan-Detailansicht (unter „Einheiten"): Dort sitzt es in einer
    `.mehr-card`, die KEIN Polster mitbringt. */
 .lp-km-karte { padding: 14px; }
+/* Die Ueberschrift steht hier als Abschnittstitel UEBER der Karte (23.09.2026), in der Karte
+   liegt also nur noch das Diagramm. Ohne Kopf braucht der Rahmen den unteren 12px-Abstand des
+   Diagramms nicht mehr — mit ihm saesse es 14px oben und 26px unten. */
+.lp-km-karte .ex-chart-wrap { margin: 0; }
 .lauf-wochen-karte .ex-chart-wrap { margin-bottom: 0; }
 .lauf-wochen-karte .ex-chart-block.collapsed .ex-chart-head { margin-bottom: 0; }
 .lauf-wochenliste { margin-top: 12px; padding: 0 4px; }

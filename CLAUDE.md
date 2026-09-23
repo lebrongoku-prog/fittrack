@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v388**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v389**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2608,9 +2608,19 @@ Das Diagramm erscheint nur, wenn ein Laufplan laeuft UND er ueberhaupt Kilometer
 **DASSELBE DIAGRAMM STEHT EIN ZWEITES MAL IN DER LAUFPLAN-DETAILANSICHT**, seit dem 23.09.2026
 UEBER dem Abschnitt „Einheiten" in einer eigenen `.mehr-card` (Leonard-Wunsch; am 22.09.2026
 stand es noch darunter — die Wochenliste ist aufgeklappt mehrere Bildschirme lang, das Diagramm
-war dahinter kaum zu finden). Reihenfolge der Detailseite damit: Laufplan-Daten · Diagramm ·
-Einheiten · Aktionen. `_zeichneLpKmDiagramm()` bleibt am ENDE von `renderRunPlanDetail` — das
-Canvas muss im DOM stehen, bevor Chart.js es misst. Gesteuert ueber die
+war dahinter kaum zu finden). Reihenfolge der Detailseite damit: Laufplan-Daten · Wochenkilometer
+· Einheiten · Aktionen. `_zeichneLpKmDiagramm()` bleibt am ENDE von `renderRunPlanDetail` — das
+Canvas muss im DOM stehen, bevor Chart.js es misst.
+**DIE UEBERSCHRIFT IST DORT EIN ABSCHNITTSTITEL** (`titelAussen: true` in `KM_DIAGRAMM`,
+23.09.2026, Leonard-Wunsch): „Wochenkilometer" steht als `.mehr-section-title` UEBER der Karte,
+in derselben weissen Grossbuchstaben-Form wie „Laufplan-Daten", „Einheiten" und „Aktionen". Die
+Karte selbst bekommt deshalb GAR KEINEN Kopf mehr (`laufKmDiagrammHTML` laesst `.ex-chart-head`
+weg) — sonst stuende „Wochenkilometer" zweimal untereinander. Mit dem Kopf faellt auch der
+untere 12px-Abstand des Diagramms weg (`.lp-km-karte .ex-chart-wrap { margin: 0 }`), sonst saesse
+es 14px vom oberen und 26px vom unteren Kartenrand (gemessen: jetzt 14/14).
+In der Karte „Diese Woche" bleibt die Ueberschrift IN der Karte — dort ist sie der
+Ausklapp-Knopf (gemessen: weiter ein `<button>` mit Pfeil, Ausgangszustand zugeklappt).
+Gesteuert ueber die
 Tabelle `KM_DIAGRAMM` mit dem Schluessel `welches` ('lauf' | 'lp'); Markup, Umschalten und
 Zeichnen teilen sich beide (`laufKmDiagrammHTML(plan, welches)`, `toggleKmDiagramm(welches)`,
 `_zeichneKmDiagramm`). UNTERSCHIEDE der Detailansicht:
