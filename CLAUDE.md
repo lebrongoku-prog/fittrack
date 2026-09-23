@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v387**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v388**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2605,8 +2605,12 @@ ZWEI UNTERSCHEIDUNGEN ZUGLEICH (`_laufKmPalette`, `_laufKmFarben`):
 Gerechnet wird ueber den MONTAG der gezeigten Seite, nicht ueber den Seitenindex: Liegt heute
 ausserhalb des Plans, hat der Scroller eine Seite mehr als das Diagramm Saeulen.
 Das Diagramm erscheint nur, wenn ein Laufplan laeuft UND er ueberhaupt Kilometer nennt.
-**DASSELBE DIAGRAMM STEHT EIN ZWEITES MAL IN DER LAUFPLAN-DETAILANSICHT**, unter dem Abschnitt
-„Einheiten" in einer eigenen `.mehr-card` (22.09.2026, Leonard-Wunsch). Gesteuert ueber die
+**DASSELBE DIAGRAMM STEHT EIN ZWEITES MAL IN DER LAUFPLAN-DETAILANSICHT**, seit dem 23.09.2026
+UEBER dem Abschnitt „Einheiten" in einer eigenen `.mehr-card` (Leonard-Wunsch; am 22.09.2026
+stand es noch darunter — die Wochenliste ist aufgeklappt mehrere Bildschirme lang, das Diagramm
+war dahinter kaum zu finden). Reihenfolge der Detailseite damit: Laufplan-Daten · Diagramm ·
+Einheiten · Aktionen. `_zeichneLpKmDiagramm()` bleibt am ENDE von `renderRunPlanDetail` — das
+Canvas muss im DOM stehen, bevor Chart.js es misst. Gesteuert ueber die
 Tabelle `KM_DIAGRAMM` mit dem Schluessel `welches` ('lauf' | 'lp'); Markup, Umschalten und
 Zeichnen teilen sich beide (`laufKmDiagrammHTML(plan, welches)`, `toggleKmDiagramm(welches)`,
 `_zeichneKmDiagramm`). UNTERSCHIEDE der Detailansicht:
@@ -2655,7 +2659,33 @@ Eingabe in einem km-Feld bleibt beim Umschalten stehen.
 Der Titel steht dafuer in einer Zeile mit dem Knopf (`.mehr-section-kopf`, wiederverwendbar fuer
 jeden Abschnitt mit Knopf; der untere Abstand wandert vom Titel auf die Zeile). Der Knopf ist eine
 Pille in 18-%-Weiss auf dem farbigen Grund der Detailseite, mit dem App-weiten Pfeil.
-Die Wochen selbst klappen weiterhin OHNE Bewegung.
+
+**DIE WOCHEN KLAPPEN MIT BEWEGUNG AUF UND ZU** (`_lpWocheKlappen`, 23.09.2026, Leonard-Wunsch —
+bis dahin sprangen sie per `display`). Gleiche 200ms, gleiche Kurve, gleiche Notbremse
+(`_klappBewegung`) wie Uebungskarten, Muskelgruppen und die drei Archive. Gefahren wird die Hoehe
+des Wochenkoerpers (`.lp-woche-body`).
+WEITERHIN OHNE NEUAUFBAU: Die Detailseite ist ein Formular. Der Koerper steht dauerhaft im DOM
+und wird am Ende wieder auf `display: none` gesetzt — nicht bloss auf Hoehe 0, sonst hielte er
+als leerer Kasten im Fluss den 6px-Abstand des Knopfes fest.
+FALLE ABSTAND, wie bei den Muskelgruppen: Waehrend der Bewegung traegt der Koerper
+`overflow: hidden` und bildet damit einen eigenen Formatierungskontext — die 6px
+`margin-bottom` des Knopfes verschmelzen dann NICHT mehr mit dem 8px-Abstand zur naechsten Woche,
+und es spraenge zu Beginn des Aufklappens um genau diesen Betrag. Deshalb faehrt der `margin-top`
+von −6px (hebt den Knopfabstand auf) bis 0 mit; der Wert wird am Knopf gelesen, nicht fest
+verdrahtet.
+TOKEN `_lpKlappNr` am Koerper: Ein zweiter Tipp waehrend der Bewegung entwertet deren Abschluss
+(sonst setzte der alte `display` verkehrt herum) und beginnt an der AKTUELLEN Hoehe — der
+Startpunkt wird VOR dem Abbruch der laufenden Bewegung gemessen und als Anteil der vollen Hoehe
+in die Keyframes gerechnet.
+„Alle aufklappen / Alle zuklappen" bewegt alle acht Wochen GLEICHZEITIG; eine Woche, die schon
+im Zielzustand steht, faehrt von 1 nach 1 und bewegt sich damit sichtbar nicht.
+Der KNOPF springt sofort in den neuen Zustand, sein Pfeil dreht sich mit der Bewegung.
+GEMESSEN (375px, Plan mit 8 Wochen): Keyframes `0px/-6px → 138px/0px`; Abstand Woche 1 → Woche 2
+bei t=1ms 8.3px (= zugeklappt) und bei t=199ms 152px (= aufgeklappt), also kein Sprung an beiden
+Enden; bei t=100ms Hoehe 27.3px und Rand −4.81px; Endzustand ohne Inline-Angaben und ohne
+Restanimation; „Alle aufklappen" = 8 Bewegungen zugleich; dreimal in 60ms-Abstand getippt endet
+beim richtigen Zustand; eine ungespeicherte Eingabe („99") ueberlebt das Umschalten; bei
+`prefers-reduced-motion` wird ohne Animation umgeschaltet.
 
 **Oberflaeche:** Seitenschalter `Laufkalender | Laufplanverwaltung` (`setLaufView`, `_laufSeite`).
 Auf- und Zuklappen einer Woche laeuft OHNE Neuaufbau (`toggleRunWoche` schaltet nur `display`) und

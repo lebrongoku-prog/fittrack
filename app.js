@@ -2910,6 +2910,44 @@ function _archivKlappen(listeId, auf, zeichnen) {
   _klappBewegung(inhalt, [offen(h), zu], () => { if (liste._archivNr === nr) zeichnen(); });
 }
 
+// ─── Die Wochen im Laufplan-Detail klappen ebenso (23.09.2026, Leonard-Wunsch) ───────
+// Gleiche 200ms, gleiche Kurve, gleiche Notbremse (`_klappBewegung`) wie Uebungskarten,
+// Muskelgruppen und Archive. Gefahren wird die Hoehe des Wochenkoerpers (`.lp-woche-body`).
+// KEIN Neuaufbau: Die Detailseite ist ein Formular — ein Re-Render naehme den Feldern darueber
+// ihre noch nicht gespeicherten Eingaben. Der Koerper steht deshalb dauerhaft im DOM und wird
+// am Ende wieder auf `display: none` gesetzt (nicht nur auf Hoehe 0) — sonst hielte er als
+// leerer Kasten im Fluss den 6px-Abstand des Knopfes fest.
+// FALLE ABSTAND, wie bei den Muskelgruppen: Waehrend der Bewegung steht der Koerper mit
+// `overflow: hidden` im Fluss und bildet damit einen eigenen Formatierungskontext — die 6px
+// `margin-bottom` des Knopfes verschmelzen dann NICHT mehr mit dem 8px-Abstand zur naechsten
+// Woche, und es spraenge zu Beginn des Aufklappens um genau diesen Betrag. Deshalb faehrt der
+// `margin-top` von −6px (hebt den Knopfabstand auf) bis 0 mit; der Wert wird am Knopf gelesen.
+// TOKEN (`_lpKlappNr`): Ein zweiter Tipp waehrend der Bewegung entwertet deren Abschluss und
+// beginnt an der AKTUELLEN Hoehe — sonst setzte der alte Abschluss `display` verkehrt herum.
+function _lpWocheKlappen(body, knopf, auf) {
+  if (!body) return;
+  const nr = body._lpKlappNr = (body._lpKlappNr || 0) + 1;
+  const fertig = () => {
+    if (body._lpKlappNr !== nr) return;
+    body.style.overflow = '';
+    body.style.marginTop = '';
+    body.style.display = auf ? '' : 'none';
+  };
+  if (_bewegungReduziert() || !body.animate) { fertig(); return; }
+  // Stand VOR dem Abbruch messen: Laeuft schon eine Bewegung, liefert das ihre aktuelle Hoehe.
+  const vonH = body.style.display === 'none' ? 0 : body.getBoundingClientRect().height;
+  body.getAnimations().forEach(a => a.cancel());
+  body.style.display = '';
+  body.style.marginTop = '';
+  const voll = body.getBoundingClientRect().height;
+  if (voll < 1) { fertig(); return; }
+  body.style.overflow = 'hidden';
+  const luecke = parseFloat(getComputedStyle(knopf).marginBottom) || 0;
+  const bild = (t) => ({ height: (voll * t) + 'px', marginTop: (-luecke * (1 - t)) + 'px' });
+  const von = Math.min(1, Math.max(0, vonH / voll));
+  _klappBewegung(body, [bild(von), bild(auf ? 1 : 0)], fertig);
+}
+
 function toggleAexCollapse(exId, ev) {
   if (ev) {
     // Klick auf die Erledigt-Box soll NICHT togglen. (Der frueher hier mitgeprüfte
@@ -5288,6 +5326,10 @@ function renderRunPlanDetail() {
       </div>
     </div>
 
+    ${laufKmDiagrammHTML(p, 'lp') ? `<div class="mehr-section">
+      <div class="mehr-card lp-km-karte">${laufKmDiagrammHTML(p, 'lp')}</div>
+    </div>` : ''}
+
     <div class="mehr-section">
       <div class="mehr-section-kopf">
         <div class="mehr-section-title">Einheiten</div>
@@ -5298,10 +5340,6 @@ function renderRunPlanDetail() {
       </div>
       <div class="mehr-card plan-form-card lp-wochen-karte">${wochenBlocks.join('')}</div>
     </div>
-
-    ${laufKmDiagrammHTML(p, 'lp') ? `<div class="mehr-section">
-      <div class="mehr-card lp-km-karte">${laufKmDiagrammHTML(p, 'lp')}</div>
-    </div>` : ''}
 
     <div class="mehr-section">
       <div class="mehr-section-title">Aktionen</div>
@@ -5335,10 +5373,9 @@ function toggleRunWoche(id, w) {
   _laufOffeneWochen.has(k) ? _laufOffeneWochen.delete(k) : _laufOffeneWochen.add(k);
   const btn = document.querySelector(`.lp-woche-btn[onclick*="'${id}',${w})"]`);
   if (!btn) return _laufNeuZeichnen();
-  const body = btn.nextElementSibling;
   const auf = _laufOffeneWochen.has(k);
   btn.setAttribute('aria-expanded', auf ? 'true' : 'false');
-  if (body) body.style.display = auf ? '' : 'none';
+  _lpWocheKlappen(btn.nextElementSibling, btn, auf);
   _syncAlleRunWochenBtn(id);
 }
 
@@ -5363,8 +5400,7 @@ function toggleAlleRunWochen(id) {
   }
   document.querySelectorAll('#runplan-detail-body .lp-woche-btn').forEach(btn => {
     btn.setAttribute('aria-expanded', auf ? 'true' : 'false');
-    const body = btn.nextElementSibling;
-    if (body) body.style.display = auf ? '' : 'none';
+    _lpWocheKlappen(btn.nextElementSibling, btn, auf);
   });
   _syncAlleRunWochenBtn(id);
 }
