@@ -4729,16 +4729,20 @@ function laufWochenListe(mo, istAktuell, maxKm) {
     // (`.ppv-col.today`, Leonard-Wunsch).
     const ist = lauf ? (lauf.art === 'hiit' ? `HIIT ${fmtMin(lauf.minutes)}` : `${fmtKm(lauf.km)} gelaufen`)
       : verschoben[i] ? 'verschoben' : '';
-    // Die Zeile hat ZWEI Ebenen: oben Scheibe, Vorgabe und Ist, darunter der Laengenbalken.
+    // Die Zeile ist eine WAAGERECHTE Reihe: links die Scheibe, rechts ein Block aus Angaben und
+    // Laengenbalken (23.09.2026, Leonard-Wunsch). Dadurch steht die Scheibe mittig zu BEIDEM;
+    // bis dahin lag sie in derselben Ebene wie die Angaben und sass damit ueber dem Balken.
     // Die NOTIZ der Einheit stand bis zum 23.09.2026 unter der Vorgabe und ist entfallen
     // (Leonard-Wunsch) — sie steht weiter in der Detailansicht des Laufs und im Laufplan.
-    const inhalt = `<div class="lauf-wz-oben">
-        <span class="lauf-wz-feld${i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag ${zustand}">${label}</span></span>
-        <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${soll}${zone}</div></div>
-        ${ist ? `<span class="lauf-wz-ist">${ist}</span>` : ''}
-        {{CHEV}}
-      </div>
-      ${_laufWzBalken(u && u.km, lauf && lauf.km, maxKm)}`;
+    const inhalt = `<span class="lauf-wz-feld${i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag ${zustand}">${label}</span></span>
+      <div class="lauf-wz-rechts">
+        <div class="lauf-wz-oben">
+          <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${soll}${zone}</div></div>
+          ${ist ? `<span class="lauf-wz-ist">${ist}</span>` : ''}
+          {{CHEV}}
+        </div>
+        ${_laufWzBalken(u && u.km, lauf && lauf.km, maxKm)}
+      </div>`;
     // Ein gelaufener Tag ist ein KNOPF in die Detailansicht des Laufs — derselbe kleine
     // Pfeil-Knopf wie in der Kalender-Fusszeile. Ein `<button>`, damit `initScrollHideNav`
     // ihn als Bedienelement erkennt.

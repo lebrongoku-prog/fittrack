@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v392**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v393**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2500,7 +2500,18 @@ sich die Wochen beim Wischen vergleichen; in einer lockeren Woche sind eben alle
 Die tatsaechlich gelaufenen Strecken zaehlen in den Bezug mit, sonst stiesse ein Lauf, der laenger
 war als jede Vorgabe, an den Rand. Mindestbreite 3 %, damit ein sehr kurzer Lauf sichtbar bleibt.
 KEIN Balken ohne Kilometer: Intervalltraining (`art: 'hiit'`) und Lauftage ohne Vorgabe.
-Die Zeile hat dafuer zwei Ebenen (`.lauf-wz-oben` + Balken); `.lauf-wz` ist kein Flex mehr.
+**AUFBAU DER ZEILE seit dem 23.09.2026** (Leonard-Wunsch „Wochentagkreis mittig zentriert zur
+km-Angabe und dem Balken"): eine WAAGERECHTE Reihe — links die Scheibe, rechts ein Block
+(`.lauf-wz-rechts`) aus Angabenzeile (`.lauf-wz-oben`) und Balken. `.lauf-wz` ist damit wieder
+ein Flex mit `align-items: center`, und die Scheibe steht mittig zu BEIDEM.
+Vom 22. bis 23.09.2026 lagen Scheibe und Angaben in derselben Ebene und der Balken haengte
+darunter — die Scheibe sass dadurch oberhalb der Zeilenmitte.
+FOLGE: Die Zeile ist flacher, weil Scheibe und Balken sich die Hoehe teilen, statt uebereinander
+zu stehen (gemessen 49 → 38px mit Balken; ohne Balken unveraendert 38px). Der Balken braucht
+seinen frueheren Einzug von 45px nicht mehr — er steht ohnehin im Block rechts der Scheibe.
+GEMESSEN (375px, Querformat 1100px und Glas-Modus): Mitte der Scheibe = Mitte des Blocks auf
+0.0px genau in allen Zeilen, mit und ohne Balken; Scheibe weiter bei 23px, Text und Balken bei
+63px; kein Ueberlauf; keine Konsolenfehler.
 GEMESSEN (Bezug 21 km): 6 km = 28.6 %, Ist 6.2 km = 29.5 %, 8 km = 38.1 %, 14 km = 66.7 %, „Ohne
 Vorgabe" ohne Balken; ein Lauf UNTER der Vorgabe (8 km geplant, 5.4 km gelaufen) zeigt beide
 Teile (108px hell, 73px kraeftig). Glas-Modus: Spur 20-%-, Vorgabe 45-%-, Ist 92-%-Weiss.

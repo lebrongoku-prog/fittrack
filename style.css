@@ -2608,26 +2608,34 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,2
 /* KEINE Trennlinien zwischen den Zeilen (23.09.2026, Leonard-Wunsch — bis dahin trug jede Zeile
    ausser der ersten eine 1px-Linie oben). Der Abstand allein trennt sie; die 16px aus Polster und
    Aussenabstand bleiben unveraendert. */
+/* DIE ZEILE IST EINE WAAGERECHTE REIHE (23.09.2026, Leonard-Wunsch): links die Scheibe, rechts
+   ein Block aus Angaben UND Laengenbalken. `align-items: center` stellt die Scheibe damit mittig
+   zu beidem. Vorher lag sie in derselben Ebene wie die Angaben (`.lauf-wz-oben`) und der Balken
+   haengte darunter — die Scheibe sass dadurch oberhalb der Zeilenmitte.
+   FOLGE: Die Zeile ist flacher, weil Scheibe und Balken sich die Hoehe teilen, statt
+   uebereinander zu stehen (gemessen 49 → 38px bei einer Zeile mit Balken). */
 .lauf-wz {
-  display: block; width: 100%;
+  display: flex; align-items: center; gap: 5px; width: 100%;
   padding: 8px 0 0; margin-top: 8px; border: none;
   background: none; font: inherit; color: inherit; text-align: left;
   -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
 }
 button.lauf-wz { cursor: pointer; }
 button.lauf-wz:active { opacity: .6; }
-/* ZWEI Ebenen je Zeile seit dem 22.09.2026: oben die Angaben, darunter der Laengenbalken. */
 /* Abstand 5px statt 10: Das gruene Heute-Feld legt selbst 5px um die Scheibe, zusammen sind es
-   wieder die gewohnten 10px zwischen Scheibe und Text. */
+   wieder die gewohnten 10px zwischen Scheibe und Text. Derselbe Wert steht an der Zeile (Scheibe
+   → Block) und in der Angabenzeile (Vorgabe → Ist → Pfeil). */
+.lauf-wz-rechts { flex: 1; min-width: 0; }
 .lauf-wz-oben { display: flex; align-items: center; gap: 5px; }
 /* LAENGENBALKEN (Leonard-Wunsch 22.09.2026): Der helle Teil ist die Vorgabe, der kraeftige die
    tatsaechlich gelaufene Strecke — ist er laenger, war der Lauf laenger als geplant. Bezug ist
    der laengste Lauf des ganzen Plans (`_laufBezugKm`), damit sich die Wochen beim Wischen
-   vergleichen lassen. Der Einzug entspricht Scheibe (30px) plus Abstand (10px), der Balken
-   beginnt also unter der Vorgabe. */
+   vergleichen lassen. Er beginnt unter der Vorgabe — seit dem 23.09.2026 von selbst, weil er im
+   Block RECHTS der Scheibe steht; der fruehere Einzug von 45px (Feld 40px + Abstand 5px) ist
+   damit entfallen. */
 .lauf-wz-balken {
   position: relative; height: 4px; border-radius: 99px;
-  background: var(--card2); margin: 6px 0 0 45px;   /* Feld (40px) + Abstand (5px) = unter dem Text */
+  background: var(--card2); margin: 6px 0 0;
 }
 .lauf-wz-balken > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; }
 .lauf-wz-balken > .soll { background: rgba(74, 222, 128, .62); }
