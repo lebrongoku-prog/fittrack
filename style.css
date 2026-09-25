@@ -2565,7 +2565,7 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 }
 @media (prefers-reduced-motion: reduce) { .lauf-wochen-zurueck.kommt { animation: none; } }
 /* Seitenanzeige: Punkte bis 14 Wochen, darueber ein schmaler Strich mit Marke. */
-.lauf-wochen-punkte { display: flex; gap: 5px; justify-content: center; padding-top: 10px; }
+.lauf-wochen-punkte { display: flex; gap: 5px; justify-content: center; padding-top: 18px; }
 .lauf-wochen-punkte > i { width: 5px; height: 5px; border-radius: 50%; background: var(--card2); display: block; transition: width .2s, background .2s; }
 .lauf-wochen-punkte > i.an { width: 14px; border-radius: 99px; background: #4ADE80; }
 .lauf-wochen-leiste { position: relative; height: 3px; border-radius: 99px; background: var(--card2); margin: 12px 20% 2px; }
@@ -2600,14 +2600,17 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,2
 .lp-km-karte .ex-chart-wrap { margin: 0; }
 .lauf-wochen-karte .ex-chart-wrap { margin-bottom: 0; }
 .lauf-wochen-karte .ex-chart-block.collapsed .ex-chart-head { margin-bottom: 0; }
-/* Die Liste ist seit dem 23.09.2026 das Erste auf der Seite (die Summen darueber sind weg),
-   deshalb kein eigener Abstand nach oben. Die erste Zeile verliert zudem ihre Abstaende, damit
-   sie buendig am Kartenpolster beginnt. */
-.lauf-wochenliste { padding: 0 4px; }
-.lauf-wochenliste > .lauf-wz:first-child { margin-top: 0; padding-top: 0; }
+/* GLEICHE ABSTAENDE UEBERALL: 18px (23.09.2026, Leonard-Wunsch — „zu eng beieinander").
+   Vorher standen im Stapel drei verschiedene Werte: 10px vom Kartenkopf zur ersten Zeile, 16px
+   zwischen den Zeilen (8px Aussenabstand + 8px Polster) und 10px von der letzten Zeile zur
+   Seitenanzeige. Jetzt ist es dreimal derselbe Wert, und er entspricht dem seitlichen Einzug der
+   Zeilen (18px vom Kartenrand) — das Raster der Karte ist damit in beide Richtungen dasselbe.
+   GEFAHREN UEBER `gap` statt ueber Polster an den Zeilen: Die Zeilen tragen dadurch selbst gar
+   keine Abstaende mehr, und der Wert steht an EINER Stelle.
+   Die 8px Polster oben in der Liste ergaenzen den 10px-Aussenabstand des Kartenkopfes zu 18. */
+.lauf-wochenliste { display: flex; flex-direction: column; gap: 18px; padding: 8px 4px 0; }
 /* KEINE Trennlinien zwischen den Zeilen (23.09.2026, Leonard-Wunsch — bis dahin trug jede Zeile
-   ausser der ersten eine 1px-Linie oben). Der Abstand allein trennt sie; die 16px aus Polster und
-   Aussenabstand bleiben unveraendert. */
+   ausser der ersten eine 1px-Linie oben). Der Abstand allein trennt sie. */
 /* DIE ZEILE IST EINE WAAGERECHTE REIHE (23.09.2026, Leonard-Wunsch): links die Scheibe, rechts
    ein Block aus Angaben UND Laengenbalken. `align-items: center` stellt die Scheibe damit mittig
    zu beidem. Vorher lag sie in derselben Ebene wie die Angaben (`.lauf-wz-oben`) und der Balken
@@ -2616,7 +2619,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,2
    uebereinander zu stehen (gemessen 49 → 38px bei einer Zeile mit Balken). */
 .lauf-wz {
   display: flex; align-items: center; gap: 5px; width: 100%;
-  padding: 8px 0 0; margin-top: 8px; border: none;
+  padding: 0; margin: 0; border: none;
   background: none; font: inherit; color: inherit; text-align: left;
   -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
 }

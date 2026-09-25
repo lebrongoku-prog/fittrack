@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v393**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v394**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2470,9 +2470,20 @@ rechts das Ist („8.1 km gelaufen", beim Intervalltraining „HIIT 28min"), son
    nur noch aus `laufWochenListe`. Die Wochensumme steht weiter im Diagramm darunter.
 2. Die NOTIZ der Einheit unter der Vorgabe (`.lauf-wz-notiz`). Sie steht weiter in der
    Detailansicht des Laufs (`showRunDetail`) und im Laufplan.
-FOLGE fuer die erste Zeile: Sie ist jetzt das Erste in der Karte. `.lauf-wochenliste` hat
-deshalb keinen oberen Abstand mehr, und `.lauf-wochenliste > .lauf-wz:first-child` verliert
-`margin-top` und `padding-top`, damit sie buendig am Kartenpolster beginnt.
+**DIE ABSTAENDE IM STAPEL SIND ALLE 18px** (23.09.2026, Leonard-Wunsch „gleichmaessig und
+passend zu den restlichen Polstern — aktuell zu eng"). Vorher standen dort drei verschiedene
+Werte: 10px vom Kartenkopf zur ersten Zeile, 16px zwischen den Zeilen (8px Aussenabstand + 8px
+Polster) und 10px von der letzten Zeile zur Seitenanzeige. Jetzt dreimal 18px — derselbe Wert wie
+der seitliche Einzug der Zeilen, das Raster der Karte ist damit in beide Richtungen dasselbe.
+Das Kartenpolster (14px) bleibt unangetastet.
+GEFAHREN UEBER `gap`: `.lauf-wochenliste` ist eine Flex-Spalte mit `gap: 18px`, die ZEILEN tragen
+selbst gar keine Abstaende mehr (`.lauf-wz { padding: 0; margin: 0 }`) und die Sonderregel fuer
+die erste Zeile ist entfallen. Der Wert steht damit an EINER Stelle.
+Die beiden Enden: `padding-top: 8px` an der Liste ergaenzt den 10px-Aussenabstand des Kartenkopfes
+zu 18, und `.lauf-wochen-punkte` traegt `padding-top: 18px` statt 10.
+GEMESSEN (375px, Querformat 1100px und Glas-Modus): Kopf → erste Zeile 18, Zeile → Zeile 18,
+letzte Zeile → Punkte 18, Kartenpolster oben und unten unveraendert 14; alle Zeilen 30px hoch;
+Seitenhoehen und Scrollerhoehe ziehen mit (122 → 134px), Wischen auf Woche 6 unveraendert.
 **AUCH DIE TRENNLINIEN ZWISCHEN DEN ZEILEN SIND WEG** (23.09.2026, Leonard-Wunsch — im selben
 Zug wie die Linie ueber „Wochenkilometer"): `.lauf-wz` traegt kein `border-top` mehr. Die Karte
 kennt damit gar keine grauen Linien mehr; getrennt wird allein ueber den Abstand (unveraendert
