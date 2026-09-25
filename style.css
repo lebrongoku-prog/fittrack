@@ -2601,13 +2601,16 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,2
 .lauf-wochen-karte .ex-chart-wrap { margin-bottom: 0; }
 .lauf-wochen-karte .ex-chart-block.collapsed .ex-chart-head { margin-bottom: 0; }
 /* Die Liste ist seit dem 23.09.2026 das Erste auf der Seite (die Summen darueber sind weg),
-   deshalb kein eigener Abstand nach oben. Die erste Zeile verliert zudem ihre Trennlinie samt
-   Abstaenden — sonst stuende eine Linie unmittelbar unter dem Kartenpolster. */
+   deshalb kein eigener Abstand nach oben. Die erste Zeile verliert zudem ihre Abstaende, damit
+   sie buendig am Kartenpolster beginnt. */
 .lauf-wochenliste { padding: 0 4px; }
-.lauf-wochenliste > .lauf-wz:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+.lauf-wochenliste > .lauf-wz:first-child { margin-top: 0; padding-top: 0; }
+/* KEINE Trennlinien zwischen den Zeilen (23.09.2026, Leonard-Wunsch — bis dahin trug jede Zeile
+   ausser der ersten eine 1px-Linie oben). Der Abstand allein trennt sie; die 16px aus Polster und
+   Aussenabstand bleiben unveraendert. */
 .lauf-wz {
   display: block; width: 100%;
-  padding: 8px 0 0; margin-top: 8px; border: none; border-top: 1px solid var(--border);
+  padding: 8px 0 0; margin-top: 8px; border: none;
   background: none; font: inherit; color: inherit; text-align: left;
   -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
 }

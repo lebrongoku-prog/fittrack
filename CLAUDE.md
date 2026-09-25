@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v391**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v392**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2472,8 +2472,12 @@ rechts das Ist („8.1 km gelaufen", beim Intervalltraining „HIIT 28min"), son
    Detailansicht des Laufs (`showRunDetail`) und im Laufplan.
 FOLGE fuer die erste Zeile: Sie ist jetzt das Erste in der Karte. `.lauf-wochenliste` hat
 deshalb keinen oberen Abstand mehr, und `.lauf-wochenliste > .lauf-wz:first-child` verliert
-Trennlinie, `margin-top` und `padding-top` — sonst laege eine Linie unmittelbar unter dem
-Kartenpolster.
+`margin-top` und `padding-top`, damit sie buendig am Kartenpolster beginnt.
+**AUCH DIE TRENNLINIEN ZWISCHEN DEN ZEILEN SIND WEG** (23.09.2026, Leonard-Wunsch — im selben
+Zug wie die Linie ueber „Wochenkilometer"): `.lauf-wz` traegt kein `border-top` mehr. Die Karte
+kennt damit gar keine grauen Linien mehr; getrennt wird allein ueber den Abstand (unveraendert
+8px Aussenabstand plus 8px Polster = 16px). GEMESSEN: alle Zeilen `border-top: 0px`, Abstaende
+8/8px, erste Zeile 43px unter der Kartenoberkante (Kopfzeile eingerechnet).
 HEUTE steht seit dem 22.09.2026 NICHT mehr als Wort rechts, sondern als dasselbe gruene Feld
 hinter der Scheibe, das die Wochenplan-Karte darueber fuer den heutigen Tag nutzt (`.ppv-col.today`,
 Leonard-Wunsch): `.lauf-wz-feld.heute` mit `var(--accent-bg)`, im Transparenz-Modus 18-%-Weiss.
