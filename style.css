@@ -2775,6 +2775,18 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
   -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer;
 }
 /* Sieben Tage in EINER Zeile — `1 1 0` statt `1` mit Mindestbreite, sonst bricht „So" um. */
+/* MUSKELGRUPPEN-CHIPS im Gymtag-Detail (26.09.2026): dieselbe Bauform wie die Lauftage
+   darueber, aber UMBRECHEND — sieben Gruppen passen auf 375px nicht in eine Zeile
+   („Schultern" allein misst rund 70px). Ein angeschalteter Chip traegt die Farbe seiner
+   Gruppe; die setzt das JS inline, weil sie je Chip verschieden ist. */
+.mg-wahl-reihe { display: flex; gap: 4px; flex-wrap: wrap; }
+.mg-wahl {
+  flex: 0 0 auto; padding: 6px 10px; border-radius: 9px;
+  border: 1px solid var(--border); background: var(--card2); color: var(--text2);
+  font: inherit; font-size: var(--fs-neben); font-weight: 600;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.mg-wahl.an { color: #fff; }
 .lp-tagwahl-reihe { display: flex; gap: 4px; flex-wrap: nowrap; }
 .lp-tagwahl {
   flex: 1 1 0; min-width: 0; padding: 8px 0; border-radius: 9px; border: 1px solid var(--border);

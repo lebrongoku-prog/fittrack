@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v395**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v396**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1279,6 +1279,21 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Knopf `#ex-plan-filter-btn` links neben „Alle ein-/ausklappen". Der Zustand wird BEWUSST nicht gespeichert — ein Filter, Beim Einschalten werden die Gruppen mit aufgeklappt
   (`collapsedExGroups.clear()`) — sonst bliebe die verkuerzte Liste hinter zugeklappten Kopfzeilen verborgen.
   der einen Neustart überlebt, lässt den Katalog später unerklärlich leer wirken.
+- **JEDER GYMTAG HAT MUSKELGRUPPEN** (`day.muscles`, 26.09.2026, Leonard-Wunsch). In der
+  Detailansicht steht zwischen „Name des Trainingstags" und „Notizen" eine Zeile Chips
+  (`.mg-wahl-reihe` / `.mg-wahl`, `_mgWahlZeichnen` + `toggleLibDayMuscle`), einer je Gruppe aus
+  `MUSCLE_ORDER`. Bauform wie die Lauftage im Laufplan-Detail, aber UMBRECHEND — sieben Chips
+  passen auf 375px nicht in eine Zeile (gemessen: zwei Reihen, 62px hoch).
+  Ein angeschalteter Chip traegt die FARBE seiner Gruppe (`MUSCLE_META[].color`), inline gesetzt,
+  weil sie je Chip verschieden ist.
+  GESPEICHERT in der Reihenfolge von `MUSCLE_ORDER`, NICHT in der Tippreihenfolge: Zwei Tage mit
+  denselben Gruppen haben so dieselbe Liste — davon haengt die Faerbung der Kacheln ab.
+  KEINE Ableitung aus den Uebungen des Tages (Leonard-Wunsch „basierend auf der Angabe"): Ein
+  „Push" soll „Brust · Schultern · Trizeps" heissen duerfen, auch wenn eine Bauchuebung drin
+  steht.
+  OHNE Neuaufbau der Seite — nur die Chip-Reihe wird neu gezeichnet; ein Re-Render naehme dem
+  Namensfeld darueber seine noch nicht gespeicherte Eingabe (dieselbe Regel wie im
+  Laufplan-Detail). GEMESSEN: Reihenfolge stimmt, Name bleibt beim Umschalten stehen.
 - **Gymtage stehen als DREIER-RASTER, nicht als volle Zeilen** (`#libdays-list` als Grid mit
   `repeat(3, minmax(0, 1fr))`, Leonard-Wunsch 07.09.2026). Das Raster sitzt auf der LISTE, die
   Kacheln (`.pld-kachel`) verlieren dafuer ihren eigenen Seitenrand — nur so sind alle drei

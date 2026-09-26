@@ -7863,6 +7863,7 @@ function renderLibDayDetail() {
     `${(day.exercises||[]).length} Übungen • ${setCount} Sätze${day.archived ? ' • archiviert' : ''}`;
   const nameEl = document.getElementById('day-name'); if (nameEl) nameEl.value = day.name || '';
   const notesEl = document.getElementById('day-notes'); if (notesEl) notesEl.value = day.notes || '';
+  _mgWahlZeichnen(day);
 
   // In welchen Trainingsplänen ist dieser Tag (analog „Verwendet in" bei Übungen). EXAKT verknüpft
   // über sourceLibDayId — nur ab jetzt via Bibliothek hinzugefügte Tage; Altbestand/Import zeigen nichts.
@@ -7903,6 +7904,39 @@ function renderLibDayDetail() {
         `<div class="plan-day-empty" style="color:rgba(255,255,255,0.85);background:transparent;margin:0 14px">Noch keine Übungen — tippe unten auf „+ Übung zum Trainingstag hinzufügen".</div>`;
     }
   }
+}
+
+// ── MUSKELGRUPPEN EINES GYMTAGS (26.09.2026, Leonard-Wunsch) ─────────────────────────
+// Eine Zeile Chips zwischen „Name des Trainingstags" und „Notizen", einer je Muskelgruppe.
+// Dieselbe Bauart wie die Lauftage im Laufplan-Detail (`.lp-tagwahl-reihe`) — ein Tipp schaltet
+// die Gruppe an oder aus, mehrere sind erlaubt. Ein angeschalteter Chip traegt die FARBE seiner
+// Gruppe (`MUSCLE_META[].color`), dieselbe wie der Punkt im Uebungskatalog.
+// GESPEICHERT wird `day.muscles` als Liste von Schluesseln in der Reihenfolge von
+// `MUSCLE_ORDER` — nicht in der Tippreihenfolge, damit zwei Tage mit denselben Gruppen auch
+// dieselbe Liste haben (die Kacheln faerben sich spaeter danach).
+// KEINE Ableitung aus den Uebungen: Leonard gibt sie an. Ein Tag „Push" kann bewusst als
+// „Brust · Schultern · Trizeps" gelten, auch wenn eine Bauchuebung mit drin steht.
+// OHNE Neuaufbau der Seite (nur die Reihe wird neu gezeichnet) — ein Re-Render naehme dem
+// Namensfeld darueber seine noch nicht gespeicherte Eingabe, wie im Laufplan-Detail.
+function _mgWahlZeichnen(day) {
+  const el = document.getElementById('day-muscles');
+  if (!el) return;
+  const an = new Set(day.muscles || []);
+  el.innerHTML = MUSCLE_ORDER.map(m => {
+    const meta = MUSCLE_META[m];
+    const stil = an.has(m) ? ` style="background:${meta.color};border-color:${meta.color}"` : '';
+    return `<button type="button" class="mg-wahl${an.has(m) ? ' an' : ''}"${stil}
+             onclick="toggleLibDayMuscle('${m}')">${meta.name}</button>`;
+  }).join('');
+}
+function toggleLibDayMuscle(m) {
+  const days = DB.getTrainingDays();
+  const d = days.find(x => x.id === editingLibDayId); if (!d) return;
+  const an = new Set(d.muscles || []);
+  an.has(m) ? an.delete(m) : an.add(m);
+  d.muscles = MUSCLE_ORDER.filter(k => an.has(k));   // feste Reihenfolge, nicht die Tippreihenfolge
+  DB.saveTrainingDays(days);
+  _mgWahlZeichnen(d);
 }
 
 function saveLibDayName() {
