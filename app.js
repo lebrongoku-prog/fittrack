@@ -7777,6 +7777,7 @@ function renderLibDays() {
     const setCount = (d.exercises||[]).reduce((a,e) => a + (e.targetSets||0), 0);
     const imPlan = activeDayIds.has(d.id);
     return `<div class="plan-list-row pld-kachel" onclick="openLibDayDetail('${d.id}')">
+      ${_mgLeiste(d.muscles)}
       ${imPlan ? '<span class="pld-dot" title="Im aktuellen Plan"></span>' : ''}
       <div class="plan-list-name">${pd(escapeHtml(d.name).replace(/\//g, '/<wbr>'))}</div>
       <div class="plan-list-meta">${anzUeb} ${anzUeb === 1 ? 'Übung' : 'Übungen'}<br>${setCount} Sätze</div>
@@ -9858,6 +9859,24 @@ function withUndo(label, fn, afterRestore) {
     showToast('Wiederhergestellt');
   });
 }
+// ── FARBLEISTE DER GYMTAG-KACHELN (26.09.2026, Leonard-Entscheidung „Variante A" aus vier
+// gezeichneten Vorschlaegen — Namensbalken, Punkte unten und getoente Kachel waren die anderen).
+// Ein 5px-Streifen ueber die ganze Kartenbreite, in GLEICH BREITE Abschnitte je Muskelgruppe
+// geteilt. Im Dreier-Raster erkennt man einen Tag damit schon am Farbmuster, ohne den Namen zu
+// lesen; Textplatz kostet er keinen (die Kachel hat oben 5px mehr Polster bekommen — ALLE
+// Kacheln, auch die ohne Angabe, sonst saessen die Namen in einer Zeile verschieden hoch).
+// HARTE Farbwechsel (zwei Haltepunkte je Farbe), kein weicher Verlauf: Es sind getrennte
+// Kategorien, keine Skala. Ohne Angabe gibt es keinen Streifen.
+function _mgLeiste(muscles) {
+  const m = (muscles || []).filter(k => MUSCLE_META[k]);
+  if (!m.length) return '';
+  const grund = m.length === 1 ? muscleColor(m[0])
+    : `linear-gradient(90deg,${m.map((k, i) =>
+        `${muscleColor(k)} ${i / m.length * 100}%,${muscleColor(k)} ${(i + 1) / m.length * 100}%`).join(',')})`;
+  const titel = m.map(k => muscleName(k)).join(' · ');
+  return `<i class="pld-leiste" style="background:${grund}" title="${escapeHtml(titel)}"></i>`;
+}
+
 function pd(name) { return `<span class="pd-name">${name}</span>`; }
 
 // ═══════════════════════════════════════════════

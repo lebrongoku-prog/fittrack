@@ -763,10 +763,24 @@ body.theme-plans .hist-action-dd {
      bei 13px 87px und passte mit 10px Polster (86px) um EIN Pixel nicht — der Browser brach
      es dann mitten im Wort („Shoulder/Le | gs"), weil `break-word` die erste Zeile fuellt,
      statt am Schraegstrich zu trennen. Senkrecht bleibt es bei 10px. */
-  padding: 10px 8px;
+  /* OBEN 15 statt 10px seit dem 26.09.2026: Die 5px sind der Platz fuer die Farbleiste der
+     Muskelgruppen. Sie gelten fuer ALLE Kacheln, auch die ohne Angabe — sonst saessen die
+     Namen in einer Rasterzeile verschieden hoch. Die Kachel bleibt bei 113px (`min-height`):
+     Auch mit zweizeiligem Namen misst der Inhalt nur rund 103px. */
+  padding: 15px 8px 10px;
   display: flex; flex-direction: column; gap: 2px;
   align-items: stretch; justify-content: flex-start;
+  /* Beschneidet die Farbleiste auf den Eckenradius der Kachel — nur so laeuft sie bis an beide
+     Kanten und folgt der Rundung. Der Schatten der Kachel liegt AUSSERHALB und bleibt heil
+     (`overflow` beschneidet Kinder, nicht den eigenen Schatten). */
+  overflow: hidden;
 }
+/* FARBLEISTE nach Muskelgruppen (26.09.2026, Leonard-Entscheidung „Variante A"): 5px ueber die
+   ganze Kartenbreite, je Gruppe ein gleich breiter Abschnitt. Den Verlauf setzt das JS inline
+   (`_mgLeiste`) — die Farben haengen am Tag, nicht an der Regel.
+   Sie bleibt auch im TRANSPARENZ-MODUS farbig: Muskelgruppenfarben sind eine Kategorie, keine
+   Sportfarbe — dieselbe Ausnahme wie der Farbpunkt im Uebungskatalog. */
+.pld-leiste { position: absolute; left: 0; right: 0; top: 0; height: 5px; display: block; }
 /* Auf 81px Textbreite passt kein 16px-Name mehr in eine Zeile. 14px und hoechstens zwei
    Zeilen, danach Auslassungspunkte — `-webkit-line-clamp` ist dafuer das einzige Mittel,
    das MITTEN in der zweiten Zeile abschneidet statt die dritte anzuhaengen. */

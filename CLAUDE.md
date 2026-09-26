@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v396**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v397**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1294,6 +1294,27 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   OHNE Neuaufbau der Seite — nur die Chip-Reihe wird neu gezeichnet; ein Re-Render naehme dem
   Namensfeld darueber seine noch nicht gespeicherte Eingabe (dieselbe Regel wie im
   Laufplan-Detail). GEMESSEN: Reihenfolge stimmt, Name bleibt beim Umschalten stehen.
+  **DIE KACHEL TRAEGT SIE ALS FARBLEISTE OBEN** (`_mgLeiste`, `.pld-leiste`, 26.09.2026,
+  Leonard-Entscheidung „Variante A" aus vier gezeichneten Vorschlaegen — Namensbalken farbig,
+  Punkte unten und getoente Kachel waren die anderen). Ein 5px-Streifen ueber die ganze
+  Kartenbreite, in GLEICH BREITE Abschnitte je Gruppe geteilt, mit harten Farbwechseln (zwei
+  Haltepunkte je Farbe) — es sind getrennte Kategorien, keine Skala. Der `title` nennt sie
+  ausgeschrieben („Brust · Schultern · Trizeps").
+  DREI Dinge, die daran haengen:
+  1. Das obere Polster der Kachel ist 15 statt 10px, und zwar bei ALLEN Kacheln — auch denen
+     OHNE Angabe, sonst saessen die Namen in einer Rasterzeile verschieden hoch. Die Kachel
+     bleibt bei 113px (`min-height`); auch mit zweizeiligem Namen misst der Inhalt nur rund
+     103px.
+  2. `.pld-kachel` traegt jetzt `overflow: hidden` — nur so folgt die Leiste dem Eckenradius
+     und laeuft bis an beide Kanten. Der Schatten der Kachel bleibt heil: `overflow`
+     beschneidet Kinder, nicht den eigenen Schatten.
+  3. Sie bleibt im TRANSPARENZ-MODUS farbig. Muskelgruppenfarben sind eine Kategorie, keine
+     Sportfarbe — dieselbe Ausnahme wie der Farbpunkt im Uebungskatalog (siehe „Keine
+     Sportfarben im Transparenz-Modus", das gilt fuer Wochenplan- und Kalenderkarten).
+  GEMESSEN (375px): alle sechs Kacheln 113px hoch, Name in jeder bei 15px, Leiste 109x5px bei
+  x=0; ein Tag ohne Angabe hat keine Leiste; archivierte Kacheln tragen sie ebenso; Glas-Modus
+  Karte 12-%-Weiss mit farbiger Leiste; Querformat Kachel und Leiste je 323px; keine
+  Konsolenfehler.
 - **Gymtage stehen als DREIER-RASTER, nicht als volle Zeilen** (`#libdays-list` als Grid mit
   `repeat(3, minmax(0, 1fr))`, Leonard-Wunsch 07.09.2026). Das Raster sitzt auf der LISTE, die
   Kacheln (`.pld-kachel`) verlieren dafuer ihren eigenen Seitenrand — nur so sind alle drei
