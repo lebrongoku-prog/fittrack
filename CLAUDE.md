@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v400**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v401**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -179,36 +179,54 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `setThemeBackground` selbst nach; ohne das bliebe der Hintergrund nach dem Seitenwechsel
   auf der Farbe der alten Seite stehen.
 - **`.weitere-btn`** — Ausklapp-Knopf auf farbigem Tab-Hintergrund, uebernommen aus der Health-Command-Center-App
-  (28.08.2026). Im Einsatz bei den Muskelgruppen-Koepfen im Katalog (`.ex-group-btn`) und „Archivierte Plaene"
-  (`.archiv-btn`). Sein erster Einsatzort, „Uebung zum Trainingstag hinzufuegen" auf der Seite „Gym", ist am
-  08.09.2026 ENTFALLEN (siehe unten).
+  (28.08.2026). Im Einsatz NUR NOCH bei den Muskelgruppen-Koepfen im Katalog (`.ex-group-btn`).
+  Sein erster Einsatzort, „Uebung zum Trainingstag hinzufuegen" auf der Seite „Gym", ist am
+  08.09.2026 ENTFALLEN (siehe unten), der Archiv-Knopf am 05.09.2026 (siehe naechster Punkt).
   KEIN Rahmen, dafuer ein weicher Schatten; weisse Schrift auf 12-%-Weiss — setzt einen FARBIGEN Grund voraus, auf
   einer weissen Karte waere er unlesbar (dort dunkle Schrift auf `rgba(0,0,0,.06)`).
   `font:inherit` MUSS vor den Schrift-Angaben stehen, sonst gewinnt die Browser-Standardschrift fuer `<button>`.
   Es MUSS ein `<button>` sein: `initScrollHideNav` nimmt echte Bedienelemente von der „Tableiste wieder
   einblenden"-Erkennung aus — ein `<div>` wuerde die Nav bei jedem Tipp zurueckholen.
-  Der Archiv-Knopf ist am 05.09.2026 aus `.weitere-btn` ausgeschieden — siehe „Archiv-Knopf"
-  weiter unten.
-- **Archiv-Knopf: EINE Bauform fuer alle drei Listen** (`.plans-list-archive-header`,
-  vereinheitlicht 05.09.2026 nach dem Vorbild des Gymtage-Archivs). Weisse Karte mit Schatten,
-  Beschriftung links (`.plan-day-collapse-label`), Anzahl als Pille (`.plan-day-collapse-count`)
-  und Ausklapp-Pfeil rechts. Im Einsatz auf drei Seiten mit je eigener Beschriftung:
-  „Archivierte Gympläne" (Gymplan) · „Archivierte Gymtage" (Gymtage) · „Archivierte Laufpläne"
-  (Laufplan). Alle drei sind `<button>` und brauchen deshalb `width: calc(100% - 28px)` — bei
-  `width:auto` schrumpft ein Button auf seinen Inhalt, auch als Block-Element; die 28px sind die
-  beiden 14px-Raender. Vorher war es auf zwei Seiten ein `.weitere-btn.archiv-btn` (transparent,
-  Pfeil links neben der Beschriftung, mittig) und nur im Gymtage-Archiv die weisse Karte.
-  Der Zustand steht als KLASSE `.expanded` UND als `aria-expanded` am Knopf — die Drehregel
-  fragt beides ab, damit sie unabhaengig vom Aufrufer greift.
-  Im TRANSPARENZ-MODUS traegt er dieselben Werte wie `.plan-list-row` daneben
-  (`rgba(255,255,255,.12)` plus die vier Farbtoken). Ohne diese Regel blieb er als einziges
-  Element der Seite deckend weiss stehen und sprang heraus (Leonard-Meldung 09.09.2026) —
-  er ist eben eine Karte, und Karten sind dort durchscheinend.
-  Die ANZAHL-PILLE braucht dabei eine EIGENE Angabe: Sie liest `background: var(--card)`,
-  und `--card` steht in der Regel darueber nicht mit drin. Sie blieb deshalb deckend weiss
-  — mit einer 65-%-weissen Ziffer darin, also ein leerer weisser Fleck (Leonard-Meldung
-  09.09.2026 mit Screenshot). Jetzt `rgba(255,255,255,.25)` mit weisser Ziffer. Betraf
-  ALLE DREI Knoepfe, sie teilen sich die Klasse.
+  Der Archiv-Knopf ist am 05.09.2026 aus `.weitere-btn` ausgeschieden und steht seit dem
+  26.09.2026 oben im Kopf — siehe den naechsten Punkt.
+- **DAS ARCHIV HAENGT AM KOPF DER SEITE** (`#plans-archive-btn`, `ARCHIV_SEITEN`,
+  `syncPlansArchivBtn`, 26.09.2026, Leonard-Wunsch). Ein QUADRATISCHER Knopf oben rechts, links
+  neben dem „+" — dieselbe Bauform wie „+" und der Ansichtsknopf der Wettkaempfe
+  (`.ex-add-btn`, 38x38px, 8px Abstand). Er gilt fuer die GEZEIGTE Seite: Gymplan, Gymtage und
+  Laufplan haben ein Archiv, „Wettkämpfe" nicht.
+  Welche Seite was zaehlt und umschaltet, steht in EINER Tabelle (`ARCHIV_SEITEN`, wie schon
+  `PLANS_SEITEN`, `OVERLAY_SCREENS` und `SEITEN_LEISTE`). Alle Eintraege sind FUNKTIONEN —
+  die Tabelle wird beim Laden ausgewertet, die Zaehler und Zustaende erst beim Aufruf; als
+  Werte liefen sie in die temporale Todeszone der weiter unten stehenden `let`-Variablen.
+  DREI Regeln:
+  1. Der Knopf ZEIGT SICH NUR, wenn die Seite ueberhaupt archivierte Eintraege hat. Ein Knopf,
+     der nichts aufklappt, waere eine Sackgasse.
+  2. OFFEN heisst GEFUELLT (`.active`, `--accent-dark`; im Transparenz-Modus 45-%-Weiss) —
+     dieselbe Sprache wie beim Katalogfilter „nur aus dem aktiven Plan". Einen Pfeil, der den
+     Zustand zeigen koennte, hat er nicht mehr.
+  3. Die ANZAHL steht im `title` („Archivierte Gympläne (2)"). Im 38px-Quadrat ist fuer eine
+     Pille kein Platz, und 9px Schrift laegen unter der Schriftskala.
+  `syncPlansArchivBtn` laeuft am ENDE von `renderPlansScreen` — `autoArchivBeendetePlaene`
+  steckt in den Renderern und kann die Anzahl noch aendern — und zu Beginn von
+  `_archivKlappen`, damit der Knopf beim Tipp sofort umspringt, waehrend die Bewegung laeuft.
+  IN DER LISTE bleibt nur eine Ueberschrift (`.archiv-titel`, `_archivTitel`), weiss und in
+  Grossbuchstaben wie die Abschnittstitel der Detailseiten, und nur im aufgeklappten Zustand.
+  Sie steht IN der Ausklapp-Huelle und faehrt damit mit. Ohne sie waeren vor allem die
+  archivierten GYMTAGE nicht von den aktiven zu unterscheiden — ihre Kacheln tragen kein
+  Merkmal, und mit dem Knopf ist auch die Trennung zwischen beiden Gruppen verschwunden.
+  Einzug 2px innerhalb der Karten daneben, wie bei `.mehr-section-title`: in den Planlisten
+  also 14px (die Karten stehen mit 12px), im Gymtage-Raster 2px (die Liste bringt ihre 14px
+  selbst mit). Dort spannt sie ueber alle drei Spalten.
+  VORGESCHICHTE: Vom 05.09. bis 26.09.2026 war es eine halbbreite weisse Karte UNTER den
+  Eintraegen (`.plans-list-archive-header`) mit Beschriftung links, Anzahl als Pille und
+  Ausklapp-Pfeil rechts — eine Bauform fuer alle drei Listen, davor auf zwei Seiten ein
+  transparenter `.weitere-btn.archiv-btn`. Sie ist samt ihrer Klassen
+  (`.plan-day-collapse-label`, `.plan-day-collapse-count`), ihrer halben Breite, ihrer
+  Gymtage-Rasterregeln und ihren zwei Glas-Regeln ersatzlos entfallen.
+  GEMESSEN (375px): Knopf 38x38, 8px links vom „+", gleiche Oberkante, 14px vom rechten Rand;
+  Titel 2px innerhalb der Karten (Planlisten 14px, Gymtage-Raster 16px bei Kacheln auf 14px);
+  alle drei Seiten auf und zu, Wettkaempfe ohne Knopf, Seite ohne Archiv ohne Knopf; hell
+  gefuellt rgb(120,53,15), Glas 45-%-Weiss mit weissem Symbol; keine Konsolenfehler.
 - **SCHRIFTSKALA: FUENF STUFEN FUER ALLEN TEXT** (21.09.2026, Leonard-Wunsch „zu viele
   verschiedene Schriftgroessen"). Vorher standen im Stylesheet 32 Werte: jeder Pixel von 10 bis
   18 belegt, dazu krumme Werte aus den 10-/20-%-Vergroesserungen (12.1, 14.3, 15.4, 15.6, 15.84,
@@ -304,8 +322,7 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   **Der Knopf zeigt NUR den Namen, auch ausgeklappt** (21.09.2026, Leonard-Wunsch). Vom
   01.09. bis 21.09.2026 erschien im ausgeklappten Zustand die Anzahl in Klammern („(4)"); sie ist
   samt ihrer Regel `.ex-group-btn .count` entfallen. NICHT betroffen: die Muskelgruppen-Titel in
-  den Dialogen „Uebung hinzufuegen" (`.ex-group-title`) — dort steht die Anzahl weiter. Dasselbe gilt fuer „Archivierte Plaene" im Plaene-Tab, der
-  ausserdem die Tipp-Animation der Karten traegt und dasselbe 14px-Polster bekommen hat.
+  den Dialogen „Uebung hinzufuegen" (`.ex-group-title`) — dort steht die Anzahl weiter.
   **Der Muskelgruppen-Knopf hat KEINEN Ausklapp-Pfeil** (01.09.2026) — ebensowenig die Uebungen im
   Katalog. Ob eine Gruppe offen ist, zeigt die Liste darunter. Damit sind `.weitere-pfeil` und
   `.ex-item-chev` restlos entfallen.
@@ -319,7 +336,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Schriftgroesse traegt (16px gegen 15px) und sonst 5px flacher waere. Sein Pfeil ist in Form und
   Groesse der `.ex-item-chev` nachgebaut: immer „▾", 14px, per `[aria-expanded="true"]` um 180 Grad
   gedreht (die frueher im JS getauschten Zeichen „▸/▾" sind weg). Die Farbe bleibt weiss —
-  der Knopf steht auf farbigem Grund. `.archiv-btn` behaelt den alten Pfeil.
+  der Knopf steht auf farbigem Grund. (Der Archiv-Knopf, von dem dieser Absatz handelt, ist am
+  26.09.2026 in den Kopf der Seite gewandert und hat dabei seinen Pfeil verloren.)
 - **EIN Ausklapp-Pfeil fuer die ganze App** (`.aex-v2-chev` + `AEX_CHEV_SVG`). Am 01.09.2026 aus
   Uebungskarten und Muskelgruppen ENTFERNT, am 05.09.2026 auf Leonards Wunsch wieder eingefuehrt —
   diesmal mit festen Regeln, die ueberall gelten:
@@ -329,18 +347,18 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   3. Aufgeklappt dreht er sich um 180 Grad — das Menue oeffnet nach unten, der Pfeil zeigt dorthin.
   Am 05.09.2026 auf ALLE neun Ausklapp-Stellen der App ausgeweitet — es gibt seither keine
   Textpfeile („▸/▾") mehr, die frueheren Sonderklassen `.ex-group-arrow`, `.plan-day-collapse-arrow`
-  und `.ex-chart-chev` sind entfallen:
+  und `.ex-chart-chev` sind entfallen. Seit dem 26.09.2026 sind es ACHT: Die drei Archive
+  haengen jetzt am quadratischen Knopf im Kopf, der keinen Pfeil traegt.
   Uebungskarten (`.aex-v2`, beide Fassungen) · Muskelgruppen im Katalog (`.ex-group-btn`) ·
-  Uebungszeilen im Katalog (`.ex-item-head`) · alle drei Archiv-Knoepfe
-  (`.plans-list-archive-header`) · Muskelgruppen im Uebung-hinzufuegen-Dialog
+  Uebungszeilen im Katalog (`.ex-item-head`) · Muskelgruppen im Uebung-hinzufuegen-Dialog
   (`.ex-group-title`) · Wochenbloecke im Laufplan (`.lp-woche-btn`) · „Entwicklung" in der
   Einheiten-Detailansicht (`.ex-chart-collapse`) · „Debug-Info" in den Einstellungen
   (`.drive-row`).
   Der Zustand kommt je nach Stelle aus einer KLASSE (`.collapsed`, `.open`, `.expanded`) oder aus
-  `aria-expanded` — daher mehrere Drehregeln fuer dieselbe Sache. Beim Archiv-Knopf und den
-  Laufplan-Wochen war die Drehung frueher −90 Grad; seit dem 05.09.2026 sind es ueberall 180.
+  `aria-expanded` — daher mehrere Drehregeln fuer dieselbe Sache. Bei den Laufplan-Wochen war die
+  Drehung frueher −90 Grad; seit dem 05.09.2026 sind es ueberall 180.
   Die Kastengroesse variiert bewusst, weil sie die Zeilenhoehe bestimmt: 32px in den Karten,
-  20px in den Knoepfen mit 44px-Zeile, 18px bei den Laufplan-Wochen, 14px im Archiv-Knopf.
+  20px in den Knoepfen mit 44px-Zeile, 18px bei den Laufplan-Wochen.
   Auf- und zugeklappt wird weiterhin per Tipp auf den ganzen Kopf, nicht nur auf den Pfeil.
   BUG, der dabei auffiel: `toggleDriveDebug` haelt in `open` den Zustand VOR dem Umschalten fest —
   der neue ist `!open`. Die erste Fassung setzte `aria-expanded` deshalb verkehrt herum.
@@ -425,10 +443,11 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Der Ausschnitt reicht seitlich und oben ueber die Huelle hinaus, nur seine Unterkante folgt der
   Hoehe. Das Archiv steht immer ZULETZT in seiner Liste; die Hoehe faehrt trotzdem mit, damit die
   Seite beim Zuklappen weit unten gleichmaessig nachzieht statt am Ende zu springen.
-  Der Knopf springt sofort in den neuen Zustand, der Pfeil dreht sich mit. Beim AUFklappen steht
-  er nach dem Neuzeichnen schon gedreht da und wird kurz in die alte Lage gesetzt, damit die
-  Drehung laeuft. TOKEN `_archivNr` an der Liste: Ein weiterer Tipp waehrend des Zuklappens
-  entwertet dessen Neuzeichnen am Ende.
+  Der Knopf springt sofort in den neuen Zustand — seit dem 26.09.2026 ist das der quadratische
+  Knopf oben rechts, der sich fuellt (`syncPlansArchivBtn` laeuft zu Beginn von
+  `_archivKlappen`); vorher stand er in der Liste und drehte dabei seinen Pfeil.
+  TOKEN `_archivNr` an der Liste: Ein weiterer Tipp waehrend des Zuklappens entwertet dessen
+  Neuzeichnen am Ende.
   `_staffelKarten` (Seitenwechsel) steigt in `.archiv-inhalt` hinab — die archivierten Kacheln
   kommen dort einzeln, nicht als ein Block.
   GEMESSEN: auf/zu in allen drei Listen, Standbild bei 45ms (Kacheln halb aufgedeckt, Schatten
@@ -1376,8 +1395,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `minmax(0, 1fr)` ist Pflicht: Ein blosses `1fr` ist `minmax(auto, 1fr)` und laesst die Spalte
   auf die Mindestbreite ihres Inhalts wachsen — „Shoulder/Legs" sprengte damit seine Spalte
   (130 statt 111px) und schob die dritte Kachel ueber den rechten Rand.
-  Archiv-Knopf und Leermeldung spannen ueber alle drei Spalten und muessen ihre eigene Breite
-  samt Raendern zuruecksetzen (der Archiv-Knopf traegt sonst `width: calc(100% - 28px)`).
+  Die Leermeldung spannt ueber alle drei Spalten und muss ihre eigene Breite samt Raendern
+  zuruecksetzen; dasselbe galt bis zum 26.09.2026 fuer den Archiv-Knopf, der dort stand.
   HOEHE 113px — 20% mehr als die fruehere vollbreite Karte (94px), und die Schriften darin
   wachsen im selben Verhaeltnis mit: Name 12→14,4px, Meta 11→13,2px (Leonard-Wunsch
   07.09.2026; die erste Fassung behielt die 94px).
@@ -1994,7 +2013,7 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   |---|---|---|---|
   | Hero-Knopf im Trainings-Tab | 323px | ~~258px (−20 %)~~ **seit 13.09.2026 wieder 323px** | Regel entfallen, siehe unten |
   | Uebungskarte (Seite „Gym" + Gymtag-Detail) | 323px | **291px** (−10 %) | `.aex-v2:not(.lauf-tag-karte)` |
-  | Archiv-Knopf (alle drei Listen) | 347px | **173px** (−50 %) | `.plans-list-archive-header` |
+  | Archiv-Knopf (alle drei Listen) | 347px | ~~173px (−50 %)~~ **seit 26.09.2026 im Kopf** | Regel entfallen, siehe „Das Archiv haengt am Kopf der Seite" |
 
   **DER HERO-KNOPF IST SEIT DEM 13.09.2026 WIEDER VOLL BREIT** (Leonard-Wunsch): Auf den Seiten
   „Gym" und „Laufen" fuellt er die Karte zwischen den 14px-Polstern — dieselben Aussenabstaende
@@ -2006,9 +2025,9 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
      „Pausieren" und „Beenden" mit.
   2. Die Tageskarte der Seite „Laufen" borgt sich die Klassen der Uebungskarte, ist aber
      keine — `.lauf-tag-karte` ist ausgenommen und bleibt bei 323px.
-  3. Im Gymtage-Raster setzt `#libdays-list > .plans-list-archive-header` die Breite auf
-     `auto` zurueck (der Knopf spannt dort ueber alle drei Spalten). Die halbe Breite muss
-     danach NOCHMAL gesetzt werden, sonst ist dieser eine Knopf voll breit.
+  3. Im Gymtage-Raster musste der Archiv-Knopf seine halbe Breite zweimal setzen, weil die
+     Rasterregel sie auf `auto` zuruecksetzte. Mit seinem Umzug in den Kopf (26.09.2026) ist
+     das erledigt.
 - **Kuenftige Trainingstage in der kombinierten Wochenkarte sind hellgrau GEFUELLT plus Ring**
   (08.09.2026, Leonard-Wunsch — vorher `background: transparent`). Damit kennt die Karte drei
   Zustaende in EINER Formensprache:
@@ -2896,8 +2915,9 @@ Einheiten statt Krafteinheiten). BEWUSST eine eigene Funktion: Die beiden Datenm
 ausser der Woche nichts gemeinsam. Ohne `plan` zeichnet sie den LAUFENDEN Plan, mit `plan` einen
 bestimmten — daraus besteht seit dem 04.09.2026 die ganze Liste auf der Seite „Laufplan",
 aufgebaut wie `renderPlans()` beim Gymplan: Nur der laufende Plan zeigt Fortschrittsbalken und
-Haken, alle uebrigen tragen Statuschip (`runPlanStatus`) und Laufzeit. Das Archiv haengt hinter
-demselben Ausklapp-Knopf (`.archiv-btn`, `runplansArchiveExpanded`/`toggleRunplansArchive`).
+Haken, alle uebrigen tragen Statuschip (`runPlanStatus`) und Laufzeit. Das Archiv haengt an
+demselben Knopf oben rechts wie in den anderen beiden Listen (`runplansArchiveExpanded` /
+`toggleRunplansArchive`, siehe „Das Archiv haengt am Kopf der Seite").
 Steht ausserdem in der **Uebersicht** unter dem Gymwochenplan (`#ov-runplan-card`; im Querformat
 teilen sich beide eine Zeile, die Herocard rutscht darunter ueber die volle Breite) und im
 **Trainings-Tab auf der Seite „Laufen" zuoberst**. Im QUERFORMAT teilen sich dort Wochenplan

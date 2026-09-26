@@ -2885,34 +2885,27 @@ function _gruppeKlappAnimieren(gruppe, auf, danach) {
 // Das Archiv steht immer ZULETZT in seiner Liste, darunter liegt nichts, was mitwandern
 // muesste. Die Hoehe faehrt trotzdem mit: Beim Zuklappen weit unten zieht die Seite so
 // gleichmaessig nach, statt am Ende um die ganze Archivhoehe zu springen.
-// Der KNOPF springt sofort in den neuen Zustand, sein Pfeil dreht sich mit der Bewegung. Beim
-// AUFklappen steht er nach dem Neuzeichnen schon gedreht da — er wird deshalb kurz in die alte
-// Lage zurueckgesetzt, damit die Drehung laeuft.
+// Der KNOPF steht seit dem 26.09.2026 oben rechts im Kopf und springt sofort in den neuen
+// Zustand (gefuellt = offen, `syncPlansArchivBtn`) — die Bewegung laeuft darunter weiter. Bis
+// dahin stand er ueber den Eintraegen in der Liste und drehte dabei seinen Pfeil.
 // TOKEN (`_archivNr` an der Liste): Ein zweiter Tipp waehrend des Zuklappens entwertet dessen
 // Neuzeichnen am Ende — sonst raeumte es das inzwischen wieder geoeffnete Archiv ab.
 function _archivKlappen(listeId, auf, zeichnen) {
   const liste = document.getElementById(listeId);
   const nr = liste ? (liste._archivNr = (liste._archivNr || 0) + 1) : 0;
+  syncPlansArchivBtn();
   if (!liste || _bewegungReduziert() || !liste.animate || !liste.clientWidth) { zeichnen(); return; }
   const zu = { height: '0px', clipPath: 'inset(-12px -24px 0px -24px)' };
   const offen = (h) => ({ height: h + 'px', clipPath: 'inset(-12px -24px -12px -24px)' });
-  const kopfSetzen = (kopf, an) => {
-    kopf.classList.toggle('expanded', an);
-    kopf.setAttribute('aria-expanded', an ? 'true' : 'false');
-  };
   if (auf) {
     zeichnen();
-    const kopf = liste.querySelector(':scope > .plans-list-archive-header');
     const inhalt = liste.querySelector(':scope > .archiv-inhalt');
-    if (kopf) { kopfSetzen(kopf, false); void kopf.offsetWidth; kopfSetzen(kopf, true); }
     const h = inhalt ? inhalt.getBoundingClientRect().height : 0;
     if (h < 1) return;
     _klappBewegung(inhalt, [zu, offen(h)], () => {});
     return;
   }
-  const kopf = liste.querySelector(':scope > .plans-list-archive-header');
   const inhalt = liste.querySelector(':scope > .archiv-inhalt');
-  if (kopf) kopfSetzen(kopf, false);
   const h = inhalt ? inhalt.getBoundingClientRect().height : 0;
   if (h < 1) { zeichnen(); return; }
   _klappBewegung(inhalt, [offen(h), zu], () => { if (liste._archivNr === nr) zeichnen(); });
@@ -5211,6 +5204,7 @@ function renderLaufVerwaltung() {
   const plaene = DB.getRunPlans();
   const offen = plaene.filter(p => !p.archived).sort((a, b) => (a.startDate || 0) - (b.startDate || 0));
   const archiv = plaene.filter(p => p.archived).sort((a, b) => (b.startDate || 0) - (a.startDate || 0));
+  syncPlansArchivBtn();
 
   if (!plaene.length) {
     el.innerHTML = `<div class="plan-day-empty" style="margin:24px 14px">Noch kein Laufplan — tippe auf das + oben rechts, um deinen ersten Plan anzulegen.</div>`;
@@ -5221,14 +5215,8 @@ function renderLaufVerwaltung() {
 
   let html = offen.map(zeile).join('');
   if (archiv.length) {
-    const auf = runplansArchiveExpanded;
-    html += `<button type="button" class="plans-list-archive-header${auf ? ' expanded' : ''}"
-                     aria-expanded="${auf}" onclick="toggleRunplansArchive()">
-      <span class="plan-day-collapse-label">Archivierte Laufpläne</span>
-      <span class="plan-day-collapse-count">${archiv.length}</span>
-      <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
-    </button>`;
-    if (auf) html += `<div class="archiv-inhalt">${archiv.map(zeile).join('')}</div>`;
+    if (runplansArchiveExpanded) html += `<div class="archiv-inhalt">${
+      _archivTitel('Archivierte Laufpläne')}${archiv.map(zeile).join('')}</div>`;
   }
   el.innerHTML = html;
 }
@@ -6952,6 +6940,7 @@ function renderPlans() {
   const plans = DB.getPlans();
   const active = plans.filter(p => !p.archived).sort((a,b) => a.startDate - b.startDate);
   const archived = plans.filter(p => p.archived).sort((a,b) => b.startDate - a.startDate);
+  syncPlansArchivBtn();   // auch bei direkten Aufrufen (Loeschen, Papierkorb) auf Stand halten
 
   const subEl = document.getElementById('plans-subline');
   if (subEl) {
@@ -6987,17 +6976,10 @@ function renderPlans() {
   } else {
     html += active.map(renderRow).join('');
     if (archived.length) {
-      const expanded = plansArchiveExpanded;
-      // Gleicher Knopf wie im Archiv der Gymtage (Leonard-Wunsch 05.09.2026) — weisse Karte,
-      // Beschriftung links, Anzahl und Pfeil rechts. Der fruehere `.weitere-btn.archiv-btn` ist
-      // damit ueberall abgeloest.
-      html += `<button type="button" class="plans-list-archive-header${expanded ? ' expanded' : ''}"
-                       aria-expanded="${expanded}" onclick="togglePlansArchive()">
-        <span class="plan-day-collapse-label">Archivierte Gympläne</span>
-        <span class="plan-day-collapse-count">${archived.length}</span>
-        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
-      </button>`;
-      if (expanded) html += `<div class="archiv-inhalt">${archived.map(renderRow).join('')}</div>`;
+      // Der Knopf steht seit dem 26.09.2026 oben rechts im Kopf (siehe `syncPlansArchivBtn`);
+      // in der Liste bleibt nur die Ueberschrift, und die nur im aufgeklappten Zustand.
+      if (plansArchiveExpanded) html += `<div class="archiv-inhalt">${
+        _archivTitel('Archivierte Gympläne')}${archived.map(renderRow).join('')}</div>`;
     }
   }
   document.getElementById('plans-list').innerHTML = html;
@@ -7453,6 +7435,52 @@ const PLANS_SEITEN = {
   races:    { titel: 'Wettkämpfe', liste: 'races-list'    },
 };
 
+// ── DAS ARCHIV HAENGT AM KOPF DER SEITE (26.09.2026, Leonard-Wunsch) ─────────────────────
+// Bis dahin stand unter jeder der drei Listen ein breiter Knopf „Archivierte …" als weisse
+// Karte. Jetzt ist es ein quadratischer Knopf oben rechts, links neben dem „+" — dieselbe
+// Bauform wie „+" und der Ansichtsknopf der Wettkaempfe (`.ex-add-btn`, 38px).
+// DREI Seiten haben ein Archiv, „Wettkämpfe" nicht; welche Seite was zaehlt und umschaltet,
+// steht in dieser EINEN Tabelle — wie schon `PLANS_SEITEN`, `OVERLAY_SCREENS` und
+// `SEITEN_LEISTE`. Alle Eintraege sind FUNKTIONEN: Die Tabelle wird beim Laden ausgewertet,
+// die Zaehler und Zustaende erst beim Aufruf (`plansArchiveExpanded` und Geschwister stehen
+// weiter unten in der Datei, siehe die TDZ-Warnung bei `SEITEN_LEISTE`).
+const ARCHIV_SEITEN = {
+  plans:    { titel: 'Archivierte Gympläne',  anzahl: () => DB.getPlans().filter(p => p.archived).length,
+              offen: () => plansArchiveExpanded,     um: () => togglePlansArchive() },
+  days:     { titel: 'Archivierte Gymtage',   anzahl: () => DB.getTrainingDays().filter(d => d.archived).length,
+              offen: () => libDaysArchiveExpanded,   um: () => toggleLibDaysArchive() },
+  runplans: { titel: 'Archivierte Laufpläne', anzahl: () => DB.getRunPlans().filter(p => p.archived).length,
+              offen: () => runplansArchiveExpanded,  um: () => toggleRunplansArchive() },
+};
+// Der Knopf ZEIGT SICH NUR, wenn die Seite ueberhaupt archivierte Eintraege hat — ein Knopf,
+// der nichts aufklappt, waere eine Sackgasse. Offen = gefuellt, genau wie der Katalogfilter
+// „nur aus dem aktiven Plan". Die Anzahl stand frueher als Pille im Knopf; im 38px-Quadrat ist
+// dafuer kein Platz (und 9px Schrift waeren unter der Schriftskala), sie steht deshalb im
+// `title`.
+function syncPlansArchivBtn() {
+  const b = document.getElementById('plans-archive-btn');
+  if (!b) return;
+  const seite = ARCHIV_SEITEN[plansViewMode];
+  const anzahl = seite ? seite.anzahl() : 0;
+  b.style.display = anzahl ? '' : 'none';
+  if (!anzahl) { b.classList.remove('active'); return; }
+  const auf = seite.offen();
+  b.classList.toggle('active', auf);
+  b.setAttribute('aria-expanded', auf ? 'true' : 'false');
+  b.title = `${seite.titel} (${anzahl})`;
+}
+function togglePlansArchivBtn() {
+  const seite = ARCHIV_SEITEN[plansViewMode];
+  if (seite) seite.um();
+}
+// Ueberschrift ueber den archivierten Eintraegen. Ohne sie waeren vor allem die archivierten
+// GYMTAGE nicht von den aktiven zu unterscheiden — ihre Kacheln tragen kein Merkmal, und mit
+// dem Knopf ist auch die Trennlinie zwischen beiden Gruppen verschwunden. Sie steht IN der
+// Huelle, damit sie mit auf- und zuklappt.
+function _archivTitel(text) {
+  return `<div class="archiv-titel">${escapeHtml(text)}</div>`;
+}
+
 function renderPlansScreen() {
   const zeige = (el, an) => { if (el) el.style.display = an ? '' : 'none'; };
   Object.keys(PLANS_SEITEN).forEach(k => {
@@ -7473,6 +7501,9 @@ function renderPlansScreen() {
   else if (plansViewMode === 'runplans') renderLaufVerwaltung();
   else if (plansViewMode === 'races') renderWettkaempfe();
   else renderPlans();
+  // NACH dem Renderer: `autoArchivBeendetePlaene` laeuft darin und kann die Anzahl der
+  // archivierten Plaene noch aendern — davor gezaehlt, fehlte der Knopf beim ersten Blick.
+  syncPlansArchivBtn();
 }
 
 // ── Seite „Wettkaempfe" ────────────────────────────────────────────
@@ -7755,6 +7786,7 @@ function renderLibDays() {
     return (a.createdAt||0) - (b.createdAt||0);
   });
   const archived = days.filter(d => d.archived).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+  syncPlansArchivBtn();
   const subEl = document.getElementById('plans-subline');
   if (subEl) subEl.textContent = days.length
     ? `${active.length} Trainingstag${active.length===1?'':'e'}${archived.length ? ` • ${archived.length} archiviert` : ''}`
@@ -7792,14 +7824,8 @@ function renderLibDays() {
   } else {
     html += active.map(renderRow).join('');
     if (archived.length) {
-      const expanded = libDaysArchiveExpanded;
-      html += `<button type="button" class="plans-list-archive-header${expanded ? ' expanded' : ''}"
-                       aria-expanded="${expanded}" onclick="toggleLibDaysArchive()">
-        <span class="plan-day-collapse-label">Archivierte Gymtage</span>
-        <span class="plan-day-collapse-count">${archived.length}</span>
-        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
-      </button>`;
-      if (expanded) html += `<div class="archiv-inhalt">${archived.map(renderRow).join('')}</div>`;
+      if (libDaysArchiveExpanded) html += `<div class="archiv-inhalt">${
+        _archivTitel('Archivierte Gymtage')}${archived.map(renderRow).join('')}</div>`;
     }
   }
   document.getElementById('libdays-list').innerHTML = html;

@@ -674,21 +674,6 @@ body.theme-plans .hist-action-dd {
   background: #D1FAE5; color: #059669;
   border-radius: 6px;
 }
-.plan-day-collapse-label { flex: 1; }
-/* Pfeil ganz rechts, hinter der Anzahl — dieselbe Reihenfolge wie im Archiv-Knopf des
-   Plaene-Tabs. Der frueher fuehrende `.plan-day-collapse-arrow` ist entfallen. */
-.plans-list-archive-header .aex-v2-chev { width: 20px; height: 20px; color: inherit; }
-.plans-list-archive-header .aex-v2-chev svg { width: 17px; height: 17px; }
-.plans-list-archive-header.expanded .aex-v2-chev,
-.plans-list-archive-header[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
-.plan-day-collapse-count {
-  font-size: var(--fs-etikett); font-weight: 700;
-  color: var(--text3);
-  background: var(--card);
-  padding: 2px 8px;
-  border-radius: 10px;
-  min-width: 24px; text-align: center;
-}
 .plan-day-empty {
   padding: 20px 14px;
   text-align: center;
@@ -732,14 +717,9 @@ body.theme-plans .hist-action-dd {
   gap: 10px;
   padding: 0 14px;
 }
-/* Archiv-Knopf und Leermeldung sind keine Kacheln — sie spannen ueber alle drei Spalten.
-   Der Archiv-Knopf traegt sonst `width: calc(100% - 28px)` samt eigener Raender; im Raster
-   liefert die Spalte die Breite, beides muss also zurueckgesetzt werden. */
-#libdays-list > .plans-list-archive-header,
+/* Die Leermeldung ist keine Kachel — sie spannt ueber alle drei Spalten. (Bis zum 26.09.2026
+   stand hier auch der Archiv-Knopf; der sitzt jetzt oben rechts im Kopf.) */
 #libdays-list > .plan-day-empty { grid-column: 1 / -1; width: auto; margin-left: 0; margin-right: 0; }
-/* … der Archiv-Knopf holt sich seine halbe Breite danach zurueck (siehe dort). Die Regel
-   MUSS hinter der Zeile darueber stehen, beide haben dieselbe Spezifitaet. */
-#libdays-list > .plans-list-archive-header { width: 50%; margin-left: auto; margin-right: auto; }
 /* Die archivierten Kacheln stehen seit dem 18.09.2026 in einer eigenen Huelle (sie klappt als
    Ganzes auf und zu, `_archivKlappen`). Sie spannt ueber alle drei Spalten und baut darin
    DASSELBE Raster noch einmal — Spaltenbreiten und Abstaende sind damit unveraendert, und der
@@ -950,8 +930,8 @@ body.theme-plans .hist-action-dd {
 /* Die ausklappbaren Muskelgruppen-Koepfe im Katalog reagieren wie eine Karte
    (Leonard-Wunsch 01.09.2026). Nur dieser eine `.weitere-btn` — die anderen beiden
    („Uebung hinzufuegen", „Archivierte Plaene") bleiben unveraendert. */
-.ex-group-btn, .plans-list-archive-header { transition: transform .1s ease; }
-.ex-group-btn:active, .plans-list-archive-header:active { transform: scale(0.995); }
+.ex-group-btn { transition: transform .1s ease; }
+.ex-group-btn:active { transform: scale(0.995); }
 #ov-cal-card, #plans-cal-card { transition: none; }
 /* AUSNAHME aufgeklappter Laufplan: Die Karte IST hier das Bearbeitungsformular. Jeder Tipp
    in ein Feld liess die ganze Karte zucken (Leonard-Meldung 04.09.2026). Eingeklappt bleibt
@@ -1086,29 +1066,26 @@ body.theme-plans .hist-action-dd {
 .plan-status-past { opacity: 0.85; }
 .plan-status-archived { opacity: 0.7; }
 
-/* Archiv-Knopf — EINE Bauform fuer alle drei Listen (Gympläne, Gymtage, Laufpläne;
-   vereinheitlicht 05.09.2026). Weisse Karte, Beschriftung links, Anzahl und Ausklapp-Pfeil
-   rechts. Ein `<button>` braucht die Breitenangabe: bei `width:auto` schrumpft er auf seinen
-   Inhalt, auch als Block-Element. Der fruehere `.weitere-btn.archiv-btn` ist entfallen. */
-/* 50 % schmaler als die Zeile und mittig (Leonard-Wunsch 08.09.2026). Er oeffnet ein
-   Archiv und ist damit der unwichtigste Knopf der Seite — ueber die volle Breite wog er
-   schwerer als die Karten darueber. Gerechnet von der bisherigen Breite (Zeile minus die
-   beiden 14px-Raender): auf 375px also 173 statt 347px.
-   Gilt fuer ALLE DREI Listen, auch „Archivierte Gympläne" — Leonard hat zwei davon genannt,
-   aber sie sind seit dem 05.09.2026 bewusst EINE Bauform; zwei schmal und eine breit waere
-   ein Rueckschritt. */
-.plans-list-archive-header {
-  width: calc((100% - 28px) * 0.5); border: none; font-family: inherit; text-align: left;
-  margin: 16px auto 8px;
-  background: var(--card);
-  border-radius: 12px;
-  padding: 12px 16px;
-  display: flex; align-items: center; gap: 10px;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-  font-size: var(--fs-neben); font-weight: 600; color: var(--text2);
-  box-shadow: var(--shadow);
-  user-select: none; -webkit-user-select: none;
+/* ARCHIV: Der Knopf steht oben rechts im Kopf, in der Liste bleibt nur die Ueberschrift
+   (26.09.2026, Leonard-Wunsch). Vorher war es eine halbbreite weisse Karte unter den
+   Eintraegen (`.plans-list-archive-header`, seit 05.09.2026 EINE Bauform fuer alle drei
+   Listen) — sie ist samt Beschriftung, Anzahl-Pille und Pfeil ersatzlos entfallen.
+   Die Ueberschrift steht IN der Ausklapp-Huelle und faehrt damit mit. Weiss und in
+   Grossbuchstaben wie die Abschnittstitel der Detailseiten — sie liegt auf dem farbigen
+   Tab-Hintergrund, nicht auf einer Karte; grau ginge dort unter.
+   Ohne sie waeren vor allem die archivierten GYMTAGE nicht von den aktiven zu unterscheiden:
+   Ihre Kacheln tragen kein Merkmal, und mit dem Knopf ist auch die Trennung zwischen beiden
+   Gruppen verschwunden.
+   Der Einzug richtet sich nach der Liste: In den Planlisten stehen die Karten mit 12px
+   Rand (14 = 12 + 2, dieselben 2px wie bei `.mehr-section-title`), im Gymtage-Raster bringt
+   die Liste ihre 14px schon selbst mit, dort bleiben 2px. */
+.archiv-titel {
+  grid-column: 1 / -1;
+  margin: 6px 14px 10px;
+  font-size: var(--fs-etikett); font-weight: 700; color: #fff;
+  text-transform: uppercase; letter-spacing: 0.8px;
 }
+#libdays-list .archiv-titel { margin-left: 2px; margin-right: 2px; }
 
 /* Plan-Detail-Screen: ph mit Zurück-Pfeil links neben Titel */
 .plan-detail-ph {
@@ -1526,7 +1503,8 @@ html.glas .screen:not(#screen-mehr) .ex-sort-btn svg,
 html.glas .screen:not(#screen-mehr) .ex-add-btn svg { stroke: #fff; }
 /* Aktiver Filter: auf dem Schleier waere die dunkle Akzentfarbe ein Fremdkoerper —
    stattdessen eine deutlich hellere Flaeche, wie beim aktiven Seitenschalter. */
-html.glas .screen:not(#screen-mehr) #ex-plan-filter-btn.active { background: rgba(255,255,255,.45); }
+html.glas .screen:not(#screen-mehr) #ex-plan-filter-btn.active,
+html.glas .screen:not(#screen-mehr) #plans-archive-btn.active { background: rgba(255,255,255,.45); }
 html.glas .screen:not(#screen-mehr) #ex-plan-filter-btn.active svg { stroke: #fff; fill: #fff; }
 html.glas .screen:not(#screen-mehr) .ex-search-bar {
   background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.24);
@@ -1548,27 +1526,9 @@ html.glas .screen:not(#screen-mehr) .plan-list-row {
   --border: rgba(255,255,255,.24);
 }
 html.glas .screen:not(#screen-mehr) .plan-list-row .plan-list-name { color: #fff; }
-/* Der Archiv-Knopf ist eine KARTE (weisse Flaeche mit Schatten, seit 05.09.2026 dieselbe
-   Bauform fuer alle drei Listen) und blieb im Transparenz-Modus als einziges Element
-   deckend weiss stehen — er sprang aus der Seite heraus (Leonard-Meldung 09.09.2026).
-   Dieselben Werte wie `.plan-list-row` daneben, damit er sich einreiht. Die Farbtoken
-   werden mitgesetzt: Beschriftung, Anzahl-Pille und Pfeil lesen sie. */
-html.glas .screen:not(#screen-mehr) .plans-list-archive-header {
-  background: rgba(255,255,255,.12);
-  box-shadow: 0 1px 6px rgba(0,0,0,.18);
-  color: rgba(255,255,255,.85);
-  --text: #fff; --text2: rgba(255,255,255,.85); --text3: rgba(255,255,255,.65);
-  --border: rgba(255,255,255,.24);
-}
-/* Die Anzahl-Pille liest `background: var(--card)` — und `--card` blieb in der Regel darueber
-   auf Weiss stehen. Ergebnis war ein deckend weisser Fleck mit einer 65-%-weissen Ziffer
-   darin, also praktisch unsichtbar (Leonard-Meldung 09.09.2026, Screenshot). Sie braucht
-   deshalb eine eigene Angabe — beide Werte ausgeschrieben statt ueber `--card`, damit der
-   Zusammenhang beim Lesen sofort da steht.
-   Gilt fuer ALLE DREI Archiv-Knoepfe, sie teilen sich die Klasse. */
-html.glas .screen:not(#screen-mehr) .plans-list-archive-header .plan-day-collapse-count {
-  background: rgba(255,255,255,.25); color: #fff;
-}
+/* Die Archiv-Ueberschrift braucht hier KEINE eigene Regel: Sie ist schon weiss und steht in
+   beiden Farbmodi auf demselben farbigen Tab-Hintergrund. Die frueheren zwei Regeln fuer den
+   Archiv-KNOPF (durchscheinende Karte und Anzahl-Pille) sind mit ihm entfallen. */
 
 /* Die Ruhetag-Karte traegt ihren hellen Verlauf ueber die Klasse (frueher inline gesetzt,
    was jede Regel geschlagen haette) — hier wird er durch den Schleier ersetzt. */
@@ -3264,9 +3224,13 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 }
 .ex-sort-btn svg { width: 18px; height: 18px; stroke: var(--accent-dark); fill: none; stroke-width: 1.8; }
 /* Aktiver Filter „nur aus dem aktiven Plan": gefüllter Knopf, damit auf einen Blick
-   erkennbar ist, warum der Katalog verkürzt ist. */
-#ex-plan-filter-btn.active { background: var(--accent-dark); }
+   erkennbar ist, warum der Katalog verkürzt ist. Dasselbe beim Archiv-Knopf des Plan-Tabs
+   (26.09.2026): gefuellt heisst „Archiv ist aufgeklappt" — er hat keinen Pfeil mehr, der
+   den Zustand zeigen koennte. `fill` bleibt dort aus, das Symbol ist eine Strichzeichnung. */
+#ex-plan-filter-btn.active,
+#plans-archive-btn.active { background: var(--accent-dark); }
 #ex-plan-filter-btn.active svg { stroke: #fff; fill: #fff; }
+#plans-archive-btn.active svg { stroke: #fff; }
 
 /* Alle-ein/ausklappen-Button: Icon nach Zustand (collapsed → „ausklappen", expanded → „einklappen") */
 #ex-collapse-all-btn .ex-coll-ic-collapse { display: none; }

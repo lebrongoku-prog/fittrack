@@ -213,6 +213,12 @@
         <div class="ph-sub" id="plans-subline" style="display:none">Übersicht aller Pläne</div>
       </div>
       <div class="ph-actions">
+        <!-- Archiv der gezeigten Seite (Gympläne, Gymtage, Laufpläne). Sichtbar nur, wenn es
+             dort überhaupt archivierte Einträge gibt; gefüllt, solange das Archiv offen ist.
+             Beides setzt syncPlansArchivBtn. -->
+        <div class="ex-add-btn" id="plans-archive-btn" onclick="togglePlansArchivBtn()" style="display:none">
+          <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+        </div>
         <!-- Nur auf der Seite „Wettkämpfe": schaltet zwischen Liste und Zeitstrahl um.
              Sichtbarkeit und Symbol setzt renderPlansScreen bzw. syncWkAnsichtBtn. -->
         <div class="ex-add-btn" id="races-view-btn" onclick="toggleWettkampfAnsicht()" style="display:none"></div>
