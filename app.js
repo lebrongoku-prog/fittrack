@@ -1677,25 +1677,33 @@ function runWochenStatus() {
 // ihren Trainingstag), hier ist sie geraten. Einen kuenftigen Lauftag deshalb abzuhaken,
 // weil man vorher einmal zusaetzlich gelaufen ist, waere eine Behauptung — der Tag kann
 // noch kommen.
-function runVerschobeneTage() {
+// `mo` = Montag der gefragten Woche; ohne Angabe die LAUFENDE (23.09. → 26.09.2026 verallgemeinert,
+// damit die Wochenliste auch beim Zurueckwischen weiss, welcher Lauftag verschoben und welcher
+// wirklich verpasst ist). In einer KUENFTIGEN Woche gibt es nichts zu verschieben.
+function runVerschobeneTage(mo) {
   const p = runPlanAktiv();
   if (!p) return {};
   const geplant = p.runDays || [];
   if (!geplant.length) return {};
-  const st = runWochenStatus();
+  const heuteMo = _laufWochenMontag(new Date());
+  const woMo = mo ? _laufWochenMontag(mo) : heuteMo;
+  if (woMo.getTime() > heuteMo.getTime()) return {};
+  const von = woMo.getTime(), bis = von + 7 * 864e5 - 1;
   const proTag = {};
-  (st.gelaufen || []).forEach(l => {
+  DB.getRuns().forEach(l => {
     const [y, m, d] = l.date.split('-').map(Number);
-    const i = (new Date(y, m - 1, d).getDay() + 6) % 7;
-    proTag[i] = (proTag[i] || 0) + 1;
+    const t = new Date(y, m - 1, d).getTime();
+    if (t < von || t > bis) return;
+    proTag[(new Date(t).getDay() + 6) % 7] = (proTag[(new Date(t).getDay() + 6) % 7] || 0) + 1;
   });
   // Jeder geplante Tag mit eigenem Lauf verbraucht einen davon.
   let uebrig = Object.values(proTag).reduce((a, b) => a + b, 0);
   geplant.forEach(i => { if (proTag[i]) uebrig--; });
   if (uebrig <= 0) return {};
-  const todayIdx = (new Date().getDay() + 6) % 7;
+  // In der laufenden Woche zaehlen nur die Tage VOR heute, in einer vergangenen alle sieben.
+  const grenze = woMo.getTime() === heuteMo.getTime() ? (new Date().getDay() + 6) % 7 : 7;
   const out = {};
-  for (let i = 0; i < todayIdx && uebrig > 0; i++) {
+  for (let i = 0; i < grenze && uebrig > 0; i++) {
     if (!geplant.includes(i) || proTag[i]) continue;   // nicht geplant bzw. selbst gelaufen
     out[i] = true; uebrig--;
   }
@@ -4709,17 +4717,24 @@ function _laufWzBalken(sollKm, istKm, maxKm) {
 function laufWochenListe(mo, istAktuell, maxKm) {
   const geplant = runGeplanteTage();
   const gelaufen = runNachTag();
-  // „verschoben" und „heute" gibt es nur in der LAUFENDEN Woche: `runVerschobeneTage` rechnet
-  // ausschliesslich fuer sie, und in einer anderen Woche gibt es kein Heute.
-  const verschoben = istAktuell ? runVerschobeneTage() : {};
+  // „verschoben" rechnet seit dem 26.09.2026 fuer JEDE Woche (siehe `runVerschobeneTage`) —
+  // sonst saehe ein verschobener Lauf beim Zurueckwischen wie ein verpasster aus.
+  // „heute" gibt es weiterhin nur in der laufenden Woche.
+  const verschoben = runVerschobeneTage(mo);
   const todayIdx = istAktuell ? (new Date().getDay() + 6) % 7 : -1;
+  const heuteMs = (() => { const h = new Date(); h.setHours(0, 0, 0, 0); return h.getTime(); })();
   const zeilen = WOCHENTAGE_KURZ.map((label, i) => {
     const d = new Date(mo); d.setDate(mo.getDate() + i);
     const key = _dayKeyOf(d.getTime());
     const gepl = geplant[key], lauf = gelaufen[key];
     if (!gepl && !lauf) return '';
     const u = gepl && gepl.einheit;
-    const zustand = lauf ? 'gelaufen' : (verschoben[i] ? 'verschoben' : 'offen');
+    // VERPASST (26.09.2026, Leonard-Wunsch „hervorheben, wenn ein Lauf nicht absolviert wird"):
+    // ein geplanter Tag, der VORBEI ist, an dem nichts gelaufen wurde und der auch nicht durch
+    // einen Lauf an einem anderen Tag abgedeckt ist. HEUTE zaehlt NICHT dazu — der Tag laeuft
+    // noch; kuenftige Tage bleiben „offen".
+    const verpasst = !lauf && !verschoben[i] && gepl && d.getTime() < heuteMs;
+    const zustand = lauf ? 'gelaufen' : verschoben[i] ? 'verschoben' : verpasst ? 'verpasst' : 'offen';
     const vorgabe = u ? [u.km ? fmtKm(u.km) : '', u.minutes ? fmtMin(u.minutes) : ''].filter(Boolean).join(' · ') : '';
     const soll = !gepl ? '<span class="lauf-wz-leer">Nicht geplant</span>'
       : vorgabe || '<span class="lauf-wz-leer">Ohne Vorgabe</span>';
@@ -4728,7 +4743,7 @@ function laufWochenListe(mo, istAktuell, maxKm) {
     // Feld hinter der Scheibe, das die Wochenplan-Karte fuer den heutigen Tag nutzt
     // (`.ppv-col.today`, Leonard-Wunsch).
     const ist = lauf ? (lauf.art === 'hiit' ? `HIIT ${fmtMin(lauf.minutes)}` : `${fmtKm(lauf.km)} gelaufen`)
-      : verschoben[i] ? 'verschoben' : '';
+      : verschoben[i] ? 'verschoben' : verpasst ? 'nicht gelaufen' : '';
     // Die Zeile ist eine WAAGERECHTE Reihe: links die Scheibe, rechts ein Block aus Angaben und
     // Laengenbalken (23.09.2026, Leonard-Wunsch). Dadurch steht die Scheibe mittig zu BEIDEM;
     // bis dahin lag sie in derselben Ebene wie die Angaben und sass damit ueber dem Balken.
@@ -4738,7 +4753,7 @@ function laufWochenListe(mo, istAktuell, maxKm) {
       <div class="lauf-wz-rechts">
         <div class="lauf-wz-oben">
           <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${soll}${zone}</div></div>
-          ${ist ? `<span class="lauf-wz-ist">${ist}</span>` : ''}
+          ${ist ? `<span class="lauf-wz-ist${verpasst ? ' verpasst' : ''}">${ist}</span>` : ''}
           {{CHEV}}
         </div>
         ${_laufWzBalken(u && u.km, lauf && lauf.km, maxKm)}

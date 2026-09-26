@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v394**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v395**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1957,7 +1957,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Die CSS-Regeln MUESSEN hinter `.ppv-col.training .ppv-wd` stehen, und die
   `.run-plan`-Fassung braucht ihre eigene Zeile (die dortige Trainingsregel traegt eine
   Klasse mehr).
-  **BEIM LAUFEN ist die Zuordnung GEZAEHLT, nicht erkannt** (`runVerschobeneTage`): Ein Lauf
+  **BEIM LAUFEN ist die Zuordnung GEZAEHLT, nicht erkannt** (`runVerschobeneTage`, seit dem
+  26.09.2026 mit optionalem Montag fuer eine beliebige Woche): Ein Lauf
   kommt aus der Google-Tabelle und weiss NICHT, zu welchem geplanten Lauftag er gehoert —
   das Modell kennt nur `runDays: [0..6]` und die gelaufenen Daten. Laeufe an nicht geplanten
   Tagen decken deshalb offene Lauftage ab, der frueheste zuerst, und BEWUSST nur
@@ -2500,6 +2501,28 @@ Die Scheibe traegt DIESELBEN Zustaende wie der Wochentagskreis der Karte daruebe
 (#4ADE80) = gelaufen, hellgrau mit Ring = geplant und offen, grau = verschoben
 (`runVerschobeneTage`). Die Vorgabe kommt aus `runGeplanteTage` — derselben Quelle wie die
 Kennzahl „geplant" daneben.
+**EIN VIERTER ZUSTAND: VERPASST** (26.09.2026, Leonard-Wunsch „hervorheben, wenn ein Lauf nicht
+absolviert wird"). Ein geplanter Tag, der VORBEI ist, an dem nichts gelaufen wurde und der auch
+nicht durch einen Lauf an einem anderen Tag abgedeckt ist, steht in ROT: Scheibe in `--red-bg`
+mit 2px-Ring und Schrift in `--red`, rechts „nicht gelaufen". Dieselbe Form wie „offen", nur in
+der Warnfarbe — die App nutzt Rot schon fuer die trainingsfreie Woche im Kalender und fuers
+Loeschen.
+HEUTE und KUENFTIGE Tage bleiben „offen": Dort ist noch nichts versaeumt. Gerechnet wird ueber
+das DATUM der Zeile gegen Mitternacht heute, nicht ueber den Wochentagsindex — so stimmt es auch
+in den Wochen, die man erwischt, wenn man zurueckwischt.
+Im TRANSPARENZ-MODUS bleibt Rot rot (heller: `#FCA5A5` auf 22-%-Weiss). Es ist eine Warnung,
+keine Sportfarbe — dieselbe Ausnahme wie beim Wettkampftag und der roten Woche im Kalender.
+DAFUER RECHNET `runVerschobeneTage` JETZT FUER JEDE WOCHE (`mo` als optionaler Parameter, der
+Montag der gefragten Woche; ohne Angabe die laufende). Vorher war sie auf die laufende Woche
+verdrahtet (`runWochenStatus`) — beim Zurueckwischen haette ein VERSCHOBENER Lauf dort als
+verpasst dagestanden. In einer KUENFTIGEN Woche gibt sie nichts zurueck, in der laufenden zaehlen
+wie bisher nur die Tage VOR heute, in einer vergangenen alle sieben.
+GEMESSEN (heute Samstag, Lauftage Mo/Di/Mi/Sa/So, Laeufe Mo geplant und Do ungeplant): diese
+Woche Mo gelaufen · Di verschoben · Mi verpasst · Do gelaufen · Sa offen (heute!) · So offen;
+zwei Wochen ohne Laeufe komplett verpasst; kuenftige Woche komplett offen; ein zusaetzlicher
+Lauf am Do der LETZTEN Woche macht dort Mo verschoben und laesst die laufende Woche unveraendert.
+Farben hell rgb(229,62,62) auf rgb(255,234,234), Glas #FCA5A5 auf 22-%-Weiss; Querformat ohne
+Ueberlauf; keine Konsolenfehler.
 **JEDE ZEILE HAT EINEN LAENGENBALKEN** (`_laufWzBalken`, 22.09.2026, Leonard-Entscheidung
 „Variante A" gegen eine kurze Saeule in der Zeile und einen Balken hinter dem Text): eine 4px
 hohe Leiste UNTER den Angaben, eingerueckt auf die Textspalte (30px Scheibe + 10px Abstand), in

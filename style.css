@@ -2668,11 +2668,17 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
 .lauf-wz-tag.gelaufen   { background: #4ADE80; color: #fff; }
 .lauf-wz-tag.offen      { background: var(--card2); box-shadow: inset 0 0 0 2px #4ADE80; color: #22A05B; }
 .lauf-wz-tag.verschoben { background: var(--card2); color: var(--text2); }
+/* VERPASST (26.09.2026, Leonard-Wunsch): ein geplanter Lauftag, der vorbei ist und nicht
+   gelaufen wurde. Dieselbe Form wie „offen", nur in Rot — die App kennt ROT als Warnfarbe
+   (Woche ohne Training im Kalender, Loeschen). Rechts steht dazu „nicht gelaufen".
+   HEUTE und kuenftige Tage bleiben „offen": Dort ist noch nichts versaeumt. */
+.lauf-wz-tag.verpasst   { background: var(--red-bg); box-shadow: inset 0 0 0 2px var(--red); color: var(--red); }
 .lauf-wz-mitte { flex: 1; min-width: 0; }
 .lauf-wz-soll { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: var(--fs-text); font-weight: 600; color: var(--text); }
 .lauf-wz-leer { font-weight: 400; color: var(--text3); }
 .lauf-wz-zone { font-size: var(--fs-etikett); font-weight: 700; color: #166534; background: #DCFCE7; border-radius: 999px; padding: 1px 7px; }
 .lauf-wz-ist { flex-shrink: 0; font-size: var(--fs-neben); font-weight: 600; color: var(--text2); white-space: nowrap; }
+.lauf-wz-ist.verpasst { color: var(--red); }
 /* Transparenz-Modus: keine Sportfarben, dieselben Werte wie die Wochentagskreise der
    Einzelkarten (gelaufen weiss gefuellt, offen weiss umrandet). Der Wochentag im weissen
    Kreis bleibt farbig — `--accent-dark` ist auf der Glas-Karte selbst weiss, deshalb fest
@@ -2680,6 +2686,10 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
 html.glas .screen:not(#screen-mehr) .lauf-wz-tag.gelaufen   { background: rgba(255,255,255,.92); color: #059669; }
 html.glas .screen:not(#screen-mehr) .lauf-wz-tag.offen      { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 2px rgba(255,255,255,.92); color: #fff; }
 html.glas .screen:not(#screen-mehr) .lauf-wz-tag.verschoben { background: rgba(255,255,255,.22); color: rgba(255,255,255,.85); }
+/* Rot BLEIBT rot im Transparenz-Modus — wie die trainingsfreie Woche im Kalender; es ist eine
+   Warnung, keine Sportfarbe. Nur heller, sonst geht es im Farbverlauf unter. */
+html.glas .screen:not(#screen-mehr) .lauf-wz-tag.verpasst   { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 2px #FCA5A5; color: #FCA5A5; }
+html.glas .screen:not(#screen-mehr) .lauf-wz-ist.verpasst   { color: #FCA5A5; }
 html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(255,255,255,.22); color: #fff; }
 .lauf-leer { font-size: var(--fs-neben); color: var(--text3); text-align: center; padding: 10px 0; }
 /* Eingeklappte Plan-Karte: wie eine Listenzeile, aufgeklappt wird sie zum Formular. */
