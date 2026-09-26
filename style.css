@@ -763,11 +763,10 @@ body.theme-plans .hist-action-dd {
      bei 13px 87px und passte mit 10px Polster (86px) um EIN Pixel nicht — der Browser brach
      es dann mitten im Wort („Shoulder/Le | gs"), weil `break-word` die erste Zeile fuellt,
      statt am Schraegstrich zu trennen. Senkrecht bleibt es bei 10px. */
-  /* OBEN 15 statt 10px seit dem 26.09.2026: Die 5px sind der Platz fuer die Farbleiste der
-     Muskelgruppen. Sie gelten fuer ALLE Kacheln, auch die ohne Angabe — sonst saessen die
-     Namen in einer Rasterzeile verschieden hoch. Die Kachel bleibt bei 113px (`min-height`):
-     Auch mit zweizeiligem Namen misst der Inhalt nur rund 103px. */
-  padding: 15px 8px 10px;
+  /* OBEN 15 statt 10px (Platz fuer die Leiste), UNTEN 22 statt 10px (Platz fuer die
+     Muskelgruppen-Punkte, 26.09.2026). Beides gilt fuer ALLE Kacheln, auch die ohne Leiste und
+     ohne Punkte — sonst saessen Namen und Kennzahlen in einer Rasterzeile verschieden hoch. */
+  padding: 15px 8px 22px;
   display: flex; flex-direction: column; gap: 2px;
   align-items: stretch; justify-content: flex-start;
   /* Beschneidet die Farbleiste auf den Eckenradius der Kachel — nur so laeuft sie bis an beide
@@ -775,12 +774,25 @@ body.theme-plans .hist-action-dd {
      (`overflow` beschneidet Kinder, nicht den eigenen Schatten). */
   overflow: hidden;
 }
-/* FARBLEISTE nach Muskelgruppen (26.09.2026, Leonard-Entscheidung „Variante A"): 5px ueber die
-   ganze Kartenbreite, je Gruppe ein gleich breiter Abschnitt. Den Verlauf setzt das JS inline
-   (`_mgLeiste`) — die Farben haengen am Tag, nicht an der Regel.
-   Sie bleibt auch im TRANSPARENZ-MODUS farbig: Muskelgruppenfarben sind eine Kategorie, keine
-   Sportfarbe — dieselbe Ausnahme wie der Farbpunkt im Uebungskatalog. */
-.pld-leiste { position: absolute; left: 0; right: 0; top: 0; height: 5px; display: block; }
+/* LEISTE = „Im aktuellen Gymplan" (26.09.2026, Leonard-Wunsch): 5px ueber die ganze
+   Kartenbreite im Gym-Gruen. Sie hat den Punkt unten rechts (`.pld-dot`) abgeloest — auf einen
+   Blick ueber das ganze Raster sieht man damit, welche Tage der laufende Plan nutzt.
+   Am selben Tag war sie kurz die Anzeige der MUSKELGRUPPEN (v397, Variante A); die stehen
+   jetzt als Punkte unten links (`.pld-mg`).
+   Dasselbe Gruen wie die trainierten Kaestchen im Kalender und die Gym-Kreise der
+   Wochenplan-Karten — und wie der abgeloeste Punkt. */
+.pld-leiste { position: absolute; left: 0; right: 0; top: 0; height: 5px; display: block; background: #0F766E; }
+/* MUSKELGRUPPEN als Punkte unten links (26.09.2026, Leonard-Entscheidung „Variante C" aus vier
+   gezeichneten Vorschlaegen): ein 7px-Punkt je Gruppe, dieselbe Form wie der fruehere
+   Plan-Punkt. Als einzige der vier Varianten laesst sie die Gruppen ZAEHLEN.
+   Die Farben setzt das JS inline (`_mgPunkte`) — sie haengen am Tag, nicht an der Regel.
+   ABSOLUT gesetzt, damit sie dem Namen keine Breite nehmen; den Platz macht das untere
+   Kartenpolster frei (siehe `.pld-kachel`).
+   Sie bleiben im TRANSPARENZ-MODUS farbig: Muskelgruppenfarben sind eine Kategorie, keine
+   Sportfarbe — dieselbe Ausnahme wie der Farbpunkt im Uebungskatalog.
+   SIEBEN Punkte messen 7x7 + 6x3 = 67px und passen damit in die 93px Innenbreite. */
+.pld-mg { position: absolute; left: 8px; bottom: 9px; display: flex; gap: 3px; }
+.pld-mg > i { width: 7px; height: 7px; border-radius: 50%; display: block; }
 /* Auf 81px Textbreite passt kein 16px-Name mehr in eine Zeile. 14px und hoechstens zwei
    Zeilen, danach Auslassungspunkte — `-webkit-line-clamp` ist dafuer das einzige Mittel,
    das MITTEN in der zweiten Zeile abschneidet statt die dritte anzuhaengen. */
@@ -788,22 +800,24 @@ body.theme-plans .hist-action-dd {
   font-size: var(--fs-text); line-height: 1.3;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-/* `.pd-name` (der Balken vor dem Namen) ist `inline-block` — ein Wort, das breiter ist als
-   die Kachel, macht damit die BOX breiter, statt umzubrechen: „Shoulder/Legs" lief auf
-   375px sichtbar ueber den Kartenrand hinaus. Als Block bricht der Text normal um, und
-   `overflow-wrap: anywhere` trennt notfalls INNERHALB eines Wortes — auf 81px Textbreite
-   passt sonst kein einziger langer Tagname. */
-/* `.pd-name` bringt neben dem 3px-Balken noch 9px Innenabstand mit — zusammen 12px, die dem
-   Text fehlen. In der schmalen Kachel sind das 81 statt 93px, und „Shoulder/Legs" (91px bei
-   13px Schrift) brach dadurch mitten im Wort um. Mit 5px Abstand und 12px Schrift bleiben
-   85px fuer den Text.
+/* `.pd-name` ist `inline-block` — ein Wort, das breiter ist als die Kachel, macht damit die
+   BOX breiter, statt umzubrechen: „Shoulder/Legs" lief auf 375px sichtbar ueber den Kartenrand
+   hinaus. Als Block bricht der Text normal um, und `overflow-wrap: break-word` trennt notfalls
+   INNERHALB eines Wortes.
+   SEIT DEM 26.09.2026 stehen dem Namen die vollen 93px zur Verfuegung: Der 3px-Balken und sein
+   9px-Einzug sind entfallen (siehe `.pd-name`), vorher waren es 85px.
    UMBRUCH: `break-word` trennt nur, wenn ein Wort allein nicht auf eine Zeile passt. Seit die
    Kachel 113px hoch ist (20% mehr, 07.09.2026), ist eine zweite Zeile kein Problem mehr —
    vorher war `normal` noetig und ein zu langer Name wurde schlicht abgeschnitten.
-   Die ueblichen Namen passen bei 14,4px weiterhin einzeilig („Ganzkörper" 82px von 85px);
    „Shoulder/Legs" bricht dank des `<wbr>` aus dem JS sauber nach dem Schraegstrich. */
 .pld-kachel .pd-name {
-  display: block; overflow-wrap: break-word; padding-left: 5px;
+  display: block; overflow-wrap: break-word;
+  /* `.pd-name` bringt `line-height: 1.45` mit und schlug damit die 1.3 der Zeile darueber.
+     Bei einem ZWEIZEILIGEN Namen kostete das 4.5px — zusammen mit dem neuen unteren Polster
+     fuer die Muskelgruppen-Punkte (22px) waere die Kachel auf 118px gewachsen, waehrend die
+     einzeiligen bei 113 blieben; in einer Rasterzeile mit beidem sprang die Hoehe.
+     Mit `inherit` gilt wieder die 1.3, die die Kachel ohnehin vorgibt. */
+  line-height: inherit;
   /* Fuer den Ausnahmefall eines sehr langen Einzelworts („Ganzkörperkrafttraining"):
      Silbentrennung nach deutschen Regeln — moeglich, weil `<html lang="de">` gesetzt ist.
      Sie greift NUR, wenn das Wort sonst nicht passt, und trennt mit Bindestrich an einer
@@ -813,17 +827,10 @@ body.theme-plans .hist-action-dd {
      einzelnen zu breiten Wort. */
   -webkit-hyphens: auto; hyphens: auto;
 }
-/* Der Punkt sitzt UNTEN rechts, nicht oben: Oben nahm er dem Namen 12px, und damit blieben
-   genau 74px — „Ganzkörper" misst bei 13px ebenfalls 74px und brach dadurch mitten im Wort
-   um. Unten steht er neben der kurzen Meta-Zeile („9 Sätze", rund 45px) und kostet nichts. */
 .pld-kachel .plan-list-meta { font-size: var(--fs-neben); line-height: 1.35; margin-top: auto; }
-/* „Im aktuellen Plan" als PUNKT statt als Chip — der Text misst bei 11px rund 95px und
-   passte nicht. Absolut gesetzt, damit er dem Namen keine Breite nimmt. */
-.pld-dot {
-  position: absolute; bottom: 12px; right: 10px;
-  width: 7px; height: 7px; border-radius: 50%;
-  background: #0F766E;
-}
+/* `.pld-dot` („Im aktuellen Plan" als Punkt unten rechts) ist am 26.09.2026 ENTFALLEN — die
+   Zugehoerigkeit zeigt jetzt die Leiste oben, die Punkte unten links gehoeren den
+   Muskelgruppen. */
 
 /* Status-Chips für Pläne */
 .plan-status-chip {
@@ -1675,23 +1682,26 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    Rot/Orange/Cyan/Braun/Violett) belegt, damit Trainingstage eindeutig erkennbar bleiben).
    Ersetzt die frühere Großbuchstaben-Darstellung. Wird NUR in Standalone-Kontexten
    (Listen-Zeilen, Gruppen-Header) verwendet — inline in Sätzen/Toasts steht der Name plain. */
-/* Trainingstag-Name (Helper pd()): kräftiger Text mit schmalem Balken links statt der
-   früheren pinken Pille. Keine Flächenfarbe → funktioniert in jedem Tab-Theme.
-   Kein border-radius, weil der Balken eine einseitige Kante ist. */
+/* Trainingstag-Name (Helper pd()): kraeftiger Text, sonst nichts.
+   DER 3px-BALKEN LINKS IST AM 26.09.2026 ENTFALLEN (Leonard-Wunsch, ausdruecklich UEBERALL in
+   der App — alle sechs Stellen: Gymtage-Kacheln, Trainingstage-Liste im Plan-Detail, Auswahl-
+   Dialog, Kopfzeile der laufenden Einheit und Abschlussansicht). Mit ihm faellt sein 9px-Einzug
+   weg; die Namen stehen jetzt buendig am linken Rand ihres Kastens.
+   Vorgeschichte: Er war der Ersatz fuer eine pinke Pille und trug in den beiden
+   Gruppen-Ueberschriften des Uebungen-Tabs eine eigene Farbe — die zwei Regeln dafuer setzen
+   jetzt nur noch die Schriftfarbe. */
 .pd-name {
   display: inline-block;
-  border-left: 3px solid var(--text);
   color: var(--text);
   font-weight: 600;
   letter-spacing: 0.1px;
-  padding: 0 0 0 9px;
   line-height: 1.45;
   vertical-align: baseline;
 }
-/* Übungen-Tab: Gruppen-Überschriften stehen direkt auf dem farbigen Tab-Hintergrund,
-   dort muss der Name hell sein. Im Add-Übung-Modal steht dieselbe Klasse auf Weiß. */
-.ex-group-title .pd-name { color: #fff; border-left-color: rgba(255,255,255,0.8); }
-.sheet-ex-group .ex-group-title .pd-name { color: var(--text); border-left-color: var(--text); }
+/* Die beiden Sonderregeln fuer `.ex-group-title .pd-name` (Gruppen-Ueberschriften hell auf dem
+   Tab-Hintergrund, dunkel im Add-Uebung-Modal) sind am 26.09.2026 ENTFALLEN: Beide Stellen
+   bauen ihre Ueberschrift laengst ohne `pd()` (Farbpunkt + Name + Anzahl), die Kombination
+   konnte also gar nicht mehr greifen. Aufgefallen beim Entfernen des Balkens. */
 
 /* ─── Util ─── */
 .hidden { display: none !important; }

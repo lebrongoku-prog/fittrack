@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v397**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v398**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -469,7 +469,19 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   laeuft unveraendert daneben. ACHTUNG: HTML5-Drag gibt es auf iOS ohnehin nicht — das Sortieren
   war und ist eine Maus-Funktion. Der Griff im Plan-Detail-Modal (`.plan-ex-handle`) ist am
   13.09.2026 mit diesem Modal entfallen.
-- **Trainingstag-Namen** = kräftiger Text mit 3px-Balken links (`.pd-name`, KEINE Flächenfarbe) via Helper `pd(name)`. Sonderfall `.ex-group-title .pd-name`: im Übungen-Tab stehen die Gruppentitel auf dem farbigen Tab-Hintergrund → dort hell; im Add-Übung-Modal (`.sheet-ex-group`) wieder dunkel.
+- **Trainingstag-Namen** = kraeftiger Text, sonst nichts (`.pd-name` via Helper `pd(name)`).
+  **DER 3px-BALKEN LINKS IST AM 26.09.2026 ENTFALLEN** (Leonard-Wunsch, ausdruecklich UEBERALL
+  in der App). Er war der Ersatz fuer eine fruehere pinke Pille; mit ihm faellt sein 9px-Einzug
+  weg, die Namen stehen jetzt buendig am linken Rand ihres Kastens.
+  BETROFFEN sind alle sechs Aufrufstellen von `pd()`: Gymtage-Kacheln, Trainingstage-Liste im
+  Plan-Detail (normale Liste und Loesch-Modus), Auswahl-Dialog „Trainingstag waehlen",
+  Kopfzeile der laufenden Einheit und Abschlussansicht. KEINE der umgebenden Klassen
+  (`.pdr-name`, `.day-pick-name`, `.sum-day`, `.sess-v2-name`, `.plan-list-name`) rechnete mit
+  dem Einzug — sie setzen nur Schriftgroesse und -staerke (geprueft).
+  MIT ENTFALLEN sind die beiden Sonderregeln `.ex-group-title .pd-name` (hell auf dem
+  Tab-Hintergrund) und `.sheet-ex-group .ex-group-title .pd-name` (dunkel im Dialog): Beide
+  Gruppen-Ueberschriften bauen ihren Titel laengst ohne `pd()` (Farbpunkt + Name + Anzahl), die
+  Kombination konnte also gar nicht mehr greifen. Sie waren tot, bevor der Balken fiel.
 - **Zugeklappte Uebungskarte** zeigt nur den Namen: `.aex-v2-last` und `.aex-cmp-pr` sind ausgeblendet, und
   `.aex-v2-info` bekommt `min-height:32px` mit zentriertem Inhalt, damit der Name auf einer Linie mit der
   Nummernscheibe steht. ZUGEKLAPPT richtet der Kopf mittig aus (`.aex-v2.collapsed .aex-v2-header
@@ -1294,27 +1306,37 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   OHNE Neuaufbau der Seite — nur die Chip-Reihe wird neu gezeichnet; ein Re-Render naehme dem
   Namensfeld darueber seine noch nicht gespeicherte Eingabe (dieselbe Regel wie im
   Laufplan-Detail). GEMESSEN: Reihenfolge stimmt, Name bleibt beim Umschalten stehen.
-  **DIE KACHEL TRAEGT SIE ALS FARBLEISTE OBEN** (`_mgLeiste`, `.pld-leiste`, 26.09.2026,
-  Leonard-Entscheidung „Variante A" aus vier gezeichneten Vorschlaegen — Namensbalken farbig,
-  Punkte unten und getoente Kachel waren die anderen). Ein 5px-Streifen ueber die ganze
-  Kartenbreite, in GLEICH BREITE Abschnitte je Gruppe geteilt, mit harten Farbwechseln (zwei
-  Haltepunkte je Farbe) — es sind getrennte Kategorien, keine Skala. Der `title` nennt sie
-  ausgeschrieben („Brust · Schultern · Trizeps").
+  **DIE KACHEL ZEIGT SIE ALS PUNKTE UNTEN LINKS** (`_mgPunkte`, `.pld-mg`, 26.09.2026,
+  Leonard-Entscheidung „Variante C" aus vier gezeichneten Vorschlaegen — Farbleiste oben,
+  Namensbalken farbig und getoente Kachel waren die anderen). Ein 7px-Punkt je Gruppe in ihrer
+  Farbe; als einzige der vier Varianten laesst sie die Gruppen ZAEHLEN. Der `title` nennt sie
+  ausgeschrieben („Brust · Schultern · Trizeps"). Ohne Angabe keine Punkte.
+  Sieben Punkte messen 7x7 + 6x3 = 67px und passen damit in die 93px Innenbreite.
+  ZWISCHENSTAND vom selben Tag: v397 war „Variante A" — ein 5px-Streifen oben in Abschnitten je
+  Gruppe. Die Leiste GIBT ES WEITER, sie hat nur die Aufgabe gewechselt (siehe naechster Punkt).
+  **DIE LEISTE OBEN ZEIGT JETZT „IM AKTUELLEN GYMPLAN"** (`.pld-leiste`, 26.09.2026,
+  Leonard-Wunsch): 5px ueber die ganze Kartenbreite im Gym-Gruen #0F766E — dieselbe Farbe wie
+  die trainierten Kaestchen im Kalender und die Gym-Kreise der Wochenplan-Karten. Sie hat den
+  fruehern PUNKT unten rechts (`.pld-dot`, ersatzlos entfallen) abgeloest: Ueber das ganze
+  Raster sieht man damit auf einen Blick, welche Tage der laufende Plan nutzt.
   DREI Dinge, die daran haengen:
-  1. Das obere Polster der Kachel ist 15 statt 10px, und zwar bei ALLEN Kacheln — auch denen
-     OHNE Angabe, sonst saessen die Namen in einer Rasterzeile verschieden hoch. Die Kachel
-     bleibt bei 113px (`min-height`); auch mit zweizeiligem Namen misst der Inhalt nur rund
-     103px.
-  2. `.pld-kachel` traegt jetzt `overflow: hidden` — nur so folgt die Leiste dem Eckenradius
-     und laeuft bis an beide Kanten. Der Schatten der Kachel bleibt heil: `overflow`
-     beschneidet Kinder, nicht den eigenen Schatten.
-  3. Sie bleibt im TRANSPARENZ-MODUS farbig. Muskelgruppenfarben sind eine Kategorie, keine
-     Sportfarbe — dieselbe Ausnahme wie der Farbpunkt im Uebungskatalog (siehe „Keine
-     Sportfarben im Transparenz-Modus", das gilt fuer Wochenplan- und Kalenderkarten).
-  GEMESSEN (375px): alle sechs Kacheln 113px hoch, Name in jeder bei 15px, Leiste 109x5px bei
-  x=0; ein Tag ohne Angabe hat keine Leiste; archivierte Kacheln tragen sie ebenso; Glas-Modus
-  Karte 12-%-Weiss mit farbiger Leiste; Querformat Kachel und Leiste je 323px; keine
-  Konsolenfehler.
+  1. Das Kartenpolster ist OBEN 15 statt 10px (Platz fuer die Leiste) und UNTEN 22 statt 10px
+     (Platz fuer die Punkte) — beides bei ALLEN Kacheln, auch denen ohne Leiste und ohne
+     Punkte, sonst saessen Namen und Kennzahlen in einer Rasterzeile verschieden hoch.
+  2. `.pld-kachel` traegt `overflow: hidden` — nur so folgt die Leiste dem Eckenradius und
+     laeuft bis an beide Kanten. Der Schatten bleibt heil: `overflow` beschneidet Kinder,
+     nicht den eigenen Schatten.
+  3. `.pld-kachel .pd-name` setzt `line-height: inherit`. `.pd-name` brachte 1.45 mit und
+     schlug damit die 1.3 der Zeile darueber; bei einem ZWEIZEILIGEN Namen kostete das 4.5px,
+     und mit dem neuen unteren Polster waere die Kachel auf 118px gewachsen, waehrend die
+     einzeiligen bei 113 blieben — in einer Rasterzeile mit beidem sprang die Hoehe.
+  Leiste und Punkte bleiben im TRANSPARENZ-MODUS farbig: Muskelgruppenfarben sind eine
+  Kategorie, keine Sportfarbe — dieselbe Ausnahme wie der Farbpunkt im Uebungskatalog.
+  GEMESSEN (375px): alle sechs Kacheln 113px, Name in jeder bei 15px und jetzt buendig bei 8px
+  (vorher 16px, der Balken ist weg), Leiste 109x5px in rgb(15,118,110) nur auf den Tagen des
+  laufenden Plans, Punkte 1–7 Stueck bei x=8 mit 6px Luft zur Kennzahl, ein Tag ohne Angabe
+  ohne Punkte; Querformat Kachel und Leiste je 323px; Glas-Modus Karte 12-%-Weiss mit farbiger
+  Leiste und farbigen Punkten; keine Konsolenfehler.
 - **Gymtage stehen als DREIER-RASTER, nicht als volle Zeilen** (`#libdays-list` als Grid mit
   `repeat(3, minmax(0, 1fr))`, Leonard-Wunsch 07.09.2026). Das Raster sitzt auf der LISTE, die
   Kacheln (`.pld-kachel`) verlieren dafuer ihren eigenen Seitenrand — nur so sind alle drei
