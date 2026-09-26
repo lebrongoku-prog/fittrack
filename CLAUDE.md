@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v398**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v399**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1294,10 +1294,40 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 - **JEDER GYMTAG HAT MUSKELGRUPPEN** (`day.muscles`, 26.09.2026, Leonard-Wunsch). In der
   Detailansicht steht zwischen „Name des Trainingstags" und „Notizen" eine Zeile Chips
   (`.mg-wahl-reihe` / `.mg-wahl`, `_mgWahlZeichnen` + `toggleLibDayMuscle`), einer je Gruppe aus
-  `MUSCLE_ORDER`. Bauform wie die Lauftage im Laufplan-Detail, aber UMBRECHEND — sieben Chips
-  passen auf 375px nicht in eine Zeile (gemessen: zwei Reihen, 62px hoch).
+  `MUSCLE_ORDER`. Bauform wie die Lauftage im Laufplan-Detail.
   Ein angeschalteter Chip traegt die FARBE seiner Gruppe (`MUSCLE_META[].color`), inline gesetzt,
   weil sie je Chip verschieden ist.
+  **ALLE SIEBEN STEHEN IN EINER ZEILE** (26.09.2026, Leonard-Entscheidung „Variante B" aus vier
+  gezeichneten Vorschlaegen — Kuerzel „BRU RÜC SCH", gekuerzte Namen und reine Farbfelder waren
+  die anderen). Bis dahin brach die Reihe um (zwei Zeilen, 62px hoch): Die vollen Namen messen
+  bei 13px zusammen 483px, die Formularzeile ist 323px breit. DREI Dinge zusammen bringen sie
+  unter, keines davon reicht allein:
+    1. Schrift 11px (`--fs-etikett` statt `--fs-neben`) — die Namen messen dann 264.1px.
+    2. Seitliches Polster 3 statt 10px, Luecke 3 statt 4px.
+    3. Die Reihe tritt mit `margin: 0 -10px` aus dem 14px-Polster der Formularzeile heraus und
+       hat damit 343 statt 323px. Sie steht dadurch 4px vom Kartenrand und sichtbar weiter
+       aussen als Namensfeld und Notizen darueber (14px) — der Preis der vollen Namen.
+  Die Chips messen zusammen 320.1px, mit den sechs Luecken 338.1px; die uebrigen 4.9px bekommen
+  sie ueber `flex: 1 1 auto` zu gleichen Teilen (je +0.7px), damit die Reihe links UND rechts mit
+  4px endet. Linksbuendig laege die Luft ganz rechts (4 zu 8.9px); `space-between` riss die Chips
+  im Querformat auf 124px Abstand auseinander. NICHT `flex: 1 1 0` wie bei den Lauftagen: Gleich
+  breite Chips waeren je 46px, „Schultern" braucht 61px.
+  Das SENKRECHTE Polster steigt auf 8px — mit der kleineren Schrift waere der Chip sonst nur
+  27px hoch und mit feuchten Haenden schlecht zu treffen (jetzt 31px, vorher 29px).
+  `flex-wrap: nowrap` plus `min-width: 0` und „…": Auf einem schmaleren Geraet (iPhone SE, 320px)
+  schrumpfen die Chips und kuerzen, statt in eine zweite Zeile zu rutschen; der volle Name steht
+  dann im `title` (den setzt das JS seither an jedem Chip).
+  GEMESSEN (375px): eine Zeile, 4px links und rechts, Luecken 3px, nichts gekuerzt, Chips 31px
+  hoch; Querformat 1100px eine Zeile, Chips fuellen die Reihe mit 3px Luecke; 320px eine Zeile
+  mit „…"; Glas-Modus unveraendert (die Karte bleibt weiss, die Chips farbig).
+  **DIE KARTE MACHT DIE TIPP-ANIMATION NICHT MEHR MIT** (26.09.2026, Leonard-Wunsch): Ein Tipp
+  auf einen Chip stauchte die ganze Karte „Trainingstag-Daten" (`.mehr-card:active
+  { transform: scale(0.995) }`). Sie traegt jetzt `plan-form-card` wie die beiden Plan-Formulare
+  — dieselbe Ueberlegung wie dort (04.09.2026): Die Karte IST das Bearbeitungsformular.
+  Gilt damit fuer die GANZE Karte, also auch fuer Namensfeld und Notizen; die Kachel in der
+  Liste behaelt ihre Animation, dort oeffnet der Tipp ja die Detailseite.
+  GEMESSEN mit echtem Tastendruck: Die Karte trifft `:active`, `transform` bleibt `none`, die
+  Breite bleibt bei 351px.
   GESPEICHERT in der Reihenfolge von `MUSCLE_ORDER`, NICHT in der Tippreihenfolge: Zwei Tage mit
   denselben Gruppen haben so dieselbe Liste — davon haengt die Faerbung der Kacheln ab.
   KEINE Ableitung aus den Uebungen des Tages (Leonard-Wunsch „basierend auf der Angabe"): Ein

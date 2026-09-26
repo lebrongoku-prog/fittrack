@@ -7910,6 +7910,7 @@ function renderLibDayDetail() {
 
 // ── MUSKELGRUPPEN EINES GYMTAGS (26.09.2026, Leonard-Wunsch) ─────────────────────────
 // Eine Zeile Chips zwischen „Name des Trainingstags" und „Notizen", einer je Muskelgruppe.
+// Alle sieben stehen in EINER Zeile (26.09.2026) — wie das geht, steht bei `.mg-wahl` im CSS.
 // Dieselbe Bauart wie die Lauftage im Laufplan-Detail (`.lp-tagwahl-reihe`) — ein Tipp schaltet
 // die Gruppe an oder aus, mehrere sind erlaubt. Ein angeschalteter Chip traegt die FARBE seiner
 // Gruppe (`MUSCLE_META[].color`), dieselbe wie der Punkt im Uebungskatalog.
@@ -7928,7 +7929,8 @@ function _mgWahlZeichnen(day) {
     const meta = MUSCLE_META[m];
     const stil = an.has(m) ? ` style="background:${meta.color};border-color:${meta.color}"` : '';
     return `<button type="button" class="mg-wahl${an.has(m) ? ' an' : ''}"${stil}
-             onclick="toggleLibDayMuscle('${m}')">${meta.name}</button>`;
+             title="${escapeHtml(meta.name)}"
+             onclick="toggleLibDayMuscle('${m}')">${escapeHtml(meta.name)}</button>`;
   }).join('');
 }
 function toggleLibDayMuscle(m) {

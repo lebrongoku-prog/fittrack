@@ -2800,14 +2800,35 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
 }
 /* Sieben Tage in EINER Zeile — `1 1 0` statt `1` mit Mindestbreite, sonst bricht „So" um. */
 /* MUSKELGRUPPEN-CHIPS im Gymtag-Detail (26.09.2026): dieselbe Bauform wie die Lauftage
-   darueber, aber UMBRECHEND — sieben Gruppen passen auf 375px nicht in eine Zeile
-   („Schultern" allein misst rund 70px). Ein angeschalteter Chip traegt die Farbe seiner
-   Gruppe; die setzt das JS inline, weil sie je Chip verschieden ist. */
-.mg-wahl-reihe { display: flex; gap: 4px; flex-wrap: wrap; }
+   darueber. Ein angeschalteter Chip traegt die Farbe seiner Gruppe; die setzt das JS inline,
+   weil sie je Chip verschieden ist.
+   ALLE SIEBEN IN EINER ZEILE (26.09.2026, Leonard-Entscheidung „Variante B" aus vier
+   gezeichneten Vorschlaegen — Kuerzel, gekuerzte Namen und reine Farbfelder waren die
+   anderen). Die vollen Namen messen bei 13px zusammen 483px, die Formularzeile ist 323px
+   breit; drei Dinge zusammen bringen sie unter:
+     1. Schrift 11px (`--fs-etikett` statt `--fs-neben`) — Namen zusammen 264.1px.
+     2. Seitliches Polster 3 statt 10px und 3px Luecke.
+     3. Die Reihe tritt 10px aus dem 14px-Polster der Formularzeile heraus (343 statt 323px)
+        und steht damit 4px vom Kartenrand — sichtbar weiter aussen als Namensfeld und
+        Notizen darueber (14px). Das ist der Preis der vollen Namen.
+   Die Chips messen zusammen 320.1px, dazu 6x3px Luecke = 338.1px; die uebrigen 4.9px
+   bekommen sie ueber `flex: 1 1 auto` zu gleichen Teilen dazu (je +0.7px), damit die Reihe
+   links UND rechts mit 4px am Kartenrand endet. Linksbuendig laege die ganze Luft sonst
+   rechts (4 zu 8.9px), und `space-between` riss die Chips im Querformat auseinander
+   (124px zwischen ihnen).
+   NICHT `flex: 1 1 0` wie bei den Lauftagen: Gleich breite Chips waeren auf 375px je 46px,
+   „Schultern" braucht 61px und wuerde gekuerzt.
+   Das senkrechte Polster steigt dafuer auf 8px: Mit der kleineren Schrift waere der Chip
+   sonst nur 27px hoch und mit feuchten Fingern schlecht zu treffen.
+   NOWRAP plus `min-width: 0`: Auf einem schmaleren Geraet (iPhone SE, 320px)
+   schrumpfen die Chips und kuerzen mit „…", statt in eine zweite Zeile zu rutschen — der
+   volle Name steht dann im `title`. */
+.mg-wahl-reihe { display: flex; gap: 3px; flex-wrap: nowrap; margin: 0 -10px; }
 .mg-wahl {
-  flex: 0 0 auto; padding: 6px 10px; border-radius: 9px;
+  flex: 1 1 auto; min-width: 0; padding: 8px 3px; border-radius: 9px;
   border: 1px solid var(--border); background: var(--card2); color: var(--text2);
-  font: inherit; font-size: var(--fs-neben); font-weight: 600;
+  font: inherit; font-size: var(--fs-etikett); font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .mg-wahl.an { color: #fff; }
