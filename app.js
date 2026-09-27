@@ -916,7 +916,7 @@ function _applyTabState(name) {
   seitenleisteAktualisieren();
 
   if (name === 'overview') renderOverview();
-  else if (name === 'workouts') { renderWorkoutsScreen(); laufDatenAutomatischHolen(); }
+  else if (name === 'workouts') renderWorkoutsScreen();
   else if (name === 'exercises') renderExercisesScreen();
   else if (name === 'plans') renderPlansScreen();
   else if (name === 'plan-detail') renderPlanDetail();
@@ -2306,7 +2306,6 @@ function _setWorkoutsView(mode) {
   if (mode !== 'laufen') _laufWochenNr = null;
   workoutsViewMode = mode;
   renderWorkoutsScreen();
-  if (mode === 'laufen') laufDatenAutomatischHolen();
   // Der Tabhintergrund haengt an der gewaehlten SEITE (grau, wenn dort heute nichts ansteht) —
   // ohne diesen Aufruf bliebe er nach dem Seitenwechsel auf der Farbe der alten Seite stehen.
   if (currentScreen === 'workouts') setThemeBackground('workouts');
@@ -4512,7 +4511,6 @@ const RUN_SHEET_ID = '1YJ3ke8Z2jS1KdJlKOnukUStMgvqqppnktAb8UVHDdgk';
 // freigeschaltet ist, waere die Drive-Sicherung mit kaputt.
 const RUN_SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
 const RUN_TOKEN_KEY = 'ft_run_token_exp';
-const RUN_TOKEN_WERT_KEY = 'ft_run_token';
 
 const WOCHENTAGE_KURZ = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 // Ausgeschriebene Namen nach demselben Index (0=Mo). `dayFullName` geht ueber den `dayKey`
@@ -4530,18 +4528,7 @@ function istLauf(typ) { return /lauf|ausf(ü|ue)hren|run|jog/i.test(String(typ |
 // sinnvolle Strecke: Dort zaehlen Dauer und Maximalpuls (Leonard-Wunsch 01.09.2026).
 function istHiit(typ) { return /intervalltraining|hochintensiv|hiit/i.test(String(typ || '')); }
 
-// Der Zugang liegt wie der Drive-Token im SITZUNGSSPEICHER (27.09.2026). Vorher nur in der
-// Variablen — nach jedem Neuladen galt die App als nicht verbunden, obwohl der Zugang noch
-// bis zu einer Stunde gueltig war; der automatische Abruf haette dann nie gegriffen.
-function runVerbunden() {
-  if (!runToken) {
-    try {
-      runToken = sessionStorage.getItem(RUN_TOKEN_WERT_KEY);
-      runTokenExp = Number(sessionStorage.getItem(RUN_TOKEN_KEY) || 0);
-    } catch (_) {}
-  }
-  return !!runToken && Date.now() < runTokenExp;
-}
+function runVerbunden() { return !!runToken && Date.now() < runTokenExp; }
 
 function runInit() {
   if (runTokenClient || typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) return;
@@ -4549,11 +4536,6 @@ function runInit() {
     client_id: DRIVE_CLIENT_ID, scope: RUN_SCOPE, callback: () => {},
   });
   try { runTokenExp = Number(sessionStorage.getItem(RUN_TOKEN_KEY) || 0); } catch (_) {}
-}
-
-function _runTokenVergessen() {
-  runToken = null; runTokenExp = 0;
-  try { sessionStorage.removeItem(RUN_TOKEN_KEY); sessionStorage.removeItem(RUN_TOKEN_WERT_KEY); } catch (_) {}
 }
 
 // Wie driveRequestToken: MUSS immer enden. Google Identity ruft in der installierten PWA
@@ -4570,10 +4552,7 @@ function runRequestToken({ interactive = true } = {}) {
       if (r.error) return ende(reject, new Error(`Zugriff verweigert (${r.error})`));
       runToken = r.access_token;
       runTokenExp = Date.now() + (Number(r.expires_in || 3600) - 60) * 1000;
-      try {
-        sessionStorage.setItem(RUN_TOKEN_KEY, String(runTokenExp));
-        sessionStorage.setItem(RUN_TOKEN_WERT_KEY, runToken);
-      } catch (_) {}
+      try { sessionStorage.setItem(RUN_TOKEN_KEY, String(runTokenExp)); } catch (_) {}
       ende(resolve, runToken);
     };
     runTokenClient.error_callback = (e) => ende(reject, new Error(`Google-Anmeldung nicht möglich (${(e && (e.type || e.message)) || 'unbekannt'})`));
@@ -4617,8 +4596,6 @@ async function runLaeufeLaden({ interactive = false } = {}) {
     const kopfR = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${RUN_SHEET_ID}?fields=sheets.properties.title`,
       { headers: { Authorization: 'Bearer ' + runToken } });
-    // Abgelehnter Zugang: vergessen, damit der naechste Tipp einen neuen anfordert.
-    if (kopfR.status === 401) _runTokenVergessen();
     if (!kopfR.ok) throw new Error(
       kopfR.status === 403 ? 'Google verweigert den Zugriff. Zwei mögliche Gründe: die „Google Sheets API" ist im Projekt nicht eingeschaltet, oder dein Konto darf diese Tabelle nicht lesen.'
       : kopfR.status === 401 ? 'Die Anmeldung ist abgelaufen — bitte erneut auf „Verbinden" tippen.'
@@ -4656,37 +4633,6 @@ async function runLaeufeLaden({ interactive = false } = {}) {
     else if (currentScreen === 'plans' && plansViewMode === 'races') renderWettkaempfe();
   }
 }
-
-// ── LAUFDATEN AUTOMATISCH HOLEN (27.09.2026, Leonard-Wunsch) ──────────────────────────
-// Oeffnet man die Seite „Laufen" (Seitenschalter, Tabwechsel oder Rueckkehr in die App), liest
-// die App die Tabelle still neu ein — hoechstens alle LAUF_AUTO_ABSTAND_MS, gerechnet ab dem
-// letzten Abruf ODER Versuch (sonst liefe ein scheiternder Abruf bei jedem Zeichnen erneut).
-// NIE mit Anmeldefenster: Nur wenn noch ein gueltiger Zugang da ist (`runVerbunden`). Ohne ihn
-// passiert nichts; angemeldet wird wie bisher ueber „Lauf erledigt" bzw. „Aktualisieren".
-// Das haengt NICHT an der Drive-Sicherung — die Entscheidung vom 04.09.2026 bleibt bestehen.
-// Kurz verzoegert, damit das Neuzeichnen nicht in die Staffel des Seitenwechsels faellt.
-const LAUF_AUTO_ABSTAND_MS = 30 * 60 * 1000;
-const LAUF_AUTO_VERZOEGERUNG_MS = 700;
-let _laufAutoVersuch = 0;
-
-function _laufSeiteSichtbar() {
-  return currentScreen === 'workouts' && workoutsViewMode === 'laufen'
-    && document.visibilityState === 'visible';
-}
-
-function laufDatenAutomatischHolen() {
-  setTimeout(() => {
-    if (!_laufSeiteSichtbar() || runLaden || !runVerbunden()) return;
-    if (Date.now() - Math.max(DB.getRunsStand(), _laufAutoVersuch) < LAUF_AUTO_ABSTAND_MS) return;
-    _laufAutoVersuch = Date.now();
-    runLaeufeLaden({ interactive: false });
-  }, LAUF_AUTO_VERZOEGERUNG_MS);
-}
-
-// Rueckkehr in die App, waehrend die Seite „Laufen" offen ist, zaehlt ebenfalls als Oeffnen.
-document.addEventListener('visibilitychange', () => {
-  if (_laufSeiteSichtbar()) laufDatenAutomatischHolen();
-});
 
 // Notiz zu EINER geplanten Laufeinheit. Die Zeile im Laufplan muss einzeilig bleiben, dort
 // steht deshalb nur eine gekuerzte Vorschau; geschrieben wird in einem eigenen Fenster mit
