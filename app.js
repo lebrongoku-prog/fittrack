@@ -1133,6 +1133,8 @@ function renderUebersichtHero() {
   wrap.innerHTML = buildHeuteHero(tag, eintrag, {
     previewOnClick: tag ? `requestStartFromOverview('${tag.id}')` : null,
     runIdx: gewaehlt ? _kombiTag : null,
+    // Dieselbe Regel fuer den Lauf: heute schon gelaufen → Knopf grau.
+    erledigtGrau: !gewaehlt,
     // Der Titel nennt den gewaehlten Tag statt „Heute" (Leonard-Entscheidung 12.09.2026).
     // Ist heute gewaehlt, bleibt es bei „Heute" — der Wochentag saehe dort wie ein Fehler aus.
     titel: (gewaehlt && idx !== todayIdx) ? WOCHENTAGE_LANG[idx] : 'Heute',
@@ -1998,6 +2000,7 @@ function buildSessionCard(active, planDay, selDay, opts) {
 // Dort gehoeren Uhr, Fortschritt und „Pausieren/Beenden" hin, nicht „Heute".
 //
 // `sport`: 'beide' (Uebersicht) · 'gym' (Trainings-Tab, Seite Gym) · 'lauf' (Seite Laufen).
+// `erledigtGrau`: ein schon gelaufener Tag bekommt den grauen Laufknopf (nur Uebersicht, heute).
 // Umfang eines Trainingstags fuer die zweite Zeile der Gym-Herocard: Uebungen, Saetze und —
 // sobald mindestens eine Einheit dieses Tags abgeschlossen ist — deren mittlere Dauer.
 // Die Dauer stand frueher schon einmal in der Vorschau-Herocard (`avgDauerFuerTag`) und ist
@@ -2069,9 +2072,13 @@ function buildHeuteHero(planDay, selDay, opts) {
     const u = gepl && gepl.einheit;
     const ziel = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null].filter(Boolean).join(' · ') : '';
     // Kein Lauf geplant → grauer Knopf ohne Verlauf, dieselbe Regel wie beim Gym.
+    // Schon GELAUFEN → ebenfalls grau (27.09.2026, Leonard-Wunsch) — aber nur, wo auch der
+    // Gymknopf nach einer erledigten Einheit grau wird (`opts.erledigtGrau`, Uebersicht ohne
+    // gewaehlten Tag). Die Beschriftung bleibt stehen: „Kein Lauf" waere an diesem Tag falsch.
+    const gelaufen = !!opts.erledigtGrau && !!runNachTag()[_dayKeyOf(tagD.getTime())];
     spalten.push(`<div class="hero-heute-spalte">
       <div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf')}</div>
-      <button class="hero-v2-btn hero-v2-btn-lauf${gepl ? '' : ' hero-v2-btn-grau'}" data-sport="lauf"
+      <button class="hero-v2-btn hero-v2-btn-lauf${gepl && !gelaufen ? '' : ' hero-v2-btn-grau'}" data-sport="lauf"
               onclick="runLaeufeLaden({interactive:true})"
               ${runLaden ? 'disabled' : ''}>
         ${HERO_ICON_LAEUFER}${runLaden ? 'Lese …' : 'Lauf erledigt'}

@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v404**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v405**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3242,6 +3242,13 @@ Leonard-Vorgabe:
   Bedienbar bleiben beide (freies Training bzw. Laufdaten holen). Dasselbe Grau wie
   „Pausieren", damit die App nur EIN neutrales Knopfgrau kennt. Die Regel MUSS hinter den
   beiden Sportfarben stehen — gleiche Spezifitaet, es entscheidet die Reihenfolge.
+- **Schon GELAUFEN → Laufknopf grau** (`opts.erledigtGrau`, 27.09.2026, Leonard-Wunsch): das
+  Gegenstueck zum Gymknopf, der nach einer erledigten Einheit grau wird. Deshalb GENAU dort, wo
+  auch der Gymknopf das tut: in der UEBERSICHT ohne angetippten Wochentag (`renderUebersichtHero`
+  setzt `erledigtGrau: !gewaehlt`). Mit angetipptem Tag und auf der Seite „Laufen" bleibt er
+  gruen — wie der Gymknopf auf der Seite „Gym" (Regel vom 12.09.2026). ANDERS als beim Gym bleibt
+  die Beschriftung (das Ziel, z. B. „10 km · 1h 0min") stehen: „Kein Lauf" waere an einem
+  gelaufenen Tag falsch. Erledigt = fuer den Tag steht ein Lauf in `runNachTag()`.
 - **ZWEITE ZEILE unter dem Trainingstag, nur auf der Seite „Gym"** (`.hero-heute-meta`,
   `gymTagUmfang()`, Leonard-Wunsch 07.09.2026): Uebungen, Saetze und — sobald eine Einheit
   dieses Tags abgeschlossen ist — deren mittlere Dauer („5 Übungen · 16 Sätze · Ø 1h 6min").
