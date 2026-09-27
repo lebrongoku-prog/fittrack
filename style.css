@@ -581,7 +581,9 @@ body.theme-plans .hist-action-dd {
 .ph-with-back { justify-content: flex-start; gap: 10px; align-items: center; }
 .ph-with-back .ph-left { flex: 1; min-width: 0; }
 .ph-left h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
-.ph-left .ph-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }/* Zahnrad in der Übersicht: Zugang zu den Einstellungen, seit „Mehr" kein Tab mehr ist.
+.ph-left .ph-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
+
+/* Zahnrad in der Übersicht: Zugang zu den Einstellungen, seit „Mehr" kein Tab mehr ist.
    Auf dem farbigen Tab-Hintergrund → helle Fläche, damit es sich abhebt. */
 /* KEIN eigenes `margin-top` mehr: Den Abstand nach oben setzt `.ph-right` fuer alle drei
    Elemente gemeinsam. Mit einem zusaetzlichen Rand nur an den Knoepfen sassen sie 1px
@@ -597,7 +599,9 @@ body.theme-plans .hist-action-dd {
 .ph-gear:active { transform: scale(.94); }
 
 /* ─── Cards ─── */
-.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin: 0 12px 12px; overflow: hidden; }.section-title { font-size: var(--fs-betont); font-weight: 700; }/* ─── Buttons ─── */
+.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin: 0 12px 12px; overflow: hidden; }
+
+/* ─── Buttons ─── */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 13px 18px; border: none; border-radius: var(--radius-sm); font-size: var(--fs-text); font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: opacity .15s, transform .1s; }
 .btn:active { opacity: .75; transform: scale(.97); }
 .btn-primary { background: var(--accent); color: #fff; }
@@ -608,14 +612,10 @@ body.theme-plans .hist-action-dd {
 .btn-full { width: 100%; }
 /* „Verstanden" in den Lesehilfe-Fenstern: genau 44px hoch (Leonard-Wunsch 01.09.2026).
    Aus Polster und Schrift ergaeben sich 43px — die Angabe hebt ihn auf das runde Mass. */
-.info-ok-btn { min-height: 44px; }/* ─── Divider ─── */
-.divider { height: 1px; background: var(--border); }
+.info-ok-btn { min-height: 44px; }
 
-/* ─── Empty State ─── */
-.empty { text-align: center; padding: 48px 24px; color: var(--text3); }
-.empty .ei { font-size: 44px; margin-bottom: 12px; }
-.empty h3 { font-size: var(--fs-betont); font-weight: 600; color: var(--text2); margin-bottom: 6px; }
-.empty p { font-size: var(--fs-text); line-height: 1.5; }
+/* ─── Divider ─── */
+.divider { height: 1px; background: var(--border); }
 
 /* ══════════════════════════════════════
    SCREEN: ÜBERSICHT
@@ -697,7 +697,6 @@ body.theme-plans .hist-action-dd {
 .plan-list-info { flex: 1; min-width: 0; }
 .plan-list-name { font-size: var(--fs-text); font-weight: 700; color: var(--text); }
 .plan-list-meta { font-size: var(--fs-neben); color: var(--text3); margin-top: 3px; line-height: 1.4; }
-.plan-list-tags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
 .plan-list-action { color: var(--text3); font-size: var(--fs-betont); flex-shrink: 0; }
 
 /* ─── Gymtage: DREI Kacheln pro Zeile (Leonard-Wunsch 07.09.2026) ───
@@ -958,11 +957,10 @@ body.theme-plans .hist-action-dd {
   display: flex; align-items: center; gap: 8px; }
 /* Symbol der Sportart vor dem Titel (Leonard-Wunsch 06.09.2026), in TITELgroesse: `1em`
    bindet es an die 16px des Namens. Es darf nicht schrumpfen, wenn der Name lang wird. */
-.ppv-name-ic { width: 1em; height: 1em; flex-shrink: 0; display: inline-flex; }
-.ppv-name-ic svg { width: 100%; height: 100%; }
 /* Das Symbol folgt der TITELFARBE statt der Sportartfarbe (Leonard-Wunsch 06.09.2026) —
    `inherit` heisst hier automatisch auch: im Transparenz-Modus weiss wie der Titel. */
-.ppv-name-ic { color: inherit; }
+.ppv-name-ic { width: 1em; height: 1em; flex-shrink: 0; display: inline-flex; color: inherit; }
+.ppv-name-ic svg { width: 100%; height: 100%; }
 .plan-status-past .ppv-name, .plan-status-archived .ppv-name { color: var(--text2); }
 .ppv-meta { font-size: var(--fs-neben); color: var(--text3); margin-top: 4.4px; }
 /* BESCHREIBUNGSZEILE MIT QUOTE (beendete Plaene, 18.09.2026, `planMetaZeile`): Laufzeit und
@@ -1213,9 +1211,11 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   padding: 8px 0;
   font-size: var(--fs-neben); color: var(--text3); font-style: italic;
   text-align: center;
-}.pdr-info { flex: 1; }
+}
+.pdr-info { flex: 1; }
 .pdr-name { font-size: var(--fs-text); font-weight: 600; }
-.pdr-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }.mehr-row { display: flex; align-items: center; padding: 14px; gap: 12px; }
+.pdr-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
+.mehr-row { display: flex; align-items: center; padding: 14px; gap: 12px; }
 .mehr-row + .mehr-row { border-top: 1px solid var(--border); }
 .mehr-row-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
 .mehr-row-info { flex: 1; }
@@ -1267,7 +1267,9 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .form-label { font-size: var(--fs-neben); font-weight: 600; color: var(--text2); }
 .form-input { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 16px; color: var(--text); width: 100%; }
 .form-input:focus { outline: none; border-color: var(--accent); }
-.form-select { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 16px; color: var(--text); width: 100%; -webkit-appearance: none; }/* ─── Detailansicht einer vergangenen Einheit (Zeitstrahl) ─── */
+.form-select { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 16px; color: var(--text); width: 100%; -webkit-appearance: none; }
+
+/* ─── Detailansicht einer vergangenen Einheit (Zeitstrahl) ─── */
 /* Kennzahlen der Einheit als drei Kacheln über der Übungsliste. */
 .hd-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-bottom: 16px; }
 .hd-stat { background: var(--card2); border-radius: 12px; padding: 10px 6px; text-align: center; }
@@ -1651,10 +1653,10 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
   .card, .mehr-section,
   .hero-v2, .plan-section-card, .chart-card-v2, .aex-v2,
   .ex-group
-    { max-width: 520px; margin-left: auto; margin-right: auto; }  /* Ausnahme Trainingskalender: je breiter, desto mehr Wochen ohne Scrollen sichtbar.
+    { max-width: 520px; margin-left: auto; margin-right: auto; }
+  /* Ausnahme Trainingskalender: je breiter, desto mehr Wochen ohne Scrollen sichtbar.
      Im Querformat (844–932px) blieb er sonst auf 520px stehen. */
   #ov-cal-card, #plans-cal-card { max-width: none; margin-left: 14px; margin-right: 14px; }
-  .ex-tab-v2-bar { padding-left: calc((100vw - 520px)/2 + 14px); }
   .ph-left h1 { font-size: 28px; }
 }
 
@@ -1687,7 +1689,6 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 
 /* ─── Util ─── */
 .hidden { display: none !important; }
-.flex { display: flex; }.text3 { color: var(--text3); }
 
 /* ══════════════════════════════════════
    NEW MOCKUP-ALIGNED COMPONENTS
@@ -2111,26 +2112,6 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
    WORKOUT (Active session) – Mockup v2
 ═══════════════════════════════════ */
 
-/* Session card (Workouts active/preview) – white card on themed gradient bg */
-/* Exercise tab cards (replaces ex-tab pills) */
-.ex-tab-v2-bar { display: flex; gap: 10px; padding: 0 12px 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.ex-tab-v2-bar::-webkit-scrollbar { display: none; }
-/* Vorschau-Modus: die Tableiste ist leer (innerHTML='') → kollabieren, damit der
-   Abstand Hero→erste Übung dem gleichmäßigen 12px-Kachelabstand entspricht. */
-.ex-tab-v2-bar:empty { display: none; }
-.ex-tab-v2 {
-  flex-shrink: 0; width: 110px; padding: 10px 10px 12px; border-radius: 14px;
-  background: var(--c-bg, var(--card)); border: 1.5px solid var(--border);
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-  display: flex; flex-direction: column; gap: 6px;
-}
-.ex-tab-v2.active { border-color: var(--c, var(--accent)); box-shadow: 0 0 0 1px var(--c, var(--accent)); }
-/* Done: green-tinted chip */
-.ex-tab-v2.done {
-  background: var(--green-bg);
-  border-color: var(--green);
-}
-
 /* Active exercise card – v2 with colored left border + white bg */
 .aex-v2 {
   margin: 0 26px 12px; background: var(--card); border-radius: 14px;
@@ -2171,8 +2152,10 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 /* align-items: flex-start (nicht center) — beim Aufklappen kommen im Info-Block Zeilen
    dazu (Bestwert, Differenz). Bei zentrierter Ausrichtung wanderte die Nummernscheibe
    dadurch sichtbar nach unten; oben ausgerichtet bleibt sie an Ort und Stelle. */
-.aex-v2-header { display: flex; align-items: flex-start; gap: 10px; padding: 14px 14px 10px; }
-.aex-v2-header { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.aex-v2-header {
+  display: flex; align-items: flex-start; gap: 10px; padding: 14px 14px 10px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
 
 /* Chevron-Indikator im Card-Header (zeigt ein/aus-Klapp-Status) */
 /* Höhe = Höhe der Nummernscheibe rechts daneben. Der Kopf richtet oben aus
@@ -2420,7 +2403,8 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
   font-size: var(--fs-neben); color: var(--accent); font-weight: 600;
   cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: var(--shadow);
 }
-.hist-action-dd svg { width: 14px; height: 14px; }.chart-card-v2 {
+.hist-action-dd svg { width: 14px; height: 14px; }
+.chart-card-v2 {
   margin: 0 12px 12px; background: var(--card); border-radius: 18px;
   box-shadow: var(--shadow); padding: 14px;
 }
@@ -2447,7 +2431,9 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 /* Muscle bars v2 (with icons + colors) */
 /* Liegt in einer `.chart-card-v2`, die bereits 14px polstert — seitlich also 0, sonst
    staende der Inhalt 30px vom Kartenrand und damit weiter innen als der Titel darueber. */
-.muscle-bars-v2 { padding: 4px 0 8px; }/* ─── Zahlenblock ─── */
+.muscle-bars-v2 { padding: 4px 0 8px; }
+
+/* ─── Zahlenblock ─── */
 .np-sheet { padding-bottom: calc(12px + var(--safe-b)); }
 .np-head { padding: 2px 18px 0; }
 .np-title { font-size: var(--fs-text); font-weight: 700; color: var(--text); line-height: 1.3; }
@@ -2770,11 +2756,10 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
 .lp-notiz:active { opacity: .6; }
 /* Knopfzeile im Notizfenster. */
 .run-note-actions { display: flex; gap: 8px; margin-top: 12px; }
-.run-note-actions .btn { flex: 1; }
 /* Drei Knoepfe (Wettkampf-Dialog: Loeschen · Abbrechen · Speichern) liefen mit dem normalen
    18px-Innenabstand 2px ueber die Zeile (gemessen 21.09.2026). Mit 10px sind alle drei gleich
    breit (106px auf 375px) und passen. */
-.run-note-actions .btn { min-width: 0; padding-left: 10px; padding-right: 10px; }
+.run-note-actions .btn { flex: 1; min-width: 0; padding-left: 10px; padding-right: 10px; }
 /* Das unsichtbare Bedienelement MUSS 16px tragen — sonst zoomt iOS beim Fokussieren hinein. */
 .lp-zone-sel {
   position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 16px;
@@ -2958,33 +2943,33 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
 }
 /* Rahmen + Beschriftung der Plan-Zeiträume — dasselbe Grün wie die trainierten Kerne. */
 .cal-scroll { --cal-plan-color: #0F766E; }
-/* Seitliches Polster des Kalenderbereichs — die Zeile mit Wochentagsspalte und Scroller
-   sowie die Tagesbeschreibung darunter nutzen ihn, damit beide buendig stehen. */
-:root { --cal-pad-x: 1px; }
-/* Polster oben und unten im Scroller; die Wochentagsspalte rechnet es mit, um senkrecht zum
-   Raster zu passen. Frueher nahm es zusaetzlich den Ueberstand der Plan-Umrandung auf — die
-   gibt es seit dem 04.09.2026 nicht mehr (Name oben, Balken unten). */
-:root { --cal-pad-y: 5px; }
-/* Abstand zwischen der Wochentagsspalte und dem Scroller. */
-/* Abstand zwischen den Kaestchen. EINE Quelle fuer CSS UND JS: renderTrainingCalendar
-   liest den Wert von der Karte und rechnet damit die Spaltenbreite fuer Plan-Umrandungen
-   und Scrollposition. Standen beide getrennt da, liefen die Umrandungen bei abweichenden
-   Werten gegenueber den Spalten aus dem Tritt — je weiter rechts, desto staerker. */
-:root { --cal-gap: 3.6px; }
-/* Groesse EINES Kaestchens. FESTE Groesse in jeder Ausrichtung — das Raster scrollt damit
-   im Querformat genauso waagerecht wie im Hochformat (Leonard-Wunsch 01.09.2026).
-   renderTrainingCalendar liest den Wert hier aus, statt ihn selbst zu setzen. */
-:root { --cal-cell: 25.2px; }
-:root { --cal-label-gap: 4.8px; }
-/* Breite der Wochentagsspalte. Sie steht ausserhalb des Scrollers — die Platzrechnung in
-   renderTrainingCalendar misst den Scroller und muss sie deshalb NICHT mehr abziehen. */
-:root { --cal-label-w: 28.8px; }
-/* Feste Hoehe der Monatszeile. Feste Hoehe statt gemessener Schrifthoehe, weil die
-   Wochentagsspalte ausserhalb des Scrollers denselben Wert als oberen Abstand nutzt —
-   nur so liegen „Mo" und die erste Rasterzeile garantiert auf einer Linie. */
-:root { --cal-months-h: 19.2px; --cal-months-gap: 12px; }
+/* Masse des Trainingskalenders — beim Aendern NUR hier anfassen. */
+:root {
+  /* Seitliches Polster des Kalenderbereichs — die Zeile mit Wochentagsspalte und Scroller
+     sowie die Tagesbeschreibung darunter nutzen es, damit beide buendig stehen. */
+  --cal-pad-x: 1px;
+  /* Polster oben und unten im Scroller; die Wochentagsspalte rechnet es mit, um senkrecht
+     zum Raster zu passen. */
+  --cal-pad-y: 5px;
+  /* Abstand zwischen den Kaestchen und Groesse EINES Kaestchens. EINE Quelle fuer CSS UND
+     JS: `renderTrainingCalendar` liest beide und rechnet damit die Spaltenbreite fuer die
+     Plan-Laufzeiten und die Scrollposition. FESTE Groesse in jeder Ausrichtung — das Raster
+     scrollt im Querformat genauso waagerecht wie im Hochformat (Leonard-Wunsch 01.09.2026). */
+  --cal-gap: 3.6px;
+  --cal-cell: 25.2px;
+  /* Abstand zwischen der Wochentagsspalte und dem Scroller. */
+  --cal-label-gap: 4.8px;
+  /* Breite der Wochentagsspalte. Sie steht ausserhalb des Scrollers — die Platzrechnung
+     misst den Scroller und muss sie deshalb NICHT abziehen. */
+  --cal-label-w: 28.8px;
+  /* Feste Hoehe der Monatszeile statt gemessener Schrifthoehe: Die Wochentagsspalte nutzt
+     denselben Wert als oberen Abstand — nur so liegen „Mo" und die erste Rasterzeile
+     garantiert auf einer Linie. */
+  --cal-months-h: 19.2px;
+  --cal-months-gap: 12px;
+}
 /* Der Kern behaelt sein Groessenverhaeltnis zum Kaestchen (frueher 3px bei 16px) —
-   daher 4,5px und keine runde Zahl. */
+   daher 4,2px und keine runde Zahl. */
 .cal-day.done::before {
   content: ''; position: absolute; inset: 4.2px;
   border-radius: 3px; background: #0F766E;
@@ -3201,7 +3186,8 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 }
 /* Variante ohne Muskel-Icon: Icon-Spalte entfaellt */
 .pr-v2-row.no-icon { grid-template-columns: 22px 1fr auto auto; }
-.pr-v2-row:last-child { border-bottom: none; }.pr-v2-num {
+.pr-v2-row:last-child { border-bottom: none; }
+.pr-v2-num {
   width: 22px; height: 22px; border-radius: 50%; background: var(--border);
   color: var(--text2); font-size: var(--fs-etikett); font-weight: 700;
   display: flex; align-items: center; justify-content: center;
@@ -3216,11 +3202,13 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
    Bestleistung selbst steht hervorgehoben rechts. */
 .pr-v2-delta { color: var(--text3); font-weight: 500; }
 .pr-v2-val { font-size: var(--fs-text); font-weight: 700; color: var(--green); }
-.pr-v2-arrow { color: var(--text3); font-size: var(--fs-betont); line-height: 1; }.sess-v2-row {
+.pr-v2-arrow { color: var(--text3); font-size: var(--fs-betont); line-height: 1; }
+.sess-v2-row {
   display: flex; align-items: center; gap: 12px; padding: 12px 0;
   border-bottom: 1px solid var(--border); cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.sess-v2-row:last-child { border-bottom: none; }.sess-v2-info { flex: 1; min-width: 0; }
+.sess-v2-row:last-child { border-bottom: none; }
+.sess-v2-info { flex: 1; min-width: 0; }
 .sess-v2-name { font-size: var(--fs-text); font-weight: 600; }
 .sess-v2-meta { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
 .sess-v2-arrow { color: var(--text3); font-size: var(--fs-betont); }
@@ -3426,7 +3414,9 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 /* Trainingstag-Detail: „Zu Trainingsplan" mit hellem Akzent-Fill + dunklem Akzent-Text */
 #screen-day-detail .ex-item-actions button.primary { color: var(--accent-dark); border-color: var(--accent-soft); background: var(--accent-soft); }
 .ex-item-actions button.danger  { color: var(--red); border-color: var(--red-bg); background: var(--red-bg); }
-.ex-item-actions button:disabled { opacity: 0.45; cursor: not-allowed; }/* Übungen-Tab: Suchfeld */
+.ex-item-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Übungen-Tab: Suchfeld */
 .ex-search-wrap { padding: 0 var(--screen-pad, 14px) 10px; }
 .ex-search-bar {
   width: 100%; background: rgba(255,255,255,0.92); border: 1px solid rgba(255,255,255,0.5);
@@ -3457,7 +3447,8 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .wpe-name { flex: 1; min-width: 0; font-size: var(--fs-neben); white-space: normal; overflow-wrap: anywhere; }
 .wpe-rest { flex: 1; min-width: 0; font-size: var(--fs-neben); color: var(--text3); opacity: 0.6; }
 .wpe-chev { flex: 0 0 auto; font-size: var(--fs-betont); line-height: 1; color: var(--text3); }
-.wpe-select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer; font-size: 16px; }.program-form-row { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.wpe-select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer; font-size: 16px; }
+.program-form-row { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
 .program-form-row + .program-form-row { border-top: 1px solid var(--border); }
 .program-form-row label { font-size: var(--fs-neben); color: var(--text3); font-weight: 600; }
 /* color MUSS gesetzt sein: <input> erbt die Textfarbe nicht, sonst bleibt sie beim
@@ -3807,7 +3798,9 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
 
 .plan-day-actions { display: flex; gap: 6px; margin-left: auto; }
 .plan-day-actions button { border: none; background: var(--bg); color: var(--text3); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-.plan-day-actions button.del { color: var(--red); background: var(--red-bg); }/* Das Plan-Day-Edit-Modal ist am 13.09.2026 entfallen (Gymtage nur noch in ihrer
+.plan-day-actions button.del { color: var(--red); background: var(--red-bg); }
+
+/* Das Plan-Day-Edit-Modal ist am 13.09.2026 entfallen (Gymtage nur noch in ihrer
    Detailansicht) — mit ihm die Regeln `.plan-ex-item`, `.plan-ex-handle` und
    `.plan-ex-del`. Die Drop-Anzeiger darunter LEBEN weiter, sie gelten auch fuer
    `.aex-v2`; dort ist nur der tote Selektor aus der Liste gefallen. */
@@ -3970,7 +3963,6 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
     margin-left: 14px;
     margin-right: 14px;
   }
-  .ex-tab-v2-bar { padding-left: 14px; }
 
   /* Wettkampfkarten stehen NEBENEINANDER (Leonard-Wunsch 06.09.2026). Wie in den uebrigen
      Querformat-Grids behalten die Karten ihre eigenen 14px und der `column-gap` bleibt 0 —
@@ -4057,7 +4049,6 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
   #wo-view-gym > #wo-week-card > .plan-card-v2 {
     display: flex; flex-direction: column; justify-content: center;
   }
-  #wo-view-gym > .ex-tab-v2-bar,
   #wo-view-gym > #active-ex-list,
   #wo-view-gym > #wo-add-ex-wrap { grid-column: 1 / -1; }
   #wo-view-gym > #wo-week-card { grid-column: 1; }

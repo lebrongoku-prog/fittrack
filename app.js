@@ -1,6 +1,11 @@
 // ═══════════════════════════════════════════════
-// FEATURE FLAGS
+// ZEITKONSTANTEN
 // ═══════════════════════════════════════════════
+
+// Fuer Rechnungen mit Kalendertagen ueber einen Sommerzeitwechsel hinweg NICHT blind teilen,
+// sondern runden (`Math.round(diff / TAG_MS)`) — ein solcher Tag hat 23 bzw. 25 Stunden.
+const TAG_MS = 24 * 3600 * 1000;
+const WOCHE_MS = 7 * TAG_MS;
 
 // ═══════════════════════════════════════════════
 // DATA LAYER
@@ -69,11 +74,10 @@ const DEFAULT_PROGRAM = {
   endDate: null,     // ms timestamp; recomputed from start + weeksTotal if missing
 };
 
-function _msToDate(ms) { return ms ? new Date(ms).toISOString().slice(0,10) : ''; }
 function _dateToMs(str) { return str ? new Date(str).getTime() : null; }
 function _weeksBetween(startMs, endMs) {
   if (!startMs || !endMs) return 0;
-  return Math.max(1, Math.round((endMs - startMs) / (7*24*3600*1000)));
+  return Math.max(1, Math.round((endMs - startMs) / WOCHE_MS));
 }
 
 // Mo, Di, Mi, Do, Fr, Sa, So
@@ -261,7 +265,7 @@ function migrateToMultiPlan() {
   try { if (oldWeekplanRaw) weekPlan = JSON.parse(oldWeekplanRaw); } catch {}
   const startDate = prog.startDate || Date.now();
   const weeksTotal = prog.weeksTotal || 12;
-  const endDate = prog.endDate || (startDate + weeksTotal * 7 * 24 * 3600 * 1000);
+  const endDate = prog.endDate || (startDate + weeksTotal * WOCHE_MS);
   const plan = {
     id: 'plan_' + Date.now(),
     name: prog.name || 'Mein Trainingsplan',
@@ -274,10 +278,20 @@ function migrateToMultiPlan() {
   // ft_program/ft_plan2/ft_weekplan bleiben als Notfall-Backup erhalten
 }
 
+// Liest einen JSON-Wert aus dem localStorage; fehlt der Schluessel, gilt `leer`.
+function _speicherLesen(key, leer) {
+  const s = localStorage.getItem(key);
+  return s ? JSON.parse(s) : leer;
+}
+// Schreibt einen Wert und stoesst die Drive-Sicherung an.
+function _speicherSchreiben(key, wert) {
+  localStorage.setItem(key, JSON.stringify(wert));
+  markLocalChange();
+}
+
 const DB = {
   getExercises() {
-    const s = localStorage.getItem('ft_exercises');
-    let list = s ? JSON.parse(s) : DEFAULT_EXERCISES.map(e => ({...e}));
+    let list = _speicherLesen('ft_exercises', null) || DEFAULT_EXERCISES.map(e => ({...e}));
     let migrated = false;
     list = list.map(ex => {
       if (ex.muscle === 'arms') { migrated = true; return migrateExerciseMuscle({...ex}); }
@@ -299,16 +313,22 @@ const DB = {
     if (migrated) localStorage.setItem('ft_exercises', JSON.stringify(list));
     return list;
   },
-  saveExercises(v) { localStorage.setItem('ft_exercises', JSON.stringify(v)); markLocalChange(); },
+  saveExercises(v) { _speicherSchreiben('ft_exercises', v); },
 
   // Multi-Plan: Raw-Zugriff
-  getPlans() {
-    const s = localStorage.getItem('ft_plans');
-    return s ? JSON.parse(s) : [];
-  },
-  savePlans(plans) {
-    localStorage.setItem('ft_plans', JSON.stringify(plans));
-    markLocalChange();
+  getPlans() { return _speicherLesen('ft_plans', []); },
+  savePlans(plans) { _speicherSchreiben('ft_plans', plans); },
+
+  // Gemeinsamer Rahmen der Schreibmethoden `savePlan`/`saveProgram`/`saveWeekPlan`: sucht den
+  // bearbeiteten (sonst den aktiven) Plan, laesst `aendern` ihn anpassen und speichert die Liste.
+  _bearbeitetenPlanAendern(aendern) {
+    const targetId = editingPlanId || (getActivePlan()?.id);
+    if (!targetId) return;
+    const plans = this.getPlans();
+    const p = plans.find(pl => pl.id === targetId);
+    if (!p) return;
+    aendern(p);
+    this.savePlans(plans);
   },
 
   // Backwards-Compat: getPlan/savePlan/getProgram/saveProgram/getWeekPlan/saveWeekPlan
@@ -324,70 +344,52 @@ const DB = {
   // selbst hält nur die Reihenfolge/Zuordnung als dayIds. Archivierte Pläne sind eingefroren →
   // Bearbeitung bleibt plan-lokal in archivedDays (propagiert NICHT in die Bibliothek).
   savePlan(trainingDays) {
-    const targetId = editingPlanId || (getActivePlan()?.id);
-    if (!targetId) return;
-    const plans = this.getPlans();
-    const p = plans.find(pl => pl.id === targetId);
-    if (!p) return;
-    if (p.archived) {
-      p.archivedDays = trainingDays;
+    this._bearbeitetenPlanAendern(p => {
       delete p.trainingDays;
-      this.savePlans(plans);
-      return;
-    }
-    const lib = this.getTrainingDays();
-    const idx = {};
-    lib.forEach((d, i) => { idx[d.id] = i; });
-    trainingDays.forEach(day => {
-      if (idx[day.id] !== undefined) lib[idx[day.id]] = day;
-      else { idx[day.id] = lib.length; lib.push(day); }
+      if (p.archived) { p.archivedDays = trainingDays; return; }
+      // Upsert in die Bibliothek: vorhandene Tage ersetzen, neue anhaengen.
+      const lib = this.getTrainingDays();
+      const idx = {};
+      lib.forEach((d, i) => { idx[d.id] = i; });
+      trainingDays.forEach(day => {
+        if (idx[day.id] !== undefined) lib[idx[day.id]] = day;
+        else { idx[day.id] = lib.length; lib.push(day); }
+      });
+      this.saveTrainingDays(lib);
+      p.dayIds = trainingDays.map(d => d.id);
     });
-    this.saveTrainingDays(lib);
-    p.dayIds = trainingDays.map(d => d.id);
-    delete p.trainingDays;
-    this.savePlans(plans);
   },
   getProgram() {
     const p = _resolveEditPlan();
-    if (!p) return { name: 'Mein Trainingsplan', weeksTotal: 12, startDate: Date.now(), endDate: Date.now() + 12*7*24*3600*1000 };
+    if (!p) return { name: 'Mein Trainingsplan', weeksTotal: 12, startDate: Date.now(), endDate: Date.now() + 12 * WOCHE_MS };
     return { name: p.name, weeksTotal: p.weeksTotal, startDate: p.startDate, endDate: p.endDate };
   },
   saveProgram(prog) {
-    const targetId = editingPlanId || (getActivePlan()?.id);
-    if (!targetId) return;
-    const plans = this.getPlans();
-    const p = plans.find(pl => pl.id === targetId);
-    if (!p) return;
-    p.name = prog.name;
-    p.weeksTotal = prog.weeksTotal;
-    p.startDate = prog.startDate;
-    p.endDate = prog.endDate;
-    this.savePlans(plans);
+    this._bearbeitetenPlanAendern(p => {
+      p.name = prog.name;
+      p.weeksTotal = prog.weeksTotal;
+      p.startDate = prog.startDate;
+      p.endDate = prog.endDate;
+    });
   },
   getWeekPlan() {
     const p = _resolveEditPlan();
     return p ? p.weekPlan : JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
   },
   saveWeekPlan(wp) {
-    const targetId = editingPlanId || (getActivePlan()?.id);
-    if (!targetId) return;
-    const plans = this.getPlans();
-    const p = plans.find(pl => pl.id === targetId);
-    if (!p) return;
-    p.weekPlan = wp;
-    this.savePlans(plans);
+    this._bearbeitetenPlanAendern(p => { p.weekPlan = wp; });
   },
 
   // Trainingstage-Bibliothek: planunabhaengiger Speicher fuer eigenstaendige Trainingstage.
   // Ein Lib-Tag: { id, name, color?, exercises:[{exId,targetSets,targetReps}], notes, archived, createdAt }
-  getTrainingDays() { const s = localStorage.getItem('ft_trainingdays'); return s ? JSON.parse(s) : []; },
-  saveTrainingDays(v) { localStorage.setItem('ft_trainingdays', JSON.stringify(v)); markLocalChange(); },
+  getTrainingDays() { return _speicherLesen('ft_trainingdays', []); },
+  saveTrainingDays(v) { _speicherSchreiben('ft_trainingdays', v); },
 
   // Nachgetragene Trainingstage OHNE Einheit: nur ein Datum ('YYYY-MM-DD'), keine Uebungen,
   // keine Saetze, kein Volumen. Sie faerben das Kaestchen im Trainingskalender und zaehlen
   // in dessen Kennzahlen mit — mehr steht ueber sie nicht zur Verfuegung.
-  getManualDays() { const s = localStorage.getItem('ft_manual_days'); return s ? JSON.parse(s) : []; },
-  saveManualDays(v) { localStorage.setItem('ft_manual_days', JSON.stringify(v)); markLocalChange(); },
+  getManualDays() { return _speicherLesen('ft_manual_days', []); },
+  saveManualDays(v) { _speicherSchreiben('ft_manual_days', v); },
 
   // EIGENSTAENDIGE Wettkaempfe: `{ date: 'YYYY-MM-DD', name }`, ohne zugehoerigen Laufplan.
   // Das Gegenstueck zu `plan.raceDate` — noetig fuer Wettkaempfe aus Jahren, in denen es noch
@@ -400,40 +402,38 @@ const DB = {
   // liest sich die Seite wie eine Laufbahn und die anstehenden Termine stehen am Ende.
   // Andere Listen der App sind neueste-zuerst; hier ist es bewusst umgekehrt.
   getRaces() {
-    const s = localStorage.getItem('ft_races');
-    const arr = s ? JSON.parse(s) : [];
-    return arr.map(r => (typeof r === 'string' ? { date: r, name: '' } : r))
+    return _speicherLesen('ft_races', []).map(r => (typeof r === 'string' ? { date: r, name: '' } : r))
               .filter(r => r && r.date)
               .sort((a, b) => a.date.localeCompare(b.date));
   },
-  saveRaces(v) { localStorage.setItem('ft_races', JSON.stringify(v)); markLocalChange(); },
+  saveRaces(v) { _speicherSchreiben('ft_races', v); },
 
   // ── Laufen ──────────────────────────────────────────────────────
   // Laufplaene liegen LOKAL wie alle FitTrack-Daten (Drive-Sicherung inklusive). Aus der
   // Google-Tabelle kommen ausschliesslich die tatsaechlich gelaufenen Einheiten — FitTrack
   // liest sie nur und schreibt nichts hinein.
-  getRunPlans() { const s = localStorage.getItem('ft_runplans'); return s ? JSON.parse(s) : []; },
-  saveRunPlans(v) { localStorage.setItem('ft_runplans', JSON.stringify(v)); markLocalChange(); },
+  getRunPlans() { return _speicherLesen('ft_runplans', []); },
+  saveRunPlans(v) { _speicherSchreiben('ft_runplans', v); },
   // Zwischenspeicher der gelesenen Laeufe: FitTrack ist offline-faehig, der Lauf-Tab soll
   // also auch ohne Netz etwas zeigen. BEWUSST nicht in der Drive-Sicherung — die Daten
   // gehoeren der Tabelle, nicht FitTrack.
-  getRuns() { const s = localStorage.getItem('ft_runs_cache'); return s ? (JSON.parse(s).runs || []) : []; },
-  getRunsStand() { const s = localStorage.getItem('ft_runs_cache'); return s ? (JSON.parse(s).fetchedAt || 0) : 0; },
+  getRuns() { return _speicherLesen('ft_runs_cache', {}).runs || []; },
+  getRunsStand() { return _speicherLesen('ft_runs_cache', {}).fetchedAt || 0; },
   saveRuns(runs) {
     localStorage.setItem('ft_runs_cache', JSON.stringify({ fetchedAt: Date.now(), runs }));
   },
 
-  getWorkouts() { const s = localStorage.getItem('ft_workouts'); return s ? JSON.parse(s) : []; },
-  saveWorkouts(v) { localStorage.setItem('ft_workouts', JSON.stringify(v)); markLocalChange(); },
+  getWorkouts() { return _speicherLesen('ft_workouts', []); },
+  saveWorkouts(v) { _speicherSchreiben('ft_workouts', v); },
   addWorkout(w) { const ws = this.getWorkouts(); ws.unshift(w); this.saveWorkouts(ws); },
-  getActive() { const s = localStorage.getItem('ft_active'); return s ? JSON.parse(s) : null; },
+  getActive() { return _speicherLesen('ft_active', null); },
   saveActive(v) { localStorage.setItem('ft_active', JSON.stringify(v)); },
   clearActive() { localStorage.removeItem('ft_active'); },
 
   // Papierkorb: gelöschte Einheiten, Pläne, Trainingstage und Übungen liegen hier
   // TRASH_KEEP_DAYS lang, bevor sie endgültig verschwinden.
-  getTrash() { const s = localStorage.getItem('ft_trash'); return s ? JSON.parse(s) : []; },
-  saveTrash(v) { localStorage.setItem('ft_trash', JSON.stringify(v)); markLocalChange(); },
+  getTrash() { return _speicherLesen('ft_trash', []); },
+  saveTrash(v) { _speicherSchreiben('ft_trash', v); },
 };
 
 // ═══════════════════════════════════════════════
@@ -441,6 +441,12 @@ const DB = {
 // ═══════════════════════════════════════════════
 
 function getEx(id) { return DB.getExercises().find(e => e.id === id); }
+// Anzeigename einer Einheit: der aktuelle Name ihres Trainingstags aus `tage`, sonst der beim
+// Start gespeicherte Name, sonst „Freies Training".
+function _einheitName(w, tage) {
+  const day = tage.find(d => d.id === w.planDayId);
+  return day ? day.name : (w.planDayName || 'Freies Training');
+}
 function muscleName(m) { return (MUSCLE_META[m] && MUSCLE_META[m].name) || m; }
 function muscleColor(m) { return (MUSCLE_META[m] && MUSCLE_META[m].color) || '#0066ff'; }
 function muscleBg(m) { return (MUSCLE_META[m] && MUSCLE_META[m].bg) || '#e8f0ff'; }
@@ -453,17 +459,20 @@ function fmtDateShort(ts) { return new Date(ts).toLocaleDateString('de-DE',{day:
 // Volumenangaben ab einer Tonne in „t" — fünfstellige Kilogramm-Zahlen liest niemand.
 // Liefert den Wert MIT Einheit, weil die Einheit von der Größe abhängt.
 function fmtVol(kg) {
-  if (Math.abs(kg) < 1000) return Math.round(kg) + ' kg';
-  return (kg / 1000).toFixed(1).replace('.0', '') + ' t';
+  return _volText(kg, Math.abs(kg) >= 1000);
 }
 
 // Beschriftung der Volumen-Achse. Die Einheit gilt für die GANZE Achse (entschieden am
-// größten Wert) — gemischt stünde „500 kg" neben „1,5 t" und die Skala wäre unlesbar.
+// größten Wert) — gemischt stünde „500 kg" neben „1.5 t" und die Skala wäre unlesbar.
 function volAchsenWert(v, inTonnen) {
-  if (!v) return '0';
+  return v ? _volText(v, inTonnen) : '0';
+}
+
+// Gemeinsame Formatierung: Tonnen mit einer Nachkommastelle (ohne „.0"), sonst ganze kg.
+function _volText(kg, inTonnen) {
   return inTonnen
-    ? (v / 1000).toFixed(1).replace('.0', '') + ' t'
-    : Math.round(v) + ' kg';
+    ? (kg / 1000).toFixed(1).replace('.0', '') + ' t'
+    : Math.round(kg) + ' kg';
 }
 // Get current program week based on startDate of the ACTIVE plan (not editing context)
 function getProgramWeek() {
@@ -474,7 +483,7 @@ function getProgramWeek() {
   monStart.setHours(0,0,0,0);
   monStart.setDate(monStart.getDate() - ((monStart.getDay()+6)%7)); // Mon of start-week
   const diffMs = Date.now() - monStart.getTime();
-  const week = Math.floor(diffMs / (7*24*3600*1000)) + 1;
+  const week = Math.floor(diffMs / WOCHE_MS) + 1;
   return { num: Math.min(Math.max(week,1), active.weeksTotal), total: active.weeksTotal, name: active.name };
 }
 
@@ -483,7 +492,7 @@ function _planProgramWeek(p) {
   const start = p.startDate || Date.now();
   const monStart = new Date(start); monStart.setHours(0,0,0,0);
   monStart.setDate(monStart.getDate() - ((monStart.getDay()+6)%7));
-  const week = Math.floor((Date.now() - monStart.getTime()) / (7*24*3600*1000)) + 1;
+  const week = Math.floor((Date.now() - monStart.getTime()) / WOCHE_MS) + 1;
   // Dieselbe Quelle wie die Detailansicht: aus Start und Ende gerechnet, mit `weeksTotal`
   // nur als Rueckfallebene. Sonst stand in der Karte „Woche 5 / 12", waehrend die
   // Detailansicht „9 Wochen" nannte (04.09.2026).
@@ -977,11 +986,8 @@ function renderOverview() {
   // damit der "X von Y"-Zähler unten nicht auf DEFAULT_PLAN.length zurückfällt.
   const active = getActivePlan();
   const plan = active ? active.trainingDays : [];
-  const week7 = getCurrentWeekDays();
-  const todayEntry = week7.find(d => d.isToday) || week7[0];
   const wStatus = getWeekStatus();
   const prog = getProgramWeek();
-  const activeWo = DB.getActive();
 
   // ─ Header subline ─
   const subEl = document.getElementById('ov-week-info');
@@ -994,7 +1000,7 @@ function renderOverview() {
   // ─ EINE Wochenplankarte fuer beide Sportarten ─ (siehe `renderWochenKarte`)
   renderWochenKarte();
 
-  // ─ Hinweis auf das Plan-Ende + Sicherungs-Status ─
+  // ─ Sicherungs-Status ─
   renderBackupLine();
 
   // ─ Trainingskalender (ganzes Kalenderjahr) ─
@@ -1270,7 +1276,7 @@ function renderBackupLine() {
     txt = 'Anmeldung nötig';
     title = 'Google-Anmeldung abgelaufen — es wird nichts mehr gesichert. Tippen zum neu Verbinden.';
   } else if (enabled && last) {
-    const days = Math.floor((Date.now() - last) / 86400000);
+    const days = Math.floor((Date.now() - last) / TAG_MS);
     txt = days <= 0 ? 'Heute gesichert' : (days === 1 ? 'Gestern gesichert' : `Vor ${days} Tagen`);
     title = `Google Drive · ${days <= 0 ? 'heute' : days === 1 ? 'gestern' : 'vor ' + days + ' Tagen'} gesichert`;
     if (days > 7) cls += ' warn';
@@ -1323,8 +1329,7 @@ function renderRecentSessions() {
   // liegen kann. Fällt sonst auf den gespeicherten Snapshot-Namen zurück.
   const allDays = DB.getTrainingDays();
   container.innerHTML = ws.map((w, i) => {
-    const day = allDays.find(d => d.id === w.planDayId);
-    const dayName = day ? day.name : (w.planDayName || 'Freies Training');
+    const dayName = _einheitName(w, allDays);
     return `<div class="sess-v2-row" onclick="showHistDetail(${i})">
       <div class="sess-v2-info">
         <div class="sess-v2-name">${pd(dayName)}</div>
@@ -1688,7 +1693,7 @@ function runVerschobeneTage(mo) {
   const heuteMo = _laufWochenMontag(new Date());
   const woMo = mo ? _laufWochenMontag(mo) : heuteMo;
   if (woMo.getTime() > heuteMo.getTime()) return {};
-  const von = woMo.getTime(), bis = von + 7 * 864e5 - 1;
+  const von = woMo.getTime(), bis = von + WOCHE_MS - 1;
   const proTag = {};
   DB.getRuns().forEach(l => {
     const [y, m, d] = l.date.split('-').map(Number);
@@ -1773,7 +1778,7 @@ function buildRunPlanCard(onTap, plan, opts) {
   if (laeuft) {
     const monStart = new Date(p.startDate); monStart.setHours(0, 0, 0, 0);
     monStart.setDate(monStart.getDate() - ((monStart.getDay() + 6) % 7));
-    const num = Math.min(Math.max(Math.floor((Date.now() - monStart.getTime()) / (7 * 864e5)) + 1, 1), wochen || 1);
+    const num = Math.min(Math.max(Math.floor((Date.now() - monStart.getTime()) / WOCHE_MS) + 1, 1), wochen || 1);
     const pct = Math.round(num / (wochen || 1) * 100);
     progress = `<div class="ppv-progress">
       <span class="ppv-wk">Woche ${num} / ${wochen}</span>
@@ -2270,7 +2275,6 @@ function _renderGymSeite() {
     addWrap.innerHTML = '';
     stopTimer();
   } else {
-    document.getElementById('ex-tab-bar').innerHTML = '';
     document.getElementById('active-ex-list').innerHTML = '';
     addWrap.style.display = 'none';
     stopTimer();
@@ -2490,8 +2494,6 @@ function _setzeUebungsSpalten(container, anzahl) {
 }
 
 function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-ex-list') {
-  // (Mini-Kacheln im Workouts-Tab wurden entfernt)
-  if (mode !== 'libday') document.getElementById('ex-tab-bar').innerHTML = '';
 
   // Cards (read-only target view). mode='libday' rendert dieselben Cards für einen
   // Bibliotheks-Trainingstag in den Container `containerId` (Drag&Drop/Add routen zum Lib-Tag).
@@ -2525,14 +2527,8 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
             ${zelle(si, 'weight', s.weight)}
           </div>`).join('');
     return `<div class="aex-v2 ${collapsedCls}" id="aex-${ei}" data-ex="${exIdKey}" style="--c:${col.c};--c-bg:${col.bg}"
-                 ondragstart="aexDragStart(event,${ei},'${mode}','${planDay.id}')"
-                 ondragend="aexDragEnd(event)"
-                 ondragover="aexDragOver(event,${ei})"
-                 ondragleave="aexDragLeave(event)"
-                 ondrop="aexDrop(event,${ei})">
-      <div class="aex-v2-header" onclick="toggleAexCollapse('${exIdKey}', event)"
-           onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
-           onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">
+                 ${_aexZiehAttribute(ei, `'${mode}','${planDay.id}'`)}>
+      ${_aexKopfOeffnen(exIdKey)}
         <div class="aex-v2-num">${ei+1}</div>
         <div class="aex-v2-info">
           <div class="aex-v2-name">${ex.name}</div>
@@ -2632,8 +2628,6 @@ function renderActiveWorkout() {
   const wo = DB.getActive();
   if (!wo) return;
 
-  // (Mini-Kacheln im Workouts-Tab wurden entfernt)
-  document.getElementById('ex-tab-bar').innerHTML = '';
 
   // Ist keine Karte offen (frisch gestartet oder App zwischendurch neu geladen), die nächste
   // unerledigte Übung aufklappen. Der Klappzustand lebt nur im Speicher — ohne das stünde man
@@ -2679,14 +2673,8 @@ function renderActiveWorkout() {
     const exIdKey = ex.exId || ex.id;
     const collapsedCls = isAexExpanded(exIdKey) ? '' : 'collapsed';
     return `<div class="aex-v2 ${stateCls} ${collapsedCls}" id="aex-${ei}" data-ex="${exIdKey}" style="--c:${col.c};--c-bg:${col.bg}"
-                 ondragstart="aexDragStart(event,${ei},'active')"
-                 ondragend="aexDragEnd(event)"
-                 ondragover="aexDragOver(event,${ei})"
-                 ondragleave="aexDragLeave(event)"
-                 ondrop="aexDrop(event,${ei})">
-      <div class="aex-v2-header" onclick="toggleAexCollapse('${exIdKey}', event)"
-           onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
-           onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">
+                 ${_aexZiehAttribute(ei, `'active'`)}>
+      ${_aexKopfOeffnen(exIdKey)}
         <div class="aex-v2-num">${ei+1}</div>
         <div class="aex-v2-info">
           <div class="aex-v2-name">${ex.name}</div>
@@ -3542,6 +3530,23 @@ function unskipExercise(ei) {
 
 // Drag-and-Drop für Detail-Cards im Workouts-Tab (Active + Vorschau)
 let aexDragState = null; // { mode: 'active'|'preview', dayId?: string, fromIdx: number }
+// Sortieren der Uebungskarten per Ziehen (nur mit der Maus — HTML5-Drag gibt es auf iOS
+// nicht). `startArgs` wird hinter dem Index an `aexDragStart` gereicht (Modus, ggf. Tag-Id).
+function _aexZiehAttribute(ei, startArgs) {
+  return `ondragstart="aexDragStart(event,${ei},${startArgs})"
+                 ondragend="aexDragEnd(event)"
+                 ondragover="aexDragOver(event,${ei})"
+                 ondragleave="aexDragLeave(event)"
+                 ondrop="aexDrop(event,${ei})"`;
+}
+// Oeffnendes Tag des Kartenkopfs: Tipp klappt auf/zu; gezogen wird nur, solange der Finger bzw.
+// die Maus auf dem Kopf liegt (einen sichtbaren Griff gibt es seit dem 01.09.2026 nicht mehr).
+function _aexKopfOeffnen(exIdKey) {
+  return `<div class="aex-v2-header" onclick="toggleAexCollapse('${exIdKey}', event)"
+           onpointerdown="event.currentTarget.closest('.aex-v2').draggable=true"
+           onpointerup="event.currentTarget.closest('.aex-v2').draggable=false">`;
+}
+
 function aexDragStart(e, idx, mode, dayId) {
   aexDragState = { mode, dayId: dayId || null, fromIdx: idx };
   if (e.dataTransfer) {
@@ -4142,7 +4147,7 @@ function setVolumeUnit(unit) {
 }
 
 function filterWorkoutsByRange(ws, days) {
-  const cutoff = Date.now() - days*24*3600*1000;
+  const cutoff = Date.now() - days * TAG_MS;
   return ws.filter(w => w.startTs >= cutoff);
 }
 
@@ -4198,92 +4203,39 @@ function _gleicheHoeheStatsKarten() {
 function renderVolumeChart(ws) {
   if (volumeChart) { volumeChart.destroy(); volumeChart = null; }
   const canvas = document.getElementById('volume-chart');
+  const ctx = canvas.getContext('2d');
   if (!ws.length) {
-    const ctx = canvas.getContext('2d');
     ctx.clearRect(0,0,canvas.width,canvas.height);
     return;
   }
-  // Einteilung richtet sich nach dem gewählten Zeitraum: Kalenderwochen-Nummern („W30")
-  // sagten wenig und passten bei „7 Tage" gar nicht — dort gab es nur ein bis zwei Punkte,
-  // während „Letztes Jahr" trotzdem auf acht Wochen gekappt wurde.
-  const grouping = histRangeDays <= 7 ? 'day' : (histRangeDays >= 365 ? 'month' : 'week');
-  const maxPoints = grouping === 'day' ? 7 : (grouping === 'month' ? 12 : (histRangeDays >= 90 ? 13 : 6));
-
-  const bucketOf = (d) => {
-    if (grouping === 'day')   { const x = new Date(d); x.setHours(0,0,0,0); return x; }
-    if (grouping === 'month') return new Date(d.getFullYear(), d.getMonth(), 1);
-    const x = new Date(d); x.setHours(0,0,0,0);
-    x.setDate(x.getDate() - ((x.getDay() + 6) % 7));   // Montag der Woche
-    return x;
-  };
-  const labelOf = (start, prev) => {
-    if (grouping === 'day')   return start.toLocaleDateString('de-DE', { weekday: 'short' });
-    if (grouping === 'month') return start.toLocaleDateString('de-DE', { month: 'short' });
-    // Wochen: bei langen Zeiträumen nur den Monatswechsel beschriften, sonst das Datum
-    if (histRangeDays >= 90) {
-      return (!prev || prev.getMonth() !== start.getMonth())
-        ? start.toLocaleDateString('de-DE', { month: 'long' }) : '';
-    }
-    return start.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
-  };
-
-  const buckets = {};
-  ws.forEach(w => {
-    const start = bucketOf(new Date(w.startTs));
-    const key = start.getTime();
-    const val = volumeUnit === 'kg'
-      ? calcVolume(w)
-      : w.exercises.reduce((a,e) => a + (Array.isArray(e.sets) ? e.sets.length : 0), 0);
-    if (!buckets[key]) buckets[key] = { start, val: 0, ts: w.startTs };
-    buckets[key].val += val;
-    if (w.startTs < buckets[key].ts) buckets[key].ts = w.startTs;
-  });
-  // Chronologisch AUFSTEIGEND (älteste links, neueste rechts)
-  const sortedKeys = Object.keys(buckets).sort((a,b) => buckets[a].start - buckets[b].start).slice(-maxPoints);
-  let _prevStart = null;
-  const xLabels = sortedKeys.map(k => {
-    const lbl = labelOf(buckets[k].start, _prevStart);
-    _prevStart = buckets[k].start;
+  const einteilung = _volEinteilung(histRangeDays);
+  const isKg = volumeUnit === 'kg';
+  const punkte = _volPunkte(ws, einteilung, isKg);
+  let vorher = null;
+  const xLabels = punkte.map(p => {
+    const lbl = einteilung.beschriftung(p.start, vorher);
+    vorher = p.start;
     return lbl;
   });
   // Volle Datumsangabe für die Kopfzeile beim Antippen eines Punktes
-  const xTitles = sortedKeys.map(k => {
-    const s = buckets[k].start;
-    if (grouping === 'day')   return s.toLocaleDateString('de-DE', { weekday:'long', day:'numeric', month:'long' });
-    if (grouping === 'month') return s.toLocaleDateString('de-DE', { month:'long', year:'numeric' });
-    const e = new Date(s); e.setDate(s.getDate() + 6);
-    return `Woche ${s.toLocaleDateString('de-DE',{day:'numeric',month:'short'})} – ${e.toLocaleDateString('de-DE',{day:'numeric',month:'short'})}`;
-  });
-  const lastIdx = sortedKeys.length - 1;
-  const ctx = canvas.getContext('2d');
-  const isKg = volumeUnit === 'kg';
-  const achseInTonnen = isKg && sortedKeys.some(k => buckets[k].val >= 1000);
-  // Read the current theme accent (so the chart matches the active tab).
+  const xTitles = punkte.map(p => einteilung.titel(p.start));
+  const achseInTonnen = isKg && punkte.some(p => p.val >= 1000);
   // Weiss NUR auf dem Schleier (der Glas-Modus gilt bloss innerhalb der Tabs) — sonst laege
-  // die Linie in der Farbe des Untergrunds.
+  // die Linie in der Farbe des Untergrunds. Sonst die Akzentfarbe des aktiven Tabs.
   const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)');
   const accent = aufGlas ? '#ffffff'
     : (getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#0066ff');
-  // Das Badge ueber dem letzten Punkt wird sonst in derselben Farbe gefuellt wie seine
-  // Schrift — auf dem Schleier also weiss auf weiss und damit unlesbar (gemeldet 01.09.2026).
-  const badgeFlaeche = aufGlas ? '#ffffff' : accent;
-  const badgeSchrift = aufGlas ? '#0F172A' : '#fff';
-  const accentRGB = (() => {
-    // Convert hex to "r,g,b" for rgba()
-    const h = accent.replace('#','');
-    if (h.length !== 6) return '0,102,255';
-    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)].join(',');
-  })();
+  const accentRGB = _hexZuRgb(accent);
+  const wertText = (v) => isKg ? fmtVol(v) : (v + ' Sätze');
   volumeChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: xLabels,
       datasets: [{
-        data: sortedKeys.map(k => Math.round(buckets[k].val)),
+        data: punkte.map(p => Math.round(p.val)),
         borderColor: accent,
         backgroundColor: (ctx2) => {
-          const c = ctx2.chart.ctx;
-          const g = c.createLinearGradient(0,0,0,200);
+          const g = ctx2.chart.ctx.createLinearGradient(0,0,0,200);
           g.addColorStop(0,`rgba(${accentRGB},0.22)`);
           g.addColorStop(1,`rgba(${accentRGB},0.00)`);
           return g;
@@ -4299,13 +4251,10 @@ function renderVolumeChart(ws) {
     options: {
       responsive: true, maintainAspectRatio: false,
       animation: { duration: 600 },
-      // Tooltip an der ganzen Spalte auslösen, nicht nur exakt auf dem Punkt: Ein Tipp
-      // irgendwo unter dem Punkt (in der gefüllten Fläche) genügt. Auf dem Touchscreen
-      // ist der 5px-Punkt sonst kaum zu treffen.
+      // Tooltip an der ganzen Spalte auslösen, nicht nur exakt auf dem Punkt: Auf dem
+      // Touchscreen ist der 5px-Punkt sonst kaum zu treffen.
       interaction: { mode: 'index', intersect: false },
-
-      // Top-Padding gibt dem Custom-Label-Plugin (lastPointLabel) Platz, damit das Badge
-      // ueber dem letzten Punkt nicht am oberen Chart-Rand abgeschnitten wird.
+      // Top-Padding gibt dem Badge ueber dem letzten Punkt Platz (siehe `_volLetzterPunktPlugin`).
       layout: { padding: { top: 28 } },
       plugins: {
         legend: { display: false },
@@ -4313,7 +4262,7 @@ function renderVolumeChart(ws) {
           enabled: true,
           callbacks: {
             title: (items) => (items && items.length) ? (xTitles[items[0].dataIndex] || '') : '',
-            label: c => isKg ? fmtVol(c.raw) : (c.raw+' Sätze'),
+            label: c => wertText(c.raw),
           }
         }
       },
@@ -4328,44 +4277,106 @@ function renderVolumeChart(ws) {
         // Im Wochen-Modus sind viele Labels absichtlich leer (nur Monatswechsel beschriftet) —
         // dort darf Chart.js nichts wegskippen. Bei Tagen/Monaten schon, sonst überlappen
         // zwölf Monatsnamen auf iPhone-Breite.
-        x: { grid: { display: false }, ticks: { font:{size:11}, autoSkip: grouping !== 'week', maxRotation: 0 } }
+        x: { grid: { display: false }, ticks: { font:{size:11}, autoSkip: einteilung.art !== 'week', maxRotation: 0 } }
       }
     },
-    plugins: [{
-      id:'lastPointLabel',
-      afterDatasetsDraw(chart) {
-        const ds = chart.data.datasets[0];
-        if (!ds || !ds.data.length) return;
-        const meta = chart.getDatasetMeta(0);
-        const last = meta.data[lastIdx];
-        if (!last) return;
-        const val = ds.data[lastIdx];
-        const txt = isKg ? fmtVol(val) : (val+' Sätze');
-        const c = chart.ctx;
-        c.save();
-        c.font = '600 12px -apple-system, sans-serif';
-        const w = c.measureText(txt).width + 14;
-        const h = 22;
-        // In die Zeichenfläche einpassen: Beim letzten Punkt liegt die Hälfte des Badges
-        // sonst außerhalb und wird am Kartenrand abgeschnitten (sichtbar ab „1 Jahr",
-        // wo der letzte Punkt ganz rechts sitzt).
-        const ca = chart.chartArea;
-        const x = Math.min(Math.max(last.x - w/2, ca.left), ca.right - w);
-        const y = Math.max(last.y - h - 8, 2);
-        c.fillStyle = badgeFlaeche;
-        c.beginPath(); c.roundRect(x, y, w, h, 6); c.fill();
-        c.fillStyle = badgeSchrift;
-        c.textBaseline = 'middle';
-        c.textAlign = 'center';
-        c.fillText(txt, x + w/2, y + h/2);   // Mitte des Kastens, nicht des Punktes
-        c.restore();
-      }
-    }]
+    // Das Badge wird sonst in derselben Farbe gefuellt wie seine Schrift — auf dem Schleier
+    // also weiss auf weiss und damit unlesbar (gemeldet 01.09.2026).
+    plugins: [_volLetzterPunktPlugin(punkte.length - 1, wertText,
+      aufGlas ? '#ffffff' : accent, aufGlas ? '#0F172A' : '#fff')]
   });
 }
 
+// Einteilung der Volumenentwicklung nach gewähltem Zeitraum: 7 Tage = pro Tag, bis 90 Tage =
+// pro Woche, 1 Jahr = pro Monat. Kalenderwochen-Nummern („W30") sagten wenig und passten bei
+// „7 Tage" gar nicht, während „Letztes Jahr" auf acht Wochen gekappt wurde.
+function _volEinteilung(tage) {
+  const art = tage <= 7 ? 'day' : (tage >= 365 ? 'month' : 'week');
+  const kurz = (d, opt) => d.toLocaleDateString('de-DE', opt);
+  return {
+    art,
+    maxPunkte: art === 'day' ? 7 : (art === 'month' ? 12 : (tage >= 90 ? 13 : 6)),
+    // Beginn des Abschnitts, in den ein Datum faellt (Tag, Montag der Woche, Monatserster).
+    abschnitt(d) {
+      if (art === 'month') return new Date(d.getFullYear(), d.getMonth(), 1);
+      const x = new Date(d); x.setHours(0,0,0,0);
+      if (art === 'week') x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+      return x;
+    },
+    beschriftung(start, vorher) {
+      if (art === 'day')   return kurz(start, { weekday: 'short' });
+      if (art === 'month') return kurz(start, { month: 'short' });
+      // Wochen: bei langen Zeiträumen nur den Monatswechsel beschriften, sonst das Datum
+      if (tage >= 90) {
+        return (!vorher || vorher.getMonth() !== start.getMonth()) ? kurz(start, { month: 'long' }) : '';
+      }
+      return kurz(start, { day: 'numeric', month: 'short' });
+    },
+    titel(s) {
+      if (art === 'day')   return kurz(s, { weekday:'long', day:'numeric', month:'long' });
+      if (art === 'month') return kurz(s, { month:'long', year:'numeric' });
+      const e = new Date(s); e.setDate(s.getDate() + 6);
+      return `Woche ${kurz(s, {day:'numeric',month:'short'})} – ${kurz(e, {day:'numeric',month:'short'})}`;
+    },
+  };
+}
+
+// Summiert Volumen (kg) bzw. Saetze je Abschnitt; chronologisch AUFSTEIGEND (aelteste links),
+// gekappt auf die letzten `maxPunkte`.
+function _volPunkte(ws, einteilung, isKg) {
+  const buckets = {};
+  ws.forEach(w => {
+    const start = einteilung.abschnitt(new Date(w.startTs));
+    const key = start.getTime();
+    const val = isKg
+      ? calcVolume(w)
+      : w.exercises.reduce((a,e) => a + (Array.isArray(e.sets) ? e.sets.length : 0), 0);
+    if (!buckets[key]) buckets[key] = { start, val: 0 };
+    buckets[key].val += val;
+  });
+  return Object.values(buckets).sort((a, b) => a.start - b.start).slice(-einteilung.maxPunkte);
+}
+
+// "#rrggbb" → "r,g,b" fuer rgba(); andere Schreibweisen fallen auf das Standardblau zurueck.
+function _hexZuRgb(hex) {
+  const h = hex.replace('#','');
+  if (h.length !== 6) return '0,102,255';
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)].join(',');
+}
+
+// Chart.js-Plugin: Badge mit dem Wert ueber dem letzten Punkt der Volumenentwicklung.
+function _volLetzterPunktPlugin(lastIdx, wertText, flaeche, schrift) {
+  return {
+    id: 'lastPointLabel',
+    afterDatasetsDraw(chart) {
+      const ds = chart.data.datasets[0];
+      if (!ds || !ds.data.length) return;
+      const last = chart.getDatasetMeta(0).data[lastIdx];
+      if (!last) return;
+      const txt = wertText(ds.data[lastIdx]);
+      const c = chart.ctx;
+      c.save();
+      c.font = '600 12px -apple-system, sans-serif';
+      const w = c.measureText(txt).width + 14;
+      const h = 22;
+      // In die Zeichenfläche einpassen: Beim letzten Punkt liegt die Hälfte des Badges
+      // sonst außerhalb und wird am Kartenrand abgeschnitten (sichtbar ab „1 Jahr").
+      const ca = chart.chartArea;
+      const x = Math.min(Math.max(last.x - w/2, ca.left), ca.right - w);
+      const y = Math.max(last.y - h - 8, 2);
+      c.fillStyle = flaeche;
+      c.beginPath(); c.roundRect(x, y, w, h, 6); c.fill();
+      c.fillStyle = schrift;
+      c.textBaseline = 'middle';
+      c.textAlign = 'center';
+      c.fillText(txt, x + w/2, y + h/2);   // Mitte des Kastens, nicht des Punktes
+      c.restore();
+    }
+  };
+}
+
 // ═══════════════════════════════════════════════════════════════════
-//  LAUFEN — Tab 5
+//  LAUFEN
 //  Zwei Quellen, klar getrennt:
 //   • Die GELAUFENEN Einheiten kommen aus Leonards Google-Tabelle „Workout Data"
 //     (Ordner „health auto export"). FitTrack liest sie nur — geschrieben wird dort nie.
@@ -4587,7 +4598,7 @@ function runPlanWochen(plan) {
   const a = new Date(plan.startDate); a.setHours(0, 0, 0, 0);
   a.setDate(a.getDate() - ((a.getDay() + 6) % 7));          // Montag der Startwoche
   const b = new Date(plan.endDate); b.setHours(0, 0, 0, 0);
-  return Math.max(1, Math.ceil((Math.round((b - a) / 86400000) + 1) / 7));
+  return Math.max(1, Math.ceil((Math.round((b - a) / TAG_MS) + 1) / 7));
 }
 
 // Datum einer Planeinheit. Wird GERECHNET, nicht gespeichert — verschiebt man den Plan,
@@ -4686,7 +4697,7 @@ function _laufBezugKm() {
     (p.units || []).forEach(u => merke(u.km));
     const wochen = runPlanWochen(p);
     const von = runEinheitDatum(p, 1, 0).getTime();
-    const bis = runEinheitDatum(p, wochen, 6).getTime() + 864e5 - 1;
+    const bis = runEinheitDatum(p, wochen, 6).getTime() + TAG_MS - 1;
     DB.getRuns().forEach(l => {
       const [y, m, d] = l.date.split('-').map(Number);
       const t = new Date(y, m - 1, d).getTime();
@@ -4910,7 +4921,6 @@ function _laufWochenWischEinrichten(sc, montage, aktIdx, startIdx) {
 // Zugeklappt ist der Ausgangszustand; der Zustand haelt, solange die App laeuft (wie der
 // Gewicht/Wdh.-Umschalter der Uebungen, bewusst nicht gespeichert).
 let _laufKmOffen = false;      // Karte „Diese Woche" — zugeklappt
-let _lpKmOffen = true;         // Laufplan-Detailansicht — AUFGEKLAPPT (Leonard-Wunsch 22.09.2026)
 let _laufKmChart = null;       // Instanz in der Wochenkarte
 let _lpKmChart = null;         // Instanz in der Detailansicht
 
@@ -4926,7 +4936,7 @@ function _laufKmDaten(plan, nurPlan) {
   const runs = DB.getRuns();
   return Array.from({ length: wochen }, (_, i) => {
     const mo = runEinheitDatum(plan, i + 1, 0);
-    const von = mo.getTime(), bis = von + 7 * 864e5 - 1;
+    const von = mo.getTime(), bis = von + WOCHE_MS - 1;
     let geplant = 0, gelaufen = 0;
     (plan.units || []).forEach(u => { if (Number(u.week) === i + 1) geplant += Number(u.km) || 0; });
     runs.forEach(l => {
@@ -4951,7 +4961,8 @@ const KM_DIAGRAMM = {
   lauf: { block: 'lauf-km-block', canvas: 'lauf-km-chart', nurPlan: false, klappbar: true,  titelAussen: false },
   lp:   { block: 'lp-km-block',   canvas: 'lp-km-chart',   nurPlan: true,  klappbar: false, titelAussen: true  },
 };
-function _kmOffen(welches) { return welches === 'lp' ? true : _laufKmOffen; }
+// Die Detailansicht des Laufplans ist nicht einklappbar (`klappbar: false`) und immer offen.
+function _kmOffen(welches) { return KM_DIAGRAMM[welches].klappbar ? _laufKmOffen : true; }
 
 function laufKmDiagrammHTML(plan, welches) {
   welches = welches || 'lauf';
@@ -4975,8 +4986,9 @@ function laufKmDiagrammHTML(plan, welches) {
 function toggleKmDiagramm(welches) {
   welches = welches || 'lauf';
   const cfg = KM_DIAGRAMM[welches];
+  if (!cfg.klappbar) return;
   const offen = !_kmOffen(welches);
-  if (welches === 'lp') _lpKmOffen = offen; else _laufKmOffen = offen;
+  _laufKmOffen = offen;
   const block = document.getElementById(cfg.block);
   if (!block) return;
   block.classList.toggle('collapsed', !offen);
@@ -4985,11 +4997,8 @@ function toggleKmDiagramm(welches) {
   // Erst beim Aufklappen zeichnen: Ein verstecktes Canvas hat keine Breite, Chart.js behielte
   // sonst die alten Masse (dieselbe Regel wie bei `toggleChartBlock`).
   if (!offen) return;
-  if (welches === 'lp') _zeichneLpKmDiagramm();
-  else {
-    const sc = document.getElementById('lauf-wochen-scroll');
-    _zeichneLaufKmDiagramm(sc && sc._montage ? sc._montage[Math.max(0, _laufWochenIdx)] : null);
-  }
+  const sc = document.getElementById('lauf-wochen-scroll');
+  _zeichneLaufKmDiagramm(sc && sc._montage ? sc._montage[Math.max(0, _laufWochenIdx)] : null);
 }
 
 // Farben der Saeulen. ZWEI Unterscheidungen zugleich:
@@ -5234,7 +5243,7 @@ function lpDatumFeld(ts, onChange, id) {
   // Mit `toISOString()` gelesen ist das in Mitteleuropa 22:00 des VORTAGS — das Feld zeigte
   // dadurch einen Tag zu frueh an, und jedes erneute Speichern schob das Datum ein weiteres
   // Mal zurueck (gefunden 04.09.2026). Beide Darstellungen kommen deshalb aus den LOKALEN
-  // Datumsteilen. Die Trainingsplaene sind nicht betroffen: `_msToDate`/`_dateToMs` rechnen
+  // Datumsteilen. Die Trainingsplaene sind nicht betroffen: `_dateToMs` rechnet
   // beide in UTC und bleiben damit unter sich stimmig.
   const p2 = (n) => String(n).padStart(2, '0');
   const d = ts ? new Date(ts) : null;
@@ -5918,6 +5927,18 @@ function setCalJahr(jahr, id) {
   _calRasterBlende(id, () => renderTrainingCalendar(id, id === 'cal' ? 'ov-cal-card' : 'plans-cal-card'));
 }
 
+// Spalte (Woche) eines Zeitpunkts im Raster, das am Montag `start` beginnt.
+// NICHT über Millisekunden-Division: Zwischen Winter- und Sommerzeit fehlt eine Stunde,
+// wodurch ein Datum genau auf einer Wochengrenze in die Vorwoche rutschte. Über ganze Tage
+// gerundet stimmt es.
+function _calSpalte(ts, start) {
+  const d = new Date(ts); d.setHours(0, 0, 0, 0);
+  return Math.floor(Math.round((d - start) / TAG_MS) / 7);
+}
+
+// Zeichnet einen der beiden Trainingskalender (Uebersicht `cal`, Plan-Tab `pcal`).
+// Die Arbeit steckt in fuenf Teilen: Zeitraum bestimmen, Raster bauen, Kopfzeile fuellen,
+// Plan-Laufzeiten darueber/darunter zeichnen und die Scrollposition setzen.
 function renderTrainingCalendar(id, cardId) {
   id = id || 'cal';
   cardId = cardId || 'ov-cal-card';
@@ -5925,363 +5946,360 @@ function renderTrainingCalendar(id, cardId) {
   if (card && !document.getElementById(id + '-grid')) card.innerHTML = calendarInnerHTML(id);
   const grid = document.getElementById(id + '-grid');
   if (!grid) return;
-  const byDay = buildCalendarData();
 
-  const today = new Date(); today.setHours(0,0,0,0);
-  // Gemeinsamer Kalender: Die Laeufe kommen NUR in der Uebersicht dazu (Leonard-Entscheidung
-  // 01.09.2026 — der Kalender im Plaene-Tab bleibt vorerst reines Krafttraining).
-  const modus = _calModus(id);
-  // ZEITRAUM: entweder ein ganzes Kalenderjahr (1. Januar bis 31. Dezember) oder — Standard seit
-  // dem 14.09.2026 — nur der laufende Plan („Aktuell", siehe `_calAktuellePlaene`). Das Raster
-  // beginnt immer am Montag der Woche, in der der Zeitraum beginnt, damit die Wochentagszeilen
-  // durchgehend stimmen. Beide Kalender folgen ihrer eigenen Auswahl (Leonard-Wunsch 06.09.2026).
-  const wahl = calJahr(id);
-  const aktPlaene = _calAktuellePlaene(modus);
-  const aktuell = wahl === 'aktuell' && !!aktPlaene.bereich;
-  const jahr = (typeof wahl === 'number') ? wahl : today.getFullYear();
-  // „Aktuell" beschreibt immer den Stand von heute — wie das laufende Jahr.
-  const istLaufendesJahr = aktuell || jahr === today.getFullYear();
-  const von = aktuell ? aktPlaene.bereich.von : new Date(jahr, 0, 1);
-  const bis = aktuell ? aktPlaene.bereich.bis : new Date(jahr, 11, 31);
-  // Ausserhalb des Zeitraums (Rand-Tage der ersten/letzten Woche) = ausgegraut und nicht
-  // antippbar — im Jahr die Tage des Vor- und Folgejahres, in „Aktuell" die Tage vor Planbeginn
-  // und nach Planende (Leonard-Entscheidung 14.09.2026).
-  const imBereich = (tag) => tag.getTime() >= von.getTime() && tag.getTime() <= bis.getTime();
-  const start = new Date(von);
-  start.setDate(von.getDate() - ((von.getDay() + 6) % 7));
-  const wochen = Math.ceil((Math.round((bis - start) / 86400000) + 1) / 7);
-  // Hat sich der Zeitraum geaendert (anderer Filter, andere Plan-Seite, ein neuer Plan), passt die
-  // gemerkte Scrollposition nicht mehr — dann wie beim ersten Zeichnen neu positionieren. Beim
-  // Jahreswechsel setzt `setCalJahr` das ohnehin selbst zurueck.
-  const bereichKey = von.getTime() + '-' + bis.getTime();
-  if (_calBereich[id] !== undefined && _calBereich[id] !== bereichKey) {
-    _calPositioniert[id] = false;
-    _calScrollPos[id] = 0;
-  }
-  _calBereich[id] = bereichKey;
+  const z = _calZeitraum(id);
+  _calBereichMerken(id, z);
 
-  // Plan-Zeitraeume einmal vorbereiten (statt pro Tag aufzuloesen).
-  const planIndex = _calPlanIndex();
-  const zeigtLaeufe = modus.lauf;
-  const zeigtKraft = modus.kraft;
-  const laeufeTag = zeigtLaeufe ? runNachTag() : {};
-  const laufGeplant = zeigtLaeufe ? runGeplanteTage() : {};
-  // Wettkampftage — das ganze Kaestchen wird hellgruen (Leonard-Wunsch 04.09.2026). Nur dort,
-  // wo der Kalender ueberhaupt Laeufe zeigt. ZWEI Quellen: die eigenstaendige Liste `ft_races`
-  // und das `raceDate` eines Laufplans. Die Plaene kommen ZULETZT, damit ihr Name den Vorrang
-  // hat, wenn ein Datum in beiden steht (`true` heisst nur „Wettkampf, ohne Plan").
-  const wettkampfTage = {};
-  if (zeigtLaeufe) {
-    DB.getRaces().forEach(r => { wettkampfTage[r.date] = r; });
-    DB.getRunPlans().forEach(p => { if (p.raceDate) wettkampfTage[_dayKeyOf(p.raceDate)] = p; });
-  }
-
-  // Eine Woche OHNE Training bekommt hellrote Kaestchen (Leonard-Wunsch 05.09.2026).
-  // Es zaehlt allein, ob in der Woche etwas stattgefunden hat — auf einen laufenden Plan kommt
-  // es NICHT an (am 05.09.2026 ausdruecklich so gewuenscht; eine erste Fassung hatte Wochen
-  // ohne Plan ausgenommen). Einzige Bedingung bleibt, dass die Woche VORBEI ist: In einer
-  // laufenden oder kommenden Woche ist noch nichts versaeumt.
-  // Was als „Training" zaehlt, folgt dem Modus des Kalenders: im Gymkalender die Krafteinheiten
-  // (inklusive der nachgetragenen Tage), im Laufkalender die Laeufe, im gemeinsamen beides.
-  const wocheOhneTraining = (weekStart) => {
-    // NUR in den Einzelkalendern (Leonard-Wunsch 09.09.2026): Im gemeinsamen
-    // „Trainingskalender" gibt es die roten Spalten nicht mehr. Dort stehen Gym und Lauf
-    // nebeneinander im selben Kaestchen — eine Woche ohne BEIDES ist selten, und das Rot
-    // uebertoente die Marken, statt etwas zu zeigen. Im Gym- und im Laufkalender bleibt es:
-    // Dort ist „diese Woche nichts" eine klare Aussage ueber genau eine Sportart.
-    if (zeigtKraft && zeigtLaeufe) return false;
-    const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
-    if (weekEnd.getTime() >= today.getTime()) return false;
-    for (let d = 0; d < 7; d++) {
-      const tag = new Date(weekStart); tag.setDate(weekStart.getDate() + d);
-      if (!imBereich(tag)) continue;
-      const k = _dayKeyOf(tag.getTime());
-      if (zeigtKraft && byDay[k]) return false;
-      if (zeigtLaeufe && laeufeTag[k]) return false;
-    }
-    return true;
-  };
-
-  let cells = '';
-  let months = '';
-  let lastMonth = -1;
-  for (let w = 0; w < wochen; w++) {
-    const weekStart = new Date(start); weekStart.setDate(start.getDate() + w * 7);
-    const leereWoche = wocheOhneTraining(weekStart);
-    // Die Monatsbeschriftung steht ueber der Spalte, in der der ERSTE des Monats liegt
-    // (Leonard-Wunsch 13.09.2026). Vorher stand sie ueber der ersten Woche, die IM neuen
-    // Monat beginnt — faellt der Monatserste auf einen Dienstag oder spaeter, war das die
-    // Woche danach, und die Beschriftung stand bis zu sechs Tage zu weit rechts.
-    // Nur der Erste INNERHALB des Zeitraums zaehlt: Die erste Rasterwoche reicht in den
-    // Dezember davor, die letzte in den Januar danach — sonst stuende „Jan" zweimal da.
-    let monatsErster = null;
-    for (let d = 0; d < 7; d++) {
-      const tag = new Date(weekStart); tag.setDate(weekStart.getDate() + d);
-      if (tag.getDate() === 1 && imBereich(tag)) { monatsErster = tag; break; }
-    }
-    // In „Aktuell" beginnt der Zeitraum meist mitten im Monat — die ersten Spalten stuenden dann
-    // ohne Beschriftung da. Die erste Spalte traegt deshalb den Monat des Planbeginns, sofern der
-    // naechste Monatserste mindestens zwei Spalten weiter liegt (sonst ueberlappten die Namen).
-    if (aktuell && w === 0 && !monatsErster) {
-      const naechster = new Date(von.getFullYear(), von.getMonth() + 1, 1);
-      const spalteNaechster = Math.floor(Math.round((naechster - start) / 86400000) / 7);
-      if (spalteNaechster >= 2) monatsErster = von;
-    }
-    const showLabel = !!monatsErster && monatsErster.getMonth() !== lastMonth;
-    months += `<span class="cal-month">${showLabel ? monatsErster.toLocaleDateString('de-DE',{month:'short'}) : ''}</span>`;
-    if (showLabel) lastMonth = monatsErster.getMonth();
-
-    cells += '<div class="cal-week">';
-    for (let d = 0; d < 7; d++) {
-      const day = new Date(weekStart); day.setDate(weekStart.getDate() + d);
-      const key = _dayKeyOf(day.getTime());
-      const entry = byDay[key];
-      const future = day.getTime() > today.getTime();
-      const isToday = day.getTime() === today.getTime();
-      const ausserhalb = !imBereich(day);   // Rand-Tage der ersten/letzten Woche (siehe `imBereich`)
-      // Flaeche = war laut damaligem Plan ein Trainingstag, Kern = tatsaechlich trainiert.
-      const plan = _calPlanInfo(day, planIndex);
-      const cls = ['cal-day'];
-      if (ausserhalb) cls.push('outside');
-      else if (leereWoche) cls.push('leer-woche');
-      if (zeigtKraft && plan.planned && !ausserhalb) cls.push('planned');
-      if (zeigtKraft && entry && !ausserhalb) cls.push('done');
-      const lauf = !ausserhalb && laeufeTag[key];
-      const laufGepl = !ausserhalb && laufGeplant[key];
-      if (lauf) cls.push('run');
-      else if (laufGepl) cls.push('run-planned');
-      const wettkampf = !ausserhalb && wettkampfTage[key];
-      if (wettkampf) cls.push('wettkampf');
-      if (future) cls.push('future');
-      if (isToday) cls.push('today');
-      const kraftZustand = entry
-        ? (plan.planned ? 'geplant und trainiert' : 'zusaetzlich trainiert')
-        : (plan.planned ? (future ? 'geplant' : 'geplant, nicht trainiert') : 'kein Gym geplant');
-      const zustand = kraftZustand + (lauf ? ', gelaufen' : (laufGepl ? ', Lauf geplant' : ''))
-        + (wettkampf ? ', Wettkampftag' : '') + (leereWoche && !ausserhalb ? ', Woche ohne Training' : '');
-      cells += `<span class="${cls.join(' ')}"
-                      data-key="${key}" onclick="showCalDay('${key}','${id}')"
-                      role="button" tabindex="0"
-                      aria-label="${day.toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})}, ${zustand}"></span>`;
-    }
-    cells += '</div>';
-  }
-  grid.innerHTML = cells;
+  const raster = _calRasterHTML(id, z);
+  grid.innerHTML = raster.zellen;
   // Mit den Zellen verschwindet die Markierung — die Tagesbeschreibung darf nicht
   // stehenbleiben, sonst gehoert sie sichtbar zu keinem Tag mehr.
   const detailEl = document.getElementById(id + '-detail');
   if (detailEl) detailEl.innerHTML = '';
   const monthsEl = document.getElementById(id + '-months');
-  if (monthsEl) monthsEl.innerHTML = months;
+  if (monthsEl) monthsEl.innerHTML = raster.monate;
 
-  // Kennzahlen: Einheiten im Zeitraum + aktuelle Wochenserie
-  // Der Laufkalender zaehlt Laeufe, der Gymkalender Krafteinheiten (Leonard-Wunsch 01.09.2026).
-  // In „Aktuell" steht statt der Jahressumme das VERHAELTNIS absolviert / geplant bis heute, je
-  // Sportart gegen ihren eigenen laufenden Plan (`_calPlanStand`, Leonard-Wunsch 14.09.2026).
-  const inRange = modus.kraft
-    ? DB.getWorkouts().filter(w => new Date(w.startTs).getFullYear() === jahr).length
-      + DB.getManualDays().filter(k => Number(k.slice(0, 4)) === jahr).length
-    : DB.getRuns().filter(l => Number(l.date.slice(0, 4)) === jahr).length;
-  const einheitWort = modus.kraft
-    ? (n => n === 1 ? 'Einheit' : 'Einheiten')
-    : (n => n === 1 ? 'Lauf' : 'Läufe');
-  // Zeigt der Kalender BEIDE Sportarten, gehoeren auch beide Zahlen in die Kennzahl.
-  const laeufeImJahr = DB.getRuns().filter(l => Number(l.date.slice(0, 4)) === jahr).length;
-  const zusatzLauf = (modus.kraft && modus.lauf)
-    ? `${laeufeImJahr} ${laeufeImJahr === 1 ? 'Lauf' : 'Läufe'}` : '';
-  // Die Serie gehoert zu GENAU EINER Sportart und steht deshalb nur in deren Kalender
-  // (Leonard-Wunsch 06.09.2026): Gymkalender = Serie der Krafteinheiten, Laufkalender = Serie
-  // der Laeufe. Im gemeinsamen Trainingskalender stuenden zwei Serien nebeneinander, ohne dass
-  // erkennbar waere, welche welche ist — dort bleibt sie weg.
-  // Die Serie beschreibt den STAND VON HEUTE — in einem vergangenen Jahr waere sie irrefuehrend.
-  // In der UEBERSICHT steht die Serie seit dem 14.09.2026 gar nicht mehr (Leonard-Wunsch) — nur
-  // noch im Kalender des Plan-Tabs.
-  const streak = (id === 'cal' || !istLaufendesJahr || (modus.kraft && modus.lauf)) ? 0
-    : (modus.kraft ? getWeekStreak() : getRunWeekStreak());
+  _calKopfSetzen(id, z);
+
+  // Kaestchengroesse und Abstand kommen BEIDE aus dem CSS (--cal-cell, --cal-gap), damit
+  // jedes Mass nur an einer Stelle steht: Hier ergeben sie die Spaltenbreite fuer
+  // Plan-Laufzeiten und Scrollposition, im CSS die tatsaechlichen Kaestchen und Luecken.
+  // Liefen die beiden Seiten auseinander, verschoeben sich die Balken gegenueber den
+  // Spalten — je weiter rechts, desto staerker.
+  // FESTE Groesse, keine Anpassung an die Bildschirmbreite (Leonard-Wunsch 01.09.2026):
+  // Das Raster ist im Querformat genauso gross wie im Hochformat und scrollt auch dort.
+  const wurzelStil = getComputedStyle(document.documentElement);
+  const luecke = parseFloat(wurzelStil.getPropertyValue('--cal-gap')) || 3;
+  const zelle = parseFloat(wurzelStil.getPropertyValue('--cal-cell')) || 19;
+  const masse = { zelle, luecke, spalte: zelle + luecke };
+
+  _calPlanLaufzeitenZeichnen(id, card, z, masse);
+  _calScrollPositionieren(id, z, masse);
+}
+
+// ZEITRAUM des Rasters: entweder ein ganzes Kalenderjahr oder — Standard seit dem 14.09.2026 —
+// nur der laufende Plan („Aktuell", siehe `_calAktuellePlaene`). Das Raster beginnt immer am
+// Montag der Woche, in der der Zeitraum beginnt, damit die Wochentagszeilen durchgehend stimmen.
+// Beide Kalender folgen ihrer eigenen Auswahl (Leonard-Wunsch 06.09.2026).
+function _calZeitraum(id) {
+  const heute = new Date(); heute.setHours(0, 0, 0, 0);
+  // Gemeinsamer Kalender: Die Laeufe kommen NUR in der Uebersicht dazu (Leonard-Entscheidung
+  // 01.09.2026 — der Kalender im Plaene-Tab zeigt je Seite eine Sportart).
+  const modus = _calModus(id);
+  const wahl = calJahr(id);
+  const aktPlaene = _calAktuellePlaene(modus);
+  const aktuell = wahl === 'aktuell' && !!aktPlaene.bereich;
+  const jahr = (typeof wahl === 'number') ? wahl : heute.getFullYear();
+  const von = aktuell ? aktPlaene.bereich.von : new Date(jahr, 0, 1);
+  const bis = aktuell ? aktPlaene.bereich.bis : new Date(jahr, 11, 31);
+  const start = new Date(von);
+  start.setDate(von.getDate() - ((von.getDay() + 6) % 7));
+  return {
+    heute, modus, aktPlaene, aktuell, jahr, von, bis, start,
+    // „Aktuell" beschreibt immer den Stand von heute — wie das laufende Jahr.
+    istLaufendesJahr: aktuell || jahr === heute.getFullYear(),
+    wochen: Math.ceil((Math.round((bis - start) / TAG_MS) + 1) / 7),
+    // Ausserhalb des Zeitraums (Rand-Tage der ersten/letzten Woche) = ausgegraut und nicht
+    // antippbar — im Jahr die Tage des Vor- und Folgejahres, in „Aktuell" die Tage vor
+    // Planbeginn und nach Planende (Leonard-Entscheidung 14.09.2026).
+    imBereich: (tag) => tag.getTime() >= von.getTime() && tag.getTime() <= bis.getTime(),
+  };
+}
+
+// Hat sich der Zeitraum geaendert (anderer Filter, andere Plan-Seite, ein neuer Plan), passt die
+// gemerkte Scrollposition nicht mehr — dann wie beim ersten Zeichnen neu positionieren. Beim
+// Jahreswechsel setzt `setCalJahr` das ohnehin selbst zurueck.
+function _calBereichMerken(id, z) {
+  const bereichKey = z.von.getTime() + '-' + z.bis.getTime();
+  if (_calBereich[id] !== undefined && _calBereich[id] !== bereichKey) {
+    _calPositioniert[id] = false;
+    _calScrollPos[id] = 0;
+  }
+  _calBereich[id] = bereichKey;
+}
+
+// Wettkampftage — das ganze Kaestchen wird hellgruen (Leonard-Wunsch 04.09.2026). ZWEI Quellen:
+// die eigenstaendige Liste `ft_races` und das `raceDate` eines Laufplans. Die Plaene kommen
+// ZULETZT, damit ihr Name den Vorrang hat, wenn ein Datum in beiden steht.
+function _calWettkampfTage() {
+  const tage = {};
+  DB.getRaces().forEach(r => { tage[r.date] = r; });
+  DB.getRunPlans().forEach(p => { if (p.raceDate) tage[_dayKeyOf(p.raceDate)] = p; });
+  return tage;
+}
+
+// Baut die Kaestchen (`zellen`) und die Monatszeile darueber (`monate`).
+function _calRasterHTML(id, z) {
+  const { heute, modus, imBereich, start } = z;
+  const byDay = buildCalendarData();
+  const planIndex = _calPlanIndex();
+  const laeufeTag = modus.lauf ? runNachTag() : {};
+  const laufGeplant = modus.lauf ? runGeplanteTage() : {};
+  const wettkampfTage = modus.lauf ? _calWettkampfTage() : {};
+
+  // Eine Woche OHNE Training bekommt hellrote Kaestchen (Leonard-Wunsch 05.09.2026).
+  // Es zaehlt allein, ob in der Woche etwas stattgefunden hat — auf einen laufenden Plan kommt
+  // es NICHT an. Einzige Bedingung: Die Woche ist VORBEI (in einer laufenden oder kommenden
+  // Woche ist noch nichts versaeumt). Was als „Training" zaehlt, folgt dem Modus des Kalenders.
+  // Im gemeinsamen „Trainingskalender" gibt es die roten Wochen NICHT (Leonard-Wunsch
+  // 09.09.2026) — dort uebertoente das Rot die Marken beider Sportarten.
+  const wocheOhneTraining = (weekStart) => {
+    if (modus.kraft && modus.lauf) return false;
+    const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
+    if (weekEnd.getTime() >= heute.getTime()) return false;
+    for (let d = 0; d < 7; d++) {
+      const tag = new Date(weekStart); tag.setDate(weekStart.getDate() + d);
+      if (!imBereich(tag)) continue;
+      const k = _dayKeyOf(tag.getTime());
+      if (modus.kraft && byDay[k]) return false;
+      if (modus.lauf && laeufeTag[k]) return false;
+    }
+    return true;
+  };
+
+  const tagZelle = (day, leereWoche) => {
+    const key = _dayKeyOf(day.getTime());
+    const entry = byDay[key];
+    const future = day.getTime() > heute.getTime();
+    const ausserhalb = !imBereich(day);
+    // Flaeche = war laut damaligem Plan ein Trainingstag, Kern = tatsaechlich trainiert.
+    const plan = _calPlanInfo(day, planIndex);
+    const lauf = !ausserhalb && laeufeTag[key];
+    const laufGepl = !ausserhalb && laufGeplant[key];
+    const wettkampf = !ausserhalb && wettkampfTage[key];
+    const cls = ['cal-day'];
+    if (ausserhalb) cls.push('outside');
+    else if (leereWoche) cls.push('leer-woche');
+    if (modus.kraft && plan.planned && !ausserhalb) cls.push('planned');
+    if (modus.kraft && entry && !ausserhalb) cls.push('done');
+    if (lauf) cls.push('run');
+    else if (laufGepl) cls.push('run-planned');
+    if (wettkampf) cls.push('wettkampf');
+    if (future) cls.push('future');
+    if (day.getTime() === heute.getTime()) cls.push('today');
+    const kraftZustand = entry
+      ? (plan.planned ? 'geplant und trainiert' : 'zusaetzlich trainiert')
+      : (plan.planned ? (future ? 'geplant' : 'geplant, nicht trainiert') : 'kein Gym geplant');
+    const zustand = kraftZustand + (lauf ? ', gelaufen' : (laufGepl ? ', Lauf geplant' : ''))
+      + (wettkampf ? ', Wettkampftag' : '') + (leereWoche && !ausserhalb ? ', Woche ohne Training' : '');
+    return `<span class="${cls.join(' ')}"
+                    data-key="${key}" onclick="showCalDay('${key}','${id}')"
+                    role="button" tabindex="0"
+                    aria-label="${day.toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})}, ${zustand}"></span>`;
+  };
+
+  let zellen = '';
+  let monate = '';
+  let letzterMonat = -1;
+  for (let w = 0; w < z.wochen; w++) {
+    const weekStart = new Date(start); weekStart.setDate(start.getDate() + w * 7);
+    const monatsErster = _calMonatsErster(z, weekStart, w);
+    const zeigeMonat = !!monatsErster && monatsErster.getMonth() !== letzterMonat;
+    monate += `<span class="cal-month">${zeigeMonat ? monatsErster.toLocaleDateString('de-DE',{month:'short'}) : ''}</span>`;
+    if (zeigeMonat) letzterMonat = monatsErster.getMonth();
+
+    const leereWoche = wocheOhneTraining(weekStart);
+    zellen += '<div class="cal-week">';
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(weekStart); day.setDate(weekStart.getDate() + d);
+      zellen += tagZelle(day, leereWoche);
+    }
+    zellen += '</div>';
+  }
+  return { zellen, monate };
+}
+
+// Welcher Monat steht ueber der Spalte `w`? Die Beschriftung steht ueber der Spalte, in der der
+// ERSTE des Monats liegt (Leonard-Wunsch 13.09.2026). Nur der Erste INNERHALB des Zeitraums
+// zaehlt: Die erste Rasterwoche reicht in den Dezember davor, die letzte in den Januar danach —
+// sonst stuende „Jan" zweimal da. Liefert das Datum des Monatsersten oder `null`.
+function _calMonatsErster(z, weekStart, w) {
+  for (let d = 0; d < 7; d++) {
+    const tag = new Date(weekStart); tag.setDate(weekStart.getDate() + d);
+    if (tag.getDate() === 1 && z.imBereich(tag)) return tag;
+  }
+  // In „Aktuell" beginnt der Zeitraum meist mitten im Monat — die ersten Spalten stuenden dann
+  // ohne Beschriftung da. Die erste Spalte traegt deshalb den Monat des Planbeginns, sofern der
+  // naechste Monatserste mindestens zwei Spalten weiter liegt (sonst ueberlappten die Namen).
+  if (z.aktuell && w === 0) {
+    const naechster = new Date(z.von.getFullYear(), z.von.getMonth() + 1, 1);
+    if (_calSpalte(naechster, z.start) >= 2) return z.von;
+  }
+  return null;
+}
+
+// Kopfzeile: Titel (in der Farbe der Sportart), Zeitraum und Kennzahl.
+function _calKopfSetzen(id, z) {
+  const { modus, aktuell, jahr } = z;
+  const kombi = modus.kraft && modus.lauf;
   const titelEl = document.getElementById(id === 'cal' ? 'cal-filter-btn' : id + '-titel');
   if (titelEl) {
     titelEl.textContent = modus.titel;
-    // Der Titel traegt die Farbe der Sportart, die der Kalender zeigt (Leonard-Wunsch
-    // 06.09.2026): Gym dunkelgruen, Lauf hellgruen, beide zusammen in der normalen Textfarbe.
     // Als KLASSE, nicht als Inline-Farbe — sonst schlaege sie die Glas-Regel, die den Titel
     // im Transparenz-Modus weiss setzt.
     titelEl.classList.toggle('cal-titel-gym', modus.kraft && !modus.lauf);
     titelEl.classList.toggle('cal-titel-lauf', modus.lauf && !modus.kraft);
   }
-  // Das Jahr steht seit dem 06.09.2026 NEBEN dem Titel statt vorn in der Kennzahl
-  // (Leonard-Wunsch) und ist in BEIDEN Kalendern ein Auswahlfeld — der Plan-Tab zeigte
-  // zunaechst nur Text, seit dem 06.09.2026 kommt man auch dort in vergangene Jahre.
   // Der Wechsler zeigt nur den Zeitraum als Text — die Reihenfolge der Stufen steht in
   // `wechselCalJahr`.
   const jahrEl = document.getElementById(id + '-jahr');
   if (jahrEl) jahrEl.textContent = aktuell ? 'Aktuell' : String(jahr);
+
   const statsEl = document.getElementById(id + '-stats');
-  if (statsEl) {
-    const kombi = modus.kraft && modus.lauf;
-    // Jeder Teil traegt die Klasse SEINER Sportart (19.09.2026, Leonard-Wunsch): In der
-    // Uebersicht steht der Gym-Teil dunkelgruen, der Lauf-Teil hellgruen — dieselben Farben wie
-    // Titel und Fusszeile. Gefaerbt wird im CSS und nur in `#ov-cal-card`; der Trennpunkt und die
-    // Serie (nur im Plan-Tab) bleiben in der Grundfarbe.
-    const teil = (sport, text) => `<span class="cal-stat-${sport}">${escapeHtml(text)}</span>`;
-    const kennzahl = aktuell
-      ? [modus.kraft ? teil('gym', _calPlanStandText('gym', _calPlanStand('gym', aktPlaene.gym, von, today), kombi)) : null,
-         modus.lauf ? teil('lauf', _calPlanStandText('lauf', _calPlanStand('lauf', aktPlaene.lauf, von, today), kombi)) : null]
-          .filter(Boolean).join(' · ')
-      : teil(modus.kraft ? 'gym' : 'lauf', `${inRange} ${einheitWort(inRange)}`)
-        + (zusatzLauf ? ' · ' + teil('lauf', zusatzLauf) : '');
-    statsEl.innerHTML = kennzahl
-      + (streak > 0 ? ` · Serie ${streak} ${streak === 1 ? 'Woche' : 'Wochen'}` : '');
+  if (!statsEl) return;
+  // Jeder Teil traegt die Klasse SEINER Sportart (19.09.2026): Gefaerbt wird im CSS und nur in
+  // `#ov-cal-card`; Trennpunkt und Serie bleiben in der Grundfarbe.
+  const teil = (sport, text) => `<span class="cal-stat-${sport}">${escapeHtml(text)}</span>`;
+  let kennzahl;
+  if (aktuell) {
+    // In „Aktuell" steht das VERHAELTNIS absolviert / geplant bis heute, je Sportart gegen ihren
+    // eigenen laufenden Plan (`_calPlanStand`, Leonard-Wunsch 14.09.2026).
+    const stand = (sport, plan) => teil(sport,
+      _calPlanStandText(sport, _calPlanStand(sport, plan, z.von, z.heute), kombi));
+    kennzahl = [modus.kraft ? stand('gym', z.aktPlaene.gym) : null,
+                modus.lauf ? stand('lauf', z.aktPlaene.lauf) : null].filter(Boolean).join(' · ');
+  } else {
+    // Im Jahr die Anzahl: Der Laufkalender zaehlt Laeufe, der Gymkalender Krafteinheiten samt
+    // nachgetragener Tage; zeigt der Kalender BEIDE Sportarten, stehen beide Zahlen da.
+    const imJahr = (datum) => Number(datum.slice(0, 4)) === jahr;
+    const laeufe = DB.getRuns().filter(l => imJahr(l.date)).length;
+    const laufText = `${laeufe} ${laeufe === 1 ? 'Lauf' : 'Läufe'}`;
+    if (modus.kraft) {
+      const einheiten = DB.getWorkouts().filter(w => new Date(w.startTs).getFullYear() === jahr).length
+        + DB.getManualDays().filter(imJahr).length;
+      kennzahl = teil('gym', `${einheiten} ${einheiten === 1 ? 'Einheit' : 'Einheiten'}`)
+        + (modus.lauf ? ' · ' + teil('lauf', laufText) : '');
+    } else {
+      kennzahl = teil('lauf', laufText);
+    }
   }
+  // Die Serie gehoert zu GENAU EINER Sportart und beschreibt den STAND VON HEUTE: nur im
+  // Einzelkalender des Plan-Tabs und nur im laufenden Jahr (Leonard-Wuensche 06. und 14.09.2026).
+  const serie = (id === 'cal' || !z.istLaufendesJahr || kombi) ? 0
+    : (modus.kraft ? getWeekStreak() : getRunWeekStreak());
+  statsEl.innerHTML = kennzahl
+    + (serie > 0 ? ` · Serie ${serie} ${serie === 1 ? 'Woche' : 'Wochen'}` : '');
+}
 
-  // Kaestchengroesse und Abstand kommen BEIDE aus dem CSS (--cal-cell, --cal-gap), damit
-  // jedes Mass nur an einer Stelle steht: Hier ergeben sie die Spaltenbreite fuer
-  // Plan-Umrandungen und Scrollposition, im CSS die tatsaechlichen Kaestchen und Luecken.
-  // Liefen die beiden Seiten auseinander, verschoeben sich die Umrandungen gegenueber den
-  // Spalten — je weiter rechts, desto staerker.
-  // FESTE Groesse, keine Anpassung an die Bildschirmbreite mehr (Leonard-Wunsch 01.09.2026):
-  // Das Raster soll im Querformat genauso gross sein wie im Hochformat und dort ebenfalls
-  // waagerecht gescrollt werden. Die frueheren Konstanten CAL_CELL_DEFAULT/CAL_CELL_MIN und
-  // die Schleife, die das Kaestchen bis zum Hineinpassen des ganzen Jahres verkleinert hat,
-  // sind damit entfallen.
-  const wurzelStil = getComputedStyle(document.documentElement);
-  const CAL_GAP = parseFloat(wurzelStil.getPropertyValue('--cal-gap')) || 3;
-  const zelle = parseFloat(wurzelStil.getPropertyValue('--cal-cell')) || 19;
-  const SPALTE = zelle + CAL_GAP;
-
-  // ── Plan-Laufzeiten (Variante A + D, Leonard-Entscheidung 04.09.2026) ────────────
-  // Statt eines Rahmens UM die Wochenspalten: der Planname in einer Zeile UEBER dem Raster
-  // und ein farbiger Balken direkt DARUNTER. Zusammen klammern die beiden den Zeitraum ein,
-  // ohne die Kaestchen zu beruehren. Der Rahmen (`.cal-band`) ist damit entfallen — er zeigte
-  // nur, DASS ein Plan lief, nicht welcher, und zwei ueberlappende Rahmen lagen aufeinander.
+// ── Plan-Laufzeiten (Variante A + D, Leonard-Entscheidung 04.09.2026) ────────────
+// Der Planname in einer Zeile UEBER dem Raster und ein farbiger Balken direkt darunter UND
+// unter dem Raster. Zusammen klammern sie den Zeitraum ein, ohne die Kaestchen zu beruehren.
+function _calPlanLaufzeitenZeichnen(id, card, z, masse) {
   const namenEl = document.getElementById(id + '-plannames');
   const spurenEl = document.getElementById(id + '-planlanes');
   const spurenObenEl = document.getElementById(id + '-planlanes-oben');
-  if (namenEl && spurenEl && spurenObenEl) {
-    // Spalte NICHT über Millisekunden-Division bestimmen: Zwischen Winter- und Sommerzeit
-    // fehlt eine Stunde, wodurch ein Datum genau auf einer Wochengrenze in die Vorwoche
-    // rutschte. Über ganze Tage gerundet stimmt es.
-    const spalteFuer = (ts) => {
-      const d = new Date(ts); d.setHours(0, 0, 0, 0);
-      return Math.floor(Math.round((d - start) / 86400000) / 7);
-    };
-    const rasterEnde = new Date(start.getTime());
-    rasterEnde.setDate(rasterEnde.getDate() + wochen * 7);
-    rasterEnde.setMilliseconds(-1);
-    // Welche Plaene der Kalender zeigt, folgt seinem Modus: Gymkalender nur Trainingsplaene,
-    // Laufkalender nur Laufplaene, die Uebersicht im Modus „beide" beide Arten.
-    const imBild = (p) => p && p.startDate
-      && p.startDate <= rasterEnde.getTime() && (p.endDate || Infinity) >= start.getTime();
-    const zeitraeume = [];
-    if (modus.kraft) DB.getPlans().filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'gym' }));
-    if (modus.lauf)  DB.getRunPlans().filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'lauf' }));
-    zeitraeume.sort((a, b) => (a.typ === b.typ ? a.p.startDate - b.p.startDate : (a.typ === 'gym' ? -1 : 1)));
+  if (!namenEl || !spurenEl || !spurenObenEl) return;
+  const { modus } = z;
 
-    // Jede Sportart bekommt ihre eigene Spur, damit Gym und Lauf sich nie ueberlagern.
-    // Ueberschneiden sich ZWEI Plaene derselben Sportart, oeffnet der zweite eine weitere
-    // Spur — sonst stuenden zwei Namen uebereinander.
-    const spuren = [];   // je Eintrag: { typ, bis }
-    const stuecke = [];  // je Eintrag: { p, typ, von, bis, spur }
-    zeitraeume.forEach(({ p, typ }) => {
-      const von = Math.max(0, spalteFuer(p.startDate));
-      const bis = Math.min(wochen - 1, spalteFuer(p.endDate || rasterEnde.getTime()));
-      if (bis < von) return;
-      let nr = spuren.findIndex(sp => sp.typ === typ && sp.bis < von);
-      if (nr < 0) { nr = spuren.length; spuren.push({ typ, bis }); }
-      else spuren[nr].bis = bis;
-      stuecke.push({ p, typ, von, bis, spur: nr });
-    });
+  const stuecke = _calPlanStuecke(z);
+  const anzahl = stuecke.reduce((n, st) => Math.max(n, st.spur + 1), 0);
+  const NAME_H = 15, NAME_GAP = 3, SPUR_H = 5, SPUR_GAP = 3;
+  const stil = (st) => `left:${st.von * masse.spalte}px;width:${(st.bis - st.von + 1) * masse.spalte - masse.luecke}px`;
+  const klasse = (st) => (st.typ === 'lauf' ? ' lauf' : '') + (st.p.archived ? ' archiviert' : '');
 
-    const NAME_H = 15, NAME_GAP = 3, SPUR_H = 5, SPUR_GAP = 3;
-    const stil = (st) => `left:${st.von * SPALTE}px;width:${(st.bis - st.von + 1) * SPALTE - CAL_GAP}px`;
-    const klasse = (st) => (st.typ === 'lauf' ? ' lauf' : '') + (st.p.archived ? ' archiviert' : '');
+  // Zeigt der Kalender BEIDE Sportarten, bleiben die Namen weg (Leonard-Wunsch 04.09.2026):
+  // Mit Gym- und Laufplaenen gleichzeitig standen bis zu vier Zeilen Text ueber dem Raster.
+  const zeigtNamen = !(modus.kraft && modus.lauf);
+  namenEl.innerHTML = zeigtNamen ? stuecke.map(st =>
+    `<span class="cal-planname${klasse(st)}" style="${stil(st)};top:${st.spur * (NAME_H + NAME_GAP)}px"
+           title="${escapeHtml(st.p.name || '')}">${escapeHtml(st.p.name || 'Plan')}</span>`).join('') : '';
+  const balken = stuecke.map(st =>
+    `<span class="cal-planspur${klasse(st)}" style="${stil(st)};top:${st.spur * (SPUR_H + SPUR_GAP)}px"></span>`).join('');
+  spurenObenEl.innerHTML = balken;
+  spurenEl.innerHTML = balken;
 
-    // Zeigt der Kalender BEIDE Sportarten, bleiben die Namen weg (Leonard-Wunsch 04.09.2026):
-    // Mit Gym- und Laufplaenen gleichzeitig standen bis zu vier Zeilen Text ueber dem Raster.
-    // In den Einzelansichten (Gymkalender, Laufkalender) erscheinen sie unveraendert.
-    const zeigtNamen = !(modus.kraft && modus.lauf);
-    namenEl.innerHTML = zeigtNamen ? stuecke.map(st =>
-      `<span class="cal-planname${klasse(st)}" style="${stil(st)};top:${st.spur * (NAME_H + NAME_GAP)}px"
-             title="${escapeHtml(st.p.name || '')}">${escapeHtml(st.p.name || 'Plan')}</span>`).join('') : '';
-    // Derselbe Balken OBEN wie UNTEN (Leonard-Wunsch 04.09.2026): Er steht direkt unter dem
-    // Namen und noch einmal unter dem Raster — die beiden klammern den Zeitraum sichtbar ein.
-    const balken = stuecke.map(st =>
-      `<span class="cal-planspur${klasse(st)}" style="${stil(st)};top:${st.spur * (SPUR_H + SPUR_GAP)}px"></span>`).join('');
-    spurenObenEl.innerHTML = balken;
-    spurenEl.innerHTML = balken;
+  // Alle drei Zeilen sind absolut gefuellt und haetten sonst die Hoehe null. Die Wochentagsspalte
+  // liegt ABSOLUT ueber dem Kalender und muss alles ueber dem Raster mitrechnen, sonst steht „Mo"
+  // nicht mehr auf einer Linie mit der ersten Rasterzeile — daher `--cal-names-h`.
+  const hNamen = (anzahl && zeigtNamen) ? anzahl * NAME_H + (anzahl - 1) * NAME_GAP : 0;
+  const hBalken = anzahl ? anzahl * SPUR_H + (anzahl - 1) * SPUR_GAP : 0;
+  namenEl.style.height = hNamen + 'px';
+  namenEl.style.marginBottom = hNamen ? '3px' : '0';
+  spurenObenEl.style.height = hBalken + 'px';
+  spurenObenEl.style.marginBottom = anzahl ? '6px' : '0';
+  spurenEl.style.height = hBalken + 'px';
+  spurenEl.style.marginTop = anzahl ? '7px' : '0';
+  if (card) card.style.setProperty('--cal-names-h',
+    (anzahl ? (hNamen ? hNamen + 3 : 0) + hBalken + 6 : 0) + 'px');
+}
 
-    // Beide Zeilen sind absolut gefuellt und haetten sonst die Hoehe null. Die Namenszeile
-    // schiebt ausserdem das Raster nach unten — die Wochentagsspalte liegt ABSOLUT ueber dem
-    // Kalender und muss denselben Versatz mitrechnen, sonst steht „Mo" nicht mehr auf einer
-    // Linie mit der ersten Rasterzeile. Deshalb `--cal-names-h` als gemeinsame Quelle.
-    const anzahl = spuren.length;
-    const hNamen = (anzahl && zeigtNamen) ? anzahl * NAME_H + (anzahl - 1) * NAME_GAP : 0;
-    const hBalken = anzahl ? anzahl * SPUR_H + (anzahl - 1) * SPUR_GAP : 0;
-    namenEl.style.height = hNamen + 'px';
-    namenEl.style.marginBottom = hNamen ? '3px' : '0';
-    spurenObenEl.style.height = hBalken + 'px';
-    spurenObenEl.style.marginBottom = anzahl ? '6px' : '0';
-    spurenEl.style.height = hBalken + 'px';
-    spurenEl.style.marginTop = anzahl ? '7px' : '0';
-    // Alles, was UEBER dem Raster liegt, muss die absolut positionierte Wochentagsspalte
-    // mitrechnen — sonst steht „Mo" nicht mehr auf einer Linie mit der ersten Rasterzeile.
-    if (card) card.style.setProperty('--cal-names-h',
-      (anzahl ? (hNamen ? hNamen + 3 : 0) + hBalken + 6 : 0) + 'px');
-  }
+// Welche Plaene im Bild liegen, in welchen Spalten und in welcher Spur. Jede Sportart bekommt
+// ihre eigene Spur, damit Gym und Lauf sich nie ueberlagern; ueberschneiden sich ZWEI Plaene
+// derselben Sportart, oeffnet der zweite eine weitere Spur (einfaches Intervall-Packing).
+function _calPlanStuecke(z) {
+  const { modus, start, wochen } = z;
+  const rasterEnde = new Date(start.getTime());
+  rasterEnde.setDate(rasterEnde.getDate() + wochen * 7);
+  rasterEnde.setMilliseconds(-1);
+  const imBild = (p) => p && p.startDate
+    && p.startDate <= rasterEnde.getTime() && (p.endDate || Infinity) >= start.getTime();
+  const zeitraeume = [];
+  if (modus.kraft) DB.getPlans().filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'gym' }));
+  if (modus.lauf)  DB.getRunPlans().filter(imBild).forEach(p => zeitraeume.push({ p, typ: 'lauf' }));
+  zeitraeume.sort((a, b) => (a.typ === b.typ ? a.p.startDate - b.p.startDate : (a.typ === 'gym' ? -1 : 1)));
 
-  // Beim ERSTEN Aufbau zum Beginn des laufenden Plans scrollen (13.09.2026, Leonard-Wunsch —
-  // vorher zur aktuellen Woche). Danach die Position des Nutzers HALTEN:
-  // `renderTrainingCalendar` laeuft bei jedem Tabwechsel erneut (ueber `_applyTabState`), und
-  // ein erneutes Setzen liess das Raster jedes Mal zurueckspringen (gemeldet 01.09.2026).
+  const spuren = [];   // je Eintrag: { typ, bis }
+  const stuecke = [];  // je Eintrag: { p, typ, von, bis, spur }
+  zeitraeume.forEach(({ p, typ }) => {
+    const von = Math.max(0, _calSpalte(p.startDate, start));
+    const bis = Math.min(wochen - 1, _calSpalte(p.endDate || rasterEnde.getTime(), start));
+    if (bis < von) return;
+    let nr = spuren.findIndex(sp => sp.typ === typ && sp.bis < von);
+    if (nr < 0) { nr = spuren.length; spuren.push({ typ, bis }); }
+    else spuren[nr].bis = bis;
+    stuecke.push({ p, typ, von, bis, spur: nr });
+  });
+  return stuecke;
+}
+
+// Beim ERSTEN Aufbau zum Beginn des laufenden Plans scrollen (13.09.2026, Leonard-Wunsch).
+// Danach die Position des Nutzers HALTEN: `renderTrainingCalendar` laeuft bei jedem Tabwechsel
+// erneut (ueber `_applyTabState`), und ein erneutes Setzen liess das Raster jedes Mal
+// zurueckspringen (gemeldet 01.09.2026).
+function _calScrollPositionieren(id, z, masse) {
   const scroller = document.getElementById(id + '-scroll');
-  if (scroller && !scroller.dataset.posMerker) {
+  if (!scroller) return;
+  if (!scroller.dataset.posMerker) {
     scroller.dataset.posMerker = '1';
     scroller.addEventListener('scroll', () => {
       if (_calPositioniert[id]) _calScrollPos[id] = scroller.scrollLeft;
     }, { passive: true });
   }
-  if (scroller) requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
     if (_calPositioniert[id]) { scroller.scrollLeft = _calScrollPos[id] || 0; return; }
     if (!scroller.clientWidth) return;   // im unsichtbaren Tab nicht messbar — spaeter erneut
-    const spalteVon = (ts) => {
-      const d = new Date(ts); d.setHours(0, 0, 0, 0);
-      return Math.floor(Math.round((d - start) / 86400000) / 7);
-    };
-    // ── Wo faengt die Ansicht an? (13.09.2026, Leonard-Entscheidung) ──
-    // 1. Beim Beginn des laufenden Plans — JEDER Kalender folgt dabei seiner eigenen
-    //    Sportart: Gymkalender dem Gymplan, Laufkalender dem Laufplan, der gemeinsame
-    //    Trainingskalender dem frueheren von beiden. Sonst begaenne der Laufkalender beim
-    //    Start eines Gymplans, dessen Daten er gar nicht zeigt.
-    // 2. Liegt dieser Beginn nicht im angezeigten Jahr (anderes Jahr gewaehlt, oder der Plan
-    //    laeuft schon seit dem Vorjahr): Spalte des aktuellen Monats — aber nur im laufenden
-    //    Jahr, sonst gibt es keinen „aktuellen Monat".
-    // 3. Sonst der Jahresanfang.
-    const starts = [];
-    if (modus.kraft) { const gp = getActivePlan(); if (gp && gp.startDate) starts.push(gp.startDate); }
-    if (modus.lauf)  { const rp = runPlanAktiv(); if (rp && rp.startDate) starts.push(rp.startDate); }
-    const planStart = starts.length ? Math.min(...starts) : null;
-    let zielSpalte = 0;
-    // In „Aktuell" beginnt das Raster ohnehin beim Planbeginn — Spalte 0.
-    if (aktuell) zielSpalte = 0;
-    else if (planStart != null && new Date(planStart).getFullYear() === jahr) zielSpalte = spalteVon(planStart);
-    else if (istLaufendesJahr) zielSpalte = spalteVon(new Date(jahr, today.getMonth(), 1).getTime());
-    let ziel = Math.max(0, zielSpalte * SPALTE);
+    let ziel = Math.max(0, _calStartSpalte(z) * masse.spalte);
     // HEUTE muss sichtbar bleiben (Leonard-Entscheidung 13.09.2026): Ein 18-Wochen-Plan ist
-    // breiter als die rund 10 sichtbaren Spalten — beim Planbeginn stehend waere die aktuelle
-    // Woche aus dem Bild, und man muesste jedes Mal nach rechts scrollen. Liegt heute rechts
-    // ausserhalb, wird nur so weit nachgeschoben, dass sein Kaestchen gerade hineinpasst.
-    if (istLaufendesJahr) {
-      const mindestens = spalteVon(today.getTime()) * SPALTE + zelle - scroller.clientWidth;
+    // breiter als die rund 10 sichtbaren Spalten. Liegt heute rechts ausserhalb, wird nur so
+    // weit nachgeschoben, dass sein Kaestchen gerade hineinpasst.
+    if (z.istLaufendesJahr) {
+      const mindestens = _calSpalte(z.heute.getTime(), z.start) * masse.spalte + masse.zelle - scroller.clientWidth;
       if (ziel < mindestens) ziel = mindestens;
     }
     ziel = Math.max(0, Math.min(ziel, scroller.scrollWidth - scroller.clientWidth));
     scroller.scrollLeft = ziel;
     _calScrollPos[id] = ziel;
     _calPositioniert[id] = true;
-    // KEIN `touch-action` hier. Der Versuch (01.09.2026), dem Browser mit `pan-x` die Wahl
-    // zwischen senkrechtem Seiten- und waagerechtem Rasterscroll abzunehmen, hat das
-    // Stocken nicht behoben — und in Tabs, deren Seite senkrecht scrollt (Uebersicht),
-    // nimmt es der Geste zusaetzlich den senkrechten Ausweg. Beim Wiederaufgreifen bedenken.
+    // KEIN `touch-action` hier. Der Versuch (01.09.2026) mit `pan-x` hat das Stocken nicht
+    // behoben und nimmt in senkrecht scrollenden Tabs der Geste den Ausweg.
   });
+}
+
+// Wo faengt die Ansicht an? (13.09.2026, Leonard-Entscheidung)
+// 1. Beim Beginn des laufenden Plans — JEDER Kalender folgt seiner Sportart: Gymkalender dem
+//    Gymplan, Laufkalender dem Laufplan, der gemeinsame dem frueheren von beiden.
+// 2. Liegt dieser Beginn nicht im angezeigten Jahr: Spalte des aktuellen Monats — aber nur im
+//    laufenden Jahr, sonst gibt es keinen „aktuellen Monat".
+// 3. Sonst der Jahresanfang. In „Aktuell" beginnt das Raster ohnehin beim Planbeginn.
+function _calStartSpalte(z) {
+  if (z.aktuell) return 0;
+  const starts = [];
+  if (z.modus.kraft) { const gp = getActivePlan(); if (gp && gp.startDate) starts.push(gp.startDate); }
+  if (z.modus.lauf)  { const rp = runPlanAktiv(); if (rp && rp.startDate) starts.push(rp.startDate); }
+  const planStart = starts.length ? Math.min(...starts) : null;
+  if (planStart != null && new Date(planStart).getFullYear() === z.jahr) return _calSpalte(planStart, z.start);
+  if (z.istLaufendesJahr) return _calSpalte(new Date(z.jahr, z.heute.getMonth(), 1).getTime(), z.start);
+  return 0;
 }
 
 // Tippen auf ein Kästchen: Tag in der Fußzeile beschreiben.
@@ -6345,7 +6363,6 @@ function showCalDay(key, id) {
   const plan = _calPlanInfo(new Date(y, m-1, d), _calPlanIndex());
   // Im Lauf-Modus bleibt vom Trainingsteil nur das Datum stehen.
   const modus = _calModus(id);
-  const kraft = modus.kraft;
   // Zeile 1: Wochentag und Datum. Darunter ZWEI SPALTEN — links Gym, rechts Laufen
   // (Leonard-Wunsch 06.09.2026; vorher standen sie untereinander). Jede Spalte nennt entweder
   // die absolvierte Einheit (als Knopf zur Detailansicht) oder was fuer den Tag geplant war.
@@ -6606,10 +6623,8 @@ function showHistDetail(i, highlightExId) {
   const ws = DB.getWorkouts();
   const w = ws[i];
   if (!w) return;
-  const plan = DB.getPlan();
-  const day = plan.find(d => d.id === w.planDayId);
   document.getElementById('hist-detail-title').textContent =
-    `${day ? day.name : (w.planDayName || 'Freies Training')} — ${fmtDate(w.startTs)}`;
+    `${_einheitName(w, DB.getPlan())} — ${fmtDate(w.startTs)}`;
 
   // PR-Marker pro Übung (gewichtsbasiert).
   const prByExId = {};
@@ -6703,9 +6718,7 @@ function deleteSession(i) {
   const ws = DB.getWorkouts();
   const w = ws[i];
   if (!w) return;
-  const plan = DB.getPlan();
-  const day = plan.find(d => d.id === w.planDayId);
-  const dayName = day ? day.name : (w.planDayName || 'Freies Training');
+  const dayName = _einheitName(w, DB.getPlan());
   const dateStr = fmtDate(w.startTs);
   // Erst hist-detail-Modal schließen, dann confirmAction öffnen (z-index/DOM-Order-Schutz)
   closeModal('modal-hist-detail');
@@ -6825,7 +6838,7 @@ function planWochen(p) {
   if (!p) return null;
   if (p.weeksTotal) return p.weeksTotal;
   if (!p.startDate || !p.endDate) return null;
-  return Math.max(1, Math.round((p.endDate - p.startDate) / (7 * 24 * 3600 * 1000)));
+  return Math.max(1, Math.round((p.endDate - p.startDate) / WOCHE_MS));
 }
 
 function fmtDateRange(start, end) {
@@ -7112,7 +7125,7 @@ function createNewPlan() {
     const plans = DB.getPlans();
     const startDate = Date.now();
     const weeksTotal = 12;
-    const endDate = startDate + weeksTotal * 7 * 24 * 3600 * 1000;
+    const endDate = startDate + weeksTotal * WOCHE_MS;
     const newPlan = {
       id: 'plan_' + Date.now() + '_' + Math.floor(Math.random()*10000),
       name, weeksTotal, startDate, endDate,
@@ -7364,7 +7377,7 @@ function applyPlanTemplate(key) {
   const plans = DB.getPlans();
   const startDate = Date.now();
   const weeksTotal = t.weeks || 12;
-  const endDate = startDate + weeksTotal * 7 * 24 * 3600 * 1000;
+  const endDate = startDate + weeksTotal * WOCHE_MS;
   const np = { id: 'plan_' + Date.now() + '_' + Math.floor(Math.random()*10000), name: t.name, weeksTotal, startDate, endDate, notes: '', dayIds, weekPlan, archived: false, createdAt: Date.now() };
   plans.push(np);
   DB.savePlans(plans);
@@ -7415,7 +7428,7 @@ function copyExistingPlan(planId) {
   const plans = DB.getPlans();
   const startDate = Date.now();
   const weeksTotal = src.weeksTotal || 12;
-  const endDate = startDate + weeksTotal * 7 * 24 * 3600 * 1000;
+  const endDate = startDate + weeksTotal * WOCHE_MS;
   const np = { id: 'plan_' + Date.now() + '_' + Math.floor(Math.random()*10000), name: src.name + ' (Kopie)', weeksTotal, startDate, endDate, notes: src.notes || '', dayIds: newDayIds, weekPlan, archived: false, createdAt: Date.now() };
   plans.push(np);
   DB.savePlans(plans);
@@ -7665,7 +7678,7 @@ function wettkampfKarte(r, lauf) {
   const heute = new Date(); heute.setHours(0, 0, 0, 0);
   const tag = new Date(y, m - 1, d);
   const kuenftig = tag > heute;
-  const tageHer = Math.round((heute - tag) / 86400000);
+  const tageHer = Math.round((heute - tag) / TAG_MS);
   const ueberfaellig = !kuenftig && tageHer > WK_KULANZ_TAGE;
 
   // Dieselben Kacheln wie in der Laufdetailansicht (`.hd-stats`), damit ein Wettkampf nicht
@@ -8198,7 +8211,7 @@ function onStartDateChange() {
   if (!start) return;
   if (p.endDate && start >= p.endDate) { showToast('Startdatum muss vor dem Enddatum liegen'); _renderAfterPlanEdit(); return; }
   p.startDate = start;
-  if (!p.endDate) p.endDate = start + (p.weeksTotal || 12) * 7*24*3600*1000;
+  if (!p.endDate) p.endDate = start + (p.weeksTotal || 12) * WOCHE_MS;
   _planDauerNachziehen(p);
   DB.saveProgram(p);
   showToast('Trainingsplan aktualisiert');
@@ -9293,9 +9306,12 @@ function importData(event) {
 
 const VALID_MUSCLES = ['chest','back','shoulders','biceps','triceps','legs','core'];
 
-let pendingPlanImport = null;
+// ─── Gemeinsame Bausteine beider Importe ──────────────────────────────
 
-function importTrainingPlan(event) {
+// Liest die gewaehlte Datei, prueft JSON und Format und reicht die Daten an `weiter`.
+// Fehler melden sich als Toast. Das Dateifeld wird geleert, damit dieselbe Datei erneut
+// gewaehlt werden kann (sonst feuert `change` nicht noch einmal).
+function _importDateiLesen(event, format, weiter) {
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -9304,24 +9320,55 @@ function importTrainingPlan(event) {
     let data;
     try { data = JSON.parse(e.target.result); }
     catch { showToast('Datei ist kein gültiges JSON'); return; }
-    if (data.format !== 'fittrack-plan-import') {
-      showToast('Falsches Format — erwartet "fittrack-plan-import"');
+    if (data.format !== format) {
+      showToast(`Falsches Format — erwartet "${format}"`);
       return;
     }
-    if (!Array.isArray(data.trainingDays) || data.trainingDays.length === 0) {
-      showToast('Import enthält keine Trainingstage');
-      return;
-    }
-    for (const day of data.trainingDays) {
-      if (!day.name || typeof day.name !== 'string') {
-        showToast('Trainingstag ohne Name gefunden — Import abgebrochen');
-        return;
-      }
-      if (!Array.isArray(day.exercises)) {
-        showToast(`Trainingstag "${day.name}" hat keine Übungs-Liste`);
-        return;
-      }
-    }
+    weiter(data);
+  };
+  reader.readAsText(file);
+}
+
+// Uebungsnamen werden ohne Gross-/Kleinschreibung und Randleerzeichen verglichen.
+function _importNameSchluessel(name) { return name.trim().toLowerCase(); }
+function _importFindeUebung(exs, name) {
+  const schluessel = _importNameSchluessel(name);
+  return exs.find(e => _importNameSchluessel(e.name) === schluessel);
+}
+
+// Fortlaufende IDs innerhalb EINES Imports — `Date.now()` allein ist fuer viele Eintraege in
+// derselben Millisekunde nicht eindeutig.
+function _importIdGeber() {
+  let n = 0;
+  return (prefix) => `${prefix}_${Date.now()}_${n++}`;
+}
+
+// Neue Katalog-Uebung aus einem Import-Eintrag. Fehlt eine gueltige Muskelgruppe, wird sie
+// aus dem Namen geraten; die Kategorie (push/pull/legs) folgt der Muskelgruppe.
+function _importNeueUebung(ie, neueId) {
+  const muscle = VALID_MUSCLES.includes(ie.muscle) ? ie.muscle : inferMuscleFromName(ie.name);
+  const category = muscle === 'legs' ? 'legs'
+                 : (muscle === 'back' || muscle === 'biceps') ? 'pull'
+                 : 'push';
+  return {
+    id: neueId('custom'),
+    name: ie.name.trim(),
+    muscle, category,
+    isCustom: true,
+    notes: (typeof ie.notes === 'string' ? ie.notes : ''),
+  };
+}
+
+function _mehrzahlUebung(n) { return `${n} neue Übung${n === 1 ? '' : 'en'}`; }
+
+// ─── Trainingsplan-Import ─────────────────────────────────────────────
+
+let pendingPlanImport = null;
+
+function importTrainingPlan(event) {
+  _importDateiLesen(event, 'fittrack-plan-import', data => {
+    const fehler = _planImportFehler(data);
+    if (fehler) { showToast(fehler); return; }
     pendingPlanImport = data;
     const dayCount = data.trainingDays.length;
     const totalEx = data.trainingDays.reduce((s, d) => s + d.exercises.length, 0);
@@ -9331,8 +9378,19 @@ function importTrainingPlan(event) {
     document.getElementById('plan-import-summary').innerHTML =
       `Ein neuer Trainingsplan ${tpName} mit <strong>${dayCount}</strong> Trainingstagen und insgesamt <strong>${totalEx}</strong> Übungen wird erstellt (Dauer ${tpWeeks} Wochen). Bestehende Pläne bleiben unverändert.`;
     openModal('modal-plan-import');
-  };
-  reader.readAsText(file);
+  });
+}
+
+// Prueft den Inhalt einer Plan-Datei; liefert die Fehlermeldung oder `null`.
+function _planImportFehler(data) {
+  if (!Array.isArray(data.trainingDays) || data.trainingDays.length === 0) {
+    return 'Import enthält keine Trainingstage';
+  }
+  for (const day of data.trainingDays) {
+    if (!day.name || typeof day.name !== 'string') return 'Trainingstag ohne Name gefunden — Import abgebrochen';
+    if (!Array.isArray(day.exercises)) return `Trainingstag "${day.name}" hat keine Übungs-Liste`;
+  }
+  return null;
 }
 
 function cancelPlanImport() {
@@ -9351,75 +9409,17 @@ function applyPlanImport() {
   if (!data) return;
 
   const exs = DB.getExercises();
-  let newExCount = 0;
-  let reusedExCount = 0;
-
-  const findExByName = (name) => {
-    const norm = name.trim().toLowerCase();
-    return exs.find(e => e.name.trim().toLowerCase() === norm);
-  };
-
-  let _idCounter = 0;
-  const genId = (prefix) => `${prefix}_${Date.now()}_${_idCounter++}`;
-
-  const importedDays = data.trainingDays.map(day => {
-    const exercises = (day.exercises || []).map(ie => {
-      let ex = findExByName(ie.name);
-      if (ex) {
-        reusedExCount++;
-      } else {
-        const muscle = VALID_MUSCLES.includes(ie.muscle) ? ie.muscle : inferMuscleFromName(ie.name);
-        const category = muscle === 'legs' ? 'legs'
-                       : (muscle === 'back' || muscle === 'biceps') ? 'pull'
-                       : 'push';
-        ex = {
-          id: genId('custom'),
-          name: ie.name.trim(),
-          muscle, category,
-          isCustom: true,
-          notes: (typeof ie.notes === 'string' ? ie.notes : ''),
-        };
-        exs.push(ex);
-        newExCount++;
-      }
-
-      const planEx = {
-        exId: ex.id,
-        targetSets: Number.isFinite(+ie.targetSets) ? +ie.targetSets : 3,
-        targetReps: Number.isFinite(+ie.targetReps) ? +ie.targetReps : 8,
-      };
-      if (Number.isFinite(+ie.targetWeight) && +ie.targetWeight > 0) {
-        planEx.targetWeight = +ie.targetWeight;
-      }
-      return planEx;
-    });
-    return { id: genId('day'), name: day.name.trim(), color: null, exercises };
-  });
+  const neueId = _importIdGeber();
+  const zaehler = { neu: 0, vorhanden: 0 };
+  const importedDays = _planImportTage(data, exs, neueId, zaehler);
 
   // Plan-Metadaten extrahieren (oder Defaults)
   const tp = data.trainingPlan || data.program;
   const planName = tp?.name?.trim() || 'Importierter Trainingsplan';
   const weeksTotal = Number.isFinite(+tp?.weeksTotal) && +tp.weeksTotal > 0 ? +tp.weeksTotal : 12;
   const startDate = tp?.startDate ? (_dateToMs(tp.startDate) || Date.now()) : Date.now();
-  const endDate = startDate + weeksTotal * 7 * 24 * 3600 * 1000;
-
-  // weekPlan: Default, oder ueberschrieben durch JSON-Block (by-name-Mapping auf trainingDays)
-  let weekPlan = JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
-  const wpFromJson = tp?.weekPlan || data.weekPlan;
-  if (Array.isArray(wpFromJson)) {
-    // trainingDay-Name → erzeugte ID
-    const dayIdByName = {};
-    importedDays.forEach(d => { dayIdByName[d.name.trim().toLowerCase()] = d.id; });
-    weekPlan = weekPlan.map(slot => {
-      const match = wpFromJson.find(w => w && w.dayKey === slot.dayKey);
-      if (!match) return slot;
-      // null/leer/false → expliziter Ruhetag
-      const name = (typeof match.trainingDay === 'string') ? match.trainingDay.trim() : '';
-      if (!name) return { ...slot, planDayId: null };
-      const id = dayIdByName[name.toLowerCase()];
-      return { ...slot, planDayId: id || null };
-    });
-  }
+  const endDate = startDate + weeksTotal * WOCHE_MS;
+  const weekPlan = _planImportWochenplan(tp?.weekPlan || data.weekPlan, importedDays);
 
   // Referenz-Modell: importierte Tage werden zu geteilten Bibliothek-Tagen; der Plan
   // referenziert sie über dayIds. (weekPlan zeigt bereits auf dieselben importedDays-IDs.)
@@ -9430,9 +9430,8 @@ function applyPlanImport() {
   });
   DB.saveTrainingDays(lib);
 
-  // Neuen Plan erstellen
   const plans = DB.getPlans();
-  const newPlan = {
+  plans.push({
     id: 'plan_' + Date.now() + '_' + Math.floor(Math.random()*10000),
     name: planName,
     weeksTotal, startDate, endDate,
@@ -9440,12 +9439,10 @@ function applyPlanImport() {
     weekPlan,
     archived: false,
     createdAt: Date.now(),
-  };
-  plans.push(newPlan);
+  });
   DB.savePlans(plans);
   DB.saveExercises(exs);
 
-  // UI-Refresh
   if (currentScreen === 'plans') renderPlans();
   else if (currentScreen === 'overview') renderOverview();
   else if (currentScreen === 'exercises') renderExercises();
@@ -9453,10 +9450,54 @@ function applyPlanImport() {
   const parts = [
     `Trainingsplan "${planName}" erstellt`,
     `${importedDays.length} Trainingstage`,
-    newExCount ? `${newExCount} neue Übung${newExCount === 1 ? '' : 'en'}` : null,
-    reusedExCount ? `${reusedExCount} existierende wiederverwendet` : null,
+    zaehler.neu ? _mehrzahlUebung(zaehler.neu) : null,
+    zaehler.vorhanden ? `${zaehler.vorhanden} existierende wiederverwendet` : null,
   ].filter(Boolean);
   showToast(parts.join(' • ') + ' ✓');
+}
+
+// Baut die Trainingstage der Datei. Uebungen gleichen Namens werden aus dem Katalog
+// wiederverwendet, unbekannte neu angelegt (in `exs`, gespeichert vom Aufrufer).
+function _planImportTage(data, exs, neueId, zaehler) {
+  return data.trainingDays.map(day => {
+    const exercises = (day.exercises || []).map(ie => {
+      let ex = _importFindeUebung(exs, ie.name);
+      if (ex) {
+        zaehler.vorhanden++;
+      } else {
+        ex = _importNeueUebung(ie, neueId);
+        exs.push(ex);
+        zaehler.neu++;
+      }
+      const planEx = {
+        exId: ex.id,
+        targetSets: Number.isFinite(+ie.targetSets) ? +ie.targetSets : 3,
+        targetReps: Number.isFinite(+ie.targetReps) ? +ie.targetReps : 8,
+      };
+      if (Number.isFinite(+ie.targetWeight) && +ie.targetWeight > 0) {
+        planEx.targetWeight = +ie.targetWeight;
+      }
+      return planEx;
+    });
+    return { id: neueId('day'), name: day.name.trim(), color: null, exercises };
+  });
+}
+
+// Wochenplan: Standard, oder aus der Datei — dort stehen die Tage per NAME, zugeordnet wird
+// ueber den Namen der importierten Trainingstage (ohne Gross-/Kleinschreibung).
+function _planImportWochenplan(wpAusDatei, importedDays) {
+  const weekPlan = JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
+  if (!Array.isArray(wpAusDatei)) return weekPlan;
+  const dayIdByName = {};
+  importedDays.forEach(d => { dayIdByName[_importNameSchluessel(d.name)] = d.id; });
+  return weekPlan.map(slot => {
+    const match = wpAusDatei.find(w => w && w.dayKey === slot.dayKey);
+    if (!match) return slot;
+    // null/leer/false → expliziter Ruhetag
+    const name = (typeof match.trainingDay === 'string') ? match.trainingDay.trim() : '';
+    if (!name) return { ...slot, planDayId: null };
+    return { ...slot, planDayId: dayIdByName[name.toLowerCase()] || null };
+  });
 }
 
 // ─── Uebungs-Import (nur in die Library, ohne Plan-Wrap) ──────────────
@@ -9466,37 +9507,19 @@ function applyPlanImport() {
 let pendingExercisesImport = null;
 
 function importExercises(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    event.target.value = '';
-    let data;
-    try { data = JSON.parse(e.target.result); }
-    catch { showToast('Datei ist kein gültiges JSON'); return; }
-    if (data.format !== 'fittrack-exercises-import') {
-      showToast('Falsches Format — erwartet "fittrack-exercises-import"');
-      return;
-    }
+  _importDateiLesen(event, 'fittrack-exercises-import', data => {
     if (!Array.isArray(data.exercises) || data.exercises.length === 0) {
       showToast('Import enthält keine Übungen');
       return;
     }
-    for (const ex of data.exercises) {
-      if (!ex.name || typeof ex.name !== 'string' || !ex.name.trim()) {
-        showToast('Übung ohne Name gefunden — Import abgebrochen');
-        return;
-      }
+    if (data.exercises.some(ex => !ex.name || typeof ex.name !== 'string' || !ex.name.trim())) {
+      showToast('Übung ohne Name gefunden — Import abgebrochen');
+      return;
     }
-
-    // Preview-Statistik fuer das Confirm-Modal: wie viele neu, wie viele schon da
+    // Vorschau fuer das Bestaetigungsfenster: wie viele neu, wie viele schon da
     const existing = DB.getExercises();
-    let willCreate = 0, willReuse = 0;
-    for (const ie of data.exercises) {
-      const norm = ie.name.trim().toLowerCase();
-      if (existing.some(e => e.name.trim().toLowerCase() === norm)) willReuse++;
-      else willCreate++;
-    }
+    const willReuse = data.exercises.filter(ie => _importFindeUebung(existing, ie.name)).length;
+    const willCreate = data.exercises.length - willReuse;
 
     pendingExercisesImport = data;
     const total = data.exercises.length;
@@ -9507,8 +9530,7 @@ function importExercises(event) {
     ].filter(Boolean);
     document.getElementById('exercises-import-summary').innerHTML = lines.join('<br>');
     openModal('modal-exercises-import');
-  };
-  reader.readAsText(file);
+  });
 }
 
 function cancelExercisesImport() {
@@ -9527,38 +9549,22 @@ function applyExercisesImport() {
   if (!data) return;
 
   const exs = DB.getExercises();
-  let newExCount = 0;
-  let reusedExCount = 0;
-  let _idCounter = 0;
-  const genId = (prefix) => `${prefix}_${Date.now()}_${_idCounter++}`;
-
+  const neueId = _importIdGeber();
+  let neu = 0, vorhanden = 0;
   for (const ie of data.exercises) {
-    const norm = ie.name.trim().toLowerCase();
-    if (exs.some(e => e.name.trim().toLowerCase() === norm)) {
-      reusedExCount++;
-      continue;
-    }
-    const muscle = VALID_MUSCLES.includes(ie.muscle) ? ie.muscle : inferMuscleFromName(ie.name);
-    const category = muscle === 'legs' ? 'legs'
-                   : (muscle === 'back' || muscle === 'biceps') ? 'pull'
-                   : 'push';
-    exs.push({
-      id: genId('custom'),
-      name: ie.name.trim(),
-      muscle, category,
-      isCustom: true,
-      notes: (typeof ie.notes === 'string' ? ie.notes : ''),
-    });
-    newExCount++;
+    // Auch gegen die in DIESEM Durchlauf angelegten pruefen — doppelte Eintraege in der Datei
+    // landen so nur einmal im Katalog.
+    if (_importFindeUebung(exs, ie.name)) { vorhanden++; continue; }
+    exs.push(_importNeueUebung(ie, neueId));
+    neu++;
   }
   DB.saveExercises(exs);
 
-  // UI-Refresh: wenn der User aktuell im Uebungen-Tab ist, dort neu rendern
   if (currentScreen === 'exercises') renderExercisesScreen();
 
   const parts = [
-    newExCount ? `${newExCount} neue Übung${newExCount === 1 ? '' : 'en'}` : null,
-    reusedExCount ? `${reusedExCount} bereits vorhanden` : null,
+    neu ? _mehrzahlUebung(neu) : null,
+    vorhanden ? `${vorhanden} bereits vorhanden` : null,
   ].filter(Boolean);
   showToast((parts.length ? parts.join(' • ') : 'Nichts zu importieren') + ' ✓');
 }
@@ -9727,7 +9733,7 @@ function trashPut(type, label, payload) {
 
 // Abgelaufene Einträge entfernen (läuft beim App-Start).
 function purgeTrash() {
-  const cutoff = Date.now() - TRASH_KEEP_DAYS * 86400000;
+  const cutoff = Date.now() - TRASH_KEEP_DAYS * TAG_MS;
   const trash = DB.getTrash();
   const kept = trash.filter(t => t.deletedAt >= cutoff);
   if (kept.length !== trash.length) DB.saveTrash(kept);
@@ -9844,7 +9850,7 @@ function renderTrash() {
     return;
   }
   wrap.innerHTML = trash.map(t => {
-    const daysLeft = Math.max(0, TRASH_KEEP_DAYS - Math.floor((Date.now() - t.deletedAt) / 86400000));
+    const daysLeft = Math.max(0, TRASH_KEEP_DAYS - Math.floor((Date.now() - t.deletedAt) / TAG_MS));
     return `<div class="trash-row" data-trash="${t.id}">
       <div class="trash-info">
         <div class="trash-name">${escapeHtml(t.label)}</div>
@@ -10210,7 +10216,7 @@ function driveApplyCloudData(data) {
       id: 'plan_' + Date.now(),
       name: prog.name || 'Mein Trainingsplan',
       weeksTotal, startDate,
-      endDate: prog.endDate || (startDate + weeksTotal * 7 * 24 * 3600 * 1000),
+      endDate: prog.endDate || (startDate + weeksTotal * WOCHE_MS),
       trainingDays: data.plan,
       weekPlan: wp,
       archived: false,

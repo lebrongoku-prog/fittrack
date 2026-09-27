@@ -12,10 +12,10 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 
 | Datei | Zweck |
 |---|---|
-| `index.html` (~905 Z.) | Markup, alle Screens + Modals |
-| `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
-| `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v402**) |
+| `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
+| `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
+| `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v403**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -46,9 +46,14 @@ Regel: Nach jeder abgeschlossenen Umsetzung direkt hochladen und das Ergebnis me
    - Bei CSS-Aufräumarbeiten NIE eine Regel nur deshalb löschen, weil EIN Selektor tot ist — Regeln mit
      Selektorlisten (`.a, .b, .c { … }`) verlieren sonst lebende Teile. So verschwand beim Cardio-Ausbau
      `.aex-v2.collapsed .aex-v2-body` und die Übungskarten ließen sich nicht mehr zuklappen.
-   - **`node` ist auf dem Rechner NICHT installiert** — statt `node --check app.js` die App über
-     `.claude/devserver.py` im Browser laden und die Konsole auf Fehler prüfen (das deckt auch
-     Laufzeitfehler ab). Beim Testen vorher Service Worker + Caches löschen, sonst läuft alter Code.
+   - **`node` ist auf dem Rechner NICHT installiert** — für einen reinen SYNTAX-Check taugt aber
+     macOS' JavaScriptCore (`jsc`, siehe „Nützliche Befehle"). Laufzeitfehler findet nur der
+     Browser: die App über `.claude/devserver.py` laden und die Konsole prüfen. Beim Testen vorher
+     Service Worker + Caches löschen, sonst läuft alter Code.
+   - Bei UMBAUTEN ohne Verhaltensänderung (Aufräumen, Aufteilen): alte Fassung (`git show HEAD:…`)
+     in einen Unterordner von `.claude/` legen, beide mit DENSELBEN `localStorage`-Daten laden und
+     die gerenderten Ausgaben vergleichen. Die CSP verbietet `eval` — ein Prüfskript als
+     `<script src>` einhängen (gleicher Ursprung ist erlaubt). So geprüft beim Aufräumen am 27.09.2026.
    - CSS-Klammerbalance: `python3 -c "s=open('style.css').read(); print(s.count('{'), s.count('}'))"` (muss gleich sein)
    - gezielte Greps auf neu/entfernte Bezeichner
 4. **Updates greifen erst nach dem ZWEITEN App-Neustart** (1. Start installiert den neuen SW, 2. Start aktiviert ihn).
@@ -62,6 +67,11 @@ Regel: Nach jeder abgeschlossenen Umsetzung direkt hochladen und das Ergebnis me
 
 ### Daten- & DB-Schicht
 - Zentrales `const DB = { … }` kapselt alle `localStorage`-Zugriffe. `markLocalChange()` triggert die Drive-Sync.
+  Gelesen/geschrieben wird über `_speicherLesen(key, leer)` / `_speicherSchreiben(key, wert)` (Letzteres ruft
+  `markLocalChange`). AUSNAHMEN ohne Sync-Anstoß, bewusst: `saveActive` (laufende Einheit) und
+  `saveRuns` (Zwischenspeicher der Tabelle). `savePlan`/`saveProgram`/`saveWeekPlan` teilen sich
+  `DB._bearbeitetenPlanAendern(aendern)` (bearbeiteter, sonst aktiver Plan).
+- Zeitspannen als Konstanten `TAG_MS` / `WOCHE_MS` (ganz oben in app.js), keine `86400000` o. Ä. mehr im Code.
 - Keys u. a.: `ft_plans`, `ft_trainingdays`, `ft_exercises`, `ft_workouts`, `ft_active`.
 - Wichtige DB-Methoden: `getPlans/savePlans`, `getPlan()/savePlan(arr)` (operieren via `editingPlanId` bzw. aktiver Plan), `getTrainingDays/saveTrainingDays`, `getExercises/saveExercises`, `getWorkouts/saveWorkouts`, `getActive/saveActive`, `getProgram/saveProgram`, `getWeekPlan/saveWeekPlan`.
 
@@ -3348,6 +3358,23 @@ Einheit, nicht die Tagesuebersicht.
   1 Jahr = pro Monat. Frueher immer Kalenderwochen mit Label "WNN" und hart auf 8 Punkte gekappt —
   dadurch zeigte "Letztes Jahr" nur zwei Monate. `autoSkip` ist im Wochen-Modus AUS, weil dort
   Labels absichtlich leer sind; sonst an. X-Achse aufsteigend (aelteste links).
+- Aufraeum-Stand (27.09.2026, ganze App, Leonard-Auftrag): Keine Verhaltensaenderung — per
+  Vorher/Nachher-Vergleich von 52 gerenderten Ausgaben mit identischen Testdaten belegt.
+  AUFGETEILT: `renderTrainingCalendar` (365 Zeilen) in `_calZeitraum`, `_calBereichMerken`,
+  `_calRasterHTML`, `_calMonatsErster`, `_calKopfSetzen`, `_calPlanLaufzeitenZeichnen`,
+  `_calPlanStuecke`, `_calScrollPositionieren`, `_calStartSpalte`; die zweifach definierte
+  Spaltenrechnung ist jetzt `_calSpalte(ts, start)`. `renderVolumeChart` in `_volEinteilung`,
+  `_volPunkte`, `_hexZuRgb`, `_volLetzterPunktPlugin`. Beide JSON-Importe teilen sich
+  `_importDateiLesen`, `_importFindeUebung`, `_importIdGeber`, `_importNeueUebung`;
+  `applyPlanImport` nutzt `_planImportTage`/`_planImportWochenplan`.
+  ZUSAMMENGEFASST: `_einheitName(w, tage)` (Name einer Einheit, vorher dreimal kopiert),
+  `_volText` (Tonnen/kg fuer `fmtVol` und `volAchsenWert`), `_aexZiehAttribute`/`_aexKopfOeffnen`
+  (Zieh-Attribute der Uebungskarte, vorher in Vorschau und laufender Einheit doppelt).
+  ENTFERNT: die Uebungs-Tableiste `#ex-tab-bar` samt `.ex-tab-v2*` (wurde nur noch geleert, nie
+  befuellt), `_msToDate`, `_lpKmOffen` (das Diagramm der Laufplan-Detailansicht ist nicht
+  einklappbar), drei unbenutzte lokale Variablen, CSS `.empty*`, `.section-title`, `.text3`,
+  `.flex`, `.plan-list-tags`. Acht einzelne `:root`-Zeilen des Kalenders sind EIN Block;
+  13 Stellen mit mehreren Regeln in einer Zeile (Reste frueherer Regex-Laeufe) sind getrennt.
 - Aufraeum-Stand (06.09.2026, zweiter Durchgang): Vollstaendige Suche nach Leichen in JS UND
   CSS. Gefunden und entfernt: fuenf Funktionen ohne Aufrufer — `avgDauerFuerTag` (die mittlere
   Dauer stand nur in der alten Vorschau-Herocard), `calZeigtKraft`/`calZeigtLauf` (durch
@@ -3402,7 +3429,7 @@ Einheit, nicht die Tagesuebersicht.
 
 ## Nützliche Befehle
 ```bash
-node --check app.js
+/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Helpers/jsc -e 'try{ new Function(readFile("app.js")); print("OK") }catch(e){ print(e) }'
 python3 -c "s=open('style.css').read(); print(s.count('{'), s.count('}'))"
 grep -n "fittrack-v" sw.js
 ```
