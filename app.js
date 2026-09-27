@@ -2000,7 +2000,8 @@ function buildSessionCard(active, planDay, selDay, opts) {
 // Dort gehoeren Uhr, Fortschritt und „Pausieren/Beenden" hin, nicht „Heute".
 //
 // `sport`: 'beide' (Uebersicht) · 'gym' (Trainings-Tab, Seite Gym) · 'lauf' (Seite Laufen).
-// `erledigtGrau`: ein schon gelaufener Tag bekommt den grauen Laufknopf (nur Uebersicht, heute).
+// `erledigtGrau`: ein schon gelaufener Tag bekommt den grauen Laufknopf (Uebersicht ohne
+// gewaehlten Tag, Seite „Laufen").
 // Umfang eines Trainingstags fuer die zweite Zeile der Gym-Herocard: Uebungen, Saetze und —
 // sobald mindestens eine Einheit dieses Tags abgeschlossen ist — deren mittlere Dauer.
 // Die Dauer stand frueher schon einmal in der Vorschau-Herocard (`avgDauerFuerTag`) und ist
@@ -2072,9 +2073,9 @@ function buildHeuteHero(planDay, selDay, opts) {
     const u = gepl && gepl.einheit;
     const ziel = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null].filter(Boolean).join(' · ') : '';
     // Kein Lauf geplant → grauer Knopf ohne Verlauf, dieselbe Regel wie beim Gym.
-    // Schon GELAUFEN → ebenfalls grau (27.09.2026, Leonard-Wunsch) — aber nur, wo auch der
-    // Gymknopf nach einer erledigten Einheit grau wird (`opts.erledigtGrau`, Uebersicht ohne
-    // gewaehlten Tag). Die Beschriftung bleibt stehen: „Kein Lauf" waere an diesem Tag falsch.
+    // Schon GELAUFEN → ebenfalls grau (27.09.2026, Leonard-Wunsch), wo `opts.erledigtGrau`
+    // gesetzt ist: Uebersicht ohne gewaehlten Tag und Seite „Laufen" (fuer den gewaehlten Tag).
+    // Die Beschriftung bleibt stehen: „Kein Lauf" waere an diesem Tag falsch.
     const gelaufen = !!opts.erledigtGrau && !!runNachTag()[_dayKeyOf(tagD.getTime())];
     spalten.push(`<div class="hero-heute-spalte">
       <div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf')}</div>
@@ -5274,8 +5275,10 @@ function renderLaufKalenderSeite() {
     { selectedIdx: selectedRunDayIdx, dayOnTap: 'selectRunDay' })}</div>`;
   // Herocard direkt unter dem Wochenplan — dieselbe Stelle wie im Gymteil
   // (Leonard-Wunsch 06.09.2026).
+  // Schon gelaufen → grauer Knopf (27.09.2026, Leonard-Wunsch) — hier fuer den GEWAEHLTEN Tag.
+  // Anders als der Gymknopf auf der Nachbarseite, der gruen bleibt (Regel vom 12.09.2026).
   const hero = `<div id="wo-lauf-hero">${buildHeuteHero(null, null,
-    { sport: 'lauf', runIdx: selectedRunDayIdx })}</div>`;
+    { sport: 'lauf', runIdx: selectedRunDayIdx, erledigtGrau: true })}</div>`;
   // Die Wochenkarte: eine Seite je Woche des laufenden Laufplans, waagerecht wischbar.
   const plan = runPlanAktiv();
   const heuteMo = _laufWochenMontag(new Date());

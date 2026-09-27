@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v407**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v408**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3249,8 +3249,12 @@ Leonard-Vorgabe:
 - **Schon GELAUFEN → Laufknopf grau** (`opts.erledigtGrau`, 27.09.2026, Leonard-Wunsch): das
   Gegenstueck zum Gymknopf, der nach einer erledigten Einheit grau wird. Deshalb GENAU dort, wo
   auch der Gymknopf das tut: in der UEBERSICHT ohne angetippten Wochentag (`renderUebersichtHero`
-  setzt `erledigtGrau: !gewaehlt`). Mit angetipptem Tag und auf der Seite „Laufen" bleibt er
-  gruen — wie der Gymknopf auf der Seite „Gym" (Regel vom 12.09.2026). ANDERS als beim Gym bleibt
+  setzt `erledigtGrau: !gewaehlt`). Mit angetipptem Tag bleibt er dort gruen.
+  SEIT v408 AUCH AUF DER SEITE „LAUFEN" (27.09.2026, Leonard-Wunsch) — dort fuer den im
+  Wochenplan GEWAEHLTEN Tag (`renderLaufKalenderSeite` setzt `erledigtGrau: true`). Damit weicht
+  die Seite bewusst vom Gymknopf auf der Seite „Gym" ab, der gruen bleibt (Regel vom 12.09.2026).
+  GEMESSEN: So gelaufen → grau, Di geplant nicht gelaufen → gruen, Do ungeplant → grau
+  („Kein Lauf"), auch per Tipp auf den Wochentag. ANDERS als beim Gym bleibt
   die Beschriftung (das Ziel, z. B. „10 km · 1h 0min") stehen: „Kein Lauf" waere an einem
   gelaufenen Tag falsch. Erledigt = fuer den Tag steht ein Lauf in `runNachTag()`.
 - **ZWEITE ZEILE unter dem Trainingstag, nur auf der Seite „Gym"** (`.hero-heute-meta`,
