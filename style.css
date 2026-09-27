@@ -727,6 +727,16 @@ body.theme-plans .hist-action-dd {
 #libdays-list > .archiv-inhalt {
   grid-column: 1 / -1;
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
+  /* Die Kacheln fuellen die Spalten bis an den Rand der Huelle — mit `overflow: hidden`
+     waeren ihre 6px-Schatten seitlich und unten abgeschnitten. Die Huelle greift deshalb
+     seitlich 14px weiter aussen und holt die Breite mit demselben Polster zurueck (die drei
+     Spalten bleiben dadurch exakt gleich breit); nach aussen steht sie dann buendig mit dem
+     Bildschirmrand, ragt also nirgends hinaus.
+     Die 8px UNTEN sind der Platz fuer die Schatten der letzten Reihe. Senkrechtes Polster
+     kann bei `box-sizing: border-box` nicht unter seinen eigenen Wert schrumpfen — es bliebe
+     bei Hoehe 0 als 8px-Streifen stehen. Deshalb faehrt `_archivKlappen` ueber `_boxFahren`,
+     das genau dafuer gebaut ist und das Polster mitschrumpfen laesst. */
+  padding: 0 14px 8px; margin: 0 -14px;
 }
 
 .pld-kachel {
@@ -1086,6 +1096,18 @@ body.theme-plans .hist-action-dd {
   text-transform: uppercase; letter-spacing: 0.8px;
 }
 #libdays-list .archiv-titel { margin-left: 2px; margin-right: 2px; }
+/* BESCHNITTEN WIRD PER `overflow: hidden` — seit dem 26.09.2026, vorher per animiertem
+   `clip-path` (siehe `_archivKlappen`). Auf dem iPhone blieb nach dem Zuklappen ein Streifen
+   der archivierten Karten am rechten Rand stehen (Leonard-Meldung mit Screenshot): Die
+   Clip-Bewegung legt das Element auf eine eigene Compositor-Ebene, und deren rechter Rand
+   wurde beim Entfernen nicht neu gezeichnet. Jede andere Klapp-Stelle der App faehrt ihre
+   Hoehe mit `overflow: hidden`, und dort ist das nie passiert.
+   DIE SCHATTEN, wegen derer der `clip-path` gewaehlt worden war, bleiben trotzdem heil:
+   In den PLANLISTEN stehen die Karten mit 12px Rand INNERHALB der Huelle, der 6px-Schatten
+   hat dort ohnehin Platz (seitlich wie unten, der letzte Aussenabstand von 12px liegt durch
+   den eigenen Formatierungskontext jetzt mit drin). Nur im GYMTAGE-Raster stossen die Kacheln
+   an die Huelle — siehe die Regel weiter unten. */
+.archiv-inhalt { overflow: hidden; }
 
 /* Plan-Detail-Screen: ph mit Zurück-Pfeil links neben Titel */
 .plan-detail-ph {

@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~905 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~2090 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~7040 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v401**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v402**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -437,11 +437,25 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Die archivierten Eintraege stehen dafuer in EINER Huelle hinter dem Knopf (`.archiv-inhalt`),
   gefahren wird deren Hoehe. Bei den Gymtagen baut die Huelle dasselbe Dreier-Raster noch einmal
   (`#libdays-list > .archiv-inhalt`) — Spalten und Abstaende sind unveraendert (gemessen:
-  14/133/252px, je 109px breit, 18px unter dem Knopf wie vorher; in den Planlisten 8px).
-  BESCHNITTEN PER `clip-path`, NICHT per `overflow: hidden`: Die Kacheln stossen seitlich direkt an
-  die Huelle, ihre Schatten waeren waehrend der Bewegung abgeschnitten und am Ende aufgeblitzt.
-  Der Ausschnitt reicht seitlich und oben ueber die Huelle hinaus, nur seine Unterkante folgt der
-  Hoehe. Das Archiv steht immer ZULETZT in seiner Liste; die Hoehe faehrt trotzdem mit, damit die
+  14/133/252px, je 109px breit).
+  **BESCHNITTEN PER `overflow: hidden`, NICHT MEHR PER `clip-path`** (26.09.2026,
+  Leonard-Meldung mit Screenshot): Nach dem Zuklappen blieb auf dem iPhone ein senkrechter
+  Streifen der archivierten Karten am rechten Rand stehen — die Clip-Bewegung legt das Element
+  auf eine eigene Compositor-Ebene, und deren rechter Rand wurde beim Entfernen nicht neu
+  gezeichnet. Jede andere Klapp-Stelle der App faehrt ihre Hoehe mit `overflow: hidden`, und
+  dort ist das nie passiert. Gefahren wird seither ueber `_boxFahren` (Hoehe UND senkrechtes
+  Polster).
+  DIE SCHATTEN, wegen derer der `clip-path` gewaehlt worden war, bleiben trotzdem heil:
+  In den PLANLISTEN stehen die Karten mit 12px Rand INNERHALB der Huelle (gemessen: 12px
+  seitlich und unten, der 6px-Schatten hat dort Platz — der Aussenabstand der letzten Karte
+  liegt durch den eigenen Formatierungskontext jetzt mit drin). Nur im GYMTAGE-Raster stossen
+  die Kacheln an die Huelle: Dort greift der Beschnitt seitlich 14px weiter aussen
+  (`padding: 0 14px 8px; margin: 0 -14px` — Polster und Aussenabstand heben sich auf, die drei
+  Spalten bleiben exakt gleich breit, und die Huelle endet buendig mit dem Bildschirmrand statt
+  darueber hinauszuragen). Die 8px UNTEN sind der Platz fuer die Schatten der letzten Reihe;
+  senkrechtes Polster kann bei `box-sizing: border-box` nicht unter seinen eigenen Wert
+  schrumpfen und bliebe bei Hoehe 0 als Streifen stehen — genau dafuer gibt es `_boxFahren`.
+  Das Archiv steht immer ZULETZT in seiner Liste; die Hoehe faehrt trotzdem mit, damit die
   Seite beim Zuklappen weit unten gleichmaessig nachzieht statt am Ende zu springen.
   Der Knopf springt sofort in den neuen Zustand — seit dem 26.09.2026 ist das der quadratische
   Knopf oben rechts, der sich fuellt (`syncPlansArchivBtn` laeuft zu Beginn von
@@ -450,8 +464,12 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Neuzeichnen am Ende.
   `_staffelKarten` (Seitenwechsel) steigt in `.archiv-inhalt` hinab — die archivierten Kacheln
   kommen dort einzeln, nicht als ein Block.
-  GEMESSEN: auf/zu in allen drei Listen, Standbild bei 45ms (Kacheln halb aufgedeckt, Schatten
-  seitlich heil), dreimal in 60ms-Abstand getippt → Endzustand stimmt ohne Reste.
+  GEMESSEN (26.09.2026 nach dem Umbau): auf/zu in allen drei Listen; Keyframes NUR noch Hoehe
+  (Gymtage zusaetzlich Polster 8 → 0px), kein `clip-path` mehr; danach Huelle aus dem DOM, keine
+  Restanimation, kein Inline-Stil; Schattenplatz 12px (Planlisten) bzw. 14px seitlich und 8px
+  unten (Gymtage); Huelle buendig 0–375px, kein Querscrollen (`scrollWidth` = `clientWidth`);
+  Querformat 1100px ebenso; Glas-Modus Kacheln 12-%-Weiss mit heilem Schatten; dreimal in
+  60ms-Abstand getippt → Endzustand stimmt ohne Reste; keine Konsolenfehler.
 - **KALENDER-FUSSZEILE UND WETTKAMPFKARTE IM ZEITSTRAHL KLAPPEN EBENSO** (13.09.2026,
   Leonard-Wunsch). Beide sind Kaesten, die aus dem NICHTS erscheinen bzw. ganz verschwinden —
   dafuer gibt es `_boxFahren(el, von, bis, fertig)`: Es faehrt die Hoehe UND das senkrechte

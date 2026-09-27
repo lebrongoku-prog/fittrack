@@ -2877,11 +2877,15 @@ function _gruppeKlappAnimieren(gruppe, auf, danach) {
 // gleiche Kurve, gleiche Notbremse wie Muskelgruppen und Uebungskarten. Die archivierten
 // Eintraege stehen dafuer in EINER Huelle hinter dem Knopf (`.archiv-inhalt`), gefahren wird
 // deren Hoehe.
-// BESCHNITTEN WIRD PER `clip-path`, NICHT per `overflow: hidden`: Die Karten und Kacheln haben
-// weiche Schatten, und die Gymtag-Kacheln stossen seitlich direkt an die Huelle — mit
-// `overflow: hidden` waeren die Schatten waehrend der Bewegung abgeschnitten und am Ende
-// aufgeblitzt. Der Ausschnitt reicht seitlich und oben ueber die Huelle hinaus, nur seine
-// Unterkante folgt der wachsenden Hoehe.
+// BESCHNITTEN WIRD PER `overflow: hidden` an der Huelle, und gefahren wird ueber `_boxFahren`
+// (Hoehe UND senkrechtes Polster — das Gymtage-Raster traegt unten 8px fuer die Schatten der
+// letzten Kachelreihe, und ein Kasten kann bei `box-sizing: border-box` nicht flacher werden
+// als sein Polster).
+// Bis zum 26.09.2026 lief stattdessen ein `clip-path` mit: Auf dem iPhone blieb danach ein
+// Streifen der archivierten Karten am rechten Rand stehen (Leonard-Meldung mit Screenshot) —
+// die Clip-Bewegung legt das Element auf eine eigene Compositor-Ebene, deren rechter Rand beim
+// Entfernen nicht neu gezeichnet wurde. Die Schatten, wegen derer der `clip-path` gewaehlt
+// worden war, bleiben trotzdem heil, siehe `.archiv-inhalt` im CSS.
 // Das Archiv steht immer ZULETZT in seiner Liste, darunter liegt nichts, was mitwandern
 // muesste. Die Hoehe faehrt trotzdem mit: Beim Zuklappen weit unten zieht die Seite so
 // gleichmaessig nach, statt am Ende um die ganze Archivhoehe zu springen.
@@ -2895,20 +2899,18 @@ function _archivKlappen(listeId, auf, zeichnen) {
   const nr = liste ? (liste._archivNr = (liste._archivNr || 0) + 1) : 0;
   syncPlansArchivBtn();
   if (!liste || _bewegungReduziert() || !liste.animate || !liste.clientWidth) { zeichnen(); return; }
-  const zu = { height: '0px', clipPath: 'inset(-12px -24px 0px -24px)' };
-  const offen = (h) => ({ height: h + 'px', clipPath: 'inset(-12px -24px -12px -24px)' });
   if (auf) {
     zeichnen();
     const inhalt = liste.querySelector(':scope > .archiv-inhalt');
     const h = inhalt ? inhalt.getBoundingClientRect().height : 0;
     if (h < 1) return;
-    _klappBewegung(inhalt, [zu, offen(h)], () => {});
+    _boxFahren(inhalt, 0, h, () => {});
     return;
   }
   const inhalt = liste.querySelector(':scope > .archiv-inhalt');
   const h = inhalt ? inhalt.getBoundingClientRect().height : 0;
   if (h < 1) { zeichnen(); return; }
-  _klappBewegung(inhalt, [offen(h), zu], () => { if (liste._archivNr === nr) zeichnen(); });
+  _boxFahren(inhalt, h, 0, () => { if (liste._archivNr === nr) zeichnen(); });
 }
 
 // ─── Die Wochen im Laufplan-Detail klappen ebenso (23.09.2026, Leonard-Wunsch) ───────
