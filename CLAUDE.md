@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v403**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v404**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -145,6 +145,46 @@ zu Wochentagen im Wochenplaner und der Bearbeiten-Modus „Trainingstage aus Pla
   `mehrInactivePlanExpanded` und `timerPaused` weg — sie hatten danach keinen Aufrufer mehr. `ft_cardio_removed` wird bewusst nur geschrieben (Sicherung).
 
 ---
+
+## Fuenf Verbesserungen vom 27.09.2026 (Leonard-Auswahl aus einer Vorschlagsliste)
+
+- **Wochenrueckblick** (`renderRueckblick`, `wochenRueckblick(mo)`, `#ov-rueckblick`): Ab Montag
+  steht in der UEBERSICHT ueber der Wochenkarte eine Karte „Letzte Woche" (Leonard-Entscheidung:
+  Karte, kein Blatt beim Start). Kacheln: Gym absolviert/geplant, Volumen samt Trend zur Vorwoche,
+  Laeufe absolviert/geplant, gelaufene km „von X km"; darunter die neuen Bestleistungen (je Uebung
+  die hoechste). „Geplant" rechnet wie der Kalender (`_calPlanInfo`, `runGeplanteTage`), auch aus
+  archivierten Plaenen; nachgetragene Tage zaehlen als Einheit. Ohne irgendetwas Geplantes oder
+  Absolviertes keine Karte; nur die Sportart, bei der etwas war, bekommt Kacheln.
+  ✕ klappt sie weg (`_zeileWegKlappen`) und merkt die Woche in `ft_rueckblick_zu` (Montag
+  'YYYY-MM-DD') — Anzeige-Einstellung, NICHT in der Drive-Sicherung. Querformat: ueber beide Spalten.
+- **Stillstand** (`stillstandIndex`, `STILLSTAND_EINHEITEN` = 4, `STILLSTAND_AKTUELL_TAGE` = 42):
+  Chip „Stillstand" (Amber) in der Katalogzeile, im aufgeklappten Eintrag die Zeile `.ex-stillstand`
+  („Seit N Einheiten kein neuer Bestwert. Bisher bester Satz: …"). Fortschritt = schwererer Satz
+  ODER beim gleichen Hoechstgewicht mehr Wiederholungen. Nur Uebungen mit Gewicht, zuletzt
+  hoechstens 42 Tage her und mit mindestens einer Einheit vor dem 4er-Fenster. Zwischengespeichert
+  gegen den Rohtext von `ft_workouts`. Die Katalog-Chips tragen `nowrap`; bei zwei Chips bricht der
+  Uebungsname um (`.ex-item-name { min-width: 0 }`). `_exItemKlappen` setzt das Diagramm hinter
+  den Hinweis, sonst stimmte die Reihenfolge waehrend der Bewegung nicht.
+- **Soll/Ist beim Lauf** (`laufVergleichHTML`, Laufdetailansicht): Strecke, Dauer und Pace
+  geplant | gelaufen | Differenz, direkt unter den Kacheln. HERZFREQUENZZONEN BLEIBEN AUSSEN VOR
+  (Leonard-Entscheidung) — die App kennt nur Zonennamen, keine Pulsgrenzen; die Zone steht nur als
+  Zeile „Zone laut Plan". Eine Zeile nur, wo der Plan eine Vorgabe hat; Pace aus `kmh`, ersatzweise
+  aus Dauer und Strecke.
+- **Uebungsnamen aus dem Katalog** (`uebungsName(exId, gespeichert)`): Einheiten speichern den Namen
+  beim Start mit. PR-Liste, Einheiten-Detailansicht, Bestleistungen und „Trainingstag angepasst" in
+  der Abschlussansicht sowie der Rueckblick zeigen jetzt den AKTUELLEN Katalognamen; der
+  gespeicherte greift nur, wenn die Uebung geloescht ist. Die Karten der LAUFENDEN Einheit
+  nutzen weiter den Startnamen (dort identisch).
+- **Keine gleichnamigen Gymtage mehr durch Kopieren** (`eindeutigerTagName(name, tage, ausserId)`):
+  Plan kopieren, Vorlage, Import, Zurueckholen aus dem Archiv und neu angelegte Tage bekommen bei
+  Namensgleichheit „(2)", „(3)" … — verglichen ohne Gross-/Kleinschreibung, nur mit nicht
+  archivierten Tagen; aus „Push (2)" wird „Push (3)", nicht „Push (2) (2)". Beim Import erst beim
+  Ablegen, weil der Wochenplan der Datei ueber die Originalnamen zugeordnet wird. Beim UMBENENNEN in
+  der Detailansicht wird nichts angehaengt, es kommt nur ein Hinweis-Toast.
+GEMESSEN (375px, Testbestand): Rueckblick 4/4 · 6.9 t (+2 %) · 2/2 · 19.6 von 20 km · 1 PR, ✕ merkt
+2026-09-14; Stillstand bei Bankdruecken, nicht bei steigender Kniebeuge; Laufvergleich −0.8 km /
+−1min / 21 s langsamer; Umbenennen der Kniebeuge wirkt in PR-Liste, Detailansicht und Rueckblick;
+Plankopie ergibt „Push (2)" usw.; Glas-Modus und Querformat 1100px sauber; keine Konsolenfehler.
 
 ## Sprache in der Oberfläche
 
@@ -3338,7 +3378,9 @@ Einheit, nicht die Tagesuebersicht.
   `.nav-btn.active svg` und ihre beiden Glas-Fassungen) setzen deshalb `color` MIT.
 
 - **GLEICHNAMIGE GYMTAGE sind technisch harmlos, aber nicht unterscheidbar** (geprueft
-  13.09.2026 auf Leonards Frage). Alles Interne laeuft ueber die ID: Plaene (`dayIds`),
+  13.09.2026 auf Leonards Frage). SEIT DEM 27.09.2026 bekommen neu ENTSTEHENDE Tage einen Zusatz
+  („Push (2)", `eindeutigerTagName`) — siehe „Fuenf Verbesserungen vom 27.09.2026". Der Rest dieses
+  Absatzes beschreibt den Stand davor; Altbestand und bewusst getippte Doppel gibt es weiter. Alles Interne laeuft ueber die ID: Plaene (`dayIds`),
   Wochenplan (`planDayId`), Einheiten, verschobene Einheiten, Satzanzahl-Rueckmeldung,
   Volumenvergleich, Ø-Dauer. Keine Stelle ordnet einen Tag ueber den Namen zu, und es gibt beim
   Anlegen oder Umbenennen KEINE Pruefung auf Doppelte.

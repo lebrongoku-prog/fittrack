@@ -3026,6 +3026,37 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
 .run-detail-notiz { padding: 9px 0; border-top: 1px solid var(--border); font-size: var(--fs-text); }
 .run-detail-notiz span { color: var(--text3); }
 .run-detail-notiz p { margin: 4px 0 0; color: var(--text); line-height: 1.45; white-space: pre-wrap; }
+/* Soll/Ist-Vergleich mit der geplanten Einheit (27.09.2026): vier Spalten, Kennzahl links. */
+.lauf-vgl {
+  display: grid; grid-template-columns: auto 1fr 1fr 1fr; column-gap: 10px; row-gap: 8px;
+  align-items: baseline; padding: 4px 0 12px; font-size: var(--fs-text); color: var(--text2);
+  font-variant-numeric: tabular-nums;
+}
+.lauf-vgl > :nth-child(4n+2), .lauf-vgl > :nth-child(4n+3), .lauf-vgl > :nth-child(4n+4) { text-align: right; }
+.lauf-vgl-kopf { font-size: var(--fs-etikett); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text3); }
+.lauf-vgl-name { color: var(--text3); }
+.lauf-vgl strong { color: var(--text); font-weight: 700; }
+.lauf-vgl-diff { color: var(--text2); white-space: nowrap; }
+/* Wochenrueckblick in der Uebersicht (27.09.2026). Die Kacheln sind `.hd-stats` wie in den
+   Detailansichten, hier zwei je Zeile — so passt die Zusatzzeile („+8 % zur Vorwoche")
+   ohne Umbruch in die Kachel. */
+.rb-datum { font-weight: 500; color: var(--text3); margin-left: 4px; }
+.rb-zu {
+  width: 30px; height: 30px; margin: -6px -6px -6px 0; border: none; border-radius: 50%;
+  background: transparent; color: var(--text3); font: inherit; font-size: var(--fs-text);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.rb-kacheln { grid-template-columns: repeat(2, 1fr); margin-bottom: 0; }
+.rb-zusatz { display: block; font-style: normal; font-size: var(--fs-etikett); color: var(--text2); margin-top: 3px; }
+.rb-pr { margin-top: 12px; font-size: var(--fs-neben); line-height: 1.5; color: var(--text2); }
+.rb-pr strong { color: var(--text); font-weight: 700; }
+html.glas .screen:not(#screen-mehr) .rb-datum,
+html.glas .screen:not(#screen-mehr) .rb-zu { color: rgba(255,255,255,.75); }
+html.glas .screen:not(#screen-mehr) .rb-karte .hd-stat { background: rgba(255,255,255,.14); }
+html.glas .screen:not(#screen-mehr) .rb-karte .hd-stat span,
+html.glas .screen:not(#screen-mehr) .rb-zusatz,
+html.glas .screen:not(#screen-mehr) .rb-pr { color: rgba(255,255,255,.8); }
+html.glas .screen:not(#screen-mehr) .rb-pr strong { color: #fff; }
 .run-detail-quelle { margin: 12px 0 0; font-size: var(--fs-neben); color: var(--text3); line-height: 1.45; }
 .cal-detail-run.geplant { color: var(--text3); }
 /* Fusszeile: Datum in Zeile 1, Trainingstag in Zeile 2. Ist der Tag aufgezeichnet, ist die
@@ -3289,7 +3320,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
   padding: 13px 14px; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .ex-item-stripe { width: 4px; align-self: stretch; border-radius: 2px; background: var(--mc, var(--accent)); flex-shrink: 0; }
-.ex-item-name { flex: 1; font-size: var(--fs-text); font-weight: 500; color: var(--text); }
+.ex-item-name { flex: 1; min-width: 0; font-size: var(--fs-text); font-weight: 500; color: var(--text); }
 /* Der Pfeil steht ganz rechts; 20px statt 32px, damit die Zeile ihre 44px behaelt. */
 .ex-item-head > .aex-v2-chev { margin-left: auto; width: 20px; height: 20px; }
 .ex-item-head > .aex-v2-chev svg { width: 17px; height: 17px; }
@@ -3300,6 +3331,18 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .ex-item-plan-tag {
   font-size: var(--fs-etikett); padding: 2px 7px; border-radius: 10px;
   background: var(--green-bg); color: var(--green); font-weight: 600;
+  /* Chips bleiben einzeilig; stehen zwei in der Zeile, bricht der Uebungsname um. */
+  white-space: nowrap; flex-shrink: 0;
+}
+/* Stillstand (27.09.2026): Amber wie der Statuschip „laeuft" — ein Hinweis, keine Warnung.
+   Bleibt auch im Transparenz-Modus farbig, wie der gruene Chip daneben. */
+.ex-item-stillstand-tag {
+  font-size: var(--fs-etikett); padding: 2px 7px; border-radius: 10px;
+  background: #FEF3C7; color: #92400E; font-weight: 600; flex-shrink: 0; white-space: nowrap;
+}
+.ex-stillstand {
+  font-size: var(--fs-neben); line-height: 1.4; color: #92400E;
+  background: #FEF3C7; border-radius: 10px; padding: 8px 10px; margin: -4px 0 14px;
 }
 .ex-item-using { margin-top: 12px; }
 .ex-item-using-label { font-size: var(--fs-neben); color: var(--text2); margin-bottom: 6px; font-weight: 600; }
@@ -4003,7 +4046,8 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
   /* Die kombinierte Wochenkarte haelt beide Sportarten und spannt deshalb ueber beide
      Spalten — wie die Herocard darueber (07.09.2026, vorher lagen hier zwei Karten
      nebeneinander, je eine Sportart pro Spalte). */
-  #screen-overview.active > #ov-week-card { grid-column: 1 / -1; }
+  #screen-overview.active > #ov-week-card,
+  #screen-overview.active > #ov-rueckblick { grid-column: 1 / -1; }
   /* Das Wochenraster nutzt die VOLLE Breite (Leonard-Wunsch 07.09.2026). Eine erste Fassung
      kappte es bei 480px, weil die Marken sonst weit auseinanderstehen — Leonard will die
      Breite ausgenutzt sehen, die Zeile bleibt durch die Wochentagsbeschriftung darueber

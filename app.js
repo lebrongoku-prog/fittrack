@@ -441,6 +441,14 @@ const DB = {
 // ═══════════════════════════════════════════════
 
 function getEx(id) { return DB.getExercises().find(e => e.id === id); }
+// Anzeigename einer Uebung aus einer gespeicherten Einheit (27.09.2026, Leonard-Wunsch): der
+// AKTUELLE Name im Katalog — eine Einheit speichert beim Start den damaligen Namen mit, und nach
+// einem Umbenennen standen Bestleistungen sonst weiter unter dem alten. Der gespeicherte Name
+// greift nur noch, wenn die Uebung aus dem Katalog geloescht ist.
+function uebungsName(exId, gespeichert) {
+  const ex = getEx(exId);
+  return (ex && ex.name) || gespeichert || 'Unbekannte Übung';
+}
 // Anzeigename einer Einheit: der aktuelle Name ihres Trainingstags aus `tage`, sonst der beim
 // Start gespeicherte Name, sonst „Freies Training".
 function _einheitName(w, tage) {
@@ -684,7 +692,7 @@ function detectPRs(workout, allPrevWorkouts) {
       }
     });
     if (maxW > prevMax) {
-      prs.push({ exId: ex.exId||ex.id, name: ex.name, kind: 'strength', weight: maxW, prev: prevMax });
+      prs.push({ exId: ex.exId||ex.id, name: uebungsName(ex.exId||ex.id, ex.name), kind: 'strength', weight: maxW, prev: prevMax });
     }
   });
   return prs;
@@ -997,6 +1005,9 @@ function renderOverview() {
   renderUebersichtHero();
   ensureTimerActive();
 
+  // ─ Rueckblick auf die Vorwoche ─ (siehe `renderRueckblick`)
+  renderRueckblick();
+
   // ─ EINE Wochenplankarte fuer beide Sportarten ─ (siehe `renderWochenKarte`)
   renderWochenKarte();
 
@@ -1126,6 +1137,107 @@ function renderUebersichtHero() {
     // Ist heute gewaehlt, bleibt es bei „Heute" — der Wochentag saehe dort wie ein Fehler aus.
     titel: (gewaehlt && idx !== todayIdx) ? WOCHENTAGE_LANG[idx] : 'Heute',
   });
+}
+
+// ═══════════════════════════════════════════════
+// WOCHENRUECKBLICK (27.09.2026, Leonard-Wunsch)
+// ═══════════════════════════════════════════════
+// Ab Montag steht ueber der Wochenkarte der Uebersicht eine Karte mit der Bilanz der VORWOCHE:
+// Gym-Einheiten gegen den Plan, Volumen gegen die Woche davor, Laeufe und Kilometer gegen den
+// Laufplan, neue Bestleistungen. Ein ✕ blendet sie aus, bis die naechste Woche vorbei ist.
+// Gemerkt wird nur, WELCHE Woche ausgeblendet wurde (`ft_rueckblick_zu`, Montag als
+// 'YYYY-MM-DD'). Eine reine Anzeige-Einstellung dieses Geraets — NICHT in der Drive-Sicherung.
+// Ohne irgendetwas Geplantes oder Absolviertes in der Vorwoche erscheint keine Karte.
+const RUECKBLICK_KEY = 'ft_rueckblick_zu';
+
+function _rueckblickMontag() {
+  const mo = _laufWochenMontag(new Date());
+  mo.setDate(mo.getDate() - 7);
+  return mo;
+}
+
+// Zahlen der Woche ab Montag `mo`. „Geplant" rechnet wie der Kalender: Gymtage aus dem Plan,
+// der den Tag abdeckte (auch archivierte), Lauftage aus allen Laufplaenen. Nachgetragene Tage
+// ohne Aufzeichnung zaehlen als Einheit, bringen aber kein Volumen.
+function wochenRueckblick(mo) {
+  const tage = Array.from({ length: 7 }, (_, i) => { const d = new Date(mo); d.setDate(mo.getDate() + i); return d; });
+  const keys = new Set(tage.map(d => _dayKeyOf(d.getTime())));
+  const vorMo = new Date(mo); vorMo.setDate(mo.getDate() - 7);
+  const ws = DB.getWorkouts();
+  const woche = ws.filter(w => keys.has(_dayKeyOf(w.startTs)));
+  const vorwoche = ws.filter(w => w.startTs >= vorMo.getTime() && w.startTs < mo.getTime());
+  const mitEinheit = new Set(woche.map(w => _dayKeyOf(w.startTs)));
+  const nachgetragen = DB.getManualDays().filter(k => keys.has(k) && !mitEinheit.has(k)).length;
+  const planIndex = _calPlanIndex();
+  const laufPlan = runGeplanteTage();
+  const laufGeplant = [...keys].map(k => laufPlan[k]).filter(Boolean);
+  const laeufe = DB.getRuns().filter(l => keys.has(l.date));
+  // Je Uebung nur die hoechste neue Bestleistung der Woche (zwei Einheiten, zwei Rekorde).
+  const bestleistungen = {};
+  woche.forEach(w => (w.prs || []).forEach(p => {
+    const alt = bestleistungen[p.exId];
+    if (!alt || p.weight > alt.weight) bestleistungen[p.exId] = { name: uebungsName(p.exId, p.name), weight: p.weight };
+  }));
+  const volumen = (liste) => liste.reduce((sum, w) => sum + calcVolume(w), 0);
+  return {
+    gym: { absolviert: woche.length + nachgetragen, geplant: tage.filter(d => _calPlanInfo(d, planIndex).planned).length },
+    volumen: volumen(woche),
+    volumenVorwoche: volumen(vorwoche),
+    lauf: {
+      absolviert: laeufe.length,
+      geplant: laufGeplant.length,
+      km: laeufe.reduce((sum, l) => sum + (l.km || 0), 0),
+      kmGeplant: laufGeplant.reduce((sum, g) => sum + ((g.einheit && g.einheit.km) || 0), 0),
+    },
+    bestleistungen: Object.values(bestleistungen).sort((a, b) => b.weight - a.weight),
+  };
+}
+
+function renderRueckblick() {
+  const el = document.getElementById('ov-rueckblick');
+  if (!el) return;
+  const mo = _rueckblickMontag();
+  let ausgeblendet = null;
+  try { ausgeblendet = localStorage.getItem(RUECKBLICK_KEY); } catch {}
+  if (ausgeblendet === _dayKeyOf(mo.getTime())) { el.innerHTML = ''; return; }
+  const r = wochenRueckblick(mo);
+  const gymDa = r.gym.geplant > 0 || r.gym.absolviert > 0;
+  const laufDa = r.lauf.geplant > 0 || r.lauf.absolviert > 0;
+  if (!gymDa && !laufDa) { el.innerHTML = ''; return; }
+
+  const kachel = (wert, label, zusatz) =>
+    `<div class="hd-stat"><b>${wert}</b><span>${label}</span>${zusatz ? `<i class="rb-zusatz">${zusatz}</i>` : ''}</div>`;
+  const anteil = (a, g) => g ? `${a}/${g}` : `${a}`;
+  const kacheln = [];
+  if (gymDa) {
+    let trend = '';
+    if (r.volumenVorwoche > 0 && r.volumen > 0) {
+      const pct = Math.round((r.volumen - r.volumenVorwoche) / r.volumenVorwoche * 100);
+      trend = `${pct > 0 ? '+' : pct < 0 ? '−' : '±'}${Math.abs(pct)}\u00A0% zur Vorwoche`;
+    }
+    kacheln.push(kachel(anteil(r.gym.absolviert, r.gym.geplant), 'Gym'));
+    kacheln.push(kachel(fmtVol(r.volumen), 'Volumen', trend));
+  }
+  if (laufDa) {
+    kacheln.push(kachel(anteil(r.lauf.absolviert, r.lauf.geplant), 'Läufe'));
+    kacheln.push(kachel(fmtKm(r.lauf.km), 'Gelaufen', r.lauf.kmGeplant ? `von ${fmtKm(r.lauf.kmGeplant)}` : ''));
+  }
+  const prs = r.bestleistungen.length
+    ? `<div class="rb-pr">🏆 ${r.bestleistungen.map(p => `${escapeHtml(p.name)} <strong>${fmtKg(p.weight)}\u00A0kg</strong>`).join(' · ')}</div>`
+    : '';
+  el.innerHTML = `<div class="chart-card-v2 rb-karte">
+      <div class="chart-card-v2-head">
+        <div class="chart-card-v2-title">Letzte Woche <span class="rb-datum">${_laufWochenSpanne(mo)}</span></div>
+        <button type="button" class="rb-zu" onclick="rueckblickAusblenden()" aria-label="Rückblick ausblenden">✕</button>
+      </div>
+      <div class="hd-stats rb-kacheln">${kacheln.join('')}</div>
+      ${prs}
+    </div>`;
+}
+
+function rueckblickAusblenden() {
+  try { localStorage.setItem(RUECKBLICK_KEY, _dayKeyOf(_rueckblickMontag().getTime())); } catch {}
+  _zeileWegKlappen(document.querySelector('#ov-rueckblick .rb-karte')).then(renderRueckblick);
 }
 
 function renderWochenKarte() {
@@ -1483,7 +1595,7 @@ function syncSetCountsToPlanDay(planDayId, exercises) {
     const before = peSets(pe).length;
     const after = we.sets.length;
     if (!_setzeSatzanzahl(pe, we.sets)) return;
-    changes.push({ name: we.name, before, after });
+    changes.push({ name: uebungsName(we.exId || we.id, we.name), before, after });
   });
 
   if (changes.length) DB.saveTrainingDays(days);
@@ -4571,22 +4683,56 @@ function showRunDetail(key) {
   ].filter(Boolean);
 
   const geplant = runGeplanteTage()[key];
-  const soll = geplant && geplant.einheit
-    ? [geplant.einheit.km ? fmtKm(geplant.einheit.km) : null,
-       geplant.einheit.minutes ? fmtMin(geplant.einheit.minutes) : null,
-       geplant.einheit.zone || null].filter(Boolean).join(' · ')
-    : '';
+  const u = geplant && geplant.einheit;
+  const vergleich = u ? laufVergleichHTML(u, l) : '';
 
   document.getElementById('run-detail-body').innerHTML =
     `<div class="hd-stats run-detail-stats">`
     + kacheln.map(k => `<div class="hd-stat"><b>${k.wert}</b><span>${k.label}</span></div>`).join('')
     + `</div>`
+    + vergleich
     + `<div class="run-detail-zeile"><span>Kategorie</span><strong>${escapeHtml(l.typ || (hiit ? 'Intervalltraining' : 'Laufen'))}</strong></div>`
-    + (geplant ? `<div class="run-detail-zeile"><span>Geplant</span><strong>${soll || escapeHtml(geplant.plan.name || 'Laufplan')}</strong></div>` : '')
+    // Ohne Vorgabe (weder km noch Minuten) gibt es nichts zu vergleichen — dann nur der Plan.
+    + (geplant && !vergleich ? `<div class="run-detail-zeile"><span>Geplant</span><strong>${escapeHtml(geplant.plan.name || 'Laufplan')}</strong></div>` : '')
+    + (u && u.zone ? `<div class="run-detail-zeile"><span>Zone laut Plan</span><strong>${escapeHtml(u.zone)}</strong></div>` : '')
     + (geplant && geplant.einheit && geplant.einheit.note
         ? `<div class="run-detail-notiz"><span>Notiz</span><p>${escapeHtml(geplant.einheit.note)}</p></div>` : '')
     + `<p class="run-detail-quelle">Aus der Tabelle „Workout Data" gelesen. FitTrack ändert dort nichts.</p>`;
   openModal('modal-run-detail');
+}
+
+// SOLL/IST eines Laufs gegen seine geplante Einheit (27.09.2026, Leonard-Wunsch): Strecke,
+// Dauer und Pace nebeneinander, dazu die Abweichung. Herzfrequenzzonen bleiben bewusst AUSSEN
+// VOR (Leonard-Entscheidung) — die App kennt nur die Zonennamen, keine Pulsgrenzen.
+// Eine Zeile erscheint nur, wenn der Plan dafuer eine Vorgabe hat; beim Intervalltraining
+// fehlen Strecke und Pace ohnehin. Leer, wenn es gar nichts zu vergleichen gibt.
+function laufVergleichHTML(u, l) {
+  const vorzeichen = (x) => (x > 0 ? '+' : x < 0 ? '−' : '±');
+  const zeilen = [];
+  if (u.km && l.km != null) {
+    const d = Math.round((l.km - u.km) * 10) / 10;
+    zeilen.push(['Strecke', fmtKm(u.km), fmtKm(l.km), `${vorzeichen(d)}${fmtKm(Math.abs(d))}`]);
+  }
+  if (u.minutes && l.minutes != null) {
+    const d = Math.round(l.minutes - u.minutes);
+    zeilen.push(['Dauer', fmtMin(u.minutes), fmtMin(l.minutes), `${vorzeichen(d)}${fmtMin(Math.abs(d))}`]);
+  }
+  // Pace in Sekunden je km: geplant aus Minuten und km, gelaufen aus dem Tempo der Tabelle
+  // (ersatzweise aus Dauer und Strecke).
+  const lKmh = l.kmh || (l.km && l.minutes ? l.km / (l.minutes / 60) : 0);
+  if (u.km && u.minutes && lKmh && l.art !== 'hiit') {
+    const sollKmh = u.km / (u.minutes / 60);
+    const d = Math.round(3600 / lKmh - 3600 / sollKmh);
+    const diff = d === 0 ? 'wie geplant' : `${Math.abs(d)} s ${d < 0 ? 'schneller' : 'langsamer'}`;
+    zeilen.push(['Pace', fmtPace(sollKmh), fmtPace(lKmh), diff]);
+  }
+  if (!zeilen.length) return '';
+  return `<div class="lauf-vgl">
+      <span class="lauf-vgl-kopf"></span><span class="lauf-vgl-kopf">Geplant</span>
+      <span class="lauf-vgl-kopf">Gelaufen</span><span class="lauf-vgl-kopf">Differenz</span>
+      ${zeilen.map(([name, soll, ist, diff]) =>
+        `<span class="lauf-vgl-name">${name}</span><span>${soll}</span><strong>${ist}</strong><span class="lauf-vgl-diff">${diff}</span>`).join('')}
+    </div>`;
 }
 
 // ── Laufplaene ─────────────────────────────────────────────────────
@@ -6551,7 +6697,7 @@ function getAllPRs() {
     hist.sort((a,b) => b.weight - a.weight);
     const best = hist[0];
     const prev = hist.find(h => h.weight < best.weight);
-    return { exId:id, name:best.name, weight:best.weight, prev: prev ? prev.weight : 0, date: best.date, sets: best.sets };
+    return { exId:id, name:uebungsName(id, best.name), weight:best.weight, prev: prev ? prev.weight : 0, date: best.date, sets: best.sets };
   }).sort((a,b) => b.weight - a.weight);
 }
 
@@ -6571,7 +6717,7 @@ function prHTML(pr, number) {
   return `<div class="pr-v2-row no-icon" style="--mc:${valColor};--mc-bg:${muscleBg(muscleKey)}" onclick="showHistDetailForEx('${pr.exId}', ${pr.date || 0})">
     <div class="pr-v2-num">${num}</div>
     <div>
-      <div class="pr-v2-name">${pr.name}</div>
+      <div class="pr-v2-name">${escapeHtml(pr.name)}</div>
       <div class="pr-v2-sub">${verlauf}${zunahme}</div>
     </div>
     <div class="pr-v2-val" style="color:${valColor}">${fmtKg(pr.weight)} kg</div>
@@ -6657,7 +6803,7 @@ function showHistDetail(i, highlightExId) {
     return `<div class="hd-step" style="--mc:${farbe}">
       <div class="hd-step-num">${idx + 1}</div>
       <div class="hd-step-body${hervor}">
-        <div class="hd-step-title">${ex.name}${prChip}</div>
+        <div class="hd-step-title">${escapeHtml((exData && exData.name) || ex.name || '')}${prChip}</div>
         ${delta}
         <div class="hd-cols">
           <div class="hd-chips">${chips}</div>
@@ -7172,13 +7318,15 @@ function togglePlanArchive() {
     const fresh = snap.map((d, i) => {
       const newId = 'libday_' + Date.now() + '_' + Math.floor(Math.random()*100000) + '_' + i;
       idMap[d.id] = newId;
-      return {
-        id: newId, name: d.name, color: d.color || null,
+      const tag = {
+        id: newId, name: eindeutigerTagName(d.name, lib), color: d.color || null,
         exercises: JSON.parse(JSON.stringify(d.exercises || [])),
         notes: d.notes || '', archived: false, createdAt: Date.now(),
       };
+      lib.push(tag);
+      return tag;
     });
-    if (fresh.length) { lib.push(...fresh); DB.saveTrainingDays(lib); }
+    if (fresh.length) DB.saveTrainingDays(lib);
     plan.dayIds = fresh.map(d => d.id);
     (plan.weekPlan || []).forEach(w => {
       w.planDayId = (w.planDayId && idMap[w.planDayId]) ? idMap[w.planDayId] : null;
@@ -7363,7 +7511,7 @@ function applyPlanTemplate(key) {
   const dayIds = [];
   t.days.forEach((d, i) => {
     const id = 'libday_' + Date.now() + '_' + Math.floor(Math.random()*100000) + '_' + i;
-    lib.push({ id, name: d.name, color: null, exercises: d.exercises.map(e => ({ ...e })), notes: '', archived: false, createdAt: Date.now() });
+    lib.push({ id, name: eindeutigerTagName(d.name, lib), color: null, exercises: d.exercises.map(e => ({ ...e })), notes: '', archived: false, createdAt: Date.now() });
     dayIds.push(id);
   });
   DB.saveTrainingDays(lib);
@@ -7419,7 +7567,7 @@ function copyExistingPlan(planId) {
   srcDays.forEach((d, i) => {
     const id = 'libday_' + Date.now() + '_' + Math.floor(Math.random()*100000) + '_' + i;
     idMap[d.id] = id;
-    lib.push({ id, name: d.name, color: d.color || null, exercises: JSON.parse(JSON.stringify(d.exercises || [])), notes: d.notes || '', archived: false, createdAt: Date.now() });
+    lib.push({ id, name: eindeutigerTagName(d.name, lib), color: d.color || null, exercises: JSON.parse(JSON.stringify(d.exercises || [])), notes: d.notes || '', archived: false, createdAt: Date.now() });
     newDayIds.push(id);
   });
   DB.saveTrainingDays(lib);
@@ -7847,8 +7995,9 @@ function renderLibDays() {
 }
 
 function createNewLibDay() {
-  promptForName('Name des neuen Trainingstags', 'Neuer Trainingstag', (name) => {
+  promptForName('Name des neuen Trainingstags', 'Neuer Trainingstag', (eingabe) => {
     const days = DB.getTrainingDays();
+    const name = eindeutigerTagName(eingabe, days);
     const newDay = {
       id: 'libday_' + Date.now() + '_' + Math.floor(Math.random()*10000),
       name, exercises: [], notes: '', archived: false, createdAt: Date.now(),
@@ -7984,6 +8133,27 @@ function toggleLibDayMuscle(m) {
   _mgWahlZeichnen(d);
 }
 
+// GLEICHNAMIGE GYMTAGE vermeiden (27.09.2026, Leonard-Wunsch): Technisch sind sie harmlos (alles
+// laeuft ueber die Id), aber in jeder Liste und Auswahl, die nur den Namen zeigt, sind zwei
+// „Push" nicht zu unterscheiden. Neu ENTSTEHENDE Tage (Kopie, Vorlage, Import, Zurueckholen aus
+// dem Archiv, neu angelegt) bekommen deshalb einen Zusatz: „Push (2)", „Push (3)" …
+// Verglichen wird ohne Gross-/Kleinschreibung und nur mit NICHT archivierten Tagen — archivierte
+// stehen in einer eigenen Gruppe und sind dort ohnehin unterscheidbar.
+// `tage` ist der Bestand, gegen den geprueft wird (beim Anlegen mehrerer Tage in einem Zug die
+// schon ergaenzte Liste, damit auch die neuen untereinander eindeutig werden).
+function eindeutigerTagName(name, tage, ausserId) {
+  const belegt = new Set((tage || DB.getTrainingDays())
+    .filter(d => d && !d.archived && d.id !== ausserId)
+    .map(d => String(d.name || '').trim().toLowerCase()));
+  const gewuenscht = String(name || '').trim() || 'Trainingstag';
+  if (!belegt.has(gewuenscht.toLowerCase())) return gewuenscht;
+  // Die Kopie einer Kopie heisst „Push (3)", nicht „Push (2) (2)".
+  const basis = gewuenscht.replace(/ \(\d+\)$/, '');
+  let n = 2;
+  while (belegt.has(`${basis} (${n})`.toLowerCase())) n++;
+  return `${basis} (${n})`;
+}
+
 function saveLibDayName() {
   const el = document.getElementById('day-name'); if (!el) return;
   const days = DB.getTrainingDays();
@@ -7991,6 +8161,10 @@ function saveLibDayName() {
   d.name = el.value.trim() || 'Trainingstag';
   DB.saveTrainingDays(days);
   document.getElementById('day-detail-title').textContent = d.name;
+  // Beim UMBENENNEN wird nichts angehaengt — der Name ist bewusst getippt. Ein Hinweis genuegt.
+  if (eindeutigerTagName(d.name, days, d.id) !== d.name) {
+    showToast(`„${d.name}" gibt es schon als Gymtag — in Auswahllisten sind die beiden nicht zu unterscheiden`);
+  }
 }
 function saveLibDayNotes() {
   const el = document.getElementById('day-notes'); if (!el) return;
@@ -8319,9 +8493,10 @@ function addNewPlanDay() {
 
 function addNewPlanDayFromScratch() {
   closeModal('modal-plan-day-source');
-  promptForName('Name des neuen Trainingstags', 'Neuer Tag', (name) => {
+  promptForName('Name des neuen Trainingstags', 'Neuer Tag', (eingabe) => {
     const plan = DB.getPlan();
     const id = 'day_' + Date.now();
+    const name = eindeutigerTagName(eingabe);
     plan.push({ id, name, color: null, exercises: [] });
     DB.savePlan(plan);
     if (currentScreen === 'plan-detail') renderPlanDetail();
@@ -8496,6 +8671,60 @@ function getPlanDaysUsingExercise(exId) {
   return active.trainingDays.filter(d => d.exercises.some(e => e.exId === exId));
 }
 
+// ── STILLSTAND (27.09.2026, Leonard-Wunsch) ──────────────────────────────────────────────
+// Eine Uebung „stagniert", wenn ihre letzten STILLSTAND_EINHEITEN Einheiten KEINEN neuen
+// Bestwert gebracht haben. Fortschritt heisst: schwererer Satz ODER beim gleichen Hoechstgewicht
+// mehr Wiederholungen — sonst zaehlte ein Satz mehr Wiederholungen nicht als Fortschritt.
+// NUR Uebungen, die gerade trainiert werden (letzte Einheit hoechstens STILLSTAND_AKTUELL_TAGE
+// her) und die mindestens eine Einheit VOR dem Fenster haben — sonst gaebe es keinen Vergleich.
+// Uebungen ohne Gewicht (Koerpergewicht) bleiben aussen vor.
+const STILLSTAND_EINHEITEN = 4;
+const STILLSTAND_AKTUELL_TAGE = 42;
+let _stillstandCache = { roh: null, index: null };
+
+// exId → { best, seit } fuer alle stagnierenden Uebungen. Zwischengespeichert, solange sich die
+// Einheiten nicht aendern — der Katalog fragt fuer jede Zeile.
+function stillstandIndex() {
+  const roh = localStorage.getItem('ft_workouts') || '';
+  if (_stillstandCache.roh === roh) return _stillstandCache.index;
+  const verlauf = {};   // exId → [{ ts, kg, wdh }] je Einheit: schwerster Satz und seine Wdh.
+  DB.getWorkouts().forEach(w => (w.exercises || []).forEach(ex => {
+    if (ex.skipped || !Array.isArray(ex.sets)) return;
+    let kg = 0, wdh = 0;
+    ex.sets.forEach(satz => {
+      const g = parseFloat(satz.weight) || 0, r = parseInt(satz.reps, 10) || 0;
+      if (!g || !r) return;
+      if (g > kg || (g === kg && r > wdh)) { kg = g; wdh = r; }
+    });
+    if (!kg) return;
+    const id = ex.exId || ex.id;
+    (verlauf[id] = verlauf[id] || []).push({ ts: w.startTs, kg, wdh });
+  }));
+  const besser = (a, b) => a.kg > b.kg || (a.kg === b.kg && a.wdh > b.wdh);
+  const grenze = Date.now() - STILLSTAND_AKTUELL_TAGE * TAG_MS;
+  const index = {};
+  Object.entries(verlauf).forEach(([id, liste]) => {
+    if (liste.length <= STILLSTAND_EINHEITEN) return;
+    liste.sort((a, b) => a.ts - b.ts);
+    if (liste[liste.length - 1].ts < grenze) return;
+    const fenster = liste.slice(-STILLSTAND_EINHEITEN);
+    const best = liste.slice(0, -STILLSTAND_EINHEITEN).reduce((m, x) => besser(x, m) ? x : m);
+    if (fenster.some(x => besser(x, best))) return;
+    // Wie viele Einheiten seit dem Bestwert vergangen sind — mindestens das Fenster, oft mehr.
+    index[id] = { best, seit: liste.filter(x => x.ts > best.ts).length };
+  });
+  _stillstandCache = { roh, index };
+  return index;
+}
+
+// Erklaerung im aufgeklappten Katalogeintrag; leer, wenn die Uebung nicht stagniert.
+function stillstandHinweisHTML(exId) {
+  const st = stillstandIndex()[exId];
+  if (!st) return '';
+  const datum = new Date(st.best.ts).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
+  return `<div class="ex-stillstand">Seit ${st.seit} Einheiten kein neuer Bestwert. Bisher bester Satz: ${fmtKg(st.best.kg)} kg × ${st.best.wdh} am ${datum}.</div>`;
+}
+
 // Bestleistung + letzte Ausfuehrung. Gemeinsamer Baustein von Uebungskatalog und
 // Detail-Modal, damit beide nicht auseinanderlaufen.
 function exStatsHTML(exId) {
@@ -8573,6 +8802,8 @@ function buildExItemHTML(ex, context) {
   const usingDays = getPlanDaysUsingExercise(ex.id);
   const planTag = usingDays.length
     ? '<span class="ex-item-plan-tag">Im aktuellen Plan</span>' : '';
+  const stillstandTag = stillstandIndex()[ex.id]
+    ? '<span class="ex-item-stillstand-tag" title="Seit mehreren Einheiten kein neuer Bestwert">Stillstand</span>' : '';
   const usingBlock = usingDays.length
     ? `<div class="ex-item-using">
          <div class="ex-item-using-label">Verwendet in:</div>
@@ -8592,11 +8823,13 @@ function buildExItemHTML(ex, context) {
       <div class="ex-item-stripe"></div>
       <div class="ex-item-name">${ex.name}</div>
       ${noteIndicator}
+      ${stillstandTag}
       ${planTag}
       <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
     </div>
     <div class="ex-item-body">
       ${statsBlock}
+      ${stillstandHinweisHTML(ex.id)}
       ${chartBlock}
       <div class="ex-item-body-label">Notizen</div>
       <textarea class="ex-notes-area" placeholder="z. B. Form-Tipps, Hinweise, Bemerkungen…"
@@ -8894,8 +9127,9 @@ function _exItemKlappen(el, key, auf, fertig) {
     const body = el.querySelector('.ex-item-body');
     if (body && !body.querySelector('.ex-chart-block')) {
       const exId = key.includes('__') ? key.split('__')[1] : key;
-      const stats = body.querySelector('.ex-item-stats');
-      if (stats) stats.insertAdjacentHTML('afterend', exChartHTML(exId, 'ex-chart-' + key));
+      // Hinter den Kennzahlen bzw. dem Stillstand-Hinweis — dieselbe Stelle wie im Neuaufbau.
+      const vor = body.querySelector('.ex-stillstand') || body.querySelector('.ex-item-stats');
+      if (vor) vor.insertAdjacentHTML('afterend', exChartHTML(exId, 'ex-chart-' + key));
     }
     el.classList.add('open');
   } else {
@@ -9042,9 +9276,10 @@ function createNewPlanDayAndAddEx() {
   closeModal('modal-ex-to-day');
   setTimeout(() => {
     promptForName('Name des neuen Trainingstags', 'Neuer Tag',
-      (name) => {
+      (eingabe) => {
         const plan = DB.getPlan();
         const id = 'day_' + Date.now();
+        const name = eindeutigerTagName(eingabe);
         plan.push({ id, name, color: null, exercises: [{ exId, targetSets: 3, targetReps: 8 }] });
         DB.savePlan(plan);
         const ex = DB.getExercises().find(e => e.id === exId);
@@ -9423,9 +9658,10 @@ function applyPlanImport() {
 
   // Referenz-Modell: importierte Tage werden zu geteilten Bibliothek-Tagen; der Plan
   // referenziert sie über dayIds. (weekPlan zeigt bereits auf dieselben importedDays-IDs.)
+  // Erst HIER eindeutig machen: Der Wochenplan der Datei ist oben ueber die Originalnamen zugeordnet.
   const lib = DB.getTrainingDays();
   importedDays.forEach(d => {
-    lib.push({ id: d.id, name: d.name, color: d.color || null,
+    lib.push({ id: d.id, name: eindeutigerTagName(d.name, lib), color: d.color || null,
                exercises: d.exercises, notes: '', archived: false, createdAt: Date.now() });
   });
   DB.saveTrainingDays(lib);
