@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v405**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v406**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2568,6 +2568,25 @@ Die Seite „Laufen" zeigt jetzt nur noch Laufwochenplan und „Diese Woche"; di
 synchronisieren" sichert nur nach Drive, `markLocalChange`/`driveInit` ebenso. Die Tabelle wird
 allein ueber „Aktualisieren" in der Laufdaten-Karte gelesen. Eine Kopplung war kurz eingebaut und
 wurde auf Leonards Wunsch wieder entfernt — nicht erneut einbauen, ohne zu fragen.
+**SEIT DEM 27.09.2026 HOLT DIE SEITE „LAUFEN" SELBST NACH** (`laufDatenAutomatischHolen`,
+Leonard-Auftrag, Vorschlag 7). Das ist KEINE Kopplung an die Drive-Sicherung — Ausloeser ist allein
+das Oeffnen der Seite: Seitenschalter (`_setWorkoutsView`), Tabwechsel (`_applyTabState`) und
+Rueckkehr in die App (`visibilitychange`), jeweils nur wenn Trainings-Tab UND Seite „Laufen"
+sichtbar sind. DREI Regeln:
+1. NIE ein Anmeldefenster: nur mit gueltigem Zugang (`runVerbunden`). Ohne ihn passiert nichts;
+   angemeldet wird weiter ueber „Lauf erledigt" / „Aktualisieren".
+2. Hoechstens alle 30 min (`LAUF_AUTO_ABSTAND_MS`), gerechnet ab letztem Abruf ODER Versuch
+   (`_laufAutoVersuch`) — ein scheiternder Abruf liefe sonst bei jedem Zeichnen erneut.
+3. 700ms verzoegert (`LAUF_AUTO_VERZOEGERUNG_MS`), damit das Neuzeichnen nicht in die Staffel
+   des Seitenwechsels faellt.
+Damit das nach einem Neuladen ueberhaupt greift, liegt der Lauf-Zugang jetzt wie der Drive-Token
+im SITZUNGSSPEICHER (`ft_run_token` neben `ft_run_token_exp`); vorher nur in der Variablen, und die
+App galt nach jedem Neuladen als nicht verbunden. Lehnt Google den Zugang ab (401), wird er
+vergessen (`_runTokenVergessen`), damit der naechste Tipp einen neuen anfordert.
+GEMESSEN (Tabellen-Abruf durch Attrappe ersetzt): ohne Zugang kein Abruf und keine Anmeldung;
+mit Zugang genau ein Abruf; erneutes Oeffnen und Rueckkehr innerhalb 30 min nichts; nach 31 min
+Rueckkehr → Abruf; Seite „Gym" → nichts; 401 → Zugang geloescht. NICHT pruefbar hier: der echte
+Google-Zugang und wie lange iOS den Sitzungsspeicher einer installierten App behaelt.
 
 **Der Laufplan wird auf einer EIGENEN SEITE bearbeitet** (`#screen-runplan-detail`, 04.09.2026,
 Leonard-Wunsch) — vorher klappte er in der Liste auf. Der Ablauf ist vom Gymplan kopiert:
