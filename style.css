@@ -3035,13 +3035,15 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
 }
 .rd-kopf-etikett { font-size: var(--fs-etikett); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; opacity: .85; }
 .rd-kopf-wert { font-size: 28px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.rd-kopf-zeile { font-size: var(--fs-text); font-weight: 600; opacity: .92; font-variant-numeric: tabular-nums; }
+.rd-kopf-reihe { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 12px; row-gap: 2px; }
+.rd-kopf-zeile { font-size: var(--fs-text); font-weight: 600; opacity: .92; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .rd-plan { margin: 2px 0 10px; }
 .rd-plan-titel { font-size: var(--fs-etikett); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text3); margin-bottom: 7px; }
 .rd-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .rd-chip { font-size: var(--fs-neben); font-weight: 700; padding: 4px 9px; border-radius: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .rd-chip.im-rahmen { background: var(--green-bg); color: #166534; }
 .rd-chip.daneben { background: #FEF3C7; color: #92400E; }
+.rd-chip.neutral { background: var(--card2); color: var(--text2); }
 .rd-plan-vorgabe { font-size: var(--fs-neben); color: var(--text2); }
 /* Wochenrueckblick in der Uebersicht (27.09.2026). Die Kacheln sind `.hd-stats` wie in den
    Detailansichten, hier zwei je Zeile — so passt die Zusatzzeile („+8 % zur Vorwoche")
@@ -3063,7 +3065,6 @@ html.glas .screen:not(#screen-mehr) .rb-karte .hd-stat span,
 html.glas .screen:not(#screen-mehr) .rb-zusatz,
 html.glas .screen:not(#screen-mehr) .rb-pr { color: rgba(255,255,255,.8); }
 html.glas .screen:not(#screen-mehr) .rb-pr strong { color: #fff; }
-.run-detail-quelle { margin: 12px 0 0; font-size: var(--fs-neben); color: var(--text3); line-height: 1.45; }
 .cal-detail-run.geplant { color: var(--text3); }
 /* Fusszeile: Datum in Zeile 1, Trainingstag in Zeile 2. Ist der Tag aufgezeichnet, ist die
    zweite Zeile ein Ausklapp-Knopf mit den Eckdaten der Einheit darunter. */

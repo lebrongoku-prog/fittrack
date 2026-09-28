@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v409**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v410**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -182,7 +182,19 @@ zu Wochentagen im Wochenplaner und der Bearbeiten-Modus „Trainingstage aus Pla
      5 %, `LAUF_ANTEIL_TOLERANZ`; Pace bis 10 s/km, `LAUF_PACE_TOLERANZ_S`), AMBER daneben (dieselbe
      Farbe wie der Stillstand-Chip). Darunter „Geplant: 12 km · 1h 15min · Z2" — die Zone steht nur
      noch dort. Ohne Vorgabe nur „Geplant: <Planname>"; ohne Plan entfaellt der Abschnitt.
-  4. Notiz der Einheit und der Quellenhinweis wie bisher.
+  4. Notiz der Einheit wie bisher.
+  NACHGEZOGEN 28.09.2026 (v410, Leonard-Wunsch):
+  - Dauer und Pace stehen in DERSELBEN Zeile wie die Strecke (`.rd-kopf-reihe`, Grundlinie,
+    der Zusatz bricht bei zu wenig Platz als Ganzes um).
+  - Der Abschnitt heisst „Geplant" und die Chips zeigen die GEPLANTEN Werte (12 km · 1h 15min ·
+    6'15'' /km), nicht mehr die Abweichung. Die FARBE bleibt die Bewertung (gruen/amber wie oben),
+    ohne Vergleichswert und fuer die Zone neutral grau (`.rd-chip.neutral`). Die Zeile
+    „Geplant: …" darunter ist damit entfallen; ohne Vorgabe steht dort nur der Planname.
+  - Der Quellenhinweis „Aus der Tabelle „Workout Data" gelesen …" ist entfallen (samt
+    `.run-detail-quelle`).
+  - PACE-FORMAT APP-WEIT „5'54'' /km" statt „5:54 /km" (`fmtPace`, einzige Stelle; betrifft
+    Laufdetail und Wettkampfkarten). Dabei behoben: Es wird erst auf ganze Sekunden gerundet —
+    vorher konnte „5:60" statt „6:00" entstehen (gemessen bei 10.0028 km/h).
   MIT ERLEDIGT (Leonard-Auswahl 2, 3 und 6): Das TEMPO in km/h ist entfallen (sagte dasselbe wie
   die Pace); der TITEL nutzt `fmtDate` wie die Gym-Einheit („Lauf — Sa., 19. Sept. 2026" statt
   „Samstag, 19. September 2026"); die Zeile KATEGORIE steht nur noch beim Intervalltraining.

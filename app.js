@@ -4697,8 +4697,7 @@ function showRunDetail(key) {
     // Die Kategorie nur noch beim Intervalltraining: Bei einem Lauf sagte sie nichts, was der
     // Titel nicht schon sagt (Leonard-Wunsch 28.09.2026).
     + (hiit && l.typ ? `<div class="run-detail-zeile"><span>Kategorie</span><strong>${escapeHtml(l.typ)}</strong></div>` : '')
-    + (u && u.note ? `<div class="run-detail-notiz"><span>Notiz</span><p>${escapeHtml(u.note)}</p></div>` : '')
-    + `<p class="run-detail-quelle">Aus der Tabelle „Workout Data" gelesen. FitTrack ändert dort nichts.</p>`;
+    + (u && u.note ? `<div class="run-detail-notiz"><span>Notiz</span><p>${escapeHtml(u.note)}</p></div>` : '');
   openModal('modal-run-detail');
 }
 
@@ -4710,54 +4709,60 @@ function _laufDetailKopf(l, hiit) {
     ? ['Dauer', fmtMin(l.minutes), 'Intervalltraining']
     : ['Strecke', l.km != null ? fmtKm(l.km) : fmtMin(l.minutes),
        [l.km != null ? fmtMin(l.minutes) : null, lKmh ? fmtPace(lKmh) : null].filter(x => x && x !== '–').join(' · ')];
+  // Dauer und Pace stehen seit dem 28.09.2026 in DERSELBEN Zeile wie der Hauptwert (Leonard-Wunsch);
+  // auf der Grundlinie ausgerichtet, bei zu wenig Platz bricht der Zusatz als Ganzes um.
   return `<div class="rd-kopf">
       <span class="rd-kopf-etikett">${etikett}</span>
-      <span class="rd-kopf-wert">${wert}</span>
-      ${zeile ? `<span class="rd-kopf-zeile">${zeile}</span>` : ''}
+      <div class="rd-kopf-reihe">
+        <span class="rd-kopf-wert">${wert}</span>
+        ${zeile ? `<span class="rd-kopf-zeile">${zeile}</span>` : ''}
+      </div>
     </div>`;
 }
 
-// Abschnitt „Gegen den Plan": die Abweichungen als Chips, darunter die Vorgabe selbst.
+// Abschnitt „Geplant" (28.09.2026, Leonard-Wunsch; vorher „Gegen den Plan" mit den Abweichungen
+// als Chip-Text): Die Chips zeigen die GEPLANTEN Werte, ihre FARBE sagt weiter, wie nah der Lauf
+// daran lag. Die Zone steht als neutraler Chip dabei.
 // Ohne Vorgabe (weder km noch Minuten) steht nur, zu welchem Plan der Tag gehoert.
 function _laufPlanBlock(u, l, plan) {
-  const vorgabe = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null]
-    .filter(Boolean).join(' · ') : '';
   const chips = u ? laufVergleichChips(u, l) : '';
   return `<div class="rd-plan">
-      <div class="rd-plan-titel">Gegen den Plan</div>
-      ${chips ? `<div class="rd-chips">${chips}</div>` : ''}
-      <div class="rd-plan-vorgabe">Geplant: ${escapeHtml(vorgabe || plan.name || 'Laufplan')}</div>
+      <div class="rd-plan-titel">Geplant</div>
+      ${chips ? `<div class="rd-chips">${chips}</div>`
+              : `<div class="rd-plan-vorgabe">${escapeHtml(plan.name || 'Laufplan')}</div>`}
     </div>`;
 }
 
-// SOLL/IST eines Laufs gegen seine geplante Einheit (27.09.2026, Leonard-Wunsch): Strecke, Dauer
-// und Pace als Abweichung. Herzfrequenzzonen bleiben bewusst AUSSEN VOR (Leonard-Entscheidung) —
-// die App kennt nur die Zonennamen, keine Pulsgrenzen.
+// SOLL/IST eines Laufs gegen seine geplante Einheit (27.09.2026, Leonard-Wunsch): Jeder Chip nennt
+// den GEPLANTEN Wert (seit 28.09.2026, vorher die Abweichung) und ist nach der Abweichung gefaerbt.
+// Herzfrequenzzonen fliessen NICHT in die Bewertung ein (Leonard-Entscheidung) — die App kennt nur
+// die Zonennamen, keine Pulsgrenzen; die Zone steht deshalb als neutraler Chip dabei.
 // GRUEN heisst „im Rahmen" (Strecke und Dauer hoechstens 5 % daneben, Pace hoechstens
 // LAUF_PACE_TOLERANZ_S), AMBER „deutlich daneben" — ein Hinweis, keine Warnung, in derselben
 // Farbe wie der Stillstand-Chip. Ein Chip nur, wo der Plan eine Vorgabe hat.
 const LAUF_ANTEIL_TOLERANZ = 0.05;
 const LAUF_PACE_TOLERANZ_S = 10;
 function laufVergleichChips(u, l) {
-  const vorzeichen = (x) => (x > 0 ? '+' : x < 0 ? '−' : '±');
-  const chip = (text, imRahmen) => `<span class="rd-chip ${imRahmen ? 'im-rahmen' : 'daneben'}">${text}</span>`;
+  // `imRahmen`: true = gruen, false = amber, null = neutral (ohne Vergleichswert).
+  const chip = (text, imRahmen) => {
+    const art = imRahmen == null ? 'neutral' : imRahmen ? 'im-rahmen' : 'daneben';
+    return `<span class="rd-chip ${art}">${text}</span>`;
+  };
   const chips = [];
-  if (u.km && l.km != null) {
-    const d = Math.round((l.km - u.km) * 10) / 10;
-    chips.push(chip(`${vorzeichen(d)}${fmtKm(Math.abs(d))}`, Math.abs(d) <= u.km * LAUF_ANTEIL_TOLERANZ));
+  if (u.km) {
+    chips.push(chip(fmtKm(u.km), l.km != null ? Math.abs(l.km - u.km) <= u.km * LAUF_ANTEIL_TOLERANZ : null));
   }
-  if (u.minutes && l.minutes != null) {
-    const d = Math.round(l.minutes - u.minutes);
-    chips.push(chip(`${vorzeichen(d)}${fmtMin(Math.abs(d))}`, Math.abs(d) <= u.minutes * LAUF_ANTEIL_TOLERANZ));
+  if (u.minutes) {
+    chips.push(chip(fmtMin(u.minutes), l.minutes != null ? Math.abs(l.minutes - u.minutes) <= u.minutes * LAUF_ANTEIL_TOLERANZ : null));
   }
   // Pace in Sekunden je km: geplant aus Minuten und km, gelaufen aus dem Tempo der Tabelle
   // (ersatzweise aus Dauer und Strecke).
   const lKmh = l.kmh || (l.km && l.minutes ? l.km / (l.minutes / 60) : 0);
-  if (u.km && u.minutes && lKmh && l.art !== 'hiit') {
-    const d = Math.round(3600 / lKmh - 3600 / (u.km / (u.minutes / 60)));
-    const text = d === 0 ? 'Pace wie geplant' : `${Math.abs(d)} s/km ${d < 0 ? 'schneller' : 'langsamer'}`;
-    chips.push(chip(text, Math.abs(d) <= LAUF_PACE_TOLERANZ_S));
+  if (u.km && u.minutes && l.art !== 'hiit') {
+    const sollKmh = u.km / (u.minutes / 60);
+    chips.push(chip(fmtPace(sollKmh), lKmh ? Math.abs(3600 / lKmh - 3600 / sollKmh) <= LAUF_PACE_TOLERANZ_S : null));
   }
+  if (u.zone) chips.push(chip(escapeHtml(u.zone), null));
   return chips.join('');
 }
 
@@ -4815,11 +4820,12 @@ function runNachTag() {
   return map;
 }
 
+// Pace im Laeufer-Format „5'54'' /km" (28.09.2026, Leonard-Wunsch, gilt fuer die ganze App).
+// Erst auf ganze Sekunden runden, dann teilen — sonst konnte „5'60''" statt „6'00''" entstehen.
 function fmtPace(kmh) {
   if (!kmh || kmh <= 0) return '–';
-  const secProKm = 3600 / kmh;
-  const m = Math.floor(secProKm / 60), s = Math.round(secProKm % 60);
-  return `${m}:${String(s).padStart(2, '0')} /km`;
+  const sek = Math.round(3600 / kmh);
+  return `${Math.floor(sek / 60)}'${String(sek % 60).padStart(2, '0')}'' /km`;
 }
 function fmtKm(v) { return v == null ? '–' : (Math.round(v * 10) / 10).toFixed(1).replace(/\.0$/, '') + ' km'; }
 function fmtMin(v) {
