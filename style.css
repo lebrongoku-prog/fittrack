@@ -3803,7 +3803,9 @@ html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
 .wk-kopf { margin-bottom: 12px; }
 /* Die Kacheln bringen ihren eigenen unteren Abstand mit (16px fuer den Zeitstrahl im Modal);
    als letztes Element der Karte waere das ein Loch. */
-.wk-card .wk-stats { margin-bottom: 0; }
+/* Wettkampf mit Lauf = Inhalt der Laufdetailansicht (28.09.2026). Das letzte Stueck traegt keinen
+   Abstand nach unten, sonst stuende unter der Karte mehr Luft als ueber ihr. */
+.wk-lauf > :last-child { margin-bottom: 0; }
 /* Vier Kacheln in drei Spalten lassen unten eine halbe Zeile stehen. Auf iPhone-Breite passen
    die 6 Werte in zwei Zeilen zu drei — genau das Raster der Laufdetailansicht. */
 .wk-datum { font-size: var(--fs-neben); font-weight: 600; color: var(--text3); margin-top: 3px; }
@@ -3843,6 +3845,14 @@ html.glas .screen:not(#screen-mehr) .wk-datum,
 html.glas .screen:not(#screen-mehr) .wk-leer { color: rgba(255,255,255,.8); }
 html.glas .screen:not(#screen-mehr) .wk-card .hd-stat { background: rgba(255,255,255,.14); }
 html.glas .screen:not(#screen-mehr) .wk-card .hd-stat span { color: rgba(255,255,255,.75); }
+/* Laufinhalt auf der durchscheinenden Wettkampfkarte: Kopf und farbige Chips bleiben farbig
+   (wie die Knoepfe der Herocard), nur die grauen Teile werden weiss. */
+html.glas .screen:not(#screen-mehr) .wk-card .rd-plan-titel,
+html.glas .screen:not(#screen-mehr) .wk-card .rd-plan-vorgabe,
+html.glas .screen:not(#screen-mehr) .wk-card .run-detail-notiz span { color: rgba(255,255,255,.75); }
+html.glas .screen:not(#screen-mehr) .wk-card .run-detail-notiz { border-top-color: rgba(255,255,255,.2); }
+html.glas .screen:not(#screen-mehr) .wk-card .run-detail-notiz p { color: #fff; }
+html.glas .screen:not(#screen-mehr) .wk-card .rd-chip.neutral { background: rgba(255,255,255,.14); color: #fff; }
 html.glas .screen:not(#screen-mehr) .wk-anstehend { background: rgba(255,255,255,.14); color: rgba(255,255,255,.85); }
 html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,255,.85); }
 

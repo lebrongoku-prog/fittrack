@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v410**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v411**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -195,6 +195,15 @@ zu Wochentagen im Wochenplaner und der Bearbeiten-Modus „Trainingstage aus Pla
   - PACE-FORMAT APP-WEIT „5'54'' /km" statt „5:54 /km" (`fmtPace`, einzige Stelle; betrifft
     Laufdetail und Wettkampfkarten). Dabei behoben: Es wird erst auf ganze Sekunden gerundet —
     vorher konnte „5:60" statt „6:00" entstehen (gemessen bei 10.0028 km/h).
+  AUCH DIE WETTKAMPFKARTEN nutzen diesen Inhalt (v411, 28.09.2026, Leonard-Wunsch):
+  `laufDetailInhalt(key, lauf)` baut Kopf, Kacheln, „Geplant", Kategorie und Notiz OHNE Titel;
+  `showRunDetail` und `wettkampfKarte` rufen beide diese eine Funktion — beim Aendern der
+  Laufdetailansicht ziehen die Wettkaempfe also von selbst mit. Die Karte behaelt ihren eigenen
+  Kopf (Name, ausgeschriebenes Datum) und die drei Zustaende ohne Lauf (steht an / wartet / fehlt).
+  Mit den sechs alten Kacheln ist `.wk-stats` entfallen; `.wk-lauf > :last-child` nimmt dem
+  letzten Stueck den Abstand nach unten. Im Transparenz-Modus bleiben Kopf und farbige Chips
+  farbig, Abschnittstitel, Notiz und der neutrale Zonen-Chip werden weiss (Glas-Regeln unter
+  `.wk-card`). GEMESSEN: Liste und Zeitstrahl, mit und ohne Plan, Glas-Modus; keine Konsolenfehler.
   MIT ERLEDIGT (Leonard-Auswahl 2, 3 und 6): Das TEMPO in km/h ist entfallen (sagte dasselbe wie
   die Pace); der TITEL nutzt `fmtDate` wie die Gym-Einheit („Lauf — Sa., 19. Sept. 2026" statt
   „Samstag, 19. September 2026"); die Zeile KATEGORIE steht nur noch beim Intervalltraining.
@@ -3060,9 +3069,9 @@ Im QUERFORMAT stehen zwei Karten nebeneinander (`#races-list` als 2-Spalten-Grid
 auf die Hoehe der Nachbarin.
 Aufbau einer Karte (`wettkampfKarte`): Kopf mit Name und ausgeschriebenem Datum (OHNE
 Sportsymbol — es war kurzzeitig da und ist am 06.09.2026 wieder entfallen, wie im
-Seitenschalter), darunter die Werte in denselben Kacheln wie die Laufdetailansicht
-(`.hd-stats`) —
-Strecke, Zeit, Pace, Ø Puls, Max Puls, Hoehenmeter. BEWUSST kein eigenes Kacheldesign: Ein
+Seitenschalter), darunter seit dem 28.09.2026 DERSELBE Inhalt wie die Laufdetailansicht
+(`laufDetailInhalt`: gruener Kopf, Puls/Hoehe, „Geplant", Notiz). Vorher sechs eigene Kacheln
+(Strecke, Zeit, Pace, Ø Puls, Max Puls, Hoehenmeter). BEWUSST kein eigenes Design: Ein
 Wettkampf ist ein Lauf und soll auch so aussehen.
 Die WERTE kommen aus `runNachTag()[date]`, also aus der Tabelle — nicht aus `ft_races`.
 Liegt zu dem Tag kein Lauf vor (Daten noch nicht abgerufen, oder der Lauf fehlt in der

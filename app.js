@@ -4680,6 +4680,15 @@ function showRunDetail(key) {
   document.getElementById('run-detail-title').textContent =
     `${hiit ? 'Intervalltraining' : 'Lauf'} — ${fmtDate(new Date(y, m - 1, d).getTime())}`;
 
+  document.getElementById('run-detail-body').innerHTML = laufDetailInhalt(key, l);
+  openModal('modal-run-detail');
+}
+
+// Der INHALT der Laufdetailansicht ohne Titel — gemeinsam mit den Wettkampfkarten im Plan-Tab
+// (28.09.2026, Leonard-Wunsch „die neue Detailansicht auch dort"). Eine Quelle, damit ein
+// Wettkampf genauso aussieht wie jeder andere Lauf und die beiden nicht auseinanderlaufen.
+function laufDetailInhalt(key, l) {
+  const hiit = l.art === 'hiit';
   const geplant = runGeplanteTage()[key];
   const u = geplant && geplant.einheit;
   const kacheln = [
@@ -4687,9 +4696,7 @@ function showRunDetail(key) {
     l.maxHR != null          ? { wert: `${Math.round(l.maxHR)}`,   label: 'Max Puls' } : null,
     !hiit && l.elevM != null ? { wert: `${Math.round(l.elevM)} m`, label: 'Höhe' } : null,
   ].filter(Boolean);
-
-  document.getElementById('run-detail-body').innerHTML =
-    _laufDetailKopf(l, hiit)
+  return _laufDetailKopf(l, hiit)
     + (kacheln.length ? `<div class="hd-stats run-detail-stats">`
         + kacheln.map(k => `<div class="hd-stat"><b>${k.wert}</b><span>${k.label}</span></div>`).join('')
         + `</div>` : '')
@@ -4698,7 +4705,6 @@ function showRunDetail(key) {
     // Titel nicht schon sagt (Leonard-Wunsch 28.09.2026).
     + (hiit && l.typ ? `<div class="run-detail-zeile"><span>Kategorie</span><strong>${escapeHtml(l.typ)}</strong></div>` : '')
     + (u && u.note ? `<div class="run-detail-notiz"><span>Notiz</span><p>${escapeHtml(u.note)}</p></div>` : '');
-  openModal('modal-run-detail');
 }
 
 // Gruener Kopf: der Hauptwert gross, darunter die uebrigen Eckdaten in einer Zeile. Das Tempo in
@@ -7863,27 +7869,17 @@ function wettkampfKarte(r, lauf) {
   const tageHer = Math.round((heute - tag) / TAG_MS);
   const ueberfaellig = !kuenftig && tageHer > WK_KULANZ_TAGE;
 
-  // Dieselben Kacheln wie in der Laufdetailansicht (`.hd-stats`), damit ein Wettkampf nicht
-  // anders aussieht als jeder andere Lauf. Fehlende Werte bleiben WEG statt als „–"
-  // dazustehen; das Raster fuellt die Luecke von selbst auf.
-  const kacheln = lauf ? [
-    lauf.km      != null ? { wert: fmtKm(lauf.km),                label: 'Strecke' } : null,
-    lauf.minutes != null ? { wert: fmtMin(lauf.minutes),          label: 'Zeit' } : null,
-    lauf.kmh             ? { wert: fmtPace(lauf.kmh),             label: 'Pace' } : null,
-    lauf.avgHR   != null ? { wert: `${Math.round(lauf.avgHR)}`,   label: 'Ø Puls' } : null,
-    lauf.maxHR   != null ? { wert: `${Math.round(lauf.maxHR)}`,   label: 'Max Puls' } : null,
-    lauf.elevM   != null ? { wert: `${Math.round(lauf.elevM)} m`, label: 'Höhenmeter' } : null,
-  ].filter(Boolean) : [];
+  // Liegt ein Lauf vor, zeigt die Karte DENSELBEN Inhalt wie die Laufdetailansicht
+  // (`laufDetailInhalt`, seit 28.09.2026 — vorher sechs eigene Kacheln): gruener Kopf, Puls und
+  // Hoehe, „Geplant" und Notiz. Ein Wettkampf sieht damit aus wie jeder andere Lauf.
 
   // Der Abruf-Knopf ruft dieselbe Funktion wie „Aktualisieren" in den Einstellungen. Er MUSS
   // `stopPropagation` rufen, sonst oeffnet der Tipp zugleich den Bearbeiten-Dialog der Karte.
   const holKnopf = `<button class="btn btn-sm wk-hol-btn" onclick="event.stopPropagation();runLaeufeLaden({interactive:true})">`
     + `Laufdaten holen</button>`;
 
-  const koerper = kacheln.length
-    ? `<div class="hd-stats wk-stats">`
-      + kacheln.map(k => `<div class="hd-stat"><b>${k.wert}</b><span>${k.label}</span></div>`).join('')
-      + `</div>`
+  const koerper = lauf
+    ? `<div class="wk-lauf">${laufDetailInhalt(r.date, lauf)}</div>`
     : kuenftig
       ? `<div class="wk-leer wk-anstehend">Steht noch an</div>`
       : ueberfaellig
@@ -7896,7 +7892,7 @@ function wettkampfKarte(r, lauf) {
 
   // Ein Tipp oeffnet denselben Dialog wie das „+", nur mit gefuellten Feldern — sonst gaebe es
   // keinen Weg, einen Vertipper zu berichtigen oder einen Termin wieder zu entfernen.
-  const zustand = kuenftig ? ' wk-kuenftig' : (!kacheln.length && ueberfaellig ? ' wk-offen' : '');
+  const zustand = kuenftig ? ' wk-kuenftig' : (!lauf && ueberfaellig ? ' wk-offen' : '');
   return `<div class="chart-card-v2 wk-card${zustand}" data-date="${r.date}"
        onclick="openRaceDialog('${r.date}')">
     <div class="wk-kopf">
