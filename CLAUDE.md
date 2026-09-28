@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v408**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v409**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -165,11 +165,30 @@ zu Wochentagen im Wochenplaner und der Bearbeiten-Modus „Trainingstage aus Pla
   gegen den Rohtext von `ft_workouts`. Die Katalog-Chips tragen `nowrap`; bei zwei Chips bricht der
   Uebungsname um (`.ex-item-name { min-width: 0 }`). `_exItemKlappen` setzt das Diagramm hinter
   den Hinweis, sonst stimmte die Reihenfolge waehrend der Bewegung nicht.
-- **Soll/Ist beim Lauf** (`laufVergleichHTML`, Laufdetailansicht): Strecke, Dauer und Pace
-  geplant | gelaufen | Differenz, direkt unter den Kacheln. HERZFREQUENZZONEN BLEIBEN AUSSEN VOR
-  (Leonard-Entscheidung) — die App kennt nur Zonennamen, keine Pulsgrenzen; die Zone steht nur als
-  Zeile „Zone laut Plan". Eine Zeile nur, wo der Plan eine Vorgabe hat; Pace aus `kmh`, ersatzweise
-  aus Dauer und Strecke.
+- **Soll/Ist beim Lauf** (`laufVergleichChips`, Laufdetailansicht): Abweichung bei Strecke, Dauer
+  und Pace. HERZFREQUENZZONEN BLEIBEN AUSSEN VOR (Leonard-Entscheidung) — die App kennt nur
+  Zonennamen, keine Pulsgrenzen. Ein Chip nur, wo der Plan eine Vorgabe hat; Pace aus `kmh`,
+  ersatzweise aus Dauer und Strecke. (Bis v408 eine vierspaltige Tabelle `laufVergleichHTML`.)
+- **LAUFDETAILANSICHT „VARIANTE B"** (`showRunDetail`, `_laufDetailKopf`, `_laufPlanBlock`,
+  28.09.2026, Leonard-Wahl aus drei gezeichneten Entwuerfen — A „wie die Gym-Einheit" mit
+  Soll/Ist-Balken und C „Zeitstrahl" waren die anderen). Aufbau von oben:
+  1. KOPF `.rd-kopf` im Verlauf des Lauf-Knopfs der Herocard (#15803D → #4ADE80, weisse Schrift):
+     Etikett „Strecke", die Strecke gross (28px, Einzelanzeige), darunter „1h 14min · 6:36 /km".
+     Beim Intervalltraining „Dauer" gross und „Intervalltraining" darunter. Aendert sich die Farbe
+     des Lauf-Knopfs, hier mitziehen.
+  2. KACHELN (`.hd-stats`) nur noch fuer Ø Puls, Max Puls und Hoehe — hoechstens drei, keine
+     verwaiste Kachel mehr (vorher sieben in 3 + 3 + 1).
+  3. „GEGEN DEN PLAN": Abweichungen als Chips (`.rd-chip`) — GRUEN im Rahmen (Strecke/Dauer bis
+     5 %, `LAUF_ANTEIL_TOLERANZ`; Pace bis 10 s/km, `LAUF_PACE_TOLERANZ_S`), AMBER daneben (dieselbe
+     Farbe wie der Stillstand-Chip). Darunter „Geplant: 12 km · 1h 15min · Z2" — die Zone steht nur
+     noch dort. Ohne Vorgabe nur „Geplant: <Planname>"; ohne Plan entfaellt der Abschnitt.
+  4. Notiz der Einheit und der Quellenhinweis wie bisher.
+  MIT ERLEDIGT (Leonard-Auswahl 2, 3 und 6): Das TEMPO in km/h ist entfallen (sagte dasselbe wie
+  die Pace); der TITEL nutzt `fmtDate` wie die Gym-Einheit („Lauf — Sa., 19. Sept. 2026" statt
+  „Samstag, 19. September 2026"); die Zeile KATEGORIE steht nur noch beim Intervalltraining.
+  GEMESSEN (375px): Lauf daneben (−0.8 km amber, −1min gruen, 21 s/km langsamer amber), Lauf im
+  Rahmen (alle gruen), Intervalltraining ohne Chips mit Kategorie, Lauf ohne Plan ohne Abschnitt;
+  keine Konsolenfehler.
 - **Uebungsnamen aus dem Katalog** (`uebungsName(exId, gespeichert)`): Einheiten speichern den Namen
   beim Start mit. PR-Liste, Einheiten-Detailansicht, Bestleistungen und „Trainingstag angepasst" in
   der Abschlussansicht sowie der Rueckblick zeigen jetzt den AKTUELLEN Katalognamen; der

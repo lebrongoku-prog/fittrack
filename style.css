@@ -3026,17 +3026,23 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-zone           { background: rgba(2
 .run-detail-notiz { padding: 9px 0; border-top: 1px solid var(--border); font-size: var(--fs-text); }
 .run-detail-notiz span { color: var(--text3); }
 .run-detail-notiz p { margin: 4px 0 0; color: var(--text); line-height: 1.45; white-space: pre-wrap; }
-/* Soll/Ist-Vergleich mit der geplanten Einheit (27.09.2026): vier Spalten, Kennzahl links. */
-.lauf-vgl {
-  display: grid; grid-template-columns: auto 1fr 1fr 1fr; column-gap: 10px; row-gap: 8px;
-  align-items: baseline; padding: 4px 0 12px; font-size: var(--fs-text); color: var(--text2);
-  font-variant-numeric: tabular-nums;
+/* Laufdetailansicht „Variante B" (28.09.2026): gruener Kopf im Verlauf des Lauf-Knopfs der
+   Herocard (`.hero-heute .hero-v2-btn-lauf`) — aendert sich dort die Farbe, hier mitziehen. */
+.rd-kopf {
+  display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px;
+  padding: 14px 16px; border-radius: 16px; color: #fff;
+  background: linear-gradient(135deg, #15803D, #4ADE80);
 }
-.lauf-vgl > :nth-child(4n+2), .lauf-vgl > :nth-child(4n+3), .lauf-vgl > :nth-child(4n+4) { text-align: right; }
-.lauf-vgl-kopf { font-size: var(--fs-etikett); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text3); }
-.lauf-vgl-name { color: var(--text3); }
-.lauf-vgl strong { color: var(--text); font-weight: 700; }
-.lauf-vgl-diff { color: var(--text2); white-space: nowrap; }
+.rd-kopf-etikett { font-size: var(--fs-etikett); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; opacity: .85; }
+.rd-kopf-wert { font-size: 28px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.rd-kopf-zeile { font-size: var(--fs-text); font-weight: 600; opacity: .92; font-variant-numeric: tabular-nums; }
+.rd-plan { margin: 2px 0 10px; }
+.rd-plan-titel { font-size: var(--fs-etikett); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text3); margin-bottom: 7px; }
+.rd-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.rd-chip { font-size: var(--fs-neben); font-weight: 700; padding: 4px 9px; border-radius: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.rd-chip.im-rahmen { background: var(--green-bg); color: #166534; }
+.rd-chip.daneben { background: #FEF3C7; color: #92400E; }
+.rd-plan-vorgabe { font-size: var(--fs-neben); color: var(--text2); }
 /* Wochenrueckblick in der Uebersicht (27.09.2026). Die Kacheln sind `.hd-stats` wie in den
    Detailansichten, hier zwei je Zeile — so passt die Zusatzzeile („+8 % zur Vorwoche")
    ohne Umbruch in die Kachel. */

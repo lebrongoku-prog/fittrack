@@ -4666,81 +4666,99 @@ function saveRunNote() {
 }
 
 // Detailansicht eines gelaufenen Tages — Gegenstueck zu `showHistDetail` fuer die
-// Krafteinheiten (Leonard-Wunsch 04.09.2026). Sie zeigt alles, was die Tabelle „Workout Data"
-// zu diesem Tag hergibt; Werte, die dort fehlen, bleiben WEG statt als „–" dazustehen.
-// Ein Intervalltraining hat weder Strecke noch Tempo — die Kacheln entstehen deshalb aus einer
-// gefilterten Liste und nicht aus einem festen Raster.
+// Krafteinheiten (Leonard-Wunsch 04.09.2026). Seit dem 28.09.2026 „Variante B" (Leonard-Wahl aus
+// drei Entwuerfen): Oben ein Kopf im Gruen des Lauf-Knopfs der Herocard mit der Strecke gross,
+// darunter Puls und Hoehenmeter als Kacheln und der Plan-Vergleich als farbige Chips.
+// Werte, die in der Tabelle fehlen, bleiben WEG statt als „–" dazustehen.
+// Ein Intervalltraining hat weder Strecke noch Pace — dort steht die DAUER im Kopf.
 function showRunDetail(key) {
   const l = runNachTag()[key];
   if (!l) return;
   const [y, m, d] = key.split('-').map(Number);
-  const datum = new Date(y, m - 1, d).toLocaleDateString('de-DE',
-    { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const hiit = l.art === 'hiit';
+  // Dasselbe Datumsformat wie die Detailansicht einer Gym-Einheit („Sa., 19. Sept. 2026").
   document.getElementById('run-detail-title').textContent =
-    `${hiit ? 'Intervalltraining' : 'Lauf'} — ${datum}`;
-
-  const kacheln = [
-    !hiit && l.km != null   ? { wert: fmtKm(l.km),               label: 'Strecke' } : null,
-    l.minutes != null       ? { wert: fmtMin(l.minutes),         label: 'Dauer' } : null,
-    !hiit && l.kmh          ? { wert: fmtPace(l.kmh),            label: 'Pace' } : null,
-    !hiit && l.kmh          ? { wert: `${(Math.round(l.kmh * 10) / 10)} km/h`, label: 'Tempo' } : null,
-    l.avgHR != null         ? { wert: `${Math.round(l.avgHR)}`,  label: 'Ø Puls' } : null,
-    l.maxHR != null         ? { wert: `${Math.round(l.maxHR)}`,  label: 'Max Puls' } : null,
-    !hiit && l.elevM != null? { wert: `${Math.round(l.elevM)} m`, label: 'Höhenmeter' } : null,
-  ].filter(Boolean);
+    `${hiit ? 'Intervalltraining' : 'Lauf'} — ${fmtDate(new Date(y, m - 1, d).getTime())}`;
 
   const geplant = runGeplanteTage()[key];
   const u = geplant && geplant.einheit;
-  const vergleich = u ? laufVergleichHTML(u, l) : '';
+  const kacheln = [
+    l.avgHR != null          ? { wert: `${Math.round(l.avgHR)}`,   label: 'Ø Puls' } : null,
+    l.maxHR != null          ? { wert: `${Math.round(l.maxHR)}`,   label: 'Max Puls' } : null,
+    !hiit && l.elevM != null ? { wert: `${Math.round(l.elevM)} m`, label: 'Höhe' } : null,
+  ].filter(Boolean);
 
   document.getElementById('run-detail-body').innerHTML =
-    `<div class="hd-stats run-detail-stats">`
-    + kacheln.map(k => `<div class="hd-stat"><b>${k.wert}</b><span>${k.label}</span></div>`).join('')
-    + `</div>`
-    + vergleich
-    + `<div class="run-detail-zeile"><span>Kategorie</span><strong>${escapeHtml(l.typ || (hiit ? 'Intervalltraining' : 'Laufen'))}</strong></div>`
-    // Ohne Vorgabe (weder km noch Minuten) gibt es nichts zu vergleichen — dann nur der Plan.
-    + (geplant && !vergleich ? `<div class="run-detail-zeile"><span>Geplant</span><strong>${escapeHtml(geplant.plan.name || 'Laufplan')}</strong></div>` : '')
-    + (u && u.zone ? `<div class="run-detail-zeile"><span>Zone laut Plan</span><strong>${escapeHtml(u.zone)}</strong></div>` : '')
-    + (geplant && geplant.einheit && geplant.einheit.note
-        ? `<div class="run-detail-notiz"><span>Notiz</span><p>${escapeHtml(geplant.einheit.note)}</p></div>` : '')
+    _laufDetailKopf(l, hiit)
+    + (kacheln.length ? `<div class="hd-stats run-detail-stats">`
+        + kacheln.map(k => `<div class="hd-stat"><b>${k.wert}</b><span>${k.label}</span></div>`).join('')
+        + `</div>` : '')
+    + (geplant ? _laufPlanBlock(u, l, geplant.plan) : '')
+    // Die Kategorie nur noch beim Intervalltraining: Bei einem Lauf sagte sie nichts, was der
+    // Titel nicht schon sagt (Leonard-Wunsch 28.09.2026).
+    + (hiit && l.typ ? `<div class="run-detail-zeile"><span>Kategorie</span><strong>${escapeHtml(l.typ)}</strong></div>` : '')
+    + (u && u.note ? `<div class="run-detail-notiz"><span>Notiz</span><p>${escapeHtml(u.note)}</p></div>` : '')
     + `<p class="run-detail-quelle">Aus der Tabelle „Workout Data" gelesen. FitTrack ändert dort nichts.</p>`;
   openModal('modal-run-detail');
 }
 
-// SOLL/IST eines Laufs gegen seine geplante Einheit (27.09.2026, Leonard-Wunsch): Strecke,
-// Dauer und Pace nebeneinander, dazu die Abweichung. Herzfrequenzzonen bleiben bewusst AUSSEN
-// VOR (Leonard-Entscheidung) — die App kennt nur die Zonennamen, keine Pulsgrenzen.
-// Eine Zeile erscheint nur, wenn der Plan dafuer eine Vorgabe hat; beim Intervalltraining
-// fehlen Strecke und Pace ohnehin. Leer, wenn es gar nichts zu vergleichen gibt.
-function laufVergleichHTML(u, l) {
+// Gruener Kopf: der Hauptwert gross, darunter die uebrigen Eckdaten in einer Zeile. Das Tempo in
+// km/h ist entfallen — es sagte dasselbe wie die Pace (Leonard-Wunsch 28.09.2026).
+function _laufDetailKopf(l, hiit) {
+  const lKmh = l.kmh || (l.km && l.minutes ? l.km / (l.minutes / 60) : 0);
+  const [etikett, wert, zeile] = hiit
+    ? ['Dauer', fmtMin(l.minutes), 'Intervalltraining']
+    : ['Strecke', l.km != null ? fmtKm(l.km) : fmtMin(l.minutes),
+       [l.km != null ? fmtMin(l.minutes) : null, lKmh ? fmtPace(lKmh) : null].filter(x => x && x !== '–').join(' · ')];
+  return `<div class="rd-kopf">
+      <span class="rd-kopf-etikett">${etikett}</span>
+      <span class="rd-kopf-wert">${wert}</span>
+      ${zeile ? `<span class="rd-kopf-zeile">${zeile}</span>` : ''}
+    </div>`;
+}
+
+// Abschnitt „Gegen den Plan": die Abweichungen als Chips, darunter die Vorgabe selbst.
+// Ohne Vorgabe (weder km noch Minuten) steht nur, zu welchem Plan der Tag gehoert.
+function _laufPlanBlock(u, l, plan) {
+  const vorgabe = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null]
+    .filter(Boolean).join(' · ') : '';
+  const chips = u ? laufVergleichChips(u, l) : '';
+  return `<div class="rd-plan">
+      <div class="rd-plan-titel">Gegen den Plan</div>
+      ${chips ? `<div class="rd-chips">${chips}</div>` : ''}
+      <div class="rd-plan-vorgabe">Geplant: ${escapeHtml(vorgabe || plan.name || 'Laufplan')}</div>
+    </div>`;
+}
+
+// SOLL/IST eines Laufs gegen seine geplante Einheit (27.09.2026, Leonard-Wunsch): Strecke, Dauer
+// und Pace als Abweichung. Herzfrequenzzonen bleiben bewusst AUSSEN VOR (Leonard-Entscheidung) —
+// die App kennt nur die Zonennamen, keine Pulsgrenzen.
+// GRUEN heisst „im Rahmen" (Strecke und Dauer hoechstens 5 % daneben, Pace hoechstens
+// LAUF_PACE_TOLERANZ_S), AMBER „deutlich daneben" — ein Hinweis, keine Warnung, in derselben
+// Farbe wie der Stillstand-Chip. Ein Chip nur, wo der Plan eine Vorgabe hat.
+const LAUF_ANTEIL_TOLERANZ = 0.05;
+const LAUF_PACE_TOLERANZ_S = 10;
+function laufVergleichChips(u, l) {
   const vorzeichen = (x) => (x > 0 ? '+' : x < 0 ? '−' : '±');
-  const zeilen = [];
+  const chip = (text, imRahmen) => `<span class="rd-chip ${imRahmen ? 'im-rahmen' : 'daneben'}">${text}</span>`;
+  const chips = [];
   if (u.km && l.km != null) {
     const d = Math.round((l.km - u.km) * 10) / 10;
-    zeilen.push(['Strecke', fmtKm(u.km), fmtKm(l.km), `${vorzeichen(d)}${fmtKm(Math.abs(d))}`]);
+    chips.push(chip(`${vorzeichen(d)}${fmtKm(Math.abs(d))}`, Math.abs(d) <= u.km * LAUF_ANTEIL_TOLERANZ));
   }
   if (u.minutes && l.minutes != null) {
     const d = Math.round(l.minutes - u.minutes);
-    zeilen.push(['Dauer', fmtMin(u.minutes), fmtMin(l.minutes), `${vorzeichen(d)}${fmtMin(Math.abs(d))}`]);
+    chips.push(chip(`${vorzeichen(d)}${fmtMin(Math.abs(d))}`, Math.abs(d) <= u.minutes * LAUF_ANTEIL_TOLERANZ));
   }
   // Pace in Sekunden je km: geplant aus Minuten und km, gelaufen aus dem Tempo der Tabelle
   // (ersatzweise aus Dauer und Strecke).
   const lKmh = l.kmh || (l.km && l.minutes ? l.km / (l.minutes / 60) : 0);
   if (u.km && u.minutes && lKmh && l.art !== 'hiit') {
-    const sollKmh = u.km / (u.minutes / 60);
-    const d = Math.round(3600 / lKmh - 3600 / sollKmh);
-    const diff = d === 0 ? 'wie geplant' : `${Math.abs(d)} s ${d < 0 ? 'schneller' : 'langsamer'}`;
-    zeilen.push(['Pace', fmtPace(sollKmh), fmtPace(lKmh), diff]);
+    const d = Math.round(3600 / lKmh - 3600 / (u.km / (u.minutes / 60)));
+    const text = d === 0 ? 'Pace wie geplant' : `${Math.abs(d)} s/km ${d < 0 ? 'schneller' : 'langsamer'}`;
+    chips.push(chip(text, Math.abs(d) <= LAUF_PACE_TOLERANZ_S));
   }
-  if (!zeilen.length) return '';
-  return `<div class="lauf-vgl">
-      <span class="lauf-vgl-kopf"></span><span class="lauf-vgl-kopf">Geplant</span>
-      <span class="lauf-vgl-kopf">Gelaufen</span><span class="lauf-vgl-kopf">Differenz</span>
-      ${zeilen.map(([name, soll, ist, diff]) =>
-        `<span class="lauf-vgl-name">${name}</span><span>${soll}</span><strong>${ist}</strong><span class="lauf-vgl-diff">${diff}</span>`).join('')}
-    </div>`;
+  return chips.join('');
 }
 
 // ── Laufplaene ─────────────────────────────────────────────────────
