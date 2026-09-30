@@ -1800,34 +1800,72 @@ function runWochenStatus() {
 // damit die Wochenliste auch beim Zurueckwischen weiss, welcher Lauftag verschoben und welcher
 // wirklich verpasst ist). In einer KUENFTIGEN Woche gibt es nichts zu verschieben.
 function runVerschobeneTage(mo) {
+  const out = {};
+  Object.keys(runVerschiebungen(mo).planNachLauf).forEach(i => { out[i] = true; });
+  return out;
+}
+
+// DIE ZUORDNUNG SELBST (30.09.2026, Leonard-Meldung: Dienstagslauf am Montag vorgezogen und
+// 1 km laenger gelaufen — die Liste zeigte „Mo: Nicht geplant · 10 km gelaufen" und „Di:
+// verschoben", also scheinbar einen Zusatzlauf). Welcher Lauf welchen Plantag abdeckt:
+//   planNachLauf[i] = j  → der geplante Tag i wurde am Tag j gelaufen
+//   laufNachPlan[j] = i  → der Lauf am Tag j war der geplante Lauf vom Tag i
+// Gepaart wird der Reihe nach: der frueheste freie Lauf deckt den fruehesten offenen Plantag.
+// Freie Laeufe sind Laeufe an ungeplanten Tagen und jeder weitere Lauf an einem Plantag.
+function runVerschiebungen(mo) {
+  const leer = { planNachLauf: {}, laufNachPlan: {} };
   const p = runPlanAktiv();
-  if (!p) return {};
+  if (!p) return leer;
   const geplant = p.runDays || [];
-  if (!geplant.length) return {};
+  if (!geplant.length) return leer;
   const heuteMo = _laufWochenMontag(new Date());
   const woMo = mo ? _laufWochenMontag(mo) : heuteMo;
-  if (woMo.getTime() > heuteMo.getTime()) return {};
+  if (woMo.getTime() > heuteMo.getTime()) return leer;
   const von = woMo.getTime(), bis = von + WOCHE_MS - 1;
   const proTag = {};
   DB.getRuns().forEach(l => {
     const [y, m, d] = l.date.split('-').map(Number);
     const t = new Date(y, m - 1, d).getTime();
     if (t < von || t > bis) return;
-    proTag[(new Date(t).getDay() + 6) % 7] = (proTag[(new Date(t).getDay() + 6) % 7] || 0) + 1;
+    const i = (new Date(t).getDay() + 6) % 7;
+    proTag[i] = (proTag[i] || 0) + 1;
   });
-  // Jeder geplante Tag mit eigenem Lauf verbraucht einen davon.
-  let uebrig = Object.values(proTag).reduce((a, b) => a + b, 0);
-  geplant.forEach(i => { if (proTag[i]) uebrig--; });
-  if (uebrig <= 0) return {};
+  // Jeder geplante Tag mit eigenem Lauf verbraucht einen davon; der Rest ist frei.
+  const frei = [];
+  for (let j = 0; j < 7; j++) {
+    const n = (proTag[j] || 0) - (geplant.includes(j) && proTag[j] ? 1 : 0);
+    for (let k = 0; k < n; k++) frei.push(j);
+  }
+  if (!frei.length) return leer;
   // In der laufenden Woche zaehlen nur die Tage VOR heute, in einer vergangenen alle sieben.
   const grenze = woMo.getTime() === heuteMo.getTime() ? (new Date().getDay() + 6) % 7 : 7;
-  const out = {};
-  for (let i = 0; i < grenze && uebrig > 0; i++) {
+  const out = { planNachLauf: {}, laufNachPlan: {} };
+  for (let i = 0; i < grenze && frei.length; i++) {
     if (!geplant.includes(i) || proTag[i]) continue;   // nicht geplant bzw. selbst gelaufen
-    out[i] = true; uebrig--;
+    const j = frei.shift();
+    out.planNachLauf[i] = j;
+    if (!(j in out.laufNachPlan)) out.laufNachPlan[j] = i;
   }
   return out;
 }
+
+// Die geplante Einheit, die ein Lauf am Tag `key` erfuellt: die eigene des Tags oder — wenn der
+// Lauf einen anderen Plantag abdeckt (`runVerschiebungen`) — die dieses Tags. `vonIdx` ist dann
+// der Wochentag, zu dem sie eigentlich gehoerte.
+function runGeplantFuerLauf(key, geplant) {
+  geplant = geplant || runGeplanteTage();
+  if (geplant[key]) return geplant[key];
+  const [y, m, d] = key.split('-').map(Number);
+  const tag = new Date(y, m - 1, d);
+  const mo = _laufWochenMontag(tag);
+  const i = runVerschiebungen(mo).laufNachPlan[(tag.getDay() + 6) % 7];
+  if (i == null) return null;
+  const plTag = new Date(mo); plTag.setDate(mo.getDate() + i);
+  const g = geplant[_dayKeyOf(plTag.getTime())];
+  return g ? { ...g, vonIdx: i, vonMs: plTag.getTime(), amMs: tag.getTime() } : null;
+}
+// „vorgezogen" oder „nachgeholt" — je nachdem, ob der Lauf vor oder nach dem Plantag lag.
+function _laufVerschiebWort(vonMs, amMs) { return amMs < vonMs ? 'vorgezogen' : 'nachgeholt'; }
 
 // Dieselbe Regel wie beim Gymplan, in Kalendertagen (siehe `_planHatBegonnen`).
 function runPlanStatus(p) {
@@ -4689,7 +4727,8 @@ function showRunDetail(key) {
 // Wettkampf genauso aussieht wie jeder andere Lauf und die beiden nicht auseinanderlaufen.
 function laufDetailInhalt(key, l) {
   const hiit = l.art === 'hiit';
-  const geplant = runGeplanteTage()[key];
+  // Auch ein vorgezogener bzw. nachgeholter Lauf wird gegen SEINE geplante Einheit verglichen.
+  const geplant = runGeplantFuerLauf(key);
   const u = geplant && geplant.einheit;
   const kacheln = [
     l.avgHR != null          ? { wert: `${Math.round(l.avgHR)}`,   label: 'Ø Puls' } : null,
@@ -4700,7 +4739,7 @@ function laufDetailInhalt(key, l) {
     + (kacheln.length ? `<div class="hd-stats run-detail-stats">`
         + kacheln.map(k => `<div class="hd-stat"><b>${k.wert}</b><span>${k.label}</span></div>`).join('')
         + `</div>` : '')
-    + (geplant ? _laufPlanBlock(u, l, geplant.plan) : '')
+    + (geplant ? _laufPlanBlock(u, l, geplant) : '')
     // Die Kategorie nur noch beim Intervalltraining: Bei einem Lauf sagte sie nichts, was der
     // Titel nicht schon sagt (Leonard-Wunsch 28.09.2026).
     + (hiit && l.typ ? `<div class="run-detail-zeile"><span>Kategorie</span><strong>${escapeHtml(l.typ)}</strong></div>` : '')
@@ -4730,10 +4769,15 @@ function _laufDetailKopf(l, hiit) {
 // als Chip-Text): Die Chips zeigen die GEPLANTEN Werte, ihre FARBE sagt weiter, wie nah der Lauf
 // daran lag. Die Zone steht als neutraler Chip dabei.
 // Ohne Vorgabe (weder km noch Minuten) steht nur, zu welchem Plan der Tag gehoert.
-function _laufPlanBlock(u, l, plan) {
+function _laufPlanBlock(u, l, geplant) {
+  const plan = geplant.plan;
   const chips = u ? laufVergleichChips(u, l) : '';
+  // Deckt der Lauf einen anderen Plantag ab, nennt der Titel ihn („Geplant am Di · vorgezogen").
+  const titel = geplant.vonIdx != null
+    ? `Geplant am ${WOCHENTAGE_KURZ[geplant.vonIdx]} · ${_laufVerschiebWort(geplant.vonMs, geplant.amMs)}`
+    : 'Geplant';
   return `<div class="rd-plan">
-      <div class="rd-plan-titel">Geplant</div>
+      <div class="rd-plan-titel">${titel}</div>
       ${chips ? `<div class="rd-chips">${chips}</div>`
               : `<div class="rd-plan-vorgabe">${escapeHtml(plan.name || 'Laufplan')}</div>`}
     </div>`;
@@ -4910,30 +4954,40 @@ function laufWochenListe(mo, istAktuell, maxKm) {
   // „verschoben" rechnet seit dem 26.09.2026 fuer JEDE Woche (siehe `runVerschobeneTage`) —
   // sonst saehe ein verschobener Lauf beim Zurueckwischen wie ein verpasster aus.
   // „heute" gibt es weiterhin nur in der laufenden Woche.
-  const verschoben = runVerschobeneTage(mo);
+  const verschiebung = runVerschiebungen(mo);
+  const verschoben = verschiebung.planNachLauf;
   const todayIdx = istAktuell ? (new Date().getDay() + 6) % 7 : -1;
   const heuteMs = (() => { const h = new Date(); h.setHours(0, 0, 0, 0); return h.getTime(); })();
   const zeilen = WOCHENTAGE_KURZ.map((label, i) => {
     const d = new Date(mo); d.setDate(mo.getDate() + i);
     const key = _dayKeyOf(d.getTime());
-    const gepl = geplant[key], lauf = gelaufen[key];
-    if (!gepl && !lauf) return '';
-    const u = gepl && gepl.einheit;
+    const eigenerPlan = geplant[key], lauf = gelaufen[key];
+    if (!eigenerPlan && !lauf) return '';
+    // Ein Lauf, der einen anderen Plantag abdeckt, zeigt DESSEN Vorgabe samt Balken — er IST der
+    // geplante Lauf, nur an einem anderen Tag (30.09.2026, Leonard-Wunsch). Der Plantag selbst
+    // steht grau ohne Vorgabe und nennt den Tag, an dem gelaufen wurde.
+    const vonIdx = lauf && !eigenerPlan ? verschiebung.laufNachPlan[i] : undefined;
+    const gepl = vonIdx != null ? runGeplantFuerLauf(key, geplant) : eigenerPlan;
+    const verschiebWort = (a, b) => (a < b ? 'vorgezogen' : 'nachgeholt');
+    const u = gepl && !(verschoben[i] != null && !lauf) ? gepl.einheit : null;
     // VERPASST (26.09.2026, Leonard-Wunsch „hervorheben, wenn ein Lauf nicht absolviert wird"):
     // ein geplanter Tag, der VORBEI ist, an dem nichts gelaufen wurde und der auch nicht durch
     // einen Lauf an einem anderen Tag abgedeckt ist. HEUTE zaehlt NICHT dazu — der Tag laeuft
     // noch; kuenftige Tage bleiben „offen".
-    const verpasst = !lauf && !verschoben[i] && gepl && d.getTime() < heuteMs;
-    const zustand = lauf ? 'gelaufen' : verschoben[i] ? 'verschoben' : verpasst ? 'verpasst' : 'offen';
+    const verpasst = !lauf && verschoben[i] == null && gepl && d.getTime() < heuteMs;
+    const zustand = lauf ? 'gelaufen' : verschoben[i] != null ? 'verschoben' : verpasst ? 'verpasst' : 'offen';
     const vorgabe = u ? [u.km ? fmtKm(u.km) : '', u.minutes ? fmtMin(u.minutes) : ''].filter(Boolean).join(' · ') : '';
-    const soll = !gepl ? '<span class="lauf-wz-leer">Nicht geplant</span>'
-      : vorgabe || '<span class="lauf-wz-leer">Ohne Vorgabe</span>';
-    const zone = u && u.zone ? `<span class="lauf-wz-zone">${escapeHtml(u.zone)}</span>` : '';
+    const soll = verschoben[i] != null && !lauf
+        ? `<span class="lauf-wz-leer">${verschiebWort(verschoben[i], i) === 'vorgezogen' ? 'Vorgezogen auf' : 'Nachgeholt am'} ${WOCHENTAGE_KURZ[verschoben[i]]}</span>`
+      : !gepl ? '<span class="lauf-wz-leer">Nicht geplant</span>'
+      : (vorgabe || '<span class="lauf-wz-leer">Ohne Vorgabe</span>');
+    const zone = (u && u.zone ? `<span class="lauf-wz-zone">${escapeHtml(u.zone)}</span>` : '')
+      + (vonIdx != null ? `<span class="lauf-wz-von">${verschiebWort(i, vonIdx)} von ${WOCHENTAGE_KURZ[vonIdx]}</span>` : '');
     // HEUTE steht seit dem 22.09.2026 nicht mehr als Wort rechts, sondern als dasselbe gruene
     // Feld hinter der Scheibe, das die Wochenplan-Karte fuer den heutigen Tag nutzt
     // (`.ppv-col.today`, Leonard-Wunsch).
     const ist = lauf ? (lauf.art === 'hiit' ? `HIIT ${fmtMin(lauf.minutes)}` : `${fmtKm(lauf.km)} gelaufen`)
-      : verschoben[i] ? 'verschoben' : verpasst ? 'nicht gelaufen' : '';
+      : verpasst ? 'nicht gelaufen' : '';
     // Die Zeile ist eine WAAGERECHTE Reihe: links die Scheibe, rechts ein Block aus Angaben und
     // Laengenbalken (23.09.2026, Leonard-Wunsch). Dadurch steht die Scheibe mittig zu BEIDEM;
     // bis dahin lag sie in derselben Ebene wie die Angaben und sass damit ueber dem Balken.

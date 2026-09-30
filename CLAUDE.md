@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v411**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v412**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2744,6 +2744,18 @@ zwei Wochen ohne Laeufe komplett verpasst; kuenftige Woche komplett offen; ein z
 Lauf am Do der LETZTEN Woche macht dort Mo verschoben und laesst die laufende Woche unveraendert.
 Farben hell rgb(229,62,62) auf rgb(255,234,234), Glas #FCA5A5 auf 22-%-Weiss; Querformat ohne
 Ueberlauf; keine Konsolenfehler.
+**VORGEZOGENE UND NACHGEHOLTE LAEUFE** (`runVerschiebungen(mo)`, `runGeplantFuerLauf(key)`,
+30.09.2026, Leonard-Meldung: Dienstagslauf am Montag gelaufen, 10 statt 9 km — die Liste zeigte
+„Mo: Nicht geplant" plus „Di: verschoben", also scheinbar einen Zusatzlauf). Die Zuordnung liefert
+jetzt, WELCHER Lauf welchen Plantag abdeckt (`planNachLauf[i] = j`, `laufNachPlan[j] = i`, der
+Reihe nach gepaart; `runVerschobeneTage` ist nur noch eine Huelle darum). Die Zeile des LAUFS zeigt
+die Vorgabe des Plantags samt Zone, Balken (Soll 9 / Ist 10) und dem Hinweis „vorgezogen von Di"
+bzw. „nachgeholt von Di" (`.lauf-wz-von`); der PLANTAG steht grau ohne Vorgabe und Balken als
+„Vorgezogen auf Mo" / „Nachgeholt am Mo", rechts steht nichts mehr. Die Detailansicht des Laufs
+vergleicht gegen die Einheit des Plantags, Titel „Geplant am Di · vorgezogen", Notiz dieses Tags.
+Weiter gilt: nur Plantage VOR heute werden abgedeckt (geraten, nicht sicher).
+GEMESSEN: genau Leonards Fall (Mo 10 km, Di 9 km geplant, heute Mi) in Liste und Detailansicht;
+keine Konsolenfehler.
 **JEDE ZEILE HAT EINEN LAENGENBALKEN** (`_laufWzBalken`, 22.09.2026, Leonard-Entscheidung
 „Variante A" gegen eine kurze Saeule in der Zeile und einen Balken hinter dem Text): eine 4px
 hohe Leiste UNTER den Angaben, eingerueckt auf die Textspalte (30px Scheibe + 10px Abstand), in
