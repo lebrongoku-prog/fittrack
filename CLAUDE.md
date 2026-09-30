@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v415**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v416**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1120,6 +1120,13 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   nach unten zu schieben. Er braucht dabei zwingend ein `z-index`: Die `.hd-step`s sind fuer die Nummernscheibe
   ebenfalls positioniert und stehen im Markup NACH dem Knopf — ohne eigene Ebene liegt der erste Uebungstitel
   darueber und schluckt den Tipp (gefunden 25.08.2026).
+  **AUF- UND ZUKLAPPEN MIT BEWEGUNG** (`_hdBlockKlappen`, 30.09.2026, Leonard-Wunsch): gleiche
+  200ms, Kurve und Notbremse wie die Uebungskarten; gefahren wird die Hoehe des `.ex-chart-block`.
+  Beim Aufklappen faellt `.collapsed` sofort (das Canvas braucht eine Breite, `_renderHdCharts`
+  zeichnet gleich), beim Zuklappen erst am Ende; `data-zu` markiert ein laufendes Zuklappen
+  (zaehlt fuer Einzel-Tipp, „Alle ein-/ausklappen" und dessen Beschriftung als zu), `_klappNr`
+  entwertet den Abschluss einer abgebrochenen Bewegung. „Alle …" bewegt nur die Bloecke, die
+  ihren Zustand wechseln, gleichzeitig.
   Die Satz-Kaestchen stehen IMMER oben in ihrer Zeile und bewegen sich beim Auf-/Zuklappen der Diagramme nicht
   (Leonard-Entscheidung 28.08.2026). Eine frueher eingebaute Ausrichtung ihrer Unterkante auf die X-Achse des
   Diagramms (`_richteHdSaetzeAus`, per gemessenem `margin-top`) wurde wieder entfernt: Sie liess die Kaestchen beim

@@ -6972,8 +6972,10 @@ function _renderHdCharts() {
 function toggleAllHdCharts() {
   const bloecke = [...document.querySelectorAll('#hist-detail-body .ex-chart-block')];
   if (!bloecke.length) return;
-  const alleZu = bloecke.every(b => b.classList.contains('collapsed'));
-  bloecke.forEach(b => b.classList.toggle('collapsed', !alleZu));
+  const istZu = b => b.classList.contains('collapsed') || b.dataset.zu === '1';
+  const alleZu = bloecke.every(istZu);
+  // Nur die Bloecke, deren Zustand sich aendert, bewegen sich — alle gleichzeitig.
+  bloecke.filter(b => istZu(b) === alleZu).forEach(b => _hdBlockKlappen(b, alleZu));
   if (alleZu) _renderHdCharts();
   _syncHdToggleAllLabel();
 }
@@ -6984,7 +6986,7 @@ function _syncHdToggleAllLabel() {
   const btn = document.getElementById('hd-toggle-all');
   if (!btn) return;
   const bloecke = [...document.querySelectorAll('#hist-detail-body .ex-chart-block')];
-  const alleZu = bloecke.length > 0 && bloecke.every(b => b.classList.contains('collapsed'));
+  const alleZu = bloecke.length > 0 && bloecke.every(b => b.classList.contains('collapsed') || b.dataset.zu === '1');
   btn.textContent = alleZu ? 'Alle ausklappen' : 'Alle einklappen';
 }
 
@@ -8905,9 +8907,38 @@ function exChartHTML(exId, canvasId, opts) {
 function toggleChartBlock(btn) {
   const block = btn.closest('.ex-chart-block');
   if (!block) return;
-  block.classList.toggle('collapsed');
-  if (!block.classList.contains('collapsed')) _renderHdCharts();
+  const auf = block.classList.contains('collapsed') || block.dataset.zu === '1';
+  _hdBlockKlappen(block, auf);
+  if (auf) _renderHdCharts();
   _syncHdToggleAllLabel();
+}
+
+// Das Diagramm klappt MIT BEWEGUNG auf und zu (30.09.2026, Leonard-Wunsch) — gleiche 200ms,
+// Kurve und Notbremse wie die Uebungskarten (`_klappBewegung`). Gefahren wird die Hoehe des
+// ganzen Blocks (Ueberschrift + Diagramm), `overflow: hidden` beschneidet waehrenddessen.
+// AUF: Die Klasse faellt sofort, damit das Canvas eine Breite hat und gleich gezeichnet werden
+// kann; der Block waechst von seiner Kopfhoehe. ZU: Die Klasse wird nur zum MESSEN gesetzt und
+// erst am Ende der Bewegung endgueltig — sonst schrumpfte eine leere Flaeche.
+// `data-zu` merkt ein laufendes Zuklappen, damit ein zweiter Tipp waehrenddessen richtig herum
+// wieder aufklappt; `_klappNr` entwertet den Abschluss einer abgebrochenen Bewegung.
+function _hdBlockKlappen(block, auf) {
+  const nr = (block._klappNr || 0) + 1;
+  block._klappNr = nr;
+  const setzen = () => { block.classList.toggle('collapsed', !auf); delete block.dataset.zu; };
+  if (_bewegungReduziert() || !block.animate) { setzen(); return; }
+  const von = block.getBoundingClientRect().height;
+  block.getAnimations().forEach(a => a.cancel());
+  block.classList.toggle('collapsed', !auf);
+  const bis = block.getBoundingClientRect().height;
+  if (!auf) { block.classList.remove('collapsed'); block.dataset.zu = '1'; }
+  else delete block.dataset.zu;
+  if (Math.abs(bis - von) < 1) { setzen(); return; }
+  block.style.overflow = 'hidden';
+  _klappBewegung(block, [{ height: von + 'px' }, { height: bis + 'px' }], () => {
+    if (block._klappNr !== nr) return;
+    block.style.overflow = '';
+    setzen();
+  });
 }
 
 function buildExItemHTML(ex, context) {
