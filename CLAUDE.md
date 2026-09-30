@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v412**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v413**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2751,7 +2751,11 @@ jetzt, WELCHER Lauf welchen Plantag abdeckt (`planNachLauf[i] = j`, `laufNachPla
 Reihe nach gepaart; `runVerschobeneTage` ist nur noch eine Huelle darum). Die Zeile des LAUFS zeigt
 die Vorgabe des Plantags samt Zone, Balken (Soll 9 / Ist 10) und dem Hinweis „vorgezogen von Di"
 bzw. „nachgeholt von Di" (`.lauf-wz-von`); der PLANTAG steht grau ohne Vorgabe und Balken als
-„Vorgezogen auf Mo" / „Nachgeholt am Mo", rechts steht nichts mehr. Die Detailansicht des Laufs
+„Vorgezogen auf Mo" / „Nachgeholt am Mo", rechts steht nichts mehr.
+NACHGEZOGEN (v413, Leonard-Wunsch): Der abgedeckte PLANTAG steht GAR NICHT mehr in der Liste, und
+der Hinweis am Lauf heisst nur noch „vorgezogen" bzw. „nachgeholt" — ohne Tag. Wann er geplant
+war, ist in der Karte nicht mehr zu sehen. Die Wochenplan-Karte darueber (grauer Kreis) und die
+Detailansicht („Geplant am Di · vorgezogen") bleiben unveraendert. Die Detailansicht des Laufs
 vergleicht gegen die Einheit des Plantags, Titel „Geplant am Di · vorgezogen", Notiz dieses Tags.
 Weiter gilt: nur Plantage VOR heute werden abgedeckt (geraten, nicht sicher).
 GEMESSEN: genau Leonards Fall (Mo 10 km, Di 9 km geplant, heute Mi) in Liste und Detailansicht;

@@ -4963,13 +4963,16 @@ function laufWochenListe(mo, istAktuell, maxKm) {
     const key = _dayKeyOf(d.getTime());
     const eigenerPlan = geplant[key], lauf = gelaufen[key];
     if (!eigenerPlan && !lauf) return '';
+    // Ein Plantag, dessen Lauf an einem anderen Tag stattfand, steht NICHT in der Liste
+    // (30.09.2026, Leonard-Wunsch): Es zaehlt, wann gelaufen wurde, nicht wann es geplant war.
+    if (!lauf && verschoben[i] != null) return '';
     // Ein Lauf, der einen anderen Plantag abdeckt, zeigt DESSEN Vorgabe samt Balken — er IST der
-    // geplante Lauf, nur an einem anderen Tag (30.09.2026, Leonard-Wunsch). Der Plantag selbst
-    // steht grau ohne Vorgabe und nennt den Tag, an dem gelaufen wurde.
+    // geplante Lauf, nur an einem anderen Tag (30.09.2026, Leonard-Wunsch). Der Hinweis sagt nur
+    // „vorgezogen"/„nachgeholt", nicht von welchem Tag.
     const vonIdx = lauf && !eigenerPlan ? verschiebung.laufNachPlan[i] : undefined;
     const gepl = vonIdx != null ? runGeplantFuerLauf(key, geplant) : eigenerPlan;
     const verschiebWort = (a, b) => (a < b ? 'vorgezogen' : 'nachgeholt');
-    const u = gepl && !(verschoben[i] != null && !lauf) ? gepl.einheit : null;
+    const u = gepl ? gepl.einheit : null;
     // VERPASST (26.09.2026, Leonard-Wunsch „hervorheben, wenn ein Lauf nicht absolviert wird"):
     // ein geplanter Tag, der VORBEI ist, an dem nichts gelaufen wurde und der auch nicht durch
     // einen Lauf an einem anderen Tag abgedeckt ist. HEUTE zaehlt NICHT dazu — der Tag laeuft
@@ -4977,12 +4980,10 @@ function laufWochenListe(mo, istAktuell, maxKm) {
     const verpasst = !lauf && verschoben[i] == null && gepl && d.getTime() < heuteMs;
     const zustand = lauf ? 'gelaufen' : verschoben[i] != null ? 'verschoben' : verpasst ? 'verpasst' : 'offen';
     const vorgabe = u ? [u.km ? fmtKm(u.km) : '', u.minutes ? fmtMin(u.minutes) : ''].filter(Boolean).join(' · ') : '';
-    const soll = verschoben[i] != null && !lauf
-        ? `<span class="lauf-wz-leer">${verschiebWort(verschoben[i], i) === 'vorgezogen' ? 'Vorgezogen auf' : 'Nachgeholt am'} ${WOCHENTAGE_KURZ[verschoben[i]]}</span>`
-      : !gepl ? '<span class="lauf-wz-leer">Nicht geplant</span>'
+    const soll = !gepl ? '<span class="lauf-wz-leer">Nicht geplant</span>'
       : (vorgabe || '<span class="lauf-wz-leer">Ohne Vorgabe</span>');
     const zone = (u && u.zone ? `<span class="lauf-wz-zone">${escapeHtml(u.zone)}</span>` : '')
-      + (vonIdx != null ? `<span class="lauf-wz-von">${verschiebWort(i, vonIdx)} von ${WOCHENTAGE_KURZ[vonIdx]}</span>` : '');
+      + (vonIdx != null ? `<span class="lauf-wz-von">${verschiebWort(i, vonIdx)}</span>` : '');
     // HEUTE steht seit dem 22.09.2026 nicht mehr als Wort rechts, sondern als dasselbe gruene
     // Feld hinter der Scheibe, das die Wochenplan-Karte fuer den heutigen Tag nutzt
     // (`.ppv-col.today`, Leonard-Wunsch).
