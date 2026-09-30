@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v414**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v415**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1152,6 +1152,11 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Gezeichnet wird ueber `_renderAexCharts()` nach jedem Rendern der Kartenliste; die Instanzen liegen in `_aexCharts`.
   Die vier Knoepfe passen nur einzeilig, weil `.aex-v2-actions .btn-sm` Polster und Schrift verkleinert.
   Das frueher hier verlinkte Modal `#modal-ex-detail` wurde ersatzlos entfernt.
+  **DAS DIAGRAMM KLAPPT MIT BEWEGUNG AUF UND ZU** (`_aexDiagrammKlappen`, 30.09.2026,
+  Leonard-Wunsch): gleiche 200ms, Kurve und Notbremse (`_klappBewegung`) wie die Karte selbst;
+  gefahren wird die HOEHE DER KARTE, neu gezeichnet danach. Beim Aufklappen wird der leere
+  Diagrammblock VOR dem Messen eingesetzt (feste Hoehe von `.ex-chart-wrap`, wie
+  `_exItemKlappen`), beim Zuklappen nur zum Messen herausgenommen.
 - **Diagrammfarben richten sich nach dem UNTERGRUND, nicht nach dem globalen Glas-Modus.** `_zeichneExDiagramm`
   prueft `canvas.closest('.screen:not(#screen-mehr)')` — genau die Flaechen, auf die der Glas-Modus im CSS wirkt.
   Nur dort werden Linie und Achsen weiss; in Modalfenstern und den Einstellungen (weisser Grund) bleiben sie

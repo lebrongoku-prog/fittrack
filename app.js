@@ -2888,10 +2888,39 @@ function isAexExpanded(exId) { return expandedAexIds.has(exId); }
 // beim naechsten Aufklappen wieder geschlossen ist (Leonard-Wunsch 28.08.2026).
 const aexChartOffen = new Set();
 function toggleAexChart(key) {
-  if (aexChartOffen.has(key)) aexChartOffen.delete(key);
-  else aexChartOffen.add(key);
-  if (currentScreen === 'workouts') renderWorkoutsScreen();
-  else if (currentScreen === 'day-detail') renderLibDayDetail();
+  const auf = !aexChartOffen.has(key);
+  if (auf) aexChartOffen.add(key);
+  else aexChartOffen.delete(key);
+  _aexDiagrammKlappen(_aexKarte(key), key, auf, () => {
+    if (currentScreen === 'workouts') renderWorkoutsScreen();
+    else if (currentScreen === 'day-detail') renderLibDayDetail();
+  });
+}
+// Das Diagramm klappt MIT BEWEGUNG auf und zu (30.09.2026, Leonard-Wunsch) — gefahren wird wie
+// beim Auf-/Zuklappen der Karte deren HOEHE, der Neuaufbau kommt danach.
+// Beim AUFklappen steht der Diagrammblock noch nicht im DOM: Er wird VOR dem Messen leer
+// eingesetzt (`.ex-chart-wrap` hat eine feste Hoehe, gezeichnet wird erst mit dem Neuaufbau) —
+// dieselbe Loesung wie beim Aufklappen einer Uebung im Katalog (`_exItemKlappen`).
+// Beim ZUklappen wird der Block nur zum MESSEN herausgenommen und bleibt bis zum Ende stehen.
+function _aexDiagrammKlappen(karte, key, auf, danach) {
+  if (!karte || karte.classList.contains('collapsed') || _bewegungReduziert() || !karte.animate) { danach(); return; }
+  const von = karte.getBoundingClientRect().height;
+  let block = karte.querySelector(':scope > .aex-v2-chart');
+  if (auf && !block) {
+    block = document.createElement('div');
+    block.className = 'aex-v2-chart';
+    block.innerHTML = exChartHTML(key, 'aex-chart-mess-' + key);
+    karte.appendChild(block);
+  }
+  if (!block) { danach(); return; }
+  const platz = block.nextSibling;
+  if (!auf) block.remove();
+  const bis = karte.getBoundingClientRect().height;
+  if (!auf) karte.insertBefore(block, platz);
+  if (Math.abs(bis - von) < 1) { danach(); return; }
+  karte.style.overflow = 'hidden';
+  _klappBewegung(karte, [{ height: von + 'px' }, { height: bis + 'px' }],
+                 () => { karte.style.overflow = ''; danach(); });
 }
 
 // Diagramme in den Uebungskarten neu zeichnen. Eigene Liste, damit sie unabhaengig von
