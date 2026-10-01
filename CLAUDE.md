@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v417**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v418**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -908,6 +908,14 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Die Kennzahl (absolviert/geplant) ist unberuehrt. GEMESSEN: Push Di→Mo, Pull Do→Fr, Lauf Di→Mo
   ohne Umriss am Plantag; Di der Vorwoche nicht trainiert = weiter umrandet; kommender Lauftag
   weiter umrandet; Plan-Tab-Kalender ebenso; Wochenliste der Seite „Laufen" unveraendert.
+  **GEPLANTE LAUFTAGE NUR INNERHALB DER LAUFZEIT** (01.10.2026, Leonard-Meldung v418):
+  `runGeplanteTage` erzeugte die Lauftage je PLANWOCHE (Mo–So) und kannte das Enddatum nicht —
+  endete ein Plan am Freitag (Greifenseelauf, 18.09.), stand der Sonntag danach als geplant im
+  Kalender; ebenso Tage vor einem Start mitten in der Woche. Jetzt fallen Tage vor `startDate`
+  und nach `endDate` heraus (lokale Tage via `_calLokalTag`). Wirkt ueberall, wo die Funktion
+  gelesen wird: Kalender, Fusszeile, Rueckblick, Wochenliste, Wochenkilometer, Verschiebungen.
+  GYMPLAENE waren NICHT betroffen: `_calPlanInfo` prueft Start und Ende bereits je Tag
+  (gemessen: Plan bis Fr 18.09. mit So als Trainingstag → So 13.09. geplant, So 20.09. nicht).
   `.planned::before` = laut damaligem Plan vorgesehen, nur UMRANDET; `.done::before` =
   tatsächlich trainiert, GEFUELLT. Seit 04.09.2026 dieselbe Logik wie beim Lauf, wo der geplante
   Kreis leer und der gelaufene gefuellt ist (Leonard-Wunsch); vorher faerbte „geplant" das ganze

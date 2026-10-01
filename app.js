@@ -4887,9 +4887,15 @@ function runGeplanteTage() {
   DB.getRunPlans().forEach(p => {
     if (!p.startDate) return;
     const wochen = runPlanWochen(p);
+    // Nur Tage INNERHALB der Laufzeit (01.10.2026, Leonard-Meldung): Die erste und die letzte
+    // Planwoche sind ganze Wochen Mo–So — endet ein Plan am Freitag, standen Sa/So danach als
+    // geplant im Kalender (ebenso Tage vor einem Start mitten in der Woche).
+    const von = _calLokalTag(p.startDate).getTime();
+    const bis = p.endDate ? _calLokalTag(p.endDate).getTime() : Infinity;
     for (let w = 1; w <= wochen; w++) {
       (p.runDays || []).forEach(di => {
         const d = runEinheitDatum(p, w, di);
+        if (d.getTime() < von || d.getTime() > bis) return;
         map[_dayKeyOf(d.getTime())] = { plan: p, einheit: runEinheit(p, w, di) };
       });
     }
