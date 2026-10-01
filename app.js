@@ -1812,15 +1812,20 @@ function runVerschobeneTage(mo) {
 //   laufNachPlan[j] = i  → der Lauf am Tag j war der geplante Lauf vom Tag i
 // Gepaart wird der Reihe nach: der frueheste freie Lauf deckt den fruehesten offenen Plantag.
 // Freie Laeufe sind Laeufe an ungeplanten Tagen und jeder weitere Lauf an einem Plantag.
-function runVerschiebungen(mo) {
+function runVerschiebungen(mo, geplantMap) {
   const leer = { planNachLauf: {}, laufNachPlan: {} };
-  const p = runPlanAktiv();
-  if (!p) return leer;
-  const geplant = p.runDays || [];
-  if (!geplant.length) return leer;
   const heuteMo = _laufWochenMontag(new Date());
   const woMo = mo ? _laufWochenMontag(mo) : heuteMo;
   if (woMo.getTime() > heuteMo.getTime()) return leer;
+  // Geplant ist, was an dem DATUM in einem Laufplan steht (`runGeplanteTage`) — seit dem
+  // 01.10.2026 statt der Lauftage des laufenden Plans, damit auch der Kalender in vergangenen
+  // Plaenen richtig zuordnet. Fuer die laufende Woche ist das dasselbe.
+  geplantMap = geplantMap || runGeplanteTage();
+  const geplant = [0, 1, 2, 3, 4, 5, 6].filter(i => {
+    const d = new Date(woMo); d.setDate(woMo.getDate() + i);
+    return !!geplantMap[_dayKeyOf(d.getTime())];
+  });
+  if (!geplant.length) return leer;
   const von = woMo.getTime(), bis = von + WOCHE_MS - 1;
   const proTag = {};
   DB.getRuns().forEach(l => {
@@ -5888,8 +5893,44 @@ function _calPlanInfo(date, index) {
   const entry = p.wp[(date.getDay() + 6) % 7];
   if (!entry || !entry.planDayId) return { known: true, planned: false, name: null, plan: p.plan };
   const d = p.days.find(x => x && x.id === entry.planDayId);
-  return { known: true, planned: true, name: d ? d.name : null, plan: p.plan };
+  return { known: true, planned: true, name: d ? d.name : null, plan: p.plan, planDayId: entry.planDayId };
 }
+
+// VERSCHOBENE GYM-EINHEITEN IM KALENDER (01.10.2026, Leonard-Wunsch): Welche geplante Einheit
+// einer Woche wurde an einem ANDEREN Tag derselben Woche absolviert? Dieselbe Regel wie in den
+// Wochenkarten (`_verschobeneZuordnen`), aber fuer jede Woche und gegen den damaligen Plan:
+// Zugeordnet wird ueber den Trainingstag (`planDayId`), nicht ueber den Wochentag; ein freies
+// Training oder ein anderer Trainingstag deckt nichts ab (Leonard-Entscheidung). Ein Plantag, an
+// dem selbst etwas lief, ist nicht verschoben. Kein Zeitlimit — die Zuordnung ist sicher.
+//   planNachIst[i] = j → der Plantag i wurde am Tag j absolviert; istNachPlan[j] = i umgekehrt.
+function _calGymVerschiebungen(mo, planIndex, byDay, ws) {
+  const out = { planNachIst: {}, istNachPlan: {} };
+  const tage = [0, 1, 2, 3, 4, 5, 6].map(i => {
+    const d = new Date(mo); d.setDate(mo.getDate() + i);
+    const info = _calPlanInfo(d, planIndex);
+    return { planDayId: info.planned ? info.planDayId : null, done: !!byDay[_dayKeyOf(d.getTime())] };
+  });
+  const so = new Date(mo); so.setDate(so.getDate() + 6); so.setHours(23, 59, 59, 999);
+  const uebrig = [];
+  (ws || DB.getWorkouts()).forEach(w => {
+    if (w.startTs < mo.getTime() || w.startTs > so.getTime() || !w.planDayId) return;
+    const idx = woDayIdx(w);
+    if (idx >= 0 && tage[idx].planDayId === w.planDayId) return;   // lief an seinem Plantag
+    uebrig.push({ planDayId: w.planDayId, idx });
+  });
+  uebrig.sort((a, b) => a.idx - b.idx);
+  tage.forEach((t, i) => {
+    if (!t.planDayId || t.done) return;
+    const k = uebrig.findIndex(u => u.planDayId === t.planDayId);
+    if (k === -1) return;
+    const j = uebrig.splice(k, 1)[0].idx;
+    out.planNachIst[i] = j;
+    if (!(j in out.istNachPlan)) out.istNachPlan[j] = i;
+  });
+  return out;
+}
+// „vorgezogen" oder „nachgeholt", je nachdem, ob der Ist-Tag vor oder nach dem Plantag liegt.
+function _verschiebWort(planIdx, istIdx) { return istIdx < planIdx ? 'vorgezogen' : 'nachgeholt'; }
 
 // Kalender-Innenleben. Eine Quelle fuer beide Einbauorte (Uebersicht + Plaene-Tab);
 // die IDs bekommen ein Praefix, damit zwei Instanzen nebeneinander bestehen koennen.
@@ -6310,6 +6351,18 @@ function _calRasterHTML(id, z) {
   const laeufeTag = modus.lauf ? runNachTag() : {};
   const laufGeplant = modus.lauf ? runGeplanteTage() : {};
   const wettkampfTage = modus.lauf ? _calWettkampfTage() : {};
+  // Verschiebungen je Woche, einmal gerechnet (Schluessel = Montag).
+  const wsAlle = modus.kraft ? DB.getWorkouts() : [];
+  const verschCache = {};
+  const verschiebung = (day) => {
+    const mo = _laufWochenMontag(day);
+    const k = mo.getTime();
+    if (!verschCache[k]) verschCache[k] = {
+      gym: modus.kraft ? _calGymVerschiebungen(mo, planIndex, byDay, wsAlle) : { planNachIst: {} },
+      lauf: modus.lauf ? runVerschiebungen(mo, laufGeplant) : { planNachLauf: {} },
+    };
+    return verschCache[k];
+  };
 
   // Eine Woche OHNE Training bekommt hellrote Kaestchen (Leonard-Wunsch 05.09.2026).
   // Es zaehlt allein, ob in der Woche etwas stattgefunden hat — auf einen laufenden Plan kommt
@@ -6339,12 +6392,18 @@ function _calRasterHTML(id, z) {
     // Flaeche = war laut damaligem Plan ein Trainingstag, Kern = tatsaechlich trainiert.
     const plan = _calPlanInfo(day, planIndex);
     const lauf = !ausserhalb && laeufeTag[key];
-    const laufGepl = !ausserhalb && laufGeplant[key];
+    // Eine geplante Einheit, die an einem ANDEREN Tag derselben Woche absolviert wurde, zeigt
+    // KEINEN offenen Umriss mehr (01.10.2026, Leonard-Wunsch) — nur der Tag, an dem trainiert
+    // wurde, traegt sein gefuelltes Zeichen. Offen bleibt, was wirklich nicht absolviert ist.
+    const wi = (day.getDay() + 6) % 7;
+    const ver = ausserhalb ? null : verschiebung(day);
+    const gymVerschoben = !!(ver && !entry && ver.gym.planNachIst[wi] != null);
+    const laufGepl = !ausserhalb && laufGeplant[key] && !(ver && !lauf && ver.lauf.planNachLauf[wi] != null);
     const wettkampf = !ausserhalb && wettkampfTage[key];
     const cls = ['cal-day'];
     if (ausserhalb) cls.push('outside');
     else if (leereWoche) cls.push('leer-woche');
-    if (modus.kraft && plan.planned && !ausserhalb) cls.push('planned');
+    if (modus.kraft && plan.planned && !ausserhalb && !gymVerschoben) cls.push('planned');
     if (modus.kraft && entry && !ausserhalb) cls.push('done');
     if (lauf) cls.push('run');
     else if (laufGepl) cls.push('run-planned');
@@ -6353,6 +6412,7 @@ function _calRasterHTML(id, z) {
     if (day.getTime() === heute.getTime()) cls.push('today');
     const kraftZustand = entry
       ? (plan.planned ? 'geplant und trainiert' : 'zusaetzlich trainiert')
+      : gymVerschoben ? 'an anderem Tag trainiert'
       : (plan.planned ? (future ? 'geplant' : 'geplant, nicht trainiert') : 'kein Gym geplant');
     const zustand = kraftZustand + (lauf ? ', gelaufen' : (laufGepl ? ', Lauf geplant' : ''))
       + (wettkampf ? ', Wettkampftag' : '') + (leereWoche && !ausserhalb ? ', Woche ohne Training' : '');
@@ -6634,9 +6694,16 @@ function showCalDay(key, id) {
   }
   // Neben dem Ergebnis auch nennen, was fuer den Tag vorgesehen war — sonst bliebe
   // unklar, ob ein leerer Tag ein Ruhetag oder eine ausgefallene Einheit ist.
-  const plan = _calPlanInfo(new Date(y, m-1, d), _calPlanIndex());
+  const planIndex = _calPlanIndex();
+  const plan = _calPlanInfo(new Date(y, m-1, d), planIndex);
   // Im Lauf-Modus bleibt vom Trainingsteil nur das Datum stehen.
   const modus = _calModus(id);
+  // Verschobene Einheiten derselben Woche (01.10.2026, Leonard-Wunsch): Der Plantag nennt den
+  // Tag, an dem trainiert wurde, der Ist-Tag sagt „vorgezogen"/„nachgeholt" statt „zusätzlich".
+  const wiTag = (new Date(y, m-1, d).getDay() + 6) % 7;
+  const moTag = _laufWochenMontag(new Date(y, m-1, d));
+  const gymVer = modus.kraft ? _calGymVerschiebungen(moTag, planIndex, buildCalendarData()) : { planNachIst: {}, istNachPlan: {} };
+  const laufVer = modus.lauf ? runVerschiebungen(moTag) : { planNachLauf: {}, laufNachPlan: {} };
   // Zeile 1: Wochentag und Datum. Darunter ZWEI SPALTEN — links Gym, rechts Laufen
   // (Leonard-Wunsch 06.09.2026; vorher standen sie untereinander). Jede Spalte nennt entweder
   // die absolvierte Einheit (als Knopf zur Detailansicht) oder was fuer den Tag geplant war.
@@ -6651,7 +6718,10 @@ function showCalDay(key, id) {
       // getWorkouts() ist neueste-zuerst; bei mehreren Einheiten am selben Tag zaehlt die
       // zuletzt begonnene.
       const woIdx = DB.getWorkouts().findIndex(w => _dayKeyOf(w.startTs) === key);
-      const name = entry.names.join(', ') + (plan.known && !plan.planned ? ' · zusätzlich' : '');
+      const vonIdx = gymVer.istNachPlan[wiTag];
+      const name = entry.names.join(', ')
+        + (vonIdx != null ? ' · ' + _verschiebWort(vonIdx, wiTag)
+          : (plan.known && !plan.planned ? ' · zusätzlich' : ''));
       // Oeffnet die bestehende Detailansicht der Einheit (`#modal-hist-detail`).
       // `stopPropagation` ist Pflicht: Sonst raeumt initCalendarDeselect die Beschreibung im
       // selben Klick weg.
@@ -6661,6 +6731,10 @@ function showCalDay(key, id) {
                    class="cal-detail-tagname">${name}</span><span
                    class="cal-detail-chev">▾</span></button>`
         : `<div class="cal-detail-tag-txt">${name}</div>`;
+    } else if (plan.planned && gymVer.planNachIst[wiTag] != null) {
+      const j = gymVer.planNachIst[wiTag];
+      gymHTML = `<div class="cal-detail-tag-txt">${plan.name ? escapeHtml(plan.name) : 'Training'} · `
+              + `${_verschiebWort(wiTag, j) === 'vorgezogen' ? 'vorgezogen auf' : 'nachgeholt am'} ${WOCHENTAGE_KURZ[j]}</div>`;
     } else if (plan.planned) {
       gymHTML = `<div class="cal-detail-tag-txt">geplant: ${plan.name ? escapeHtml(plan.name) : 'Training'}`
               + (kommt ? '' : ' · nicht trainiert') + '</div>';
@@ -6692,10 +6766,15 @@ function showCalDay(key, id) {
         ? [fmtMin(lauf.minutes), lauf.maxHR ? `max. ${Math.round(lauf.maxHR)} bpm` : null].filter(Boolean).join(' · ')
         : `${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}`;
       const bez = lauf.art === 'hiit' ? 'HIIT: ' : '';
+      const vonIdx = laufVer.laufNachPlan[wiTag];
+      const zusatz = vonIdx != null ? ' · ' + _verschiebWort(vonIdx, wiTag) : '';
       laufHTML = `<button type="button" class="cal-detail-tag"
                           onclick="event.stopPropagation();showRunDetail('${key}')"><span
-                          class="cal-detail-tagname">${bez}${werte}</span><span
+                          class="cal-detail-tagname">${bez}${werte}${zusatz}</span><span
                           class="cal-detail-chev">▾</span></button>`;
+    } else if (gepl && laufVer.planNachLauf[wiTag] != null) {
+      const j = laufVer.planNachLauf[wiTag];
+      laufHTML = `<div class="cal-detail-tag-txt">Lauf · ${_verschiebWort(wiTag, j) === 'vorgezogen' ? 'vorgezogen auf' : 'nachgeholt am'} ${WOCHENTAGE_KURZ[j]}</div>`;
     } else if (gepl) {
       const u = gepl.einheit;
       const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null].filter(Boolean).join(' · ') : '';
