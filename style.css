@@ -2795,7 +2795,13 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
    NOWRAP plus `min-width: 0`: Auf einem schmaleren Geraet (iPhone SE, 320px)
    schrumpfen die Chips und kuerzen mit „…", statt in eine zweite Zeile zu rutschen — der
    volle Name steht dann im `title`. */
-.mg-wahl-reihe { display: flex; gap: 2px; flex-wrap: nowrap; }
+/* LUECKE ZWISCHEN DEN CHIPS waechst mit dem Platz (01.10.2026, Leonard-Wunsch „etwas Raum
+   dazwischen"): Sie nimmt den Rest der Zeile nach den Chips in ihrer natuerlichen Breite
+   (zusammen rund 306px, + 4px Reserve) und verteilt ihn auf die sechs Luecken, gedeckelt bei 6px
+   und nie unter 2px. Die Chips fuellen weiter die Zeile (`flex: 1 1 auto`), „Brust" und „Beine"
+   stehen also immer buendig am Polster. Auf 375px bleibt es bei rund 2px — dort fuellen die
+   Namen die Zeile fast ganz; mehr Luecke kostete die Kuerzung von „Schultern". */
+.mg-wahl-reihe { display: flex; gap: clamp(2px, calc((100% - 310px) / 6), 6px); flex-wrap: nowrap; }
 .mg-wahl {
   flex: 1 1 auto; min-width: 0; padding: 8px 2px; border-radius: 9px;
   border: 1px solid var(--border); background: var(--card2); color: var(--text2);

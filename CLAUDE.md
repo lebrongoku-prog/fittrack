@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v418**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v419**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1478,6 +1478,12 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   breite Chips waeren je 44px, „Schultern" braucht 57px.
   Das SENKRECHTE Polster steigt auf 8px — mit der kleineren Schrift waere der Chip sonst nur
   27px hoch und mit feuchten Haenden schlecht zu treffen (jetzt 31px, vorher 29px).
+  **LUECKE WAECHST MIT DEM PLATZ** (01.10.2026, Leonard-Wunsch „etwas Raum dazwischen", v419):
+  `gap: clamp(2px, calc((100% - 310px) / 6), 6px)` — der Rest der Zeile nach den Chips in
+  natuerlicher Breite (306px + 4px Reserve) geht in die sechs Luecken, hoechstens 6px. Die Chips
+  fuellen weiter, Brust/Beine bleiben buendig. GEMESSEN: 375px → 2.2px (dort fuellen die Namen die
+  Zeile fast ganz, mehr kostete die Kuerzung von „Schultern"), 430px → 6px, buendig 0/0, nichts
+  gekuerzt.
   `flex-wrap: nowrap` plus `min-width: 0` und „…": Auf einem schmaleren Geraet (iPhone SE, 320px)
   schrumpfen die Chips und kuerzen, statt in eine zweite Zeile zu rutschen; der volle Name steht
   dann im `title` (den setzt das JS seither an jedem Chip).
