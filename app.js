@@ -5021,7 +5021,8 @@ function laufWochenListe(mo, istAktuell, maxKm) {
     const zustand = lauf ? 'gelaufen' : verschoben[i] != null ? 'verschoben' : verpasst ? 'verpasst' : 'offen';
     const vorgabe = u ? [u.km ? fmtKm(u.km) : '', u.minutes ? fmtMin(u.minutes) : ''].filter(Boolean).join(' · ') : '';
     // Bei einem GELAUFENEN Lauf mit Strecke stehen ueber dem Balken die tatsaechlich gelaufenen
-    // Kilometer, nicht die Vorgabe (30.09.2026, Leonard-Wunsch); rechts steht dann nur „gelaufen".
+    // Kilometer, nicht die Vorgabe (30.09.2026, Leonard-Wunsch); rechts steht seit v420 nichts mehr —
+    // nur der Pfeil zur Detailansicht (03.10.2026, Leonard-Wunsch). Die gefuellte Scheibe sagt „gelaufen".
     const istKm = lauf && lauf.art !== 'hiit' && lauf.km != null;
     const soll = istKm ? fmtKm(lauf.km)
       : !gepl ? '<span class="lauf-wz-leer">Nicht geplant</span>'
@@ -5031,7 +5032,7 @@ function laufWochenListe(mo, istAktuell, maxKm) {
     // HEUTE steht seit dem 22.09.2026 nicht mehr als Wort rechts, sondern als dasselbe gruene
     // Feld hinter der Scheibe, das die Wochenplan-Karte fuer den heutigen Tag nutzt
     // (`.ppv-col.today`, Leonard-Wunsch).
-    const ist = lauf ? (lauf.art === 'hiit' ? `HIIT ${fmtMin(lauf.minutes)}` : (istKm ? 'gelaufen' : `${fmtKm(lauf.km)} gelaufen`))
+    const ist = lauf ? (lauf.art === 'hiit' ? `HIIT ${fmtMin(lauf.minutes)}` : (istKm ? '' : `${fmtKm(lauf.km)} gelaufen`))
       : verpasst ? 'nicht gelaufen' : '';
     // Die Zeile ist eine WAAGERECHTE Reihe: links die Scheibe, rechts ein Block aus Angaben und
     // Laengenbalken (23.09.2026, Leonard-Wunsch). Dadurch steht die Scheibe mittig zu BEIDEM;

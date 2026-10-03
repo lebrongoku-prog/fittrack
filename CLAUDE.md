@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v419**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v420**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2799,6 +2799,8 @@ war, ist in der Karte nicht mehr zu sehen. Die Wochenplan-Karte darueber (grauer
 Detailansicht („Geplant am Di · vorgezogen") bleiben unveraendert.
 UEBER DEM BALKEN eines gelaufenen Laufs stehen seit v414 die TATSAECHLICH gelaufenen Kilometer
 (Leonard-Wunsch) statt der Vorgabe, rechts nur noch „gelaufen"; Zone und „vorgezogen" bleiben.
+Seit v420 (03.10.2026, Leonard-Wunsch) entfaellt auch dieses „gelaufen" — rechts steht nur noch der
+Pfeil zur Detailansicht; dass gelaufen wurde, zeigt die gefuellte Scheibe.
 Offene, verpasste Tage und das Intervalltraining zeigen weiter die Vorgabe. Die Detailansicht des Laufs
 vergleicht gegen die Einheit des Plantags, Titel „Geplant am Di · vorgezogen", Notiz dieses Tags.
 Weiter gilt: nur Plantage VOR heute werden abgedeckt (geraten, nicht sicher).
