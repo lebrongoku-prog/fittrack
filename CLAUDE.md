@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v421**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v422**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2757,7 +2757,10 @@ hinter der Scheibe, das die Wochenplan-Karte darueber fuer den heutigen Tag nutz
 Leonard-Wunsch): `.lauf-wz-feld.heute` mit `var(--accent-bg)`, im Transparenz-Modus 18-%-Weiss.
 Das Polster des Feldes reicht ueber die Scheibe hinaus und wird per negativem Aussenabstand wieder
 herausgerechnet — die Zeile bleibt genauso hoch und die Scheibe steht, wo sie stand (gemessen:
-alle Scheiben weiter bei 26px, Zeilenhoehen unveraendert). Ohne Vorgabe steht „Ohne Vorgabe", ein Lauf an
+alle Scheiben weiter bei 26px, Zeilenhoehen unveraendert).
+FALLE (v422, 04.10.2026, Leonard-Meldung): Das Feld ragt 4px ueber die Zeile hinaus — in der
+LETZTEN Zeile schnitt der Scroller (`overflow-y: hidden`) es unten ab. Die Liste traegt deshalb
+unten 4px Polster, die Seitenanzeige 14 statt 18px; der sichtbare Abstand bleibt 18px (gemessen). Ohne Vorgabe steht „Ohne Vorgabe", ein Lauf an
 einem ungeplanten Tag heisst „Nicht geplant".
 Die Scheibe traegt DIESELBEN Zustaende wie der Wochentagskreis der Karte darueber: gefuellt
 (#4ADE80) = gelaufen, hellgrau mit Ring = geplant und offen, grau = verschoben
