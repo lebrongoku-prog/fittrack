@@ -2667,6 +2667,27 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
 .lauf-wz-tag.gym.gelaufen { background: #0F766E; }
 .lauf-wz-tag.gym.offen    { box-shadow: inset 0 0 0 2px #0F766E; color: #0F766E; }
 .lauf-wz-mitte .wz-mg { position: static; margin-top: 4px; }
+/* UEBERSICHT: je Tag EINE neutrale Scheibe, rechts die Einheiten gestapelt (04.10.2026, „B").
+   Den Zustand traegt das kleine Sportzeichen (`.wz-ic`) — dieselben vier Zustaende wie die Scheibe. */
+.lauf-wz-tag.neutral { background: var(--card2); color: var(--text2); }
+.wz-eintraege { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.wz-eintrag { gap: 8px; }
+.wz-ic {
+  width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%; box-sizing: border-box;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.wz-ic svg { width: 13px; height: 13px; }
+.wz-ic.gym.gelaufen  { background: #0F766E; color: #fff; }
+.wz-ic.lauf.gelaufen { background: #4ADE80; color: #fff; }
+.wz-ic.gym.offen     { background: var(--card2); box-shadow: inset 0 0 0 2px #0F766E; color: #0F766E; }
+.wz-ic.lauf.offen    { background: var(--card2); box-shadow: inset 0 0 0 2px #4ADE80; color: #22A05B; }
+.wz-ic.verpasst      { background: var(--red-bg); box-shadow: inset 0 0 0 2px var(--red); color: var(--red); }
+.wz-ic.verschoben    { background: var(--card2); color: var(--text2); }
+html.glas .screen:not(#screen-mehr) .lauf-wz-tag.neutral { background: rgba(255,255,255,.22); color: #fff; }
+html.glas .screen:not(#screen-mehr) .wz-ic.gelaufen   { background: rgba(255,255,255,.92); color: #059669; }
+html.glas .screen:not(#screen-mehr) .wz-ic.offen      { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 2px rgba(255,255,255,.92); color: #fff; }
+html.glas .screen:not(#screen-mehr) .wz-ic.verpasst   { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 2px #FCA5A5; color: #FCA5A5; }
+html.glas .screen:not(#screen-mehr) .wz-ic.verschoben { background: rgba(255,255,255,.22); color: rgba(255,255,255,.85); }
 .lauf-wz-tag.verschoben { background: var(--card2); color: var(--text2); }
 /* VERPASST (26.09.2026, Leonard-Wunsch): ein geplanter Lauftag, der vorbei ist und nicht
    gelaufen wurde. Dieselbe Form wie „offen", nur in Rot — die App kennt ROT als Warnfarbe

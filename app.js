@@ -5112,7 +5112,8 @@ function laufWochenZeilen(mo, istAktuell, maxKm) {
     // bis dahin lag sie in derselben Ebene wie die Angaben und sass damit ueber dem Balken.
     // Die NOTIZ der Einheit stand bis zum 23.09.2026 unter der Vorgabe und ist entfallen
     // (Leonard-Wunsch) — sie steht weiter in der Detailansicht des Laufs und im Laufplan.
-    const inhalt = `<span class="lauf-wz-feld${i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag ${zustand}">${label}</span></span>
+    const feldHTML = `<span class="lauf-wz-feld${i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag ${zustand}">${label}</span></span>`;
+    const inhalt = `${feldHTML}
       <div class="lauf-wz-rechts">
         <div class="lauf-wz-oben">
           <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${soll}${zone}</div></div>
@@ -5127,13 +5128,27 @@ function laufWochenZeilen(mo, istAktuell, maxKm) {
     // Ein NOCH NICHT gelaufener Plantag hat seit dem 04.10.2026 denselben Pfeil und oeffnet das
     // Fenster zum Ueberspringen samt Notiz (`openRunSkip`, Leonard-Wunsch).
     const chev = '<span class="cal-detail-chev">▾</span>';
-    return lauf
-      ? `<button type="button" class="lauf-wz" onclick="showRunDetail('${key}')">${inhalt.replace('{{CHEV}}', chev)}</button>`
-      : eigenerPlan
-      ? `<button type="button" class="lauf-wz" onclick="openRunSkip('${key}')">${inhalt.replace('{{CHEV}}', chev)}</button>`
-      : `<div class="lauf-wz">${inhalt.replace('{{CHEV}}', '')}</div>`;
-  }).map((html, i) => ({ i, html })).filter(z => z.html);
+    const tipp = lauf ? `showRunDetail('${key}')` : eigenerPlan ? `openRunSkip('${key}')` : '';
+    // `eintrag` ist dieselbe Zeile OHNE Wochentagsscheibe, mit dem Sportzeichen in ihrem Zustand —
+    // fuer die nach Tagen gruppierte Karte der Uebersicht (`renderUebersichtWoche`).
+    const rechts = inhalt.slice(feldHTML.length).replace('{{CHEV}}', tipp ? chev : '');
+    return {
+      html: _wzKnopf('lauf-wz', tipp, inhalt.replace('{{CHEV}}', tipp ? chev : '')),
+      eintrag: _wzKnopf('lauf-wz wz-eintrag', tipp, _wzZeichen('lauf', zustand) + rechts),
+    };
+  }).map((z, i) => z ? { i, ...z } : null).filter(Boolean);
   return zeilen;
+}
+
+// Zeile als Knopf (mit Tipp-Ziel) oder als blosser Kasten.
+function _wzKnopf(klasse, tipp, inhalt) {
+  return tipp ? `<button type="button" class="${klasse}" onclick="${tipp}">${inhalt}</button>`
+              : `<div class="${klasse}">${inhalt}</div>`;
+}
+// Kleines Sportzeichen (Hantel/Laeufer) im Zustand der Einheit — in der Uebersicht ersetzt es die
+// Wochentagsscheibe, die dort je Tag nur EINMAL steht (04.10.2026, Leonard-Entscheidung „B").
+function _wzZeichen(sport, zustand) {
+  return `<span class="wz-ic ${sport} ${zustand}" aria-hidden="true">${sport === 'gym' ? HANTEL_SVG : heroRunnerSvg()}</span>`;
 }
 
 // ── GYMZEILEN DER WOCHE (04.10.2026, Leonard-Entscheidung „G3") ──
@@ -5171,25 +5186,24 @@ function gymWochenZeilen() {
         if (k !== -1) hinweis = _verschiebWort(offeneVerschobene.splice(k, 1)[0].idx, i);
       }
       const prs = (w.prs || []).length;
-      zeilen.push({ i, html: `<button type="button" class="lauf-wz" onclick="showHistDetail(${wi})">
-        ${feld(i, 'gelaufen')}
-        <div class="lauf-wz-rechts"><div class="lauf-wz-oben">
+      const rechts = `<div class="lauf-wz-rechts"><div class="lauf-wz-oben">
           <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${escapeHtml(_einheitName(w, alleTage))}${
             hinweis ? `<span class="lauf-wz-von">${hinweis}</span>` : ''}</div>${punkte(w.planDayId)}</div>
           ${prs ? `<span class="lauf-wz-ist">${prs} PR</span>` : ''}
           <span class="cal-detail-chev">▾</span>
-        </div></div>
-      </button>` });
+        </div></div>`;
+      zeilen.push({ i, html: _wzKnopf('lauf-wz', `showHistDetail(${wi})`, feld(i, 'gelaufen') + rechts),
+        eintrag: _wzKnopf('lauf-wz wz-eintrag', `showHistDetail(${wi})`, _wzZeichen('gym', 'gelaufen') + rechts) });
     });
     if (einheiten.length || !t.planDay || t.verschoben) return;
     const verpasst = t.isPast;
-    zeilen.push({ i, html: `<div class="lauf-wz">
-      ${feld(i, verpasst ? 'verpasst' : 'offen')}
-      <div class="lauf-wz-rechts"><div class="lauf-wz-oben">
+    const rechts = `<div class="lauf-wz-rechts"><div class="lauf-wz-oben">
         <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${escapeHtml(t.planDay.name)}</div>${punkte(t.planDayId)}</div>
         ${verpasst ? '<span class="lauf-wz-ist verpasst">nicht trainiert</span>' : ''}
-      </div></div>
-    </div>` });
+      </div></div>`;
+    const zustand = verpasst ? 'verpasst' : 'offen';
+    zeilen.push({ i, html: _wzKnopf('lauf-wz', '', feld(i, zustand) + rechts),
+      eintrag: _wzKnopf('lauf-wz wz-eintrag', '', _wzZeichen('gym', zustand) + rechts) });
   });
   return zeilen;
 }
@@ -5208,12 +5222,25 @@ function renderUebersichtWoche() {
   const lauf = _wochenFilter !== 'gym' ? laufWochenZeilen(mo, true, _laufBezugKm()) : [];
   const zeilen = [...gym.map(z => ({ ...z, s: 0 })), ...lauf.map(z => ({ ...z, s: 1 }))]
     .sort((a, b) => a.i - b.i || a.s - b.s);
+  // JEDER WOCHENTAG NUR EINMAL (04.10.2026, Leonard-Entscheidung „Variante B"): eine neutrale
+  // Scheibe je Tag, rechts davon die Einheiten des Tags UNTEREINANDER, jede mit ihrem kleinen
+  // Sportzeichen im Zustand (gefuellt/Ring/rot/grau) samt Balken und Pfeil.
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const gruppen = [];
+  zeilen.forEach(z => {
+    const g = gruppen[gruppen.length - 1];
+    if (g && g.i === z.i) g.eintraege.push(z.eintrag); else gruppen.push({ i: z.i, eintraege: [z.eintrag] });
+  });
+  const tageHTML = gruppen.map(g => `<div class="lauf-wz wz-tag">
+      <span class="lauf-wz-feld${g.i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag neutral">${WOCHENTAGE_KURZ[g.i]}</span></span>
+      <div class="wz-eintraege">${g.eintraege.join('')}</div>
+    </div>`).join('');
   el.innerHTML = zeilen.length ? `<div class="chart-card-v2 ov-woche-liste">
     <div class="chart-card-v2-head">
       <span class="chart-card-v2-title">Diese Woche</span>
       <span class="lauf-wochen-datum">${_laufWochenSpanne(mo)}</span>
     </div>
-    <div class="lauf-wochenliste">${zeilen.map(z => z.html).join('')}</div>
+    <div class="lauf-wochenliste">${tageHTML}</div>
   </div>` : '';
 }
 

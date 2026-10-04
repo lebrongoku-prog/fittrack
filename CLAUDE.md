@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v423**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v424**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3326,6 +3326,13 @@ via `.wz-mg`), rechts „N PR" (`w.prs`), Pfeil → `showHistDetail`. Eine Einhe
 Plantag abdeckt, traegt „vorgezogen"/„nachgeholt"; ihr Plantag faellt weg (wie beim Lauf).
 Offener Plantag = Ring, vergangener ohne Einheit = rot „nicht trainiert" — OHNE Pfeil, ein
 Ueberspringen fuer Gym gibt es (noch) nicht. Glas-Modus: weiss wie die Laufzeilen.
+JEDER WOCHENTAG NUR EINMAL (v424, 04.10.2026, Leonard-Entscheidung „Variante B" — A waren zwei
+Spalten Gym|Lauf, C eine eingerueckte zweite Einheit): je Tag EINE neutrale Scheibe
+(`.lauf-wz-tag.neutral`, Heute-Feld wie gehabt), rechts die Einheiten des Tags untereinander
+(`.wz-eintraege`). Jede traegt statt der Scheibe ein 22px-Sportzeichen (`_wzZeichen`, Hantel bzw.
+Laeufer) in ihrem Zustand: gefuellt / Ring / rot / grau, im Glas-Modus weiss. Balken, Pfeil und
+Tipp-Ziel bleiben je Einheit. Beide Zeilenbauer liefern dafuer neben `html` (Seite „Laufen",
+unveraendert) ein `eintrag` ohne Scheibe; `_wzKnopf` baut Knopf oder Kasten.
 GEMESSEN (375px): Mo Push 2 PR · Di Lauf · Do Pull nachgeholt · Do Lauf verpasst · Fr Push nicht
 trainiert · So Lauf offen (heute); Filter Gym/Lauf filtert richtig; Tipp oeffnet „Push — Mo., 28.
 Sept. 2026"; kein Ueberlauf; Seite „Laufen" unveraendert (4 Seiten); keine Konsolenfehler.
