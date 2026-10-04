@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v422**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v423**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3306,6 +3306,29 @@ weiss gefuellt, offen weiss umrandet, leer 22-%-Weiss (siehe „Keine Sportfarbe
 Transparenz-Modus“). Vorher blieben die Sportfarben und nur der leere Kreis wurde weiss. Die
 Glas-Regel fuer den LEEREN Kreis muss auf `:not(.training):not(.done)` eingeengt sein —
 ungefiltert schlaegt sie (id-Selektor im `:not()`) jede andere Regel, und geplant sah aus wie leer.
+
+### Karte „Diese Woche" in der Uebersicht
+04.10.2026, Leonard-Entscheidung „Variante A" + Gymzeile „G3" (aus gezeichneten Vorschlaegen;
+B = zwei Karten, C = ausklappbar in der Wochenkarte; G1 = Volumen mit Balken, G2 = Saetze/Dauer).
+`#ov-diese-woche`, gefuellt von `renderUebersichtWoche()`, steht UNTER der Herocard (Querformat
+ueber beide Spalten). Sie FOLGT DEM FILTER der Wochenkarte (`_wochenFilter`): beide = Gym- und
+Laufzeilen gemischt nach Wochentag (Gym vor Lauf am selben Tag), Gymwoche bzw. Laufwoche = nur
+diese Sportart; `toggleWochenFilter` blendet sie mit ein. NUR die laufende Woche, NICHT wischbar
+(Leonard-Entscheidung — ein wischbarer Scroller verschluckte den Tabwechsel per Wisch). Ohne
+Zeile keine Karte. Die Seite „Laufen" behaelt ihre wischbare Liste unveraendert.
+LAUFZEILEN: `laufWochenZeilen(mo, istAktuell, maxKm)` liefert die Zeilen einzeln samt Wochentag;
+`laufWochenListe` ist nur noch die Huelle darum — beide Orte zeigen also dieselben Zeilen (Pfeil,
+Ueberspringen, Balken).
+GYMZEILEN (`gymWochenZeilen`, aktiver Gymplan via `getCurrentWeekDays`): dieselbe Bauform und
+dieselben Klassen (`.lauf-wz*`) mit `.lauf-wz-tag.gym` im Gym-Gruen #0F766E. Je EINHEIT eine
+Zeile: Name (`_einheitName`), darunter die Muskelgruppen-Punkte des Gymtags (`_mgPunkte`, im Fluss
+via `.wz-mg`), rechts „N PR" (`w.prs`), Pfeil → `showHistDetail`. Eine Einheit, die einen anderen
+Plantag abdeckt, traegt „vorgezogen"/„nachgeholt"; ihr Plantag faellt weg (wie beim Lauf).
+Offener Plantag = Ring, vergangener ohne Einheit = rot „nicht trainiert" — OHNE Pfeil, ein
+Ueberspringen fuer Gym gibt es (noch) nicht. Glas-Modus: weiss wie die Laufzeilen.
+GEMESSEN (375px): Mo Push 2 PR · Di Lauf · Do Pull nachgeholt · Do Lauf verpasst · Fr Push nicht
+trainiert · So Lauf offen (heute); Filter Gym/Lauf filtert richtig; Tipp oeffnet „Push — Mo., 28.
+Sept. 2026"; kein Ueberlauf; Seite „Laufen" unveraendert (4 Seiten); keine Konsolenfehler.
 
 ### Herocard „Heute"
 `buildHeuteHero(planDay, selDay, opts)` ersetzt seit dem 06.09.2026 die frueheren Vorschau- und

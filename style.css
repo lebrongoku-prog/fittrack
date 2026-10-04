@@ -2662,6 +2662,11 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
 }
 .lauf-wz-tag.gelaufen   { background: #4ADE80; color: #fff; }
 .lauf-wz-tag.offen      { background: var(--card2); box-shadow: inset 0 0 0 2px #4ADE80; color: #22A05B; }
+/* GYMZEILEN der Uebersicht (04.10.2026): dieselben Zustaende im Gym-Gruen #0F766E. Im
+   Transparenz-Modus gewinnen die Glas-Regeln weiter unten (id im `:not()`) — dort ist alles weiss. */
+.lauf-wz-tag.gym.gelaufen { background: #0F766E; }
+.lauf-wz-tag.gym.offen    { box-shadow: inset 0 0 0 2px #0F766E; color: #0F766E; }
+.lauf-wz-mitte .wz-mg { position: static; margin-top: 4px; }
 .lauf-wz-tag.verschoben { background: var(--card2); color: var(--text2); }
 /* VERPASST (26.09.2026, Leonard-Wunsch): ein geplanter Lauftag, der vorbei ist und nicht
    gelaufen wurde. Dieselbe Form wie „offen", nur in Rot — die App kennt ROT als Warnfarbe
@@ -4076,7 +4081,8 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
      Spalten — wie die Herocard darueber (07.09.2026, vorher lagen hier zwei Karten
      nebeneinander, je eine Sportart pro Spalte). */
   #screen-overview.active > #ov-week-card,
-  #screen-overview.active > #ov-rueckblick { grid-column: 1 / -1; }
+  #screen-overview.active > #ov-rueckblick,
+  #screen-overview.active > #ov-diese-woche { grid-column: 1 / -1; }
   /* Das Wochenraster nutzt die VOLLE Breite (Leonard-Wunsch 07.09.2026). Eine erste Fassung
      kappte es bei 480px, weil die Marken sonst weit auseinanderstehen — Leonard will die
      Breite ausgenutzt sehen, die Zeile bleibt durch die Wochentagsbeschriftung darueber

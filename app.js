@@ -1010,6 +1010,8 @@ function renderOverview() {
 
   // ─ EINE Wochenplankarte fuer beide Sportarten ─ (siehe `renderWochenKarte`)
   renderWochenKarte();
+  // ─ Liste „Diese Woche" unter der Herocard ─ (siehe `renderUebersichtWoche`)
+  renderUebersichtWoche();
 
   // ─ Sicherungs-Status ─
   renderBackupLine();
@@ -1045,6 +1047,12 @@ function toggleWochenFilter() {
     return karte ? [...karte.children].filter(el => !el.classList.contains('ppv-head')) : [];
   }, renderWochenKarte);
   renderUebersichtHero();
+  // Die Liste „Diese Woche" folgt demselben Filter und blendet ebenso ein.
+  const liste = document.getElementById('ov-diese-woche');
+  _neuZeichnenEinblenden('ovWoche', liste, () => {
+    const k = liste && liste.querySelector('.lauf-wochenliste');
+    return k ? [k] : [];
+  }, renderUebersichtWoche);
 }
 
 // ─── Tagesauswahl in der Kombi-Wochenplankarte (12.09.2026, Leonard-Wunsch) ───────────
@@ -5045,6 +5053,12 @@ function _laufWzBalken(sollKm, istKm, maxKm) {
 }
 
 function laufWochenListe(mo, istAktuell, maxKm) {
+  const zeilen = laufWochenZeilen(mo, istAktuell, maxKm).map(z => z.html);
+  return zeilen.length ? `<div class="lauf-wochenliste">${zeilen.join('')}</div>` : '';
+}
+// Die Zeilen einzeln samt Wochentag (`i`) — die Karte „Diese Woche" der UEBERSICHT mischt sie
+// mit den Gymzeilen (04.10.2026, siehe `renderUebersichtWoche`).
+function laufWochenZeilen(mo, istAktuell, maxKm) {
   const geplant = runGeplanteTage();
   const gelaufen = runNachTag();
   // „verschoben" rechnet seit dem 26.09.2026 fuer JEDE Woche (siehe `runVerschobeneTage`) —
@@ -5118,8 +5132,89 @@ function laufWochenListe(mo, istAktuell, maxKm) {
       : eigenerPlan
       ? `<button type="button" class="lauf-wz" onclick="openRunSkip('${key}')">${inhalt.replace('{{CHEV}}', chev)}</button>`
       : `<div class="lauf-wz">${inhalt.replace('{{CHEV}}', '')}</div>`;
-  }).filter(Boolean);
-  return zeilen.length ? `<div class="lauf-wochenliste">${zeilen.join('')}</div>` : '';
+  }).map((html, i) => ({ i, html })).filter(z => z.html);
+  return zeilen;
+}
+
+// ── GYMZEILEN DER WOCHE (04.10.2026, Leonard-Entscheidung „G3") ──
+// Gegenstueck zu `laufWochenZeilen`, NUR fuer die laufende Woche des aktiven Gymplans
+// (`getCurrentWeekDays`). Gleiche Bauform wie die Laufzeile: Scheibe mit dem Wochentag in
+// denselben Zustaenden (gefuellt = trainiert, Ring = offen, rot = verpasst), daneben der Name des
+// Gymtags mit den Punkten seiner Muskelgruppen (`day.muscles`, wie in den Gymtage-Kacheln),
+// rechts die Zahl der neuen Bestleistungen. Eine Einheit oeffnet ihre Detailansicht.
+// Ein Plantag, dessen Einheit an einem anderen Tag lief, steht NICHT in der Liste — wie beim
+// Lauf; die Einheit traegt dafuer „vorgezogen"/„nachgeholt".
+function gymWochenZeilen() {
+  const tage = getCurrentWeekDays();
+  const mo = tage[0].date;
+  const alleTage = DB.getTrainingDays();
+  const ws = DB.getWorkouts();
+  const todayIdx = tage.findIndex(t => t.isToday);
+  const zeilen = [];
+  const punkte = planDayId => {
+    const tag = alleTage.find(d => d.id === planDayId);
+    return tag ? _mgPunkte(tag.muscles).replace('class="pld-mg"', 'class="pld-mg wz-mg"') : '';
+  };
+  // Welcher Plantag ist von welcher Einheit abgedeckt? Dieselbe Reihenfolge wie
+  // `_verschobeneZuordnen`: der frueheste verschobene Tag desselben Gymtags zuerst.
+  const offeneVerschobene = tage.filter(t => t.verschoben).map(t => ({ idx: t.idx, planDayId: t.planDayId }));
+  const feld = (i, zustand) => `<span class="lauf-wz-feld${i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag gym ${zustand}">${WOCHENTAGE_KURZ[i]}</span></span>`;
+  tage.forEach(t => {
+    const i = t.idx;
+    const von = t.date.getTime(), bis = von + TAG_MS - 1;
+    const einheiten = ws.map((w, wi) => ({ w, wi })).filter(x => x.w.startTs >= von && x.w.startTs <= bis)
+      .sort((a, b) => a.w.startTs - b.w.startTs);
+    einheiten.forEach(({ w, wi }) => {
+      let hinweis = '';
+      if (w.planDayId && t.planDayId !== w.planDayId) {
+        const k = offeneVerschobene.findIndex(v => v.planDayId === w.planDayId);
+        if (k !== -1) hinweis = _verschiebWort(offeneVerschobene.splice(k, 1)[0].idx, i);
+      }
+      const prs = (w.prs || []).length;
+      zeilen.push({ i, html: `<button type="button" class="lauf-wz" onclick="showHistDetail(${wi})">
+        ${feld(i, 'gelaufen')}
+        <div class="lauf-wz-rechts"><div class="lauf-wz-oben">
+          <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${escapeHtml(_einheitName(w, alleTage))}${
+            hinweis ? `<span class="lauf-wz-von">${hinweis}</span>` : ''}</div>${punkte(w.planDayId)}</div>
+          ${prs ? `<span class="lauf-wz-ist">${prs} PR</span>` : ''}
+          <span class="cal-detail-chev">▾</span>
+        </div></div>
+      </button>` });
+    });
+    if (einheiten.length || !t.planDay || t.verschoben) return;
+    const verpasst = t.isPast;
+    zeilen.push({ i, html: `<div class="lauf-wz">
+      ${feld(i, verpasst ? 'verpasst' : 'offen')}
+      <div class="lauf-wz-rechts"><div class="lauf-wz-oben">
+        <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${escapeHtml(t.planDay.name)}</div>${punkte(t.planDayId)}</div>
+        ${verpasst ? '<span class="lauf-wz-ist verpasst">nicht trainiert</span>' : ''}
+      </div></div>
+    </div>` });
+  });
+  return zeilen;
+}
+
+// ── KARTE „DIESE WOCHE" IN DER UEBERSICHT (04.10.2026, Leonard-Entscheidung „Variante A") ──
+// Unter der Herocard. Sie folgt dem Filter der Wochenkarte (`_wochenFilter`): beide Sportarten
+// gemischt nach Wochentag (Gym vor Lauf am selben Tag), nur Gym oder nur Lauf. NUR die laufende
+// Woche, NICHT wischbar (Leonard-Entscheidung): Ueber einem wischbaren Scroller liesse sich der
+// Tab nicht mehr wechseln. Die Seite „Laufen" behaelt ihre wischbare Liste unveraendert.
+// Ohne eine einzige Zeile entfaellt die Karte.
+function renderUebersichtWoche() {
+  const el = document.getElementById('ov-diese-woche');
+  if (!el) return;
+  const mo = _laufWochenMontag(new Date());
+  const gym = _wochenFilter !== 'lauf' ? gymWochenZeilen() : [];
+  const lauf = _wochenFilter !== 'gym' ? laufWochenZeilen(mo, true, _laufBezugKm()) : [];
+  const zeilen = [...gym.map(z => ({ ...z, s: 0 })), ...lauf.map(z => ({ ...z, s: 1 }))]
+    .sort((a, b) => a.i - b.i || a.s - b.s);
+  el.innerHTML = zeilen.length ? `<div class="chart-card-v2 ov-woche-liste">
+    <div class="chart-card-v2-head">
+      <span class="chart-card-v2-title">Diese Woche</span>
+      <span class="lauf-wochen-datum">${_laufWochenSpanne(mo)}</span>
+    </div>
+    <div class="lauf-wochenliste">${zeilen.map(z => z.html).join('')}</div>
+  </div>` : '';
 }
 
 // ── DIE WOCHENKARTE IST WAAGERECHT WISCHBAR (22.09.2026, Leonard-Wunsch „Variante A") ──
