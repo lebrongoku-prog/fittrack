@@ -80,8 +80,6 @@
     <div id="ov-rueckblick"></div>
     <div id="ov-week-card"></div>
 
-    <div id="ov-hero-wrap"></div>
-
     <!-- Liste „Diese Woche" (Gym und Lauf nach dem Filter der Wochenkarte, renderUebersichtWoche). -->
     <div id="ov-diese-woche"></div>
 
@@ -781,21 +779,6 @@
       <div class="day-addto-sub" style="padding:0 2px 8px">Pläne an-/abwählen, dann speichern. Den Wochentag weist du danach im Plan-Detail zu.</div>
       <div id="day-to-plan-list"></div>
       <button class="btn btn-primary btn-full" style="margin-top:12px" onclick="saveDayToPlan()">Speichern</button>
-    </div>
-  </div>
-</div>
-
-<!-- Confirm next session start (from Übersicht hero) -->
-<div id="modal-confirm-start" class="overlay hidden">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title">Nächste Einheit starten?</div>
-    <div class="sheet-body">
-      <p id="modal-confirm-start-info" style="font-size:var(--fs-text);color:var(--text2);margin-bottom:18px;line-height:1.5"></p>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <button class="btn btn-primary btn-full" onclick="confirmStartYes()">Ja, jetzt starten</button>
-        <button class="btn btn-ghost btn-full" onclick="confirmStartNo()">Nein</button>
-      </div>
     </div>
   </div>
 </div>

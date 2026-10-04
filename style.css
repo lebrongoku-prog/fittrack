@@ -933,7 +933,9 @@ body.theme-plans .hist-action-dd {
 .karte-inert { cursor: default; }
 .karte-inert:active { transform: none; }
 .plan-card-v2.karte-inert .ppv-col[role="button"],
-.plan-card-v2.karte-inert .ppv-k-col[role="button"] { cursor: pointer; }
+/* Seit v428 (04.10.2026) sind die REIHEN der Kombi-Karte das Tipp-Ziel, nicht mehr die Kreise. */
+.plan-card-v2.karte-inert .ppv-k-reihe[role="button"] { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.plan-card-v2.karte-inert .ppv-k-reihe[role="button"]:active { opacity: .6; }
 /* Ein Tipp INS Diagramm zeigt nur den Messwert an — die Karte soll dabei nicht zucken
    (Leonard-Wunsch 01.09.2026). Die Klasse setzt `_initKeineTippAnimationAufDiagramm`
    waehrend der Beruehrung; `:has(canvas:active)` waere kuerzer, verlaesst sich aber
@@ -4101,19 +4103,6 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
     align-content: start;
   }
   #screen-overview.active > .ph { grid-column: 1 / -1; }
-  /* Die Herocard steht seit dem 06.09.2026 ZUOBERST und spannt ueber beide Spalten —
-     ihre beiden Knoepfe teilen sich die Breite dann genauso wie im Hochformat.
-     Darunter teilen sich Gym- und Laufwochenplan eine Zeile (Leonard-Wunsch 01.09.2026). */
-  #screen-overview.active > #ov-hero-wrap { grid-column: 1 / -1; }
-  /* Die FUGE zwischen den beiden Knoepfen liegt genau ueber der Fuge zwischen den
-     Wochenplan-Karten darunter (Leonard-Wunsch 07.09.2026). Die Karten tragen je 14px
-     Rand, zwischen ihnen stehen also 28px — dieselbe Luecke braucht die Herocard, deren
-     Knopfspalten sich die volle Breite teilen. Mit den 14px des Hochformats sassen die
-     Kanten 7px zu weit innen.
-     NUR die Herocard der Uebersicht: Sie ist die einzige, die ueber beide Spalten spannt.
-     Auf der Seite „Laufen" und in der laufenden Einheit steht die Karte in EINER Spalte,
-     dort gibt es keine Fuge, an der etwas auszurichten waere. */
-  #ov-hero-wrap .hero-heute-spalten { gap: 28px; }
   /* Die kombinierte Wochenkarte haelt beide Sportarten und spannt deshalb ueber beide
      Spalten — wie die Herocard darueber (07.09.2026, vorher lagen hier zwei Karten
      nebeneinander, je eine Sportart pro Spalte). */

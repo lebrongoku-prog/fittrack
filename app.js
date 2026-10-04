@@ -1001,8 +1001,7 @@ function renderOverview() {
   const subEl = document.getElementById('ov-week-info');
   subEl.innerHTML = `Woche ${prog.num} • <span class="ph-sub-accent">${wStatus.done} von ${wStatus.planned||plan.length}</span> Einheiten absolviert`;
 
-  // ─ Hero card ─ (eigene Funktion, siehe `renderUebersichtHero`)
-  renderUebersichtHero();
+  // Die Herocard „Heute" der Uebersicht ist am 04.10.2026 entfallen (Leonard-Wunsch, v428).
   ensureTimerActive();
 
   // ─ Rueckblick auf die Vorwoche ─ (siehe `renderRueckblick`)
@@ -1040,13 +1039,11 @@ const _WOCHEN_FILTER_TITEL = { beide: 'Trainingswoche', gym: 'Gymwoche', lauf: '
 // Die Karte hat eine FESTE Hoehe, es springt also nichts.
 function toggleWochenFilter() {
   _wochenFilter = _wochenFilter === 'beide' ? 'gym' : _wochenFilter === 'gym' ? 'lauf' : 'beide';
-  _kombiTag = null;            // die Auswahl gehoert zur Kombi-Karte, die es hier nicht mehr gibt
   const huelle = document.getElementById('ov-week-card');
   _neuZeichnenEinblenden('woche', huelle, () => {
     const karte = huelle && huelle.querySelector(':scope > .plan-card-v2');
     return karte ? [...karte.children].filter(el => !el.classList.contains('ppv-head')) : [];
   }, renderWochenKarte);
-  renderUebersichtHero();
   // Die Liste „Diese Woche" folgt demselben Filter und blendet ebenso ein.
   const liste = document.getElementById('ov-diese-woche');
   _neuZeichnenEinblenden('ovWoche', liste, () => {
@@ -1055,27 +1052,11 @@ function toggleWochenFilter() {
   }, renderUebersichtWoche);
 }
 
-// ─── Tagesauswahl in der Kombi-Wochenplankarte (12.09.2026, Leonard-Wunsch) ───────────
-// Jeder Wochentagskreis der beiden Reihen ist ein eigenes Tipp-Ziel; die Herocard direkt
-// darunter zeigt daraufhin DIESEN Tag. `null` heisst „nichts gewaehlt" — dann steht dort
-// wie bisher heute.
-// Gewaehlt ist ein TAG, keine Sportart: Ein Tipp auf einen Kreis markiert denselben Wochentag
-// in BEIDEN Reihen, und BEIDE Spalten der Herocard springen mit (Leonard-Entscheidung
-// 12.09.2026 — eine erste Fassung am selben Tag liess nur die getippte Sportart mitgehen, dann
-// sprach der Titel aber nur fuer die halbe Karte).
-// Ein ZWEITER Tipp auf denselben Kreis hebt die Auswahl wieder auf — dieselbe Regel wie bei
-// der Kalender-Fusszeile und dem Wettkampf-Zeitstrahl.
-// BEWUSST nicht gespeichert, wie jeder Ansichtszustand der App.
-// FOLGE: Die REIHEN sind damit stumm geworden. Vorher fuehrte ein Tipp auf die Reihe in den
-// Trainings-Tab; mit den antippbaren Kreisen laegen zwei Ziele in einer Kachel, und genau
-// das hat Leonard am 06.09.2026 abgelehnt. Zum Training kommt man ueber den Knopf der
-// Herocard darunter (Leonard-Entscheidung 12.09.2026).
-let _kombiTag = null;   // 0..6 oder null (= heute)
-function waehleKombiTag(idx) {
-  _kombiTag = (_kombiTag === idx) ? null : idx;
-  renderWochenKarte();
-  mitHeroFarbwechsel('#ov-hero-wrap', renderUebersichtHero);
-}
+// ─── Tagesauswahl in der Kombi-Wochenplankarte — ENTFALLEN am 04.10.2026 ─────────────
+// Ein Tipp auf einen Wochentagskreis schob vom 12.09.2026 an die Herocard darunter auf diesen
+// Tag (`waehleKombiTag`, `_kombiTag`). Mit der Herocard der Uebersicht (v428) hatte die Auswahl
+// nichts mehr zu steuern. Die REIHEN fuehren seither wieder in den Trainings-Tab auf die Seite
+// ihrer Sportart — wie vom 08. bis 12.09.2026.
 
 // ─── Herocard-Knoepfe wechseln ihre Farbe weich (13.09.2026, Leonard-Wunsch) ─────────
 // Tippt man in der Wochenplan-Karte auf einen anderen Tag, kann ein Knopf von Grau (nichts
@@ -1111,43 +1092,6 @@ function mitHeroFarbwechsel(huelle, zeichnen) {
                      .then(() => el.getAnimations().forEach(a => a.cancel())));
 }
 const HERO_TEXT_MS = 180;
-
-// Herocard der Uebersicht. Eigene Funktion, weil die Tagesauswahl sie einzeln neu zeichnet —
-// ein voller `renderOverview()` baute auch den Kalender neu und liesse ihn an den
-// Jahresanfang springen.
-function renderUebersichtHero() {
-  const wrap = document.getElementById('ov-hero-wrap');
-  if (!wrap) return;
-  const week7 = getCurrentWeekDays();
-  const todayIdx = Math.max(0, week7.findIndex(d => d.isToday));
-  const activeWo = DB.getActive();
-  if (activeWo) {
-    const aktiv = getActivePlan();
-    const heroDay = (aktiv ? aktiv.trainingDays : []).find(d => d.id === activeWo.planDayId);
-    wrap.innerHTML = buildSessionCard(activeWo, heroDay, week7[todayIdx], { label: 'LAUFENDE EINHEIT' });
-    return;
-  }
-  // Der Tag, der gilt: der gewaehlte, sonst heute. Er gilt fuer BEIDE Spalten.
-  const gewaehlt = _kombiTag != null;
-  const idx = gewaehlt ? _kombiTag : todayIdx;
-  const eintrag = week7[idx] || week7[todayIdx];
-  // OHNE Auswahl bleibt die bisherige Regel: Ist die heutige Einheit schon absolviert, zeigt
-  // die Karte „Kein Gym" und bietet freies Training an — heute ist erledigt.
-  // MIT Auswahl gilt die Regel des Trainings-Tabs (`_renderGymSeite`): dort steht der
-  // Trainingstag unabhaengig davon, ob er schon gelaufen ist. Leonard wollte beide Stellen
-  // gleich (12.09.2026), und „Kein Gym" an einem Tag, an dem man trainiert hat, waere falsch.
-  const tag = gewaehlt ? (eintrag.planDay || null)
-                       : ((eintrag.planDay && !eintrag.dayDone) ? eintrag.planDay : null);
-  wrap.innerHTML = buildHeuteHero(tag, eintrag, {
-    previewOnClick: tag ? `requestStartFromOverview('${tag.id}')` : null,
-    runIdx: gewaehlt ? _kombiTag : null,
-    // Dieselbe Regel fuer den Lauf: heute schon gelaufen → Knopf grau.
-    erledigtGrau: !gewaehlt,
-    // Der Titel nennt den gewaehlten Tag statt „Heute" (Leonard-Entscheidung 12.09.2026).
-    // Ist heute gewaehlt, bleibt es bei „Heute" — der Wochentag saehe dort wie ein Fehler aus.
-    titel: (gewaehlt && idx !== todayIdx) ? WOCHENTAGE_LANG[idx] : 'Heute',
-  });
-}
 
 // ═══════════════════════════════════════════════
 // WOCHENRUECKBLICK (27.09.2026, Leonard-Wunsch)
@@ -1334,9 +1278,8 @@ function buildWochenKombi() {
     verschoben: !!(laufVerschoben[i] && !gelaufen[i]),
   }));
 
-  // Jeder Wochentagskreis ist ein eigenes Tipp-Ziel und schiebt die Herocard darunter auf
-  // diesen Tag (siehe `waehleKombiTag`). Die REIHE selbst ist stumm — zwei Ziele in einer
-  // Kachel hat Leonard abgelehnt.
+  // Jede REIHE fuehrt in den Trainings-Tab auf die Seite ihrer Sportart (seit v428 wieder,
+  // siehe „Tagesauswahl … ENTFALLEN"). Die Kreise selbst haben keinen eigenen Tipp.
   const reihe = (tage, sport, icon, sportName) => {
     const punkte = tage.map((t, i) => {
       const cls = ['ppv-k-col'];
@@ -1350,12 +1293,11 @@ function buildWochenKombi() {
       // (`i > todayIdx`): Ein geplanter Lauf von HEUTE war damit voll eingefaerbt und sah
       // aus wie gelaufen, obwohl er noch anstand.
       if (t.geplant && !t.erledigt && !t.verschoben) cls.push('offen');
-      if (_kombiTag === i) cls.push('selected');
-      return `<div class="${cls.join(' ')}" onclick="waehleKombiTag(${i})"
-                   role="button" tabindex="0" aria-label="${sportName} am ${WOCHENTAGE_LANG[i]}">
-        <span class="ppv-k-dot"></span></div>`;
+      return `<div class="${cls.join(' ')}"><span class="ppv-k-dot"></span></div>`;
     }).join('');
-    return `<div class="ppv-k-reihe ${sport}">
+    const seite = sport === 'gym' ? 'gym' : 'laufen';
+    return `<div class="ppv-k-reihe ${sport}" role="button" tabindex="0" aria-label="${sportName}: zum Training"
+                 onclick="setWorkoutsView('${seite}');wischeZuTab('workouts')">
       <span class="ppv-k-ic">${icon}</span>${punkte}
     </div>`;
   };
@@ -1460,32 +1402,6 @@ function renderRecentSessions() {
       <div class="sess-v2-arrow">›</div>
     </div>`;
   }).join('');
-}
-
-// Ask the user before starting a workout from the Übersicht hero.
-let pendingStartDayId = null;
-function requestStartFromOverview(dayId) {
-  pendingStartDayId = dayId;
-  const day = DB.getPlan().find(d => d.id === dayId);
-  if (day) {
-    const exCount = day.exercises.length;
-    const setCount = day.exercises.reduce((a,e)=>a+e.targetSets, 0);
-    document.getElementById('modal-confirm-start-info').textContent =
-      `${day.name} — ${exCount} Übungen • ${setCount} Sätze`;
-  }
-  openModal('modal-confirm-start');
-}
-function confirmStartYes() {
-  closeModal('modal-confirm-start');
-  if (pendingStartDayId) {
-    const id = pendingStartDayId;
-    pendingStartDayId = null;
-    startWorkout(id); // already navigates to Workouts tab
-  }
-}
-function confirmStartNo() {
-  closeModal('modal-confirm-start');
-  pendingStartDayId = null;
 }
 
 // Keep the active-session timer running across tabs (but not while paused).

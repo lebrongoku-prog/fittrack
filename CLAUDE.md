@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v427**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v428**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3306,6 +3306,18 @@ weiss gefuellt, offen weiss umrandet, leer 22-%-Weiss (siehe „Keine Sportfarbe
 Transparenz-Modus“). Vorher blieben die Sportfarben und nur der leere Kreis wurde weiss. Die
 Glas-Regel fuer den LEEREN Kreis muss auf `:not(.training):not(.done)` eingeengt sein —
 ungefiltert schlaegt sie (id-Selektor im `:not()`) jede andere Regel, und geplant sah aus wie leer.
+
+### Die Uebersicht hat KEINE Herocard mehr
+04.10.2026, Leonard-Wunsch (v428). Entfernt: `#ov-hero-wrap`, `renderUebersichtHero`, die
+Tagesauswahl der Kombi-Karte (`_kombiTag`, `waehleKombiTag` — sie steuerte nur die Herocard),
+der nur von dort genutzte Start-Dialog (`#modal-confirm-start`, `requestStartFromOverview`,
+`confirmStartYes/No`) und die Querformat-Regeln der Herocard. Reihenfolge jetzt: Rueckblick ·
+Wochenkarte · „Diese Woche" · Kalender. FOLGEN (eigene Entscheidung): Die REIHEN der Kombi-Karte
+fuehren wieder in den Trainings-Tab auf die Seite ihrer Sportart (wie 08.–12.09.2026), die Kreise
+haben keinen eigenen Tipp mehr. Eine Einheit startet man nur noch im Trainings-Tab; eine laufende
+zeigt in der Uebersicht nur die schwebende Pille. `buildHeuteHero` (Seiten „Gym"/„Laufen") und
+`opts.titel` bleiben. Alle Abschnitte weiter unten zur Herocard „Heute" IN DER UEBERSICHT sind
+Vorgeschichte.
 
 ### Gym-Zeichen sind QUADRATE
 04.10.2026, Leonard-Wunsch (v425): Wie im Trainingskalender (Gym = abgerundetes Quadrat, Radius
