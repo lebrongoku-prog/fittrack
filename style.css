@@ -2677,6 +2677,17 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
   display: inline-flex; align-items: center; justify-content: center;
 }
 .wz-ic svg { width: 13px; height: 13px; }
+/* GYM = QUADRAT wie im Trainingskalender (04.10.2026, Leonard-Wunsch): Dort ist das Gym-Zeichen
+   ein abgerundetes Quadrat (16.8px, Radius 3px ≈ 18 %), der Lauf ein Kreis. Dasselbe Verhaeltnis
+   gilt fuer alle Gym-Zeichen der Wochenplan-Karten und der Karte „Diese Woche"; ein Tag OHNE
+   Gymeinheit bleibt rund. */
+.wz-ic.gym, .lauf-wz-tag.gym { border-radius: 4px; }
+.plan-card-v2:not(.run-plan) .ppv-col.training .ppv-wd,
+.plan-card-v2:not(.run-plan) .ppv-col.done .ppv-wd,
+.plan-card-v2:not(.run-plan) .ppv-col.verschoben .ppv-wd { border-radius: 7px; }
+.ppv-k-reihe.gym .training .ppv-k-dot,
+.ppv-k-reihe.gym .done .ppv-k-dot,
+.ppv-k-reihe.gym .verschoben .ppv-k-dot { border-radius: 5px; }
 .wz-ic.gym.gelaufen  { background: #0F766E; color: #fff; }
 .wz-ic.lauf.gelaufen { background: #4ADE80; color: #fff; }
 .wz-ic.gym.offen     { background: var(--card2); box-shadow: inset 0 0 0 2px #0F766E; color: #0F766E; }
