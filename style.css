@@ -2759,6 +2759,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
 .lp-notiz:active { opacity: .6; }
 /* Knopfzeile im Notizfenster. */
 .run-note-actions { display: flex; gap: 8px; margin-top: 12px; }
+.run-skip-info { font-size: var(--fs-neben); color: var(--text2); margin-bottom: 10px; }
 /* Drei Knoepfe (Wettkampf-Dialog: Loeschen · Abbrechen · Speichern) liefen mit dem normalen
    18px-Innenabstand 2px ueber die Zeile (gemessen 21.09.2026). Mit 10px sind alle drei gleich
    breit (106px auf 375px) und passen. */
@@ -3247,7 +3248,6 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .pr-v2-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
 /* Steigerung gegenüber der vorherigen Bestleistung — bewusst zurückgenommen, die
    Bestleistung selbst steht hervorgehoben rechts. */
-.pr-v2-delta { color: var(--text3); font-weight: 500; }
 .pr-v2-val { font-size: var(--fs-text); font-weight: 700; color: var(--green); }
 .pr-v2-arrow { color: var(--text3); font-size: var(--fs-betont); line-height: 1; }
 .sess-v2-row {

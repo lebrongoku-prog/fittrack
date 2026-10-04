@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v420**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v421**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1236,7 +1236,7 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 - **Löschen ist zweifach abgesichert:** (1) `withUndo(label, fn, afterRestore)` + `showUndoToast()` — sichert die Stores vorab, „Rückgängig" 6 s lang. (2) **Papierkorb** (`ft_trash`, `trashPut/trashRestore/trashDeleteForever/emptyTrash/purgeTrash`, Liste via `renderTrash()` im Einstellungen-Overlay): gelöschte Einheiten, Pläne, Trainingstage und Übungen liegen `TRASH_KEEP_DAYS` = 30 Tage dort. `_snapshotStores` sichert `ft_trash` mit, sonst läge ein Objekt nach „Rückgängig" doppelt vor.
 - **Auswertungen** (Volumenentwicklung, Volumen pro Muskelgruppe, Letzte Einheiten, PRs und Bestleistungen) liegen auf der Stats-Seite des Übungen-Tabs, NICHT mehr in der Übersicht. „Letzte Einheiten" (`renderRecentSessions`, Karte `#ov-recent-sessions-card`) ist am 20.08.2026 dorthin gewandert — die ID behielt ihr `ov-`Präfix.
   Reihenfolge auf der Stats-Seite: Volumenentwicklung, Volumen pro Muskelgruppe, PRs & Bestleistungen, Letzte Einheiten (01.09.2026). `renderStatsPage()` füllt sie. Der Trainingskalender wird dagegen von `renderOverview()` gerendert — er gehört zur Übersicht. ACHTUNG: Vor dem Umbau hing sein Aufruf in `renderHomeStats()`; wandert er wieder dorthin, bleibt die Kalenderkarte in der Übersicht leer.
-- **PR-Liste:** hervorgehoben ist der Bestwert selbst, die Steigerung steht grau in Klammern in der Unterzeile (`.pr-v2-delta`).
+- **PR-Liste:** hervorgehoben ist der Bestwert selbst; die Steigerung in Klammern („(+5 kg)", `.pr-v2-delta`) ist am 04.10.2026 entfallen (Leonard-Wunsch, v421).
   Die Unterzeile nennt nur noch den Verlauf („37.5 → 40 kg") plus die Steigerung — die Satzangabe („3×6")
   ist am 01.09.2026 entfallen (Leonard-Wunsch), damit auch das fuehrende Trennzeichen davor.
   `.pr-v2-name` braucht ein eigenes `color: var(--text)`: Eine Schriftfarbe wird als FERTIGER Wert vererbt,
@@ -2801,7 +2801,19 @@ UEBER DEM BALKEN eines gelaufenen Laufs stehen seit v414 die TATSAECHLICH gelauf
 (Leonard-Wunsch) statt der Vorgabe, rechts nur noch „gelaufen"; Zone und „vorgezogen" bleiben.
 Seit v420 (03.10.2026, Leonard-Wunsch) entfaellt auch dieses „gelaufen" — rechts steht nur noch der
 Pfeil zur Detailansicht; dass gelaufen wurde, zeigt die gefuellte Scheibe.
-Offene, verpasste Tage und das Intervalltraining zeigen weiter die Vorgabe. Die Detailansicht des Laufs
+Offene, verpasste Tage und das Intervalltraining zeigen weiter die Vorgabe.
+**LAEUFE UEBERSPRINGEN** (`openRunSkip(key)` / `saveRunSkip(umschalten)`, `#modal-run-skip`, v421,
+04.10.2026, Leonard-Wunsch): Jeder noch NICHT gelaufene Plantag der Liste ist ein Knopf mit
+demselben Pfeil wie ein gelaufener und oeffnet ein Blatt mit der Vorgabe und der NOTIZ der
+Einheit (dieselbe `unit.note` wie im Laufplan) — „Notiz speichern" oder „Überspringen" bzw.
+„Nicht mehr überspringen". Gespeichert als `unit.skipped = true`; `runGeplanteTage` liefert
+dafuer `uebersprungen`, `woche` und `dayIdx` mit. FOLGEN (eigene Entscheidung, nicht von Leonard
+vorgegeben): Scheibe grau wie „verschoben", rechts „übersprungen", kein Balken, nie rot;
+`runVerschiebungen` laesst den Tag aus (kein anderer Lauf deckt ihn ab); Wochenplan-Karten grau
+(`runVerschobeneTage` nimmt ihn mit); Kalender ohne Umriss, Fusszeile „Lauf · übersprungen".
+Die Kennzahl absolviert/geplant ZAEHLT IHN WEITER als geplant. Kuenftige Tage lassen sich auch
+ueberspringen. GEMESSEN: Do verpasst → uebersprungen → zurueckgenommen, Notiz bleibt; keine
+Konsolenfehler. Die Detailansicht des Laufs
 vergleicht gegen die Einheit des Plantags, Titel „Geplant am Di · vorgezogen", Notiz dieses Tags.
 Weiter gilt: nur Plantage VOR heute werden abgedeckt (geraten, nicht sicher).
 GEMESSEN: genau Leonards Fall (Mo 10 km, Di 9 km geplant, heute Mi) in Liste und Detailansicht;

@@ -1802,6 +1802,15 @@ function runWochenStatus() {
 function runVerschobeneTage(mo) {
   const out = {};
   Object.keys(runVerschiebungen(mo).planNachLauf).forEach(i => { out[i] = true; });
+  // Uebersprungene Lauftage (04.10.2026) stehen in den Wochenplan-Karten genauso grau da wie
+  // verschobene: Sie sind nicht offen, aber auch nicht gelaufen.
+  const woMo = _laufWochenMontag(mo || new Date());
+  const geplant = runGeplanteTage();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(woMo); d.setDate(woMo.getDate() + i);
+    const g = geplant[_dayKeyOf(d.getTime())];
+    if (g && g.uebersprungen) out[i] = true;
+  }
   return out;
 }
 
@@ -1823,7 +1832,9 @@ function runVerschiebungen(mo, geplantMap) {
   geplantMap = geplantMap || runGeplanteTage();
   const geplant = [0, 1, 2, 3, 4, 5, 6].filter(i => {
     const d = new Date(woMo); d.setDate(woMo.getDate() + i);
-    return !!geplantMap[_dayKeyOf(d.getTime())];
+    // Ein UEBERSPRUNGENER Lauftag ist erledigt — ein Lauf an einem anderen Tag deckt ihn nicht ab.
+    const g = geplantMap[_dayKeyOf(d.getTime())];
+    return !!g && !g.uebersprungen;
   });
   if (!geplant.length) return leer;
   const von = woMo.getTime(), bis = von + WOCHE_MS - 1;
@@ -4737,6 +4748,49 @@ function saveRunNote() {
   closeModal('modal-run-note');
 }
 
+// ── LAUF UEBERSPRINGEN (04.10.2026, Leonard-Wunsch) ──
+// Ein noch nicht gelaufener Plantag laesst sich aus der Wochenliste der Seite „Laufen" heraus
+// ueberspringen; das Fenster zeigt die NOTIZ der Einheit (dieselbe wie im Laufplan), damit der
+// Grund dabeisteht. Gespeichert wird `skipped` an der Planeinheit. Ein uebersprungener Tag ist
+// nicht mehr offen oder verpasst, wird von keinem anderen Lauf abgedeckt und zeigt im Kalender
+// keinen Umriss. In der Kennzahl „geplant" zaehlt er weiter mit.
+let _runSkipZiel = null;
+function openRunSkip(key) {
+  const g = runGeplanteTage()[key];
+  if (!g) return;
+  _runSkipZiel = { id: g.plan.id, woche: g.woche, dayIdx: g.dayIdx };
+  const u = g.einheit || {};
+  const [y, m, d] = key.split('-').map(Number);
+  document.getElementById('run-skip-title').textContent = `Lauf — ${fmtDate(new Date(y, m - 1, d).getTime())}`;
+  const vorgabe = [u.km ? fmtKm(u.km) : '', u.minutes ? fmtMin(u.minutes) : '', u.zone || ''].filter(Boolean).join(' · ');
+  document.getElementById('run-skip-info').textContent = g.uebersprungen
+    ? `Übersprungen${vorgabe ? ' · geplant: ' + vorgabe : ''}`
+    : `Geplant: ${vorgabe || 'ohne Vorgabe'}`;
+  document.getElementById('run-skip-text').value = u.note || '';
+  document.getElementById('run-skip-btn').textContent = g.uebersprungen ? 'Nicht mehr überspringen' : 'Überspringen';
+  _runSkipZiel.war = g.uebersprungen;
+  openModal('modal-run-skip');
+}
+
+// `umschalten`: true = Zustand wechseln (ueberspringen bzw. zuruecknehmen), false = nur Notiz.
+function saveRunSkip(umschalten) {
+  if (!_runSkipZiel) return closeModal('modal-run-skip');
+  const { id, woche, dayIdx, war } = _runSkipZiel;
+  const text = document.getElementById('run-skip-text').value.trim();
+  _runPlanAendern(id, p => {
+    p.units = p.units || [];
+    let u = p.units.find(x => x.week === woche && x.dayIdx === dayIdx);
+    if (!u) { u = { week: woche, dayIdx }; p.units.push(u); }
+    u.note = text;
+    const neu = umschalten ? !war : war;
+    if (neu) u.skipped = true; else delete u.skipped;
+  });
+  _runSkipZiel = null;
+  closeModal('modal-run-skip');
+  if (currentScreen === 'workouts') renderWorkoutsScreen();
+  else if (currentScreen === 'overview') renderOverview();
+}
+
 // Detailansicht eines gelaufenen Tages — Gegenstueck zu `showHistDetail` fuer die
 // Krafteinheiten (Leonard-Wunsch 04.09.2026). Seit dem 28.09.2026 „Variante B" (Leonard-Wahl aus
 // drei Entwuerfen): Oben ein Kopf im Gruen des Lauf-Knopfs der Herocard mit der Strecke gross,
@@ -4896,7 +4950,9 @@ function runGeplanteTage() {
       (p.runDays || []).forEach(di => {
         const d = runEinheitDatum(p, w, di);
         if (d.getTime() < von || d.getTime() > bis) return;
-        map[_dayKeyOf(d.getTime())] = { plan: p, einheit: runEinheit(p, w, di) };
+        const einheit = runEinheit(p, w, di);
+        // `uebersprungen` (04.10.2026): bewusst ausgelassen, siehe `openRunSkip`.
+        map[_dayKeyOf(d.getTime())] = { plan: p, einheit, woche: w, dayIdx: di, uebersprungen: !!(einheit && einheit.skipped) };
       });
     }
   });
@@ -5017,8 +5073,11 @@ function laufWochenListe(mo, istAktuell, maxKm) {
     // ein geplanter Tag, der VORBEI ist, an dem nichts gelaufen wurde und der auch nicht durch
     // einen Lauf an einem anderen Tag abgedeckt ist. HEUTE zaehlt NICHT dazu — der Tag laeuft
     // noch; kuenftige Tage bleiben „offen".
-    const verpasst = !lauf && verschoben[i] == null && gepl && d.getTime() < heuteMs;
-    const zustand = lauf ? 'gelaufen' : verschoben[i] != null ? 'verschoben' : verpasst ? 'verpasst' : 'offen';
+    // UEBERSPRUNGEN (04.10.2026, Leonard-Wunsch): bewusst ausgelassen, mit Begruendung in der
+    // Notiz der Einheit — grau wie „verschoben", nicht rot wie „verpasst".
+    const uebersprungen = !lauf && !!(eigenerPlan && eigenerPlan.uebersprungen);
+    const verpasst = !lauf && !uebersprungen && verschoben[i] == null && gepl && d.getTime() < heuteMs;
+    const zustand = lauf ? 'gelaufen' : uebersprungen ? 'verschoben' : verschoben[i] != null ? 'verschoben' : verpasst ? 'verpasst' : 'offen';
     const vorgabe = u ? [u.km ? fmtKm(u.km) : '', u.minutes ? fmtMin(u.minutes) : ''].filter(Boolean).join(' · ') : '';
     // Bei einem GELAUFENEN Lauf mit Strecke stehen ueber dem Balken die tatsaechlich gelaufenen
     // Kilometer, nicht die Vorgabe (30.09.2026, Leonard-Wunsch); rechts steht seit v420 nichts mehr —
@@ -5033,7 +5092,7 @@ function laufWochenListe(mo, istAktuell, maxKm) {
     // Feld hinter der Scheibe, das die Wochenplan-Karte fuer den heutigen Tag nutzt
     // (`.ppv-col.today`, Leonard-Wunsch).
     const ist = lauf ? (lauf.art === 'hiit' ? `HIIT ${fmtMin(lauf.minutes)}` : (istKm ? '' : `${fmtKm(lauf.km)} gelaufen`))
-      : verpasst ? 'nicht gelaufen' : '';
+      : uebersprungen ? 'übersprungen' : verpasst ? 'nicht gelaufen' : '';
     // Die Zeile ist eine WAAGERECHTE Reihe: links die Scheibe, rechts ein Block aus Angaben und
     // Laengenbalken (23.09.2026, Leonard-Wunsch). Dadurch steht die Scheibe mittig zu BEIDEM;
     // bis dahin lag sie in derselben Ebene wie die Angaben und sass damit ueber dem Balken.
@@ -5046,13 +5105,18 @@ function laufWochenListe(mo, istAktuell, maxKm) {
           ${ist ? `<span class="lauf-wz-ist${verpasst ? ' verpasst' : ''}">${ist}</span>` : ''}
           {{CHEV}}
         </div>
-        ${_laufWzBalken(u && u.km, lauf && lauf.km, maxKm)}
+        ${uebersprungen ? '' : _laufWzBalken(u && u.km, lauf && lauf.km, maxKm)}
       </div>`;
     // Ein gelaufener Tag ist ein KNOPF in die Detailansicht des Laufs — derselbe kleine
     // Pfeil-Knopf wie in der Kalender-Fusszeile. Ein `<button>`, damit `initScrollHideNav`
     // ihn als Bedienelement erkennt.
+    // Ein NOCH NICHT gelaufener Plantag hat seit dem 04.10.2026 denselben Pfeil und oeffnet das
+    // Fenster zum Ueberspringen samt Notiz (`openRunSkip`, Leonard-Wunsch).
+    const chev = '<span class="cal-detail-chev">▾</span>';
     return lauf
-      ? `<button type="button" class="lauf-wz" onclick="showRunDetail('${key}')">${inhalt.replace('{{CHEV}}', '<span class="cal-detail-chev">▾</span>')}</button>`
+      ? `<button type="button" class="lauf-wz" onclick="showRunDetail('${key}')">${inhalt.replace('{{CHEV}}', chev)}</button>`
+      : eigenerPlan
+      ? `<button type="button" class="lauf-wz" onclick="openRunSkip('${key}')">${inhalt.replace('{{CHEV}}', chev)}</button>`
       : `<div class="lauf-wz">${inhalt.replace('{{CHEV}}', '')}</div>`;
   }).filter(Boolean);
   return zeilen.length ? `<div class="lauf-wochenliste">${zeilen.join('')}</div>` : '';
@@ -6405,7 +6469,8 @@ function _calRasterHTML(id, z) {
     const wi = (day.getDay() + 6) % 7;
     const ver = ausserhalb ? null : verschiebung(day);
     const gymVerschoben = !!(ver && !entry && ver.gym.planNachIst[wi] != null);
-    const laufGepl = !ausserhalb && laufGeplant[key] && !(ver && !lauf && ver.lauf.planNachLauf[wi] != null);
+    const laufGepl = !ausserhalb && laufGeplant[key] && !laufGeplant[key].uebersprungen
+      && !(ver && !lauf && ver.lauf.planNachLauf[wi] != null);
     const wettkampf = !ausserhalb && wettkampfTage[key];
     const cls = ['cal-day'];
     if (ausserhalb) cls.push('outside');
@@ -6782,6 +6847,8 @@ function showCalDay(key, id) {
     } else if (gepl && laufVer.planNachLauf[wiTag] != null) {
       const j = laufVer.planNachLauf[wiTag];
       laufHTML = `<div class="cal-detail-tag-txt">Lauf · ${_verschiebWort(wiTag, j) === 'vorgezogen' ? 'vorgezogen auf' : 'nachgeholt am'} ${WOCHENTAGE_KURZ[j]}</div>`;
+    } else if (gepl && gepl.uebersprungen) {
+      laufHTML = `<div class="cal-detail-tag-txt">Lauf · übersprungen</div>`;
     } else if (gepl) {
       const u = gepl.einheit;
       const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null].filter(Boolean).join(' · ') : '';
@@ -6920,10 +6987,8 @@ function prHTML(pr, number) {
   const muscleKey = ex ? ex.muscle : 'chest';
   const num = number || 1;
   const valColor = muscleColor(muscleKey);
-  // Hervorgehoben ist die Bestleistung selbst; die Steigerung steht grau in Klammern
-  // am Ende der Beschreibung (Leonard-Wunsch).
-  const zunahme = (pr.prev && pr.weight > pr.prev)
-    ? ` <span class="pr-v2-delta">(+${fmtKg(pr.weight - pr.prev)} kg)</span>` : '';
+  // Die Steigerung in Klammern („(+5 kg)") ist am 04.10.2026 entfallen (Leonard-Wunsch) —
+  // der Verlauf „45 → 50 kg" sagt dasselbe.
   // Einheit nur einmal nennen — sonst bricht die Zeile auf dem iPhone um.
   // Die Satzangabe („3×6") stand frueher davor und ist am 01.09.2026 entfallen
   // (Leonard-Wunsch) — deshalb hier auch kein fuehrendes Trennzeichen mehr.
@@ -6932,7 +6997,7 @@ function prHTML(pr, number) {
     <div class="pr-v2-num">${num}</div>
     <div>
       <div class="pr-v2-name">${escapeHtml(pr.name)}</div>
-      <div class="pr-v2-sub">${verlauf}${zunahme}</div>
+      <div class="pr-v2-sub">${verlauf}</div>
     </div>
     <div class="pr-v2-val" style="color:${valColor}">${fmtKg(pr.weight)} kg</div>
     <span class="pr-v2-arrow">›</span>

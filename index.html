@@ -909,6 +909,23 @@
   </div>
 </div>
 
+<!-- Lauf ueberspringen samt Notiz (04.10.2026). -->
+<div id="modal-run-skip" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="run-skip-title">Lauf</div>
+    <div class="sheet-body">
+      <div class="run-skip-info" id="run-skip-info"></div>
+      <textarea id="run-skip-text" class="program-form-textarea" rows="4"
+                placeholder="Notiz, z. B. warum der Lauf ausfällt"></textarea>
+      <div class="run-note-actions">
+        <button class="btn btn-ghost" onclick="saveRunSkip(false)">Notiz speichern</button>
+        <button class="btn btn-primary" id="run-skip-btn" onclick="saveRunSkip(true)">Überspringen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Detailansicht eines gelaufenen Tages — Gegenstueck zu #modal-hist-detail (04.09.2026). -->
 <div id="modal-run-detail" class="overlay hidden">
   <div class="sheet">
