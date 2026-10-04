@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v426**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v427**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3324,6 +3324,10 @@ Laufzeilen gemischt nach Wochentag (Gym vor Lauf am selben Tag), Gymwoche bzw. L
 diese Sportart; `toggleWochenFilter` blendet sie mit ein. NUR die laufende Woche, NICHT wischbar
 (Leonard-Entscheidung — ein wischbarer Scroller verschluckte den Tabwechsel per Wisch). Ohne
 Zeile keine Karte. Die Seite „Laufen" behaelt ihre wischbare Liste unveraendert.
+ENTFALLEN (v427, 04.10.2026, Leonard-Wunsch): die Datumsspanne oben rechts, die
+Muskelgruppen-Punkte unter den Gymtagen und jeder Hinweis „vorgezogen"/„nachgeholt" — bei Gym im
+Code, beim Lauf per `#ov-diese-woche .lauf-wz-von { display: none }` (die Seite „Laufen" behaelt
+ihn). Die folgenden Absaetze zu Punkten und Hinweis in der Uebersicht sind damit Vorgeschichte.
 KEINE Tipp-Animation der Karte (v426, Leonard-Wunsch): `.ov-woche-liste:active { transform: none }`
 steht in der Ausnahmeliste neben den Kalenderkarten — bedienbar sind nur die Zeilen.
 LAUFZEILEN: `laufWochenZeilen(mo, istAktuell, maxKm)` liefert die Zeilen einzeln samt Wochentag;

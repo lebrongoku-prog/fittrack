@@ -2669,7 +2669,9 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
    Transparenz-Modus gewinnen die Glas-Regeln weiter unten (id im `:not()`) — dort ist alles weiss. */
 .lauf-wz-tag.gym.gelaufen { background: #0F766E; }
 .lauf-wz-tag.gym.offen    { box-shadow: inset 0 0 0 2px #0F766E; color: #0F766E; }
-.lauf-wz-mitte .wz-mg { position: static; margin-top: 4px; }
+/* Die Laufzeilen der Uebersicht zeigen KEIN „vorgezogen"/„nachgeholt" (04.10.2026, Leonard-Wunsch);
+   die Seite „Laufen" behaelt den Hinweis. */
+#ov-diese-woche .lauf-wz-von { display: none; }
 /* UEBERSICHT: je Tag EINE neutrale Scheibe, rechts die Einheiten gestapelt (04.10.2026, „B").
    Den Zustand traegt das kleine Sportzeichen (`.wz-ic`) — dieselben vier Zustaende wie die Scheibe. */
 .lauf-wz-tag.neutral { background: var(--card2); color: var(--text2); }

@@ -5166,13 +5166,8 @@ function gymWochenZeilen() {
   const ws = DB.getWorkouts();
   const todayIdx = tage.findIndex(t => t.isToday);
   const zeilen = [];
-  const punkte = planDayId => {
-    const tag = alleTage.find(d => d.id === planDayId);
-    return tag ? _mgPunkte(tag.muscles).replace('class="pld-mg"', 'class="pld-mg wz-mg"') : '';
-  };
-  // Welcher Plantag ist von welcher Einheit abgedeckt? Dieselbe Reihenfolge wie
-  // `_verschobeneZuordnen`: der frueheste verschobene Tag desselben Gymtags zuerst.
-  const offeneVerschobene = tage.filter(t => t.verschoben).map(t => ({ idx: t.idx, planDayId: t.planDayId }));
+  // Die Muskelgruppen-Punkte unter dem Namen und der Hinweis „vorgezogen"/„nachgeholt" sind am
+  // 04.10.2026 entfallen (Leonard-Wunsch, v427). Der verschobene Plantag faellt weiter weg.
   const feld = (i, zustand) => `<span class="lauf-wz-feld${i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag gym ${zustand}">${WOCHENTAGE_KURZ[i]}</span></span>`;
   tage.forEach(t => {
     const i = t.idx;
@@ -5180,15 +5175,9 @@ function gymWochenZeilen() {
     const einheiten = ws.map((w, wi) => ({ w, wi })).filter(x => x.w.startTs >= von && x.w.startTs <= bis)
       .sort((a, b) => a.w.startTs - b.w.startTs);
     einheiten.forEach(({ w, wi }) => {
-      let hinweis = '';
-      if (w.planDayId && t.planDayId !== w.planDayId) {
-        const k = offeneVerschobene.findIndex(v => v.planDayId === w.planDayId);
-        if (k !== -1) hinweis = _verschiebWort(offeneVerschobene.splice(k, 1)[0].idx, i);
-      }
       const prs = (w.prs || []).length;
       const rechts = `<div class="lauf-wz-rechts"><div class="lauf-wz-oben">
-          <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${escapeHtml(_einheitName(w, alleTage))}${
-            hinweis ? `<span class="lauf-wz-von">${hinweis}</span>` : ''}</div>${punkte(w.planDayId)}</div>
+          <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${escapeHtml(_einheitName(w, alleTage))}</div></div>
           ${prs ? `<span class="lauf-wz-ist">${prs} PR</span>` : ''}
           <span class="cal-detail-chev">▾</span>
         </div></div>`;
@@ -5198,7 +5187,7 @@ function gymWochenZeilen() {
     if (einheiten.length || !t.planDay || t.verschoben) return;
     const verpasst = t.isPast;
     const rechts = `<div class="lauf-wz-rechts"><div class="lauf-wz-oben">
-        <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${escapeHtml(t.planDay.name)}</div>${punkte(t.planDayId)}</div>
+        <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${escapeHtml(t.planDay.name)}</div></div>
         ${verpasst ? '<span class="lauf-wz-ist verpasst">nicht trainiert</span>' : ''}
       </div></div>`;
     const zustand = verpasst ? 'verpasst' : 'offen';
@@ -5238,7 +5227,6 @@ function renderUebersichtWoche() {
   el.innerHTML = zeilen.length ? `<div class="chart-card-v2 ov-woche-liste">
     <div class="chart-card-v2-head">
       <span class="chart-card-v2-title">Diese Woche</span>
-      <span class="lauf-wochen-datum">${_laufWochenSpanne(mo)}</span>
     </div>
     <div class="lauf-wochenliste">${tageHTML}</div>
   </div>` : '';
