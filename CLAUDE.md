@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v425**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v426**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3324,6 +3324,8 @@ Laufzeilen gemischt nach Wochentag (Gym vor Lauf am selben Tag), Gymwoche bzw. L
 diese Sportart; `toggleWochenFilter` blendet sie mit ein. NUR die laufende Woche, NICHT wischbar
 (Leonard-Entscheidung — ein wischbarer Scroller verschluckte den Tabwechsel per Wisch). Ohne
 Zeile keine Karte. Die Seite „Laufen" behaelt ihre wischbare Liste unveraendert.
+KEINE Tipp-Animation der Karte (v426, Leonard-Wunsch): `.ov-woche-liste:active { transform: none }`
+steht in der Ausnahmeliste neben den Kalenderkarten — bedienbar sind nur die Zeilen.
 LAUFZEILEN: `laufWochenZeilen(mo, istAktuell, maxKm)` liefert die Zeilen einzeln samt Wochentag;
 `laufWochenListe` ist nur noch die Huelle darum — beide Orte zeigen also dieselben Zeilen (Pfeil,
 Ueberspringen, Balken).
