@@ -903,9 +903,6 @@ function _applyTabState(name) {
   if (name !== 'plan-detail') editingPlanId = null;
   if (name !== 'runplan-detail') editingRunPlanId = null;
 
-  // Kopfzeile der laufenden Einheit gehoert zum Trainings-Tab: Zustand beim Verlassen
-  // zuruecksetzen, damit sie beim Zurueckkehren nicht faelschlich sofort wieder steht.
-  if (name !== 'workouts') updateStickyBar(false);
   if (name !== 'workouts') _laufWochenNr = null;   // gewischte Woche der Laufseite, siehe `_setWorkoutsView`
 
   // Seitenleiste unten: zeigt die Seiten des NEUEN Tabs (oder verschwindet, wenn er
@@ -2379,7 +2376,6 @@ function _renderGymSeite() {
   }
 
   syncWorkoutActiveUI();
-  checkStickyBar();
   if (uebergang) _woUebergangSpielen(uebergang);
 }
 
@@ -3868,29 +3864,9 @@ function syncWorkoutActiveUI() {
   if (active && barTimer) _woTimerRender(barTimer);
   const barSets = document.getElementById('wab-sets');
   if (active && barSets) barSets.textContent = _woSatzStand(wo);
-  const sbTimer = document.getElementById('wsb-timer');
-  if (active && sbTimer) sbTimer.textContent = _woTimerText();
-  const sbTitle = document.getElementById('wsb-title');
-  if (active && sbTitle && !sbTitle.textContent) sbTitle.textContent = wo.planDayName || 'Einheit';
-  if (!active) updateStickyBar(false);
 }
-
-// Kopfleiste der laufenden Einheit ein-/ausblenden. Sichtbar, sobald die Session-Karte
-// nach oben aus dem Blickfeld gescrollt ist.
-function updateStickyBar(show) {
-  const bar = document.getElementById('wo-sticky-bar');
-  if (bar) bar.classList.toggle('show', !!show);
-}
-function checkStickyBar() {
-  const wo = DB.getActive();
-  if (!wo || currentScreen !== 'workouts') { updateStickyBar(false); return; }
-  const card = document.getElementById('wo-session-card-wrap');
-  if (!card) { updateStickyBar(false); return; }
-  const r = card.getBoundingClientRect();
-  updateStickyBar(r.bottom < 90);
-  const sbTitle = document.getElementById('wsb-title');
-  if (sbTitle) sbTitle.textContent = wo.planDayName || 'Einheit';
-}
+// Die Kopfleiste der laufenden Einheit (`#wo-sticky-bar`, beim Herunterscrollen oben fest mit
+// Titel, Uhr und „Beenden") ist am 10.10.2026 entfallen (Leonard-Wunsch, v429).
 
 // Pause / resume the active workout (real freeze).
 function togglePauseWorkout() {
@@ -11882,7 +11858,6 @@ function initScrollHideNav() {
         if (Math.abs(delta) > 2) seitenleistePassiv(true);
         _navLastScrollY = cur;
         _navTickingByTab.set(tabName, false);
-        if (tabName === 'workouts') checkStickyBar();
       });
     }, { passive: true });
   }

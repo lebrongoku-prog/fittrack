@@ -352,34 +352,10 @@ html.workout-active #rest-bar.show ~ #workout-active-bar { --rest-off: var(--nav
 .rest-bar-btn:active { transform: scale(.94); }
 .rest-bar-close { background: transparent; font-size: 16px; min-width: 34px; padding: 9px 6px; }
 
-/* ─── Kopfleiste der laufenden Einheit ─── */
-#wo-sticky-bar {
-  position: fixed; left: 0; right: 0; top: 0;
-  z-index: 98;
-  display: none; align-items: center; gap: 9px;
-  padding: calc(var(--safe-t) + 6px) 12px 8px;
-  background: rgba(16,185,129,0.97); color: #fff;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.16);
-}
-/* NUR im Trainings-Tab. Der Riegel liegt im CSS, nicht im JS: Beim Tabwechsel
-   verschwindet die Kopfzeile damit sofort und nicht erst beim naechsten Scroll- oder
-   Sekundentakt. */
-body.theme-workouts #wo-sticky-bar.show { display: flex; }
-.wsb-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; flex-shrink: 0; animation: wo-pulse 1.4s ease-in-out infinite; }
-.wsb-title { flex: 1; min-width: 0; font-size: var(--fs-text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wsb-timer { font-size: var(--fs-text); font-weight: 800; font-variant-numeric: tabular-nums; }
-.wsb-finish {
-  background: rgba(255,255,255,0.2); color: #fff; border: none;
-  border-radius: 9px; padding: 7px 12px; font-size: var(--fs-neben); font-weight: 700;
-  font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
-.wsb-finish:active { transform: scale(.95); }
-
 /* Inhalt nicht hinter der Mini-Leiste verbergen (auf Workouts ist sie aus → normal). */
 html.workout-active .screen { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 54px + var(--sl-pad, 0px)); }
 html.workout-active body.theme-workouts #screen-workouts { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 12px + var(--sl-pad, 0px)); }
 
-@keyframes wo-pulse  { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.55); opacity: 0.45; } }
 /* Header texts adapt to the dark themed backgrounds */
 body.theme-overview .ph h1,
 body.theme-workouts .ph h1,
