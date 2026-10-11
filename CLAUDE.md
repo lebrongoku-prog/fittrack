@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v434**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v435**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3416,6 +3416,12 @@ Auswahl die von heute. Zweiter Tipp oder Filterwechsel = zurueck zu heute. „Ei
 startet den Trainingstag des gewaehlten Tags HEUTE. GEMESSEN (375px): Mi → „Mittwoch · Pull ·
 Einheit starten · Lauf grau", Liste *Mi; Di → „Kein Gym · 8 km", beide grau; zweiter Tipp → heute;
 Gym- und Laufwoche je 7 antippbare Tage, Karte bleibt in der Uebersicht; keine Konsolenfehler.
+**DIE TAGESZEILEN HALTEN DAS KARTENPOLSTER EIN** (v435, 11.10.2026, Leonard-Wunsch): Das Feld
+des gewaehlten Tags ragte per `margin: 0 -8px` bis 6px an den Kartenrand. Jetzt stehen ALLE Zeilen
+im 14px-Polster und ruecken ihren Inhalt um 12px ein (`.wz-flach { padding: 10px 12px }`) — wie
+der Heute-Block darueber: Feld buendig mit dem Block (14/14px), Wochentag auf einer Linie mit
+dessen Titel (26px). GEMESSEN (375px): alle Zeilen 14/14, Tag bei 26, Einheiten ≥ 26px vom
+rechten Rand; keine Konsolenfehler.
 GEMESSEN (375px): Mo Push 2 PR · Di Lauf · Do Pull nachgeholt · Do Lauf verpasst · Fr Push nicht
 trainiert · So Lauf offen (heute); Filter Gym/Lauf filtert richtig; Tipp oeffnet „Push — Mo., 28.
 Sept. 2026"; kein Ueberlauf; Seite „Laufen" unveraendert (4 Seiten); keine Konsolenfehler.
