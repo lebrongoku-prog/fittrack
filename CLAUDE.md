@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v430**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v431**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3317,6 +3317,8 @@ UEBER dem Namen — daneben haette es lange Namen auf 80px gekuerzt (gemessen). 
 bleibt unveraendert. Glas-Modus: Ring 92-%-Weiss, Etikett 22-%-Weiss mit weisser Schrift.
 GEMESSEN (375px): Karte 2 mit Ring und Etikett, nach `toggleExDone(1)` wandert beides auf Karte 3;
 keine Konsolenfehler.
+DAS ETIKETT „JETZT" IST WIEDER ENTFALLEN (v431, 11.10.2026, Leonard-Wunsch): `.aex-jetzt` samt
+Glas-Regel ist weg, es bleibt allein der gruene Ring.
 
 ### Keine Kopfleiste mehr in der laufenden Einheit
 10.10.2026, Leonard-Wunsch (v429): Die feste Leiste oben (`#wo-sticky-bar`, gruen mit Punkt,

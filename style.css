@@ -2129,16 +2129,11 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 .aex-v2.done .aex-v2-notes   { background: var(--green-bg); }
 .aex-v2.done .aex-v2-notes-area::placeholder { color: var(--green); opacity: 0.55; }
 /* DIE AKTUELLE UEBUNG der laufenden Einheit (11.10.2026, Leonard-Wunsch): Rahmen im Gym-Gruen
-   und das Etikett „Jetzt" UEBER dem Namen. Der Rahmen ist ein Schatten-Ring, damit sich die
+   (das Etikett „Jetzt" ist seit v431 weg). Der Rahmen ist ein Schatten-Ring, damit sich die
    Karte nicht um 2px verschiebt; `overflow: hidden` beschneidet nur Kinder, nicht den eigenen
    Schatten. Im Transparenz-Modus weiss (keine Sportfarben). */
 .aex-v2.aktuell { box-shadow: 0 0 0 2px #0F766E, var(--shadow); }
-.aex-jetzt {
-  display: inline-block; margin-bottom: 4px; font-size: var(--fs-etikett); font-weight: 700; line-height: 1;
-  padding: 3px 7px; border-radius: 6px; background: #E1F5EE; color: #0F766E;
-}
 html.glas .screen:not(#screen-mehr) .aex-v2.aktuell { box-shadow: 0 0 0 2px rgba(255,255,255,.92), var(--shadow); }
-html.glas .screen:not(#screen-mehr) .aex-jetzt { background: rgba(255,255,255,.22); color: #fff; }
 .aex-v2.done .aex-v2-inp     { background: #fff; }
 .aex-v2.done .aex-v2-inp.done-inp { background: var(--green); color: #fff; border-color: var(--green); }
 /* align-items: flex-start (nicht center) — beim Aufklappen kommen im Info-Block Zeilen
