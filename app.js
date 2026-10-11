@@ -1036,6 +1036,7 @@ const _WOCHEN_FILTER_TITEL = { beide: 'Trainingswoche', gym: 'Gymwoche', lauf: '
 // Die Karte hat eine FESTE Hoehe, es springt also nichts.
 function toggleWochenFilter() {
   _wochenFilter = _wochenFilter === 'beide' ? 'gym' : _wochenFilter === 'gym' ? 'lauf' : 'beide';
+  _ovTag = null;
   const huelle = document.getElementById('ov-week-card');
   _neuZeichnenEinblenden('woche', huelle, () => {
     const karte = huelle && huelle.querySelector(':scope > .plan-card-v2');
@@ -1049,11 +1050,18 @@ function toggleWochenFilter() {
   }, renderUebersichtWoche);
 }
 
-// ─── Tagesauswahl in der Kombi-Wochenplankarte — ENTFALLEN am 04.10.2026 ─────────────
-// Ein Tipp auf einen Wochentagskreis schob vom 12.09.2026 an die Herocard darunter auf diesen
-// Tag (`waehleKombiTag`, `_kombiTag`). Mit der Herocard der Uebersicht (v428) hatte die Auswahl
-// nichts mehr zu steuern. Die REIHEN fuehren seither wieder in den Trainings-Tab auf die Seite
-// ihrer Sportart — wie vom 08. bis 12.09.2026.
+// ─── Tagesauswahl in der Wochenplankarte der Uebersicht (11.10.2026, Leonard-Wunsch) ─────
+// Jeder Wochentag der Karte ist wieder ein eigenes Tipp-Ziel — in allen drei Filterzustaenden.
+// Der Startblock oben in „Diese Woche" zeigt dann DIESEN Tag (Titel, Beschriftung, Knoepfe),
+// und seine Zeile in der Liste ist hervorgehoben. Ein zweiter Tipp auf denselben Tag hebt die
+// Auswahl auf (zurueck zu heute), ebenso ein Filterwechsel. BEWUSST nicht gespeichert.
+// VORGESCHICHTE: 12.09.–04.10.2026 steuerte dieselbe Auswahl die Herocard (`waehleKombiTag`).
+let _ovTag = null;
+function waehleUebersichtTag(idx) {
+  _ovTag = (_ovTag === idx) ? null : idx;
+  renderWochenKarte();
+  mitHeroFarbwechsel('#ov-diese-woche', renderUebersichtWoche);
+}
 
 // ─── Herocard-Knoepfe wechseln ihre Farbe weich (13.09.2026, Leonard-Wunsch) ─────────
 // Tippt man in der Wochenplan-Karte auf einen anderen Tag, kann ein Knopf von Grau (nichts
@@ -1208,14 +1216,16 @@ function renderWochenKarte() {
     const active = getActivePlan();
     el.innerHTML = active
       ? buildPlanCard(active, zurTrainingsSeite('gym'), /*hideToday*/ false, /*hideStatus*/ true,
-                      /*hideMeta*/ true, { filterOnTap: 'toggleWochenFilter' })
+                      /*hideMeta*/ true, { filterOnTap: 'toggleWochenFilter',
+                      selectedIdx: _ovTag, dayOnTap: 'waehleUebersichtTag' })
       : leereWochenKarte('Kein aktiver Trainingsplan',
           'Tippe, um einen Plan anzulegen oder zu aktivieren.', zurPlanSeite('plans'));
   } else if (_wochenFilter === 'lauf') {
     // `buildRunPlanCard` zeichnet die leere Karte selbst und faellt dort auf ihr Standardziel
     // zurueck, wenn kein Ziel genannt ist — deshalb hier nur bei vorhandenem Plan eines setzen.
     el.innerHTML = buildRunPlanCard(runPlanAktiv() ? zurTrainingsSeite('laufen') : null, null,
-                                    { filterOnTap: 'toggleWochenFilter' });
+                                    { filterOnTap: 'toggleWochenFilter',
+                                      selectedIdx: _ovTag, dayOnTap: 'waehleUebersichtTag' });
   } else {
     el.innerHTML = buildWochenKombi();
   }
@@ -1275,8 +1285,8 @@ function buildWochenKombi() {
     verschoben: !!(laufVerschoben[i] && !gelaufen[i]),
   }));
 
-  // Jede REIHE fuehrt in den Trainings-Tab auf die Seite ihrer Sportart (seit v428 wieder,
-  // siehe „Tagesauswahl … ENTFALLEN"). Die Kreise selbst haben keinen eigenen Tipp.
+  // Jeder TAG ist ein Tipp-Ziel (`waehleUebersichtTag`, seit 11.10.2026 wieder) — die Reihen
+  // sind deshalb stumm, sonst laegen zwei Ziele in einer Kachel.
   const reihe = (tage, sport, icon, sportName) => {
     const punkte = tage.map((t, i) => {
       const cls = ['ppv-k-col'];
@@ -1284,17 +1294,17 @@ function buildWochenKombi() {
       if (t.erledigt) cls.push('done');
       if (t.verschoben) cls.push('verschoben');
       if (i === todayIdx) cls.push('today');
+      if (i === _ovTag) cls.push('selected');
       // GEFUELLT heisst „absolviert", sonst nichts (Leonard-Meldung 12.09.2026). Alles, was
       // geplant und noch nicht absolviert ist, traegt den Ring — heute genauso wie ein
       // kuenftiger oder ein ausgefallener Tag. Vorher hing der Ring am Datum
       // (`i > todayIdx`): Ein geplanter Lauf von HEUTE war damit voll eingefaerbt und sah
       // aus wie gelaufen, obwohl er noch anstand.
       if (t.geplant && !t.erledigt && !t.verschoben) cls.push('offen');
-      return `<div class="${cls.join(' ')}"><span class="ppv-k-dot"></span></div>`;
+      return `<div class="${cls.join(' ')}" role="button" tabindex="0" aria-label="${WOCHENTAGE_LANG[i]} wählen"
+                   onclick="event.stopPropagation();waehleUebersichtTag(${i})"><span class="ppv-k-dot"></span></div>`;
     }).join('');
-    const seite = sport === 'gym' ? 'gym' : 'laufen';
-    return `<div class="ppv-k-reihe ${sport}" role="button" tabindex="0" aria-label="${sportName}: zum Training"
-                 onclick="setWorkoutsView('${seite}');wischeZuTab('workouts')">
+    return `<div class="ppv-k-reihe ${sport}" aria-label="${sportName}">
       <span class="ppv-k-ic">${icon}</span>${punkte}
     </div>`;
   };
@@ -5130,13 +5140,21 @@ function renderUebersichtWoche() {
   // nichts ansteht oder schon trainiert wurde (dann „Freies Training"), Lauf grau, wenn kein Lauf
   // geplant oder schon gelaufen; laeuft eine Einheit, fuehrt der Gymknopf dorthin. Er folgt dem
   // Filter der Wochenkarte. Die Zeile von HEUTE steht deshalb nicht noch einmal in der Liste.
-  const heuteTag = getCurrentWeekDays()[todayIdx];
-  const gymHeute = heuteTag && heuteTag.planDay && !heuteTag.dayDone ? heuteTag.planDay : null;
+  // SEIT DEM 11.10.2026 FOLGT ER DEM IN DER WOCHENKARTE GETIPPTEN TAG (`_ovTag`, Leonard-Wunsch),
+  // ohne Auswahl heute. Die Zeile dieses Tags steht wieder in der Liste und ist hervorgehoben
+  // (vorher fiel die Zeile von heute weg). Mit Auswahl gilt die Regel des Trainings-Tabs: der
+  // Trainingstag steht da, auch wenn er schon absolviert ist; ohne Auswahl wie bisher.
+  const gewaehlt = _ovTag != null;
+  const tagIdx = gewaehlt ? _ovTag : todayIdx;
+  const tagEintrag = getCurrentWeekDays()[tagIdx];
+  const gymTag = !tagEintrag || !tagEintrag.planDay ? null
+    : (gewaehlt || !tagEintrag.dayDone) ? tagEintrag.planDay : null;
   const sportHeute = _wochenFilter === 'beide' ? 'beide' : _wochenFilter === 'gym' ? 'gym' : 'lauf';
-  const heuteBlock = buildHeuteHero(gymHeute, heuteTag, { sport: sportHeute, erledigtGrau: true,
-      titel: `Heute · ${WOCHENTAGE_KURZ[todayIdx]}` })
+  const titel = tagIdx === todayIdx ? `Heute · ${WOCHENTAGE_KURZ[todayIdx]}` : WOCHENTAGE_LANG[tagIdx];
+  const heuteBlock = buildHeuteHero(gymTag, tagEintrag, { sport: sportHeute, erledigtGrau: true,
+      runIdx: tagIdx, titel })
     .replace('class="hero-v2 hero-heute', 'class="hero-heute wz-heute');
-  const tageHTML = gruppen.filter(g => g.i !== todayIdx).map(g => `<div class="wz-flach">
+  const tageHTML = gruppen.map(g => `<div class="wz-flach${g.i === tagIdx ? ' gewaehlt' : ''}">
       <span class="wz-flach-tag">${WOCHENTAGE_KURZ[g.i]}</span>
       <div class="wz-flach-teile">${g.teile.map(einheit).join('')}</div>
     </div>`).join('');
