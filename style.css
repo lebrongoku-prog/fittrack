@@ -2653,41 +2653,51 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
    Transparenz-Modus gewinnen die Glas-Regeln weiter unten (id im `:not()`) — dort ist alles weiss. */
 .lauf-wz-tag.gym.gelaufen { background: #0F766E; }
 .lauf-wz-tag.gym.offen    { box-shadow: inset 0 0 0 2px #0F766E; color: #0F766E; }
-/* Die Laufzeilen der Uebersicht zeigen KEIN „vorgezogen"/„nachgeholt" (04.10.2026, Leonard-Wunsch);
-   die Seite „Laufen" behaelt den Hinweis. */
-#ov-diese-woche .lauf-wz-von { display: none; }
-/* UEBERSICHT: je Tag EINE neutrale Scheibe, rechts die Einheiten gestapelt (04.10.2026, „B").
-   Den Zustand traegt das kleine Sportzeichen (`.wz-ic`) — dieselben vier Zustaende wie die Scheibe. */
-.lauf-wz-tag.neutral { background: var(--card2); color: var(--text2); }
-.wz-eintraege { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-.wz-eintrag { gap: 8px; }
-.wz-ic {
-  width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%; box-sizing: border-box;
-  display: inline-flex; align-items: center; justify-content: center;
-}
-.wz-ic svg { width: 13px; height: 13px; }
+/* UEBERSICHT Diese Woche: EINE FLACHE ZEILE JE TAG (11.10.2026, Leonard-Entscheidung B).
+   Wochentag als Text, die Einheiten nebeneinander, je ein 14px-Zeichen (Quadrat = Gym, Kreis =
+   Lauf) im Zustand: gefuellt = erledigt, Ring = offen, roter Ring = verpasst, grau = verschoben
+   bzw. uebersprungen. Duenne Linien zwischen den Tagen. Keine Sportfarben im Glas-Modus. */
 /* GYM = QUADRAT wie im Trainingskalender (04.10.2026, Leonard-Wunsch): Dort ist das Gym-Zeichen
-   ein abgerundetes Quadrat (16.8px, Radius 3px ≈ 18 %), der Lauf ein Kreis. Dasselbe Verhaeltnis
-   gilt fuer alle Gym-Zeichen der Wochenplan-Karten und der Karte „Diese Woche"; ein Tag OHNE
-   Gymeinheit bleibt rund. */
-.wz-ic.gym, .lauf-wz-tag.gym { border-radius: 4px; }
+   ein abgerundetes Quadrat (16.8px, Radius 3px = rund 18 %), der Lauf ein Kreis. Dasselbe
+   Verhaeltnis gilt fuer die Gym-Zeichen der Wochenplan-Karten (und `.wz-zeichen.gym` unten); ein
+   Tag OHNE Gymeinheit bleibt rund. */
+.lauf-wz-tag.gym { border-radius: 4px; }
 .plan-card-v2:not(.run-plan) .ppv-col.training .ppv-wd,
 .plan-card-v2:not(.run-plan) .ppv-col.done .ppv-wd,
 .plan-card-v2:not(.run-plan) .ppv-col.verschoben .ppv-wd { border-radius: 7px; }
 .ppv-k-reihe.gym .training .ppv-k-dot,
 .ppv-k-reihe.gym .done .ppv-k-dot,
 .ppv-k-reihe.gym .verschoben .ppv-k-dot { border-radius: 5px; }
-.wz-ic.gym.gelaufen  { background: #0F766E; color: #fff; }
-.wz-ic.lauf.gelaufen { background: #4ADE80; color: #fff; }
-.wz-ic.gym.offen     { background: var(--card2); box-shadow: inset 0 0 0 2px #0F766E; color: #0F766E; }
-.wz-ic.lauf.offen    { background: var(--card2); box-shadow: inset 0 0 0 2px #4ADE80; color: #22A05B; }
-.wz-ic.verpasst      { background: var(--red-bg); box-shadow: inset 0 0 0 2px var(--red); color: var(--red); }
-.wz-ic.verschoben    { background: var(--card2); color: var(--text2); }
-html.glas .screen:not(#screen-mehr) .lauf-wz-tag.neutral { background: rgba(255,255,255,.22); color: #fff; }
-html.glas .screen:not(#screen-mehr) .wz-ic.gelaufen   { background: rgba(255,255,255,.92); color: #059669; }
-html.glas .screen:not(#screen-mehr) .wz-ic.offen      { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 2px rgba(255,255,255,.92); color: #fff; }
-html.glas .screen:not(#screen-mehr) .wz-ic.verpasst   { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 2px #FCA5A5; color: #FCA5A5; }
-html.glas .screen:not(#screen-mehr) .wz-ic.verschoben { background: rgba(255,255,255,.22); color: rgba(255,255,255,.85); }
+.wz-flach-liste { padding-top: 4px; }
+.wz-flach { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 0.5px solid var(--border); }
+.wz-flach:first-child { border-top: none; }
+.wz-flach-tag { width: 24px; flex-shrink: 0; font-size: var(--fs-neben); font-weight: 600; color: var(--text3); }
+.wz-flach-tag.heute { color: var(--accent-dark); font-weight: 800; }
+.wz-flach-teile { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.wz-einheit {
+  display: inline-flex; align-items: center; gap: 7px; min-width: 0; max-width: 100%;
+  padding: 0; margin: 0; border: none; background: none; font: inherit; color: var(--text);
+  font-size: var(--fs-text); font-weight: 600; text-align: left;
+  -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
+}
+button.wz-einheit { cursor: pointer; }
+button.wz-einheit:active { opacity: .6; }
+.wz-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.wz-zeichen { width: 14px; height: 14px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; }
+.wz-zeichen.gym { border-radius: 3px; }
+.wz-zeichen.gym.gelaufen  { background: #0F766E; }
+.wz-zeichen.lauf.gelaufen { background: #4ADE80; }
+.wz-zeichen.gym.offen     { box-shadow: inset 0 0 0 2px #0F766E; }
+.wz-zeichen.lauf.offen    { box-shadow: inset 0 0 0 2px #4ADE80; }
+.wz-zeichen.verpasst      { box-shadow: inset 0 0 0 2px var(--red); }
+.wz-zeichen.verschoben    { background: var(--card2); box-shadow: inset 0 0 0 2px var(--text3); }
+html.glas .screen:not(#screen-mehr) .wz-flach { border-top-color: rgba(255,255,255,.25); }
+html.glas .screen:not(#screen-mehr) .wz-flach:first-child { border-top: none; }
+html.glas .screen:not(#screen-mehr) .wz-flach-tag.heute { color: #fff; }
+html.glas .screen:not(#screen-mehr) .wz-zeichen.gelaufen { background: rgba(255,255,255,.92); }
+html.glas .screen:not(#screen-mehr) .wz-zeichen.offen    { box-shadow: inset 0 0 0 2px rgba(255,255,255,.92); }
+html.glas .screen:not(#screen-mehr) .wz-zeichen.verpasst { box-shadow: inset 0 0 0 2px #FCA5A5; }
+html.glas .screen:not(#screen-mehr) .wz-zeichen.verschoben { background: rgba(255,255,255,.22); box-shadow: none; }
 .lauf-wz-tag.verschoben { background: var(--card2); color: var(--text2); }
 /* VERPASST (26.09.2026, Leonard-Wunsch): ein geplanter Lauftag, der vorbei ist und nicht
    gelaufen wurde. Dieselbe Form wie „offen", nur in Rot — die App kennt ROT als Warnfarbe

@@ -5027,12 +5027,13 @@ function laufWochenZeilen(mo, istAktuell, maxKm) {
     // Fenster zum Ueberspringen samt Notiz (`openRunSkip`, Leonard-Wunsch).
     const chev = '<span class="cal-detail-chev">▾</span>';
     const tipp = lauf ? `showRunDetail('${key}')` : eigenerPlan ? `openRunSkip('${key}')` : '';
-    // `eintrag` ist dieselbe Zeile OHNE Wochentagsscheibe, mit dem Sportzeichen in ihrem Zustand —
-    // fuer die nach Tagen gruppierte Karte der Uebersicht (`renderUebersichtWoche`).
-    const rechts = inhalt.slice(feldHTML.length).replace('{{CHEV}}', tipp ? chev : '');
+    // `kurz` ist die knappe Fassung fuer die flache Tageszeile der Uebersicht
+    // (`renderUebersichtWoche`): nur Zustand, ein kurzer Text und das Tipp-Ziel.
+    const kurzText = lauf ? (lauf.art === 'hiit' ? `HIIT ${fmtMin(lauf.minutes)}` : fmtKm(lauf.km))
+      : u && u.km ? fmtKm(u.km) : u && u.minutes ? fmtMin(u.minutes) : 'Lauf';
     return {
       html: _wzKnopf('lauf-wz', tipp, inhalt.replace('{{CHEV}}', tipp ? chev : '')),
-      eintrag: _wzKnopf('lauf-wz wz-eintrag', tipp, _wzZeichen('lauf', zustand) + rechts),
+      kurz: { sport: 'lauf', zustand, text: kurzText, tipp },
     };
   }).map((z, i) => z ? { i, ...z } : null).filter(Boolean);
   return zeilen;
@@ -5042,11 +5043,6 @@ function laufWochenZeilen(mo, istAktuell, maxKm) {
 function _wzKnopf(klasse, tipp, inhalt) {
   return tipp ? `<button type="button" class="${klasse}" onclick="${tipp}">${inhalt}</button>`
               : `<div class="${klasse}">${inhalt}</div>`;
-}
-// Kleines Sportzeichen (Hantel/Laeufer) im Zustand der Einheit — in der Uebersicht ersetzt es die
-// Wochentagsscheibe, die dort je Tag nur EINMAL steht (04.10.2026, Leonard-Entscheidung „B").
-function _wzZeichen(sport, zustand) {
-  return `<span class="wz-ic ${sport} ${zustand}" aria-hidden="true">${sport === 'gym' ? HANTEL_SVG : heroRunnerSvg()}</span>`;
 }
 
 // ── GYMZEILEN DER WOCHE (04.10.2026, Leonard-Entscheidung „G3") ──
@@ -5080,7 +5076,7 @@ function gymWochenZeilen() {
           <span class="cal-detail-chev">▾</span>
         </div></div>`;
       zeilen.push({ i, html: _wzKnopf('lauf-wz', `showHistDetail(${wi})`, feld(i, 'gelaufen') + rechts),
-        eintrag: _wzKnopf('lauf-wz wz-eintrag', `showHistDetail(${wi})`, _wzZeichen('gym', 'gelaufen') + rechts) });
+        kurz: { sport: 'gym', zustand: 'gelaufen', text: _einheitName(w, alleTage), tipp: `showHistDetail(${wi})` } });
     });
     if (einheiten.length || !t.planDay || t.verschoben) return;
     const verpasst = t.isPast;
@@ -5090,7 +5086,7 @@ function gymWochenZeilen() {
       </div></div>`;
     const zustand = verpasst ? 'verpasst' : 'offen';
     zeilen.push({ i, html: _wzKnopf('lauf-wz', '', feld(i, zustand) + rechts),
-      eintrag: _wzKnopf('lauf-wz wz-eintrag', '', _wzZeichen('gym', zustand) + rechts) });
+      kurz: { sport: 'gym', zustand, text: t.planDay.name, tipp: '' } });
   });
   return zeilen;
 }
@@ -5109,24 +5105,33 @@ function renderUebersichtWoche() {
   const lauf = _wochenFilter !== 'gym' ? laufWochenZeilen(mo, true, _laufBezugKm()) : [];
   const zeilen = [...gym.map(z => ({ ...z, s: 0 })), ...lauf.map(z => ({ ...z, s: 1 }))]
     .sort((a, b) => a.i - b.i || a.s - b.s);
-  // JEDER WOCHENTAG NUR EINMAL (04.10.2026, Leonard-Entscheidung „Variante B"): eine neutrale
-  // Scheibe je Tag, rechts davon die Einheiten des Tags UNTEREINANDER, jede mit ihrem kleinen
-  // Sportzeichen im Zustand (gefuellt/Ring/rot/grau) samt Balken und Pfeil.
+  // EINE FLACHE ZEILE JE TAG (11.10.2026, Leonard-Entscheidung Variante B aus drei gezeichneten
+  // Vorschlaegen — A = wie bisher ohne Balken, C = nach Zustand gruppiert). Links der Wochentag als
+  // Text, daneben die Einheiten des Tags NEBENEINANDER, je ein kleines Zeichen (Quadrat = Gym,
+  // Kreis = Lauf) im Zustand plus ein kurzer Text. Keine Balken, keine Zonen, kein Pfeil; jede
+  // Einheit ist selbst das Tipp-Ziel. Duenne Linien trennen die Tage.
+  // VORGESCHICHTE: v424–v431 eine Scheibe je Tag mit den Einheiten untereinander (Sportzeichen mit
+  // Piktogramm, Balken und Pfeil) — ersatzlos entfallen.
   const todayIdx = (new Date().getDay() + 6) % 7;
   const gruppen = [];
   zeilen.forEach(z => {
     const g = gruppen[gruppen.length - 1];
-    if (g && g.i === z.i) g.eintraege.push(z.eintrag); else gruppen.push({ i: z.i, eintraege: [z.eintrag] });
+    if (g && g.i === z.i) g.teile.push(z.kurz); else gruppen.push({ i: z.i, teile: [z.kurz] });
   });
-  const tageHTML = gruppen.map(g => `<div class="lauf-wz wz-tag">
-      <span class="lauf-wz-feld${g.i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag neutral">${WOCHENTAGE_KURZ[g.i]}</span></span>
-      <div class="wz-eintraege">${g.eintraege.join('')}</div>
+  const einheit = k => {
+    const innen = `<span class="wz-zeichen ${k.sport} ${k.zustand}" aria-hidden="true"></span><span class="wz-text">${escapeHtml(k.text)}</span>`;
+    return k.tipp ? `<button type="button" class="wz-einheit" onclick="${k.tipp}">${innen}</button>`
+                  : `<span class="wz-einheit">${innen}</span>`;
+  };
+  const tageHTML = gruppen.map(g => `<div class="wz-flach">
+      <span class="wz-flach-tag${g.i === todayIdx ? ' heute' : ''}">${WOCHENTAGE_KURZ[g.i]}</span>
+      <div class="wz-flach-teile">${g.teile.map(einheit).join('')}</div>
     </div>`).join('');
   el.innerHTML = zeilen.length ? `<div class="chart-card-v2 ov-woche-liste">
     <div class="chart-card-v2-head">
       <span class="chart-card-v2-title">Diese Woche</span>
     </div>
-    <div class="lauf-wochenliste">${tageHTML}</div>
+    <div class="wz-flach-liste">${tageHTML}</div>
   </div>` : '';
 }
 

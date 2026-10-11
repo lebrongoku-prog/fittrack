@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v431**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v432**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3378,6 +3378,22 @@ Spalten Gym|Lauf, C eine eingerueckte zweite Einheit): je Tag EINE neutrale Sche
 Laeufer) in ihrem Zustand: gefuellt / Ring / rot / grau, im Glas-Modus weiss. Balken, Pfeil und
 Tipp-Ziel bleiben je Einheit. Beide Zeilenbauer liefern dafuer neben `html` (Seite „Laufen",
 unveraendert) ein `eintrag` ohne Scheibe; `_wzKnopf` baut Knopf oder Kasten.
+**SEIT v432 (11.10.2026, Leonard-Entscheidung „Variante B" aus drei gezeichneten Vorschlaegen —
+A = wie bisher ohne Balken, C = nach Zustand gruppiert) EINE FLACHE ZEILE JE TAG:** Wochentag als
+Text links (`.wz-flach-tag`, heute fett in `--accent-dark`), die Einheiten NEBENEINANDER
+(`.wz-flach-teile`, Umbruch erlaubt), je ein 14px-Zeichen (`.wz-zeichen`, Quadrat 3px = Gym,
+Kreis = Lauf: gefuellt/Ring/roter Ring/grau) plus kurzer Text (Gymtag-Name; Lauf: gelaufene km,
+HIIT-Dauer bzw. Vorgabe-km). KEINE Balken, Zonen, PR-Zahl, Statustexte oder Pfeile; jede Einheit
+ist selbst ein Knopf (`.wz-einheit`, gleiche Ziele wie vorher), duenne Linien trennen die Tage.
+Beide Zeilenbauer liefern dafuer `kurz: { sport, zustand, text, tipp }` statt des frueheren
+`eintrag`. ENTFALLEN: `_wzZeichen`, `.wz-eintraege`/`.wz-eintrag`/`.wz-ic*`,
+`.lauf-wz-tag.neutral` und die Regel `#ov-diese-woche .lauf-wz-von`. Die Absaetze darueber zur
+Scheibe je Tag, zu Punkten und Hinweisen sind Vorgeschichte.
+FALLE beim Umbau: Die Quadrat-Regeln der Gym-Zeichen (v425) standen MITTEN im alten `.wz-ic`-Block
+und wurden beim ersten Entfernen mitgeloescht — wiederhergestellt und gemessen (Kombi 5px,
+`.wz-zeichen.gym` 3px).
+GEMESSEN v432 (375px): Mo Push · Di 8.2 km · Do Pull + 6 km (verpasst) · Fr Push (verpasst) ·
+So 12 km (offen, heute); Glas weiss bzw. #FCA5A5; keine Konsolenfehler.
 GEMESSEN (375px): Mo Push 2 PR · Di Lauf · Do Pull nachgeholt · Do Lauf verpasst · Fr Push nicht
 trainiert · So Lauf offen (heute); Filter Gym/Lauf filtert richtig; Tipp oeffnet „Push — Mo., 28.
 Sept. 2026"; kein Ueberlauf; Seite „Laufen" unveraendert (4 Seiten); keine Konsolenfehler.
