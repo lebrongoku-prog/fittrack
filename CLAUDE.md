@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v435**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v436**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3422,6 +3422,10 @@ im 14px-Polster und ruecken ihren Inhalt um 12px ein (`.wz-flach { padding: 10px
 der Heute-Block darueber: Feld buendig mit dem Block (14/14px), Wochentag auf einer Linie mit
 dessen Titel (26px). GEMESSEN (375px): alle Zeilen 14/14, Tag bei 26, Einheiten ≥ 26px vom
 rechten Rand; keine Konsolenfehler.
+**OHNE FLAECHE UND OHNE TRENNLINIEN** (v436, 11.10.2026, Leonard-Wunsch): Der Startblock hat
+keinen blauen Hintergrund mehr (`.wz-heute { background: none; padding: 0 }`), die Knoepfe
+fuellen damit das Kartenpolster; die duennen Linien zwischen den Tageszeilen (`border-top`) samt
+Glas-Regeln sind entfallen. Abstand Block → Liste 12px. Das Feld des gewaehlten Tags bleibt.
 GEMESSEN (375px): Mo Push 2 PR · Di Lauf · Do Pull nachgeholt · Do Lauf verpasst · Fr Push nicht
 trainiert · So Lauf offen (heute); Filter Gym/Lauf filtert richtig; Tipp oeffnet „Push — Mo., 28.
 Sept. 2026"; kein Ueberlauf; Seite „Laufen" unveraendert (4 Seiten); keine Konsolenfehler.

@@ -2671,17 +2671,16 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
 /* STARTBLOCK HEUTE (v433): die Bausteine der frueheren Herocard (`.hero-heute`) als Kasten
    oben in der Karte, ohne eigene Karte (`.hero-v2`) — gedeckt im Akzent-Ton des Tabs. Die Knoepfe
    tragen hier die Textstufe statt 18px und weniger Polster, der Block soll kompakt bleiben. */
-.hero-heute.wz-heute { background: var(--accent-bg); border-radius: 14px; padding: 12px; gap: 10px; }
+/* v436: ohne eigene Flaeche (Leonard-Wunsch) — der Block steht direkt auf der Karte. */
+.hero-heute.wz-heute { background: none; padding: 0; gap: 10px; }
 .hero-heute.wz-heute .hero-heute-titel { margin-bottom: 0; }
 .hero-heute.wz-heute .hero-heute-spalte { gap: 8px; }
 .hero-heute.wz-heute:not(.hero-aktiv) .hero-v2-btn { font-size: var(--fs-text); padding: 12px 8px; }
-html.glas .screen:not(#screen-mehr) .hero-heute.wz-heute { background: rgba(255,255,255,.14); }
-.wz-flach-liste { padding-top: 8px; }
+.wz-flach-liste { padding-top: 12px; }
 /* Die Zeilen bleiben im Kartenpolster (14px) und ruecken ihren Inhalt um dieselben 12px ein wie
    der Heute-Block darueber — so steht das Feld des gewaehlten Tags buendig mit dem Block und der
    Wochentag auf einer Linie mit dessen Titel (v435, Leonard-Wunsch). */
-.wz-flach { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 0.5px solid var(--border); }
-.wz-flach:first-child { border-top: none; }
+.wz-flach { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
 .wz-flach-tag { width: 24px; flex-shrink: 0; font-size: var(--fs-neben); font-weight: 600; color: var(--text3); }
 .wz-flach-teile { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
 .wz-einheit {
@@ -2701,15 +2700,12 @@ button.wz-einheit:active { opacity: .6; }
 .wz-zeichen.lauf.offen    { box-shadow: inset 0 0 0 2px #4ADE80; }
 .wz-zeichen.verpasst      { box-shadow: inset 0 0 0 2px var(--red); }
 .wz-zeichen.verschoben    { background: var(--card2); box-shadow: inset 0 0 0 2px var(--text3); }
-html.glas .screen:not(#screen-mehr) .wz-flach { border-top-color: rgba(255,255,255,.25); }
-html.glas .screen:not(#screen-mehr) .wz-flach:first-child { border-top: none; }
 html.glas .screen:not(#screen-mehr) .wz-zeichen.gelaufen { background: rgba(255,255,255,.92); }
 html.glas .screen:not(#screen-mehr) .wz-zeichen.offen    { box-shadow: inset 0 0 0 2px rgba(255,255,255,.92); }
 html.glas .screen:not(#screen-mehr) .wz-zeichen.verpasst { box-shadow: inset 0 0 0 2px #FCA5A5; }
 html.glas .screen:not(#screen-mehr) .wz-zeichen.verschoben { background: rgba(255,255,255,.22); box-shadow: none; }
-.wz-flach.gewaehlt { background: var(--accent-bg); border-radius: 10px; border-color: transparent; }
+.wz-flach.gewaehlt { background: var(--accent-bg); border-radius: 10px; }
 .wz-flach.gewaehlt .wz-flach-tag { color: var(--accent-dark); font-weight: 800; }
-.wz-flach.gewaehlt + .wz-flach { border-top-color: transparent; }
 html.glas .screen:not(#screen-mehr) .wz-flach.gewaehlt { background: rgba(255,255,255,.18); }
 html.glas .screen:not(#screen-mehr) .wz-flach.gewaehlt .wz-flach-tag { color: #fff; }
 .lauf-wz-tag.verschoben { background: var(--card2); color: var(--text2); }
