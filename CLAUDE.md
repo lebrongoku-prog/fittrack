@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v436**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v437**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3426,6 +3426,9 @@ rechten Rand; keine Konsolenfehler.
 keinen blauen Hintergrund mehr (`.wz-heute { background: none; padding: 0 }`), die Knoepfe
 fuellen damit das Kartenpolster; die duennen Linien zwischen den Tageszeilen (`border-top`) samt
 Glas-Regeln sind entfallen. Abstand Block → Liste 12px. Das Feld des gewaehlten Tags bleibt.
+**WOCHENTAGE 15px** (v437, Leonard-Wunsch): `.wz-flach-tag` von 13px (`--fs-neben`) auf 15px
+(`--fs-text`), Spalte 24 → 28px („Mo" misst 22.1px). Die Einheiten waren schon 15px. In der Karte
+stehen damit nur noch 16px (Titel) und 15px (alles andere).
 GEMESSEN (375px): Mo Push 2 PR · Di Lauf · Do Pull nachgeholt · Do Lauf verpasst · Fr Push nicht
 trainiert · So Lauf offen (heute); Filter Gym/Lauf filtert richtig; Tipp oeffnet „Push — Mo., 28.
 Sept. 2026"; kein Ueberlauf; Seite „Laufen" unveraendert (4 Seiten); keine Konsolenfehler.

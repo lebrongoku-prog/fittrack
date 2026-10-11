@@ -2681,7 +2681,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
    der Heute-Block darueber — so steht das Feld des gewaehlten Tags buendig mit dem Block und der
    Wochentag auf einer Linie mit dessen Titel (v435, Leonard-Wunsch). */
 .wz-flach { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
-.wz-flach-tag { width: 24px; flex-shrink: 0; font-size: var(--fs-neben); font-weight: 600; color: var(--text3); }
+.wz-flach-tag { width: 28px; flex-shrink: 0; font-size: var(--fs-text); font-weight: 600; color: var(--text3); }
 .wz-flach-teile { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
 .wz-einheit {
   display: inline-flex; align-items: center; gap: 7px; min-width: 0; max-width: 100%;
