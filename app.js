@@ -5123,16 +5123,27 @@ function renderUebersichtWoche() {
     return k.tipp ? `<button type="button" class="wz-einheit" onclick="${k.tipp}">${innen}</button>`
                   : `<span class="wz-einheit">${innen}</span>`;
   };
-  const tageHTML = gruppen.map(g => `<div class="wz-flach">
-      <span class="wz-flach-tag${g.i === todayIdx ? ' heute' : ''}">${WOCHENTAGE_KURZ[g.i]}</span>
+  // HEUTE STEHT OBEN ALS STARTBLOCK (11.10.2026, Leonard-Entscheidung Variante B aus drei
+  // gezeichneten Vorschlaegen — A = Tag antippen klappt Knoepfe auf, C = kleine Knoepfe in der
+  // Zeile). Er ersetzt die Herocard, die mit v428 aus der Uebersicht entfallen ist, und nutzt
+  // deren Bausteine (`buildHeuteHero`): gleiche Knoepfe, gleiche Regeln — Gym grau, wenn heute
+  // nichts ansteht oder schon trainiert wurde (dann „Freies Training"), Lauf grau, wenn kein Lauf
+  // geplant oder schon gelaufen; laeuft eine Einheit, fuehrt der Gymknopf dorthin. Er folgt dem
+  // Filter der Wochenkarte. Die Zeile von HEUTE steht deshalb nicht noch einmal in der Liste.
+  const heuteTag = getCurrentWeekDays()[todayIdx];
+  const gymHeute = heuteTag && heuteTag.planDay && !heuteTag.dayDone ? heuteTag.planDay : null;
+  const sportHeute = _wochenFilter === 'beide' ? 'beide' : _wochenFilter === 'gym' ? 'gym' : 'lauf';
+  const heuteBlock = buildHeuteHero(gymHeute, heuteTag, { sport: sportHeute, erledigtGrau: true,
+      titel: `Heute · ${WOCHENTAGE_KURZ[todayIdx]}` })
+    .replace('class="hero-v2 hero-heute', 'class="hero-heute wz-heute');
+  const tageHTML = gruppen.filter(g => g.i !== todayIdx).map(g => `<div class="wz-flach">
+      <span class="wz-flach-tag">${WOCHENTAGE_KURZ[g.i]}</span>
       <div class="wz-flach-teile">${g.teile.map(einheit).join('')}</div>
     </div>`).join('');
-  el.innerHTML = zeilen.length ? `<div class="chart-card-v2 ov-woche-liste">
-    <div class="chart-card-v2-head">
-      <span class="chart-card-v2-title">Diese Woche</span>
-    </div>
-    <div class="wz-flach-liste">${tageHTML}</div>
-  </div>` : '';
+  el.innerHTML = `<div class="chart-card-v2 ov-woche-liste">
+    ${heuteBlock}
+    ${tageHTML ? `<div class="wz-flach-liste">${tageHTML}</div>` : ''}
+  </div>`;
 }
 
 // ── DIE WOCHENKARTE IST WAAGERECHT WISCHBAR (22.09.2026, Leonard-Wunsch „Variante A") ──

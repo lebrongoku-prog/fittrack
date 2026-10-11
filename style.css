@@ -2668,11 +2668,18 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
 .ppv-k-reihe.gym .training .ppv-k-dot,
 .ppv-k-reihe.gym .done .ppv-k-dot,
 .ppv-k-reihe.gym .verschoben .ppv-k-dot { border-radius: 5px; }
-.wz-flach-liste { padding-top: 4px; }
+/* STARTBLOCK HEUTE (v433): die Bausteine der frueheren Herocard (`.hero-heute`) als Kasten
+   oben in der Karte, ohne eigene Karte (`.hero-v2`) — gedeckt im Akzent-Ton des Tabs. Die Knoepfe
+   tragen hier die Textstufe statt 18px und weniger Polster, der Block soll kompakt bleiben. */
+.hero-heute.wz-heute { background: var(--accent-bg); border-radius: 14px; padding: 12px; gap: 10px; }
+.hero-heute.wz-heute .hero-heute-titel { margin-bottom: 0; }
+.hero-heute.wz-heute .hero-heute-spalte { gap: 8px; }
+.hero-heute.wz-heute:not(.hero-aktiv) .hero-v2-btn { font-size: var(--fs-text); padding: 12px 8px; }
+html.glas .screen:not(#screen-mehr) .hero-heute.wz-heute { background: rgba(255,255,255,.14); }
+.wz-flach-liste { padding-top: 8px; }
 .wz-flach { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 0.5px solid var(--border); }
 .wz-flach:first-child { border-top: none; }
 .wz-flach-tag { width: 24px; flex-shrink: 0; font-size: var(--fs-neben); font-weight: 600; color: var(--text3); }
-.wz-flach-tag.heute { color: var(--accent-dark); font-weight: 800; }
 .wz-flach-teile { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
 .wz-einheit {
   display: inline-flex; align-items: center; gap: 7px; min-width: 0; max-width: 100%;
@@ -2693,7 +2700,6 @@ button.wz-einheit:active { opacity: .6; }
 .wz-zeichen.verschoben    { background: var(--card2); box-shadow: inset 0 0 0 2px var(--text3); }
 html.glas .screen:not(#screen-mehr) .wz-flach { border-top-color: rgba(255,255,255,.25); }
 html.glas .screen:not(#screen-mehr) .wz-flach:first-child { border-top: none; }
-html.glas .screen:not(#screen-mehr) .wz-flach-tag.heute { color: #fff; }
 html.glas .screen:not(#screen-mehr) .wz-zeichen.gelaufen { background: rgba(255,255,255,.92); }
 html.glas .screen:not(#screen-mehr) .wz-zeichen.offen    { box-shadow: inset 0 0 0 2px rgba(255,255,255,.92); }
 html.glas .screen:not(#screen-mehr) .wz-zeichen.verpasst { box-shadow: inset 0 0 0 2px #FCA5A5; }

@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v432**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v433**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3393,6 +3393,16 @@ FALLE beim Umbau: Die Quadrat-Regeln der Gym-Zeichen (v425) standen MITTEN im al
 und wurden beim ersten Entfernen mitgeloescht — wiederhergestellt und gemessen (Kombi 5px,
 `.wz-zeichen.gym` 3px).
 GEMESSEN v432 (375px): Mo Push · Di 8.2 km · Do Pull + 6 km (verpasst) · Fr Push (verpasst) ·
+**HEUTE-STARTBLOCK OBEN IN DER KARTE** (v433, 11.10.2026, Leonard-Entscheidung „Variante B"):
+Ueber den Tageszeilen steht ein Block „Heute · So" (`.hero-heute.wz-heute`, gebaut mit
+`buildHeuteHero`, aussen ohne `hero-v2`, in `--accent-bg`, im Glas-Modus 14-%-Weiss) mit den
+Knoepfen „Einheit starten"/„Freies Training" und „Lauf erledigt" — er folgt `_wochenFilter`.
+Der Gymknopf wird grau („Freies Training"), sobald die heutige Einheit erledigt ist
+(`erledigtGrau`). Die Zeile von HEUTE faellt dafuer aus der Liste; die Karte steht damit immer
+da. „Einheit starten" startet DIREKT, ohne den frueheren Bestaetigungsdialog.
+`.wz-flach-tag.heute` ist entfallen. GEMESSEN (375px, So mit Pull und 12-km-Lauf): Titel
+„Heute · So", „Einheit starten" → `startWorkout('d2')`, Liste Mo–Fr ohne So, alle drei Filter,
+kein Ueberlauf, Glas 14-%-Weiss; keine Konsolenfehler.
 So 12 km (offen, heute); Glas weiss bzw. #FCA5A5; keine Konsolenfehler.
 GEMESSEN (375px): Mo Push 2 PR · Di Lauf · Do Pull nachgeholt · Do Lauf verpasst · Fr Push nicht
 trainiert · So Lauf offen (heute); Filter Gym/Lauf filtert richtig; Tipp oeffnet „Push — Mo., 28.
