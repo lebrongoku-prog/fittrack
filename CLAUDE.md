@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v429**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v430**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3306,6 +3306,17 @@ weiss gefuellt, offen weiss umrandet, leer 22-%-Weiss (siehe „Keine Sportfarbe
 Transparenz-Modus“). Vorher blieben die Sportfarben und nur der leere Kreis wurde weiss. Die
 Glas-Regel fuer den LEEREN Kreis muss auf `:not(.training):not(.done)` eingeengt sein —
 ungefiltert schlaegt sie (id-Selektor im `:not()`) jede andere Regel, und geplant sah aus wie leer.
+
+### Die aktuelle Uebung der laufenden Einheit ist hervorgehoben
+11.10.2026, Leonard-Entscheidung „C ohne Scheibe + A" (aus vier gezeichneten Vorschlaegen; B =
+Leiste links, D = Rest gedaempft). Aktuell = die ERSTE weder erledigte noch uebersprungene Uebung
+(`aktuellIdx` in `renderActiveWorkout`) — dieselbe, die `ensureActiveExpanded` aufklappt; sie
+wandert mit jedem Abhaken weiter. `.aex-v2.aktuell` traegt einen 2px-Ring im Gym-Gruen #0F766E als
+Schatten (kein Layoutversatz), dazu das Etikett `.aex-jetzt` („Jetzt", 11px, #E1F5EE/#0F766E)
+UEBER dem Namen — daneben haette es lange Namen auf 80px gekuerzt (gemessen). Die Nummernscheibe
+bleibt unveraendert. Glas-Modus: Ring 92-%-Weiss, Etikett 22-%-Weiss mit weisser Schrift.
+GEMESSEN (375px): Karte 2 mit Ring und Etikett, nach `toggleExDone(1)` wandert beides auf Karte 3;
+keine Konsolenfehler.
 
 ### Keine Kopfleiste mehr in der laufenden Einheit
 10.10.2026, Leonard-Wunsch (v429): Die feste Leiste oben (`#wo-sticky-bar`, gruen mit Punkt,

@@ -2729,6 +2729,11 @@ function renderActiveWorkout() {
   ensureActiveExpanded(wo);
 
   // Exercise cards
+  // DIE AKTUELLE UEBUNG (11.10.2026, Leonard-Wunsch „C ohne Scheibe + A"): die erste weder
+  // erledigte noch uebersprungene — dieselbe, die nach dem letzten Satz von selbst aufklappt.
+  // Sie traegt einen Rahmen im Gym-Gruen und das Etikett „Jetzt" UEBER dem Namen — daneben
+  // kuerzte es lange Namen („Schrägbankdrücken") schon auf 80px.
+  const aktuellIdx = wo.exercises.findIndex(e => !e.done && !e.skipped);
   _setzeUebungsSpalten(document.getElementById('active-ex-list'), wo.exercises.length);
   document.getElementById('active-ex-list').innerHTML = wo.exercises.map((ex, ei) => {
     const col = colorForExercise(ex);
@@ -2766,11 +2771,13 @@ function renderActiveWorkout() {
     const stateCls = ex.done ? 'done' : (ex.skipped ? 'skipped' : '');
     const exIdKey = ex.exId || ex.id;
     const collapsedCls = isAexExpanded(exIdKey) ? '' : 'collapsed';
-    return `<div class="aex-v2 ${stateCls} ${collapsedCls}" id="aex-${ei}" data-ex="${exIdKey}" style="--c:${col.c};--c-bg:${col.bg}"
+    const aktuell = ei === aktuellIdx;
+    return `<div class="aex-v2 ${stateCls} ${collapsedCls}${aktuell ? ' aktuell' : ''}" id="aex-${ei}" data-ex="${exIdKey}" style="--c:${col.c};--c-bg:${col.bg}"
                  ${_aexZiehAttribute(ei, `'active'`)}>
       ${_aexKopfOeffnen(exIdKey)}
         <div class="aex-v2-num">${ei+1}</div>
         <div class="aex-v2-info">
+          ${aktuell ? '<span class="aex-jetzt">Jetzt</span>' : ''}
           <div class="aex-v2-name">${ex.name}</div>
           ${lastRoh ? `<div class="aex-v2-last">${lastRoh}${diffStr ? ` ${diffStr}` : ''}</div>` : ''}
           ${cmpStr}
