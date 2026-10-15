@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v439**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v440**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3033,6 +3033,15 @@ in der Laufplan-Detailansicht) liegt eine gestrichelte Linie auf dem Mittel der 
 ABGESCHLOSSENEN Wochen, rechts beschriftet „Ø 20 km" (Plugin `laufKmSchnitt`). Farbe #334155,
 Glas 90-%-Weiss. Ohne abgeschlossene Woche keine Linie. Der Tooltip zeigt nur die Saeule
 (`filter: datasetIndex === 0`). GEMESSEN: W1 19 + W2 21 → Linie bei 20; keine Konsolenfehler.
+SEIT v440 (Leonard-Wunsch) DEZENTER: 1px, Strich 4/4, `rgba(51,65,85,.4)` (Glas 55-%-Weiss), OHNE
+Beschriftung am Strich. Der Wert steht stattdessen OBEN RECHTS im Kopf des Diagramms
+(`.km-schnitt`, „Ø 20 km", `_laufKmSchnitt`), nur aufgeklappt sichtbar.
+**NOTIZ-MARKE** (v440, 15.10.2026, Leonard-Entscheidung „A + D" aus vier Vorschlaegen — B = Punkt
+am Wochentagskreis, C = Notizanfang in der Zeile): `NOTIZ_ICON` (Sprechblase 13px, `--text3`, Glas
+75-%-Weiss) hinter jedem Lauf, dessen geplante Einheit eine `note` hat — in der Liste „Diese Woche"
+der Seite „Laufen" (hinter Vorgabe/Zone), in „Diese Woche" der Uebersicht (`kurz.notiz`) und in der
+Kalender-Fusszeile (gelaufen: Notiz der abgedeckten Einheit via `runGeplantFuerLauf`; geplant;
+uebersprungen). GEMESSEN: Di mit Notiz in allen drei Stellen markiert, Sa ohne; keine Konsolenfehler.
 TESTHINWEIS: `glasAktiv()` liest den SPEICHER, nicht die Klasse am `<html>` — zum Pruefen
 `localStorage.setItem(GLAS_KEY, '1'); applyGlasModus();` statt die Klasse von Hand zu setzen.
 

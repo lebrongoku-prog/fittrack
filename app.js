@@ -2072,6 +2072,12 @@ function buildHeuteHero(planDay, selDay, opts) {
   </div>`;
 }
 
+// NOTIZ-MARKE (15.10.2026, v440, Leonard-Entscheidung „A + D"): ein kleines Sprechblasen-Symbol
+// hinter einem Lauf, dessen geplante Einheit eine Notiz traegt — in der Liste „Diese Woche"
+// (Seite „Laufen" und Uebersicht) und in der Kalender-Fusszeile. Die Notiz selbst steht in der
+// Detailansicht bzw. im Fenster zum Ueberspringen.
+const NOTIZ_ICON = '<span class="notiz-ic" title="Mit Notiz" aria-label="Mit Notiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/></svg></span>';
+
 // Symbole im Knopf, in Textgroesse. Als Konstanten, damit alle Knoepfe dasselbe nutzen.
 // Die HANTEL loest am 06.09.2026 das Play-Dreieck ab (Leonard-Wunsch): Sie benennt die
 // Sportart statt der Aktion und ist damit das Gegenstueck zum Laeufer im Nachbarknopf.
@@ -4966,7 +4972,7 @@ function laufWochenZeilen(mo, istAktuell, maxKm) {
     const inhalt = `${feldHTML}
       <div class="lauf-wz-rechts">
         <div class="lauf-wz-oben">
-          <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${soll}${zone}</div></div>
+          <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${soll}${zone}${u && u.note ? NOTIZ_ICON : ''}</div></div>
           ${ist ? `<span class="lauf-wz-ist${verpasst ? ' verpasst' : ''}">${ist}</span>` : ''}
           {{CHEV}}
         </div>
@@ -4985,7 +4991,7 @@ function laufWochenZeilen(mo, istAktuell, maxKm) {
       : u && u.km ? fmtKm(u.km) : u && u.minutes ? fmtMin(u.minutes) : 'Lauf';
     return {
       html: _wzKnopf('lauf-wz', tipp, inhalt.replace('{{CHEV}}', tipp ? chev : '')),
-      kurz: { sport: 'lauf', zustand, text: kurzText, tipp },
+      kurz: { sport: 'lauf', zustand, text: kurzText, tipp, notiz: !!(u && u.note) },
     };
   }).map((z, i) => z ? { i, ...z } : null).filter(Boolean);
   return zeilen;
@@ -5071,7 +5077,7 @@ function renderUebersichtWoche() {
     if (g && g.i === z.i) g.teile.push(z.kurz); else gruppen.push({ i: z.i, teile: [z.kurz] });
   });
   const einheit = k => {
-    const innen = `<span class="wz-zeichen ${k.sport} ${k.zustand}" aria-hidden="true"></span><span class="wz-text">${escapeHtml(k.text)}</span>`;
+    const innen = `<span class="wz-zeichen ${k.sport} ${k.zustand}" aria-hidden="true"></span><span class="wz-text">${escapeHtml(k.text)}</span>${k.notiz ? NOTIZ_ICON : ''}`;
     return k.tipp ? `<button type="button" class="wz-einheit" onclick="${k.tipp}">${innen}</button>`
                   : `<span class="wz-einheit">${innen}</span>`;
   };
@@ -5262,6 +5268,11 @@ let _lpKmChart = null;         // Instanz in der Detailansicht
 // im Tooltip.
 // `nurPlan` (Laufplan-Detailansicht): Dort stehen IMMER die geplanten Kilometer, nie das Ist
 // (Leonard-Wunsch) — die Ansicht dient dem Planen, nicht dem Nachschauen.
+// Mittel der GELAUFENEN km ueber die abgeschlossenen Wochen (null ohne abgeschlossene Woche).
+function _laufKmSchnitt(daten) {
+  const vorbei = daten.filter(d => d.vorbei);
+  return vorbei.length ? vorbei.reduce((s, d) => s + d.gelaufen, 0) / vorbei.length : null;
+}
 function _laufKmDaten(plan, nurPlan) {
   const wochen = runPlanWochen(plan);
   const heuteMo = _laufWochenMontag(new Date()).getTime();
@@ -5303,9 +5314,12 @@ function laufKmDiagrammHTML(plan, welches) {
   const daten = _laufKmDaten(plan, cfg.nurPlan);
   if (!daten.some(d => d.geplant > 0 || d.gelaufen > 0)) return '';   // nichts zu zeigen
   const offen = _kmOffen(welches);
+  // Der DURCHSCHNITT steht seit v440 oben rechts im Kopf — nur aufgeklappt sichtbar (CSS).
+  const schnitt = cfg.nurPlan ? null : _laufKmSchnitt(daten);
   const kopf = cfg.titelAussen ? '' : `<div class="ex-item-body-label ex-chart-head">
         <button type="button" class="ex-chart-collapse" onclick="toggleKmDiagramm('${welches}')"
                aria-expanded="${offen ? 'true' : 'false'}">Wochenkilometer<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
+        ${schnitt != null ? `<span class="km-schnitt">Ø ${fmtKm(Math.round(schnitt * 10) / 10)}</span>` : ''}
       </div>`;
   return `<div class="ex-chart-block${offen ? '' : ' collapsed'}" id="${cfg.block}">
       ${kopf}
@@ -5401,30 +5415,17 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
   // ABGESCHLOSSENEN Wochen (dieselben, deren Saeule das Ist zeigt), gestrichelt ueber die ganze
   // Breite, rechts beschriftet („Ø 24 km"). Nur auf der Seite „Laufen" — die Detailansicht des
   // Laufplans zeigt nur den Plan. Ohne abgeschlossene Woche keine Linie.
-  const vorbei = daten.filter(d => d.vorbei);
-  const schnitt = !cfg.nurPlan && vorbei.length
-    ? vorbei.reduce((s, d) => s + d.gelaufen, 0) / vorbei.length : null;
-  const linienFarbe = aufGlas ? 'rgba(255,255,255,0.9)' : '#334155';
+  const schnitt = cfg.nurPlan ? null : _laufKmSchnitt(daten);
+  // Dezent (v440, Leonard-Wunsch): duenner, halbtransparent, ohne Beschriftung am Strich — der
+  // Wert steht oben rechts im Kopf des Diagramms (`laufKmDiagrammHTML`).
+  const linienFarbe = aufGlas ? 'rgba(255,255,255,0.55)' : 'rgba(51,65,85,0.4)';
   const datensaetze = [];
   if (schnitt != null) datensaetze.push({
-    type: 'line', data: daten.map(() => schnitt), borderColor: linienFarbe, borderWidth: 1.5,
-    borderDash: [5, 4], pointRadius: 0, pointHoverRadius: 0, fill: false, order: 0,
+    type: 'line', data: daten.map(() => schnitt), borderColor: linienFarbe, borderWidth: 1,
+    borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 0, fill: false, order: 0,
   });
-  const schnittBeschriftung = {
-    id: 'laufKmSchnitt',
-    afterDatasetsDraw(ch) {
-      if (schnitt == null) return;
-      const y = ch.scales.y.getPixelForValue(schnitt), a = ch.chartArea, ctx = ch.ctx;
-      ctx.save();
-      ctx.font = '600 11px -apple-system, BlinkMacSystemFont, system-ui, sans-serif';
-      ctx.fillStyle = linienFarbe; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
-      ctx.fillText('Ø ' + fmtKm(Math.round(schnitt * 10) / 10), a.right, Math.max(a.top + 12, y - 3));
-      ctx.restore();
-    },
-  };
   const chart = new Chart(canvas.getContext('2d'), {
     type: 'bar',
-    plugins: [schnittBeschriftung],
     data: {
       labels: daten.map((_, i) => 'W' + (i + 1)),
       // ABGESCHLOSSENE Wochen zeigen das IST, laufende und kuenftige das SOLL.
@@ -6843,6 +6844,9 @@ function showCalDay(key, id) {
     }
     const lauf = runNachTag()[key];
     const gepl = runGeplanteTage()[key];
+    // Notiz-Marke (v440): bei einem Lauf die Notiz SEINER geplanten Einheit (auch vorgezogen/nachgeholt).
+    const notizU = lauf ? (runGeplantFuerLauf(key) || {}).einheit : gepl && gepl.einheit;
+    const notiz = notizU && notizU.note ? NOTIZ_ICON : '';
     if (lauf) {
       // Lauf: Strecke und Zeit. Intervalltraining hat keine sinnvolle Strecke — dort
       // stehen Dauer und Maximalpuls (Leonard-Wunsch 01.09.2026).
@@ -6854,17 +6858,17 @@ function showCalDay(key, id) {
       const zusatz = vonIdx != null ? ' · ' + _verschiebWort(vonIdx, wiTag) : '';
       laufHTML = `<button type="button" class="cal-detail-tag"
                           onclick="event.stopPropagation();showRunDetail('${key}')"><span
-                          class="cal-detail-tagname">${bez}${werte}${zusatz}</span><span
+                          class="cal-detail-tagname">${bez}${werte}${zusatz}${notiz}</span><span
                           class="cal-detail-chev">▾</span></button>`;
     } else if (gepl && laufVer.planNachLauf[wiTag] != null) {
       const j = laufVer.planNachLauf[wiTag];
       laufHTML = `<div class="cal-detail-tag-txt">Lauf · ${_verschiebWort(wiTag, j) === 'vorgezogen' ? 'vorgezogen auf' : 'nachgeholt am'} ${WOCHENTAGE_KURZ[j]}</div>`;
     } else if (gepl && gepl.uebersprungen) {
-      laufHTML = `<div class="cal-detail-tag-txt">Lauf · übersprungen</div>`;
+      laufHTML = `<div class="cal-detail-tag-txt">Lauf · übersprungen${notiz}</div>`;
     } else if (gepl) {
       const u = gepl.einheit;
       const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null].filter(Boolean).join(' · ') : '';
-      laufHTML = `<div class="cal-detail-tag-txt">geplant${soll ? ': ' + soll : ''}</div>`;
+      laufHTML = `<div class="cal-detail-tag-txt">geplant${soll ? ': ' + soll : ''}${notiz}</div>`;
     } else if (_laufplanDeckt(key)) {
       // Gegenstueck zu „Kein Gym geplant": nur INNERHALB eines Laufplans (Leonard-Wunsch
       // 06.09.2026).

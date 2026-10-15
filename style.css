@@ -4288,6 +4288,14 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
    damit setExChartMode seinen Zustand weiter mitfuehrt. */
 .ex-chart-block.collapsed .ex-chart-toggle { display: none; }
 .ex-chart-block.collapsed .ex-chart-head { margin-bottom: 0; }
+/* Durchschnitt der Wochenkilometer oben rechts (v440), nur aufgeklappt. */
+.km-schnitt { margin-left: auto; font-size: var(--fs-etikett); font-weight: 700; color: var(--text2); text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.ex-chart-block.collapsed .km-schnitt { display: none; }
+html.glas .screen:not(#screen-mehr) .km-schnitt { color: rgba(255,255,255,.85); }
+/* Notiz-Marke hinter einem Lauf (v440). */
+.notiz-ic { display: inline-flex; width: 13px; height: 13px; margin-left: 6px; color: var(--text3); vertical-align: -1px; flex-shrink: 0; }
+.notiz-ic svg { width: 100%; height: 100%; }
+html.glas .screen:not(#screen-mehr) .notiz-ic { color: rgba(255,255,255,.75); }
 /* In der Einheiten-Detailansicht ist der Platz schmaler als im Katalog. */
 #hist-detail-body .ex-chart-wrap { height: 120px; margin: 2px 0 0; }
 #hist-detail-body .ex-chart-empty { margin-bottom: 0; }
