@@ -1804,8 +1804,6 @@ function runGeplantFuerLauf(key, geplant) {
   const g = geplant[_dayKeyOf(plTag.getTime())];
   return g ? { ...g, vonIdx: i, vonMs: plTag.getTime(), amMs: tag.getTime() } : null;
 }
-// „vorgezogen" oder „nachgeholt" — je nachdem, ob der Lauf vor oder nach dem Plantag lag.
-function _laufVerschiebWort(vonMs, amMs) { return amMs < vonMs ? 'vorgezogen' : 'nachgeholt'; }
 
 // Dieselbe Regel wie beim Gymplan, in Kalendertagen (siehe `_planHatBegonnen`).
 function runPlanStatus(p) {
@@ -4736,7 +4734,7 @@ function laufDetailInhalt(key, l) {
     + (kacheln.length ? `<div class="hd-stats run-detail-stats">`
         + kacheln.map(k => `<div class="hd-stat"><b>${k.wert}</b><span>${k.label}</span></div>`).join('')
         + `</div>` : '')
-    + (geplant ? _laufPlanBlock(u, l, geplant) : '')
+    // Der Abschnitt „Geplant" (`_laufPlanBlock`) ist am 15.10.2026 entfallen (v439, Leonard-Wunsch).
     // Die Kategorie nur noch beim Intervalltraining: Bei einem Lauf sagte sie nichts, was der
     // Titel nicht schon sagt (Leonard-Wunsch 28.09.2026).
     + (hiit && l.typ ? `<div class="run-detail-zeile"><span>Kategorie</span><strong>${escapeHtml(l.typ)}</strong></div>` : '')
@@ -4760,57 +4758,6 @@ function _laufDetailKopf(l, hiit) {
         ${zeile ? `<span class="rd-kopf-zeile">${zeile}</span>` : ''}
       </div>
     </div>`;
-}
-
-// Abschnitt „Geplant" (28.09.2026, Leonard-Wunsch; vorher „Gegen den Plan" mit den Abweichungen
-// als Chip-Text): Die Chips zeigen die GEPLANTEN Werte, ihre FARBE sagt weiter, wie nah der Lauf
-// daran lag. Die Zone steht als neutraler Chip dabei.
-// Ohne Vorgabe (weder km noch Minuten) steht nur, zu welchem Plan der Tag gehoert.
-function _laufPlanBlock(u, l, geplant) {
-  const plan = geplant.plan;
-  const chips = u ? laufVergleichChips(u, l) : '';
-  // Deckt der Lauf einen anderen Plantag ab, nennt der Titel ihn („Geplant am Di · vorgezogen").
-  const titel = geplant.vonIdx != null
-    ? `Geplant am ${WOCHENTAGE_KURZ[geplant.vonIdx]} · ${_laufVerschiebWort(geplant.vonMs, geplant.amMs)}`
-    : 'Geplant';
-  return `<div class="rd-plan">
-      <div class="rd-plan-titel">${titel}</div>
-      ${chips ? `<div class="rd-chips">${chips}</div>`
-              : `<div class="rd-plan-vorgabe">${escapeHtml(plan.name || 'Laufplan')}</div>`}
-    </div>`;
-}
-
-// SOLL/IST eines Laufs gegen seine geplante Einheit (27.09.2026, Leonard-Wunsch): Jeder Chip nennt
-// den GEPLANTEN Wert (seit 28.09.2026, vorher die Abweichung) und ist nach der Abweichung gefaerbt.
-// Herzfrequenzzonen fliessen NICHT in die Bewertung ein (Leonard-Entscheidung) — die App kennt nur
-// die Zonennamen, keine Pulsgrenzen; die Zone steht deshalb als neutraler Chip dabei.
-// GRUEN heisst „im Rahmen" (Strecke und Dauer hoechstens 5 % daneben, Pace hoechstens
-// LAUF_PACE_TOLERANZ_S), AMBER „deutlich daneben" — ein Hinweis, keine Warnung, in derselben
-// Farbe wie der Stillstand-Chip. Ein Chip nur, wo der Plan eine Vorgabe hat.
-const LAUF_ANTEIL_TOLERANZ = 0.05;
-const LAUF_PACE_TOLERANZ_S = 10;
-function laufVergleichChips(u, l) {
-  // `imRahmen`: true = gruen, false = amber, null = neutral (ohne Vergleichswert).
-  const chip = (text, imRahmen) => {
-    const art = imRahmen == null ? 'neutral' : imRahmen ? 'im-rahmen' : 'daneben';
-    return `<span class="rd-chip ${art}">${text}</span>`;
-  };
-  const chips = [];
-  if (u.km) {
-    chips.push(chip(fmtKm(u.km), l.km != null ? Math.abs(l.km - u.km) <= u.km * LAUF_ANTEIL_TOLERANZ : null));
-  }
-  if (u.minutes) {
-    chips.push(chip(fmtMin(u.minutes), l.minutes != null ? Math.abs(l.minutes - u.minutes) <= u.minutes * LAUF_ANTEIL_TOLERANZ : null));
-  }
-  // Pace in Sekunden je km: geplant aus Minuten und km, gelaufen aus dem Tempo der Tabelle
-  // (ersatzweise aus Dauer und Strecke).
-  const lKmh = l.kmh || (l.km && l.minutes ? l.km / (l.minutes / 60) : 0);
-  if (u.km && u.minutes && l.art !== 'hiit') {
-    const sollKmh = u.km / (u.minutes / 60);
-    chips.push(chip(fmtPace(sollKmh), lKmh ? Math.abs(3600 / lKmh - 3600 / sollKmh) <= LAUF_PACE_TOLERANZ_S : null));
-  }
-  if (u.zone) chips.push(chip(escapeHtml(u.zone), null));
-  return chips.join('');
 }
 
 // ── Laufplaene ─────────────────────────────────────────────────────
@@ -5450,8 +5397,34 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
   // `hervorIdx` auf -1 und alle Saeulen sind gleich.
   const zeigt = mo || (cfg.nurPlan ? null : _laufWochenMontag(new Date()));
   const hervorIdx = zeigt ? daten.findIndex(d => d.mo.getTime() === zeigt.getTime()) : -1;
+  // DURCHSCHNITTSLINIE DER GELAUFENEN KM (15.10.2026, v439, Leonard-Wunsch): Mittel ueber die
+  // ABGESCHLOSSENEN Wochen (dieselben, deren Saeule das Ist zeigt), gestrichelt ueber die ganze
+  // Breite, rechts beschriftet („Ø 24 km"). Nur auf der Seite „Laufen" — die Detailansicht des
+  // Laufplans zeigt nur den Plan. Ohne abgeschlossene Woche keine Linie.
+  const vorbei = daten.filter(d => d.vorbei);
+  const schnitt = !cfg.nurPlan && vorbei.length
+    ? vorbei.reduce((s, d) => s + d.gelaufen, 0) / vorbei.length : null;
+  const linienFarbe = aufGlas ? 'rgba(255,255,255,0.9)' : '#334155';
+  const datensaetze = [];
+  if (schnitt != null) datensaetze.push({
+    type: 'line', data: daten.map(() => schnitt), borderColor: linienFarbe, borderWidth: 1.5,
+    borderDash: [5, 4], pointRadius: 0, pointHoverRadius: 0, fill: false, order: 0,
+  });
+  const schnittBeschriftung = {
+    id: 'laufKmSchnitt',
+    afterDatasetsDraw(ch) {
+      if (schnitt == null) return;
+      const y = ch.scales.y.getPixelForValue(schnitt), a = ch.chartArea, ctx = ch.ctx;
+      ctx.save();
+      ctx.font = '600 11px -apple-system, BlinkMacSystemFont, system-ui, sans-serif';
+      ctx.fillStyle = linienFarbe; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+      ctx.fillText('Ø ' + fmtKm(Math.round(schnitt * 10) / 10), a.right, Math.max(a.top + 12, y - 3));
+      ctx.restore();
+    },
+  };
   const chart = new Chart(canvas.getContext('2d'), {
     type: 'bar',
+    plugins: [schnittBeschriftung],
     data: {
       labels: daten.map((_, i) => 'W' + (i + 1)),
       // ABGESCHLOSSENE Wochen zeigen das IST, laufende und kuenftige das SOLL.
@@ -5459,15 +5432,16 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
         data: daten.map(d => d.vorbei ? d.gelaufen : d.geplant),
         backgroundColor: _laufKmFarben(daten, hervorIdx, pal),
         hoverBackgroundColor: _laufKmVoll(daten, pal),
-        borderRadius: 4, borderWidth: 0, maxBarThickness: 34,
-      }],
+        borderRadius: 4, borderWidth: 0, maxBarThickness: 34, order: 1,
+      }, ...datensaetze],
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: {
+        // Nur die Saeule erklaert sich im Tooltip; die Linie traegt ihre Beschriftung selbst.
+        tooltip: { filter: (it) => it.datasetIndex === 0, callbacks: {
           title: (c) => 'Woche ' + (c[0].dataIndex + 1),
           // Im Tooltip stehen BEIDE Zahlen (Leonard-Wunsch): was geplant war und was gelaufen
           // wurde. „Gelaufen" bleibt weg, solange die Woche laeuft und noch nichts drin steht.

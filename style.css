@@ -3096,14 +3096,6 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
 .rd-kopf-wert { font-size: 28px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .rd-kopf-reihe { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 12px; row-gap: 2px; }
 .rd-kopf-zeile { font-size: var(--fs-text); font-weight: 600; opacity: .92; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.rd-plan { margin: 2px 0 10px; }
-.rd-plan-titel { font-size: var(--fs-etikett); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text3); margin-bottom: 7px; }
-.rd-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-.rd-chip { font-size: var(--fs-neben); font-weight: 700; padding: 4px 9px; border-radius: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.rd-chip.im-rahmen { background: var(--green-bg); color: #166534; }
-.rd-chip.daneben { background: #FEF3C7; color: #92400E; }
-.rd-chip.neutral { background: var(--card2); color: var(--text2); }
-.rd-plan-vorgabe { font-size: var(--fs-neben); color: var(--text2); }
 /* Wochenrueckblick in der Uebersicht (27.09.2026). Die Kacheln sind `.hd-stats` wie in den
    Detailansichten, hier zwei je Zeile — so passt die Zusatzzeile („+8 % zur Vorwoche")
    ohne Umbruch in die Kachel. */
@@ -3903,14 +3895,11 @@ html.glas .screen:not(#screen-mehr) .wk-datum,
 html.glas .screen:not(#screen-mehr) .wk-leer { color: rgba(255,255,255,.8); }
 html.glas .screen:not(#screen-mehr) .wk-card .hd-stat { background: rgba(255,255,255,.14); }
 html.glas .screen:not(#screen-mehr) .wk-card .hd-stat span { color: rgba(255,255,255,.75); }
-/* Laufinhalt auf der durchscheinenden Wettkampfkarte: Kopf und farbige Chips bleiben farbig
+/* Laufinhalt auf der durchscheinenden Wettkampfkarte: der Kopf bleibt farbig
    (wie die Knoepfe der Herocard), nur die grauen Teile werden weiss. */
-html.glas .screen:not(#screen-mehr) .wk-card .rd-plan-titel,
-html.glas .screen:not(#screen-mehr) .wk-card .rd-plan-vorgabe,
 html.glas .screen:not(#screen-mehr) .wk-card .run-detail-notiz span { color: rgba(255,255,255,.75); }
 html.glas .screen:not(#screen-mehr) .wk-card .run-detail-notiz { border-top-color: rgba(255,255,255,.2); }
 html.glas .screen:not(#screen-mehr) .wk-card .run-detail-notiz p { color: #fff; }
-html.glas .screen:not(#screen-mehr) .wk-card .rd-chip.neutral { background: rgba(255,255,255,.14); color: #fff; }
 html.glas .screen:not(#screen-mehr) .wk-anstehend { background: rgba(255,255,255,.14); color: rgba(255,255,255,.85); }
 html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,255,.85); }
 

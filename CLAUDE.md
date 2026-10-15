@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v438**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v439**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -178,6 +178,10 @@ zu Wochentagen im Wochenplaner und der Bearbeiten-Modus „Trainingstage aus Pla
      des Lauf-Knopfs, hier mitziehen.
   2. KACHELN (`.hd-stats`) nur noch fuer Ø Puls, Max Puls und Hoehe — hoechstens drei, keine
      verwaiste Kachel mehr (vorher sieben in 3 + 3 + 1).
+  ENTFALLEN (v439, 15.10.2026, Leonard-Wunsch): der ganze Abschnitt „Geplant" (Punkt 3) samt
+  `_laufPlanBlock`, `laufVergleichChips`, `LAUF_ANTEIL_TOLERANZ`/`LAUF_PACE_TOLERANZ_S`,
+  `_laufVerschiebWort` und den CSS-Regeln `.rd-plan*`/`.rd-chip*` — damit auch in den
+  Wettkampfkarten (gleiche Funktion `laufDetailInhalt`). Die Notiz der Einheit bleibt.
   3. „GEGEN DEN PLAN": Abweichungen als Chips (`.rd-chip`) — GRUEN im Rahmen (Strecke/Dauer bis
      5 %, `LAUF_ANTEIL_TOLERANZ`; Pace bis 10 s/km, `LAUF_PACE_TOLERANZ_S`), AMBER daneben (dieselbe
      Farbe wie der Stillstand-Chip). Darunter „Geplant: 12 km · 1h 15min · Z2" — die Zone steht nur
@@ -3024,6 +3028,11 @@ Seitenwechsel offen; Achsen im Glas-Modus 80-%-Weiss.
 GEMESSEN (Farben): W1/W2 vorbei = dunkles Gruen (gedaempft rgba(34,160,91,.55), gezeigt
 #22A05B), W3–W8 geplant = helles Gruen; Glas 55/95 % gegen 35/75 % Weiss; `hoverBackgroundColor`
 je Saeule passend zum Ton.
+**DURCHSCHNITTSLINIE** (v439, 15.10.2026, Leonard-Wunsch): Im Diagramm der Seite „Laufen" (nicht
+in der Laufplan-Detailansicht) liegt eine gestrichelte Linie auf dem Mittel der GELAUFENEN km der
+ABGESCHLOSSENEN Wochen, rechts beschriftet „Ø 20 km" (Plugin `laufKmSchnitt`). Farbe #334155,
+Glas 90-%-Weiss. Ohne abgeschlossene Woche keine Linie. Der Tooltip zeigt nur die Saeule
+(`filter: datasetIndex === 0`). GEMESSEN: W1 19 + W2 21 → Linie bei 20; keine Konsolenfehler.
 TESTHINWEIS: `glasAktiv()` liest den SPEICHER, nicht die Klasse am `<html>` — zum Pruefen
 `localStorage.setItem(GLAS_KEY, '1'); applyGlasModus();` statt die Klasse von Hand zu setzen.
 
