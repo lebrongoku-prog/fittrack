@@ -2675,8 +2675,8 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
 .hero-heute.wz-heute { background: none; padding: 0; gap: 10px; }
 .hero-heute.wz-heute .hero-heute-titel { margin-bottom: 0; }
 .hero-heute.wz-heute .hero-heute-spalte { gap: 8px; }
-/* v441: 50 % hoeher (Leonard-Wunsch) — vorher 42.75px aus dem Polster, jetzt mindestens 64px. */
-.hero-heute.wz-heute:not(.hero-aktiv) .hero-v2-btn { font-size: var(--fs-text); padding: 12px 8px; min-height: 64px; }
+/* v442: 52px hoch (Leonard-Wunsch; v441 kurz 64px, vorher 42.75px aus dem Polster). */
+.hero-heute.wz-heute:not(.hero-aktiv) .hero-v2-btn { font-size: var(--fs-text); padding: 12px 8px; min-height: 52px; }
 .wz-flach-liste { padding-top: 12px; }
 /* Die Zeilen bleiben im Kartenpolster (14px) und ruecken ihren Inhalt um dieselben 12px ein wie
    der Heute-Block darueber — so steht das Feld des gewaehlten Tags buendig mit dem Block und der
