@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v440**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v441**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3455,6 +3455,8 @@ Glas-Regeln sind entfallen. Abstand Block → Liste 12px. Das Feld des gewaehlte
 **WOCHENTAGE 15px** (v437, Leonard-Wunsch): `.wz-flach-tag` von 13px (`--fs-neben`) auf 15px
 (`--fs-text`), Spalte 24 → 28px („Mo" misst 22.1px). Die Einheiten waren schon 15px. In der Karte
 stehen damit nur noch 16px (Titel) und 15px (alles andere).
+**KNOEPFE DES STARTBLOCKS 50 % HOEHER** (v441, Leonard-Wunsch): `min-height: 64px` an
+`.hero-heute.wz-heute .hero-v2-btn` (vorher 42.75px allein aus dem Polster). GEMESSEN: beide 64px.
 GEMESSEN (375px): Mo Push 2 PR · Di Lauf · Do Pull nachgeholt · Do Lauf verpasst · Fr Push nicht
 trainiert · So Lauf offen (heute); Filter Gym/Lauf filtert richtig; Tipp oeffnet „Push — Mo., 28.
 Sept. 2026"; kein Ueberlauf; Seite „Laufen" unveraendert (4 Seiten); keine Konsolenfehler.
