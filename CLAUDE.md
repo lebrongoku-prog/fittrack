@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v437**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v438**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2816,7 +2816,15 @@ vorgegeben): Scheibe grau wie „verschoben", rechts „übersprungen", kein Bal
 (`runVerschobeneTage` nimmt ihn mit); Kalender ohne Umriss, Fusszeile „Lauf · übersprungen".
 Die Kennzahl absolviert/geplant ZAEHLT IHN WEITER als geplant. Kuenftige Tage lassen sich auch
 ueberspringen. GEMESSEN: Do verpasst → uebersprungen → zurueckgenommen, Notiz bleibt; keine
-Konsolenfehler. Die Detailansicht des Laufs
+Konsolenfehler.
+SEIT v438 (15.10.2026, Leonard-Wunsch) SIEHT EIN UEBERSPRUNGENER LAUF AUS WIE EIN NICHT
+EINGEHALTENER — auch an einem kuenftigen Tag: Liste der Seite „Laufen" (und „Diese Woche" der
+Uebersicht) rote Scheibe, rechts „übersprungen" in Rot, Balken der Vorgabe wieder da;
+Wochenplan-Karte Ring statt Grau (`runVerschobeneTage` nimmt ihn nicht mehr mit); Kalender behaelt
+den Umriss (`laufGepl` ohne Ausnahme). Unveraendert: `runVerschiebungen` laesst ihn aus (kein
+anderer Lauf deckt ihn ab), Fusszeile „Lauf · übersprungen", Kennzahl zaehlt ihn als geplant.
+GEMESSEN (375px, heute Do): Di (vorbei) und So (kuenftig) uebersprungen → beide rot mit Balken,
+Karte Ring, Kalender `run-planned`; keine Konsolenfehler. Die Detailansicht des Laufs
 vergleicht gegen die Einheit des Plantags, Titel „Geplant am Di · vorgezogen", Notiz dieses Tags.
 Weiter gilt: nur Plantage VOR heute werden abgedeckt (geraten, nicht sicher).
 GEMESSEN: genau Leonards Fall (Mo 10 km, Di 9 km geplant, heute Mi) in Liste und Detailansicht;

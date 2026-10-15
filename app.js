@@ -1733,15 +1733,8 @@ function runWochenStatus() {
 function runVerschobeneTage(mo) {
   const out = {};
   Object.keys(runVerschiebungen(mo).planNachLauf).forEach(i => { out[i] = true; });
-  // Uebersprungene Lauftage (04.10.2026) stehen in den Wochenplan-Karten genauso grau da wie
-  // verschobene: Sie sind nicht offen, aber auch nicht gelaufen.
-  const woMo = _laufWochenMontag(mo || new Date());
-  const geplant = runGeplanteTage();
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(woMo); d.setDate(woMo.getDate() + i);
-    const g = geplant[_dayKeyOf(d.getTime())];
-    if (g && g.uebersprungen) out[i] = true;
-  }
+  // Uebersprungene Lauftage stehen seit dem 15.10.2026 (v438, Leonard-Wunsch) NICHT mehr grau
+  // da, sondern wie ein nicht eingehaltener Lauf: Sie zaehlen hier also nicht als verschoben.
   return out;
 }
 
@@ -4995,11 +4988,13 @@ function laufWochenZeilen(mo, istAktuell, maxKm) {
     // ein geplanter Tag, der VORBEI ist, an dem nichts gelaufen wurde und der auch nicht durch
     // einen Lauf an einem anderen Tag abgedeckt ist. HEUTE zaehlt NICHT dazu — der Tag laeuft
     // noch; kuenftige Tage bleiben „offen".
-    // UEBERSPRUNGEN (04.10.2026, Leonard-Wunsch): bewusst ausgelassen, mit Begruendung in der
-    // Notiz der Einheit — grau wie „verschoben", nicht rot wie „verpasst".
+    // UEBERSPRUNGEN (04.10.2026): bewusst ausgelassen, mit Begruendung in der Notiz der Einheit.
+    // Seit dem 15.10.2026 (v438, Leonard-Wunsch) sieht ein uebersprungener Lauf aus wie ein nicht
+    // eingehaltener — rot, mit Balken der Vorgabe —, auch an einem kuenftigen Tag. Rechts steht
+    // weiter „übersprungen" statt „nicht gelaufen".
     const uebersprungen = !lauf && !!(eigenerPlan && eigenerPlan.uebersprungen);
-    const verpasst = !lauf && !uebersprungen && verschoben[i] == null && gepl && d.getTime() < heuteMs;
-    const zustand = lauf ? 'gelaufen' : uebersprungen ? 'verschoben' : verschoben[i] != null ? 'verschoben' : verpasst ? 'verpasst' : 'offen';
+    const verpasst = !lauf && (uebersprungen || (verschoben[i] == null && gepl && d.getTime() < heuteMs));
+    const zustand = lauf ? 'gelaufen' : verpasst ? 'verpasst' : verschoben[i] != null ? 'verschoben' : 'offen';
     const vorgabe = u ? [u.km ? fmtKm(u.km) : '', u.minutes ? fmtMin(u.minutes) : ''].filter(Boolean).join(' · ') : '';
     // Bei einem GELAUFENEN Lauf mit Strecke stehen ueber dem Balken die tatsaechlich gelaufenen
     // Kilometer, nicht die Vorgabe (30.09.2026, Leonard-Wunsch); rechts steht seit v420 nichts mehr —
@@ -5028,7 +5023,7 @@ function laufWochenZeilen(mo, istAktuell, maxKm) {
           ${ist ? `<span class="lauf-wz-ist${verpasst ? ' verpasst' : ''}">${ist}</span>` : ''}
           {{CHEV}}
         </div>
-        ${uebersprungen ? '' : _laufWzBalken(u && u.km, lauf && lauf.km, maxKm)}
+        ${_laufWzBalken(u && u.km, lauf && lauf.km, maxKm)}
       </div>`;
     // Ein gelaufener Tag ist ein KNOPF in die Detailansicht des Laufs — derselbe kleine
     // Pfeil-Knopf wie in der Kalender-Fusszeile. Ein `<button>`, damit `initScrollHideNav`
@@ -6511,7 +6506,8 @@ function _calRasterHTML(id, z) {
     const wi = (day.getDay() + 6) % 7;
     const ver = ausserhalb ? null : verschiebung(day);
     const gymVerschoben = !!(ver && !entry && ver.gym.planNachIst[wi] != null);
-    const laufGepl = !ausserhalb && laufGeplant[key] && !laufGeplant[key].uebersprungen
+    // Ein UEBERSPRUNGENER Lauf behaelt seit v438 seinen Umriss — wie ein nicht eingehaltener.
+    const laufGepl = !ausserhalb && laufGeplant[key]
       && !(ver && !lauf && ver.lauf.planNachLauf[wi] != null);
     const wettkampf = !ausserhalb && wettkampfTage[key];
     const cls = ['cal-day'];
