@@ -4702,6 +4702,7 @@ function saveRunSkip(umschalten) {
   closeModal('modal-run-skip');
   if (currentScreen === 'workouts') renderWorkoutsScreen();
   else if (currentScreen === 'overview') renderOverview();
+  else if (currentScreen === 'plans') renderPlansScreen();
 }
 
 // Detailansicht eines gelaufenen Tages — Gegenstueck zu `showHistDetail` fuer die
@@ -4991,7 +4992,7 @@ function laufWochenZeilen(mo, istAktuell, maxKm) {
       : u && u.km ? fmtKm(u.km) : u && u.minutes ? fmtMin(u.minutes) : 'Lauf';
     return {
       html: _wzKnopf('lauf-wz', tipp, inhalt.replace('{{CHEV}}', tipp ? chev : '')),
-      kurz: { sport: 'lauf', zustand, text: kurzText, tipp, notiz: !!(u && u.note) },
+      kurz: { sport: 'lauf', zustand, text: kurzText, tipp },
     };
   }).map((z, i) => z ? { i, ...z } : null).filter(Boolean);
   return zeilen;
@@ -5077,7 +5078,7 @@ function renderUebersichtWoche() {
     if (g && g.i === z.i) g.teile.push(z.kurz); else gruppen.push({ i: z.i, teile: [z.kurz] });
   });
   const einheit = k => {
-    const innen = `<span class="wz-zeichen ${k.sport} ${k.zustand}" aria-hidden="true"></span><span class="wz-text">${escapeHtml(k.text)}</span>${k.notiz ? NOTIZ_ICON : ''}`;
+    const innen = `<span class="wz-zeichen ${k.sport} ${k.zustand}" aria-hidden="true"></span><span class="wz-text">${escapeHtml(k.text)}</span>`;
     return k.tipp ? `<button type="button" class="wz-einheit" onclick="${k.tipp}">${innen}</button>`
                   : `<span class="wz-einheit">${innen}</span>`;
   };
@@ -6863,12 +6864,18 @@ function showCalDay(key, id) {
     } else if (gepl && laufVer.planNachLauf[wiTag] != null) {
       const j = laufVer.planNachLauf[wiTag];
       laufHTML = `<div class="cal-detail-tag-txt">Lauf · ${_verschiebWort(wiTag, j) === 'vorgezogen' ? 'vorgezogen auf' : 'nachgeholt am'} ${WOCHENTAGE_KURZ[j]}</div>`;
-    } else if (gepl && gepl.uebersprungen) {
-      laufHTML = `<div class="cal-detail-tag-txt">Lauf · übersprungen${notiz}</div>`;
     } else if (gepl) {
       const u = gepl.einheit;
       const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null].filter(Boolean).join(' · ') : '';
-      laufHTML = `<div class="cal-detail-tag-txt">geplant${soll ? ': ' + soll : ''}${notiz}</div>`;
+      const text = gepl.uebersprungen ? 'Lauf · übersprungen' : `geplant${soll ? ': ' + soll : ''}`;
+      // MIT NOTIZ wird die Zeile ein KNOPF wie bei einer absolvierten Einheit (v443, Leonard-Wunsch):
+      // Er oeffnet das Fenster der Einheit mit Vorgabe und Notiz (`openRunSkip`).
+      laufHTML = notiz
+        ? `<button type="button" class="cal-detail-tag"
+                   onclick="event.stopPropagation();openRunSkip('${key}')"><span
+                   class="cal-detail-tagname">${text}${notiz}</span><span
+                   class="cal-detail-chev">▾</span></button>`
+        : `<div class="cal-detail-tag-txt">${text}</div>`;
     } else if (_laufplanDeckt(key)) {
       // Gegenstueck zu „Kein Gym geplant": nur INNERHALB eines Laufplans (Leonard-Wunsch
       // 06.09.2026).

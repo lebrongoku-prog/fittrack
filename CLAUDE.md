@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v442**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v443**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3042,6 +3042,12 @@ am Wochentagskreis, C = Notizanfang in der Zeile): `NOTIZ_ICON` (Sprechblase 13p
 der Seite „Laufen" (hinter Vorgabe/Zone), in „Diese Woche" der Uebersicht (`kurz.notiz`) und in der
 Kalender-Fusszeile (gelaufen: Notiz der abgedeckten Einheit via `runGeplantFuerLauf`; geplant;
 uebersprungen). GEMESSEN: Di mit Notiz in allen drei Stellen markiert, Sa ohne; keine Konsolenfehler.
+SEIT v443 (15.10.2026, Leonard-Wunsch): KEINE Sprechblase mehr in „Diese Woche" der UEBERSICHT
+(`kurz.notiz` entfallen; die Seite „Laufen" behaelt sie). In der KALENDER-FUSSZEILE wird ein
+GEPLANTER oder UEBERSPRUNGENER Lauf MIT Notiz zu einem Knopf wie bei einer absolvierten Einheit
+(`.cal-detail-tag` mit ▾) und oeffnet `openRunSkip(key)` (Vorgabe + Notiz); ohne Notiz bleibt es
+Text. Ein gelaufener Lauf war schon ein Knopf (Detailansicht mit Notiz). `saveRunSkip` zeichnet
+jetzt auch den Plan-Tab neu. GEMESSEN: Sa geplant mit Notiz → Knopf → Fenster „lang & locker".
 TESTHINWEIS: `glasAktiv()` liest den SPEICHER, nicht die Klasse am `<html>` — zum Pruefen
 `localStorage.setItem(GLAS_KEY, '1'); applyGlasModus();` statt die Klasse von Hand zu setzen.
 
