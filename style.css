@@ -2682,6 +2682,15 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
 /* v442: 52px hoch (Leonard-Wunsch; v441 kurz 64px, vorher 42.75px aus dem Polster). */
 .hero-heute.wz-heute:not(.hero-aktiv) .hero-v2-btn { font-size: var(--fs-text); padding: 12px 8px; min-height: 52px; }
 .wz-flach-liste { padding-top: 12px; }
+.wz-flach-liste.zu { display: none; }
+/* v445: Der Titel ist der Ausklapp-Knopf der Karte (Pfeil ganz rechts, dreht sich offen um 180 Grad). */
+.wz-titel-btn { display: flex; align-items: center; justify-content: space-between; width: 100%;
+  border: none; background: none; padding: 0; font: inherit; font-size: var(--fs-titel); font-weight: 700;
+  color: var(--text); text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none; }
+.wz-titel-btn .aex-v2-chev { width: 20px; height: 20px; }
+.wz-titel-btn .aex-v2-chev svg { width: 17px; height: 17px; }
+.wz-titel-btn[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
 /* Die Zeilen bleiben im Kartenpolster (14px) und ruecken ihren Inhalt um dieselben 12px ein wie
    der Heute-Block darueber — so steht das Feld des gewaehlten Tags buendig mit dem Block und der
    Wochentag auf einer Linie mit dessen Titel (v435, Leonard-Wunsch). */

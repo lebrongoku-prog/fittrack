@@ -5056,6 +5056,35 @@ function gymWochenZeilen() {
 // Woche, NICHT wischbar (Leonard-Entscheidung): Ueber einem wischbaren Scroller liesse sich der
 // Tab nicht mehr wechseln. Die Seite „Laufen" behaelt ihre wischbare Liste unveraendert.
 // Ohne eine einzige Zeile entfaellt die Karte.
+// EIN- UND AUSKLAPPBAR (v445, 17.10.2026, Leonard-Wunsch): Eingeklappt stehen nur Titel und die
+// beiden Knoepfe, ausgeklappt zusaetzlich die Tageszeilen. Umgeschaltet per Tipp auf den Titel.
+// Ausgangszustand eingeklappt; BEWUSST nicht gespeichert, wie jeder Ansichtszustand der App.
+// Die Liste steht immer im DOM (`.zu` = display:none); gefahren wird ihre Hoehe samt Polster
+// (`_boxFahren`), ein Token entwertet den Abschluss einer abgebrochenen Bewegung.
+let _ovWocheOffen = false;
+function toggleOvWoche() {
+  _ovWocheOffen = !_ovWocheOffen;
+  const karte = document.querySelector('#ov-diese-woche .ov-woche-liste');
+  const btn = karte && karte.querySelector('.wz-titel-btn');
+  if (btn) btn.setAttribute('aria-expanded', String(_ovWocheOffen));
+  const liste = karte && karte.querySelector('.wz-flach-liste');
+  if (!liste) return;
+  const nr = (liste._klappNr || 0) + 1;
+  liste._klappNr = nr;
+  const von = liste.classList.contains('zu') ? 0 : liste.getBoundingClientRect().height;
+  liste.getAnimations().forEach(a => a.cancel());
+  liste.classList.remove('zu');
+  const voll = liste.getBoundingClientRect().height;
+  const bis = _ovWocheOffen ? voll : 0;
+  const fertig = () => {
+    if (liste._klappNr !== nr) return;
+    liste.style.overflow = '';
+    liste.classList.toggle('zu', !_ovWocheOffen);
+  };
+  if (_bewegungReduziert() || !liste.animate) { fertig(); return; }
+  liste.style.overflow = 'hidden';
+  _boxFahren(liste, von, bis, fertig);
+}
 function renderUebersichtWoche() {
   const el = document.getElementById('ov-diese-woche');
   if (!el) return;
@@ -5102,14 +5131,17 @@ function renderUebersichtWoche() {
   const titel = tagIdx === todayIdx ? `Heute · ${WOCHENTAGE_KURZ[todayIdx]}` : WOCHENTAGE_LANG[tagIdx];
   const heuteBlock = buildHeuteHero(gymTag, tagEintrag, { sport: sportHeute, erledigtGrau: true,
       runIdx: tagIdx, titel })
-    .replace('class="hero-v2 hero-heute', 'class="hero-heute wz-heute');
+    .replace('class="hero-v2 hero-heute', 'class="hero-heute wz-heute')
+    // Der TITEL klappt die Tageszeilen auf und zu (v445, Leonard-Wunsch) — mit dem App-weiten Pfeil.
+    .replace(/<div class="hero-heute-titel">([\s\S]*?)<\/div>/, (m, t) =>
+      `<button type="button" class="hero-heute-titel wz-titel-btn" aria-expanded="${_ovWocheOffen}" onclick="toggleOvWoche()"><span>${t}</span><span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>`);
   const tageHTML = gruppen.map(g => `<div class="wz-flach${g.i === tagIdx ? ' gewaehlt' : ''}">
       <span class="wz-flach-tag">${WOCHENTAGE_KURZ[g.i]}</span>
       <div class="wz-flach-teile">${g.teile.map(einheit).join('')}</div>
     </div>`).join('');
   el.innerHTML = `<div class="chart-card-v2 ov-woche-liste">
     ${heuteBlock}
-    ${tageHTML ? `<div class="wz-flach-liste">${tageHTML}</div>` : ''}
+    ${tageHTML ? `<div class="wz-flach-liste${_ovWocheOffen ? '' : ' zu'}">${tageHTML}</div>` : ''}
   </div>`;
 }
 

@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v444**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v445**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3468,6 +3468,15 @@ SEIT v442 (Leonard-Wunsch) `min-height: 52px` statt 64px.
 und Laufziel bzw. „Kein Lauf" sind im Startblock ausgeblendet (`.wz-heute .hero-heute-kopf` und
 `.hero-heute-spalte > .hero-heute-einheit` per CSS) — die Seiten „Gym"/„Laufen" behalten sie.
 GEMESSEN: beide Knoepfe 52px, keine Beschriftung sichtbar; keine Konsolenfehler.
+**EIN- UND AUSKLAPPBAR** (v445, 17.10.2026, Leonard-Wunsch, `toggleOvWoche`, `_ovWocheOffen`):
+Eingeklappt nur Titel und die beiden Knoepfe, ausgeklappt zusaetzlich die Tageszeilen. Der TITEL
+ist der Knopf (`.wz-titel-btn`, in `renderUebersichtWoche` per Regex aus dem Titel von
+`buildHeuteHero` gemacht) mit dem App-weiten Pfeil ganz rechts (`aria-expanded` dreht ihn).
+Ausgangszustand EINGEKLAPPT, nicht gespeichert; ein Neuzeichnen (Tagesauswahl, Filter) behaelt den
+Zustand. Die Liste steht immer im DOM (`.wz-flach-liste.zu` = display:none), gefahren wird ihre
+Hoehe samt Polster ueber `_boxFahren` (200ms), Token `_klappNr` an der Liste.
+GEMESSEN (375px): Karte 110px zu / 235px auf, dreimal in 60ms-Abstand getippt endet sauber
+(kein overflow-Rest, keine Restanimation), Tipp auf Di laesst die Liste offen; keine Konsolenfehler.
 GEMESSEN (375px): Mo Push 2 PR · Di Lauf · Do Pull nachgeholt · Do Lauf verpasst · Fr Push nicht
 trainiert · So Lauf offen (heute); Filter Gym/Lauf filtert richtig; Tipp oeffnet „Push — Mo., 28.
 Sept. 2026"; kein Ueberlauf; Seite „Laufen" unveraendert (4 Seiten); keine Konsolenfehler.
