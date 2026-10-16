@@ -5128,7 +5128,7 @@ function renderUebersichtWoche() {
   const gymTag = !tagEintrag || !tagEintrag.planDay ? null
     : (gewaehlt || !tagEintrag.dayDone) ? tagEintrag.planDay : null;
   const sportHeute = _wochenFilter === 'beide' ? 'beide' : _wochenFilter === 'gym' ? 'gym' : 'lauf';
-  const titel = tagIdx === todayIdx ? `Heute · ${WOCHENTAGE_KURZ[todayIdx]}` : WOCHENTAGE_LANG[tagIdx];
+  const titel = tagIdx === todayIdx ? 'Heute' : WOCHENTAGE_LANG[tagIdx];   // v447: ohne „· Sa“ (Leonard-Wunsch)
   const heuteBlock = buildHeuteHero(gymTag, tagEintrag, { sport: sportHeute, erledigtGrau: true,
       runIdx: tagIdx, titel })
     .replace('class="hero-v2 hero-heute', 'class="hero-heute wz-heute')
