@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v445**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v446**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3477,6 +3477,7 @@ Zustand. Die Liste steht immer im DOM (`.wz-flach-liste.zu` = display:none), gef
 Hoehe samt Polster ueber `_boxFahren` (200ms), Token `_klappNr` an der Liste.
 GEMESSEN (375px): Karte 110px zu / 235px auf, dreimal in 60ms-Abstand getippt endet sauber
 (kein overflow-Rest, keine Restanimation), Tipp auf Di laesst die Liste offen; keine Konsolenfehler.
+SEIT v446 (Leonard-Wunsch) OHNE Ausklapp-Pfeil — der Titel allein ist der Knopf.
 GEMESSEN (375px): Mo Push 2 PR · Di Lauf · Do Pull nachgeholt · Do Lauf verpasst · Fr Push nicht
 trainiert · So Lauf offen (heute); Filter Gym/Lauf filtert richtig; Tipp oeffnet „Push — Mo., 28.
 Sept. 2026"; kein Ueberlauf; Seite „Laufen" unveraendert (4 Seiten); keine Konsolenfehler.

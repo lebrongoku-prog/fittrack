@@ -5132,9 +5132,9 @@ function renderUebersichtWoche() {
   const heuteBlock = buildHeuteHero(gymTag, tagEintrag, { sport: sportHeute, erledigtGrau: true,
       runIdx: tagIdx, titel })
     .replace('class="hero-v2 hero-heute', 'class="hero-heute wz-heute')
-    // Der TITEL klappt die Tageszeilen auf und zu (v445, Leonard-Wunsch) — mit dem App-weiten Pfeil.
+    // Der TITEL klappt die Tageszeilen auf und zu (v445, Leonard-Wunsch) — seit v446 ohne Pfeil.
     .replace(/<div class="hero-heute-titel">([\s\S]*?)<\/div>/, (m, t) =>
-      `<button type="button" class="hero-heute-titel wz-titel-btn" aria-expanded="${_ovWocheOffen}" onclick="toggleOvWoche()"><span>${t}</span><span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>`);
+      `<button type="button" class="hero-heute-titel wz-titel-btn" aria-expanded="${_ovWocheOffen}" onclick="toggleOvWoche()">${t}</button>`);
   const tageHTML = gruppen.map(g => `<div class="wz-flach${g.i === tagIdx ? ' gewaehlt' : ''}">
       <span class="wz-flach-tag">${WOCHENTAGE_KURZ[g.i]}</span>
       <div class="wz-flach-teile">${g.teile.map(einheit).join('')}</div>
