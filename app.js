@@ -5287,7 +5287,8 @@ function _laufWochenWischEinrichten(sc, montage, aktIdx, startIdx) {
 // Gewicht/Wdh.-Umschalter der Uebungen, bewusst nicht gespeichert).
 let _laufKmOffen = false;      // Karte „Diese Woche" — zugeklappt
 let _laufKmChart = null;       // Instanz in der Wochenkarte
-let _lpKmChart = null;         // Instanz in der Detailansicht
+let _lpKmChart = null;         // Instanz in der Detailansicht (geplant)
+let _lpIstChart = null;        // Instanz in der Detailansicht (gelaufen, v449)
 
 // Je Planwoche: geplante Kilometer, tatsaechlich gelaufene und ob die Woche VORBEI ist.
 // Eine abgeschlossene Woche zeigt im Diagramm das IST statt des Solls (Leonard-Wunsch
@@ -5337,7 +5338,10 @@ function _laufKmDaten(plan, nurPlan) {
 // untereinander. In der Karte „Diese Woche" bleibt sie drin, dort ist sie der Ausklapp-Knopf.
 const KM_DIAGRAMM = {
   lauf: { block: 'lauf-km-block', canvas: 'lauf-km-chart', nurPlan: false, klappbar: true,  titelAussen: false },
-  lp:   { block: 'lp-km-block',   canvas: 'lp-km-chart',   nurPlan: true,  klappbar: false, titelAussen: true  },
+  lp:   { block: 'lp-km-block',   canvas: 'lp-km-chart',   nurPlan: true,  klappbar: false, titelAussen: true,  schnittId: 'lp-km-schnitt' },
+  // v449 (17.10.2026, Leonard-Wunsch): ZWEITES Diagramm in der Detailansicht, darunter — die
+  // GELAUFENEN km je Planwoche (kuenftige Wochen 0). Linie = Mittel der abgeschlossenen Wochen.
+  lpIst: { block: 'lp-ist-block', canvas: 'lp-ist-chart',  nurPlan: false, nurIst: true, klappbar: false, titelAussen: true, schnittId: 'lp-ist-schnitt' },
 };
 // Die Detailansicht des Laufplans ist nicht einklappbar (`klappbar: false`) und immer offen.
 function _kmOffen(welches) { return KM_DIAGRAMM[welches].klappbar ? _laufKmOffen : true; }
@@ -5420,6 +5424,7 @@ function _zeichneLaufKmDiagramm(mo) {
 function _zeichneLpKmDiagramm() {
   const p = DB.getRunPlans().find(x => x.id === editingRunPlanId);
   _lpKmChart = _zeichneKmDiagramm('lp', p, null, _lpKmChart);
+  _lpIstChart = _zeichneKmDiagramm('lpIst', p, null, _lpIstChart);
 }
 
 function _zeichneKmDiagramm(welches, plan, mo, alt) {
@@ -5437,14 +5442,14 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
   // 22.09.2026, Leonard-Wunsch) — dort geht es um den Plan, nicht um die Sportart. Gelesen wird
   // `--accent` vom Body, damit die Farbe an einer Stelle steht.
   const tabFarbe = (getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#F59E0B');
-  const pal = cfg.nurPlan
+  const pal = (cfg.nurPlan || cfg.nurIst)
     ? { vorbei: tabFarbe, vorbeiMatt: _withAlpha(tabFarbe, 0.55), plan: tabFarbe, planMatt: _withAlpha(tabFarbe, 0.55) }
     : _laufKmPalette(aufGlas);
   const schrift = aufGlas ? 'rgba(255,255,255,0.8)' : '#64748B';
   const raster  = aufGlas ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.06)';
   // Hervorgehoben wird die gezeigte Woche; in der Detailansicht gibt es keine — dort steht
   // `hervorIdx` auf -1 und alle Saeulen sind gleich.
-  const zeigt = mo || (cfg.nurPlan ? null : _laufWochenMontag(new Date()));
+  const zeigt = mo || ((cfg.nurPlan || cfg.nurIst) ? null : _laufWochenMontag(new Date()));
   const hervorIdx = zeigt ? daten.findIndex(d => d.mo.getTime() === zeigt.getTime()) : -1;
   // DURCHSCHNITTSLINIE DER GELAUFENEN KM (15.10.2026, v439, Leonard-Wunsch): Mittel ueber die
   // ABGESCHLOSSENEN Wochen (dieselben, deren Saeule das Ist zeigt), gestrichelt ueber die ganze
@@ -5453,7 +5458,7 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
   const schnitt = _kmSchnitt(daten, cfg.nurPlan);
   // In der Detailansicht steht der Wert rechts neben dem Abschnittstitel — nachziehen, weil
   // `setRunUnit` nur das Diagramm neu zeichnet, nicht die Seite.
-  if (welches === 'lp') { const w = document.getElementById('lp-km-schnitt'); if (w) w.textContent = _kmSchnittText(schnitt); }
+  if (cfg.schnittId) { const w = document.getElementById(cfg.schnittId); if (w) w.textContent = _kmSchnittText(schnitt); }
   // Dezent (v440, Leonard-Wunsch): duenner, halbtransparent, ohne Beschriftung am Strich — der
   // Wert steht oben rechts im Kopf des Diagramms (`laufKmDiagrammHTML`).
   const linienFarbe = aufGlas ? 'rgba(255,255,255,0.55)' : 'rgba(51,65,85,0.4)';
@@ -5468,7 +5473,7 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
       labels: daten.map((_, i) => 'W' + (i + 1)),
       // ABGESCHLOSSENE Wochen zeigen das IST, laufende und kuenftige das SOLL.
       datasets: [{
-        data: daten.map(d => d.vorbei ? d.gelaufen : d.geplant),
+        data: daten.map(d => (cfg.nurIst || d.vorbei) ? d.gelaufen : d.geplant),
         backgroundColor: _laufKmFarben(daten, hervorIdx, pal),
         hoverBackgroundColor: _laufKmVoll(daten, pal),
         borderRadius: 4, borderWidth: 0, maxBarThickness: 34, order: 1,
@@ -5484,11 +5489,12 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
           title: (c) => 'Woche ' + (c[0].dataIndex + 1),
           // Im Tooltip stehen BEIDE Zahlen (Leonard-Wunsch): was geplant war und was gelaufen
           // wurde. „Gelaufen" bleibt weg, solange die Woche laeuft und noch nichts drin steht.
-          label: (c) => 'Geplant: ' + fmtKm(daten[c.dataIndex].geplant),
+          label: (c) => cfg.nurIst ? 'Gelaufen: ' + fmtKm(daten[c.dataIndex].gelaufen)
+                             : 'Geplant: ' + fmtKm(daten[c.dataIndex].geplant),
           afterLabel: (c) => {
             // In der Detailansicht geht es nur um den PLAN — dort bleibt das Ist auch im
             // Tooltip weg (Leonard-Wunsch).
-            if (cfg.nurPlan) return '';
+            if (cfg.nurPlan || cfg.nurIst) return '';
             const d = daten[c.dataIndex];
             return (d.vorbei || d.gelaufen) ? 'Gelaufen: ' + fmtKm(d.gelaufen) : '';
           },
@@ -5725,10 +5731,17 @@ function renderRunPlanDetail() {
 
     ${laufKmDiagrammHTML(p, 'lp') ? `<div class="mehr-section">
       <div class="mehr-section-kopf">
-        <div class="mehr-section-title">Wochenkilometer</div>
+        <div class="mehr-section-title">Geplante Wochenkilometer</div>
         <span class="mehr-section-title lp-km-schnitt" id="lp-km-schnitt">${_kmSchnittText(_kmSchnitt(_laufKmDaten(p, true), true))}</span>
       </div>
       <div class="mehr-card lp-km-karte">${laufKmDiagrammHTML(p, 'lp')}</div>
+    </div>
+    <div class="mehr-section">
+      <div class="mehr-section-kopf">
+        <div class="mehr-section-title">Gelaufene Wochenkilometer</div>
+        <span class="mehr-section-title lp-km-schnitt" id="lp-ist-schnitt">${_kmSchnittText(_kmSchnitt(_laufKmDaten(p, false), false))}</span>
+      </div>
+      <div class="mehr-card lp-km-karte">${laufKmDiagrammHTML(p, 'lpIst')}</div>
     </div>` : ''}
 
     <div class="mehr-section">

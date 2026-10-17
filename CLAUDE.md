@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v448**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v449**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3041,6 +3041,13 @@ nur den Plan, die Linie liegt deshalb auf dem Mittel der GEPLANTEN km ueber die 
 (`_kmSchnitt(daten, nurPlan)`); der Wert steht rechts neben dem Abschnittstitel „Wochenkilometer"
 (`#lp-km-schnitt`, `.lp-km-schnitt`) und zieht bei `setRunUnit` mit. GEMESSEN: 19–23 km → Ø 21 km,
 nach Aenderung einer Einheit Ø 25 km; keine Konsolenfehler.
+ZWEITES DIAGRAMM in der Laufplan-Detailansicht (v449, 17.10.2026, Leonard-Wunsch): Unter
+„GEPLANTE WOCHENKILOMETER" (bisher „Wochenkilometer") steht „GELAUFENE WOCHENKILOMETER"
+(`KM_DIAGRAMM.lpIst`, `nurIst: true`, `_lpIstChart`, Wert `#lp-ist-schnitt`): Saeulen = gelaufene km
+je Planwoche (kuenftige 0), Tabfarbe, keine Hervorhebung, Tooltip nur „Gelaufen", Linie = Mittel
+der ABGESCHLOSSENEN Wochen (`_laufKmSchnitt`). `_zeichneLpKmDiagramm` zeichnet beide. `schnittId`
+in `KM_DIAGRAMM` sagt, wo der Ø-Wert steht. GEMESSEN: Ist 19.2/7.5/0/0/0, Ø 19.2 km; keine
+Konsolenfehler.
 **NOTIZ-MARKE** (v440, 15.10.2026, Leonard-Entscheidung „A + D" aus vier Vorschlaegen — B = Punkt
 am Wochentagskreis, C = Notizanfang in der Zeile): `NOTIZ_ICON` (Sprechblase 13px, `--text3`, Glas
 75-%-Weiss) hinter jedem Lauf, dessen geplante Einheit eine `note` hat — in der Liste „Diese Woche"
