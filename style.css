@@ -1887,6 +1887,8 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 }
 /* Wochenplan-Kachel während der Einheit ausblenden (Platz für die Sätze). */
 html.wo-running #wo-week-card { display: none; }
+/* v448: Die Wochenplan-Karte im Trainings-Tab ist entfallen, die Huelle bleibt leer. */
+#wo-week-card:empty { display: none; }
 /* Uebergang normal ↔ aktiv (15.09.2026, `_woWocheFahren`): Waehrend die Wochenplan-Karte weg-
    bzw. aufklappt, bleibt sie trotz `wo-running` sichtbar und schneidet ihren Inhalt ab. Eine
    Klasse mehr als die Ausblende-Regel, damit sie gewinnt. */
@@ -4168,6 +4170,9 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
      (`#wo-view-gym > #wo-week-card`) hat ZWEI und gewinnt deshalb — die Karte
      blieb im Querformat waehrend einer laufenden Einheit stehen (Leonard-Meldung 01.09.2026). */
   html.wo-running #wo-view-gym > #wo-week-card { display: none; }
+  /* v448: ohne Wochenplan-Karte nimmt die Herocard die ganze Breite. */
+  #wo-view-gym > #wo-week-card:empty { display: none; }
+  #wo-view-gym > #wo-session-card-wrap { grid-column: 1 / -1; }
 
   /* LAUFEN — dieselbe Aufteilung wie auf der Seite „Gym": Wochenplan links, Herocard rechts
      in EINER Zeile (Leonard-Wunsch 06.09.2026). „Diese Woche" spannt darunter ueber beide
@@ -4187,7 +4192,7 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
     display: flex; flex-direction: column; justify-content: center;
   }
   #wo-view-laufen > #wo-runplan-card { grid-column: 1; }
-  #wo-view-laufen > #wo-lauf-hero { grid-column: 2; }
+  #wo-view-laufen > #wo-lauf-hero { grid-column: 1 / -1; }   /* v448: ohne Wochenplan-Karte */
   #wo-view-laufen > .chart-card-v2 { grid-column: 1 / -1; }
 
   /* STATS — Volumenentwicklung und Volumen pro Muskelgruppe teilen sich die erste Zeile
@@ -4300,6 +4305,8 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
 .ex-chart-block.collapsed .ex-chart-toggle { display: none; }
 .ex-chart-block.collapsed .ex-chart-head { margin-bottom: 0; }
 /* Durchschnitt der Wochenkilometer oben rechts (v440), nur aufgeklappt. */
+/* v448: Durchschnitt der geplanten km rechts neben dem Abschnittstitel der Laufplan-Detailansicht. */
+.lp-km-schnitt { text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums; }
 .km-schnitt { margin-left: auto; font-size: var(--fs-etikett); font-weight: 700; color: var(--text2); text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums; }
 .ex-chart-block.collapsed .km-schnitt { display: none; }
 html.glas .screen:not(#screen-mehr) .km-schnitt { color: rgba(255,255,255,.85); }

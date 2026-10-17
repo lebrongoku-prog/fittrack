@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v447**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v448**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3036,6 +3036,11 @@ Glas 90-%-Weiss. Ohne abgeschlossene Woche keine Linie. Der Tooltip zeigt nur di
 SEIT v440 (Leonard-Wunsch) DEZENTER: 1px, Strich 4/4, `rgba(51,65,85,.4)` (Glas 55-%-Weiss), OHNE
 Beschriftung am Strich. Der Wert steht stattdessen OBEN RECHTS im Kopf des Diagramms
 (`.km-schnitt`, „Ø 20 km", `_laufKmSchnitt`), nur aufgeklappt sichtbar.
+SEIT v448 (17.10.2026, Leonard-Wunsch) AUCH IN DER LAUFPLAN-DETAILANSICHT: Dort zeigen die Saeulen
+nur den Plan, die Linie liegt deshalb auf dem Mittel der GEPLANTEN km ueber die Wochen mit km > 0
+(`_kmSchnitt(daten, nurPlan)`); der Wert steht rechts neben dem Abschnittstitel „Wochenkilometer"
+(`#lp-km-schnitt`, `.lp-km-schnitt`) und zieht bei `setRunUnit` mit. GEMESSEN: 19–23 km → Ø 21 km,
+nach Aenderung einer Einheit Ø 25 km; keine Konsolenfehler.
 **NOTIZ-MARKE** (v440, 15.10.2026, Leonard-Entscheidung „A + D" aus vier Vorschlaegen — B = Punkt
 am Wochentagskreis, C = Notizanfang in der Zeile): `NOTIZ_ICON` (Sprechblase 13px, `--text3`, Glas
 75-%-Weiss) hinter jedem Lauf, dessen geplante Einheit eine `note` hat — in der Liste „Diese Woche"
@@ -3483,6 +3488,15 @@ getippter anderer Tag heisst weiter ausgeschrieben („Dienstag").
 GEMESSEN (375px): Mo Push 2 PR · Di Lauf · Do Pull nachgeholt · Do Lauf verpasst · Fr Push nicht
 trainiert · So Lauf offen (heute); Filter Gym/Lauf filtert richtig; Tipp oeffnet „Push — Mo., 28.
 Sept. 2026"; kein Ueberlauf; Seite „Laufen" unveraendert (4 Seiten); keine Konsolenfehler.
+
+### Keine Wochenplan-Karten mehr im Trainings-Tab
+17.10.2026, Leonard-Wunsch (v448): Auf den Seiten „Gym" und „Laufen" steht keine Wochenplan-Karte
+mehr. `renderWorkoutWeekStrip` leert `#wo-week-card` nur noch (`:empty` blendet aus,
+`_woWocheFahren` faehrt eine leere Huelle nicht), `renderLaufKalenderSeite` baut `#wo-runplan-card`
+nicht mehr und setzt `selectedRunDayIdx` auf heute. Damit gibt es dort KEINE Tagesauswahl mehr:
+Gym zeigt heute bzw. den Tag der laufenden Einheit, Laufen heute. Querformat: Herocard ueber beide
+Spalten. Alle Abschnitte zur Wochenplan-Karte und Tagesauswahl IM TRAININGS-TAB sind Vorgeschichte.
+GEMESSEN (375px): Gym und Laufen ohne Karte, Herocard zuoberst; keine Konsolenfehler.
 
 ### Herocard „Heute"
 `buildHeuteHero(planDay, selDay, opts)` ersetzt seit dem 06.09.2026 die frueheren Vorschau- und

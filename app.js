@@ -2263,17 +2263,11 @@ function jumpToWorkoutDay(idx) {
 function renderWorkoutWeekStrip() {
   ensureSelectedDayIdx();
   const root = document.getElementById('wo-week-card');
-  if (!root) return;
-  const plan = getActivePlan();
-  // Die Karte selbst tut hier NICHTS (`onTap: false`, Leonard-Wunsch 06.09.2026): Auf dieser
-  // Seite ist sie der Tagesumschalter, ein Tipp daneben soll nicht in den Plan-Tab wischen.
-  root.innerHTML = plan
-    ? buildPlanCard(plan, /*onTap*/ false, /*hideToday*/ false, /*hideStatus*/ true, /*hideMeta*/ true,
-                    { selectedIdx: selectedWorkoutDayIdx, dayOnTap: 'selectWorkoutDay' })
-    : `<div class="plan-card-v2" onclick="showScreen('plans')" style="cursor:pointer">
-         <div class="ppv-name" style="color:var(--text2)">Kein aktiver Trainingsplan</div>
-         <div class="ppv-meta">Tippe, um einen Plan anzulegen oder zu aktivieren.</div>
-       </div>`;
+  // ENTFALLEN (v448, 17.10.2026, Leonard-Wunsch): Auf den Seiten „Gym" und „Laufen" steht keine
+  // Wochenplan-Karte mehr. Die Huelle bleibt leer (`:empty` blendet sie aus); `_woWocheFahren`
+  // faehrt eine leere Huelle nicht. Damit gibt es dort keine Tagesauswahl mehr — die Seite zeigt
+  // heute bzw. den Tag der laufenden Einheit.
+  if (root) root.innerHTML = '';
 }
 
 // Trainings-Tab: „Gym" (Krafttraining) und „Laufen" (gelaufene Einheiten).
@@ -5306,6 +5300,14 @@ function _laufKmSchnitt(daten) {
   const vorbei = daten.filter(d => d.vorbei);
   return vorbei.length ? vorbei.reduce((s, d) => s + d.gelaufen, 0) / vorbei.length : null;
 }
+// Laufplan-Detailansicht (v448, Leonard-Wunsch): Dort zeigen die Saeulen nur den PLAN — der
+// Durchschnitt ist deshalb das Mittel der GEPLANTEN km ueber die Wochen, die ueberhaupt km nennen.
+function _kmSchnitt(daten, nurPlan) {
+  if (!nurPlan) return _laufKmSchnitt(daten);
+  const mit = daten.filter(d => d.geplant > 0);
+  return mit.length ? mit.reduce((s, d) => s + d.geplant, 0) / mit.length : null;
+}
+function _kmSchnittText(schnitt) { return schnitt != null ? `Ø ${fmtKm(Math.round(schnitt * 10) / 10)}` : ''; }
 function _laufKmDaten(plan, nurPlan) {
   const wochen = runPlanWochen(plan);
   const heuteMo = _laufWochenMontag(new Date()).getTime();
@@ -5348,7 +5350,7 @@ function laufKmDiagrammHTML(plan, welches) {
   if (!daten.some(d => d.geplant > 0 || d.gelaufen > 0)) return '';   // nichts zu zeigen
   const offen = _kmOffen(welches);
   // Der DURCHSCHNITT steht seit v440 oben rechts im Kopf — nur aufgeklappt sichtbar (CSS).
-  const schnitt = cfg.nurPlan ? null : _laufKmSchnitt(daten);
+  const schnitt = _kmSchnitt(daten, cfg.nurPlan);
   const kopf = cfg.titelAussen ? '' : `<div class="ex-item-body-label ex-chart-head">
         <button type="button" class="ex-chart-collapse" onclick="toggleKmDiagramm('${welches}')"
                aria-expanded="${offen ? 'true' : 'false'}">Wochenkilometer<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
@@ -5448,7 +5450,10 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
   // ABGESCHLOSSENEN Wochen (dieselben, deren Saeule das Ist zeigt), gestrichelt ueber die ganze
   // Breite, rechts beschriftet („Ø 24 km"). Nur auf der Seite „Laufen" — die Detailansicht des
   // Laufplans zeigt nur den Plan. Ohne abgeschlossene Woche keine Linie.
-  const schnitt = cfg.nurPlan ? null : _laufKmSchnitt(daten);
+  const schnitt = _kmSchnitt(daten, cfg.nurPlan);
+  // In der Detailansicht steht der Wert rechts neben dem Abschnittstitel — nachziehen, weil
+  // `setRunUnit` nur das Diagramm neu zeichnet, nicht die Seite.
+  if (welches === 'lp') { const w = document.getElementById('lp-km-schnitt'); if (w) w.textContent = _kmSchnittText(schnitt); }
   // Dezent (v440, Leonard-Wunsch): duenner, halbtransparent, ohne Beschriftung am Strich — der
   // Wert steht oben rechts im Kopf des Diagramms (`laufKmDiagrammHTML`).
   const linienFarbe = aufGlas ? 'rgba(255,255,255,0.55)' : 'rgba(51,65,85,0.4)';
@@ -5505,13 +5510,8 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
 function renderLaufKalenderSeite() {
   const el = document.getElementById('wo-view-laufen');
   if (!el) return;
-  // Zuoberst derselbe Laufwochenplan wie in der Uebersicht (Leonard-Wunsch 01.09.2026) —
-  // hier aber MIT Tagesauswahl, genau wie der Gymwochenplan auf der Nachbarseite.
-  if (selectedRunDayIdx === null) selectedRunDayIdx = (new Date().getDay() + 6) % 7;
-  // Karte stumm (`onTap: false`) wie auf der Nachbarseite „Gym" — sie waehlt hier nur den Tag.
-  const wochenplan = `<div id="wo-runplan-card">${buildRunPlanCard(
-    /*onTap*/ false, null,
-    { selectedIdx: selectedRunDayIdx, dayOnTap: 'selectRunDay' })}</div>`;
+  // Die Wochenplan-Karte ist entfallen (v448, Leonard-Wunsch) — die Herocard zeigt heute.
+  selectedRunDayIdx = (new Date().getDay() + 6) % 7;
   // Herocard direkt unter dem Wochenplan — dieselbe Stelle wie im Gymteil
   // (Leonard-Wunsch 06.09.2026).
   // Schon gelaufen → grauer Knopf (27.09.2026, Leonard-Wunsch) — hier fuer den GEWAEHLTEN Tag.
@@ -5566,7 +5566,7 @@ function renderLaufKalenderSeite() {
 
   // Die Tageskarte des gewaehlten Tags ist am 21.09.2026 entfallen (Leonard-Wunsch) — die
   // Laeufe der ganzen Woche stehen jetzt in „Diese Woche" (`laufWochenListe`).
-  el.innerHTML = wochenplan + hero + woche;
+  el.innerHTML = hero + woche;
   _laufWochenWischEinrichten(document.getElementById('lauf-wochen-scroll'), montage, aktIdx, startIdx);
   _zeichneLaufKmDiagramm(montage[startIdx]);
 }
@@ -5724,7 +5724,10 @@ function renderRunPlanDetail() {
     </div>
 
     ${laufKmDiagrammHTML(p, 'lp') ? `<div class="mehr-section">
-      <div class="mehr-section-title">Wochenkilometer</div>
+      <div class="mehr-section-kopf">
+        <div class="mehr-section-title">Wochenkilometer</div>
+        <span class="mehr-section-title lp-km-schnitt" id="lp-km-schnitt">${_kmSchnittText(_kmSchnitt(_laufKmDaten(p, true), true))}</span>
+      </div>
       <div class="mehr-card lp-km-karte">${laufKmDiagrammHTML(p, 'lp')}</div>
     </div>` : ''}
 
