@@ -1873,7 +1873,6 @@ function buildRunPlanCard(onTap, plan, opts) {
     progress = `<div class="ppv-progress">
       <span class="ppv-wk">Woche ${num} / ${wochen}</span>
       <div class="ppv-bar"><div class="ppv-bar-fill" style="width:${Math.min(100, pct)}%"></div></div>
-      ${st ? `<span class="ppv-adh">${st.done}/${st.planned} diese Woche</span>` : ''}
     </div>`;
   }
   // `onTap === false` = stumme Karte, siehe `buildPlanCard`.
@@ -7414,15 +7413,11 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
   if (isCurrent) {
     const pw = _planProgramWeek(p);
     const pct = Math.round(pw.num / (pw.total || 1) * 100);
-    // Die Kennzahl „x/y diese Woche" gehoert zur laufenden Woche und entfaellt deshalb im
-    // Plan-Tab (`opts.nurPlan`). „Woche 8 / 9" und der Balken bleiben: Sie beschreiben, wo der
-    // PLAN steht, nicht was man diese Woche trainiert hat.
-    const adh = opts.nurPlan ? '' : (() => { const ws = getWeekStatus();
-      return `<span class="ppv-adh">${ws.done}/${ws.planned} diese Woche</span>`; })();
+    // Die Kennzahl „x/y diese Woche" rechts neben dem Balken ist seit v450 (18.10.2026,
+    // Leonard-Wunsch) in ALLEN Wochenkarten entfallen — der Balken fuellt die Zeile.
     progress = `<div class="ppv-progress">
       <span class="ppv-wk">Woche ${pw.num} / ${pw.total}</span>
       <div class="ppv-bar"><div class="ppv-bar-fill" style="width:${Math.min(100,pct)}%"></div></div>
-      ${adh}
     </div>`;
   }
   // `onTap === false` = die Karte ist stumm (Trainings-Tab, Leonard-Wunsch 06.09.2026): Dort

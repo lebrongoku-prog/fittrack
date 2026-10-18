@@ -967,7 +967,6 @@ body.theme-plans .hist-action-dd {
    er weiss — das regelt die Glas-Regel weiter unten, die hier gewinnt. */
 .plan-card-v2 .ppv-bar-fill          { background: #0F766E; }
 .plan-card-v2.run-plan .ppv-bar-fill { background: #4ADE80; }
-.ppv-adh { font-size: var(--fs-text); font-weight: 600; color: var(--accent-dark); white-space: nowrap; }
 /* Der Statuschip IN der Karte waechst mit (13.09.2026, +10 %). Nur hier — derselbe Chip
    steht auch in den Detailansichten der Plaene, und die sind nicht gemeint. */
 .plan-card-v2 .plan-status-chip { font-size: var(--fs-etikett); padding: 4.4px 9.9px; border-radius: 6.6px; letter-spacing: .33px; }
@@ -1390,7 +1389,6 @@ html.glas .screen:not(#screen-mehr) .aex-v2-name,
 html.glas .screen:not(#screen-mehr) .ex-item-name,
 html.glas .screen:not(#screen-mehr) .hd-stat b { color: #fff; }
 /* Akzentfarbene Schrift liegt zu nah am Tab-Hintergrund. */
-html.glas .screen:not(#screen-mehr) .ppv-adh,
 html.glas .screen:not(#screen-mehr) .ex-chart-toggle .stats-mode-pill.active,
 html.glas .screen:not(#screen-mehr) .vol-unit-toggle .stats-mode-pill.active { color: #fff; }
 html.glas .screen:not(#screen-mehr) .ex-chart-toggle .stats-mode-pill.active,
@@ -1464,7 +1462,6 @@ html.glas .screen:not(#screen-mehr) .plan-card-v2 {
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-name  { color: #fff; }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-meta  { color: rgba(255,255,255,.7); }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-wk    { color: rgba(255,255,255,.85); }
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-adh   { color: #fff; }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-bar      { background: rgba(255,255,255,.25); }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-bar-fill { background: #fff; }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-wd       { color: rgba(255,255,255,.75); }
