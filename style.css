@@ -642,14 +642,16 @@ body.theme-plans .hist-action-dd {
    Fix-Farbe: Emerald aus dem Workouts-Tab-Theme (#10B981/#D1FAE5/#059669) — signalisiert
    "Training" über die ganze App-Logik hinweg, statt nur der Mehr-Tab-Default-Farbe. */
 .plan-day-row.active { }
-.pdr-days { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
+/* v457: Bei vielen Wochentagen brechen die Knoepfe in eine zweite Reihe um, statt unter ✎/✕
+   zu rutschen; Name und Metazeile behalten mindestens 80px. */
+.pdr-days { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; align-items: center; flex: 0 1 auto; min-width: 34px; }
 /* v456 (18.10.2026, Leonard-Wunsch): Die Wochentage eines Trainingstags stehen als dieselben
-   Knoepfe wie in der Reihe „Wochentage" (`.lp-tagwahl.an`) — vorher gruene Chips. Gleich breit
-   wie dort: Die Karte ist ein Container (`container-type`), `100cqw` ist ihre Breite, davon gehen
-   das 14px-Polster beidseits und sechs 4px-Luecken ab. Reine Anzeige. */
-#mehr-plan-list { container-type: inline-size; }
-.lp-tagwahl.pdr-tag {   /* zwei Klassen: `.lp-tagwahl` steht spaeter in der Datei */
-  flex: 0 0 calc((100cqw - 52px) / 7); box-sizing: border-box;
+   Knoepfe wie in der Reihe „Wochentage" (`.lp-tagwahl.an`) — vorher gruene Chips. Reine Anzeige.
+   v457 (Leonard-Meldung mit Screenshot): Die Breite aus einer Container-Abfrage (`100cqw`) lief
+   auf dem iPhone weit ueber 42px hinaus, der Knopf schob sich unter ✎ und ✕. Jetzt FEST und
+   etwas kleiner (34x28px); zwei Klassen, weil `.lp-tagwahl` spaeter in der Datei steht. */
+.lp-tagwahl.pdr-tag {
+  flex: 0 0 34px; width: 34px; height: 28px; padding: 0; box-sizing: border-box;
   display: flex; align-items: center; justify-content: center; pointer-events: none;
 }
 .plan-day-empty {
@@ -1197,7 +1199,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   font-size: var(--fs-neben); color: var(--text3); font-style: italic;
   text-align: center;
 }
-.pdr-info { flex: 1; min-width: 0; }
+.pdr-info { flex: 1; min-width: 80px; }
 .pdr-name { font-size: var(--fs-text); font-weight: 600; }
 /* v456: einzeilig mit „…" — mit den breiten Wochentag-Knoepfen (bis zu drei) braeche die Zeile
    sonst um und die Zeile wuechse ueber die 67px der uebrigen. */
@@ -3931,7 +3933,7 @@ html.glas .screen:not(#screen-mehr) .wk-card .run-detail-notiz p { color: #fff; 
 html.glas .screen:not(#screen-mehr) .wk-anstehend { background: rgba(255,255,255,.14); color: rgba(255,255,255,.85); }
 html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,255,.85); }
 
-.plan-day-actions { display: flex; gap: 6px; margin-left: auto; }
+.plan-day-actions { display: flex; gap: 6px; margin-left: auto; flex-shrink: 0; }   /* v457: nie unter die Wochentage schrumpfen */
 .plan-day-actions button { border: none; background: var(--bg); color: var(--text3); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
 .plan-day-actions button.del { color: var(--red); background: var(--red-bg); }
 

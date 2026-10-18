@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v456**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v457**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2581,6 +2581,12 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `.lp-tagwahl.pdr-tag`. Name und Metazeile der Zeile sind einzeilig mit „…" (`.pdr-info
   { min-width: 0 }`), sonst wuchs die Zeile bei drei Tagen auf 82px. GEMESSEN: Push Mo/Mi/Fr
   3x 42.7px, Zeile 66.8px, kein Ueberlauf; keine Konsolenfehler.
+  KORRIGIERT (v457, Leonard-Meldung mit Screenshot): Auf dem iPhone lief die `cqw`-Breite weit
+  ueber 42px hinaus, der Knopf rutschte unter ✎ und ✕. Container-Abfrage ENTFERNT; die Knoepfe sind
+  jetzt FEST 34x28px. `.plan-day-actions` schrumpft nie (`flex-shrink: 0`), `.pdr-days` bricht bei
+  vielen Tagen um (`flex-wrap: wrap`, rechtsbuendig), `.pdr-info` behaelt mindestens 80px.
+  GEMESSEN (375 und 320px): 1, 3 und 6 Tage — immer 12px Luecke zu ✎, nichts ausserhalb der Zeile;
+  bis 3 Tage bleibt die Zeile 66.8px, 6 Tage brechen um (88px bzw. 120px bei 320px).
 - **Wochenplan in der Plan-Detailansicht:** `.wpe-list`/`.wpe-row` = eine Zeile pro Wochentag (nicht 7 Spalten), damit lange Tagnamen vollständig umbrechen können; unsichtbares `<select>`-Overlay pro Zeile weist den Tag zu.
 - **Löschen** = „Bearbeiten"-Modus (Kästchen auswählen → „Löschen (N)" → Sicherheits-Dialog) via `_delCtx`/`_delSel`/`buildDelEditList`; inline ✕ fragt ebenfalls nach. **Hinzufügen** = Multi-Select-Modals mit „Hinzufügen (N)".
 - **Bottom-Nav**: Beim APP-START ist sie EINGEKLAPPT (`setNavHidden(true)` am Ende von
