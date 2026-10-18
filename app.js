@@ -7566,7 +7566,7 @@ function renderPlanDetail() {
   const dayChips = (d) => {
     const usedOn = dayLabelsFor[d.id] || [];
     return usedOn.length
-      ? `<div class="pdr-days">${usedOn.map(lbl => `<span class="pdr-day-chip">${lbl}</span>`).join('')}</div>` : '';
+      ? `<div class="pdr-days">${usedOn.map(lbl => `<span class="lp-tagwahl an pdr-tag">${lbl}</span>`).join('')}</div>` : '';
   };
   // Reihenfolge: zugewiesene Tage zuerst (nach frühestem Wochentag), dann unzugewiesene — ALLE sichtbar
   // (kein einklappbarer „Andere Trainingstage"-Abschnitt mehr; Hinzufügen nur via „+ Trainingstag hinzufügen").

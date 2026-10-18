@@ -643,12 +643,14 @@ body.theme-plans .hist-action-dd {
    "Training" über die ganze App-Logik hinweg, statt nur der Mehr-Tab-Default-Farbe. */
 .plan-day-row.active { }
 .pdr-days { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
-.pdr-day-chip {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 24px; height: 22px; padding: 0 7px;
-  font-size: var(--fs-etikett); font-weight: 700; letter-spacing: 0.3px;
-  background: #D1FAE5; color: #059669;
-  border-radius: 6px;
+/* v456 (18.10.2026, Leonard-Wunsch): Die Wochentage eines Trainingstags stehen als dieselben
+   Knoepfe wie in der Reihe „Wochentage" (`.lp-tagwahl.an`) — vorher gruene Chips. Gleich breit
+   wie dort: Die Karte ist ein Container (`container-type`), `100cqw` ist ihre Breite, davon gehen
+   das 14px-Polster beidseits und sechs 4px-Luecken ab. Reine Anzeige. */
+#mehr-plan-list { container-type: inline-size; }
+.lp-tagwahl.pdr-tag {   /* zwei Klassen: `.lp-tagwahl` steht spaeter in der Datei */
+  flex: 0 0 calc((100cqw - 52px) / 7); box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center; pointer-events: none;
 }
 .plan-day-empty {
   padding: 20px 14px;
@@ -1195,9 +1197,12 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   font-size: var(--fs-neben); color: var(--text3); font-style: italic;
   text-align: center;
 }
-.pdr-info { flex: 1; }
+.pdr-info { flex: 1; min-width: 0; }
 .pdr-name { font-size: var(--fs-text); font-weight: 600; }
-.pdr-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
+/* v456: einzeilig mit „…" — mit den breiten Wochentag-Knoepfen (bis zu drei) braeche die Zeile
+   sonst um und die Zeile wuechse ueber die 67px der uebrigen. */
+.pdr-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pdr-name .pd-name { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mehr-row { display: flex; align-items: center; padding: 14px; gap: 12px; }
 .mehr-row + .mehr-row { border-top: 1px solid var(--border); }
 .mehr-row-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
