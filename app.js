@@ -7541,7 +7541,7 @@ function renderPlanDetail() {
       trainingDays.map(td => `<option value="${td.id}" ${d.planDayId === td.id ? 'selected' : ''}>${escapeHtml(td.name)}</option>`).join('');
     const cls = 'wpe-row' + (i === todayIdx ? ' today' : '') + (assigned ? ' training' : '');
     return `<div class="${cls}">
-      <span class="wpe-day">${d.label}</span>
+      <span class="lp-tagwahl an wpe-tag">${d.label}</span>
       ${assigned ? `<span class="pd-name wpe-name">${escapeHtml(assigned.name)}</span>` : `<span class="wpe-rest">Gymtag wählen</span>`}
       <span class="wpe-chev">›</span>
       <select class="wpe-select" onchange="saveWeekPlanDay(${i}, this.value)" aria-label="Gymtag für ${d.label}">${options}</select>

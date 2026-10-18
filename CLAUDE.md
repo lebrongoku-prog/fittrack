@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v454**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v455**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2568,6 +2568,11 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   „Bearbeiten" neben „Trainingstage" (`#plan-days-edit-slot`) und der Loesch-Kontext `'plan-days'`
   (Ankreuzen + „Löschen (N)") sind entfallen. Ein Tag verlaesst den Plan ueber das ✕ seiner Zeile
   (`deletePlanDay`). Der Kontext `'libday-ex'` im Gymtag-Detail bleibt.
+  WOCHENTAG IM WOCHENPLAN ALS KNOPF (v455, Leonard-Wunsch): Statt `.wpe-day` (Text, entfallen)
+  steht in jeder Zeile derselbe Knopf wie in der Reihe „Wochentage" (`.lp-tagwahl.an.wpe-tag`,
+  Breite `calc((100% - 24px) / 7)` = gleich breit wie oben, `pointer-events: none` — der Tipp
+  gehoert dem Auswahlfeld). GEMESSEN: oben und Liste je 42.7x33px, rgb(245,158,11), 13px; Zeile
+  weiter 66.8px.
 - **Wochenplan in der Plan-Detailansicht:** `.wpe-list`/`.wpe-row` = eine Zeile pro Wochentag (nicht 7 Spalten), damit lange Tagnamen vollständig umbrechen können; unsichtbares `<select>`-Overlay pro Zeile weist den Tag zu.
 - **Löschen** = „Bearbeiten"-Modus (Kästchen auswählen → „Löschen (N)" → Sicherheits-Dialog) via `_delCtx`/`_delSel`/`buildDelEditList`; inline ✕ fragt ebenfalls nach. **Hinzufügen** = Multi-Select-Modals mit „Hinzufügen (N)".
 - **Bottom-Nav**: Beim APP-START ist sie EINGEKLAPPT (`setNavHidden(true)` am Ende von

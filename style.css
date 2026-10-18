@@ -3559,8 +3559,14 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 /* Der heutige Wochentag wird in der Plan-Detailansicht NICHT hervorgehoben
    (Leonard-Wunsch 01.09.2026) — hier wird ein Plan bearbeitet, das aktuelle Datum spielt
    dabei keine Rolle und die eingefaerbte Zeile las sich wie eine Auswahl. */
-.wpe-day { flex: 0 0 32px; font-size: var(--fs-neben); font-weight: 700; color: var(--text3); }
-.wpe-row.training .wpe-day { color: var(--text); }
+/* v455 (18.10.2026, Leonard-Wunsch): Der Wochentag steht als derselbe Knopf wie in der Reihe
+   „Wochentage" darueber (`.lp-tagwahl.an`), gleich breit wie dort: Die Reihe teilt dieselbe
+   Inhaltsbreite auf sieben Knoepfe mit sechs 4px-Luecken auf. Reine Anzeige — der Tipp gehoert
+   dem Auswahlfeld der Zeile. */
+.wpe-tag {
+  flex: 0 0 calc((100% - 24px) / 7); box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center; pointer-events: none;
+}
 .wpe-name { flex: 1; min-width: 0; font-size: var(--fs-neben); white-space: normal; overflow-wrap: anywhere; }
 .wpe-rest { flex: 1; min-width: 0; font-size: var(--fs-neben); color: var(--text3); opacity: 0.6; }
 .wpe-chev { flex: 0 0 auto; font-size: var(--fs-betont); line-height: 1; color: var(--text3); }
