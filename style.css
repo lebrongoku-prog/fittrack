@@ -1135,6 +1135,9 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   background: var(--card);
   box-shadow: var(--shadow);
 }
+/* v453 (18.10.2026, Leonard-Wunsch): 20 % schmaler und mittig. `inline-flex` aus `.btn` wird
+   dafuer zur Flex-Box (nur so greift `margin: auto`); die ID schlaegt `.btn-full`. */
+#plan-add-day-btn { display: flex; width: 80%; margin-left: auto; margin-right: auto; }
 
 /* ═══════════════════════════════════════════════
    COPY-PLAN-DAY Multi-Select Picker
