@@ -7551,11 +7551,8 @@ function renderPlanDetail() {
     ? `<div class="wpe-list">${zeilen}</div>`
     : `<div class="plan-day-empty">Wähle oben unter „Wochentage" die Trainingstage der Woche.</div>`;
 
-  // Bearbeiten-Button (Lösch-Auswahl) im Trainingstage-Header; „+ Trainingstag" im Edit-Modus ausblenden
-  const daysEditSlot = document.getElementById('plan-days-edit-slot');
-  if (daysEditSlot) daysEditSlot.innerHTML = trainingDays.length ? delEditBtn('plan-days') : '';
-  const addDayBtn = document.getElementById('plan-add-day-btn');
-  if (addDayBtn) addDayBtn.style.display = delEditActive('plan-days') ? 'none' : '';
+  // Der Bearbeiten-Modus der Trainingstage (Kontext 'plan-days', „Bearbeiten" neben dem Titel)
+  // ist seit v454 (18.10.2026, Leonard-Wunsch) entfallen — entfernt wird ueber das ✕ der Zeile.
 
   // Wochentag-Zuordnung je Tag (für Chips + Sortierung)
   const dayLabelsFor = {};
@@ -7577,47 +7574,24 @@ function renderPlanDetail() {
     .map((d, i) => ({ d, i, sort: dayLabelsFor[d.id] != null && earliestDayIdx[d.id] != null ? earliestDayIdx[d.id] : 99 }))
     .sort((a, b) => a.sort - b.sort);
 
-  if (delEditActive('plan-days')) {
-    // Bearbeiten-Modus: GLEICHE Darstellung (pinke Pille) + Auswahl-Kästchen, keine Aktions-Buttons
-    // (Leonard-Wunsch: kein Layout-Wechsel, kein oranger Streifen).
-    const rows = orderedDays.map(({ d }) => {
-      const checked = _delSel.has(String(d.id));
-      const setCount = d.exercises.reduce((a,e) => a+e.targetSets, 0);
-      return `<div class="plan-day-row del-select${checked ? ' sel' : ''}" onclick="toggleDelSel('${d.id}')">
-        <span class="del-check">${checked ? '✓' : ''}</span>
-        <div class="pdr-info">
-          <div class="pdr-name">${pd(d.name)}</div>
-          <div class="pdr-sub">${d.exercises.length} Übungen • ${setCount} Sätze</div>
-        </div>
-        ${dayChips(d)}
-      </div>`;
-    }).join('');
-    const n = _delSel.size;
-    const bar = n > 0
-      ? `<button class="del-confirm-btn" onclick="confirmDelEdit()">✕ Löschen (${n})</button>`
-      : `<div class="del-edit-hint">Tippe die Trainingstage an, die du aus dem Plan entfernen möchtest.</div>`;
-    document.getElementById('mehr-plan-list').innerHTML =
-      (rows || '<div class="plan-day-empty">Noch keine Trainingstage erstellt</div>') + bar;
-  } else {
-    const renderDayRow = ({ d, i }) => {
-      const isActive = !!dayLabelsFor[d.id];
-      const setCount = d.exercises.reduce((a,e) => a+e.targetSets, 0);
-      return `<div class="plan-day-row${isActive ? ' active' : ''}">
-        <div class="pdr-info" onclick="openLibDayDetail('${d.id}','plan-detail')" style="cursor:pointer">
-          <div class="pdr-name">${pd(d.name)}</div>
-          <div class="pdr-sub">${d.exercises.length} Übungen • ${setCount} Sätze</div>
-        </div>
-        ${dayChips(d)}
-        <div class="plan-day-actions">
-          <button onclick="event.stopPropagation();openLibDayDetail('${d.id}','plan-detail')" title="Bearbeiten">✎</button>
-          <button class="del" onclick="event.stopPropagation();deletePlanDay(${i})" title="Löschen">✕</button>
-        </div>
-      </div>`;
-    };
-    document.getElementById('mehr-plan-list').innerHTML = orderedDays.length
-      ? orderedDays.map(renderDayRow).join('')
-      : '<div class="plan-day-empty">Noch keine Trainingstage erstellt</div>';
-  }
+  const renderDayRow = ({ d, i }) => {
+    const isActive = !!dayLabelsFor[d.id];
+    const setCount = d.exercises.reduce((a,e) => a+e.targetSets, 0);
+    return `<div class="plan-day-row${isActive ? ' active' : ''}">
+      <div class="pdr-info" onclick="openLibDayDetail('${d.id}','plan-detail')" style="cursor:pointer">
+        <div class="pdr-name">${pd(d.name)}</div>
+        <div class="pdr-sub">${d.exercises.length} Übungen • ${setCount} Sätze</div>
+      </div>
+      ${dayChips(d)}
+      <div class="plan-day-actions">
+        <button onclick="event.stopPropagation();openLibDayDetail('${d.id}','plan-detail')" title="Bearbeiten">✎</button>
+        <button class="del" onclick="event.stopPropagation();deletePlanDay(${i})" title="Löschen">✕</button>
+      </div>
+    </div>`;
+  };
+  document.getElementById('mehr-plan-list').innerHTML = orderedDays.length
+    ? orderedDays.map(renderDayRow).join('')
+    : '<div class="plan-day-empty">Noch keine Trainingstage erstellt</div>';
 
   // Archiv-Label aktualisieren
   document.getElementById('plan-archive-label').textContent = plan.archived ? 'Aus Archiv holen' : 'Plan archivieren';
@@ -8640,8 +8614,8 @@ function removeLibDayExercise(ei) {
 // BEARBEITEN-MODUS / LÖSCH-AUSWAHL (Auswählen-dann-Löschen)
 // Pro Liste ein „Bearbeiten"-Button → Einträge werden ankreuzbar → „Löschen (N)"
 // → kurzer Sicherheits-Dialog. KEIN globaler Entwurf; nur der Lösch-Vorgang wird gesammelt.
-// Kontexte: 'libday-ex' (Trainingstag-Detail-Übungen), 'plan-days' (Plan-Detail-Tage).
-// IDs: Übungen=Array-Index, Tage=day.id. ('planday-ex' ist am 13.09.2026 mit dem
+// Kontext: 'libday-ex' (Trainingstag-Detail-Übungen), IDs = Array-Index. ('plan-days' ist am
+// 18.10.2026 entfallen, v454.) ('planday-ex' ist am 13.09.2026 mit dem
 // Bearbeiten-Dialog des Plan-Details entfallen — Übungen ändert man nur noch im
 // Trainingstag-Detail.)
 // ═══════════════════════════════════════════════
@@ -8650,7 +8624,6 @@ let _delSel = new Set();
 function delEditActive(ctx) { return _delCtx === ctx; }
 function _rerenderDelCtx(ctx) {
   if (ctx === 'libday-ex') renderLibDayDetail();
-  else if (ctx === 'plan-days') renderPlanDetail();
 }
 function enterDelEdit(ctx) { _delCtx = ctx; _delSel = new Set(); _rerenderDelCtx(ctx); }
 function exitDelEdit() { const c = _delCtx; _delCtx = null; _delSel = new Set(); if (c) _rerenderDelCtx(c); }
@@ -8686,10 +8659,8 @@ function confirmDelEdit() {
   const n = _delSel.size;
   if (!n) return;
   const ctx = _delCtx;
-  const noun = (ctx === 'plan-days') ? `Trainingstag${n > 1 ? 'e' : ''}` : `Übung${n > 1 ? 'en' : ''}`;
-  const msg = (ctx === 'plan-days')
-    ? 'Die markierten Trainingstage werden aus diesem Plan entfernt (bleiben in der Bibliothek).'
-    : 'Die markierten Übungen werden entfernt.';
+  const noun = `Übung${n > 1 ? 'en' : ''}`;
+  const msg = 'Die markierten Übungen werden entfernt.';
   confirmAction(`${n} ${noun} wirklich löschen?`, msg,
     () => withUndo(`${n} ${noun} gelöscht`, () => _applyDelEdit(ctx), () => _rerenderDelCtx(ctx)),
     { danger: true, confirmLabel: 'Löschen' });
@@ -8703,15 +8674,6 @@ function _applyDelEdit(ctx) {
       day.exercises = day.exercises.filter((_, i) => !sel.has(String(i)));
       DB.saveTrainingDays(days);
     }
-  } else if (ctx === 'plan-days') {
-    const plan = DB.getPlan();
-    const removeIds = new Set(plan.filter(d => sel.has(String(d.id))).map(d => d.id));
-    const p = plan.filter(d => !removeIds.has(d.id));
-    DB.savePlan(p);
-    const wp = DB.getWeekPlan();
-    let ch = false;
-    wp.forEach(d => { if (removeIds.has(d.planDayId)) { d.planDayId = null; ch = true; } });
-    if (ch) DB.saveWeekPlan(wp);
   }
   _delCtx = null; _delSel = new Set();
   _rerenderDelCtx(ctx);

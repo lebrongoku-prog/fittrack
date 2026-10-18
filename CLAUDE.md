@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v453**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v454**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -122,8 +122,8 @@ Satzanzahl (Leonard-Bestaetigung 13.09.2026). Das ist keine Bedienoberflaeche, s
 den Plan auf Stand; ohne sie startete die naechste Einheit wieder mit der alten Planzahl. Die
 Abschlussansicht weist die Aenderung aus.
 NICHT betroffen sind ausserdem: Tage dem Plan hinzufuegen und aus ihm entfernen, die Zuordnung
-zu Wochentagen im Wochenplaner und der Bearbeiten-Modus „Trainingstage aus Plan entfernen"
-(Kontext `'plan-days'`) — das ist Planpflege, kein Aendern des Tages.
+zu Wochentagen im Wochenplaner und das Entfernen per ✕ (der Bearbeiten-Modus `'plan-days'` ist
+seit v454 entfallen) — das ist Planpflege, kein Aendern des Tages.
 
 ### Pro-Satz-Datenmodell
 - Plan-Übungseintrag: `pe.sets = [{reps, weight}]` (weight als String, `''`=leer); Skalare `targetSets/targetReps/targetWeight` bleiben in Sync.
@@ -2563,7 +2563,11 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Zeile (`.wpe-row + .wpe-row`). GEMESSEN: beide 66.8/67.8px, das Auswahlfeld deckt die Zeile.
   „+ TRAININGSTAG HINZUFÜGEN" 20 % SCHMALER (v453, Leonard-Wunsch): `#plan-add-day-btn` mit
   `width: 80%`, mittig (`display: flex` + `margin: auto`; das Ausblenden im Loesch-Modus per
-  Inline-`display: none` wirkt weiter). GEMESSEN: 351 → 280.8px, je 35.1px Abstand links/rechts.
+  Inline-`display: none` wirkt weiter, wird aber seit v454 nicht mehr gesetzt). GEMESSEN: 351 → 280.8px, je 35.1px Abstand links/rechts.
+  KEIN BEARBEITEN-MODUS MEHR BEI DEN TRAININGSTAGEN (v454, 18.10.2026, Leonard-Wunsch): Der Knopf
+  „Bearbeiten" neben „Trainingstage" (`#plan-days-edit-slot`) und der Loesch-Kontext `'plan-days'`
+  (Ankreuzen + „Löschen (N)") sind entfallen. Ein Tag verlaesst den Plan ueber das ✕ seiner Zeile
+  (`deletePlanDay`). Der Kontext `'libday-ex'` im Gymtag-Detail bleibt.
 - **Wochenplan in der Plan-Detailansicht:** `.wpe-list`/`.wpe-row` = eine Zeile pro Wochentag (nicht 7 Spalten), damit lange Tagnamen vollständig umbrechen können; unsichtbares `<select>`-Overlay pro Zeile weist den Tag zu.
 - **Löschen** = „Bearbeiten"-Modus (Kästchen auswählen → „Löschen (N)" → Sicherheits-Dialog) via `_delCtx`/`_delSel`/`buildDelEditList`; inline ✕ fragt ebenfalls nach. **Hinzufügen** = Multi-Select-Modals mit „Hinzufügen (N)".
 - **Bottom-Nav**: Beim APP-START ist sie EINGEKLAPPT (`setNavHidden(true)` am Ende von
