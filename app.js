@@ -7523,22 +7523,33 @@ function renderPlanDetail() {
   const wp = plan.weekPlan || JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
   const trainingDays = resolvePlanDays(plan);
   const today = new Date(); const todayIdx = (today.getDay()+6)%7;
-  // Wochenplan als Mo–So-LISTE (eine Zeile pro Wochentag). Anders als die kompakten Strips in
-  // Übersicht/Workouts zeigt die Detailansicht die VOLLEN Trainingstag-Namen — daher Zeilen statt
-  // 7 Spalten, sonst müssten lange Namen abgeschnitten werden. Tippen auf eine Zeile öffnet ein
-  // natives Dropdown (overlaid <select>) zum Zuweisen eines Trainingstags bzw. Ruhetag.
-  document.getElementById('mehr-weekplan').innerHTML = `<div class="wpe-list">` + wp.map((d, i) => {
+  // WOCHENTAGE WIE IM LAUFPLAN-DETAIL (v451, 18.10.2026, Leonard-Wunsch): eine Chip-Reihe Mo–So
+  // in den Plandaten (`.lp-tagwahl`, dieselbe Bauform wie „Lauftage"). Darunter im Wochenplan
+  // stehen NUR die gewaehlten Tage, je mit der Auswahl des Gymtags. Gewaehlt ist ein Tag, wenn
+  // er in `plan.wochentage` steht; ohne das Feld (Altbestand) gelten die Tage mit Gymtag.
+  const gewaehlt = _gymWochentage(plan);
+  document.getElementById('prog-wochentage').innerHTML = `<label>Wochentage</label>
+    <div class="lp-tagwahl-reihe">${WOCHENTAGE_KURZ.map((n, i) =>
+      `<button type="button" class="lp-tagwahl${gewaehlt.includes(i) ? ' an' : ''}" onclick="toggleGymWochentag(${i})">${n}</button>`).join('')}</div>`;
+  // Wochenplan als LISTE (eine Zeile pro gewaehltem Wochentag). Die Detailansicht zeigt die
+  // VOLLEN Trainingstag-Namen — daher Zeilen statt 7 Spalten. Tippen auf eine Zeile oeffnet ein
+  // natives Dropdown (overlaid <select>) zum Zuweisen eines Gymtags.
+  const zeilen = wp.map((d, i) => {
+    if (!gewaehlt.includes(i)) return '';
     const assigned = d.planDayId ? trainingDays.find(td => td.id === d.planDayId) : null;
-    const options = `<option value="" ${!d.planDayId ? 'selected' : ''}>Kein Gym</option>` +
+    const options = `<option value="" ${!d.planDayId ? 'selected' : ''}>Gymtag wählen</option>` +
       trainingDays.map(td => `<option value="${td.id}" ${d.planDayId === td.id ? 'selected' : ''}>${escapeHtml(td.name)}</option>`).join('');
     const cls = 'wpe-row' + (i === todayIdx ? ' today' : '') + (assigned ? ' training' : '');
     return `<div class="${cls}">
       <span class="wpe-day">${d.label}</span>
-      ${assigned ? `<span class="pd-name wpe-name">${escapeHtml(assigned.name)}</span>` : `<span class="wpe-rest">Kein Gym</span>`}
+      ${assigned ? `<span class="pd-name wpe-name">${escapeHtml(assigned.name)}</span>` : `<span class="wpe-rest">Gymtag wählen</span>`}
       <span class="wpe-chev">›</span>
-      <select class="wpe-select" onchange="saveWeekPlanDay(${i}, this.value)" aria-label="Trainingstag für ${d.label}">${options}</select>
+      <select class="wpe-select" onchange="saveWeekPlanDay(${i}, this.value)" aria-label="Gymtag für ${d.label}">${options}</select>
     </div>`;
-  }).join('') + `</div>`;
+  }).join('');
+  document.getElementById('mehr-weekplan').innerHTML = zeilen
+    ? `<div class="wpe-list">${zeilen}</div>`
+    : `<div class="plan-day-empty">Wähle oben unter „Wochentage" die Trainingstage der Woche.</div>`;
 
   // Bearbeiten-Button (Lösch-Auswahl) im Trainingstage-Header; „+ Trainingstag" im Edit-Modus ausblenden
   const daysEditSlot = document.getElementById('plan-days-edit-slot');
@@ -8742,7 +8753,30 @@ function onEndDateChange() {
   _renderAfterPlanEdit();
 }
 
+// Gewaehlte Wochentage eines Gymplans (v451): `plan.wochentage`, ohne das Feld die Tage mit Gymtag.
+function _gymWochentage(plan) {
+  if (Array.isArray(plan.wochentage)) return plan.wochentage;
+  return (plan.weekPlan || []).map((d, i) => d && d.planDayId ? i : -1).filter(i => i >= 0);
+}
+// Ein Tipp auf einen Wochentag schaltet ihn um. Abgewaehlt verliert er seinen Gymtag — sonst
+// stuende im Kalender und in den Wochenkarten weiter ein Training, das man nicht mehr sieht.
+function toggleGymWochentag(i) {
+  DB._bearbeitetenPlanAendern(p => {
+    const tage = _gymWochentage(p).slice();
+    const k = tage.indexOf(i);
+    if (k >= 0) {
+      tage.splice(k, 1);
+      if (p.weekPlan && p.weekPlan[i]) p.weekPlan[i].planDayId = null;
+    } else { tage.push(i); tage.sort((a, b) => a - b); }
+    p.wochentage = tage;
+  });
+  _renderAfterPlanEdit();
+}
+
 function saveWeekPlanDay(i, value) {
+  // Altbestand ohne `wochentage`: die Auswahl vorher festschreiben, sonst verschwaende ein Tag,
+  // dessen Gymtag man auf „Gymtag wählen" zuruecksetzt, aus der Liste.
+  DB._bearbeitetenPlanAendern(p => { if (!Array.isArray(p.wochentage)) p.wochentage = _gymWochentage(p); });
   const wp = DB.getWeekPlan();
   if (!wp[i]) return;
   wp[i].planDayId = value || null;

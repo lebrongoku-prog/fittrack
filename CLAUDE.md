@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v450**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v451**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2549,6 +2549,15 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   Geschaltet wird es ueber den Parameter `hideToday` von `buildPlanCard`; `buildRunPlanCard`
   hat dafuer am selben Tag `opts.hideToday` als Gegenstueck bekommen (die Funktion nimmt ihre
   Schalter ueber `opts`, nicht ueber Positionsparameter).
+- **WOCHENTAGE IM GYMPLAN-DETAIL WIE IM LAUFPLAN** (v451, 18.10.2026, Leonard-Wunsch): In
+  „Trainingsplan-Daten" steht unter Start | Ende | Wochen eine Chip-Reihe „Wochentage"
+  (`#prog-wochentage`, `.lp-tagwahl` wie die Lauftage, `toggleGymWochentag`). Der Abschnitt
+  „Wochenplan" darunter zeigt NUR die gewaehlten Tage, je mit dem Auswahlfeld des Gymtags
+  („Gymtag wählen"); ohne Auswahl ein Hinweis. Gespeichert in `plan.wochentage` (Indizes 0–6);
+  ohne das Feld (Altbestand) gelten die Tage mit Gymtag (`_gymWochentage`). Abwaehlen setzt
+  `weekPlan[i].planDayId` auf null; `saveWeekPlanDay` schreibt bei Altbestand die Auswahl vorher
+  fest. GEMESSEN: Mo+Do vorbelegt → Mi dazu (leer) → Pull zugewiesen → Mo ab (Push weg);
+  keine Konsolenfehler.
 - **Wochenplan in der Plan-Detailansicht:** `.wpe-list`/`.wpe-row` = eine Zeile pro Wochentag (nicht 7 Spalten), damit lange Tagnamen vollständig umbrechen können; unsichtbares `<select>`-Overlay pro Zeile weist den Tag zu.
 - **Löschen** = „Bearbeiten"-Modus (Kästchen auswählen → „Löschen (N)" → Sicherheits-Dialog) via `_delCtx`/`_delSel`/`buildDelEditList`; inline ✕ fragt ebenfalls nach. **Hinzufügen** = Multi-Select-Modals mit „Hinzufügen (N)".
 - **Bottom-Nav**: Beim APP-START ist sie EINGEKLAPPT (`setNavHidden(true)` am Ende von
