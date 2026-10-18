@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v457**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v458**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2550,7 +2550,8 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   hat dafuer am selben Tag `opts.hideToday` als Gegenstueck bekommen (die Funktion nimmt ihre
   Schalter ueber `opts`, nicht ueber Positionsparameter).
 - **WOCHENTAGE IM GYMPLAN-DETAIL WIE IM LAUFPLAN** (v451, 18.10.2026, Leonard-Wunsch): In
-  „Trainingsplan-Daten" steht unter Start | Ende | Wochen eine Chip-Reihe „Wochentage"
+  „Trainingsplan-Daten" steht (seit v458 UNTER den Notizen, Leonard-Wunsch; v451–v457 unter
+  Start | Ende | Wochen) eine Chip-Reihe „Wochentage"
   (`#prog-wochentage`, `.lp-tagwahl` wie die Lauftage, `toggleGymWochentag`). Der Abschnitt
   „Wochenplan" darunter zeigt NUR die gewaehlten Tage, je mit dem Auswahlfeld des Gymtags
   („Gymtag wählen"); ohne Auswahl ein Hinweis. Gespeichert in `plan.wochentage` (Indizes 0–6);
