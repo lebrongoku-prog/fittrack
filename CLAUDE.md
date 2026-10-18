@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v451**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v452**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -2558,6 +2558,9 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
   `weekPlan[i].planDayId` auf null; `saveWeekPlanDay` schreibt bei Altbestand die Auswahl vorher
   fest. GEMESSEN: Mo+Do vorbelegt → Mi dazu (leer) → Pull zugewiesen → Mo ab (Push weg);
   keine Konsolenfehler.
+  ZEILENHOEHE (v452, Leonard-Wunsch): `.wpe-row` ist so hoch wie `.plan-day-row` darueber —
+  Polster 14px, `box-sizing: content-box; min-height: 38.8px`, Trennlinie oben ab der zweiten
+  Zeile (`.wpe-row + .wpe-row`). GEMESSEN: beide 66.8/67.8px, das Auswahlfeld deckt die Zeile.
 - **Wochenplan in der Plan-Detailansicht:** `.wpe-list`/`.wpe-row` = eine Zeile pro Wochentag (nicht 7 Spalten), damit lange Tagnamen vollständig umbrechen können; unsichtbares `<select>`-Overlay pro Zeile weist den Tag zu.
 - **Löschen** = „Bearbeiten"-Modus (Kästchen auswählen → „Löschen (N)" → Sicherheits-Dialog) via `_delCtx`/`_delSel`/`buildDelEditList`; inline ✕ fragt ebenfalls nach. **Hinzufügen** = Multi-Select-Modals mit „Hinzufügen (N)".
 - **Bottom-Nav**: Beim APP-START ist sie EINGEKLAPPT (`setNavHidden(true)` am Ende von

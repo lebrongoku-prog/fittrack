@@ -3539,15 +3539,19 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 /* Wochenplan in der Plan-Detailansicht: eine ZEILE pro Wochentag statt 7 Spalten, damit der
    Trainingstag-Name vollständig lesbar ist (bricht bei Bedarf um, wird nie abgeschnitten). */
 .wpe-list { display: flex; flex-direction: column; }
+/* v452 (18.10.2026, Leonard-Wunsch): so hoch wie die Zeilen der Trainingstage darueber
+   (`.plan-day-row`): gleiches Polster (14px), gleiche Inhaltshoehe (38.8px = Name + Metazeile
+   dort, gemessen) und dieselbe Trennlinie OBEN ab der zweiten Zeile. `content-box`, damit die
+   Linie wie dort ZUSAETZLICH zaehlt. */
 .wpe-row {
   position: relative;
   display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--border);
+  box-sizing: content-box; min-height: 38.8px;
+  padding: 14px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.wpe-row:last-child { border-bottom: none; }
+.wpe-row + .wpe-row { border-top: 1px solid var(--border); }
 .wpe-row:active { background: var(--card2); }
 /* Der heutige Wochentag wird in der Plan-Detailansicht NICHT hervorgehoben
    (Leonard-Wunsch 01.09.2026) — hier wird ein Plan bearbeitet, das aktuelle Datum spielt
