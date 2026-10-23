@@ -2002,6 +2002,10 @@ function buildHeuteHero(planDay, selDay, opts) {
   opts = opts || {};
   const sport = opts.sport || 'beide';
   const spalten = [];
+  // v471 (Leonard-Wunsch): Auf den Seiten „Gym" und „Laufen" faellt die graue Beschriftung
+  // „Kein Gym"/„Kein Lauf" weg, wenn nichts geplant ist — der Knopf rueckt unter den Titel und
+  // die Karte wird um genau diesen Platz flacher (`hero-ohne-kopf`, siehe CSS).
+  let ohneKopf = false;
 
   if (sport !== 'lauf') {
     // Laeuft anderswo bereits eine Einheit, fuehrt der Knopf dorthin statt eine zweite zu starten.
@@ -2042,11 +2046,13 @@ function buildHeuteHero(planDay, selDay, opts) {
     // NUR auf der Seite „Gym" im Trainings-Tab (`opts.sport === 'gym'`) — in der Uebersicht
     // teilen sich zwei Sportarten die Breite, dort ist dafuer kein Platz.
     const meta = (opts.sport === 'gym' && planDay) ? gymTagUmfang(planDay) : '';
+    const kopfWeg = sport === 'gym' && !planDay;
+    if (kopfWeg) ohneKopf = true;
     spalten.push(`<div class="hero-heute-spalte">
-      <div class="hero-heute-kopf">
+      ${kopfWeg ? '' : `<div class="hero-heute-kopf">
         <div class="hero-heute-einheit">${planDay ? escapeHtml(planDay.name) : 'Kein Gym'}</div>
         ${meta ? `<div class="hero-heute-meta">${meta}</div>` : ''}
-      </div>
+      </div>`}
       ${knopf}
     </div>`);
   }
@@ -2071,21 +2077,24 @@ function buildHeuteHero(planDay, selDay, opts) {
       <div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf')}</div>
       ${_heuteLaufKnopf(tagD, gepl)}
     </div>`);
-    } else
+    } else {
+    const kopfWeg = sport === 'lauf' && !gepl;
+    if (kopfWeg) ohneKopf = true;
     spalten.push(`<div class="hero-heute-spalte">
-      <div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf')}</div>
+      ${kopfWeg ? '' : `<div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf')}</div>`}
       <button class="hero-v2-btn hero-v2-btn-lauf${gepl && !gelaufen ? '' : ' hero-v2-btn-grau'}" data-sport="lauf"
               onclick="runLaeufeLaden({interactive:true})"
               ${runLaden ? 'disabled' : ''}>
         ${HERO_ICON_LAEUFER}${runLaden ? 'Lese …' : 'Lauf erledigt'}
       </button>
     </div>`);
+    }
   }
 
   // `hero-mit-meta` schaltet die enger gesetzte Fassung frei — sie holt genau den Platz
   // wieder herein, den die Zusatzzeile kostet (siehe CSS). Nur wo die Zeile wirklich steht.
   const hatMeta = spalten.some(sp => sp.includes('hero-heute-meta'));
-  return `<div class="hero-v2 hero-heute${hatMeta ? ' hero-mit-meta' : ''}">
+  return `<div class="hero-v2 hero-heute${hatMeta ? ' hero-mit-meta' : ''}${ohneKopf ? ' hero-ohne-kopf' : ''}">
     <div class="hero-heute-titel">${escapeHtml(opts.titel || 'Heute')}</div>
     <div class="hero-heute-spalten${spalten.length === 1 ? ' einzeln' : ''}">${spalten.join('')}</div>
   </div>`;

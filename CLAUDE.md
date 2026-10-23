@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v471**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v472**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -206,6 +206,12 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   (`freiesTrainingFragen` → `confirmAction` → `startFreeWorkout`). GEMESSEN: Scheibe/Feld-Mitte
   0.0px Abstand, Zeilen 60px; Abbrechen startet nichts, Bestaetigen startet ein freies Training;
   keine Konsolenfehler.
+- **v472 (23.10.2026, Leonard-Wunsch):** Auf den Seiten „Gym" und „Laufen" faellt an Tagen
+  ohne Gym bzw. ohne Lauf die graue Beschriftung („Kein Gym"/„Kein Lauf") ueber dem Knopf weg.
+  `buildHeuteHero` setzt dann `hero-ohne-kopf`: Die Karte gibt ihre feste Hoehe auf, der Knopf
+  steht im Kartenpolster unter dem Titel und behaelt seine 63.6px. Uebersicht unveraendert.
+  GEMESSEN (375px): Karte 157.3 → 128.8px, Titel → Knopf 15.4px = Polster unten, Knopf 63.6px,
+  seitlich 14/14; geplanter Tag unveraendert 157.3px; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

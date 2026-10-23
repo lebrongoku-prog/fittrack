@@ -1726,6 +1726,13 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    NUR im Meta-Fall — im Fall ohne Zusatzzeile bleibt der Abstand bei 14px, sonst waere
    „Freies Training" wieder hoeher und die Gleichheit dahin. */
 .hero-heute.hero-mit-meta { gap: 4.4px; }
+/* v471: Ohne die Beschriftung (Seite „Gym"/„Laufen", nichts geplant) steht der Knopf direkt unter
+   dem Titel. Die Karte gibt die feste Hoehe auf und wird um den gesparten Platz flacher; der Knopf
+   behaelt die Hoehe, die er in der vollen Karte hat (63.6px, gemessen). */
+.hero-v2.hero-heute.hero-ohne-kopf { height: auto; min-height: 0; }
+.hero-heute.hero-ohne-kopf .hero-heute-spalten,
+.hero-heute.hero-ohne-kopf .hero-heute-spalte { flex: none; }
+.hero-heute.hero-ohne-kopf .hero-v2-btn { flex: none; min-height: 63.6px; }
 .hero-heute.hero-mit-meta .hero-heute-kopf { gap: 0; }
 /* Die Beschriftung darf UMBRECHEN: „Lauf abgeschlossen" (heute „Lauf erledigt") brauchte bei 14px 135px Text, in den
    155px eines halben Knopfes bleiben nach Polster, Symbol und Abstand aber nur 114px. Kleiner
