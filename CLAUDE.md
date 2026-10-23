@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v464**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v465**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -154,6 +154,7 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
      (`_entwurfVergessen`). Der Stand lebt nur im Arbeitsspeicher. `_entwurf` ist `var`
      (TDZ: `_speicherSchreiben` laeuft schon beim Laden).
      „Änderungen verwerfen" steht in 13px in Textbreite, „Speichern" nimmt den Rest (166/171px).
+     Seit v465 (Leonard-Wunsch) steht „Speichern" LINKS, „Änderungen verwerfen" rechts.
   GEMESSEN (375px): Fenster mit Abschnitten, Wochentag-Pillen, Ring; Vorlage gewaehlt → Leiste,
   Verwerfen → Kopie wieder weg; Speichern blendet aus; Aenderung ueber ✎ → Leiste nach Rueckkehr,
   Verlassen → Frage, Abbrechen bleibt, Verwerfen setzt Gymtag-Namen zurueck; ohne Aenderung keine
