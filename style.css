@@ -1843,6 +1843,8 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 }
 /* Wochenplan-Kachel während der Einheit ausblenden (Platz für die Sätze). */
 html.wo-running #wo-week-card { display: none; }
+html.wo-running #wo-gym-woche,
+#wo-gym-woche:empty { display: none; }   /* v475: Wochenkarte der Seite „Gym" nicht waehrend einer Einheit */
 /* v448: Die Wochenplan-Karte im Trainings-Tab ist entfallen, die Huelle bleibt leer. */
 #wo-week-card:empty { display: none; }
 /* Uebergang normal ↔ aktiv (15.09.2026, `_woWocheFahren`): Waehrend die Wochenplan-Karte weg-
@@ -2583,6 +2585,16 @@ button.lauf-wz:active { opacity: .6; }
 .lauf-wz-balken > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; }
 .lauf-wz-balken > .soll { background: rgba(74, 222, 128, .62); }
 .lauf-wz-balken > .ist  { background: #4ADE80; }
+/* v475: Seite „Gym" — Balken = Volumen im Gym-Gruen (hell = letzte Einheit dieses Gymtags). */
+.lauf-wz-balken.gym > .soll { background: rgba(15, 118, 110, .35); }
+.lauf-wz-balken.gym > .ist  { background: #0F766E; }
+.lauf-wochen-punkte.gym > i.an, .lauf-wochen-leiste.gym > i { background: #0F766E; }
+.gym-wz-pr {
+  font-size: var(--fs-etikett); font-weight: 600; padding: 1px 6px; border-radius: 8px;
+  background: #FEF3C7; color: #92400E; white-space: nowrap;
+}
+html.glas .screen:not(#screen-mehr) .gym-wz-pr { background: rgba(255,255,255,.22); color: #fff; }
+.gym-woche-leer { font-size: var(--fs-neben); padding: 4px 0; }
 html.glas .screen:not(#screen-mehr) .lauf-wz-balken { background: rgba(255,255,255,.20); }
 html.glas .screen:not(#screen-mehr) .lauf-wz-balken > .soll { background: rgba(255,255,255,.6); }
 html.glas .screen:not(#screen-mehr) .lauf-wz-balken > .ist  { background: rgba(255,255,255,.92); }
@@ -4109,7 +4121,8 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
     display: flex; flex-direction: column; justify-content: center;
   }
   #wo-view-gym > #active-ex-list,
-  #wo-view-gym > #wo-add-ex-wrap { grid-column: 1 / -1; }
+  #wo-view-gym > #wo-add-ex-wrap,
+  #wo-view-gym > #wo-gym-woche { grid-column: 1 / -1; }
   #wo-view-gym > #wo-week-card { grid-column: 1; }
   #wo-view-gym > #wo-session-card-wrap { grid-column: 2; }
   /* Waehrend einer laufenden Einheit ist die Wochenplan-Karte ausgeblendet — der Kopf der

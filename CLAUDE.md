@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v474**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v475**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -226,6 +226,24 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Ø …", `gymTagUmfang`, lebt weiter). Die Karte ist damit immer kompakt (`hero-ohne-kopf`,
   128.8px). GEMESSEN: Push geplant und 8 km geplant je 128.8px, Titel → Knopf 15.4px; Uebersicht
   unveraendert; keine Konsolenfehler.
+- **v475 (23.10.2026, Leonard-Wahl „Variante A + B" aus vier gezeichneten Vorschlaegen — C
+  Muskelgruppen der Woche, D Tageskacheln):** Die Seite „Gym" hat unter der Herocard eine
+  Wochenkarte „Diese Woche" (`#wo-gym-woche`, `renderGymWoche`, aus `_renderGymSeite`), gebaut wie
+  die der Seite „Laufen": alle Wochen des laufenden GYMPLANS wischbar, Titel/Datum/Zurueck-Knopf,
+  Punkte, darunter ausklappbar „Wochenvolumen" (Saeulen je Planwoche, gezeigte Woche voll, Ø ueber
+  abgeschlossene Wochen; `_zeichneGymVolDiagramm`, `toggleGymVolDiagramm`). Je Zeile: Quadrat mit
+  Wochentag (trainiert/offen/verpasst; verschobener Plantag faellt weg, Einheit traegt
+  „vorgezogen"/„nachgeholt" via `_calGymVerschiebungen`), Name + PR-Pille (`.gym-wz-pr`), rechts
+  Saetze gegen die AKTUELLE Satzzahl des Gymtags und Dauer („15/15 · 1h 5min"; offen „0/18", vorbei
+  „nicht trainiert"), Pfeil → Einheit. KEINE Volumenzahl (Leonard-Entscheidung) — das Volumen ist der
+  Balken: hell = letzte Einheit desselben Gymtags davor, kraeftig = diese Einheit, Bezug = groesstes
+  Volumen im Plan (`.lauf-wz-balken.gym`). Waehrend einer Einheit ausgeblendet (`html.wo-running`).
+  Die Wisch-Mechanik ist dafuer verallgemeinert: `_laufWochenWischEinrichten(sc, …, kfg)` mit
+  eigenen Ids, Hervorhebung und Wochenmerker (`_gymWochenNr`); der Seitenstand steht am Scroller
+  (`sc._idx`, `_laufWochenIdx` entfallen), `laufWocheZurueck(id)`. GEMESSEN (375px, Testplan 5
+  Wochen): W1 alle trainiert, W2 Pull nachgeholt + Beine verpasst, W3 Push mit PR / Pull verpasst /
+  Beine offen (heute); Wischen setzt „Letzte Woche" und Saeule W2; Laufseite wischt unveraendert;
+  waehrend Einheit `display: none`; Glas weiss; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

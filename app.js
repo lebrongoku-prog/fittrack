@@ -906,7 +906,7 @@ function _applyTabState(name) {
   if (name !== 'plan-detail') editingPlanId = null;
   if (name !== 'runplan-detail') editingRunPlanId = null;
 
-  if (name !== 'workouts') _laufWochenNr = null;   // gewischte Woche der Laufseite, siehe `_setWorkoutsView`
+  if (name !== 'workouts') { _laufWochenNr = null; _gymWochenNr = null; }   // gewischte Woche, siehe `_setWorkoutsView`
 
   // Seitenleiste unten: zeigt die Seiten des NEUEN Tabs (oder verschwindet, wenn er
   // keine hat). Seit dem 21.09.2026 VOR dem Renderer (Leonard-Wunsch „schneller"): Vorher
@@ -2354,6 +2354,7 @@ function _setWorkoutsView(mode) {
   // Die gewischte Woche der Laufseite gilt nur, solange man dort steht (Leonard-Entscheidung):
   // Beim Verlassen steht die Karte wieder auf dieser Woche.
   if (mode !== 'laufen') _laufWochenNr = null;
+  if (mode !== 'gym') _gymWochenNr = null;   // v475: dasselbe fuer die Wochenkarte der Seite „Gym"
   workoutsViewMode = mode;
   renderWorkoutsScreen();
   // Der Tabhintergrund haengt an der gewaehlten SEITE (grau, wenn dort heute nichts ansteht) —
@@ -2449,6 +2450,9 @@ function _renderGymSeite() {
     addWrap.style.display = 'none';
     stopTimer();
   }
+
+  // Wochenkarte unter der Herocard (v475) — nicht waehrend der laufenden Einheit.
+  renderGymWoche(activeOnSelected);
 
   syncWorkoutActiveUI();
   if (uebergang) _woUebergangSpielen(uebergang);
@@ -5228,7 +5232,8 @@ function renderUebersichtWoche() {
 // nach dem Einrasten die der gezeigten.
 // Ein Tipp auf den Titel fuehrt zurueck zur laufenden Woche.
 let _laufWochenNr = null;        // angezeigte Planwoche (1..N); null = die laufende
-let _laufWochenIdx = -1;         // zuletzt angezeigte Seite, damit Kopf und Punkte nur bei Wechsel neu gesetzt werden
+// Die zuletzt angezeigte Seite steht seit v475 am Scroller selbst (`sc._idx`): Dieselbe Mechanik
+// treibt auch die Wochenkarte der Seite „Gym" (`renderGymWoche`).
 const MONATE_KURZ = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
 
 function _laufWochenMontag(d) {
@@ -5260,15 +5265,16 @@ function laufWochenSeite(mo, istAktuell, maxKm) {
 }
 // Kopf und Seitenanzeige auf die Seite `idx` setzen.
 function _laufWochenAnzeige(sc, idx) {
-  const titelEl = document.getElementById('lauf-wochen-titel');
-  const datumEl = document.getElementById('lauf-wochen-datum');
+  const ids = sc._ids || { titel: 'lauf-wochen-titel', datum: 'lauf-wochen-datum', zurueck: 'lauf-wochen-zurueck' };
+  const titelEl = document.getElementById(ids.titel);
+  const datumEl = document.getElementById(ids.datum);
   const mo = sc._montage[idx];
   if (!mo) return;
   const abstand = idx - sc._aktIdx;
   if (titelEl) titelEl.textContent = _laufWochenTitel(abstand, idx + 1);
   if (datumEl) datumEl.textContent = _laufWochenSpanne(mo);
   // Der Zurueck-Knopf steht nur da, wenn eine andere Woche im Bild ist.
-  const zurueckEl = document.getElementById('lauf-wochen-zurueck');
+  const zurueckEl = document.getElementById(ids.zurueck);
   if (zurueckEl) {
     const zeigen = abstand !== 0;
     if (zeigen && zurueckEl.hidden) { zurueckEl.hidden = false; zurueckEl.classList.remove('kommt'); void zurueckEl.offsetWidth; zurueckEl.classList.add('kommt'); }
@@ -5278,28 +5284,37 @@ function _laufWochenAnzeige(sc, idx) {
     p.classList.toggle('an', i === idx));
   const marke = sc.parentElement.querySelector('.lauf-wochen-leiste > i');
   if (marke) marke.style.left = (idx / Math.max(1, sc._montage.length - 1) * 100) + '%';
-  _laufKmHervorheben(mo);   // die Saeule der gezeigten Woche im Diagramm darunter
+  (sc._hervor || _laufKmHervorheben)(mo);   // die Saeule der gezeigten Woche im Diagramm darunter
 }
 // Nach einer Breitenaenderung Hoehen und Position nachziehen (Drehen, Querformat-Grid).
 function _laufWochenBreitePruefen() {
-  const sc = document.getElementById('lauf-wochen-scroll');
-  if (!sc || !sc._neuMessen) return;
-  const w = sc.clientWidth;
-  if (!w || w === sc._breite) return;   // nur die BREITE zaehlt — die Hoehe setzen wir selbst
-  sc._breite = w;
-  sc._neuMessen();
+  ['lauf-wochen-scroll', 'gym-wochen-scroll'].forEach(id => {
+    const sc = document.getElementById(id);
+    if (!sc || !sc._neuMessen) return;
+    const w = sc.clientWidth;
+    if (!w || w === sc._breite) return;   // nur die BREITE zaehlt — die Hoehe setzen wir selbst
+    sc._breite = w;
+    sc._neuMessen();
+  });
 }
 
 // Zurueck zur laufenden Woche — der Kartentitel ist dafuer ein Knopf.
-function laufWocheZurueck() {
-  const sc = document.getElementById('lauf-wochen-scroll');
+function laufWocheZurueck(id) {
+  const sc = document.getElementById(id || 'lauf-wochen-scroll');
   if (!sc || !sc.clientWidth) return;
   sc.scrollTo({ left: sc._aktIdx * sc.clientWidth, behavior: _bewegungReduziert() ? 'auto' : 'smooth' });
 }
 // Scroller einrichten: Hoehen messen, Startseite anfahren, Kopf mitfuehren.
-function _laufWochenWischEinrichten(sc, montage, aktIdx, startIdx) {
+// `kfg` (v475, fuer die Seite „Gym"): eigene Ids im Kopf (`ids`), eigene Hervorhebung im
+// Diagramm (`hervor`) und eigener Merker fuer die eingerastete Woche (`nrSetzen`). Ohne Angabe
+// gilt die Laufseite.
+function _laufWochenWischEinrichten(sc, montage, aktIdx, startIdx, kfg) {
+  kfg = kfg || {};
   sc._montage = montage;
   sc._aktIdx = aktIdx;
+  sc._ids = kfg.ids || null;
+  sc._hervor = kfg.hervor || null;
+  const nrSetzen = kfg.nrSetzen || (n => { _laufWochenNr = n; });
   const seiten = [...sc.querySelectorAll(':scope > .lauf-wochen-seite')];
   let hoehen = seiten.map(s => s.offsetHeight);            // gemessen, solange die Hoehe noch `auto` ist
   const setzeHoehe = (a, b) => { sc.style.height = Math.max(hoehen[a] || 0, hoehen[b] || 0) + 'px'; };
@@ -5309,7 +5324,7 @@ function _laufWochenWischEinrichten(sc, montage, aktIdx, startIdx) {
   const neuMessen = () => {
     sc.style.height = 'auto';
     hoehen = seiten.map(s => s.offsetHeight);
-    const i = Math.max(0, Math.min(seiten.length - 1, _laufWochenIdx));
+    const i = Math.max(0, Math.min(seiten.length - 1, sc._idx));
     setzeHoehe(i, i);
     if (sc.clientWidth) sc.scrollLeft = i * sc.clientWidth;
   };
@@ -5320,7 +5335,7 @@ function _laufWochenWischEinrichten(sc, montage, aktIdx, startIdx) {
   // der Observer nicht liefert. Beide gehen durch dieselbe Pruefung auf die BREITE.
   if (window.ResizeObserver) new ResizeObserver(() => _laufWochenBreitePruefen()).observe(sc);
   setzeHoehe(startIdx, startIdx);
-  _laufWochenIdx = startIdx;
+  sc._idx = startIdx;
   _laufWochenAnzeige(sc, startIdx);
   if (sc.clientWidth) sc.scrollLeft = startIdx * sc.clientWidth;
   if (seiten.length < 2) return;
@@ -5338,12 +5353,12 @@ function _laufWochenWischEinrichten(sc, montage, aktIdx, startIdx) {
       const i1 = Math.max(0, Math.min(grenze, Math.ceil(x)));
       setzeHoehe(i0, i1);
       const idx = Math.max(0, Math.min(grenze, Math.round(x)));
-      if (idx !== _laufWochenIdx) { _laufWochenIdx = idx; _laufWochenAnzeige(sc, idx); }
+      if (idx !== sc._idx) { sc._idx = idx; _laufWochenAnzeige(sc, idx); }
       // Einrasten: ~90ms nach dem letzten Scroll-Tick, wie beim Tabwechsel.
       clearTimeout(settle);
       settle = setTimeout(() => {
         const j = Math.max(0, Math.min(grenze, Math.round(sc.scrollLeft / Math.max(1, sc.clientWidth))));
-        _laufWochenNr = j + 1;
+        nrSetzen(j + 1);
         setzeHoehe(j, j);
       }, 90);
     });
@@ -5458,7 +5473,7 @@ function toggleKmDiagramm(welches) {
   // sonst die alten Masse (dieselbe Regel wie bei `toggleChartBlock`).
   if (!offen) return;
   const sc = document.getElementById('lauf-wochen-scroll');
-  _zeichneLaufKmDiagramm(sc && sc._montage ? sc._montage[Math.max(0, _laufWochenIdx)] : null);
+  _zeichneLaufKmDiagramm(sc && sc._montage ? sc._montage[Math.max(0, sc._idx)] : null);
 }
 
 // Farben der Saeulen. ZWEI Unterscheidungen zugleich:
@@ -5585,6 +5600,231 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
   chart._daten = daten;
   chart._pal = pal;
   return chart;
+}
+
+// ── WOCHENKARTE DER SEITE „GYM" (v475, 23.10.2026, Leonard-Wahl „Variante A + B") ──
+// Gegenstueck zur Karte „Diese Woche" der Seite „Laufen", mit derselben Mechanik: alle Wochen des
+// laufenden GYMPLANS waagerecht wischbar (`_laufWochenWischEinrichten` mit eigenen Ids), Kopf mit
+// Titel, Datum und Zurueck-Knopf, Seitenanzeige und darunter ein ausklappbares Diagramm
+// „Wochenvolumen". Eine Zeile je geplantem oder trainiertem Gymtag:
+//   - Quadrat mit dem Wochentag in den Zustaenden der Laufliste (gefuellt = trainiert,
+//     Ring = offen, rot = verpasst); ein an einem anderen Tag absolvierter Plantag faellt weg,
+//     die Einheit traegt „vorgezogen"/„nachgeholt".
+//   - Name des Gymtags (PRs als Pille), rechts Saetze gegen Plan und Dauer („16/16 · 1h 4min").
+//     Der Plan ist die AKTUELLE Satzzahl des Gymtags. Das Volumen steht NICHT als Zahl da
+//     (Leonard-Entscheidung), es ist der Balken:
+//   - Balken: HELL = Volumen der letzten Einheit desselben Gymtags davor, KRAEFTIG = Volumen
+//     dieser Einheit. Bezug ist die groesste Zahl im ganzen Plan, wie beim Lauf.
+let _gymWochenNr = null;        // eingerastete Planwoche (1..N); null = die laufende
+let _gymVolOffen = false;       // Diagramm „Wochenvolumen" — zugeklappt
+let _gymVolChart = null;
+let _gymWochenDaten = null;     // Wochen samt Volumen, fuer das Diagramm
+
+// Volumen der letzten Einheit dieses Gymtags VOR `vorTs` (0 ohne).
+function _gymVorVolumen(ws, planDayId, vorTs) {
+  if (!planDayId) return 0;
+  let best = null;
+  ws.forEach(w => { if (w.planDayId === planDayId && w.startTs < vorTs && (!best || w.startTs > best.startTs)) best = w; });
+  return best ? calcVolume(best) : 0;
+}
+function _gymSatzZahl(w) { return (w.exercises || []).reduce((a, e) => a + ((e.sets || []).length), 0); }
+function _gymPlanSaetze(tag) { return tag ? (tag.exercises || []).reduce((a, e) => a + peSets(e).length, 0) : 0; }
+
+// Zeilen einer Woche als Daten (Volumen erst danach in Balken umgerechnet — der Bezug haengt am
+// ganzen Plan).
+function _gymWochenZeilenDaten(mo, istAktuell, planIndex, ws, tageById) {
+  const heuteMs = (() => { const h = new Date(); h.setHours(0, 0, 0, 0); return h.getTime(); })();
+  const byDay = {};
+  ws.forEach(w => { byDay[_dayKeyOf(w.startTs)] = true; });
+  const versch = _calGymVerschiebungen(mo, planIndex, byDay, ws);
+  const alleTage = Object.values(tageById);
+  const zeilen = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(mo); d.setDate(mo.getDate() + i);
+    const von = d.getTime(), bis = von + TAG_MS - 1;
+    const info = _calPlanInfo(d, planIndex);
+    const einheiten = ws.map((w, wi) => ({ w, wi })).filter(x => x.w.startTs >= von && x.w.startTs <= bis)
+      .sort((a, b) => a.w.startTs - b.w.startTs);
+    einheiten.forEach(({ w, wi }) => {
+      const tag = w.planDayId ? tageById[w.planDayId] : null;
+      const vonIdx = versch.istNachPlan[i];
+      zeilen.push({ i, zustand: 'gelaufen', name: _einheitName(w, alleTage), prs: (w.prs || []).length,
+        hinweis: vonIdx != null && w.planDayId ? _verschiebWort(vonIdx, i) : '',
+        rechts: (tag ? `${_gymSatzZahl(w)}/${_gymPlanSaetze(tag)}` : `${_gymSatzZahl(w)} Sätze`) + (w.duration ? ' · ' + fmtDur(w.duration) : ''),
+        soll: _gymVorVolumen(ws, w.planDayId, w.startTs), ist: calcVolume(w), tipp: `showHistDetail(${wi})` });
+    });
+    if (einheiten.length || !info.planned || versch.planNachIst[i] != null) continue;
+    const tag = tageById[info.planDayId];
+    const verpasst = von < heuteMs;
+    zeilen.push({ i, zustand: verpasst ? 'verpasst' : 'offen', name: tag ? tag.name : (info.name || 'Gymtag'), prs: 0,
+      hinweis: '', rechts: verpasst ? 'nicht trainiert' : `0/${_gymPlanSaetze(tag)}`,
+      soll: _gymVorVolumen(ws, info.planDayId, Math.min(von, Date.now())), ist: 0, tipp: '' });
+  }
+  return zeilen;
+}
+
+function _gymWochenZeileHTML(z, todayIdx, maxVol) {
+  const feld = `<span class="lauf-wz-feld${z.i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag gym ${z.zustand}">${WOCHENTAGE_KURZ[z.i]}</span></span>`;
+  const breit = v => Math.max(3, Math.min(100, v / maxVol * 100)).toFixed(1);
+  const balken = maxVol && (z.soll || z.ist) ? `<div class="lauf-wz-balken gym" aria-hidden="true">
+      ${z.soll ? `<i class="soll" style="width:${breit(z.soll)}%"></i>` : ''}
+      ${z.ist ? `<i class="ist" style="width:${breit(z.ist)}%"></i>` : ''}
+    </div>` : '';
+  const inhalt = `${feld}<div class="lauf-wz-rechts">
+      <div class="lauf-wz-oben">
+        <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${escapeHtml(z.name)}${z.prs ? `<span class="gym-wz-pr">${z.prs} PR</span>` : ''}${z.hinweis ? `<span class="lauf-wz-von">${z.hinweis}</span>` : ''}</div></div>
+        <span class="lauf-wz-ist${z.zustand === 'verpasst' ? ' verpasst' : ''}">${z.rechts}</span>
+        ${z.tipp ? '<span class="cal-detail-chev">▾</span>' : ''}
+      </div>
+      ${balken}
+    </div>`;
+  return _wzKnopf('lauf-wz', z.tipp, inhalt);
+}
+
+// Die Karte zeichnen. Ohne laufenden Gymplan steht nur die laufende Woche da (nicht wischbar).
+function renderGymWoche(aktivLaeuft) {
+  const el = document.getElementById('wo-gym-woche');
+  if (!el) return;
+  if (aktivLaeuft) { el.innerHTML = ''; return; }
+  const plan = getActivePlan();
+  const heuteMo = _laufWochenMontag(new Date());
+  let montage = [heuteMo];
+  if (plan && plan.startDate) {
+    const erst = _laufWochenMontag(_calLokalTag(plan.startDate));
+    const letzt = _laufWochenMontag(_calLokalTag(plan.endDate || plan.startDate));
+    montage = [];
+    for (let m = new Date(erst); m <= letzt; m.setDate(m.getDate() + 7)) montage.push(new Date(m));
+    if (!montage.some(m => m.getTime() === heuteMo.getTime())) { montage.push(heuteMo); montage.sort((a, b) => a - b); }
+  }
+  const aktIdx = montage.findIndex(m => m.getTime() === heuteMo.getTime());
+  const startIdx = Math.max(0, Math.min(montage.length - 1, (_gymWochenNr || aktIdx + 1) - 1));
+  const planIndex = _calPlanIndex();
+  const ws = DB.getWorkouts();
+  const tageById = {};
+  DB.getTrainingDays().forEach(t => { tageById[t.id] = t; });
+  planIndex.forEach(p => (p.days || []).forEach(t => { if (t && !tageById[t.id]) tageById[t.id] = t; }));
+  const wochen = montage.map(mo => ({ mo, zeilen: _gymWochenZeilenDaten(mo, mo.getTime() === heuteMo.getTime(), planIndex, ws, tageById) }));
+  const maxVol = Math.max(0, ...wochen.flatMap(w => w.zeilen.flatMap(z => [z.soll, z.ist])));
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const seitenHTML = wochen.map(w => {
+    const ist = w.mo.getTime() === heuteMo.getTime();
+    const zeilen = w.zeilen.map(z => _gymWochenZeileHTML(z, ist ? todayIdx : -1, maxVol));
+    return `<div class="lauf-wochen-seite">${zeilen.length
+      ? `<div class="lauf-wochenliste">${zeilen.join('')}</div>`
+      : '<div class="lauf-wochenliste"><div class="lauf-wz-leer gym-woche-leer">Kein Gym geplant</div></div>'}</div>`;
+  }).join('');
+  // Diagramm: Volumen je Woche; der Durchschnitt nur ueber ABGESCHLOSSENE Wochen.
+  _gymWochenDaten = wochen.map(w => {
+    const von = w.mo.getTime(), bis = von + WOCHE_MS - 1;
+    const vol = ws.filter(x => x.startTs >= von && x.startTs <= bis).reduce((a, x) => a + calcVolume(x), 0);
+    return { mo: w.mo, vol, vorbei: von < heuteMo.getTime() };
+  });
+  const vorbei = _gymWochenDaten.filter(d => d.vorbei);
+  const schnitt = vorbei.length ? vorbei.reduce((a, d) => a + d.vol, 0) / vorbei.length : null;
+  const mitDiagramm = montage.length > 1 && _gymWochenDaten.some(d => d.vol > 0);
+  const anzeige = montage.length < 2 ? ''
+    : montage.length <= 14
+      ? `<div class="lauf-wochen-punkte gym" aria-hidden="true">${montage.map(() => '<i></i>').join('')}</div>`
+      : '<div class="lauf-wochen-leiste gym" aria-hidden="true"><i></i></div>';
+  const titelHTML = montage.length > 1
+    ? `<button type="button" class="chart-card-v2-title lauf-wochen-titel" id="gym-wochen-titel"
+               onclick="laufWocheZurueck('gym-wochen-scroll')">Diese Woche</button>`
+    : '<span class="chart-card-v2-title" id="gym-wochen-titel">Diese Woche</span>';
+  el.innerHTML = `<div class="chart-card-v2 lauf-wochen-karte gym-wochen-karte">
+    <div class="chart-card-v2-head">
+      ${titelHTML}
+      <button type="button" class="info-btn cal-reset-btn lauf-wochen-zurueck" id="gym-wochen-zurueck"
+              onclick="laufWocheZurueck('gym-wochen-scroll')" hidden
+              aria-label="Zur aktuellen Woche" title="Zur aktuellen Woche">${CAL_RESET_SVG}</button>
+      <span class="lauf-wochen-datum" id="gym-wochen-datum"></span>
+    </div>
+    <div class="lauf-wochen-scroll" id="gym-wochen-scroll">
+      <span class="cal-sticky-anchor" aria-hidden="true"></span>
+      ${seitenHTML}
+    </div>
+    ${anzeige}
+    ${mitDiagramm ? `<div class="ex-chart-block${_gymVolOffen ? '' : ' collapsed'}" id="gym-vol-block">
+      <div class="ex-item-body-label ex-chart-head">
+        <button type="button" class="ex-chart-collapse" onclick="toggleGymVolDiagramm()"
+               aria-expanded="${_gymVolOffen}">Wochenvolumen<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
+        ${schnitt != null ? `<span class="km-schnitt">Ø ${fmtVol(schnitt)}</span>` : ''}
+      </div>
+      <div class="ex-chart-body"><div class="ex-chart-wrap"><canvas id="gym-vol-chart"></canvas></div></div>
+    </div>` : ''}
+  </div>`;
+  const sc = document.getElementById('gym-wochen-scroll');
+  _laufWochenWischEinrichten(sc, montage, aktIdx, startIdx, {
+    ids: { titel: 'gym-wochen-titel', datum: 'gym-wochen-datum', zurueck: 'gym-wochen-zurueck' },
+    hervor: _gymVolHervorheben,
+    nrSetzen: n => { _gymWochenNr = n; },
+  });
+  _zeichneGymVolDiagramm(montage[startIdx], schnitt);
+}
+
+function toggleGymVolDiagramm() {
+  _gymVolOffen = !_gymVolOffen;
+  const block = document.getElementById('gym-vol-block');
+  if (!block) return;
+  block.classList.toggle('collapsed', !_gymVolOffen);
+  const knopf = block.querySelector('.ex-chart-collapse');
+  if (knopf) knopf.setAttribute('aria-expanded', String(_gymVolOffen));
+  if (!_gymVolOffen) return;
+  const sc = document.getElementById('gym-wochen-scroll');
+  const d = _gymWochenDaten || [];
+  const vorbei = d.filter(x => x.vorbei);
+  _zeichneGymVolDiagramm(sc && sc._montage ? sc._montage[Math.max(0, sc._idx)] : null,
+    vorbei.length ? vorbei.reduce((a, x) => a + x.vol, 0) / vorbei.length : null);
+}
+// Farben: gezeigte Woche voll, die uebrigen gedaempft — wie beim Lauf, im Gym-Gruen.
+function _gymVolFarben(daten, hervorIdx, aufGlas) {
+  const voll = aufGlas ? 'rgba(255,255,255,0.92)' : '#0F766E';
+  const matt = aufGlas ? 'rgba(255,255,255,0.45)' : 'rgba(15,118,110,0.45)';
+  return daten.map((_, i) => i === hervorIdx ? voll : matt);
+}
+function _gymVolHervorheben(mo) {
+  const c = _gymVolChart;
+  if (!c || !mo || !c._daten) return;
+  const idx = c._daten.findIndex(d => d.mo.getTime() === mo.getTime());
+  c.data.datasets[0].backgroundColor = _gymVolFarben(c._daten, idx, c._glas);
+  c.update('none');
+}
+function _zeichneGymVolDiagramm(mo, schnitt) {
+  if (_gymVolChart) { _gymVolChart.destroy(); _gymVolChart = null; }
+  const canvas = document.getElementById('gym-vol-chart');
+  const daten = _gymWochenDaten;
+  if (!canvas || !daten || !_gymVolOffen || typeof Chart === 'undefined') return;
+  const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)');
+  const schrift = aufGlas ? 'rgba(255,255,255,0.8)' : '#64748B';
+  const raster  = aufGlas ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.06)';
+  const hervorIdx = mo ? daten.findIndex(d => d.mo.getTime() === mo.getTime()) : -1;
+  const inTonnen = Math.max(...daten.map(d => d.vol)) >= 1000;
+  const sets = [{
+    data: daten.map(d => d.vol), backgroundColor: _gymVolFarben(daten, hervorIdx, aufGlas),
+    hoverBackgroundColor: aufGlas ? 'rgba(255,255,255,0.92)' : '#0F766E',
+    borderRadius: 4, borderWidth: 0, maxBarThickness: 34, order: 1,
+  }];
+  if (schnitt != null) sets.push({
+    type: 'line', data: daten.map(() => schnitt), borderColor: aufGlas ? 'rgba(255,255,255,0.55)' : 'rgba(51,65,85,0.4)',
+    borderWidth: 1, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 0, fill: false, order: 0,
+  });
+  _gymVolChart = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: { labels: daten.map((_, i) => 'W' + (i + 1)), datasets: sets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { filter: it => it.datasetIndex === 0, callbacks: {
+        title: c => 'Woche ' + (c[0].dataIndex + 1),
+        label: c => 'Volumen: ' + fmtVol(daten[c.dataIndex].vol),
+      } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: schrift, font: { size: 11 }, maxRotation: 0, autoSkipPadding: 8 } },
+        y: { beginAtZero: true, grid: { color: raster }, ticks: { color: schrift, font: { size: 11 }, callback: v => volAchsenWert(v, inTonnen) } },
+      },
+    },
+  });
+  _gymVolChart._daten = daten;
+  _gymVolChart._glas = aufGlas;
 }
 
 // ── Seite 1: Überblick über die gelaufenen Einheiten ───────────────
