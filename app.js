@@ -8874,9 +8874,17 @@ function saveWeekPlanDay(i, value) {
       const lib = DB.getTrainingDays();
       const vorlage = lib.find(d => d.id === id.slice(2));
       if (!vorlage) return;
-      const kopie = _tagKopieren(vorlage, p.id);
-      lib.push(kopie); DB.saveTrainingDays(lib);
-      id = kopie.id;
+      // v468 (Leonard-Meldung): Hat der Plan noch eine AUSSORTIERTE Kopie dieser Vorlage (sie blieb
+      // gespeichert, weil Einheiten auf sie zeigen), wird SIE wieder eingesetzt. Eine neue Kopie
+      // trennte die bisherigen Einheiten vom Plantag — Kalender und Wochenkarten zeigten
+      // vorgezogene/nachgeholte Trainings dann als offen.
+      const alt = lib.find(d => d.planId === p.id && d.vorlageId === vorlage.id && !d.archived);
+      if (alt) id = alt.id;
+      else {
+        const kopie = _tagKopieren(vorlage, p.id);
+        lib.push(kopie); DB.saveTrainingDays(lib);
+        id = kopie.id;
+      }
     }
     _wochenplanSetzen(p, i, id);
   });
@@ -10867,6 +10875,7 @@ function driveApplyCloudData(data) {
   // erzwungen ins Referenz-Modell überführen (idempotent).
   migrateDayModelV2(true);
   migrateTagKopienJePlan(true);
+  migrateVerwaisteKopien(true);
 }
 
 // ─── Haupt-Sync-Funktion ─────────────────────────────
@@ -11270,6 +11279,39 @@ function _tagKopieren(quelle, planId) {
   };
 }
 function _istVorlage(d) { return !!d && !d.planId; }
+
+// EINMALIGE REPARATUR (v468, 23.10.2026, Leonard-Meldung mit Screenshot): Bis v467 legte das
+// Zuruecksetzen eines Wochentags auf einen schon einmal entfernten Gymtag eine NEUE Kopie an; die
+// alte blieb (wegen ihrer Einheiten) aussortiert gespeichert. Die Einheiten hingen damit an der
+// alten Id, der Plantag an der neuen — Kalender und Wochenkarten zeigten vorgezogene und
+// nachgeholte Trainings als offen. Hier: Gibt es zu einer aussortierten Kopie eine aktuelle
+// desselben Gymtags (gleiche `vorlageId`, ohne Vorlage gleicher Name), wandern ihre Einheiten
+// (und die laufende) auf die aktuelle, und die alte wird geloescht. Merker `ft_tagwaisen_v1`.
+function migrateVerwaisteKopien(force) {
+  if (!force && localStorage.getItem('ft_tagwaisen_v1')) return;
+  const plans = DB.getPlans();
+  let lib = DB.getTrainingDays();
+  const ws = DB.getWorkouts();
+  const aktiv = DB.getActive();
+  const umzug = {};
+  plans.forEach(p => {
+    if (p.archived || !Array.isArray(p.dayIds)) return;
+    const aktuell = lib.filter(d => d.planId === p.id && p.dayIds.includes(d.id));
+    lib.filter(d => d.planId === p.id && !p.dayIds.includes(d.id)).forEach(waise => {
+      const ziel = aktuell.find(c => waise.vorlageId ? c.vorlageId === waise.vorlageId
+                                                    : (!c.vorlageId && c.name === waise.name));
+      if (ziel) umzug[waise.id] = ziel.id;
+    });
+  });
+  if (Object.keys(umzug).length) {
+    ws.forEach(w => { if (umzug[w.planDayId]) w.planDayId = umzug[w.planDayId]; });
+    DB.saveWorkouts(ws);
+    if (aktiv && umzug[aktiv.planDayId]) { aktiv.planDayId = umzug[aktiv.planDayId]; DB.saveActive(aktiv); }
+    lib = lib.filter(d => !umzug[d.id]);
+    DB.saveTrainingDays(lib);
+  }
+  localStorage.setItem('ft_tagwaisen_v1', '1');
+}
 
 // Einmalig (Merker `ft_tagkopien_v1`, nach einem Cloud-Abruf erzwungen): Jeder NICHT archivierte
 // Gymplan bekommt eigene Kopien; die bisherigen gemeinsamen Tage bleiben als Vorlagen stehen.
@@ -12049,6 +12091,8 @@ document.addEventListener('DOMContentLoaded', () => {
   migrateDayModelV2();
   // Jeder Gymplan bekommt eigene Kopien seiner Gymtage (v460, einmalig)
   migrateTagKopienJePlan();
+  // Aussortierte Kopien, die eine neuere Kopie desselben Gymtags abgeloest hat (v468, einmalig)
+  migrateVerwaisteKopien();
   // Daten-Hygiene: verwaiste Wochenplan-Referenzen entfernen (legacy fallback, falls noch
   // jemand auf den ft_weekplan-Key zugreift — mit Multi-Plan sind die weekPlans pro Plan)
   cleanupOrphanWeekplan();

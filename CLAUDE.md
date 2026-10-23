@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v467**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v468**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -179,6 +179,17 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   GEMESSEN (375px, Testwoche Mo–Sa): alle sechs Faelle wie beschrieben; keine Konsolenfehler.
   SEIT v467 (Leonard-Wunsch) OHNE „starten" und „laufen": geplant steht nur „Push" bzw. „8 km"
   („45 min", ohne Vorgabe „Lauf"); „erledigt"/„gelaufen" bleiben. „Beine schwer" passt damit.
+- **v468 (23.10.2026, Leonard-Meldung mit Screenshot):** Nach Hin- und Zurueckstellen eines
+  Wochentags standen im Kalender vorgezogene/nachgeholte Push-Einheiten als OFFENE Plantage da.
+  URSACHE: Beim Zurueckstellen legte die Wahl der Vorlage eine NEUE Kopie an; die Einheiten hingen
+  an der alten, aussortierten (wegen der Einheiten gespeichert gebliebenen) Kopie.
+  VORBEUGEN: `saveWeekPlanDay('v:…')` setzt eine aussortierte Kopie derselben Vorlage aus diesem
+  Plan WIEDER ein, statt eine neue anzulegen. REPARATUR einmalig `migrateVerwaisteKopien`
+  (Merker `ft_tagwaisen_v1`, nach Cloud-Abruf erzwungen): aussortierte Kopie + aktuelle desselben
+  Gymtags (gleiche `vorlageId`, ohne Vorlage gleicher Name) → Einheiten (und laufende) auf die
+  aktuelle, alte geloescht. GEMESSEN: Einheit Mo auf alter Kopie → nach Start auf neuer, Di der
+  Vorwoche ohne `planned` (mit falscher Zuordnung `planned`); abwaehlen + Vorlage neu waehlen →
+  dieselbe Kopie; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
