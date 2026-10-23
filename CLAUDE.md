@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v468**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v469**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3219,6 +3219,24 @@ Text. Ein gelaufener Lauf war schon ein Knopf (Detailansicht mit Notiz). `saveRu
 jetzt auch den Plan-Tab neu. GEMESSEN: Sa geplant mit Notiz → Knopf → Fenster „lang & locker".
 TESTHINWEIS: `glasAktiv()` liest den SPEICHER, nicht die Klasse am `<html>` — zum Pruefen
 `localStorage.setItem(GLAS_KEY, '1'); applyGlasModus();` statt die Klasse von Hand zu setzen.
+
+**EINHEITEN „VARIANTE B"** (v469, 23.10.2026, Leonard-Wahl aus drei gezeichneten Vorschlaegen —
+A Blatt zum Bearbeiten, C aufklappende Zeile): Jede Lauftag-Zeile ist gebaut wie „Diese Woche"
+der Seite „Laufen" — Wochentag-Scheibe (`.lp-scheibe`, Stil von `.lauf-wz-tag.offen`), rechts
+die Felder km und min DIREKT in der Zeile, ganz rechts der Notiz-Knopf (`.lp-notiz`, Symbol
+`NOTIZ_ICON`, gefuellt in der Tabfarbe mit Notiz, `.hat`; Fenster `#modal-run-note` wie bisher),
+darunter der Laengenbalken (`_lpBalken`) gegen den laengsten Lauf DIESES Plans (`_lpMaxKm`).
+Ziel ist, was ausgefuellt ist (km, Zeit oder beides); NUR ZEIT → KEIN Balken
+(Leonard-Entscheidung), der Platz bleibt aber (`.lp-balken-platz` 10px, alle Zeilen 60px).
+Der Wochenkopf nennt Zeitraum und Wochenkilometer (`_lpWochenInfo`, `.lp-woche-info`).
+Beim Tippen zieht `setRunUnit` → `_lpEinheitenNachziehen` Balken und Koepfe OHNE Neuaufbau nach.
+Die ZONE ist aus der Detailansicht ENTFALLEN (`setRunZone`, `HERZZONEN`, `.lp-zone*`, `.lp-tag`);
+schon gespeicherte `unit.zone`-Werte bleiben in den Daten und erscheinen weiter, wo sie bisher
+angezeigt wurden (Seite „Laufen", Fenster „Überspringen"). Eigene Klassen statt `.lauf-wz-*`,
+weil deren Glas-Regeln Scheibe und Balken auf der weissen Karte weiss faerbten; der Notiz-Knopf
+hat dafuer eine eigene Glas-Ausnahme. GEMESSEN (375px): Di 8/45 Balken 44 % mit Notiz, Do –/40
+ohne Balken, So 18 km 100 %; So auf 24 → Di 33 %, Kopf 26 → 32 km, Feld bleibt; Scheibe und
+Notiz je 14px vom Kartenrand; keine Konsolenfehler.
 
 **„Alle aufklappen / Alle zuklappen" ueber dem Abschnitt „Einheiten"** (`toggleAlleRunWochen`,
 `#lp-alle-btn`, 13.09.2026, Leonard-Wunsch). Sind ALLE Wochen offen, klappt er alle zu, sonst

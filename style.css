@@ -2717,56 +2717,49 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
 .lp-woche-btn[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
 .lp-woche-btn .aex-v2-chev { width: 18px; height: 18px; }
 .lp-woche-btn .aex-v2-chev svg { width: 16px; height: 16px; }
-/* Feste Spalten statt Umbruch: Auf iPhone-Breite rutschte die Zone sonst in eine zweite Zeile. */
-/* Sieben Spalten: Tag · km · „km" · min · „min" · Zone · Notiz. Die Notiz nimmt den Rest
-   (04.09.2026) — dadurch fuellt die Zeile jetzt die volle Breite und der fruehere Einzug der
-   Tagesspalte ist entfallen; fuer beides zusammen reicht der Platz auf 375px nicht.
-   Die festen Werte sind gemessen: „01.09.26" braucht 41,7px, eine Zahl wie „12.5" bei 16px
-   31,8px, „Zone" bei 13px 31,9px. */
-/* Tages- und km-Spalte seit dem 21.09.2026 48 bzw. 16px (vorher 44/14): Mit der Schriftskala
-   stehen Datum und Einheit bei 11 statt 10px — „28.09.26" misst dann 46.8px, „km" 15.7px. Die
-   6px gehen von der Notiz-Vorschau ab (81 → 75px), die ohnehin gekuerzt wird. */
-.lp-einheit {
-  display: grid; grid-template-columns: 48px 44px 16px 44px 20px 46px 1fr;
-  gap: 5px; align-items: center; padding: 4px 0;
+/* EINHEITEN „VARIANTE B" (v469, 23.10.2026, Leonard-Wahl): je Lauftag eine Zeile wie in der
+   Karte „Diese Woche" der Seite „Laufen" — links die Wochentag-Scheibe, rechts die Felder fuer km
+   und min plus der Notiz-Knopf, darunter der Laengenbalken (gegen den laengsten Lauf des Plans,
+   nur bei km). Die Zone ist entfallen. Eigene Klassen statt `.lauf-wz-*`: Deren Glas-Regeln
+   wuerden Scheibe und Balken weiss faerben — die Detailansicht bleibt aber weiss (`.mehr-card`). */
+.lp-einheit { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.lp-scheibe {
+  width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--fs-neben); font-weight: 700;
+  background: var(--card2); box-shadow: inset 0 0 0 2px #4ADE80; color: #22A05B;
 }
-/* Wochentag und Datum stehen MITTIG ueber ihrer Spalte (Leonard-Wunsch 04.09.2026) —
-   linksbuendig sassen die kurzen Kuerzel weit weg von den Feldern daneben. */
-.lp-tag { display: flex; flex-direction: column; line-height: 1.15; text-align: center; }
-.lp-tag strong { font-size: var(--fs-neben); color: var(--text); }
-.lp-tag span { font-size: var(--fs-etikett); color: var(--text3); }
-/* km/min/Zone haben eine FESTE, gemeinsame Hoehe. Ohne die war die Zone 2px hoeher:
-   Ein <select> rechnet seine Zeilenhoehe anders als ein <input> (Leonard-Meldung
-   04.09.2026). Mit `box-sizing: border-box` gilt der Wert einschliesslich Rand. */
-.lp-feld, .lp-zone, .lp-notiz { height: 38px; box-sizing: border-box; }
+.lp-einheit-rechts { flex: 1; min-width: 0; }
+.lp-einheit-oben { display: flex; align-items: center; gap: 5px; }
+.lp-balken {
+  position: relative; height: 4px; border-radius: 99px; background: var(--card2);
+}
+.lp-balken > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: rgba(74, 222, 128, .62); }
+/* Der Platz des Balkens ist auch ohne Balken da (Lauf nur mit Zeit) — sonst waeren die Zeilen
+   verschieden hoch. */
+.lp-balken-platz { height: 10px; padding-top: 6px; box-sizing: border-box; }
+.lp-woche-btn > span:first-child { margin-right: auto; }
+.lp-woche-info { font-size: var(--fs-neben); font-weight: 400; color: var(--text3); margin-right: 8px; }
+.lp-feld, .lp-notiz { height: 38px; box-sizing: border-box; }
 .lp-feld {
-  width: 100%; min-width: 0; text-align: center; padding: 0 2px; border-radius: 9px;
+  width: 52px; flex: none; text-align: center; padding: 0 2px; border-radius: 9px;
   border: 1px solid var(--border); background: var(--card2); color: var(--text);
   font-family: inherit; font-weight: 600;
 }
 .lp-feld:focus { outline: none; border-color: var(--accent); }
-.lp-eh { font-size: var(--fs-etikett); color: var(--text3); }
-/* Die Zone ist ein gewoehnlicher Kasten mit einem unsichtbaren <select> darueber — ein
-   sichtbares <select> bringt auf jeder Plattform eigene Masse mit (Pfeil, Mindestbreite)
-   und sprengte die Spalte. Dasselbe Muster wie `.wpe-select` im Plan-Detail. */
-.lp-zone {
-  position: relative; display: flex; align-items: center; justify-content: center;
-  width: 100%; min-width: 0; padding: 0 2px; border-radius: 9px; border: 1px solid var(--border);
-  background: var(--card2); color: var(--text); font-family: inherit; font-size: var(--fs-neben); font-weight: 600;
-}
-.lp-zone.leer { color: var(--text3); }
-/* Notiz: In der Zeile steht nur eine gekuerzte VORSCHAU — geschrieben wird im eigenen
-   Fenster (`#modal-run-note`), weil die Zeile einzeilig bleiben muss (Leonard-Wunsch
-   04.09.2026). Ein `<button>`, kein Eingabefeld: Ein Feld bekaeme auf iOS den Fokus und die
-   Tastatur wuerde ueber der einen sichtbaren Zeile aufgehen. */
+.lp-eh { font-size: var(--fs-etikett); color: var(--text3); margin-right: 4px; }
+/* Notiz: ein quadratischer Knopf mit dem Notiz-Symbol ganz rechts; geschrieben wird im eigenen
+   Fenster (`#modal-run-note`). Mit Notiz in der Tabfarbe gefuellt. Ein `<button>`, kein
+   Eingabefeld — ein Feld bekaeme auf iOS den Fokus und die Tastatur ginge auf. */
 .lp-notiz {
-  width: 100%; min-width: 0; padding: 0 8px; border-radius: 9px; border: 1px solid var(--border);
-  background: var(--card2); color: var(--text); font-family: inherit; font-size: var(--fs-neben); font-weight: 600;
-  text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  width: 38px; flex: none; margin-left: auto; padding: 0; border-radius: 9px;
+  border: 1px solid var(--border); background: var(--card2); color: var(--text3);
+  display: flex; align-items: center; justify-content: center;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
-  -webkit-user-select: none; user-select: none;
 }
-.lp-notiz.leer { color: var(--text3); font-weight: 400; }
+.lp-notiz .notiz-ic { color: inherit; width: 16px; height: 16px; margin: 0; }
+.lp-notiz .notiz-ic svg { width: 16px; height: 16px; }
+.lp-notiz.hat { background: var(--accent); border-color: var(--accent); color: #fff; }
 .lp-notiz:active { opacity: .6; }
 /* Knopfzeile im Notizfenster. */
 .run-note-actions { display: flex; gap: 8px; margin-top: 12px; }
@@ -2775,11 +2768,6 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
    18px-Innenabstand 2px ueber die Zeile (gemessen 21.09.2026). Mit 10px sind alle drei gleich
    breit (106px auf 375px) und passen. */
 .run-note-actions .btn { flex: 1; min-width: 0; padding-left: 10px; padding-right: 10px; }
-/* Das unsichtbare Bedienelement MUSS 16px tragen — sonst zoomt iOS beim Fokussieren hinein. */
-.lp-zone-sel {
-  position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 16px;
-  -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer;
-}
 /* Sieben Tage in EINER Zeile — `1 1 0` statt `1` mit Mindestbreite, sonst bricht „So" um. */
 /* MUSKELGRUPPEN-CHIPS im Gymtag-Detail (26.09.2026): dieselbe Bauform wie die Lauftage
    darueber. Ein angeschalteter Chip traegt die Farbe seiner Gruppe; die setzt das JS inline,
@@ -4269,6 +4257,8 @@ html.glas .screen:not(#screen-mehr) .km-schnitt { color: rgba(255,255,255,.85); 
 .notiz-ic { display: inline-flex; width: 13px; height: 13px; margin-left: 6px; color: var(--text3); vertical-align: -1px; flex-shrink: 0; }
 .notiz-ic svg { width: 100%; height: 100%; }
 html.glas .screen:not(#screen-mehr) .notiz-ic { color: rgba(255,255,255,.75); }
+/* Der Notiz-Knopf im Laufplan-Detail steht auf der weissen Karte — dort bleibt das Symbol dunkel. */
+html.glas #screen-runplan-detail .lp-notiz .notiz-ic { color: inherit; }
 /* In der Einheiten-Detailansicht ist der Platz schmaler als im Katalog. */
 #hist-detail-body .ex-chart-wrap { height: 120px; margin: 2px 0 0; }
 #hist-detail-body .ex-chart-empty { margin-bottom: 0; }

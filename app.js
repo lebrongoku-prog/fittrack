@@ -4561,7 +4561,6 @@ const WOCHENTAGE_KURZ = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 // eines Wochenplan-Eintrags — der kann bei einem selbst gebauten Plan leer sein, hier ist
 // der Index die sichere Quelle.
 const WOCHENTAGE_LANG = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
-const HERZZONEN = ['', 'Z1', 'Z2', 'Z3', 'Z4', 'Z5'];
 
 let runTokenClient = null, runToken = null, runTokenExp = 0;
 let runLaden = false, runFehler = '';
@@ -4678,8 +4677,8 @@ async function runLaeufeLaden({ interactive = false } = {}) {
   }
 }
 
-// Notiz zu EINER geplanten Laufeinheit. Die Zeile im Laufplan muss einzeilig bleiben, dort
-// steht deshalb nur eine gekuerzte Vorschau; geschrieben wird in einem eigenen Fenster mit
+// Notiz zu EINER geplanten Laufeinheit. In der Zeile steht seit v469 nur ein Knopf mit dem
+// Notiz-Symbol (gefuellt, wenn eine Notiz da ist); geschrieben wird in einem eigenen Fenster mit
 // Platz fuer mehrere Zeilen (Leonard-Wunsch 04.09.2026).
 let _runNoteZiel = null;
 
@@ -4703,7 +4702,7 @@ function saveRunNote() {
   // Die Vorschau von Hand nachziehen — ein Neuaufbau der Seite naehme den Feldern daneben
   // die noch nicht gespeicherten Eingaben (dieselbe Ueberlegung wie bei `setRunZone`).
   const knopf = document.querySelector(`.lp-notiz[data-woche="${woche}"][data-tag="${dayIdx}"]`);
-  if (knopf) { knopf.textContent = text || 'Notiz'; knopf.classList.toggle('leer', !text); }
+  if (knopf) { knopf.title = text || 'Notiz'; knopf.classList.toggle('hat', !!text); }
   _runNoteZiel = null;
   closeModal('modal-run-note');
 }
@@ -5734,30 +5733,38 @@ function renderRunPlanDetail() {
   const tageWahl = WOCHENTAGE_KURZ.map((n, i) =>
     `<button type="button" class="lp-tagwahl${(p.runDays || []).includes(i) ? ' an' : ''}" onclick="toggleRunDay('${p.id}',${i})">${n}</button>`).join('');
 
+  // EINHEITEN „VARIANTE B" (v469, 23.10.2026, Leonard-Wahl aus drei gezeichneten Vorschlaegen —
+  // A Blatt zum Bearbeiten, C aufklappende Zeile): Jede Woche ist gebaut wie die Karte „Diese
+  // Woche" der Seite „Laufen" — Wochentag-Scheibe, darunter ein Laengenbalken —, die Felder fuer
+  // km und min stehen aber DIREKT in der Zeile. Ziel ist, was ausgefuellt ist: km, Zeit oder
+  // beides. Die Zone ist entfallen (Leonard-Wunsch), die Notiz liegt hinter dem Knopf rechts.
+  // Der Balken misst gegen den laengsten Lauf DIESES Plans (`_lpMaxKm`); ein Lauf nur mit Zeit
+  // bekommt keinen (Leonard-Entscheidung). Im Wochenkopf stehen Zeitraum und Wochenkilometer.
+  // Balken und Kopf zieht `_lpEinheitenNachziehen` beim Tippen nach — OHNE Neuaufbau.
+  const maxKm = _lpMaxKm(p);
   const wochenBlocks = [];
   for (let w = 1; w <= wochen; w++) {
     const auf = _laufOffeneWochen.has(p.id + ':' + w);
     const tage = (p.runDays || []).map(di => {
       const u = runEinheit(p, w, di) || {};
-      const d = runEinheitDatum(p, w, di);
-      return `<div class="lp-einheit">
-        <div class="lp-tag"><strong>${WOCHENTAGE_KURZ[di]}</strong><span>${d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span></div>
-        <input class="lp-feld" type="text" inputmode="decimal" value="${u.km ?? ''}" placeholder="—"
-               onchange="setRunUnit('${p.id}',${w},${di},'km',this.value)"><span class="lp-eh">km</span>
-        <input class="lp-feld" type="text" value="${u.minutes ?? ''}" placeholder="—"
-               onchange="setRunUnit('${p.id}',${w},${di},'minutes',this.value)"><span class="lp-eh">min</span>
-        <div class="lp-zone${u.zone ? '' : ' leer'}"><span class="lp-zone-txt">${u.zone || 'Zone'}</span>
-          <select class="lp-zone-sel" aria-label="Herzzone"
-                  onchange="setRunZone('${p.id}',${w},${di},this)">
-            ${HERZZONEN.map(z => `<option value="${z}"${(u.zone || '') === z ? ' selected' : ''}>${z || 'Zone'}</option>`).join('')}
-          </select></div>
-        <button type="button" class="lp-notiz${u.note ? '' : ' leer'}" aria-label="Notiz"
-                data-woche="${w}" data-tag="${di}"
-                onclick="openRunNote('${p.id}',${w},${di})">${escapeHtml(u.note || 'Notiz')}</button>
+      return `<div class="lp-einheit" data-woche="${w}" data-tag="${di}">
+        <span class="lp-scheibe">${WOCHENTAGE_KURZ[di]}</span>
+        <div class="lp-einheit-rechts">
+          <div class="lp-einheit-oben">
+            <input class="lp-feld" type="text" inputmode="decimal" value="${u.km ?? ''}" placeholder="–" aria-label="Kilometer"
+                   onchange="setRunUnit('${p.id}',${w},${di},'km',this.value)"><span class="lp-eh">km</span>
+            <input class="lp-feld" type="text" inputmode="numeric" value="${u.minutes ?? ''}" placeholder="–" aria-label="Minuten"
+                   onchange="setRunUnit('${p.id}',${w},${di},'minutes',this.value)"><span class="lp-eh">min</span>
+            <button type="button" class="lp-notiz${u.note ? ' hat' : ''}" aria-label="Notiz" title="${escapeHtml(u.note || 'Notiz')}"
+                    data-woche="${w}" data-tag="${di}"
+                    onclick="openRunNote('${p.id}',${w},${di})">${NOTIZ_ICON}</button>
+          </div>
+          <div class="lp-balken-platz">${_lpBalken(u.km, maxKm)}</div>
+        </div>
       </div>`;
     }).join('');
     wochenBlocks.push(`<div class="lp-woche">
-      <button type="button" class="lp-woche-btn" aria-expanded="${auf}" onclick="toggleRunWoche('${p.id}',${w})">Woche ${w}<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
+      <button type="button" class="lp-woche-btn" aria-expanded="${auf}" onclick="toggleRunWoche('${p.id}',${w})"><span>Woche ${w}</span><span class="lp-woche-info" data-woche="${w}">${_lpWochenInfo(p, w)}</span><span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
       <div class="lp-woche-body"${auf ? '' : ' style="display:none"'}>${tage || '<p class="lauf-leer">Keine Lauftage gewählt.</p>'}</div>
     </div>`);
   }
@@ -5921,16 +5928,33 @@ function toggleRunDay(id, di) {
 }
 
 // Einheiten sichern sich beim Verlassen des Feldes und OHNE Neuaufbau — sonst verliert man
-// beim Weitertippen den Fokus und halb getippte Werte.
-// Der sichtbare Text liegt neben dem unsichtbaren <select> und muss von Hand nachgezogen
-// werden — ein Neuaufbau der Karte naehme den Feldern darueber die noch offenen Eingaben.
-function setRunZone(id, woche, dayIdx, sel) {
-  setRunUnit(id, woche, dayIdx, 'zone', sel.value);
-  const box = sel.closest('.lp-zone');
-  if (!box) return;
-  box.classList.toggle('leer', !sel.value);
-  const txt = box.querySelector('.lp-zone-txt');
-  if (txt) txt.textContent = sel.value || 'Zone';
+// beim Weitertippen den Fokus und halb getippte Werte. Die Zone (`setRunZone`, `HERZZONEN`-Auswahl)
+// ist mit v469 aus der Detailansicht entfallen.
+// Laengster geplanter Lauf (km) dieses Plans — Bezug der Balken.
+function _lpMaxKm(p) {
+  return Math.max(0, ...(p.units || []).filter(u => (p.runDays || []).includes(u.dayIdx)).map(u => Number(u.km) || 0));
+}
+function _lpBalken(km, maxKm) {
+  const k = Number(km) || 0;
+  if (!k || !maxKm) return '';
+  return `<div class="lp-balken"><i style="width:${Math.max(3, Math.min(100, k / maxKm * 100)).toFixed(1)}%"></i></div>`;
+}
+// „19.–25. Okt · 29 km" — Zeitraum der Planwoche und ihre geplanten Kilometer.
+function _lpWochenInfo(p, w) {
+  const km = (p.units || []).filter(u => u.week === w && (p.runDays || []).includes(u.dayIdx))
+    .reduce((a, u) => a + (Number(u.km) || 0), 0);
+  return _laufWochenSpanne(runEinheitDatum(p, w, 0)) + (km ? ` · ${fmtKm(km)}` : '');
+}
+function _lpEinheitenNachziehen(p) {
+  const maxKm = _lpMaxKm(p);
+  document.querySelectorAll('#runplan-detail-body .lp-einheit').forEach(z => {
+    const u = runEinheit(p, +z.dataset.woche, +z.dataset.tag) || {};
+    const platz = z.querySelector('.lp-balken-platz');
+    if (platz) platz.innerHTML = _lpBalken(u.km, maxKm);
+  });
+  document.querySelectorAll('#runplan-detail-body .lp-woche-info').forEach(el => {
+    el.textContent = _lpWochenInfo(p, +el.dataset.woche);
+  });
 }
 
 function setRunUnit(id, woche, dayIdx, feld, wert) {
@@ -5945,7 +5969,11 @@ function setRunUnit(id, woche, dayIdx, feld, wert) {
   if (currentScreen === 'overview') renderOverview();
   // Das Diagramm der Detailansicht zeigt genau diese Zahlen — es wird von Hand nachgezogen,
   // weil die Felder bewusst OHNE Neuaufbau speichern (sonst verlieren sie den Fokus).
-  if (feld === 'km' && currentScreen === 'runplan-detail') _zeichneLpKmDiagramm();
+  if (feld === 'km' && currentScreen === 'runplan-detail') {
+    _zeichneLpKmDiagramm();
+    const p = DB.getRunPlans().find(x => x.id === id);
+    if (p) _lpEinheitenNachziehen(p);
+  }
 }
 
 // Loeschen ist zweifach abgesichert wie bei den Trainingsplaenen: „Rueckgaengig" fuer 6
