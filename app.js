@@ -7532,21 +7532,16 @@ function renderPlanDetail() {
   // natives Dropdown (overlaid <select>) zum Zuweisen eines Gymtags.
   // SEIT v460 (23.10.2026, Leonard-Wunsch) wird hier auch HINZUGEFUEGT — der Abschnitt
   // „Trainingstage" samt „+ Trainingstag hinzufügen" ist entfallen. Die Auswahl bietet die
-  // Gymtage des Plans, die Vorlagen der Seite „Gymtage" (werden beim Waehlen kopiert, siehe
-  // `saveWeekPlanDay`) und „+ Neuer Gymtag". Eine Vorlage, von der der Plan schon eine Kopie
-  // hat, steht nicht noch einmal da. ✎ fuehrt auf die Detailseite des Gymtags.
-  const vorlagenImPlan = new Set(trainingDays.map(td => td.vorlageId).filter(Boolean));
-  const vorlagen = plan.archived ? [] : DB.getTrainingDays()
-    .filter(d => _istVorlage(d) && !d.archived && !vorlagenImPlan.has(d.id))
-    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  // Gymtage des Plans und — seit v462 als EIN Eintrag — „Aus den Gymtagen …", der ein Fenster
+  // im Stil der Seite „Gymtage" oeffnet (`openGymtagWahl`). „+ Neuer Gymtag" ist mit v462
+  // entfallen. ✎ fuehrt auf die Detailseite des Gymtags.
   const zeilen = wp.map((d, i) => {
     if (!gewaehlt.includes(i)) return '';
     const assigned = d.planDayId ? trainingDays.find(td => td.id === d.planDayId) : null;
     const opt = (wert, name) => `<option value="${wert}" ${d.planDayId === wert ? 'selected' : ''}>${escapeHtml(name)}</option>`;
     const options = `<option value="" ${!d.planDayId ? 'selected' : ''}>Gymtag wählen</option>` +
       (trainingDays.length ? `<optgroup label="In diesem Plan">${trainingDays.map(td => opt(td.id, td.name)).join('')}</optgroup>` : '') +
-      (vorlagen.length ? `<optgroup label="Aus den Gymtagen">${vorlagen.map(td => opt('v:' + td.id, td.name)).join('')}</optgroup>` : '') +
-      (plan.archived ? '' : `<option value="__neu">+ Neuer Gymtag</option>`);
+      (plan.archived ? '' : `<option value="__vorlagen">Aus den Gymtagen …</option>`);
     const cls = 'wpe-row' + (i === todayIdx ? ' today' : '') + (assigned ? ' training' : '');
     const umfang = assigned ? (() => {
       const n = (assigned.exercises || []).length;
@@ -8238,6 +8233,18 @@ function toggleLibDaysArchive() {
   _archivKlappen('libdays-list', libDaysArchiveExpanded, renderLibDays);
 }
 
+// Eine Kachel der Seite „Gymtage" — auch im Fenster „Aus den Gymtagen" (v462).
+function _gymtagKachel(d, leiste, onclick, leisteTitel) {
+  const anzUeb = (d.exercises||[]).length;
+  const setCount = (d.exercises||[]).reduce((a,e) => a + (e.targetSets||0), 0);
+  return `<div class="plan-list-row pld-kachel" onclick="${onclick}">
+      ${leiste ? `<i class="pld-leiste" title="${leisteTitel}"></i>` : ''}
+      <div class="plan-list-name">${pd(escapeHtml(d.name).replace(/\//g, '/<wbr>'))}</div>
+      <div class="plan-list-meta">${anzUeb} ${anzUeb === 1 ? 'Übung' : 'Übungen'}<br>${setCount} Sätze</div>
+      ${_mgPunkte(d.muscles)}
+    </div>`;
+}
+
 function renderLibDays() {
   // Seit v460 nur die VORLAGEN — die Kopien der Plaene erreicht man ueber deren Wochenplan.
   const days = DB.getTrainingDays().filter(_istVorlage);
@@ -8270,17 +8277,7 @@ function renderLibDays() {
   //     „Shoulder/Legs" als EIN Wort und der Browser bricht es mitten im Wort um
   //     („Shoulder/Leg | s"). Mit `<wbr>` trennt er sauber nach dem Strich. Betrifft nur die
   //     Anzeige — gespeichert bleibt der Name unveraendert.
-  const renderRow = (d) => {
-    const anzUeb = (d.exercises||[]).length;
-    const setCount = (d.exercises||[]).reduce((a,e) => a + (e.targetSets||0), 0);
-    const imPlan = activeDayIds.has(d.id);
-    return `<div class="plan-list-row pld-kachel" onclick="openLibDayDetail('${d.id}')">
-      ${imPlan ? '<i class="pld-leiste" title="Im aktuellen Plan"></i>' : ''}
-      <div class="plan-list-name">${pd(escapeHtml(d.name).replace(/\//g, '/<wbr>'))}</div>
-      <div class="plan-list-meta">${anzUeb} ${anzUeb === 1 ? 'Übung' : 'Übungen'}<br>${setCount} Sätze</div>
-      ${_mgPunkte(d.muscles)}
-    </div>`;
-  };
+  const renderRow = (d) => _gymtagKachel(d, activeDayIds.has(d.id), `openLibDayDetail('${d.id}')`, 'Im aktuellen Plan');
   // (Kein Import-Button mehr nötig: im Referenz-Modell SIND alle Plan-Tage Bibliothek-Tage.
   //  Bestehende Pläne werden einmalig per migrateDayModelV2 verknüpft.)
   let html = '';
@@ -8707,27 +8704,14 @@ function _planKopienAufraeumen(p) {
   if (rest.length !== lib.length) DB.saveTrainingDays(rest);
 }
 
-// Die Auswahl im Wochenplan kennt drei Arten von Werten (v460):
-//   '<id>'   ein Gymtag, den der Plan schon hat (dieselbe Kopie an mehreren Wochentagen)
-//   'v:<id>' eine VORLAGE — der Plan bekommt davon eine eigene Kopie
-//   '__neu'  ein neuer Gymtag nur fuer diesen Plan; danach geht es auf seine Detailseite
+// Die Auswahl im Wochenplan kennt drei Arten von Werten:
+//   '<id>'        ein Gymtag, den der Plan schon hat (dieselbe Kopie an mehreren Wochentagen)
+//   'v:<id>'      eine VORLAGE — der Plan bekommt davon eine eigene Kopie (aus `waehleGymtagVorlage`)
+//   '__vorlagen'  oeffnet das Fenster „Aus den Gymtagen" (v462)
 function saveWeekPlanDay(i, value) {
-  if (value === '__neu') {
-    _renderAfterPlanEdit();   // setzt die Auswahl zurueck, falls der Dialog abgebrochen wird
-    promptForName('Name des neuen Gymtags', 'Neuer Gymtag', (eingabe) => {
-      let neuId = null;
-      DB._bearbeitetenPlanAendern(p => {
-        const name = eindeutigerTagName(eingabe, resolvePlanDays(p));
-        const tag = { id: 'libday_' + Date.now() + '_' + Math.floor(Math.random()*100000), name,
-                      color: null, exercises: [], notes: '', archived: false, createdAt: Date.now(), planId: p.id };
-        const lib = DB.getTrainingDays(); lib.push(tag); DB.saveTrainingDays(lib);
-        neuId = tag.id;
-        _wochenplanSetzen(p, i, tag.id);
-      });
-      if (!neuId) return;
-      showToast(`${escapeHtml(eingabe)} hinzugefügt`);
-      openLibDayDetail(neuId, 'plan-detail');
-    });
+  if (value === '__vorlagen') {
+    _renderAfterPlanEdit();   // setzt die Auswahl zurueck — gewaehlt wird erst im Fenster
+    openGymtagWahl(i);
     return;
   }
   DB._bearbeitetenPlanAendern(p => {
@@ -8744,6 +8728,34 @@ function saveWeekPlanDay(i, value) {
   });
   _renderAfterPlanEdit();
 }
+// FENSTER „AUS DEN GYMTAGEN" (v462, 23.10.2026, Leonard-Wunsch): dieselben Kacheln wie die
+// Seite „Gymtage" (`_gymtagKachel`) auf dem Verlauf des Plan-Tabs. Ein Tipp waehlt GENAU EINEN
+// Gymtag fuer den angetippten Wochentag (Leonard-Entscheidung) und schliesst das Fenster.
+// Die Leiste oben heisst hier „schon in diesem Plan" — dann wird dessen Kopie zugewiesen statt
+// einer zweiten.
+let _gymtagWahlTag = null;
+function openGymtagWahl(i) {
+  const plan = _resolveEditPlan(); if (!plan) return;
+  _gymtagWahlTag = i;
+  const imPlan = {};
+  resolvePlanDays(plan).forEach(d => { if (d.vorlageId) imPlan[d.vorlageId] = d.id; });
+  const vorlagen = DB.getTrainingDays().filter(d => _istVorlage(d) && !d.archived)
+    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  document.getElementById('gymtag-wahl-titel').textContent = `Gymtag für ${WOCHENTAGE_LANG[i]}`;
+  document.getElementById('gymtag-wahl-liste').innerHTML = vorlagen.length
+    ? vorlagen.map(d => _gymtagKachel(d, !!imPlan[d.id], `waehleGymtagVorlage('${d.id}')`, 'Schon in diesem Plan')).join('')
+    : `<div class="plan-day-empty">Noch keine Gymtage — lege sie im Plan-Tab auf der Seite „Gymtage" an.</div>`;
+  openModal('modal-gymtag-wahl');
+}
+function waehleGymtagVorlage(vorlageId) {
+  const i = _gymtagWahlTag;
+  closeModal('modal-gymtag-wahl');
+  if (i === null) return;
+  const plan = _resolveEditPlan();
+  const kopie = plan && resolvePlanDays(plan).find(d => d.vorlageId === vorlageId);
+  saveWeekPlanDay(i, kopie ? kopie.id : 'v:' + vorlageId);
+}
+
 // Weist einem Wochentag einen Gymtag zu und haelt `dayIds` dazu passend.
 // Altbestand ohne `wochentage`: die Auswahl vorher festschreiben, sonst verschwaende ein Tag,
 // dessen Gymtag man auf „Gymtag wählen" zuruecksetzt, aus der Liste.

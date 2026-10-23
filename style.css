@@ -699,6 +699,14 @@ body.theme-plans .hist-action-dd {
   padding: 0 14px 8px; margin: 0 -14px;
 }
 
+/* Fenster „Aus den Gymtagen" (v462, Leonard-Wunsch „wie die Seite Gymtage"): dasselbe
+   Dreier-Raster auf dem Verlauf des Plan-Tabs, in eine gerundete Flaeche im Blatt gesetzt. */
+.gymtag-wahl-raster {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
+  padding: 14px; border-radius: 14px;
+  background: linear-gradient(135deg, #78350F, #F59E0B);
+}
+.gymtag-wahl-raster > .plan-day-empty { grid-column: 1 / -1; color: rgba(255,255,255,.9); }
 .pld-kachel {
   position: relative;
   margin: 0;

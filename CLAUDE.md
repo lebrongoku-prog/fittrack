@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v461**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v462**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -125,6 +125,16 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Chip springt sofort um; beim Abwaehlen wartet nur das Neuzeichnen auf die Bewegung. Die LETZTE
   Zeile faehrt nicht (der Hinweis ersetzt die Liste). GEMESSEN: auf 0 → 67.8px, zu 67.8 → 0,
   danach keine Inline-Stile; dreimal schnell getippt → Stand und Zeilen stimmen; keine Konsolenfehler.
+- **v462 (23.10.2026, Leonard-Wunsch/-Entscheidung):** Die Auswahl im Wochenplan hat nur noch
+  „Gymtag wählen", die Gruppe „In diesem Plan" und EINEN Eintrag „Aus den Gymtagen …"
+  (`__vorlagen`). Der oeffnet `#modal-gymtag-wahl` (`openGymtagWahl(i)`): die Kacheln der Seite
+  „Gymtage" (`_gymtagKachel`, von `renderLibDays` mitbenutzt) auf dem Plan-Tab-Verlauf
+  (`.gymtag-wahl-raster`). Ein Tipp waehlt GENAU EINEN Gymtag fuer den angetippten Wochentag
+  (Leonard-Entscheidung gegen Mehrfachwahl) und schliesst das Fenster (`waehleGymtagVorlage`).
+  Die Leiste heisst hier „Schon in diesem Plan" — dann wird dessen vorhandene Kopie zugewiesen,
+  keine zweite. „+ Neuer Gymtag" (`__neu`) ist ENTFALLEN; neue Gymtage entstehen nur noch als
+  Vorlage auf der Seite „Gymtage". GEMESSEN: Push (Vorlage) fuer Di → neue Kopie; Beine (schon im
+  Plan) fuer Fr → dieselbe Kopie, kein neuer Tag; Kacheln 96x113; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
