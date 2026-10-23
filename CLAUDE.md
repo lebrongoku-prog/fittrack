@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v458**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v459**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -1241,8 +1241,10 @@ Seiten im Trainings-Tab: **Gym** · **Laufen**.
 - **Auswertungen** (Volumenentwicklung, Volumen pro Muskelgruppe, Letzte Einheiten, PRs und Bestleistungen) liegen auf der Stats-Seite des Übungen-Tabs, NICHT mehr in der Übersicht. „Letzte Einheiten" (`renderRecentSessions`, Karte `#ov-recent-sessions-card`) ist am 20.08.2026 dorthin gewandert — die ID behielt ihr `ov-`Präfix.
   Reihenfolge auf der Stats-Seite: Volumenentwicklung, Volumen pro Muskelgruppe, PRs & Bestleistungen, Letzte Einheiten (01.09.2026). `renderStatsPage()` füllt sie. Der Trainingskalender wird dagegen von `renderOverview()` gerendert — er gehört zur Übersicht. ACHTUNG: Vor dem Umbau hing sein Aufruf in `renderHomeStats()`; wandert er wieder dorthin, bleibt die Kalenderkarte in der Übersicht leer.
 - **PR-Liste:** hervorgehoben ist der Bestwert selbst; die Steigerung in Klammern („(+5 kg)", `.pr-v2-delta`) ist am 04.10.2026 entfallen (Leonard-Wunsch, v421).
-  Die Unterzeile nennt nur noch den Verlauf („37.5 → 40 kg") plus die Steigerung — die Satzangabe („3×6")
-  ist am 01.09.2026 entfallen (Leonard-Wunsch), damit auch das fuehrende Trennzeichen davor.
+  KEINE UNTERZEILE MEHR (v459, 23.10.2026, Leonard-Wunsch): Der Verlauf „37.5 → 40 kg" unter dem
+  Uebungsnamen ist samt `.pr-v2-sub` entfallen; die Zeile zeigt nur Nummer, Name, Bestwert und Pfeil
+  (gemessen 46px hoch, Name mittig zur Nummer; keine Konsolenfehler). Vorher war schon die
+  Satzangabe („3×6", 01.09.2026) gefallen.
   `.pr-v2-name` braucht ein eigenes `color: var(--text)`: Eine Schriftfarbe wird als FERTIGER Wert vererbt,
   ohne eigene Angabe erbt der Name die am `<body>` ausgerechnete dunkle Farbe und das Umdefinieren von
   `--text` auf der Glas-Karte erreicht ihn gar nicht.

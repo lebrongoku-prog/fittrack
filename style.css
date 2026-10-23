@@ -3306,7 +3306,6 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
    am <body> ausgerechnete dunkle Farbe, und das Umdefinieren von --text auf der Karte
    erreicht ihn gar nicht. */
 .pr-v2-name { font-size: var(--fs-text); font-weight: 600; color: var(--text); }
-.pr-v2-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
 /* Steigerung gegenüber der vorherigen Bestleistung — bewusst zurückgenommen, die
    Bestleistung selbst steht hervorgehoben rechts. */
 .pr-v2-val { font-size: var(--fs-text); font-weight: 700; color: var(--green); }

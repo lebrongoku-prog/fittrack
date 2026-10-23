@@ -7057,17 +7057,12 @@ function prHTML(pr, number) {
   const muscleKey = ex ? ex.muscle : 'chest';
   const num = number || 1;
   const valColor = muscleColor(muscleKey);
-  // Die Steigerung in Klammern („(+5 kg)") ist am 04.10.2026 entfallen (Leonard-Wunsch) —
-  // der Verlauf „45 → 50 kg" sagt dasselbe.
-  // Einheit nur einmal nennen — sonst bricht die Zeile auf dem iPhone um.
-  // Die Satzangabe („3×6") stand frueher davor und ist am 01.09.2026 entfallen
-  // (Leonard-Wunsch) — deshalb hier auch kein fuehrendes Trennzeichen mehr.
-  const verlauf = pr.prev ? `${fmtKg(pr.prev)} → ${fmtKg(pr.weight)} kg` : '';
+  // Unter dem Namen steht nichts mehr: Die Steigerung „(+5 kg)" fiel am 04.10.2026, der
+  // Verlauf „45 → 50 kg" am 23.10.2026 (v459, beides Leonard-Wunsch).
   return `<div class="pr-v2-row no-icon" style="--mc:${valColor};--mc-bg:${muscleBg(muscleKey)}" onclick="showHistDetailForEx('${pr.exId}', ${pr.date || 0})">
     <div class="pr-v2-num">${num}</div>
     <div>
       <div class="pr-v2-name">${escapeHtml(pr.name)}</div>
-      <div class="pr-v2-sub">${verlauf}</div>
     </div>
     <div class="pr-v2-val" style="color:${valColor}">${fmtKg(pr.weight)} kg</div>
     <span class="pr-v2-arrow">›</span>
