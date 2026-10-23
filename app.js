@@ -5708,7 +5708,7 @@ function renderRunPlanDetail() {
 
   document.getElementById('runplan-detail-body').innerHTML = `
     <div class="mehr-section">
-      <div class="mehr-section-title">Laufplan-Daten</div>
+      <div class="mehr-section-title">Laufplandaten</div>
       <div class="mehr-card plan-form-card">
         <div class="program-form-row"><label>Name</label>
           <input type="text" value="${escapeHtml(p.name || '')}" onchange="setRunPlan('${p.id}','name',this.value)"></div>
@@ -7553,7 +7553,7 @@ function renderPlanDetail() {
       const saetze = (assigned.exercises || []).reduce((a, e) => a + (e.targetSets || 0), 0);
       return `<span class="wpe-sub">${n} ${n === 1 ? 'Übung' : 'Übungen'} · ${saetze} Sätze</span>`;
     })() : '';
-    return `<div class="${cls}">
+    return `<div class="${cls}" data-tag="${i}">
       <span class="lp-tagwahl an wpe-tag">${d.label}</span>
       ${assigned ? `<span class="wpe-text"><span class="pd-name wpe-name">${escapeHtml(assigned.name)}</span>${umfang}</span>` : `<span class="wpe-rest">Gymtag wählen</span>`}
       ${assigned && !plan.archived ? `<button type="button" class="wpe-edit" onclick="event.stopPropagation();openLibDayDetail('${assigned.id}','plan-detail')" title="Gymtag bearbeiten" aria-label="${escapeHtml(assigned.name)} bearbeiten">✎</button>` : ''}
@@ -8644,6 +8644,40 @@ function _gymWochentage(plan) {
 // Ein Tipp auf einen Wochentag schaltet ihn um. Abgewaehlt verliert er seinen Gymtag — sonst
 // stuende im Kalender und in den Wochenkarten weiter ein Training, das man nicht mehr sieht.
 function toggleGymWochentag(i) {
+  // v461 (23.10.2026, Leonard-Wunsch): Die Zeile im Wochenplan klappt AUF bzw. ZU, statt zu
+  // springen. Beim Abwaehlen faehrt erst die alte Zeile zu, dann wird gezeichnet; beim
+  // Anwaehlen wird gezeichnet und die neue Zeile faehrt auf.
+  // Gespeichert wird SOFORT, nur das Neuzeichnen wartet beim Abwaehlen auf die Bewegung —
+  // ein zweiter Tipp waehrend der Bewegung zeichnet einfach mit dem neuesten Stand.
+  const plan = _resolveEditPlan();
+  const ab = !!plan && _gymWochentage(plan).includes(i);
+  const alt = ab && document.querySelector(`#mehr-weekplan .wpe-row[data-tag="${i}"]`);
+  const letzte = !!alt && alt.parentElement.querySelectorAll('.wpe-row').length === 1;
+  _gymWochentagSchalten(i, false);
+  const chip = document.querySelectorAll('#prog-wochentage .lp-tagwahl')[i];
+  if (chip) chip.classList.toggle('an', !ab);
+  if (alt && !letzte) { _wpeZeileFahren(alt, false, _renderAfterPlanEdit); return; }
+  _renderAfterPlanEdit();   // letzte Zeile: der Hinweis ersetzt die Liste, nichts zu fahren
+  if (!ab) _wpeZeileFahren(document.querySelector(`#mehr-weekplan .wpe-row[data-tag="${i}"]`), true);
+}
+// Faehrt EINE Zeile des Wochenplans auf (0 → volle Hoehe) bzw. zu. Hoehe, Polster und die
+// Trennlinie oben fahren mit — die Zeile ist `content-box` mit 14px Polster und 38.8px
+// Mindesthoehe, ohne das bliebe bei 0 ein Streifen stehen.
+function _wpeZeileFahren(el, auf, fertig) {
+  fertig = fertig || (() => {});
+  if (!el || !el.animate || _bewegungReduziert()) { fertig(); return; }
+  const cs = getComputedStyle(el);
+  const voll = { height: el.getBoundingClientRect().height + 'px', paddingTop: cs.paddingTop,
+                 paddingBottom: cs.paddingBottom, borderTopWidth: cs.borderTopWidth, opacity: 1 };
+  const null_ = { height: '0px', paddingTop: '0px', paddingBottom: '0px', borderTopWidth: '0px', opacity: 0 };
+  Object.assign(el.style, { overflow: 'hidden', boxSizing: 'border-box', minHeight: '0' });
+  _klappBewegung(el, auf ? [null_, voll] : [voll, null_], () => {
+    if (auf) Object.assign(el.style, { overflow: '', boxSizing: '', minHeight: '' });
+    else el.style.height = '0px';
+    fertig();
+  });
+}
+function _gymWochentagSchalten(i, zeichnen) {
   DB._bearbeitetenPlanAendern(p => {
     const tage = _gymWochentage(p).slice();
     const k = tage.indexOf(i);
@@ -8654,7 +8688,7 @@ function toggleGymWochentag(i) {
     p.wochentage = tage;
     _planKopienAufraeumen(p);
   });
-  _renderAfterPlanEdit();
+  if (zeichnen !== false) _renderAfterPlanEdit();
 }
 
 // EIN PLAN BESTEHT GENAU AUS DEN GYMTAGEN SEINES WOCHENPLANS (v460, Leonard-Entscheidung):
