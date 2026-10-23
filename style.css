@@ -1154,6 +1154,10 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 #entwurf-leiste .btn-ghost { flex: 0 1 auto; font-size: var(--fs-neben); }
 #entwurf-leiste .btn-primary { flex: 1 1 0; }
 @media (prefers-reduced-motion: reduce) { #entwurf-leiste, #entwurf-leiste.an { transition: none; } }
+/* Knoepfe der Uebersicht nennen seit v466 Gymtag bzw. Laufziel („Push starten", „8 km laufen").
+   Ein langer Gymtag-Name endet mit „…" statt umzubrechen — dafuer darf der Knopf schrumpfen. */
+.hero-heute.wz-heute .hero-v2-btn { min-width: 0; }
+.hero-v2-btn .hb-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .overlay { position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.4); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); display: flex; align-items: flex-end; justify-content: center; }
 .overlay.hidden { display: none; }
 /* Schliessen ist das Spiegelbild des Oeffnens (16.09.2026, Leonard-Wunsch): Das Blatt faehrt
@@ -1792,6 +1796,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
    die Reihenfolge, sonst gewaenne der Verlauf. */
 .hero-heute .hero-v2-btn-grau { background: #475569; color: #fff; }
 .hero-v2-btn-lauf .hero-btn-ic svg { fill: none; stroke: currentColor; }
+.hero-btn-ic.strich svg { fill: none; stroke: currentColor; }   /* Haken (v466): nur Strich */
 /* FARBWECHSEL VERBLASST (13.09.2026, Leonard-Wunsch): Die Karte wird bei jedem Tipp auf einen
    Tag neu gebaut, `mitHeroFarbwechsel` setzt dann `.hero-farbe-von-<alte Farbe>`. Die ALTE
    Flaeche liegt als `::before` ueber dem Knopfgrund und blendet aus, die neue kommt darunter

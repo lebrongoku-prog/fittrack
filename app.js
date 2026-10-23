@@ -2015,6 +2015,15 @@ function buildHeuteHero(planDay, selDay, opts) {
         ? `<button class="hero-v2-btn" data-sport="gym" onclick="jumpToWorkoutDay(${laufIdx})">
              ${HERO_ICON_HANTEL}Zur laufenden Einheit</button>`
         : `<button class="hero-v2-btn" data-sport="gym" disabled>${HERO_ICON_HANTEL}Einheit läuft</button>`;
+    } else if (planDay && opts.inhaltKnopf) {
+      // UEBERSICHT, „Variante B" (v466, 23.10.2026, Leonard-Wahl aus vier gezeichneten
+      // Vorschlaegen): Der Knopf nennt den Gymtag — „Push starten" — und wird nach dem Training
+      // grau („Push erledigt", Tipp oeffnet die Einheit). Auch eine an einem anderen Tag dieser
+      // Woche absolvierte Einheit dieses Gymtags (verschoben) zaehlt.
+      const einheit = _heuteGymEinheit(planDay, selDay);
+      knopf = einheit
+        ? `<button class="hero-v2-btn hero-v2-btn-grau" data-sport="gym" onclick="showHistDetail(${einheit.wi})">${HERO_ICON_CHECK}<span class="hb-txt">${escapeHtml(planDay.name)} erledigt</span></button>`
+        : `<button class="hero-v2-btn" data-sport="gym" onclick="startWorkout('${planDay.id}')">${HERO_ICON_HANTEL}<span class="hb-txt">${escapeHtml(planDay.name)} starten</span></button>`;
     } else if (planDay) {
       const start = opts.previewOnClick || `startWorkout('${planDay.id}')`;
       knopf = `<button class="hero-v2-btn" data-sport="gym" onclick="${start}">${HERO_ICON_HANTEL}Einheit starten</button>`;
@@ -2055,6 +2064,12 @@ function buildHeuteHero(planDay, selDay, opts) {
     // gesetzt ist: Uebersicht ohne gewaehlten Tag und Seite „Laufen" (fuer den gewaehlten Tag).
     // Die Beschriftung bleibt stehen: „Kein Lauf" waere an diesem Tag falsch.
     const gelaufen = !!opts.erledigtGrau && !!runNachTag()[_dayKeyOf(tagD.getTime())];
+    if (opts.inhaltKnopf) {
+      spalten.push(`<div class="hero-heute-spalte">
+      <div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf')}</div>
+      ${_heuteLaufKnopf(tagD, gepl)}
+    </div>`);
+    } else
     spalten.push(`<div class="hero-heute-spalte">
       <div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf')}</div>
       <button class="hero-v2-btn hero-v2-btn-lauf${gepl && !gelaufen ? '' : ' hero-v2-btn-grau'}" data-sport="lauf"
@@ -2074,6 +2089,41 @@ function buildHeuteHero(planDay, selDay, opts) {
   </div>`;
 }
 
+// Die Einheit, mit der ein Gymtag an diesem Tag erledigt ist: zuerst eine am Tag selbst, sonst —
+// ist der Plantag verschoben — eine an einem anderen Tag derselben Woche. `wi` ist der Index in
+// `DB.getWorkouts()` (fuer `showHistDetail`).
+function _heuteGymEinheit(planDay, selDay) {
+  if (!selDay || !selDay.date) return null;
+  const von = new Date(selDay.date); von.setHours(0, 0, 0, 0);
+  const mo = _laufWochenMontag(von);
+  const ws = DB.getWorkouts().map((w, wi) => ({ w, wi })).filter(x => x.w.planDayId === planDay.id);
+  const amTag = ws.find(x => x.w.startTs >= von.getTime() && x.w.startTs < von.getTime() + TAG_MS);
+  if (amTag) return amTag;
+  if (!selDay.verschoben) return null;
+  return ws.find(x => x.w.startTs >= mo.getTime() && x.w.startTs < mo.getTime() + WOCHE_MS) || null;
+}
+// Laufknopf der Uebersicht in „Variante B" (v466): Er nennt das Ziel („8 km laufen") und nach dem
+// Lauf das Ergebnis („8.2 km gelaufen", Tipp → Detailansicht). Uebersprungen und ungeplant grau.
+// Fuer HEUTE prueft ein Tipp die Laufdaten (wie bisher „Lauf erledigt"); an einem anderen Tag
+// oeffnet er das Fenster mit Vorgabe und Notiz — Daten holen ergaebe dort nichts.
+function _heuteLaufKnopf(tagD, gepl) {
+  const key = _dayKeyOf(tagD.getTime());
+  const lauf = runNachTag()[key];
+  const heute = new Date(); heute.setHours(0, 0, 0, 0);
+  const istHeute = tagD.getTime() === heute.getTime();
+  const holen = `runLaeufeLaden({interactive:true})`;
+  const knopf = (grau, onclick, icon, text) => `<button class="hero-v2-btn hero-v2-btn-lauf${grau ? ' hero-v2-btn-grau' : ''}" data-sport="lauf"
+      onclick="${onclick}" ${runLaden && onclick === holen ? 'disabled' : ''}>${icon}<span class="hb-txt">${runLaden && onclick === holen ? 'Lese …' : text}</span></button>`;
+  if (lauf) return knopf(true, `showRunDetail('${key}')`, HERO_ICON_CHECK,
+    lauf.art === 'hiit' ? `HIIT ${fmtMin(lauf.minutes)}` : `${fmtKm(lauf.km)} gelaufen`);
+  if (!gepl) return knopf(true, holen, HERO_ICON_LAEUFER, 'Kein Lauf');
+  const u = gepl.einheit;
+  const tipp = istHeute ? holen : `openRunSkip('${key}')`;
+  if (gepl.uebersprungen) return knopf(true, `openRunSkip('${key}')`, HERO_ICON_LAEUFER, 'Lauf übersprungen');
+  const ziel = u && u.km ? fmtKm(u.km) : u && u.minutes ? fmtMin(u.minutes) : '';
+  return knopf(false, tipp, HERO_ICON_LAEUFER, ziel ? `${ziel} laufen` : 'Laufen');
+}
+
 // NOTIZ-MARKE (15.10.2026, v440, Leonard-Entscheidung „A + D"): ein kleines Sprechblasen-Symbol
 // hinter einem Lauf, dessen geplante Einheit eine Notiz traegt — in der Liste „Diese Woche"
 // (Seite „Laufen" und Uebersicht) und in der Kalender-Fusszeile. Die Notiz selbst steht in der
@@ -2090,6 +2140,7 @@ const HERO_ICON_HANTEL  = `<span class="hero-btn-ic">${HANTEL_SVG}</span>`;
 const HERO_ICON_LAEUFER = `<span class="hero-btn-ic">${heroRunnerSvg()}</span>`;
 const HERO_ICON_PLAY  = '<span class="hero-btn-ic"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5,3 19,12 5,21"/></svg></span>';
 const HERO_ICON_PAUSE = '<span class="hero-btn-ic"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></span>';
+const HERO_ICON_CHECK = '<span class="hero-btn-ic strich"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7"/></svg></span>';
 const HERO_ICON_STOP  = '<span class="hero-btn-ic"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></span>';
 // Dieselben Symbole vor dem Titel der Wochenplan-Karten (Leonard-Wunsch 06.09.2026) — sie
 // sagen auf einen Blick, welche Sportart die Karte zeigt. Eigene Klasse, weil sie dort der
@@ -5121,12 +5172,13 @@ function renderUebersichtWoche() {
   const gewaehlt = _ovTag != null;
   const tagIdx = gewaehlt ? _ovTag : todayIdx;
   const tagEintrag = getCurrentWeekDays()[tagIdx];
-  const gymTag = !tagEintrag || !tagEintrag.planDay ? null
-    : (gewaehlt || !tagEintrag.dayDone) ? tagEintrag.planDay : null;
+  // Seit v466 (Variante B) bleibt der Gymtag auch nach dem Training stehen — der Knopf zeigt dann
+  // „Push erledigt" statt auf „Freies Training" zu wechseln.
+  const gymTag = tagEintrag ? tagEintrag.planDay || null : null;
   const sportHeute = _wochenFilter === 'beide' ? 'beide' : _wochenFilter === 'gym' ? 'gym' : 'lauf';
   const titel = tagIdx === todayIdx ? 'Heute' : WOCHENTAGE_LANG[tagIdx];   // v447: ohne „· Sa“ (Leonard-Wunsch)
   const heuteBlock = buildHeuteHero(gymTag, tagEintrag, { sport: sportHeute, erledigtGrau: true,
-      runIdx: tagIdx, titel })
+      runIdx: tagIdx, titel, inhaltKnopf: true })
     .replace('class="hero-v2 hero-heute', 'class="hero-heute wz-heute')
     // Der TITEL klappt die Tageszeilen auf und zu (v445, Leonard-Wunsch) — seit v446 ohne Pfeil.
     .replace(/<div class="hero-heute-titel">([\s\S]*?)<\/div>/, (m, t) =>

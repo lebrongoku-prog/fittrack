@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v465**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v466**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -164,6 +164,19 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Unteres Kachelpolster wieder 10px (Kacheln bleiben 113px ueber `min-height`). `day.muscles` und
   die Muskelgruppen-Chips in der Gymtag-Detailansicht bleiben. Die Abschnitte weiter oben zu den
   Punkten („Variante C") sind Vorgeschichte.
+- **v466 (23.10.2026, Leonard-Wahl „Variante B" aus vier gezeichneten Vorschlaegen — A zweizeilig,
+  C Kaertchen ueber dem Knopf, D grosse Kachel-Knoepfe):** Die beiden Knoepfe des Startblocks in
+  der UEBERSICHT nennen den Inhalt des gewaehlten Tags (`opts.inhaltKnopf` in `buildHeuteHero`, nur
+  dort). Gym: „Push starten" → `startWorkout`; erledigt (Einheit am Tag, bei verschobenem Plantag
+  eine dieses Gymtags in derselben Woche, `_heuteGymEinheit`) grau „Push erledigt" mit Haken →
+  `showHistDetail`; ohne Gymtag wie bisher „Freies Training". Der Gymtag bleibt deshalb auch nach
+  dem Training stehen (`renderUebersichtWoche` reicht immer `tagEintrag.planDay`). Lauf
+  (`_heuteLaufKnopf`): „8 km laufen" (bzw. „45 min laufen"/„Laufen") — heute → Laufdaten holen,
+  anderer Tag → `openRunSkip`; gelaufen grau „8.2 km gelaufen"/„HIIT 28 min" → `showRunDetail`;
+  uebersprungen grau „Lauf übersprungen"; ungeplant grau „Kein Lauf". Lange Namen enden mit „…"
+  (`.hb-txt`): „Beine schwer starten" passt auf 375px NICHT (155px Knopf, 18px Schrift) und steht
+  als „Beine schwer…" da. Haken `HERO_ICON_CHECK` (`.hero-btn-ic.strich`, nur Strich).
+  GEMESSEN (375px, Testwoche Mo–Sa): alle sechs Faelle wie beschrieben; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
