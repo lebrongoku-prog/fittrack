@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v459**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v460**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -75,7 +75,50 @@ Regel: Nach jeder abgeschlossenen Umsetzung direkt hochladen und das Ergebnis me
 - Keys u. a.: `ft_plans`, `ft_trainingdays`, `ft_exercises`, `ft_workouts`, `ft_active`.
 - Wichtige DB-Methoden: `getPlans/savePlans`, `getPlan()/savePlan(arr)` (operieren via `editingPlanId` bzw. aktiver Plan), `getTrainingDays/saveTrainingDays`, `getExercises/saveExercises`, `getWorkouts/saveWorkouts`, `getActive/saveActive`, `getProgram/saveProgram`, `getWeekPlan/saveWeekPlan`.
 
-### Referenz-Tag-Modell v2 (zentral!)
+### SEIT v460: JEDER GYMPLAN HAT EIGENE KOPIEN SEINER GYMTAGE (zentral!)
+23.10.2026, Leonard-Entscheidungen (Vorlagen · Abschnitt „Trainingstage" ganz weg · abgewaehlte
+Kopie verlaesst den Plan · Bestand umstellen). Grund: Im Referenz-Modell (unten) aenderte, wer
+„Push" fuer den naechsten Plan anpasste, ihn auch im laufenden — und beim Archivieren wurde der
+geaenderte Stand eingefroren statt des trainierten.
+- **VORLAGE** = Tag in `ft_trainingdays` OHNE `planId` (`_istVorlage`). Nur Vorlagen stehen auf der
+  Seite „Gymtage" (`renderLibDays`, Archiv-Zaehler); die gruene Leiste haengt an `vorlageId` der
+  Kopien des aktiven Plans. „In Trainingsplänen" einer Vorlage zaehlt ihre Kopien mit.
+- **PLAN-KOPIE** = Tag MIT `planId` (Besitzer) und `vorlageId` (Herkunft, bei im Plan neu angelegten
+  fehlt sie). Gleicher Store, damit alles, was ueber die Id liest (Einheiten, Kalender,
+  Satzanzahl-Rueckmeldung), unveraendert bleibt. `_tagKopieren(quelle, planId)`; `DB.savePlan`
+  stempelt `planId` auf Tage ohne. Kopien tragen den Namen der Vorlage unveraendert;
+  `eindeutigerTagName` prueft ohne eigene Liste nur gegen Vorlagen.
+- **HINZUFUEGEN NUR IM WOCHENPLAN** der Plan-Detailansicht: Die Auswahl hat die Gruppen „In diesem
+  Plan" (Id), „Aus den Gymtagen" (`v:<id>` → Kopie) und „+ Neuer Gymtag" (`__neu` → Kopie ohne
+  Vorlage, danach Detailseite). Eine Vorlage, von der der Plan schon eine Kopie hat, steht nicht
+  doppelt da; derselbe Tag an zwei Wochentagen ist dieselbe Kopie. `saveWeekPlanDay` →
+  `_wochenplanSetzen` → `_planKopienAufraeumen`: Ein Plan besteht GENAU aus den Tagen seines
+  Wochenplans; eine Kopie ohne Wochentag faellt aus `dayIds` und aus dem Speicher, AUSSER eine
+  Einheit (oder die laufende) zeigt auf sie. Gilt auch fuers Abwaehlen eines Wochentags.
+  Jede Zeile zeigt Name + „N Übungen · M Sätze" und ✎ (`.wpe-edit`, `z-index` ueber dem
+  unsichtbaren `<select>`) zur Detailseite des Gymtags.
+- **ENTFALLEN:** Abschnitt „Trainingstage" (`#mehr-plan-list`, `#plan-add-day-btn`, `deletePlanDay`,
+  `.plan-day-row`/`.pdr-*`/`.plan-day-actions`), der Weg „+ Trainingstag hinzufügen"
+  (`addNewPlanDay`, `addNewPlanDayFromScratch`, `#modal-plan-day-source`, `#modal-copy-plan-day`,
+  `.copy-day-*`) und „+ Zu Trainingsplan" in der Gymtag-Detailansicht (`#modal-day-to-plan`,
+  `openDayToPlanModal` & Co.). Die Detailseite einer KOPIE hat keine Aktionsleiste
+  (`#day-aktionen`), sie verlaesst den Plan ueber den Wochenplan.
+- **NEUE PLAENE:** Kopieren, Vorlage (`applyPlanTemplate`), JSON-Import und Zurueckholen aus dem
+  Archiv legen Kopien mit `planId` an. „Neuen Trainingstag erstellen" im Uebungskatalog legt eine
+  VORLAGE an.
+- **MIGRATION** `migrateTagKopienJePlan` (Merker `ft_tagkopien_v1`, nach Cloud-Abruf erzwungen):
+  Jeder nicht archivierte Plan bekommt Kopien, die alten Tage bleiben als Vorlagen. Einheiten
+  (und die laufende) im ZEITRAUM des Plans wandern auf dessen Kopie; aeltere und archivierte
+  Plaene behalten die alten Ids. Archivierte Plaene behalten ihren Schnappschuss.
+- GEMESSEN (375px): Migration Herbst/Winter je eigene Kopien, Einheit im Herbst umgehaengt, alte
+  nicht; Vorlage per Auswahl kopiert; Mo von Push auf Beine → Push-Kopie bleibt (Einheit), Pull
+  abgewaehlt → Kopie geloescht, Vorlage bleibt; Kopie umbenannt → Vorlage unveraendert; „+ Neuer
+  Gymtag" → Kopie und Detailseite; ✎ trifft (elementFromPoint); Gymtage zeigt 3 Vorlagen; Plan
+  kopiert → eigene Kopien; Zeilen 66.8px; keine Konsolenfehler.
+Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" und zum Abschnitt
+„Trainingstage" sind damit Vorgeschichte.
+
+### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
 - `resolvePlanDays(plan)` löst `dayIds` → Tag-Objekte auf. Archivierte Pläne halten einen eingefrorenen Snapshot in `plan.archivedDays`.
 - `getActivePlan()` = aktiver Plan (per Datum) mit aufgelösten `trainingDays`. `getCurrentWeekDays()` = 7 Tage Mo–So mit `dayDone`/`planDay`/`isToday`.

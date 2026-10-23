@@ -268,12 +268,6 @@
     </div>
 
     <div class="mehr-section">
-      <div class="mehr-section-title">Trainingstage</div>
-      <div class="mehr-card" id="mehr-plan-list"></div>
-      <button id="plan-add-day-btn" class="btn btn-outline btn-full" style="margin-top:10px" onclick="addNewPlanDay()">+ Trainingstag hinzufügen</button>
-    </div>
-
-    <div class="mehr-section">
       <div class="mehr-section-title">Wochenplan (Mo – So)</div>
       <div class="mehr-card" id="mehr-weekplan"></div>
     </div>
@@ -333,9 +327,8 @@
       </div>
     </div>
 
-    <div class="mehr-section">
+    <div class="mehr-section" id="day-aktionen">
       <div class="ex-item-actions" style="margin:0 14px">
-        <button class="primary" onclick="openDayToPlanModal()">+ Zu Trainingsplan</button>
         <button id="day-archive-btn" onclick="toggleLibDayArchive()">📦 Archivieren</button>
         <button class="danger" onclick="deleteCurrentLibDay()">✕ Löschen</button>
       </div>
@@ -763,19 +756,6 @@
   </div>
 </div>
 
-<!-- Trainingstag → mehrere Trainingspläne (aus dem Trainingstag-Detail) -->
-<div id="modal-day-to-plan" class="overlay hidden">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title" id="modal-day-to-plan-title">Zu welchen Trainingsplänen hinzufügen?</div>
-    <div class="sheet-body">
-      <div class="day-addto-sub" style="padding:0 2px 8px">Pläne an-/abwählen, dann speichern. Den Wochentag weist du danach im Plan-Detail zu.</div>
-      <div id="day-to-plan-list"></div>
-      <button class="btn btn-primary btn-full" style="margin-top:12px" onclick="saveDayToPlan()">Speichern</button>
-    </div>
-  </div>
-</div>
-
 <!-- Confirm finish -->
 <!-- Zahlenblock: ersetzt die iOS-Tastatur beim Eintragen von Wiederholungen und Gewicht.
      Große Tasten, Schnellschritte (+2.5 kg / +1 Wdh.) und kein halber Bildschirm voll Tastatur. -->
@@ -967,42 +947,6 @@
 </div>
 
 <!-- Wochentag-Picker (visueller Wochenplaner: Tippen zum Zuweisen) -->
-<!-- Auswahl: neuen Trainingstag erstellen oder aus der Bibliothek per Referenz hinzufügen -->
-<div id="modal-plan-day-source" class="overlay hidden">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title">Trainingstag hinzufügen</div>
-    <div class="sheet-body">
-      <p style="font-size:var(--fs-text);color:var(--text2);margin-bottom:16px;line-height:1.5">Wie möchtest du den Trainingstag anlegen?</p>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <button class="btn btn-primary btn-full" onclick="openCopyPlanDayPicker()" id="copy-plan-day-btn">Aus Bibliothek hinzufügen</button>
-        <button class="btn btn-outline btn-full" onclick="addNewPlanDayFromScratch()">Neuen Trainingstag erstellen</button>
-        <button class="btn btn-ghost btn-full" onclick="closeModal('modal-plan-day-source')">Abbrechen</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Picker: Trainingstag(e) aus der Bibliothek per Referenz hinzufügen — Multi-Select -->
-<div id="modal-copy-plan-day" class="overlay hidden">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title with-back">
-      <button class="sheet-back-btn" onclick="closeModal('modal-copy-plan-day');openModal('modal-plan-day-source');" aria-label="Zurück">
-        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <span>Aus Bibliothek hinzufügen</span>
-    </div>
-    <div class="sheet-body">
-      <div class="sheet-list" id="copy-plan-day-list"></div>
-      <div class="plan-add-footer">
-        <button class="btn btn-primary btn-full" id="copy-plan-day-confirm" onclick="confirmCopyPlanDays()" disabled>Hinzufügen</button>
-        <button class="btn btn-ghost btn-full" onclick="closeModal('modal-copy-plan-day')">Abbrechen</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- Trainingsplan-Import Bestätigung -->
 <div id="modal-plan-import" class="overlay hidden">
   <div class="sheet">
