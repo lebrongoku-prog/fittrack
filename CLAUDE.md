@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v466**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v467**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -177,6 +177,8 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   (`.hb-txt`): „Beine schwer starten" passt auf 375px NICHT (155px Knopf, 18px Schrift) und steht
   als „Beine schwer…" da. Haken `HERO_ICON_CHECK` (`.hero-btn-ic.strich`, nur Strich).
   GEMESSEN (375px, Testwoche Mo–Sa): alle sechs Faelle wie beschrieben; keine Konsolenfehler.
+  SEIT v467 (Leonard-Wunsch) OHNE „starten" und „laufen": geplant steht nur „Push" bzw. „8 km"
+  („45 min", ohne Vorgabe „Lauf"); „erledigt"/„gelaufen" bleiben. „Beine schwer" passt damit.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

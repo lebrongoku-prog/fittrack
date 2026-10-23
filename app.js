@@ -2017,13 +2017,13 @@ function buildHeuteHero(planDay, selDay, opts) {
         : `<button class="hero-v2-btn" data-sport="gym" disabled>${HERO_ICON_HANTEL}Einheit läuft</button>`;
     } else if (planDay && opts.inhaltKnopf) {
       // UEBERSICHT, „Variante B" (v466, 23.10.2026, Leonard-Wahl aus vier gezeichneten
-      // Vorschlaegen): Der Knopf nennt den Gymtag — „Push starten" — und wird nach dem Training
+      // Vorschlaegen): Der Knopf nennt den Gymtag — seit v467 nur „Push", ohne „starten" — und wird nach dem Training
       // grau („Push erledigt", Tipp oeffnet die Einheit). Auch eine an einem anderen Tag dieser
       // Woche absolvierte Einheit dieses Gymtags (verschoben) zaehlt.
       const einheit = _heuteGymEinheit(planDay, selDay);
       knopf = einheit
         ? `<button class="hero-v2-btn hero-v2-btn-grau" data-sport="gym" onclick="showHistDetail(${einheit.wi})">${HERO_ICON_CHECK}<span class="hb-txt">${escapeHtml(planDay.name)} erledigt</span></button>`
-        : `<button class="hero-v2-btn" data-sport="gym" onclick="startWorkout('${planDay.id}')">${HERO_ICON_HANTEL}<span class="hb-txt">${escapeHtml(planDay.name)} starten</span></button>`;
+        : `<button class="hero-v2-btn" data-sport="gym" onclick="startWorkout('${planDay.id}')">${HERO_ICON_HANTEL}<span class="hb-txt">${escapeHtml(planDay.name)}</span></button>`;
     } else if (planDay) {
       const start = opts.previewOnClick || `startWorkout('${planDay.id}')`;
       knopf = `<button class="hero-v2-btn" data-sport="gym" onclick="${start}">${HERO_ICON_HANTEL}Einheit starten</button>`;
@@ -2121,7 +2121,7 @@ function _heuteLaufKnopf(tagD, gepl) {
   const tipp = istHeute ? holen : `openRunSkip('${key}')`;
   if (gepl.uebersprungen) return knopf(true, `openRunSkip('${key}')`, HERO_ICON_LAEUFER, 'Lauf übersprungen');
   const ziel = u && u.km ? fmtKm(u.km) : u && u.minutes ? fmtMin(u.minutes) : '';
-  return knopf(false, tipp, HERO_ICON_LAEUFER, ziel ? `${ziel} laufen` : 'Laufen');
+  return knopf(false, tipp, HERO_ICON_LAEUFER, ziel || 'Lauf');   // v467: ohne „laufen" (Leonard-Wunsch)
 }
 
 // NOTIZ-MARKE (15.10.2026, v440, Leonard-Entscheidung „A + D"): ein kleines Sprechblasen-Symbol
