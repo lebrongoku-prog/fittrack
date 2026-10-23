@@ -4721,7 +4721,7 @@ function openRunSkip(key) {
   const u = g.einheit || {};
   const [y, m, d] = key.split('-').map(Number);
   document.getElementById('run-skip-title').textContent = `Lauf — ${fmtDate(new Date(y, m - 1, d).getTime())}`;
-  const vorgabe = [u.km ? fmtKm(u.km) : '', u.minutes ? fmtMin(u.minutes) : '', u.zone || ''].filter(Boolean).join(' · ');
+  const vorgabe = [u.km ? fmtKm(u.km) : '', u.minutes ? fmtMin(u.minutes) : ''].filter(Boolean).join(' · ');   // ohne Zone seit v470
   document.getElementById('run-skip-info').textContent = g.uebersprungen
     ? `Übersprungen${vorgabe ? ' · geplant: ' + vorgabe : ''}`
     : `Geplant: ${vorgabe || 'ohne Vorgabe'}`;
@@ -5003,8 +5003,9 @@ function laufWochenZeilen(mo, istAktuell, maxKm) {
     const soll = istKm ? fmtKm(lauf.km)
       : !gepl ? '<span class="lauf-wz-leer">Nicht geplant</span>'
       : (vorgabe || '<span class="lauf-wz-leer">Ohne Vorgabe</span>');
-    const zone = (u && u.zone ? `<span class="lauf-wz-zone">${escapeHtml(u.zone)}</span>` : '')
-      + (vonIdx != null ? `<span class="lauf-wz-von">${verschiebWort(i, vonIdx)}</span>` : '');
+    // Die Zonen-Pille ist seit v470 ueberall entfallen (Leonard-Wunsch); der Name `zone` haelt
+    // nur noch den Hinweis „vorgezogen"/„nachgeholt".
+    const zone = (vonIdx != null ? `<span class="lauf-wz-von">${verschiebWort(i, vonIdx)}</span>` : '');
     // HEUTE steht seit dem 22.09.2026 nicht mehr als Wort rechts, sondern als dasselbe gruene
     // Feld hinter der Scheibe, das die Wochenplan-Karte fuer den heutigen Tag nutzt
     // (`.ppv-col.today`, Leonard-Wunsch).
@@ -5962,8 +5963,8 @@ function setRunUnit(id, woche, dayIdx, feld, wert) {
     p.units = p.units || [];
     let u = p.units.find(x => x.week === woche && x.dayIdx === dayIdx);
     if (!u) { u = { week: woche, dayIdx }; p.units.push(u); }
-    // Zone und Notiz sind TEXT — nur km und Minuten werden als Zahl gelesen.
-    if (feld === 'zone' || feld === 'note') u[feld] = wert;
+    // Die Notiz ist TEXT — nur km und Minuten werden als Zahl gelesen.
+    if (feld === 'note') u[feld] = wert;
     else { const v = parseFloat(String(wert).replace(',', '.')); u[feld] = isFinite(v) ? v : null; }
   });
   if (currentScreen === 'overview') renderOverview();
@@ -6999,7 +7000,7 @@ function showCalDay(key, id) {
       laufHTML = `<div class="cal-detail-tag-txt">Lauf · ${_verschiebWort(wiTag, j) === 'vorgezogen' ? 'vorgezogen auf' : 'nachgeholt am'} ${WOCHENTAGE_KURZ[j]}</div>`;
     } else if (gepl) {
       const u = gepl.einheit;
-      const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null, u.zone || null].filter(Boolean).join(' · ') : '';
+      const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null].filter(Boolean).join(' · ') : '';
       const text = gepl.uebersprungen ? 'Lauf · übersprungen' : `geplant${soll ? ': ' + soll : ''}`;
       // MIT NOTIZ wird die Zeile ein KNOPF wie bei einer absolvierten Einheit (v443, Leonard-Wunsch):
       // Er oeffnet das Fenster der Einheit mit Vorgabe und Notiz (`openRunSkip`).
@@ -10904,6 +10905,7 @@ function driveApplyCloudData(data) {
   migrateDayModelV2(true);
   migrateTagKopienJePlan(true);
   migrateVerwaisteKopien(true);
+  migrateZonenEntfernen(true);
 }
 
 // ─── Haupt-Sync-Funktion ─────────────────────────────
@@ -11315,6 +11317,17 @@ function _istVorlage(d) { return !!d && !d.planId; }
 // nachgeholte Trainings als offen. Hier: Gibt es zu einer aussortierten Kopie eine aktuelle
 // desselben Gymtags (gleiche `vorlageId`, ohne Vorlage gleicher Name), wandern ihre Einheiten
 // (und die laufende) auf die aktuelle, und die alte wird geloescht. Merker `ft_tagwaisen_v1`.
+// ZONEN ENTFERNT (v470, 23.10.2026, Leonard-Wunsch „ueberall"): einmalig `unit.zone` aus allen
+// Laufplaenen loeschen (Merker `ft_zonen_weg_v1`, nach Cloud-Abruf erzwungen).
+function migrateZonenEntfernen(force) {
+  if (!force && localStorage.getItem('ft_zonen_weg_v1')) return;
+  const ps = DB.getRunPlans();
+  let geaendert = false;
+  ps.forEach(p => (p.units || []).forEach(u => { if ('zone' in u) { delete u.zone; geaendert = true; } }));
+  if (geaendert) DB.saveRunPlans(ps);
+  localStorage.setItem('ft_zonen_weg_v1', '1');
+}
+
 function migrateVerwaisteKopien(force) {
   if (!force && localStorage.getItem('ft_tagwaisen_v1')) return;
   const plans = DB.getPlans();
@@ -12121,6 +12134,7 @@ document.addEventListener('DOMContentLoaded', () => {
   migrateTagKopienJePlan();
   // Aussortierte Kopien, die eine neuere Kopie desselben Gymtags abgeloest hat (v468, einmalig)
   migrateVerwaisteKopien();
+  migrateZonenEntfernen();
   // Daten-Hygiene: verwaiste Wochenplan-Referenzen entfernen (legacy fallback, falls noch
   // jemand auf den ft_weekplan-Key zugreift — mit Multi-Plan sind die weekPlans pro Plan)
   cleanupOrphanWeekplan();
