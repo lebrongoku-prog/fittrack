@@ -743,13 +743,34 @@
 </div>
 
 <!-- Übung zu einem Trainingstag hinzufügen (aus Übungen-Tab) -->
-<!-- „Aus den Gymtagen": Gymtag fuer einen Wochentag des Gymplans waehlen (v462) -->
+<!-- Speichern / Aenderungen verwerfen in den Detailansichten bestehender Plaene (v463) -->
+<div id="entwurf-leiste" aria-hidden="true">
+  <button class="btn btn-ghost" onclick="entwurfVerwerfen()">Änderungen verwerfen</button>
+  <button class="btn btn-primary" onclick="entwurfSpeichern()">Speichern</button>
+</div>
+<div id="modal-entwurf" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Änderungen speichern?</div>
+    <div class="sheet-body">
+      <p style="font-size:var(--fs-text);color:var(--text2);margin-bottom:16px;line-height:1.5">Du hast den Plan geändert, aber noch nicht gespeichert.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-primary btn-full" onclick="entwurfFrage('speichern')">Speichern</button>
+        <button class="btn btn-danger btn-full" onclick="entwurfFrage('verwerfen')">Verwerfen</button>
+        <button class="btn btn-ghost btn-full" onclick="entwurfFrage('abbrechen')">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Gymtag fuer einen Wochentag des Gymplans waehlen (v462, seit v463 per Tipp auf die Zeile) -->
 <div id="modal-gymtag-wahl" class="overlay hidden">
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-title" id="gymtag-wahl-titel">Gymtag wählen</div>
     <div class="sheet-body">
       <div id="gymtag-wahl-liste" class="gymtag-wahl-raster"></div>
+      <button id="gymtag-wahl-leeren" class="btn btn-ghost btn-full" style="margin-top:10px" onclick="waehleGymtag('')">Kein Gymtag</button>
     </div>
   </div>
 </div>

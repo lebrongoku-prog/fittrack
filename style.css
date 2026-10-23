@@ -707,6 +707,22 @@ body.theme-plans .hist-action-dd {
   background: linear-gradient(135deg, #78350F, #F59E0B);
 }
 .gymtag-wahl-raster > .plan-day-empty { grid-column: 1 / -1; color: rgba(255,255,255,.9); }
+/* v463: Abschnitte „In diesem Plan" / „Weitere Gymtage" — weiss in Grossbuchstaben wie die
+   Abschnittstitel der Detailseiten; die Wochentage einer Plan-Kopie als kleine Pillen; der
+   Gymtag des angetippten Wochentags mit weissem Ring. */
+.gymtag-wahl-abschnitt {
+  grid-column: 1 / -1; margin: 2px 2px -2px;
+  font-size: var(--fs-etikett); font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+  color: rgba(255,255,255,.9);
+}
+.gymtag-wahl-abschnitt ~ .gymtag-wahl-abschnitt { margin-top: 8px; }
+.pld-tage { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+.pld-tage > span {
+  font-size: var(--fs-etikett); font-weight: 700; line-height: 1;
+  padding: 3px 5px; border-radius: 5px; background: var(--accent); color: #fff;
+}
+.pld-kachel.pld-gewaehlt { box-shadow: 0 0 0 3px #fff, var(--shadow); }
+#gymtag-wahl-leeren[hidden] { display: none; }
 .pld-kachel {
   position: relative;
   margin: 0;
@@ -1129,6 +1145,26 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 /* ══════════════════════════════════════
    MODALS
 ══════════════════════════════════════ */
+/* Leiste „Änderungen verwerfen | Speichern" (v463): faehrt unten herein, sobald ein BESTEHENDER
+   Plan in seiner Detailansicht geaendert ist. Ueber dem Vollbild-Overlay (z 40), unter den
+   Blaettern (z 300). Das untere Polster des Overlays (Nav-Hoehe + 12px) laesst ihr Platz. */
+#entwurf-leiste {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+  display: flex; gap: 10px;
+  padding: 12px 14px calc(12px + var(--safe-b));
+  background: var(--card); box-shadow: 0 -4px 18px rgba(0,0,0,.14);
+  border-radius: 18px 18px 0 0;
+  transform: translateY(110%); visibility: hidden;
+  transition: transform .26s cubic-bezier(.2,.7,.2,1), visibility 0s linear .26s;
+}
+#entwurf-leiste.an { transform: none; visibility: visible; transition: transform .26s cubic-bezier(.2,.7,.2,1); }
+/* „Änderungen verwerfen" misst bei 15px rund 190px — auf 375px braeche er um oder liesse
+   „Speichern" kaum 120px. Er steht deshalb eine Stufe kleiner (13px) in seiner Textbreite,
+   „Speichern" bekommt den ganzen Rest. */
+#entwurf-leiste .btn { min-width: 0; padding-left: 12px; padding-right: 12px; white-space: nowrap; }
+#entwurf-leiste .btn-ghost { flex: 0 1 auto; font-size: var(--fs-neben); }
+#entwurf-leiste .btn-primary { flex: 1 1 0; }
+@media (prefers-reduced-motion: reduce) { #entwurf-leiste, #entwurf-leiste.an { transition: none; } }
 .overlay { position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.4); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); display: flex; align-items: flex-end; justify-content: center; }
 .overlay.hidden { display: none; }
 /* Schliessen ist das Spiegelbild des Oeffnens (16.09.2026, Leonard-Wunsch): Das Blatt faehrt
@@ -3479,8 +3515,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .wpe-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .wpe-name { font-size: var(--fs-text); font-weight: 600; white-space: normal; overflow-wrap: anywhere; }
 .wpe-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
-/* ✎ fuehrt auf die Detailseite des Gymtags. Er liegt UEBER dem unsichtbaren Auswahlfeld
-   (`z-index`), sonst schluckte das Feld den Tipp. */
+/* ✎ fuehrt auf die Detailseite des Gymtags (eigener Tipp, `stopPropagation` im JS). */
 .wpe-edit {
   position: relative; z-index: 1; flex: 0 0 auto;
   width: 30px; height: 30px; border: none; border-radius: 8px;
@@ -3491,7 +3526,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .wpe-edit:active { opacity: .7; }
 .wpe-rest { flex: 1; min-width: 0; font-size: var(--fs-neben); color: var(--text3); opacity: 0.6; }
 .wpe-chev { flex: 0 0 auto; font-size: var(--fs-betont); line-height: 1; color: var(--text3); }
-.wpe-select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer; font-size: 16px; }
+/* `.wpe-select` (unsichtbare Auswahlliste ueber der Zeile) ist mit v463 entfallen — die Zeile oeffnet das Wahlfenster. */
 .program-form-row { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
 .program-form-row + .program-form-row { border-top: 1px solid var(--border); }
 .program-form-row label { font-size: var(--fs-neben); color: var(--text3); font-weight: 600; }

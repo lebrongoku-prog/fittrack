@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v462**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v463**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -135,6 +135,29 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   keine zweite. „+ Neuer Gymtag" (`__neu`) ist ENTFALLEN; neue Gymtage entstehen nur noch als
   Vorlage auf der Seite „Gymtage". GEMESSEN: Push (Vorlage) fuer Di → neue Kopie; Beine (schon im
   Plan) fuer Fr → dieselbe Kopie, kein neuer Tag; Kacheln 96x113; keine Konsolenfehler.
+- **v463 (23.10.2026, Leonard-Wunsch/-Entscheidungen):**
+  1. KEINE AUSWAHLLISTE MEHR im Wochenplan: Ein Tipp auf die Zeile (`role="button"`) oeffnet direkt
+     `openGymtagWahl(i)`. Darin „In diesem Plan" (Kopien des Plans, Leiste, darunter als Pillen
+     `.pld-tage` die Wochentage, an denen sie stehen — nur sichtbare Wochentage; der Gymtag DIESES
+     Tags weiss umrandet, `.pld-gewaehlt`) und „Weitere Gymtage" (Vorlagen ohne Kopie im Plan).
+     „Kein Gymtag" (`#gymtag-wahl-leeren`, nur bei belegtem Tag) leert. `waehleGymtag(wert)` ruft
+     `saveWeekPlanDay`. `.wpe-select` ist entfallen.
+  2. SPEICHERN / AENDERUNGEN VERWERFEN in den Detailansichten BESTEHENDER Gym- und Laufplaene
+     (`_entwurf`, `_entwurfBeginnen/-Speichern/-Verwerfen/-Verlassen`). Alles schreibt weiter sofort;
+     beim Oeffnen wird der STAND festgehalten (Plan + beim Gymplan alle Kopien mit dieser `planId` —
+     Aenderungen ueber ✎ gehoeren dazu). Verwerfen schreibt ihn zurueck. Leiste `#entwurf-leiste`
+     (fest unten, z 60, faehrt herein) nur bei Aenderungen und nur auf `plan-detail`/
+     `runplan-detail`; geprueft nach jedem `_speicherSchreiben` und in `_applyTabState`.
+     Zurueck-Pfeil UND Wischen vom Rand fragen bei Aenderungen nach (`#modal-entwurf`: Speichern /
+     Verwerfen / Abbrechen). NEUE Plaene (`_neuePlaene`: anlegen, Vorlage, kopieren, neuer
+     Laufplan) haben beim ersten Oeffnen keinen Entwurf. Loeschen vergisst ihn
+     (`_entwurfVergessen`). Der Stand lebt nur im Arbeitsspeicher. `_entwurf` ist `var`
+     (TDZ: `_speicherSchreiben` laeuft schon beim Laden).
+     „Änderungen verwerfen" steht in 13px in Textbreite, „Speichern" nimmt den Rest (166/171px).
+  GEMESSEN (375px): Fenster mit Abschnitten, Wochentag-Pillen, Ring; Vorlage gewaehlt → Leiste,
+  Verwerfen → Kopie wieder weg; Speichern blendet aus; Aenderung ueber ✎ → Leiste nach Rueckkehr,
+  Verlassen → Frage, Abbrechen bleibt, Verwerfen setzt Gymtag-Namen zurueck; ohne Aenderung keine
+  Frage; neuer Plan ohne Leiste, beim zweiten Oeffnen mit; Laufplan ebenso; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
