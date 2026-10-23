@@ -2073,8 +2073,10 @@ function buildHeuteHero(planDay, selDay, opts) {
     // Die Beschriftung bleibt stehen: „Kein Lauf" waere an diesem Tag falsch.
     const gelaufen = !!opts.erledigtGrau && !!runNachTag()[_dayKeyOf(tagD.getTime())];
     if (opts.inhaltKnopf) {
+      const kopfWeg = sport === 'lauf' && !gepl;
+      if (kopfWeg) ohneKopf = true;
       spalten.push(`<div class="hero-heute-spalte">
-      <div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf')}</div>
+      ${kopfWeg ? '' : `<div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf')}</div>`}
       ${_heuteLaufKnopf(tagD, gepl)}
     </div>`);
     } else {
@@ -2416,7 +2418,8 @@ function _renderGymSeite() {
   if (activeOnSelected) {
     wrap.innerHTML = buildSessionCard(active, planDay, selDay);
   } else if (planDay) {
-    wrap.innerHTML = buildHeuteHero(planDay, selDay, { sport: 'gym' });
+    // v473 (Leonard-Wunsch): Knopf beschriftet wie in der Uebersicht („Push" / „Push erledigt").
+    wrap.innerHTML = buildHeuteHero(planDay, selDay, { sport: 'gym', inhaltKnopf: true });
   } else {
     // Seite „Gym" — die Laufhaelfte steht drueben auf der Seite „Laufen".
     wrap.innerHTML = buildHeuteHero(null, selDay, { sport: 'gym' });
@@ -5595,7 +5598,7 @@ function renderLaufKalenderSeite() {
   // Schon gelaufen → grauer Knopf (27.09.2026, Leonard-Wunsch) — hier fuer den GEWAEHLTEN Tag.
   // Anders als der Gymknopf auf der Nachbarseite, der gruen bleibt (Regel vom 12.09.2026).
   const hero = `<div id="wo-lauf-hero">${buildHeuteHero(null, null,
-    { sport: 'lauf', runIdx: selectedRunDayIdx, erledigtGrau: true })}</div>`;
+    { sport: 'lauf', runIdx: selectedRunDayIdx, erledigtGrau: true, inhaltKnopf: true })}</div>`;   // v473: Knopf wie in der Uebersicht
   // Die Wochenkarte: eine Seite je Woche des laufenden Laufplans, waagerecht wischbar.
   const plan = runPlanAktiv();
   const heuteMo = _laufWochenMontag(new Date());

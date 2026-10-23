@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v472**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v473**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -212,6 +212,14 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   steht im Kartenpolster unter dem Titel und behaelt seine 63.6px. Uebersicht unveraendert.
   GEMESSEN (375px): Karte 157.3 → 128.8px, Titel → Knopf 15.4px = Polster unten, Knopf 63.6px,
   seitlich 14/14; geplanter Tag unveraendert 157.3px; keine Konsolenfehler.
+- **v473 (23.10.2026, Leonard-Wunsch):** Die Knoepfe der Seiten „Gym" und „Laufen" tragen
+  dieselben Beschriftungen und Ziele wie der Startblock der Uebersicht (`inhaltKnopf: true` in
+  beiden Aufrufen von `buildHeuteHero`): Gym „Push" → Start bzw. „Push erledigt" → Einheit, ohne
+  Gymtag „Kein Gym"; Lauf „8 km"/„40min" (heute Daten holen, sonst `openRunSkip`), „8.2 km
+  gelaufen", „Lauf übersprungen", „Kein Lauf". „Lauf erledigt" und „Einheit starten" sind dort
+  entfallen; die Beschriftung ueber dem Knopf (Gymtag/Laufziel) bleibt, ohne Planung weiter weg
+  (v472). GEMESSEN: alle sieben Wochentage Uebersicht = Seite (Text und Ziel), Push offen/erledigt
+  gleich; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
