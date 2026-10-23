@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v463**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v464**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -158,6 +158,11 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Verwerfen → Kopie wieder weg; Speichern blendet aus; Aenderung ueber ✎ → Leiste nach Rueckkehr,
   Verlassen → Frage, Abbrechen bleibt, Verwerfen setzt Gymtag-Namen zurueck; ohne Aenderung keine
   Frage; neuer Plan ohne Leiste, beim zweiten Oeffnen mit; Laufplan ebenso; keine Konsolenfehler.
+- **v464 (23.10.2026, Leonard-Wunsch):** Die Muskelgruppen-PUNKTE auf den Gymtag-Kacheln
+  (`_mgPunkte`, `.pld-mg`) sind KOMPLETT entfallen — auf der Seite „Gymtage" und im Wahlfenster.
+  Unteres Kachelpolster wieder 10px (Kacheln bleiben 113px ueber `min-height`). `day.muscles` und
+  die Muskelgruppen-Chips in der Gymtag-Detailansicht bleiben. Die Abschnitte weiter oben zu den
+  Punkten („Variante C") sind Vorgeschichte.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

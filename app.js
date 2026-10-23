@@ -8348,7 +8348,6 @@ function _gymtagKachel(d, leiste, onclick, leisteTitel, extra) {
       <div class="plan-list-name">${pd(escapeHtml(d.name).replace(/\//g, '/<wbr>'))}</div>
       ${x.tage && x.tage.length ? `<div class="pld-tage">${x.tage.map(t => `<span>${t}</span>`).join('')}</div>` : ''}
       <div class="plan-list-meta">${anzUeb} ${anzUeb === 1 ? 'Übung' : 'Übungen'}<br>${setCount} Sätze</div>
-      ${_mgPunkte(d.muscles)}
     </div>`;
 }
 
@@ -10478,23 +10477,9 @@ function withUndo(label, fn, afterRestore) {
     showToast('Wiederhergestellt');
   });
 }
-// ── MUSKELGRUPPEN ALS PUNKTE AUF DER GYMTAG-KACHEL ───────────────────────────
-// 26.09.2026, Leonard-Entscheidung „Variante C" aus vier gezeichneten Vorschlaegen (Farbleiste
-// oben, Namensbalken farbig und getoente Kachel waren die anderen). Ein 7px-Punkt je Gruppe
-// unten links — dieselbe Form wie der fruehere Punkt „Im aktuellen Plan" unten rechts. Als
-// einzige der vier Varianten laesst sie die Gruppen ZAEHLEN.
-// Am selben Tag eingebaut und wieder ersetzt: Variante A, ein 5px-Streifen oben in Abschnitten
-// je Gruppe (v397). Die LEISTE gibt es weiter — sie zeigt jetzt die Zugehoerigkeit zum aktiven
-// Gymplan (siehe `.pld-leiste`).
-// Ohne Angabe gibt es keine Punkte.
-function _mgPunkte(muscles) {
-  const m = (muscles || []).filter(k => MUSCLE_META[k]);
-  if (!m.length) return '';
-  const titel = m.map(k => muscleName(k)).join(' · ');
-  return `<span class="pld-mg" title="${escapeHtml(titel)}">${
-    m.map(k => `<i style="background:${muscleColor(k)}"></i>`).join('')}</span>`;
-}
-
+// Die Muskelgruppen-Punkte unten links auf den Gymtag-Kacheln (`_mgPunkte`, `.pld-mg`) sind
+// am 23.10.2026 entfallen (v464, Leonard-Wunsch). `day.muscles` und die Chips in der
+// Detailansicht bleiben.
 function pd(name) { return `<span class="pd-name">${name}</span>`; }
 
 // ═══════════════════════════════════════════════

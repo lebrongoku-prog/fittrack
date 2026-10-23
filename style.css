@@ -740,7 +740,7 @@ body.theme-plans .hist-action-dd {
   /* OBEN 15 statt 10px (Platz fuer die Leiste), UNTEN 22 statt 10px (Platz fuer die
      Muskelgruppen-Punkte, 26.09.2026). Beides gilt fuer ALLE Kacheln, auch die ohne Leiste und
      ohne Punkte — sonst saessen Namen und Kennzahlen in einer Rasterzeile verschieden hoch. */
-  padding: 15px 8px 22px;
+  padding: 15px 8px 10px;   /* v464: unten wieder 10px — die Muskelgruppen-Punkte sind weg */
   display: flex; flex-direction: column; gap: 2px;
   align-items: stretch; justify-content: flex-start;
   /* Beschneidet die Farbleiste auf den Eckenradius der Kachel — nur so laeuft sie bis an beide
@@ -751,22 +751,11 @@ body.theme-plans .hist-action-dd {
 /* LEISTE = „Im aktuellen Gymplan" (26.09.2026, Leonard-Wunsch): 5px ueber die ganze
    Kartenbreite im Gym-Gruen. Sie hat den Punkt unten rechts (`.pld-dot`) abgeloest — auf einen
    Blick ueber das ganze Raster sieht man damit, welche Tage der laufende Plan nutzt.
-   Am selben Tag war sie kurz die Anzeige der MUSKELGRUPPEN (v397, Variante A); die stehen
-   jetzt als Punkte unten links (`.pld-mg`).
+   Am selben Tag war sie kurz die Anzeige der MUSKELGRUPPEN (v397, Variante A); deren Punkte
+   unten links (`.pld-mg`) sind seit v464 ganz entfallen.
    Dasselbe Gruen wie die trainierten Kaestchen im Kalender und die Gym-Kreise der
    Wochenplan-Karten — und wie der abgeloeste Punkt. */
 .pld-leiste { position: absolute; left: 0; right: 0; top: 0; height: 5px; display: block; background: #0F766E; }
-/* MUSKELGRUPPEN als Punkte unten links (26.09.2026, Leonard-Entscheidung „Variante C" aus vier
-   gezeichneten Vorschlaegen): ein 7px-Punkt je Gruppe, dieselbe Form wie der fruehere
-   Plan-Punkt. Als einzige der vier Varianten laesst sie die Gruppen ZAEHLEN.
-   Die Farben setzt das JS inline (`_mgPunkte`) — sie haengen am Tag, nicht an der Regel.
-   ABSOLUT gesetzt, damit sie dem Namen keine Breite nehmen; den Platz macht das untere
-   Kartenpolster frei (siehe `.pld-kachel`).
-   Sie bleiben im TRANSPARENZ-MODUS farbig: Muskelgruppenfarben sind eine Kategorie, keine
-   Sportfarbe — dieselbe Ausnahme wie der Farbpunkt im Uebungskatalog.
-   SIEBEN Punkte messen 7x7 + 6x3 = 67px und passen damit in die 93px Innenbreite. */
-.pld-mg { position: absolute; left: 8px; bottom: 9px; display: flex; gap: 3px; }
-.pld-mg > i { width: 7px; height: 7px; border-radius: 50%; display: block; }
 /* Auf 81px Textbreite passt kein 16px-Name mehr in eine Zeile. 14px und hoechstens zwei
    Zeilen, danach Auslassungspunkte — `-webkit-line-clamp` ist dafuer das einzige Mittel,
    das MITTEN in der zweiten Zeile abschneidet statt die dritte anzuhaengen. */
