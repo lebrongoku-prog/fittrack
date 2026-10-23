@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v473**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v474**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -220,6 +220,12 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   entfallen; die Beschriftung ueber dem Knopf (Gymtag/Laufziel) bleibt, ohne Planung weiter weg
   (v472). GEMESSEN: alle sieben Wochentage Uebersicht = Seite (Text und Ziel), Push offen/erledigt
   gleich; keine Konsolenfehler.
+- **v474 (23.10.2026, Leonard-Wunsch):** Auf den Seiten „Gym" und „Laufen" steht IMMER keine
+  graue Beschriftung mehr ueber dem Knopf — auch an geplanten Tagen (der Knopf nennt Gymtag bzw.
+  Ziel selbst). Mit dem Gymtag-Namen entfaellt dort auch die Umfangszeile („5 Übungen · 16 Sätze ·
+  Ø …", `gymTagUmfang`, lebt weiter). Die Karte ist damit immer kompakt (`hero-ohne-kopf`,
+  128.8px). GEMESSEN: Push geplant und 8 km geplant je 128.8px, Titel → Knopf 15.4px; Uebersicht
+  unveraendert; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

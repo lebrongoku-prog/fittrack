@@ -2046,7 +2046,7 @@ function buildHeuteHero(planDay, selDay, opts) {
     // NUR auf der Seite „Gym" im Trainings-Tab (`opts.sport === 'gym'`) — in der Uebersicht
     // teilen sich zwei Sportarten die Breite, dort ist dafuer kein Platz.
     const meta = (opts.sport === 'gym' && planDay) ? gymTagUmfang(planDay) : '';
-    const kopfWeg = sport === 'gym' && !planDay;
+    const kopfWeg = sport === 'gym';   // v474: auf der Seite „Gym“ nie (Knopf nennt den Gymtag)
     if (kopfWeg) ohneKopf = true;
     spalten.push(`<div class="hero-heute-spalte">
       ${kopfWeg ? '' : `<div class="hero-heute-kopf">
@@ -2073,14 +2073,14 @@ function buildHeuteHero(planDay, selDay, opts) {
     // Die Beschriftung bleibt stehen: „Kein Lauf" waere an diesem Tag falsch.
     const gelaufen = !!opts.erledigtGrau && !!runNachTag()[_dayKeyOf(tagD.getTime())];
     if (opts.inhaltKnopf) {
-      const kopfWeg = sport === 'lauf' && !gepl;
+      const kopfWeg = sport === 'lauf';   // v474: auf der Seite „Laufen“ nie (Knopf nennt das Ziel)
       if (kopfWeg) ohneKopf = true;
       spalten.push(`<div class="hero-heute-spalte">
       ${kopfWeg ? '' : `<div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf')}</div>`}
       ${_heuteLaufKnopf(tagD, gepl)}
     </div>`);
     } else {
-    const kopfWeg = sport === 'lauf' && !gepl;
+    const kopfWeg = sport === 'lauf';
     if (kopfWeg) ohneKopf = true;
     spalten.push(`<div class="hero-heute-spalte">
       ${kopfWeg ? '' : `<div class="hero-heute-einheit">${ziel || (gepl ? 'Lauftag' : 'Kein Lauf')}</div>`}
