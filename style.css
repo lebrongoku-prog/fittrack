@@ -3595,6 +3595,9 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .wk-punkt.kuenftig  .wk-punkt-marke { background: transparent; border: 2.5px solid #fff; }
 .wk-punkt.fehlt     .wk-punkt-marke { background: rgba(255,255,255,.45); }
 .wk-punkt.offen     .wk-punkt-marke { box-shadow: 0 0 0 3px rgba(255,255,255,.55); }
+/* v477 (Leonard-Wunsch): der Monat des Wettkampfs zwischen Marke und Name, feste Breite,
+   damit die Namen untereinander buendig stehen. */
+.wk-punkt-monat { flex: none; width: 30px; font-size: var(--fs-neben); font-weight: 600; color: rgba(255,255,255,.75); }
 .wk-punkt-name  { font-size: var(--fs-text); font-weight: 700; color: #fff; flex: 1; min-width: 0;
                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Die Karte steht IMMER im Markup und wird nur ein- und ausgeblendet — so ist das Oeffnen

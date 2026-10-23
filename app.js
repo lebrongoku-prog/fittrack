@@ -8540,6 +8540,7 @@ function wettkampfStrahl(rennen, laeufe) {
         <button type="button" class="wk-punkt-kopf" onclick="wkStrahlWaehlen('${r.date}')"
                 aria-expanded="${offen ? 'true' : 'false'}">
           <span class="wk-punkt-marke" aria-hidden="true"></span>
+          <span class="wk-punkt-monat">${MONATE_KURZ[m - 1]}</span>
           <span class="wk-punkt-name">${escapeHtml(r.name || 'Wettkampf')}</span>
         </button>
         <div class="wk-punkt-karte">${wettkampfKarte(r, lauf)}</div>
