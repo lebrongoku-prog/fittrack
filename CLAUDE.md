@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v475**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v476**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -244,6 +244,14 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Wochen): W1 alle trainiert, W2 Pull nachgeholt + Beine verpasst, W3 Push mit PR / Pull verpasst /
   Beine offen (heute); Wischen setzt „Letzte Woche" und Saeule W2; Laufseite wischt unveraendert;
   waehrend Einheit `display: none`; Glas weiss; keine Konsolenfehler.
+- **v476 (23.10.2026, Leonard-Wunsch):** (1) In den Wochenkarten der Seiten „Gym" und „Laufen"
+  steht KEIN „vorgezogen"/„nachgeholt" mehr an der Zeile (Kalender-Fusszeile unveraendert).
+  (2) Detailansicht eines Gymplans: eigener Abschnitt „Wochenvolumen" zwischen „Trainingsplandaten"
+  und „Wochenplan" (`#plan-vol-section`, `renderPlanVolumen` am Ende von `renderPlanDetail`,
+  `_gymVolDaten(plan)`): Saeulen = trainiertes Volumen je Planwoche in der Tabfarbe, Ø der
+  abgeschlossenen Wochen rechts neben dem Titel; ohne Volumen ausgeblendet. Diagramm-Kern
+  `_gymVolChartBauen` teilen sich Seite „Gym" und Detailansicht. GEMESSEN: Testplan 18.8/9.6/5.4 t,
+  Ø 14.2 t, Amber; keine Hinweise mehr in beiden Wochenkarten; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

@@ -5007,7 +5007,6 @@ function laufWochenZeilen(mo, istAktuell, maxKm) {
     // „vorgezogen"/„nachgeholt", nicht von welchem Tag.
     const vonIdx = lauf && !eigenerPlan ? verschiebung.laufNachPlan[i] : undefined;
     const gepl = vonIdx != null ? runGeplantFuerLauf(key, geplant) : eigenerPlan;
-    const verschiebWort = (a, b) => (a < b ? 'vorgezogen' : 'nachgeholt');
     const u = gepl ? gepl.einheit : null;
     // VERPASST (26.09.2026, Leonard-Wunsch „hervorheben, wenn ein Lauf nicht absolviert wird"):
     // ein geplanter Tag, der VORBEI ist, an dem nichts gelaufen wurde und der auch nicht durch
@@ -5030,7 +5029,8 @@ function laufWochenZeilen(mo, istAktuell, maxKm) {
       : (vorgabe || '<span class="lauf-wz-leer">Ohne Vorgabe</span>');
     // Die Zonen-Pille ist seit v470 ueberall entfallen (Leonard-Wunsch); der Name `zone` haelt
     // nur noch den Hinweis „vorgezogen"/„nachgeholt".
-    const zone = (vonIdx != null ? `<span class="lauf-wz-von">${verschiebWort(i, vonIdx)}</span>` : '');
+    // Der Hinweis „vorgezogen"/„nachgeholt" ist seit v476 entfallen (Leonard-Wunsch); `zone` bleibt leer.
+    const zone = '';
     // HEUTE steht seit dem 22.09.2026 nicht mehr als Wort rechts, sondern als dasselbe gruene
     // Feld hinter der Scheibe, das die Wochenplan-Karte fuer den heutigen Tag nutzt
     // (`.ppv-col.today`, Leonard-Wunsch).
@@ -5647,9 +5647,8 @@ function _gymWochenZeilenDaten(mo, istAktuell, planIndex, ws, tageById) {
       .sort((a, b) => a.w.startTs - b.w.startTs);
     einheiten.forEach(({ w, wi }) => {
       const tag = w.planDayId ? tageById[w.planDayId] : null;
-      const vonIdx = versch.istNachPlan[i];
       zeilen.push({ i, zustand: 'gelaufen', name: _einheitName(w, alleTage), prs: (w.prs || []).length,
-        hinweis: vonIdx != null && w.planDayId ? _verschiebWort(vonIdx, i) : '',
+        hinweis: '',   // v476: kein „vorgezogen"/„nachgeholt" mehr (Leonard-Wunsch)
         rechts: (tag ? `${_gymSatzZahl(w)}/${_gymPlanSaetze(tag)}` : `${_gymSatzZahl(w)} Sätze`) + (w.duration ? ' · ' + fmtDur(w.duration) : ''),
         soll: _gymVorVolumen(ws, w.planDayId, w.startTs), ist: calcVolume(w), tipp: `showHistDetail(${wi})` });
     });
@@ -5792,22 +5791,29 @@ function _zeichneGymVolDiagramm(mo, schnitt) {
   if (_gymVolChart) { _gymVolChart.destroy(); _gymVolChart = null; }
   const canvas = document.getElementById('gym-vol-chart');
   const daten = _gymWochenDaten;
-  if (!canvas || !daten || !_gymVolOffen || typeof Chart === 'undefined') return;
+  if (!canvas || !daten || !_gymVolOffen) return;
   const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)');
+  const hervorIdx = mo ? daten.findIndex(d => d.mo.getTime() === mo.getTime()) : -1;
+  _gymVolChart = _gymVolChartBauen(canvas, daten, _gymVolFarben(daten, hervorIdx, aufGlas),
+    aufGlas ? 'rgba(255,255,255,0.92)' : '#0F766E', schnitt, aufGlas);
+  if (_gymVolChart) { _gymVolChart._daten = daten; _gymVolChart._glas = aufGlas; }
+}
+// Gemeinsamer Kern (v476): Seite „Gym" und Detailansicht des Gymplans.
+function _gymVolChartBauen(canvas, daten, farben, vollFarbe, schnitt, aufGlas) {
+  if (typeof Chart === 'undefined') return null;
   const schrift = aufGlas ? 'rgba(255,255,255,0.8)' : '#64748B';
   const raster  = aufGlas ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.06)';
-  const hervorIdx = mo ? daten.findIndex(d => d.mo.getTime() === mo.getTime()) : -1;
   const inTonnen = Math.max(...daten.map(d => d.vol)) >= 1000;
   const sets = [{
-    data: daten.map(d => d.vol), backgroundColor: _gymVolFarben(daten, hervorIdx, aufGlas),
-    hoverBackgroundColor: aufGlas ? 'rgba(255,255,255,0.92)' : '#0F766E',
+    data: daten.map(d => d.vol), backgroundColor: farben,
+    hoverBackgroundColor: vollFarbe,
     borderRadius: 4, borderWidth: 0, maxBarThickness: 34, order: 1,
   }];
   if (schnitt != null) sets.push({
     type: 'line', data: daten.map(() => schnitt), borderColor: aufGlas ? 'rgba(255,255,255,0.55)' : 'rgba(51,65,85,0.4)',
     borderWidth: 1, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 0, fill: false, order: 0,
   });
-  _gymVolChart = new Chart(canvas.getContext('2d'), {
+  return new Chart(canvas.getContext('2d'), {
     type: 'bar',
     data: { labels: daten.map((_, i) => 'W' + (i + 1)), datasets: sets },
     options: {
@@ -5823,8 +5829,41 @@ function _zeichneGymVolDiagramm(mo, schnitt) {
       },
     },
   });
-  _gymVolChart._daten = daten;
-  _gymVolChart._glas = aufGlas;
+}
+
+// ── WOCHENVOLUMEN IN DER DETAILANSICHT EINES GYMPLANS (v476, Leonard-Wunsch) ──
+// Eigener Abschnitt zwischen „Trainingsplandaten" und „Wochenplan" — dieselbe Stelle wie
+// „Wochenkilometer" im Laufplan-Detail. Saeulen = trainiertes Volumen je Planwoche (kuenftige 0),
+// alle in der Tabfarbe, keine Hervorhebung; Ø ueber die ABGESCHLOSSENEN Wochen rechts neben dem
+// Titel. Ohne trainiertes Volumen im Plan entfaellt der Abschnitt.
+let _planVolChart = null;
+function _gymVolDaten(plan) {
+  if (!plan || !plan.startDate) return [];
+  const heuteMo = _laufWochenMontag(new Date()).getTime();
+  const erst = _laufWochenMontag(_calLokalTag(plan.startDate));
+  const letzt = _laufWochenMontag(_calLokalTag(plan.endDate || plan.startDate));
+  const ws = DB.getWorkouts();
+  const out = [];
+  for (let m = new Date(erst); m <= letzt; m.setDate(m.getDate() + 7)) {
+    const von = m.getTime(), bis = von + WOCHE_MS - 1;
+    const vol = ws.filter(x => x.startTs >= von && x.startTs <= bis).reduce((a, x) => a + calcVolume(x), 0);
+    out.push({ mo: new Date(m), vol, vorbei: von < heuteMo });
+  }
+  return out;
+}
+function renderPlanVolumen(plan) {
+  const sek = document.getElementById('plan-vol-section');
+  if (!sek) return;
+  if (_planVolChart) { _planVolChart.destroy(); _planVolChart = null; }
+  const daten = _gymVolDaten(plan);
+  sek.hidden = !daten.some(d => d.vol > 0);
+  if (sek.hidden) return;
+  const vorbei = daten.filter(d => d.vorbei);
+  const schnitt = vorbei.length ? vorbei.reduce((a, d) => a + d.vol, 0) / vorbei.length : null;
+  document.getElementById('plan-vol-schnitt').textContent = schnitt != null ? 'Ø ' + fmtVol(schnitt) : '';
+  const farbe = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#F59E0B';
+  _planVolChart = _gymVolChartBauen(document.getElementById('plan-vol-chart'), daten,
+    daten.map(() => farbe), farbe, schnitt, false);
 }
 
 // ── Seite 1: Überblick über die gelaufenen Einheiten ───────────────
@@ -7904,6 +7943,7 @@ function renderPlanDetail() {
 
   // Archiv-Label aktualisieren
   document.getElementById('plan-archive-label').textContent = plan.archived ? 'Aus Archiv holen' : 'Plan archivieren';
+  renderPlanVolumen(plan);   // v476: Abschnitt „Wochenvolumen"
 }
 
 // ─── Plan CRUD ───────────────────────────────────────
