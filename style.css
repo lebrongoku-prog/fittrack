@@ -2720,7 +2720,9 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
    und min plus der Notiz-Knopf, darunter der Laengenbalken (gegen den laengsten Lauf des Plans,
    nur bei km). Die Zone ist entfallen. Eigene Klassen statt `.lauf-wz-*`: Deren Glas-Regeln
    wuerden Scheibe und Balken weiss faerben — die Detailansicht bleibt aber weiss (`.mehr-card`). */
-.lp-einheit { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.lp-einheit { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; }
+/* v471: Die Scheibe steht mittig zu den 38px-Feldern, nicht zur ganzen Zeile samt Balken. */
+.lp-einheit > .lp-scheibe { margin-top: 4px; }
 .lp-scheibe {
   width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; box-sizing: border-box;
   display: flex; align-items: center; justify-content: center;

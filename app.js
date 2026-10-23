@@ -2034,7 +2034,9 @@ function buildHeuteHero(planDay, selDay, opts) {
       // „Freies Training" statt „Freies Training starten" (13.09.2026, Leonard-Entscheidung):
       // Mit der um 10 % groesseren Knopfschrift brach die lange Fassung in der Uebersicht auf
       // drei Zeilen um und wurde von der Karte abgeschnitten. Gilt in allen Tabs.
-      knopf = `<button class="hero-v2-btn hero-v2-btn-grau" data-sport="gym" onclick="startFreeWorkout()">${HERO_ICON_HANTEL}Freies Training</button>`;
+      // Seit v471 (Leonard-Wunsch) heisst er „Kein Gym" und fragt vor dem Start nach
+      // (`freiesTrainingFragen`) — der Knopf benennt den Tag, nicht die Aktion.
+      knopf = `<button class="hero-v2-btn hero-v2-btn-grau" data-sport="gym" onclick="freiesTrainingFragen()">${HERO_ICON_HANTEL}Kein Gym</button>`;
     }
     // Zweite Zeile unter dem Namen: Umfang des Tages (Leonard-Wunsch 07.09.2026). Sie steht
     // NUR auf der Seite „Gym" im Trainings-Tab (`opts.sport === 'gym'`) — in der Uebersicht
@@ -2151,6 +2153,13 @@ const PPV_ICON_LAEUFER = `<span class="ppv-name-ic">${heroRunnerSvg()}</span>`;
 
 // `buildRestHero` und `buildLaufHero` sind am 06.09.2026 entfallen — die Herocard „Heute"
 // (`buildHeuteHero`) deckt Vorschau, Ruhetag und die Seite „Laufen" gemeinsam ab.
+
+// Knopf „Kein Gym" (v471): erst nachfragen, dann wie bisher ein freies Training starten.
+function freiesTrainingFragen() {
+  if (DB.getActive()) { showToast('Es läuft bereits eine Einheit'); return; }
+  confirmAction('Freies Training starten?', 'Heute ist kein Gym geplant. Möchtest du trotzdem ein freies Training starten?',
+    startFreeWorkout, { confirmLabel: 'Freies Training starten' });
+}
 
 // Freies Training: Einheit ohne Trainingstag, Übungen werden unterwegs hinzugefügt.
 function startFreeWorkout() {
