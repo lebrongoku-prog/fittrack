@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v481**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v482**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -293,6 +293,17 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Marke steht mittig zur Zeile aus Monat und Name (`.wk-punkt-marke { top: calc(50% - 7px) }`
   statt 4px). GEMESSEN: Vorschau 0 Karten, Einheit gestartet 3 Karten; Marke und Name je auf
   0.0px gleicher Mitte in allen fuenf Zeilen; keine Konsolenfehler.
+- **v482 (24.10.2026, Leonard-Wunsch/-Meldung):** (1) Die Knoepfe in Uebersicht und Trainings-Tab
+  sagen nach dem Training nur noch den Gymtag („Push", grau mit Haken) bzw. die gelaufene Strecke
+  („8.2 km") — „erledigt"/„gelaufen" sind entfallen. (2) Die Wochenkarte der Seite „Gym" zeigt
+  keine PR-Pille mehr (`.gym-wz-pr` samt Feld `prs` weg). (3) In der Einheiten-Detailansicht
+  starten alle Diagramme „Entwicklung" EINGEKLAPPT (`exChartHTML(…, { collapsible: true, zu: true })`,
+  Knopf „Alle ausklappen"). (4) Der Trainingskalender steht in der Uebersicht ZUOBERST (vor
+  Rueckblick, Wochenkarte, „Diese Woche"). (5) BUG: Waehrend einer laufenden Einheit stand im
+  Gymknopf der Uebersicht der Gymtag (Start) statt „Zur laufenden Einheit" — `blockiert` in
+  `buildHeuteHero` gilt bei `sport === 'beide'` jetzt immer. GEMESSEN: Knopf „Rücken Trizeps
+  Bauch" grau, Detailansicht 2/2 Bloecke zu, „Alle ausklappen" oeffnet alle; Kalender erste
+  Karte; laufende Einheit → „Zur laufenden Einheit"; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

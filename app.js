@@ -2020,8 +2020,10 @@ function buildHeuteHero(planDay, selDay, opts) {
   if (sport !== 'lauf') {
     // Laeuft anderswo bereits eine Einheit, fuehrt der Knopf dorthin statt eine zweite zu starten.
     const anderswo = DB.getActive();
-    const blockiert = !!anderswo && !(planDay && anderswo.planDayId === planDay.id
-      && (selDay ? woDayIdx(anderswo) === selDay.idx : true));
+    // v482 (Leonard-Meldung): In der UEBERSICHT fuehrt der Knopf waehrend einer Einheit IMMER
+    // dorthin — auch am Tag der Einheit (vorher stand dort der Gymtag mit Start).
+    const blockiert = !!anderswo && (sport === 'beide' || !(planDay && anderswo.planDayId === planDay.id
+      && (selDay ? woDayIdx(anderswo) === selDay.idx : true)));
     const laufIdx = anderswo ? woDayIdx(anderswo) : -1;
     let knopf;
     if (blockiert) {
@@ -2036,7 +2038,7 @@ function buildHeuteHero(planDay, selDay, opts) {
       // Woche absolvierte Einheit dieses Gymtags (verschoben) zaehlt.
       const einheit = _heuteGymEinheit(planDay, selDay);
       knopf = einheit
-        ? `<button class="hero-v2-btn hero-v2-btn-grau" data-sport="gym" onclick="showHistDetail(${einheit.wi})">${HERO_ICON_CHECK}<span class="hb-txt">${escapeHtml(planDay.name)} erledigt</span></button>`
+        ? `<button class="hero-v2-btn hero-v2-btn-grau" data-sport="gym" onclick="showHistDetail(${einheit.wi})">${HERO_ICON_CHECK}<span class="hb-txt">${escapeHtml(planDay.name)}</span></button>`
         : `<button class="hero-v2-btn" data-sport="gym" onclick="startWorkout('${planDay.id}')">${HERO_ICON_HANTEL}<span class="hb-txt">${escapeHtml(planDay.name)}</span></button>`;
     } else if (planDay) {
       const start = opts.previewOnClick || `startWorkout('${planDay.id}')`;
@@ -2138,7 +2140,7 @@ function _heuteLaufKnopf(tagD, gepl) {
   const knopf = (grau, onclick, icon, text) => `<button class="hero-v2-btn hero-v2-btn-lauf${grau ? ' hero-v2-btn-grau' : ''}" data-sport="lauf"
       onclick="${onclick}" ${runLaden && onclick === holen ? 'disabled' : ''}>${icon}<span class="hb-txt">${runLaden && onclick === holen ? 'Lese …' : text}</span></button>`;
   if (lauf) return knopf(true, `showRunDetail('${key}')`, HERO_ICON_CHECK,
-    lauf.art === 'hiit' ? `HIIT ${fmtMin(lauf.minutes)}` : `${fmtKm(lauf.km)} gelaufen`);
+    lauf.art === 'hiit' ? `HIIT ${fmtMin(lauf.minutes)}` : fmtKm(lauf.km));   // v482: ohne "gelaufen" 
   if (!gepl) return knopf(true, holen, HERO_ICON_LAEUFER, 'Kein Lauf');
   const u = gepl.einheit;
   const tipp = istHeute ? holen : `openRunSkip('${key}')`;
@@ -5657,7 +5659,7 @@ function _gymWochenZeilenDaten(mo, istAktuell, planIndex, ws, tageById) {
     const einheiten = ws.map((w, wi) => ({ w, wi })).filter(x => x.w.startTs >= von && x.w.startTs <= bis)
       .sort((a, b) => a.w.startTs - b.w.startTs);
     einheiten.forEach(({ w, wi }) => {
-      zeilen.push({ i, zustand: 'gelaufen', name: _einheitName(w, alleTage), prs: (w.prs || []).length,
+      zeilen.push({ i, zustand: 'gelaufen', name: _einheitName(w, alleTage),
         hinweis: '',   // v476: kein „vorgezogen"/„nachgeholt" mehr (Leonard-Wunsch)
         rechts: w.duration ? fmtDur(w.duration) : '',   // v478: ohne Satzangabe (Leonard-Wunsch)
         soll: _gymVorVolumen(ws, w.planDayId, w.startTs), ist: calcVolume(w), tipp: `showHistDetail(${wi})` });
@@ -5665,7 +5667,7 @@ function _gymWochenZeilenDaten(mo, istAktuell, planIndex, ws, tageById) {
     if (einheiten.length || !info.planned || versch.planNachIst[i] != null) continue;
     const tag = tageById[info.planDayId];
     const verpasst = von < heuteMs;
-    zeilen.push({ i, zustand: verpasst ? 'verpasst' : 'offen', name: tag ? tag.name : (info.name || 'Gymtag'), prs: 0,
+    zeilen.push({ i, zustand: verpasst ? 'verpasst' : 'offen', name: tag ? tag.name : (info.name || 'Gymtag'),
       hinweis: '', rechts: verpasst ? 'nicht trainiert' : '',
       soll: _gymVorVolumen(ws, info.planDayId, Math.min(von, Date.now())), ist: 0, tipp: '' });
   }
@@ -5681,7 +5683,7 @@ function _gymWochenZeileHTML(z, todayIdx, maxVol) {
     </div>` : '';
   const inhalt = `${feld}<div class="lauf-wz-rechts">
       <div class="lauf-wz-oben">
-        <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${escapeHtml(z.name)}${z.prs ? `<span class="gym-wz-pr">${z.prs} PR</span>` : ''}${z.hinweis ? `<span class="lauf-wz-von">${z.hinweis}</span>` : ''}</div></div>
+        <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${escapeHtml(z.name)}${z.hinweis ? `<span class="lauf-wz-von">${z.hinweis}</span>` : ''}</div></div>
         ${z.rechts ? `<span class="lauf-wz-ist${z.zustand === 'verpasst' ? ' verpasst' : ''}">${z.rechts}</span>` : ''}
         ${z.tipp ? '<span class="cal-detail-chev">▾</span>' : ''}
       </div>
@@ -7588,7 +7590,7 @@ function showHistDetail(i, highlightExId) {
           <div class="hd-chips">${chips}</div>
           <div class="hd-right">
             ${ex.notes ? `<div class="hd-note">${ex.notes}</div>` : ''}
-            ${exChartHTML(id, `hd-chart-${idx}`, { collapsible: true })}
+            ${exChartHTML(id, `hd-chart-${idx}`, { collapsible: true, zu: true })}
           </div>
         </div>
       </div>
@@ -7598,7 +7600,7 @@ function showHistDetail(i, highlightExId) {
   document.getElementById('hist-detail-body').innerHTML =
     kopf +
     `<div class="hd-rail">
-       <button class="hd-toggle-all" id="hd-toggle-all" onclick="toggleAllHdCharts()">Alle einklappen</button>
+       <button class="hd-toggle-all" id="hd-toggle-all" onclick="toggleAllHdCharts()">Alle ausklappen</button>
        ${schritte}
      </div>` +
     `<button class="btn btn-danger btn-full" style="margin-top:18px" onclick="deleteSession(${i})">🗑 Einheit löschen</button>`;
@@ -9536,7 +9538,8 @@ function exChartHTML(exId, canvasId, opts) {
   const kopf = opts.collapsible
     ? `<button class="ex-chart-collapse" onclick="toggleChartBlock(this)">Entwicklung<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>`
     : '<span>Entwicklung</span>';
-  return `<div class="ex-chart-block">
+  // v482: In der Einheiten-Detailansicht starten die Diagramme eingeklappt (`opts.zu`).
+  return `<div class="ex-chart-block${opts.zu ? ' collapsed' : ''}">
     <div class="ex-item-body-label ex-chart-head">
       ${kopf}
       <div class="stats-mode-toggle ex-chart-toggle" data-ex="${exId}">

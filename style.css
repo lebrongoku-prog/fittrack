@@ -2593,11 +2593,6 @@ button.lauf-wz:active { opacity: .6; }
 .lauf-wz-balken.gym > .soll { background: rgba(15, 118, 110, .35); }
 .lauf-wz-balken.gym > .ist  { background: #0F766E; }
 .lauf-wochen-punkte.gym > i.an, .lauf-wochen-leiste.gym > i { background: #0F766E; }
-.gym-wz-pr {
-  font-size: var(--fs-etikett); font-weight: 600; padding: 1px 6px; border-radius: 8px;
-  background: #FEF3C7; color: #92400E; white-space: nowrap;
-}
-html.glas .screen:not(#screen-mehr) .gym-wz-pr { background: rgba(255,255,255,.22); color: #fff; }
 .gym-woche-leer { font-size: var(--fs-neben); padding: 4px 0; }
 html.glas .screen:not(#screen-mehr) .lauf-wz-balken { background: rgba(255,255,255,.20); }
 html.glas .screen:not(#screen-mehr) .lauf-wz-balken > .soll { background: rgba(255,255,255,.6); }

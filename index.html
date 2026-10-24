@@ -76,6 +76,9 @@
          Der Titel ist ein FILTER wie beim Trainingskalender: beide → Gym → Lauf → beide.
          Gefuellt von renderOverview() ueber buildWochenKombi() bzw. den beiden Kartenbauern.
          Sie steht seit dem 08.09.2026 UEBER der Herocard (Leonard-Wunsch). -->
+    <!-- Trainingskalender: ein Kästchen pro Tag. Fläche = laut Plan vorgesehen,
+         Kern = tatsächlich trainiert. Inhalt kommt aus calendarInnerHTML(). Seit v482 zuoberst (Leonard-Wunsch). -->
+    <div class="chart-card-v2 lg-span-2 kal-zu kal-inhalt-zu" id="ov-cal-card"></div>
     <!-- Rueckblick auf die Vorwoche, ab Montag bis zum Ausblenden (renderRueckblick). -->
     <div id="ov-rueckblick"></div>
     <div id="ov-week-card"></div>
@@ -83,9 +86,6 @@
     <!-- Liste „Diese Woche" (Gym und Lauf nach dem Filter der Wochenkarte, renderUebersichtWoche). -->
     <div id="ov-diese-woche"></div>
 
-    <!-- Trainingskalender: ein Kästchen pro Tag. Fläche = laut Plan vorgesehen,
-         Kern = tatsächlich trainiert. Inhalt kommt aus calendarInnerHTML() -->
-    <div class="chart-card-v2 lg-span-2 kal-zu kal-inhalt-zu" id="ov-cal-card"></div>
 
   </div><!-- /overview -->
 
