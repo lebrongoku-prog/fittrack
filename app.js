@@ -5610,8 +5610,8 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
 //   - Quadrat mit dem Wochentag in den Zustaenden der Laufliste (gefuellt = trainiert,
 //     Ring = offen, rot = verpasst); ein an einem anderen Tag absolvierter Plantag faellt weg,
 //     die Einheit traegt „vorgezogen"/„nachgeholt".
-//   - Name des Gymtags (PRs als Pille), rechts Saetze gegen Plan und Dauer („16/16 · 1h 4min").
-//     Der Plan ist die AKTUELLE Satzzahl des Gymtags. Das Volumen steht NICHT als Zahl da
+//   - Name des Gymtags (PRs als Pille), rechts die Dauer (seit v478 ohne Saetze, Leonard-Wunsch).
+//     Das Volumen steht NICHT als Zahl da
 //     (Leonard-Entscheidung), es ist der Balken:
 //   - Balken: HELL = Volumen der letzten Einheit desselben Gymtags davor, KRAEFTIG = Volumen
 //     dieser Einheit. Bezug ist die groesste Zahl im ganzen Plan, wie beim Lauf.
@@ -5627,8 +5627,6 @@ function _gymVorVolumen(ws, planDayId, vorTs) {
   ws.forEach(w => { if (w.planDayId === planDayId && w.startTs < vorTs && (!best || w.startTs > best.startTs)) best = w; });
   return best ? calcVolume(best) : 0;
 }
-function _gymSatzZahl(w) { return (w.exercises || []).reduce((a, e) => a + ((e.sets || []).length), 0); }
-function _gymPlanSaetze(tag) { return tag ? (tag.exercises || []).reduce((a, e) => a + peSets(e).length, 0) : 0; }
 
 // Zeilen einer Woche als Daten (Volumen erst danach in Balken umgerechnet — der Bezug haengt am
 // ganzen Plan).
@@ -5646,17 +5644,16 @@ function _gymWochenZeilenDaten(mo, istAktuell, planIndex, ws, tageById) {
     const einheiten = ws.map((w, wi) => ({ w, wi })).filter(x => x.w.startTs >= von && x.w.startTs <= bis)
       .sort((a, b) => a.w.startTs - b.w.startTs);
     einheiten.forEach(({ w, wi }) => {
-      const tag = w.planDayId ? tageById[w.planDayId] : null;
       zeilen.push({ i, zustand: 'gelaufen', name: _einheitName(w, alleTage), prs: (w.prs || []).length,
         hinweis: '',   // v476: kein „vorgezogen"/„nachgeholt" mehr (Leonard-Wunsch)
-        rechts: (tag ? `${_gymSatzZahl(w)}/${_gymPlanSaetze(tag)}` : `${_gymSatzZahl(w)} Sätze`) + (w.duration ? ' · ' + fmtDur(w.duration) : ''),
+        rechts: w.duration ? fmtDur(w.duration) : '',   // v478: ohne Satzangabe (Leonard-Wunsch)
         soll: _gymVorVolumen(ws, w.planDayId, w.startTs), ist: calcVolume(w), tipp: `showHistDetail(${wi})` });
     });
     if (einheiten.length || !info.planned || versch.planNachIst[i] != null) continue;
     const tag = tageById[info.planDayId];
     const verpasst = von < heuteMs;
     zeilen.push({ i, zustand: verpasst ? 'verpasst' : 'offen', name: tag ? tag.name : (info.name || 'Gymtag'), prs: 0,
-      hinweis: '', rechts: verpasst ? 'nicht trainiert' : `0/${_gymPlanSaetze(tag)}`,
+      hinweis: '', rechts: verpasst ? 'nicht trainiert' : '',
       soll: _gymVorVolumen(ws, info.planDayId, Math.min(von, Date.now())), ist: 0, tipp: '' });
   }
   return zeilen;
@@ -5672,7 +5669,7 @@ function _gymWochenZeileHTML(z, todayIdx, maxVol) {
   const inhalt = `${feld}<div class="lauf-wz-rechts">
       <div class="lauf-wz-oben">
         <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${escapeHtml(z.name)}${z.prs ? `<span class="gym-wz-pr">${z.prs} PR</span>` : ''}${z.hinweis ? `<span class="lauf-wz-von">${z.hinweis}</span>` : ''}</div></div>
-        <span class="lauf-wz-ist${z.zustand === 'verpasst' ? ' verpasst' : ''}">${z.rechts}</span>
+        ${z.rechts ? `<span class="lauf-wz-ist${z.zustand === 'verpasst' ? ' verpasst' : ''}">${z.rechts}</span>` : ''}
         ${z.tipp ? '<span class="cal-detail-chev">▾</span>' : ''}
       </div>
       ${balken}

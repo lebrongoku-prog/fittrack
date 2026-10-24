@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v477**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v478**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -255,6 +255,10 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
 - **v477 (23.10.2026, Leonard-Wunsch):** Im Wettkampf-Zeitstrahl steht zwischen Marke und Name
   der Monat im Drei-Buchstaben-Format (`.wk-punkt-monat`, `MONATE_KURZ`, 30px fest, 13px, 75-%-Weiss).
   GEMESSEN: „Apr Zurich 10km" … „Mai Sempacherseelauf 2026"; keine Konsolenfehler.
+- **v478 (24.10.2026, Leonard-Wunsch):** Die Wochenkarte der Seite „Gym" zeigt KEINE Satzangabe
+  mehr: trainiert rechts nur die Dauer („1h 5min"), offen nichts, vorbei weiter „nicht trainiert".
+  `_gymSatzZahl`/`_gymPlanSaetze` sind entfallen. GEMESSEN: „Mo Push 1 PR 1h 5min", „Mi Pull nicht
+  trainiert", offene Tage ohne rechten Text; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
