@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v479**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v480**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -269,6 +269,23 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Startposition des Rasters (vorher ohne Breite) gesetzt wird. Plan-Tab-Kalender unveraendert.
   GEMESSEN (375px): zu 47px, auf 323px, Filter schaltet auch eingeklappt, Raster nach Aufklappen
   positioniert; keine Konsolenfehler.
+- **v480 (24.10.2026, Leonard-Wunsch/-Entscheidungen):** GYMTAGE und WETTKAEMPFE sind keine
+  Seiten des Plan-Tabs mehr (`PLANS_SEITEN` nur noch `plans`/`runplans`, Seitenschalter damit
+  zweiseitig `.seg-zwei`), sondern VOLLBILDSEITEN wie das Plan-Detail (`OVERLAY_SCREENS`
+  `gymtage` → `#screen-gymtage`, `wettkaempfe` → `#screen-wettkaempfe`; Zurueck-Pfeil und Wischen
+  vom Rand, Theme Plan-Tab). Erreichbar ueber quadratische Knoepfe oben rechts LINKS neben Archiv
+  und „+": Hantel (`#plans-gymtage-btn`) NUR auf „Gymplan", Pokal (`#plans-races-btn`) NUR auf
+  „Laufplan" (`renderPlansScreen`). Die Gymtage-Seite traegt ihr eigenes Archiv
+  (`#days-archive-btn`, `_archivBtnSetzen` aus `syncPlansArchivBtn`) und „+" (`createNewLibDay`),
+  die Wettkampf-Seite Liste/Zeitstrahl (`#races-view-btn`) und „+" (`openRaceDialog`).
+  `#libdays-list`/`#races-list` wohnen jetzt dort. Rueckwege: Gymtag-Detail zurueck → `gymtage`
+  (`closeLibDayDetail`, auch nach Loeschen), Laufdaten-Abruf frischt `wettkaempfe` auf,
+  `initWettkampfStrahl` lauscht auf `#screen-wettkaempfe`. Kopfknoepfe der beiden Seiten mittig
+  zum Zurueck-Pfeil (`.plan-detail-ph .ph-actions { margin-top: 3px }`). „Diese Woche" der
+  Uebersicht war schon eingeklappt (Leonard: Anweisung entfaellt). GEMESSEN (375px): Gymplan
+  Hantel sichtbar/Pokal nicht, Laufplan umgekehrt; Pokal → 5 Wettkaempfe im Zeitstrahl; Hantel →
+  Kacheln, Archiv auf/zu, Kachel → Detail → zurueck auf Gymtage; Zurueck → Plan-Tab; keine
+  Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

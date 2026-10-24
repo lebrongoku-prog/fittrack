@@ -214,15 +214,17 @@
         <div class="ph-sub" id="plans-subline" style="display:none">Übersicht aller Pläne</div>
       </div>
       <div class="ph-actions">
-        <!-- Archiv der gezeigten Seite (Gympläne, Gymtage, Laufpläne). Sichtbar nur, wenn es
+        <!-- v480: Gymtage (nur Seite „Gymplan") und Wettkämpfe (nur Seite „Laufplan") sind keine
+             eigenen Seiten mehr, sondern Vollbildseiten hinter diesen Knöpfen. Sichtbarkeit
+             setzt renderPlansScreen. -->
+        <div class="ex-add-btn" id="plans-gymtage-btn" onclick="openGymtageSeite()" title="Gymtage" aria-label="Gymtage"><svg viewBox="0 0 24 24"><rect x="2" y="9" width="3" height="6" rx="1"/><rect x="5" y="6" width="3.5" height="12" rx="1"/><rect x="15.5" y="6" width="3.5" height="12" rx="1"/><rect x="19" y="9" width="3" height="6" rx="1"/><line x1="8.5" y1="12" x2="15.5" y2="12"/></svg></div>
+        <div class="ex-add-btn" id="plans-races-btn" onclick="openWettkampfSeite()" title="Wettkämpfe" aria-label="Wettkämpfe" style="display:none"><svg viewBox="0 0 24 24"><path d="M7 3h10v6a5 5 0 0 1-10 0V3z"/><path d="M7 5H3.5v1.5A4 4 0 0 0 7.5 10.5"/><path d="M17 5h3.5v1.5a4 4 0 0 1-4 4"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="7.5" y1="21" x2="16.5" y2="21"/><line x1="9" y1="18" x2="15" y2="18"/></svg></div>
+        <!-- Archiv der gezeigten Seite (Gympläne, Laufpläne). Sichtbar nur, wenn es
              dort überhaupt archivierte Einträge gibt; gefüllt, solange das Archiv offen ist.
              Beides setzt syncPlansArchivBtn. -->
         <div class="ex-add-btn" id="plans-archive-btn" onclick="togglePlansArchivBtn()" style="display:none">
           <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
         </div>
-        <!-- Nur auf der Seite „Wettkämpfe": schaltet zwischen Liste und Zeitstrahl um.
-             Sichtbarkeit und Symbol setzt renderPlansScreen bzw. syncWkAnsichtBtn. -->
-        <div class="ex-add-btn" id="races-view-btn" onclick="toggleWettkampfAnsicht()" style="display:none"></div>
         <div class="ex-add-btn" id="plans-add-btn" onclick="onPlansAdd()" title="Neu erstellen">
           <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </div>
@@ -231,9 +233,7 @@
     <!-- Derselbe Trainingskalender wie in der Übersicht (zweite Instanz, Präfix "pcal") -->
     <div class="chart-card-v2" id="plans-cal-card"></div>
     <div id="plans-list"></div>
-    <div id="libdays-list" style="display:none"></div>
     <div id="runplans-list" style="display:none"></div>
-    <div id="races-list" style="display:none"></div>
   </div>
 
 
@@ -369,6 +369,37 @@
     </div>
     <div id="runplan-detail-body"></div>
   </div><!-- /runplan-detail-overlay -->
+
+  <!-- ══ OVERLAY: GYMTAGE (v480, vorher eine Seite im Plan-Tab) ══ -->
+  <div id="screen-gymtage" class="screen plan-detail-overlay">
+    <div class="ph plan-detail-ph">
+      <button class="sheet-back-btn" onclick="closeGymtageSeite()" aria-label="Zurück">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="ph-left"><h1>Gymtage</h1></div>
+      <div class="ph-actions">
+        <div class="ex-add-btn" id="days-archive-btn" onclick="toggleLibDaysArchive()" style="display:none"><svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></div>
+        <div class="ex-add-btn" onclick="createNewLibDay()" title="Neuer Gymtag"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      </div>
+    </div>
+    <div id="libdays-list"></div>
+  </div>
+
+  <!-- ══ OVERLAY: WETTKÄMPFE (v480, vorher eine Seite im Plan-Tab) ══ -->
+  <div id="screen-wettkaempfe" class="screen plan-detail-overlay">
+    <div class="ph plan-detail-ph">
+      <button class="sheet-back-btn" onclick="closeWettkampfSeite()" aria-label="Zurück">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="ph-left"><h1>Wettkämpfe</h1></div>
+      <div class="ph-actions">
+        <!-- Liste ↔ Zeitstrahl; Symbol setzt syncWkAnsichtBtn. -->
+        <div class="ex-add-btn" id="races-view-btn" onclick="toggleWettkampfAnsicht()"></div>
+        <div class="ex-add-btn" onclick="openRaceDialog()" title="Neuer Wettkampf"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      </div>
+    </div>
+    <div id="races-list"></div>
+  </div>
 
   <!-- OVERLAY: EINSTELLUNGEN (frueher der Tab "Mehr") -->
   <!-- ══ SCREEN: MEHR ══ -->

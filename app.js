@@ -882,7 +882,15 @@ const OVERLAY_SCREENS = {
   'day-detail':     'screen-day-detail',
   'runplan-detail': 'screen-runplan-detail',
   'mehr':           'screen-mehr',
+  // v480: Gymtage und Wettkaempfe sind keine Seiten des Plan-Tabs mehr, sondern Vollbildseiten
+  // hinter den Knoepfen oben rechts (Gymtage auf „Gymplan", Pokal auf „Laufplan").
+  'gymtage':        'screen-gymtage',
+  'wettkaempfe':    'screen-wettkaempfe',
 };
+function openGymtageSeite()    { showScreen('gymtage'); }
+function closeGymtageSeite()   { showScreen('plans'); }
+function openWettkampfSeite()  { showScreen('wettkaempfe'); }
+function closeWettkampfSeite() { showScreen('plans'); }
 
 function _applyTabState(name) {
   _entwurfPruefen();   // Leiste „Speichern" nur in den beiden Plan-Detailansichten (v463)
@@ -891,7 +899,7 @@ function _applyTabState(name) {
   if (navEl) navEl.classList.add('active');
 
   // Body-Theme: plan-detail UND day-detail teilen sich Theme + Akzentfarbe mit der Plans-Liste (Amber).
-  const themeName = (name === 'plan-detail' || name === 'day-detail' || name === 'runplan-detail') ? 'plans' : name;
+  const themeName = ['plan-detail', 'day-detail', 'runplan-detail', 'gymtage', 'wettkaempfe'].includes(name) ? 'plans' : name;
   document.body.className = 'theme-' + themeName;
   // _applyTabState wird bei Tableisten-Klick + initialem App-Start aufgerufen —
   // dort ist KEIN Crossfade gewuenscht (sofortiger Wechsel). Beim Swipe-Snap
@@ -923,6 +931,8 @@ function _applyTabState(name) {
   else if (name === 'day-detail') renderLibDayDetail();
   else if (name === 'runplan-detail') renderRunPlanDetail();
   else if (name === 'mehr') renderMehr();
+  else if (name === 'gymtage') renderLibDays();
+  else if (name === 'wettkaempfe') { syncWkAnsichtBtn(); renderWettkaempfe(); }
 
   ensureTimerActive();
 
@@ -4698,7 +4708,7 @@ async function runLaeufeLaden({ interactive = false } = {}) {
     // Die Wettkampfseite lebt von genau diesen Daten: Erst mit dem Abruf wird aus einem
     // eingetragenen Termin eine Karte mit Werten. Ohne das bliebe sie nach dem eigenen
     // „Laufdaten holen" unveraendert stehen (06.09.2026).
-    else if (currentScreen === 'plans' && plansViewMode === 'races') renderWettkaempfe();
+    else if (currentScreen === 'wettkaempfe') renderWettkaempfe();
   }
 }
 
@@ -8224,9 +8234,7 @@ function _setPlansView(mode) {
   seitenleisteAktualisieren();
 }
 function onPlansAdd() {
-  if (plansViewMode === 'races') openRaceDialog();
-  else if (plansViewMode === 'days') createNewLibDay();
-  else if (plansViewMode === 'runplans') neuerLaufplan();
+  if (plansViewMode === 'runplans') neuerLaufplan();
   else openPlanSourceModal();
 }
 
@@ -8419,10 +8427,8 @@ function copyExistingPlan(planId) {
 // an der die Beschriftung steht.
 const PLANS_SEITEN = {
   plans:    { titel: 'Gymplan',    liste: 'plans-list'    },
-  days:     { titel: 'Gymtage',    liste: 'libdays-list'  },
   runplans: { titel: 'Laufplan',   liste: 'runplans-list' },
-  races:    { titel: 'Wettkämpfe', liste: 'races-list'    },
-};
+};   // v480: Gymtage und Wettkaempfe sind Vollbildseiten (OVERLAY_SCREENS), keine Seiten mehr
 
 // ── DAS ARCHIV HAENGT AM KOPF DER SEITE (26.09.2026, Leonard-Wunsch) ─────────────────────
 // Bis dahin stand unter jeder der drei Listen ein breiter Knopf „Archivierte …" als weisse
@@ -8447,9 +8453,11 @@ const ARCHIV_SEITEN = {
 // dafuer kein Platz (und 9px Schrift waeren unter der Schriftskala), sie steht deshalb im
 // `title`.
 function syncPlansArchivBtn() {
-  const b = document.getElementById('plans-archive-btn');
+  _archivBtnSetzen(document.getElementById('plans-archive-btn'), ARCHIV_SEITEN[plansViewMode]);
+  _archivBtnSetzen(document.getElementById('days-archive-btn'), ARCHIV_SEITEN.days);   // Vollbildseite „Gymtage" (v480)
+}
+function _archivBtnSetzen(b, seite) {
   if (!b) return;
-  const seite = ARCHIV_SEITEN[plansViewMode];
   const anzahl = seite ? seite.anzahl() : 0;
   b.style.display = anzahl ? '' : 'none';
   if (!anzahl) { b.classList.remove('active'); return; }
@@ -8475,7 +8483,9 @@ function renderPlansScreen() {
   Object.keys(PLANS_SEITEN).forEach(k => {
     zeige(document.getElementById(PLANS_SEITEN[k].liste), plansViewMode === k);
   });
-  syncWkAnsichtBtn();
+  // v480: Knopf „Gymtage" nur auf „Gymplan", Pokal „Wettkämpfe" nur auf „Laufplan".
+  zeige(document.getElementById('plans-gymtage-btn'), plansViewMode === 'plans');
+  zeige(document.getElementById('plans-races-btn'), plansViewMode === 'runplans');
   const seite = PLANS_SEITEN[plansViewMode] || PLANS_SEITEN.plans;
   const h1 = document.getElementById('plans-h1');
   if (h1) h1.textContent = seite.titel;
@@ -8486,9 +8496,7 @@ function renderPlansScreen() {
   const mitKalender = plansViewMode === 'plans' || plansViewMode === 'runplans';
   zeige(calCard, mitKalender);
   if (mitKalender && calCard) renderTrainingCalendar('pcal', 'plans-cal-card');
-  if (plansViewMode === 'days') renderLibDays();
-  else if (plansViewMode === 'runplans') renderLaufVerwaltung();
-  else if (plansViewMode === 'races') renderWettkaempfe();
+  if (plansViewMode === 'runplans') renderLaufVerwaltung();
   else renderPlans();
   // NACH dem Renderer: `autoArchivBeendetePlaene` laeuft darin und kann die Anzahl der
   // archivierten Plaene noch aendern — davor gezaehlt, fehlte der Knopf beim ersten Blick.
@@ -8525,9 +8533,6 @@ function toggleWettkampfAnsicht() {
 function syncWkAnsichtBtn() {
   const b = document.getElementById('races-view-btn');
   if (!b) return;
-  const an = plansViewMode === 'races';
-  b.style.display = an ? '' : 'none';
-  if (!an) return;
   const zurListe = _wkAnsicht === 'strahl';
   b.innerHTML = zurListe ? WK_ICON_LISTE : WK_ICON_STRAHL;
   b.title = zurListe ? 'Als Liste zeigen' : 'Als Zeitstrahl zeigen';
@@ -8625,7 +8630,7 @@ function _wkKarteKlappen(p, an) {
 // Scrollen klappt den hervorgehobenen Wettkampf wieder zu (Leonard-Wunsch 09.09.2026).
 // Nur ein Klassenwechsel, KEIN Neuaufbau — sonst ruckelte die Liste mitten in der Bewegung.
 function initWettkampfStrahl() {
-  const scr = document.getElementById('screen-plans');
+  const scr = document.getElementById('screen-wettkaempfe');   // v480: eigene Vollbildseite
   if (!scr) return;
   scr.addEventListener('scroll', () => {
     if (!_wkOffen) return;
@@ -8852,7 +8857,7 @@ function closeLibDayDetail() {
   // `editingPlanId` MUSS vor `showScreen` stehen: `_applyTabState` ruft `renderPlanDetail`,
   // und das liest den Edit-Kontext.
   if (z && z.planId) { editingPlanId = z.planId; showScreen('plan-detail'); return; }
-  showScreen('plans');
+  showScreen('gymtage');   // v480: die Gymtage sind eine eigene Vollbildseite
 }
 function _getEditingLibDay() { return DB.getTrainingDays().find(d => d.id === editingLibDayId) || null; }
 
@@ -8875,7 +8880,7 @@ function getPlansContainingLibDay(libDayId) {
 
 function renderLibDayDetail() {
   const day = _getEditingLibDay();
-  if (!day) { showScreen('plans'); return; }
+  if (!day) { showScreen('gymtage'); return; }
   document.getElementById('day-detail-title').textContent = day.name;
   const setCount = (day.exercises||[]).reduce((a,e) => a + (e.targetSets||0), 0);
   document.getElementById('day-detail-subline').textContent =
@@ -9025,8 +9030,8 @@ function deleteCurrentLibDay() {
         DB.saveTrainingDays(days);
         if (removed) trashPut('day', removed.name || 'Trainingstag', removed);
         editingLibDayId = null;
-        showScreen('plans');
-      }, () => renderPlansScreen());
+        showScreen('gymtage');
+      }, () => renderLibDays());
     },
     { danger: true, confirmLabel: 'Löschen' });
 }
@@ -12512,6 +12517,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initOverlayEdgeSwipe('screen-day-detail', closeLibDayDetail);
   initOverlayEdgeSwipe('screen-runplan-detail', closeRunPlanDetail);
   initOverlayEdgeSwipe('screen-mehr', closeMehr);
+  initOverlayEdgeSwipe('screen-gymtage', closeGymtageSeite);
+  initOverlayEdgeSwipe('screen-wettkaempfe', closeWettkampfSeite);
 });
 
 // Edge-Swipe-Back fuer Plan-Detail-Overlay.
