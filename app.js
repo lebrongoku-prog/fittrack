@@ -2447,7 +2447,10 @@ function _renderGymSeite() {
     addWrap.innerHTML = `<button class="btn btn-ghost btn-full" onclick="openAddExModal('active')">+ Übung hinzufügen</button>`;
     if (!timerInterval) startTimer();
   } else if (planDay) {
-    renderPreviewWorkout(planDay);
+    // v481 (Leonard-Wunsch): KEINE Vorschau der Uebungskarten mehr auf der Seite „Gym" — sie
+    // erscheinen erst in der laufenden Einheit. `renderPreviewWorkout` dient weiter der
+    // Gymtag-Detailansicht.
+    document.getElementById('active-ex-list').innerHTML = '';
     // KEIN Knopf „Uebung zum Trainingstag hinzufuegen“ mehr auf der Seite „Gym“
     // (Leonard-Wunsch 08.09.2026). Uebungen kommen ueber die Seite „Gymtage“ im Plan-Tab
     // dazu; der Knopf der LAUFENDEN Einheit („+ Uebung hinzufuegen“) bleibt, der schreibt

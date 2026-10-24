@@ -3600,7 +3600,8 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
   -webkit-user-select: none; user-select: none;
 }
 .wk-punkt-marke {
-  position: absolute; left: -30px; top: 4px;
+  /* v481: mittig zur Zeile (Monat + Name), nicht mehr 4px vom oberen Rand. */
+  position: absolute; left: -30px; top: calc(50% - 7px);
   width: 14px; height: 14px; border-radius: 50%;
   background: #fff; box-sizing: border-box;
 }

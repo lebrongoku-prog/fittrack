@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v480**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v481**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -286,6 +286,13 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Hantel sichtbar/Pokal nicht, Laufplan umgekehrt; Pokal → 5 Wettkaempfe im Zeitstrahl; Hantel →
   Kacheln, Archiv auf/zu, Kachel → Detail → zurueck auf Gymtage; Zurueck → Plan-Tab; keine
   Konsolenfehler.
+- **v481 (24.10.2026, Leonard-Wunsch):** (1) Die Seite „Gym" zeigt an einem Gymtag KEINE
+  Vorschau der Uebungskarten mehr (`_renderGymSeite` leert `#active-ex-list` statt
+  `renderPreviewWorkout`); in der laufenden Einheit erscheinen sie unveraendert.
+  `renderPreviewWorkout` lebt weiter fuer die Gymtag-Detailansicht. (2) Wettkampf-Zeitstrahl: Die
+  Marke steht mittig zur Zeile aus Monat und Name (`.wk-punkt-marke { top: calc(50% - 7px) }`
+  statt 4px). GEMESSEN: Vorschau 0 Karten, Einheit gestartet 3 Karten; Marke und Name je auf
+  0.0px gleicher Mitte in allen fuenf Zeilen; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
