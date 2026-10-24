@@ -6473,6 +6473,39 @@ let _calFilter = ['beide', 'kraft', 'lauf'].includes(_calAnsichtLaden().filter)
 const _CAL_FILTER_FOLGE = { beide: 'kraft', kraft: 'lauf', lauf: 'beide' };
 // Der Titel BENENNT den Filter, statt ihn als Zusatz anzuhaengen (Leonard-Wunsch 01.09.2026).
 const _CAL_FILTER_TITEL = { beide: 'Trainingskalender', kraft: 'Gymkalender', lauf: 'Laufkalender' };
+// ── TRAININGSKALENDER DER UEBERSICHT EIN- UND AUSKLAPPBAR (v479, 24.10.2026, Leonard-Wunsch) ──
+// Eingeklappt stehen nur Titel und Kennzahl (Absolvierungsquote); Zeitraum-Wechsler, Kreispfeil,
+// Raster und Fusszeile erscheinen erst ausgeklappt (Leonard-Entscheidungen: beide ausblenden,
+// kein Pfeil, Start immer eingeklappt — nicht gespeichert). Der TITEL klappt, die KENNZAHL
+// schaltet den Filter. Gefahren wird die Hoehe der Karte (200ms, `_klappBewegung`); der Kopf
+// springt sofort (`kal-zu`), Raster und Fusszeile verschwinden beim Zuklappen erst am Ende
+// (`kal-inhalt-zu`). Beim Aufklappen wird neu gezeichnet: Eingeklappt hat das Raster keine
+// Breite, die Startposition (Planbeginn bzw. heute) laesst sich erst jetzt setzen.
+let _ovKalOffen = false;
+function toggleOvKalender() {
+  const karte = document.getElementById('ov-cal-card');
+  if (!karte) return;
+  _ovKalOffen = !_ovKalOffen;
+  const btn = document.getElementById('cal-filter-btn');
+  if (btn) btn.setAttribute('aria-expanded', String(_ovKalOffen));
+  const nr = (karte._klappNr || 0) + 1;
+  karte._klappNr = nr;
+  const von = karte.getBoundingClientRect().height;
+  karte.getAnimations().forEach(a => a.cancel());
+  karte.classList.toggle('kal-zu', !_ovKalOffen);
+  karte.classList.toggle('kal-inhalt-zu', !_ovKalOffen);
+  if (_ovKalOffen) renderTrainingCalendar('cal', 'ov-cal-card');
+  const bis = karte.getBoundingClientRect().height;
+  if (!_ovKalOffen) karte.classList.remove('kal-inhalt-zu');   // Inhalt bis zum Ende stehen lassen
+  const fertig = () => {
+    if (karte._klappNr !== nr) return;
+    karte.style.overflow = '';
+    karte.classList.toggle('kal-inhalt-zu', !_ovKalOffen);
+  };
+  if (_bewegungReduziert() || !karte.animate || !karte.clientWidth || Math.abs(bis - von) < 1) { fertig(); return; }
+  karte.style.overflow = 'hidden';
+  _klappBewegung(karte, [{ height: von + 'px' }, { height: bis + 'px' }], fertig);
+}
 function toggleCalFilter() {
   _calFilter = _CAL_FILTER_FOLGE[_calFilter] || 'beide';
   _calAnsichtSpeichern();
@@ -6556,8 +6589,8 @@ function _neuZeichnenEinblenden(schluessel, huelle, teile, zeichnen) {
 function calendarInnerHTML(id) {
   // Nur der Kalender der Uebersicht zeigt beide Sportarten — nur dort ist der Titel ein Filter.
   const titel = id === 'cal'
-    ? `<button class="chart-card-v2-title cal-filter-btn" id="cal-filter-btn" onclick="toggleCalFilter()"
-               aria-label="Zwischen Training, Läufen und beidem umschalten">Trainingskalender</button>`
+    ? `<button class="chart-card-v2-title cal-filter-btn" id="cal-filter-btn" onclick="toggleOvKalender()"
+               aria-expanded="${_ovKalOffen}">Trainingskalender</button>`
     : `<span class="chart-card-v2-title" id="${id}-titel">Trainingskalender</span>`;
   // Der Zeitraum steht direkt hinter dem Titel und ist seit dem 14.09.2026 ein WECHSLER wie der
   // Titel selbst (Leonard-Wunsch; vorher ein Auswahlfeld mit unsichtbarem <select>): Jeder Tipp
@@ -6576,7 +6609,12 @@ function calendarInnerHTML(id) {
   return `<div class="chart-card-v2-head">
       <span class="cal-head-left">${titel}${jahrFeld}</span>
       <span class="cal-head-right">
-        <span class="cal-stats" id="${id}-stats"></span>
+        ${id === 'cal'
+          // v479: In der Uebersicht ist die KENNZAHL der Filter (Gym+Lauf → Gym → Lauf), der
+          // Titel klappt die Karte auf und zu (Leonard-Wunsch).
+          ? `<button type="button" class="cal-stats cal-stats-btn" id="cal-stats" onclick="toggleCalFilter()"
+                     aria-label="Zwischen Training, Läufen und beidem umschalten"></button>`
+          : `<span class="cal-stats" id="${id}-stats"></span>`}
         ${rechtsKnopf}
       </span>
     </div>

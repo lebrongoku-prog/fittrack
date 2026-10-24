@@ -3154,6 +3154,17 @@ html.glas .screen:not(#screen-mehr) .rb-pr strong { color: #fff; }
 html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-gym,
 html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit; }
 .cal-filter-btn:active { opacity: .6; }
+/* v479: Trainingskalender der Uebersicht ein- und ausklappbar. Eingeklappt nur Titel + Kennzahl;
+   die Kennzahl ist dort der Filter-Knopf. */
+#ov-cal-card.kal-zu .cal-jahr,
+#ov-cal-card.kal-zu .cal-reset-btn { display: none; }
+#ov-cal-card.kal-inhalt-zu > :not(.chart-card-v2-head) { display: none; }
+#ov-cal-card.kal-inhalt-zu .chart-card-v2-head { margin-bottom: 0; }
+.cal-stats-btn {
+  border: none; background: none; padding: 0; margin: 0; font-family: inherit; text-align: right;
+  cursor: pointer; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
+}
+.cal-stats-btn:active { opacity: .6; }
 .cal-day.future { opacity: .45; }
 /* Rand-Tage der ersten/letzten Woche, die noch ins Vor- bzw. Folgejahr fallen */
 .cal-day.outside { opacity: .25; pointer-events: none; }

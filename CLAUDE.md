@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v478**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v479**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -259,6 +259,16 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   mehr: trainiert rechts nur die Dauer („1h 5min"), offen nichts, vorbei weiter „nicht trainiert".
   `_gymSatzZahl`/`_gymPlanSaetze` sind entfallen. GEMESSEN: „Mo Push 1 PR 1h 5min", „Mi Pull nicht
   trainiert", offene Tage ohne rechten Text; keine Konsolenfehler.
+- **v479 (24.10.2026, Leonard-Wunsch/-Entscheidungen):** Der TRAININGSKALENDER der Uebersicht ist
+  ein- und ausklappbar (`toggleOvKalender`, `_ovKalOffen`). Eingeklappt (Start, NICHT gespeichert)
+  nur Titel und Kennzahl; Zeitraum-Wechsler und Kreispfeil sind dann ausgeblendet (`.kal-zu`,
+  sofort), Raster und Fusszeile ebenso (`.kal-inhalt-zu`, beim Zuklappen erst am Ende). Kein
+  Pfeil. Der TITEL klappt, die KENNZAHL (`#cal-stats`, jetzt `<button class="cal-stats-btn">`)
+  schaltet den Filter Gym+Lauf → Gym → Lauf (`toggleCalFilter`) — vorher tat das der Titel. Hoehe
+  der Karte faehrt mit `_klappBewegung`; beim Aufklappen wird neu gezeichnet, damit die
+  Startposition des Rasters (vorher ohne Breite) gesetzt wird. Plan-Tab-Kalender unveraendert.
+  GEMESSEN (375px): zu 47px, auf 323px, Filter schaltet auch eingeklappt, Raster nach Aufklappen
+  positioniert; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
