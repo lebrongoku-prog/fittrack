@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v482**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v483**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -304,6 +304,11 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   `buildHeuteHero` gilt bei `sport === 'beide'` jetzt immer. GEMESSEN: Knopf „Rücken Trizeps
   Bauch" grau, Detailansicht 2/2 Bloecke zu, „Alle ausklappen" oeffnet alle; Kalender erste
   Karte; laufende Einheit → „Zur laufenden Einheit"; keine Konsolenfehler.
+- **v483 (25.10.2026, Leonard-Wunsch):** Die beiden Knoepfe des Startblocks der UEBERSICHT
+  (`.hero-heute.wz-heute`) sind so hoch und in derselben Schrift wie die der Seiten „Gym"/„Laufen":
+  `min-height: 63.6px`, 18px (`--fs-betont`), Polster wie dort — die Sonderregel mit 15px, 12px/8px
+  Polster und 52px (v442) ist ersetzt. Lange Gymtag-Namen enden dadurch frueher mit „…".
+  GEMESSEN (375px): Uebersicht 63.6px/18px, Seite „Gym" 63.6px/18px; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
