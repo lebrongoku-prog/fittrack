@@ -361,6 +361,12 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   DETAILANSICHT (`_gymVolDaten`): Die laufende Woche zaehlt in den Ø, sobald in ihrer Wochenliste
   (`_gymWochenZeilenDaten`) keine Zeile mehr `offen` ist. GEMESSEN (heute So, Plan Di/So): Di
   gemacht → Ø 1.6 t; Di+So → Ø 2 t; keine Konsolenfehler.
+  LAUFPLAN-DETAILANSICHT (Leonard-Entscheidung, ohne Code-Aenderung): „Gelaufene
+  Wochenkilometer" (`lpIst`, `nurPlan: false`) nutzt `_laufKmDaten` und hat die v491-Regel damit
+  schon — der Ø zaehlt die laufende Woche nach ihrem letzten Lauf mit. „Geplante
+  Wochenkilometer" bleibt unberuehrt (Ø ueber alle Wochen mit Plan-km). GEMESSEN (heute So,
+  Plan Di/Do/So, Vorwoche 30 km): Di+Do gelaufen → Ø 30 km; +So → Ø 24 km; geplant Ø 28 km
+  unveraendert.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
