@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v490**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v491**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -344,6 +344,13 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   gemeinsamer Zustand fuer alle Diagramme (`_schnittAn`, nicht gespeichert). GEMESSEN: Gym aus →
   Tipp an (Karte bleibt auf), Gymplan-Detail an → Tipp aus, Laufplan-Detail aus → Tipp an; keine
   Konsolenfehler.
+- **v491 (25.10.2026, Leonard-Wunsch):** Im Diagramm „Wochenkilometer" der Seite „Laufen" zeigt
+  die LAUFENDE Woche schon das Ist (dunkles Gruen, Tooltip, zaehlt in den Ø), sobald ihr letzter
+  Lauf erledigt ist — nicht erst am Montag danach. Erledigt (`_laufKmDaten`): so viele Laeufe in
+  der Woche wie nicht uebersprungene Plantage (`runGeplanteTage`), ODER der letzte solche Plantag
+  liegt vor heute. Ohne Plantage in der Woche bleibt es beim Plan. Detailansicht (`nurPlan`)
+  unveraendert. GEMESSEN (heute So, Plan Di/Do/So): Di+Do gelaufen → Plan 28; +So → Ist 24.6;
+  Mo statt So (vorgezogen) → Ist; So uebersprungen + Di/Do → Ist 16.4; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

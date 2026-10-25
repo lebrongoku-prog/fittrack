@@ -5418,17 +5418,29 @@ function _laufKmDaten(plan, nurPlan) {
   const wochen = runPlanWochen(plan);
   const heuteMo = _laufWochenMontag(new Date()).getTime();
   const runs = DB.getRuns();
+  const geplantTage = nurPlan ? {} : runGeplanteTage();
   return Array.from({ length: wochen }, (_, i) => {
     const mo = runEinheitDatum(plan, i + 1, 0);
     const von = mo.getTime(), bis = von + WOCHE_MS - 1;
-    let geplant = 0, gelaufen = 0;
+    let geplant = 0, gelaufen = 0, laeufe = 0;
     (plan.units || []).forEach(u => { if (Number(u.week) === i + 1) geplant += Number(u.km) || 0; });
     runs.forEach(l => {
       const [y, m, d] = l.date.split('-').map(Number);
       const t = new Date(y, m - 1, d).getTime();
-      if (t >= von && t <= bis) gelaufen += Number(l.km) || 0;
+      if (t >= von && t <= bis) { gelaufen += Number(l.km) || 0; laeufe++; }
     });
-    return { mo, geplant, gelaufen, vorbei: !nurPlan && von < heuteMo };
+    // v491 (Leonard-Wunsch): Die LAUFENDE Woche gilt schon als abgeschlossen (Saeule zeigt das
+    // Ist), sobald ihr letzter Lauf erledigt ist — nicht erst am Montag danach. Erledigt heisst:
+    // so viele Laeufe wie (nicht uebersprungene) Plantage, oder der letzte Plantag ist vorbei.
+    let vorbei = von < heuteMo;
+    if (!vorbei && von === heuteMo) {
+      const heute = new Date(); heute.setHours(0, 0, 0, 0);
+      const tage = Object.entries(geplantTage)
+        .map(([k, g]) => { const [y, m, d] = k.split('-').map(Number); return { t: new Date(y, m - 1, d).getTime(), g }; })
+        .filter(x => x.t >= von && x.t <= bis && !x.g.uebersprungen).map(x => x.t);
+      if (tage.length) vorbei = laeufe >= tage.length || Math.max(...tage) < heute.getTime();
+    }
+    return { mo, geplant, gelaufen, vorbei: !nurPlan && vorbei };
   });
 }
 
