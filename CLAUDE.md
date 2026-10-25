@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v487**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v488**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -330,6 +330,8 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   SEIT v487 (Leonard-Wunsch): Nur ein Tipp auf DIESELBE Saeule blendet aus; eine ANDERE Saeule
   zeigt sofort ihren Tooltip (`getElementsAtEventForMode(…, 'index')` gegen den offenen Index).
   GEMESSEN: W2 → W3 → (W3) zu → W1 → (W1) zu; Tipp daneben → zu.
+- **v488 (25.10.2026, Leonard-Wunsch):** Die Werte ueber den Saeulen der WOCHENKILOMETER sind auf
+  GANZE km gerundet (`Math.round`); das Wochenvolumen behaelt eine Nachkommastelle in Tonnen.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

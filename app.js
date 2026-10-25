@@ -5642,7 +5642,7 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
         borderRadius: 4, borderWidth: 0, maxBarThickness: 34, order: 1,
       }, ...datensaetze],
     },
-    plugins: [_balkenWertePlugin(_kmZahl, schrift), _tooltipZweiterTipp],
+    plugins: [_balkenWertePlugin(v => String(Math.round(v)), schrift), _tooltipZweiterTipp],   // v488: ganze km
     options: {
       responsive: true, maintainAspectRatio: false, events: ['click'],
       layout: { padding: { top: 16 } },
