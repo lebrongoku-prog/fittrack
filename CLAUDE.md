@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v486**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v487**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -327,6 +327,9 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   TESTHINWEIS: Chart.js drosselt Ereignisse per rAF — in der verdeckten Ansicht direkt
   `chart._eventHandler({type:'click', x, y, native})` rufen. GEMESSEN: Tipp 1 → Tooltip, Tipp 2
   → weg, Tipp 3 → wieder da, Tipp daneben → weg; keine Konsolenfehler.
+  SEIT v487 (Leonard-Wunsch): Nur ein Tipp auf DIESELBE Saeule blendet aus; eine ANDERE Saeule
+  zeigt sofort ihren Tooltip (`getElementsAtEventForMode(…, 'index')` gegen den offenen Index).
+  GEMESSEN: W2 → W3 → (W3) zu → W1 → (W1) zu; Tipp daneben → zu.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

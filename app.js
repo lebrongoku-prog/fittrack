@@ -5560,7 +5560,7 @@ function _balkenWertePlugin(text, farbe) {
 // TOOLTIP PER ZWEITEM TIPP WEG (v486, Leonard-Wunsch) — Wochenkilometer und Wochenvolumen.
 // Die Diagramme hoeren NUR auf `click` (`events: ['click']`): Auf dem iPhone kaeme sonst schon mit
 // `touchstart` ein Tooltip, und der Klick danach naehme ihn gleich wieder weg. Steht ein Tooltip,
-// verwirft `beforeEvent` den naechsten Klick im Diagramm und blendet ihn aus; ein Tipp irgendwo
+// verwirft `beforeEvent` einen Klick auf DIESELBE Saeule und blendet ihn aus; ein Tipp irgendwo
 // ausserhalb des Diagramms tut dasselbe (ein Zuhoerer am Dokument fuer alle diese Diagramme).
 const _tipDiagramme = new Set();
 function _tipAus(chart) {
@@ -5572,8 +5572,13 @@ const _tooltipZweiterTipp = {
   id: 'tooltipZweiterTipp',
   afterInit(chart) { _tipDiagramme.add(chart); },
   afterDestroy(chart) { _tipDiagramme.delete(chart); },
+  // v487 (Leonard-Wunsch): Nur ein Tipp auf DIESELBE Saeule blendet aus; eine andere Saeule
+  // zeigt gleich ihren eigenen Tooltip (der Klick laeuft dann normal weiter).
   beforeEvent(chart, args) {
-    if (args.event.type !== 'click' || !chart.tooltip.getActiveElements().length) return;
+    const offen = chart.tooltip.getActiveElements();
+    if (args.event.type !== 'click' || !offen.length) return;
+    const ziel = chart.getElementsAtEventForMode(args.event, 'index', { intersect: false }, false);
+    if (ziel.length && ziel[0].index !== offen[0].index) return;
     _tipAus(chart);
     return false;
   },
