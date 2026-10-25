@@ -5812,10 +5812,13 @@ function renderGymWoche(aktivLaeuft) {
       : '<div class="lauf-wochenliste"><div class="lauf-wz-leer gym-woche-leer">Kein Gym geplant</div></div>'}</div>`;
   }).join('');
   // Diagramm: Volumen je Woche; der Durchschnitt nur ueber ABGESCHLOSSENE Wochen.
+  // v492 (Leonard-Wunsch, wie v491 beim Lauf): Die LAUFENDE Woche zaehlt schon als abgeschlossen,
+  // sobald kein Plantag mehr offen ist (alle trainiert, verschoben abgedeckt oder verpasst).
   _gymWochenDaten = wochen.map(w => {
     const von = w.mo.getTime(), bis = von + WOCHE_MS - 1;
     const vol = ws.filter(x => x.startTs >= von && x.startTs <= bis).reduce((a, x) => a + calcVolume(x), 0);
-    return { mo: w.mo, vol, vorbei: von < heuteMo.getTime() };
+    const fertig = von === heuteMo.getTime() && w.zeilen.length > 0 && !w.zeilen.some(z => z.zustand === 'offen');
+    return { mo: w.mo, vol, vorbei: von < heuteMo.getTime() || fertig };
   });
   const vorbei = _gymWochenDaten.filter(d => d.vorbei);
   const schnitt = vorbei.length ? vorbei.reduce((a, d) => a + d.vol, 0) / vorbei.length : null;
