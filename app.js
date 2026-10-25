@@ -5557,6 +5557,32 @@ function _balkenWertePlugin(text, farbe) {
     },
   };
 }
+// TOOLTIP PER ZWEITEM TIPP WEG (v486, Leonard-Wunsch) — Wochenkilometer und Wochenvolumen.
+// Die Diagramme hoeren NUR auf `click` (`events: ['click']`): Auf dem iPhone kaeme sonst schon mit
+// `touchstart` ein Tooltip, und der Klick danach naehme ihn gleich wieder weg. Steht ein Tooltip,
+// verwirft `beforeEvent` den naechsten Klick im Diagramm und blendet ihn aus; ein Tipp irgendwo
+// ausserhalb des Diagramms tut dasselbe (ein Zuhoerer am Dokument fuer alle diese Diagramme).
+const _tipDiagramme = new Set();
+function _tipAus(chart) {
+  chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+  chart.setActiveElements([]);
+  chart.update('none');
+}
+const _tooltipZweiterTipp = {
+  id: 'tooltipZweiterTipp',
+  afterInit(chart) { _tipDiagramme.add(chart); },
+  afterDestroy(chart) { _tipDiagramme.delete(chart); },
+  beforeEvent(chart, args) {
+    if (args.event.type !== 'click' || !chart.tooltip.getActiveElements().length) return;
+    _tipAus(chart);
+    return false;
+  },
+};
+document.addEventListener('pointerdown', e => {
+  _tipDiagramme.forEach(c => {
+    if (c.canvas !== e.target && c.tooltip && c.tooltip.getActiveElements().length) _tipAus(c);
+  });
+}, true);
 const _kmZahl = v => (Math.round(v * 10) / 10).toFixed(1).replace(/\.0$/, '');
 
 function _zeichneKmDiagramm(welches, plan, mo, alt) {
@@ -5611,9 +5637,9 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
         borderRadius: 4, borderWidth: 0, maxBarThickness: 34, order: 1,
       }, ...datensaetze],
     },
-    plugins: [_balkenWertePlugin(_kmZahl, schrift)],
+    plugins: [_balkenWertePlugin(_kmZahl, schrift), _tooltipZweiterTipp],
     options: {
-      responsive: true, maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false, events: ['click'],
       layout: { padding: { top: 16 } },
       interaction: { mode: 'index', intersect: false },
       plugins: {
@@ -5857,9 +5883,9 @@ function _gymVolChartBauen(canvas, daten, farben, vollFarbe, schnitt, aufGlas) {
   return new Chart(canvas.getContext('2d'), {
     type: 'bar',
     data: { labels: daten.map((_, i) => 'W' + (i + 1)), datasets: sets },
-    plugins: [_balkenWertePlugin(v => inTonnen ? _kmZahl(v / 1000) : String(Math.round(v)), schrift)],
+    plugins: [_balkenWertePlugin(v => inTonnen ? _kmZahl(v / 1000) : String(Math.round(v)), schrift), _tooltipZweiterTipp],
     options: {
-      responsive: true, maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false, events: ['click'],
       layout: { padding: { top: 16 } },
       interaction: { mode: 'index', intersect: false },
       plugins: { legend: { display: false }, tooltip: { filter: it => it.datasetIndex === 0, callbacks: {

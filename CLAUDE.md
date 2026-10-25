@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v485**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v486**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -318,6 +318,15 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Trainingskalender steht auch dort zuoberst (`#ov-cal-card { order: -1 }`, Kopf `.ph` `order: -2`).
   GEMESSEN: 19.5/20.5/21.5/22.5/23.5 und 7.6/6.2/4.8 ueber den Saeulen, Ist-Diagramm ohne Zahlen;
   1100px: Kopf 8, Kalender 72, Wochenkarte 131; keine Konsolenfehler.
+- **v486 (25.10.2026, Leonard-Entscheidung „Zweiter Tipp"):** In den Diagrammen „Wochenkilometer"
+  und „Wochenvolumen" verschwindet der Tooltip beim ZWEITEN Tipp ins Diagramm oder bei einem Tipp
+  ausserhalb (`_tooltipZweiterTipp`: `beforeEvent` verwirft den Klick bei offenem Tooltip und
+  blendet aus; `pointerdown`-Zuhoerer am Dokument fuer alle Diagramme in `_tipDiagramme`). Die
+  Diagramme hoeren nur noch auf `click` (`events: ['click']`) — sonst zeigte `touchstart` den
+  Tooltip und der folgende Klick naehme ihn sofort wieder weg; Hover am Rechner entfaellt damit.
+  TESTHINWEIS: Chart.js drosselt Ereignisse per rAF — in der verdeckten Ansicht direkt
+  `chart._eventHandler({type:'click', x, y, native})` rufen. GEMESSEN: Tipp 1 → Tooltip, Tipp 2
+  → weg, Tipp 3 → wieder da, Tipp daneben → weg; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
