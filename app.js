@@ -5463,7 +5463,7 @@ function laufKmDiagrammHTML(plan, welches) {
   const kopf = cfg.titelAussen ? '' : `<div class="ex-item-body-label ex-chart-head">
         <button type="button" class="ex-chart-collapse" onclick="toggleKmDiagramm('${welches}')"
                aria-expanded="${offen ? 'true' : 'false'}">Wochenkilometer<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
-        ${schnitt != null ? `<span class="km-schnitt">Ø ${fmtKm(Math.round(schnitt * 10) / 10)}</span>` : ''}
+        ${schnitt != null ? `<span class="km-schnitt" onclick="toggleSchnittLinie(event)" role="button" title="Durchschnittslinie ein-/ausblenden">Ø ${fmtKm(Math.round(schnitt * 10) / 10)}</span>` : ''}
       </div>`;
   return `<div class="ex-chart-block${offen ? '' : ' collapsed'}" id="${cfg.block}">
       ${kopf}
@@ -5588,6 +5588,20 @@ document.addEventListener('pointerdown', e => {
     if (c.canvas !== e.target && c.tooltip && c.tooltip.getActiveElements().length) _tipAus(c);
   });
 }, true);
+// DURCHSCHNITTSLINIE PER TIPP (v490, Leonard-Wunsch): Ein Tipp auf den Ø-Wert oben rechts blendet
+// die gestrichelte Linie in ALLEN Wochendiagrammen (Wochenkilometer und Wochenvolumen, Seiten und
+// Detailansichten) ein bzw. aus. Ausgangszustand AUS, nicht gespeichert. Die Linie ist Datensatz 1;
+// `stopPropagation`, weil der Wert im Kopf neben dem Ausklapp-Knopf steht.
+var _schnittAn = false;
+function toggleSchnittLinie(ev) {
+  if (ev) ev.stopPropagation();
+  _schnittAn = !_schnittAn;
+  [_laufKmChart, _lpKmChart, _lpIstChart, _gymVolChart, _planVolChart].forEach(c => {
+    if (!c || c.data.datasets.length < 2) return;
+    c.setDatasetVisibility(1, _schnittAn);
+    c.update('none');
+  });
+}
 const _kmZahl = v => (Math.round(v * 10) / 10).toFixed(1).replace(/\.0$/, '');
 
 function _zeichneKmDiagramm(welches, plan, mo, alt) {
@@ -5628,7 +5642,7 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
   const datensaetze = [];
   if (schnitt != null) datensaetze.push({
     type: 'line', data: daten.map(() => schnitt), borderColor: linienFarbe, borderWidth: 1,
-    borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 0, fill: false, order: 0,
+    borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 0, fill: false, order: 0, hidden: !_schnittAn,
   });
   const chart = new Chart(canvas.getContext('2d'), {
     type: 'bar',
@@ -5819,7 +5833,7 @@ function renderGymWoche(aktivLaeuft) {
       <div class="ex-item-body-label ex-chart-head">
         <button type="button" class="ex-chart-collapse" onclick="toggleGymVolDiagramm()"
                aria-expanded="${_laufKmOffen}">Wochenvolumen<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
-        ${schnitt != null ? `<span class="km-schnitt">Ø ${fmtVol(schnitt)}</span>` : ''}
+        ${schnitt != null ? `<span class="km-schnitt" onclick="toggleSchnittLinie(event)" role="button" title="Durchschnittslinie ein-/ausblenden">Ø ${fmtVol(schnitt)}</span>` : ''}
       </div>
       <div class="ex-chart-body"><div class="ex-chart-wrap"><canvas id="gym-vol-chart"></canvas></div></div>
     </div>` : ''}
@@ -5884,7 +5898,7 @@ function _gymVolChartBauen(canvas, daten, farben, vollFarbe, schnitt, aufGlas) {
   }];
   if (schnitt != null) sets.push({
     type: 'line', data: daten.map(() => schnitt), borderColor: aufGlas ? 'rgba(255,255,255,0.55)' : 'rgba(51,65,85,0.4)',
-    borderWidth: 1, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 0, fill: false, order: 0,
+    borderWidth: 1, borderDash: [4, 4], pointRadius: 0, pointHoverRadius: 0, fill: false, order: 0, hidden: !_schnittAn,
   });
   return new Chart(canvas.getContext('2d'), {
     type: 'bar',
@@ -6171,14 +6185,14 @@ function renderRunPlanDetail() {
     ${laufKmDiagrammHTML(p, 'lp') ? `<div class="mehr-section">
       <div class="mehr-section-kopf">
         <div class="mehr-section-title">Geplante Wochenkilometer</div>
-        <span class="mehr-section-title lp-km-schnitt" id="lp-km-schnitt">${_kmSchnittText(_kmSchnitt(_laufKmDaten(p, true), true))}</span>
+        <span class="mehr-section-title lp-km-schnitt" id="lp-km-schnitt" onclick="toggleSchnittLinie(event)" role="button" title="Durchschnittslinie ein-/ausblenden">${_kmSchnittText(_kmSchnitt(_laufKmDaten(p, true), true))}</span>
       </div>
       <div class="mehr-card lp-km-karte">${laufKmDiagrammHTML(p, 'lp')}</div>
     </div>
     <div class="mehr-section">
       <div class="mehr-section-kopf">
         <div class="mehr-section-title">Gelaufene Wochenkilometer</div>
-        <span class="mehr-section-title lp-km-schnitt" id="lp-ist-schnitt">${_kmSchnittText(_kmSchnitt(_laufKmDaten(p, false), false))}</span>
+        <span class="mehr-section-title lp-km-schnitt" id="lp-ist-schnitt" onclick="toggleSchnittLinie(event)" role="button" title="Durchschnittslinie ein-/ausblenden">${_kmSchnittText(_kmSchnitt(_laufKmDaten(p, false), false))}</span>
       </div>
       <div class="mehr-card lp-km-karte">${laufKmDiagrammHTML(p, 'lpIst')}</div>
     </div>` : ''}

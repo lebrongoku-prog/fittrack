@@ -4293,6 +4293,8 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
 .lp-km-schnitt { text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums; }
 .km-schnitt { margin-left: auto; font-size: var(--fs-etikett); font-weight: 700; color: var(--text2); text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums; }
 .ex-chart-block.collapsed .km-schnitt { display: none; }
+/* v490: Der Ø-Wert ist der Schalter der Durchschnittslinie. */
+.km-schnitt, .lp-km-schnitt[role="button"] { cursor: pointer; user-select: none; -webkit-user-select: none; }
 html.glas .screen:not(#screen-mehr) .km-schnitt { color: rgba(255,255,255,.85); }
 /* Notiz-Marke hinter einem Lauf (v440). */
 .notiz-ic { display: inline-flex; width: 13px; height: 13px; margin-left: 6px; color: var(--text3); vertical-align: -1px; flex-shrink: 0; }

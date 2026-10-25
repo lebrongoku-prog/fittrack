@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v489**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v490**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -336,6 +336,14 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   „Wochenkilometer" (Seite „Laufen") klappen GEMEINSAM: `_gymVolOffen` ist entfallen, beide lesen
   und schreiben `_laufKmOffen`. Der Seitenwechsel (`_setWorkoutsView` → `renderWorkoutsScreen`)
   zeichnet die andere Seite neu und uebernimmt damit den Zustand. Weiter nicht gespeichert.
+- **v490 (25.10.2026, Leonard-Wunsch):** Die gestrichelte DURCHSCHNITTSLINIE aller
+  Wochendiagramme (Wochenkilometer Seite „Laufen" und Laufplan-Detail geplant/gelaufen,
+  Wochenvolumen Seite „Gym" und Gymplan-Detail) ist standardmaessig AUSGEBLENDET (`hidden:
+  !_schnittAn` am Linien-Datensatz) und wird per Tipp auf den Ø-Wert oben rechts ein-/ausgeblendet
+  (`toggleSchnittLinie(event)`, `stopPropagation` — der Wert steht neben dem Ausklapp-Knopf). EIN
+  gemeinsamer Zustand fuer alle Diagramme (`_schnittAn`, nicht gespeichert). GEMESSEN: Gym aus →
+  Tipp an (Karte bleibt auf), Gymplan-Detail an → Tipp aus, Laufplan-Detail aus → Tipp an; keine
+  Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
