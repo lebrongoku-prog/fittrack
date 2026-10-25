@@ -5545,7 +5545,7 @@ function _balkenWertePlugin(text, farbe) {
       if (!meta || !meta.data.length) return;
       const ctx = chart.ctx;
       ctx.save();
-      ctx.font = '600 11px ' + (getComputedStyle(document.body).fontFamily || 'sans-serif');
+      ctx.font = '11px ' + (getComputedStyle(document.body).fontFamily || 'sans-serif');
       const breite = Math.min(...meta.data.map(b => b.width || 0));
       const texte = werte.map(v => (v > 0 ? text(v) : ''));
       if (texte.some(t => t && ctx.measureText(t).width > breite + 10)) { ctx.restore(); return; }
