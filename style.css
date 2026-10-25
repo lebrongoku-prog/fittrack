@@ -4098,7 +4098,11 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
      Im Zwei-Spalten-Layout würde er die beiden Kacheln auseinanderreißen — dort rutscht
      er per order hinter sie, ohne dass das Markup doppelt vorgehalten werden muss.
      (order wirkt nur im Grid; im Hochformat greift die DOM-Reihenfolge.) */
-  #screen-overview.active > #ov-cal-card { order: 1; }
+  /* v484 (Leonard-Wunsch): wie im Hochformat ZUOBERST — `order: -1` stellt ihn vor alle Karten
+     ohne eigene Reihenfolge (Rueckblick, Wochenkarte, „Diese Woche"). Der Kopf `.ph` traegt
+     dafuer `order: -2`, sonst rutschte der Kalender ueber ihn. */
+  #screen-overview.active > .ph { order: -2; }
+  #screen-overview.active > #ov-cal-card { order: -1; }
   #screen-overview.active > .chart-card-v2:not(#ov-cal-card) { order: 2; }
   #screen-overview.active > .plan-section-card { grid-column: 2; }
   /* Stats-Karten in Übersicht (vom alten Verlauf-Tab) */

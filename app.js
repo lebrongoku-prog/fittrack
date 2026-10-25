@@ -5532,6 +5532,33 @@ function _zeichneLpKmDiagramm() {
   _lpIstChart = _zeichneKmDiagramm('lpIst', p, null, _lpIstChart);
 }
 
+// WERTE UEBER DEN SAEULEN (v484, Leonard-Wunsch) — Wochenkilometer und Wochenvolumen. Ohne
+// Einheit, die steht an der Achse. Eine Saeule ohne Wert bekommt keine Zahl; ist eine Saeule
+// schmaler als ihre Zahl (langer Plan), entfallen ALLE, sonst liefen sie ineinander.
+// `layout.padding.top` im Diagramm laesst Platz fuer die Zahl ueber der hoechsten Saeule.
+function _balkenWertePlugin(text, farbe) {
+  return {
+    id: 'balkenWerte',
+    afterDatasetsDraw(chart) {
+      const meta = chart.getDatasetMeta(0);
+      const werte = chart.data.datasets[0].data;
+      if (!meta || !meta.data.length) return;
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.font = '600 11px ' + (getComputedStyle(document.body).fontFamily || 'sans-serif');
+      const breite = Math.min(...meta.data.map(b => b.width || 0));
+      const texte = werte.map(v => (v > 0 ? text(v) : ''));
+      if (texte.some(t => t && ctx.measureText(t).width > breite + 10)) { ctx.restore(); return; }
+      ctx.fillStyle = farbe;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      meta.data.forEach((b, i) => { if (texte[i]) ctx.fillText(texte[i], b.x, b.y - 3); });
+      ctx.restore();
+    },
+  };
+}
+const _kmZahl = v => (Math.round(v * 10) / 10).toFixed(1).replace(/\.0$/, '');
+
 function _zeichneKmDiagramm(welches, plan, mo, alt) {
   if (alt) alt.destroy();
   const cfg = KM_DIAGRAMM[welches];
@@ -5584,8 +5611,10 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
         borderRadius: 4, borderWidth: 0, maxBarThickness: 34, order: 1,
       }, ...datensaetze],
     },
+    plugins: [_balkenWertePlugin(_kmZahl, schrift)],
     options: {
       responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 16 } },
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
@@ -5828,8 +5857,10 @@ function _gymVolChartBauen(canvas, daten, farben, vollFarbe, schnitt, aufGlas) {
   return new Chart(canvas.getContext('2d'), {
     type: 'bar',
     data: { labels: daten.map((_, i) => 'W' + (i + 1)), datasets: sets },
+    plugins: [_balkenWertePlugin(v => inTonnen ? _kmZahl(v / 1000) : String(Math.round(v)), schrift)],
     options: {
       responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 16 } },
       interaction: { mode: 'index', intersect: false },
       plugins: { legend: { display: false }, tooltip: { filter: it => it.datasetIndex === 0, callbacks: {
         title: c => 'Woche ' + (c[0].dataIndex + 1),

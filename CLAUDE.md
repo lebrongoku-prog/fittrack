@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v483**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v484**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -309,6 +309,15 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   `min-height: 63.6px`, 18px (`--fs-betont`), Polster wie dort — die Sonderregel mit 15px, 12px/8px
   Polster und 52px (v442) ist ersetzt. Lange Gymtag-Namen enden dadurch frueher mit „…".
   GEMESSEN (375px): Uebersicht 63.6px/18px, Seite „Gym" 63.6px/18px; keine Konsolenfehler.
+- **v484 (25.10.2026, Leonard-Wunsch):** (1) In den Diagrammen „Wochenkilometer" (Seite
+  „Laufen", Laufplan-Detail geplant/gelaufen) und „Wochenvolumen" (Seite „Gym", Gymplan-Detail)
+  steht der WERT UEBER JEDER SAEULE (`_balkenWertePlugin(text, farbe)`, `_kmZahl`), ohne Einheit
+  (die steht an der Achse), 11px fett in der Achsenfarbe; Volumen ab 1 t in Tonnen. Saeulen mit 0
+  ohne Zahl. Ist eine Saeule schmaler als ihre Zahl (lange Plaene), entfallen ALLE Zahlen.
+  `layout.padding.top: 16` schafft Platz ueber der hoechsten Saeule. (2) QUERFORMAT: Der
+  Trainingskalender steht auch dort zuoberst (`#ov-cal-card { order: -1 }`, Kopf `.ph` `order: -2`).
+  GEMESSEN: 19.5/20.5/21.5/22.5/23.5 und 7.6/6.2/4.8 ueber den Saeulen, Ist-Diagramm ohne Zahlen;
+  1100px: Kopf 8, Kalender 72, Wochenkarte 131; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
