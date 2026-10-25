@@ -5691,7 +5691,8 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
 //   - Balken: HELL = Volumen der letzten Einheit desselben Gymtags davor, KRAEFTIG = Volumen
 //     dieser Einheit. Bezug ist die groesste Zahl im ganzen Plan, wie beim Lauf.
 let _gymWochenNr = null;        // eingerastete Planwoche (1..N); null = die laufende
-let _gymVolOffen = false;       // Diagramm „Wochenvolumen" — zugeklappt
+// v489: „Wochenvolumen" klappt GEMEINSAM mit „Wochenkilometer" der Seite „Laufen" (Leonard-Wunsch) —
+// beide lesen `_laufKmOffen`; ein Seitenwechsel zeichnet die andere Seite mit diesem Zustand neu.
 let _gymVolChart = null;
 let _gymWochenDaten = null;     // Wochen samt Volumen, fuer das Diagramm
 
@@ -5814,10 +5815,10 @@ function renderGymWoche(aktivLaeuft) {
       ${seitenHTML}
     </div>
     ${anzeige}
-    ${mitDiagramm ? `<div class="ex-chart-block${_gymVolOffen ? '' : ' collapsed'}" id="gym-vol-block">
+    ${mitDiagramm ? `<div class="ex-chart-block${_laufKmOffen ? '' : ' collapsed'}" id="gym-vol-block">
       <div class="ex-item-body-label ex-chart-head">
         <button type="button" class="ex-chart-collapse" onclick="toggleGymVolDiagramm()"
-               aria-expanded="${_gymVolOffen}">Wochenvolumen<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
+               aria-expanded="${_laufKmOffen}">Wochenvolumen<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
         ${schnitt != null ? `<span class="km-schnitt">Ø ${fmtVol(schnitt)}</span>` : ''}
       </div>
       <div class="ex-chart-body"><div class="ex-chart-wrap"><canvas id="gym-vol-chart"></canvas></div></div>
@@ -5833,13 +5834,13 @@ function renderGymWoche(aktivLaeuft) {
 }
 
 function toggleGymVolDiagramm() {
-  _gymVolOffen = !_gymVolOffen;
+  _laufKmOffen = !_laufKmOffen;
   const block = document.getElementById('gym-vol-block');
   if (!block) return;
-  block.classList.toggle('collapsed', !_gymVolOffen);
+  block.classList.toggle('collapsed', !_laufKmOffen);
   const knopf = block.querySelector('.ex-chart-collapse');
-  if (knopf) knopf.setAttribute('aria-expanded', String(_gymVolOffen));
-  if (!_gymVolOffen) return;
+  if (knopf) knopf.setAttribute('aria-expanded', String(_laufKmOffen));
+  if (!_laufKmOffen) return;
   const sc = document.getElementById('gym-wochen-scroll');
   const d = _gymWochenDaten || [];
   const vorbei = d.filter(x => x.vorbei);
@@ -5863,7 +5864,7 @@ function _zeichneGymVolDiagramm(mo, schnitt) {
   if (_gymVolChart) { _gymVolChart.destroy(); _gymVolChart = null; }
   const canvas = document.getElementById('gym-vol-chart');
   const daten = _gymWochenDaten;
-  if (!canvas || !daten || !_gymVolOffen) return;
+  if (!canvas || !daten || !_laufKmOffen) return;
   const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)');
   const hervorIdx = mo ? daten.findIndex(d => d.mo.getTime() === mo.getTime()) : -1;
   _gymVolChart = _gymVolChartBauen(canvas, daten, _gymVolFarben(daten, hervorIdx, aufGlas),
