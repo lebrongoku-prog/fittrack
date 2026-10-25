@@ -5951,7 +5951,16 @@ function _gymVolDaten(plan) {
   for (let m = new Date(erst); m <= letzt; m.setDate(m.getDate() + 7)) {
     const von = m.getTime(), bis = von + WOCHE_MS - 1;
     const vol = ws.filter(x => x.startTs >= von && x.startTs <= bis).reduce((a, x) => a + calcVolume(x), 0);
-    out.push({ mo: new Date(m), vol, vorbei: von < heuteMo });
+    // v493 (Leonard-Wunsch): wie auf der Seite „Gym" (v492) — die laufende Woche zaehlt schon,
+    // sobald in ihrer Wochenliste kein Plantag mehr offen ist.
+    let vorbei = von < heuteMo;
+    if (von === heuteMo) {
+      const tageById = {};
+      DB.getTrainingDays().forEach(t => { tageById[t.id] = t; });
+      const zeilen = _gymWochenZeilenDaten(new Date(m), true, _calPlanIndex(), ws, tageById);
+      vorbei = zeilen.length > 0 && !zeilen.some(z => z.zustand === 'offen');
+    }
+    out.push({ mo: new Date(m), vol, vorbei });
   }
   return out;
 }
