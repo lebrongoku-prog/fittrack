@@ -5231,6 +5231,26 @@ function renderUebersichtWoche() {
     ${heuteBlock}
     ${tageHTML ? `<div class="wz-flach-liste${_ovWocheOffen ? '' : ' zu'}">${tageHTML}</div>` : ''}
   </div>`;
+  _ovKnopfSchriftAnpassen(el);
+}
+// v495 (Leonard-Entscheidung): Die Knoepfe des Startblocks bleiben 63.6px hoch. Passt ein langer
+// Name nicht hinein, wird die Schrift DIESES Knopfs stufenweise kleiner (18 → 15 → 13px, Stufen der
+// Schriftskala). Gemessen wird der TEXT, nicht der Knopf — der Nachbarknopf wird in der Zeile auf
+// dieselbe Hoehe gestreckt und darf davon nicht mitschrumpfen. Ohne Breite (verdeckt) nichts tun.
+function _ovKnopfSchriftAnpassen(el) {
+  const knoepfe = [...el.querySelectorAll('.wz-heute .hero-v2-btn')];
+  knoepfe.forEach(b => b.classList.remove('hb-klein', 'hb-kleiner'));
+  // Hoehe des TEXTES selbst (Range), nicht seines Kastens — der kann gestreckt sein.
+  const textHoehe = t => { const r = document.createRange(); r.selectNodeContents(t); return r.getBoundingClientRect().height; };
+  knoepfe.forEach(b => {
+    const t = b.querySelector('.hb-txt');
+    if (!t || !b.clientWidth) return;
+    const cs = getComputedStyle(b);
+    const platz = 63.6 - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) + 1;
+    if (textHoehe(t) <= platz) return;
+    b.classList.add('hb-klein');
+    if (textHoehe(t) > platz) b.classList.add('hb-kleiner');
+  });
 }
 
 // ── DIE WOCHENKARTE IST WAAGERECHT WISCHBAR (22.09.2026, Leonard-Wunsch „Variante A") ──
