@@ -2439,6 +2439,7 @@ function _renderGymSeite() {
     // Hoehe und Hantel wie in der Uebersicht ausrichten — die Karte soll dort und hier
     // identisch aussehen.
     }
+  _knopfSchriftAnpassen(wrap);
 
   // Tabs + cards
   const addWrap = document.getElementById('wo-add-ex-wrap');
@@ -5231,14 +5232,16 @@ function renderUebersichtWoche() {
     ${heuteBlock}
     ${tageHTML ? `<div class="wz-flach-liste${_ovWocheOffen ? '' : ' zu'}">${tageHTML}</div>` : ''}
   </div>`;
-  _ovKnopfSchriftAnpassen(el);
+  _knopfSchriftAnpassen(el);
 }
-// v495 (Leonard-Entscheidung): Die Knoepfe des Startblocks bleiben 63.6px hoch. Passt ein langer
+// v495 (Leonard-Entscheidung): Die Knoepfe des Startblocks bleiben 63.6px hoch (seit v496 auch die
+// Herocards der Seiten „Gym" und „Laufen", gleiche Hoehe). Passt ein langer
 // Name nicht hinein, wird die Schrift DIESES Knopfs stufenweise kleiner (18 → 15 → 13px, Stufen der
 // Schriftskala). Gemessen wird der TEXT, nicht der Knopf — der Nachbarknopf wird in der Zeile auf
 // dieselbe Hoehe gestreckt und darf davon nicht mitschrumpfen. Ohne Breite (verdeckt) nichts tun.
-function _ovKnopfSchriftAnpassen(el) {
-  const knoepfe = [...el.querySelectorAll('.wz-heute .hero-v2-btn')];
+function _knopfSchriftAnpassen(el) {
+  if (!el) return;
+  const knoepfe = [...el.querySelectorAll('.hero-heute:not(.hero-aktiv) .hero-v2-btn')];
   knoepfe.forEach(b => b.classList.remove('hb-klein', 'hb-kleiner'));
   // Hoehe des TEXTES selbst (Range), nicht seines Kastens — der kann gestreckt sein.
   const textHoehe = t => { const r = document.createRange(); r.selectNodeContents(t); return r.getBoundingClientRect().height; };
@@ -6060,6 +6063,7 @@ function renderLaufKalenderSeite() {
   // Die Tageskarte des gewaehlten Tags ist am 21.09.2026 entfallen (Leonard-Wunsch) — die
   // Laeufe der ganzen Woche stehen jetzt in „Diese Woche" (`laufWochenListe`).
   el.innerHTML = hero + woche;
+  _knopfSchriftAnpassen(document.getElementById('wo-lauf-hero'));
   _laufWochenWischEinrichten(document.getElementById('lauf-wochen-scroll'), montage, aktIdx, startIdx);
   _zeichneLaufKmDiagramm(montage[startIdx]);
 }

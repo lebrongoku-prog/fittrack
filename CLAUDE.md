@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v495**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v496**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -374,10 +374,16 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Vorgeschichte. GEMESSEN (375px, „Rücken Trizeps Bauch Schultern"): Uebersicht 3 Zeilen, beide
   Knoepfe 108px, kein Ueberlauf; Seite „Gym" 2 Zeilen, 64px; keine Konsolenfehler.
   SEIT v495 (Leonard-Entscheidung „Schrift verkleinern") bleiben die Knoepfe der UEBERSICHT
-  63.6px hoch: `_ovKnopfSchriftAnpassen` (am Ende von `renderUebersichtWoche`) misst die Hoehe des
+  63.6px hoch: `_ovKnopfSchriftAnpassen` (seit v496 `_knopfSchriftAnpassen`; am Ende von `renderUebersichtWoche`) misst die Hoehe des
   TEXTES per Range (der Kasten wird vom Nachbarknopf gestreckt) und setzt nur diesen Knopf
   `.hb-klein` (15px) bzw. `.hb-kleiner` (13px), bis er passt. GEMESSEN: „Push"/„Beine schwer" 18px,
   „Rücken Trizeps Bauch" 15px, „Rücken Trizeps Bauch Schultern" 13px, Laufknopf 18px, alle 64px.
+  SEIT v496 (Leonard-Wunsch) AUCH AUF DEN SEITEN „GYM" UND „LAUFEN": `_knopfSchriftAnpassen(root)`
+  nimmt alle `.hero-heute:not(.hero-aktiv) .hero-v2-btn` unter `root`, gerufen in
+  `renderWorkoutsScreen` (`#wo-session-card-wrap`) und `renderLaufKalenderSeite` (`#wo-lauf-hero`);
+  die CSS-Regeln gelten nicht mehr nur fuer `.wz-heute`. GEMESSEN: Seite „Gym" mit 66 Zeichen
+  15px/64px, kuerzere 18px; Seite „Laufen" 18px/64px. GRENZE: Passt ein Name auch bei 13px nicht
+  (in der Uebersicht ab rund 50 Zeichen), waechst der Knopf doch (gemessen 99px).
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

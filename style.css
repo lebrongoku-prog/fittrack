@@ -2652,10 +2652,10 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
 /* v483: so hoch und in derselben Schrift wie die Knoepfe der Seiten „Gym“/„Laufen“
    (Leonard-Wunsch; v442 52px in 15px, v441 kurz 64px). Polster wie dort (.hero-heute .hero-v2-btn). */
 .hero-heute.wz-heute:not(.hero-aktiv) .hero-v2-btn { min-height: 63.6px; }
-/* v495: Passt ein langer Name nicht hinein, setzt `_ovKnopfSchriftAnpassen` diesen Knopf eine bzw.
-   zwei Stufen kleiner, damit die 63.6px bleiben. */
-.hero-heute.wz-heute:not(.hero-aktiv) .hero-v2-btn.hb-klein { font-size: var(--fs-text); }
-.hero-heute.wz-heute:not(.hero-aktiv) .hero-v2-btn.hb-kleiner { font-size: var(--fs-neben); }
+/* v495/v496: Passt ein langer Name nicht hinein, setzt `_knopfSchriftAnpassen` diesen Knopf eine bzw.
+   zwei Stufen kleiner, damit die 63.6px bleiben — Uebersicht und Seiten „Gym"/„Laufen". */
+.hero-heute:not(.hero-aktiv) .hero-v2-btn.hb-klein { font-size: var(--fs-text); }
+.hero-heute:not(.hero-aktiv) .hero-v2-btn.hb-kleiner { font-size: var(--fs-neben); }
 .wz-flach-liste { padding-top: 12px; }
 .wz-flach-liste.zu { display: none; }
 /* v445: Der Titel ist der Ausklapp-Knopf der Karte (seit v446 ohne Pfeil, Leonard-Wunsch). */
