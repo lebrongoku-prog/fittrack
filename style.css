@@ -1159,9 +1159,10 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 #entwurf-leiste .btn-primary { flex: 1 1 0; }
 @media (prefers-reduced-motion: reduce) { #entwurf-leiste, #entwurf-leiste.an { transition: none; } }
 /* Knoepfe der Uebersicht nennen seit v466 Gymtag bzw. Laufziel („Push starten", „8 km laufen").
-   Ein langer Gymtag-Name endet mit „…" statt umzubrechen — dafuer darf der Knopf schrumpfen. */
+   Seit v494 (Leonard-Wunsch) BRICHT ein langer Name im Knopf UM statt mit „…" zu enden; der Knopf
+   waechst dann in der Hoehe. Der Knopf darf trotzdem schrumpfen, sonst sprengte er die Zeile. */
 .hero-heute.wz-heute .hero-v2-btn { min-width: 0; }
-.hero-v2-btn .hb-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hero-v2-btn .hb-txt { min-width: 0; white-space: normal; overflow-wrap: break-word; text-align: center; }
 .overlay { position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.4); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); display: flex; align-items: flex-end; justify-content: center; }
 .overlay.hidden { display: none; }
 /* Schliessen ist das Spiegelbild des Oeffnens (16.09.2026, Leonard-Wunsch): Das Blatt faehrt

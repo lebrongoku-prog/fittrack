@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v493**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v494**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -367,6 +367,12 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Wochenkilometer" bleibt unberuehrt (Ø ueber alle Wochen mit Plan-km). GEMESSEN (heute So,
   Plan Di/Do/So, Vorwoche 30 km): Di+Do gelaufen → Ø 30 km; +So → Ø 24 km; geplant Ø 28 km
   unveraendert.
+- **v494 (26.10.2026, Leonard-Wunsch):** Zu lange Beschriftungen in den Gym- und Laufknoepfen
+  (Startblock der Uebersicht, Seiten „Gym"/„Laufen") BRECHEN UM statt mit „…" zu enden
+  (`.hero-v2-btn .hb-txt`: `white-space: normal`, `overflow-wrap: break-word`, zentriert). Der
+  Knopf waechst in der Hoehe, der Nachbarknopf zieht mit. Die Absaetze zu „…" bei v466/v483 sind
+  Vorgeschichte. GEMESSEN (375px, „Rücken Trizeps Bauch Schultern"): Uebersicht 3 Zeilen, beide
+  Knoepfe 108px, kein Ueberlauf; Seite „Gym" 2 Zeilen, 64px; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
