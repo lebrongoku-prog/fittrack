@@ -2902,6 +2902,7 @@ function renderActiveWorkout() {
         <div class="aex-v2-num">${ei+1}</div>
         <div class="aex-v2-info">
           <div class="aex-v2-name">${ex.name}</div>
+          ${aktuell ? `<div class="aex-v2-fortschritt">Satz ${Math.max(1, ex.sets.findIndex(st => !st.done) + 1) || ex.sets.length} von ${ex.sets.length}</div>` : ''}
           ${lastRoh ? `<div class="aex-v2-last">${lastRoh}${diffStr ? ` ${diffStr}` : ''}</div>` : ''}
           ${cmpStr}
         </div>

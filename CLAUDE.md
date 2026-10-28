@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v497**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v498**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3741,6 +3741,14 @@ GEMESSEN (375px): Karte 2 mit Ring und Etikett, nach `toggleExDone(1)` wandert b
 keine Konsolenfehler.
 DAS ETIKETT „JETZT" IST WIEDER ENTFALLEN (v431, 11.10.2026, Leonard-Wunsch): `.aex-jetzt` samt
 Glas-Regel ist weg, es bleibt allein der gruene Ring.
+SEIT v498 (28.10.2026, Leonard-Wahl „Variante C" aus vier Vorschlaegen — A gruener Kartenkopf,
+B Rest gedaempft, D Leiste links + kompakte Liste) ZUSAETZLICH: Karte hellgruen (#E1F5EE),
+Nummernscheibe #0F766E, Name #04342C, darunter „Satz N von M" (`.aex-v2-fortschritt`, N = erster
+nicht abgehakter Satz), Eingabefelder und Notiz weiss. Glas: Karte 24-%-Weiss, Scheibe weiss mit
+gruener Zahl, Name/Fortschritt weiss, Felder 18-%-Weiss. HINWEIS: Die ERLEDIGTE Karte ist
+ebenfalls hellgruen (`.done`, eigener Gruenton) — unterschieden wird ueber Ring, Scheibe und
+Haken. GEMESSEN (375px): Uebung 1 erledigt, Uebung 2 aktuell mit „Satz 2 von 3", bg
+rgb(225,245,238), Scheibe rgb(15,118,110), Felder weiss; Glas wie beschrieben; keine Konsolenfehler.
 
 ### Keine Kopfleiste mehr in der laufenden Einheit
 10.10.2026, Leonard-Wunsch (v429): Die feste Leiste oben (`#wo-sticky-bar`, gruen mit Punkt,

@@ -2099,6 +2099,20 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
    Schatten. Im Transparenz-Modus weiss (keine Sportfarben). */
 .aex-v2.aktuell { box-shadow: 0 0 0 2px #0F766E, var(--shadow); }
 html.glas .screen:not(#screen-mehr) .aex-v2.aktuell { box-shadow: 0 0 0 2px rgba(255,255,255,.92), var(--shadow); }
+/* v498 (Leonard-Wahl „Variante C"): zusaetzlich hellgruen getoent, Nummernscheibe im Gym-Gruen,
+   Name dunkelgruen und darunter „Satz N von M" (`.aex-v2-fortschritt`). Eingabefelder und Notiz
+   weiss, damit sie sich von der getoenten Flaeche abheben. Glas: 22-%-Weiss, Scheibe weiss. */
+.aex-v2.aktuell { background: #E1F5EE; }
+.aex-v2.aktuell .aex-v2-num { background: #0F766E; color: #fff; }
+.aex-v2.aktuell .aex-v2-name { color: #04342C; }
+.aex-v2-fortschritt { font-size: var(--fs-neben); font-weight: 600; color: #0F766E; margin-top: 1px; }
+.aex-v2.aktuell .aex-v2-inp, .aex-v2.aktuell .aex-v2-notes { background: #fff; }
+html.glas .screen:not(#screen-mehr) .aex-v2.aktuell { background: rgba(255,255,255,.24); }
+html.glas .screen:not(#screen-mehr) .aex-v2.aktuell .aex-v2-num { background: #fff; color: #0F766E; }
+html.glas .screen:not(#screen-mehr) .aex-v2.aktuell .aex-v2-name,
+html.glas .screen:not(#screen-mehr) .aex-v2.aktuell .aex-v2-fortschritt { color: #fff; }
+html.glas .screen:not(#screen-mehr) .aex-v2.aktuell .aex-v2-inp,
+html.glas .screen:not(#screen-mehr) .aex-v2.aktuell .aex-v2-notes { background: rgba(255,255,255,.18); }
 .aex-v2.done .aex-v2-inp     { background: #fff; }
 .aex-v2.done .aex-v2-inp.done-inp { background: var(--green); color: #fff; border-color: var(--green); }
 /* align-items: flex-start (nicht center) — beim Aufklappen kommen im Info-Block Zeilen
