@@ -2389,6 +2389,32 @@ function renderWorkoutsScreen() {
   _renderGymSeite();
 }
 
+// v497 (Leonard-Wunsch): Die Karte „Heute" der Seite „Gym" klappt ueber ihren Titel die
+// Uebungskarten des Gymtags auf (`#active-ex-list`, direkt unter der Karte). Start EINGEKLAPPT,
+// nicht gespeichert. Gefahren wird die Hoehe der Liste wie bei „Diese Woche" der Uebersicht.
+var _gymHeuteOffen = false;
+function toggleGymHeute() {
+  _gymHeuteOffen = !_gymHeuteOffen;
+  const btn = document.querySelector('#wo-session-card-wrap .wz-titel-btn');
+  if (btn) btn.setAttribute('aria-expanded', String(_gymHeuteOffen));
+  const liste = document.getElementById('active-ex-list');
+  const planDay = (getCurrentWeekDays()[selectedWorkoutDayIdx] || {}).planDay;
+  if (!liste || !planDay) return;
+  const nr = (liste._klappNr || 0) + 1;
+  liste._klappNr = nr;
+  const von = liste.getBoundingClientRect().height;
+  liste.getAnimations().forEach(a => a.cancel());
+  if (_gymHeuteOffen) renderPreviewWorkout(planDay);
+  const bis = _gymHeuteOffen ? liste.getBoundingClientRect().height : 0;
+  const fertig = () => {
+    if (liste._klappNr !== nr) return;
+    liste.style.overflow = '';
+    if (!_gymHeuteOffen) liste.innerHTML = '';
+  };
+  if (_bewegungReduziert() || !liste.animate) { fertig(); return; }
+  liste.style.overflow = 'hidden';
+  _boxFahren(liste, von, bis, fertig);
+}
 function _renderGymSeite() {
   // Wechsel normal ↔ aktiv: Den ALTEN Stand festhalten, BEVOR er ueberschrieben wird
   // (siehe „Uebergang" direkt darunter). Jede Zeichnung beendet ausserdem eine noch laufende
@@ -2432,7 +2458,10 @@ function _renderGymSeite() {
     wrap.innerHTML = buildSessionCard(active, planDay, selDay);
   } else if (planDay) {
     // v473 (Leonard-Wunsch): Knopf beschriftet wie in der Uebersicht („Push" / „Push erledigt").
-    wrap.innerHTML = buildHeuteHero(planDay, selDay, { sport: 'gym', inhaltKnopf: true });
+    // v497: Der Titel „Heute" klappt die Uebungskarten des Gymtags auf und zu (`toggleGymHeute`).
+    wrap.innerHTML = buildHeuteHero(planDay, selDay, { sport: 'gym', inhaltKnopf: true })
+      .replace(/<div class="hero-heute-titel">([\s\S]*?)<\/div>/, (m, t) =>
+        `<button type="button" class="hero-heute-titel wz-titel-btn" aria-expanded="${_gymHeuteOffen}" onclick="toggleGymHeute()">${t}</button>`);
   } else {
     // Seite „Gym" — die Laufhaelfte steht drueben auf der Seite „Laufen".
     wrap.innerHTML = buildHeuteHero(null, selDay, { sport: 'gym' });
@@ -2450,10 +2479,10 @@ function _renderGymSeite() {
     addWrap.innerHTML = `<button class="btn btn-ghost btn-full" onclick="openAddExModal('active')">+ Übung hinzufügen</button>`;
     if (!timerInterval) startTimer();
   } else if (planDay) {
-    // v481 (Leonard-Wunsch): KEINE Vorschau der Uebungskarten mehr auf der Seite „Gym" — sie
-    // erscheinen erst in der laufenden Einheit. `renderPreviewWorkout` dient weiter der
-    // Gymtag-Detailansicht.
-    document.getElementById('active-ex-list').innerHTML = '';
+    // v481: keine Vorschau der Uebungskarten mehr — seit v497 (Leonard-Wunsch) wieder, aber nur
+    // AUFGEKLAPPT ueber den Titel „Heute" (Start eingeklappt, nicht gespeichert).
+    if (_gymHeuteOffen) renderPreviewWorkout(planDay);
+    else document.getElementById('active-ex-list').innerHTML = '';
     // KEIN Knopf „Uebung zum Trainingstag hinzufuegen“ mehr auf der Seite „Gym“
     // (Leonard-Wunsch 08.09.2026). Uebungen kommen ueber die Seite „Gymtage“ im Plan-Tab
     // dazu; der Knopf der LAUFENDEN Einheit („+ Uebung hinzufuegen“) bleibt, der schreibt

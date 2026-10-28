@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v496**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v497**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -384,6 +384,15 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   die CSS-Regeln gelten nicht mehr nur fuer `.wz-heute`. GEMESSEN: Seite „Gym" mit 66 Zeichen
   15px/64px, kuerzere 18px; Seite „Laufen" 18px/64px. GRENZE: Passt ein Name auch bei 13px nicht
   (in der Uebersicht ab rund 50 Zeichen), waechst der Knopf doch (gemessen 99px).
+- **v497 (28.10.2026, Leonard-Wunsch):** Die Karte „Heute" der Seite „Gym" ist ueber ihren TITEL
+  ein- und ausklappbar (`toggleGymHeute`, `_gymHeuteOffen`, Start EINGEKLAPPT, nicht gespeichert;
+  Titel als `.wz-titel-btn` wie in der Uebersicht). Aufgeklappt zeigt `#active-ex-list` wieder die
+  Uebungskarten des Gymtags (`renderPreviewWorkout`, nur lesen) — die v481-Regel „keine Vorschau"
+  gilt nur noch eingeklappt. Gefahren wird die Hoehe der Liste (`_boxFahren`, Token `_klappNr`).
+  `#active-ex-list` steht dafuer im Markup jetzt VOR `#wo-gym-woche` (direkt unter der Karte;
+  waehrend der Einheit ist die Wochenkarte ohnehin aus). Ohne Gymtag kein Klapp-Titel. GEMESSEN
+  (375px): zu 0 Karten, auf 3 Karten zwischen „Heute" und „Diese Woche", Neuzeichnen behaelt den
+  Zustand, zu → 0px; laufende Einheit 3 Karten ohne Klapp-Titel; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
