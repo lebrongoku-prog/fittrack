@@ -2899,10 +2899,9 @@ function renderActiveWorkout() {
     return `<div class="aex-v2 ${stateCls} ${collapsedCls}${aktuell ? ' aktuell' : ''}" id="aex-${ei}" data-ex="${exIdKey}" style="--c:${col.c};--c-bg:${col.bg}"
                  ${_aexZiehAttribute(ei, `'active'`)}>
       ${_aexKopfOeffnen(exIdKey)}
-        <div class="aex-v2-num">${ei+1}</div>
+        <div class="aex-v2-num${stateCls ? '' : ' offen'}">${ei+1}</div>
         <div class="aex-v2-info">
           <div class="aex-v2-name">${ex.name}</div>
-          ${aktuell ? `<div class="aex-v2-fortschritt">Satz ${Math.max(1, ex.sets.findIndex(st => !st.done) + 1) || ex.sets.length} von ${ex.sets.length}</div>` : ''}
           ${lastRoh ? `<div class="aex-v2-last">${lastRoh}${diffStr ? ` ${diffStr}` : ''}</div>` : ''}
           ${cmpStr}
         </div>

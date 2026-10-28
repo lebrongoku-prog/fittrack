@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v498**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v499**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -3749,6 +3749,13 @@ gruener Zahl, Name/Fortschritt weiss, Felder 18-%-Weiss. HINWEIS: Die ERLEDIGTE 
 ebenfalls hellgruen (`.done`, eigener Gruenton) — unterschieden wird ueber Ring, Scheibe und
 Haken. GEMESSEN (375px): Uebung 1 erledigt, Uebung 2 aktuell mit „Satz 2 von 3", bg
 rgb(225,245,238), Scheibe rgb(15,118,110), Felder weiss; Glas wie beschrieben; keine Konsolenfehler.
+v498 IST IN v499 WIEDER ZURUECKGENOMMEN (28.10.2026, Leonard-Wunsch): keine Toenung, keine
+Satzangabe mehr — die aktuelle Uebung traegt wieder nur den gruenen Ring. NEU stattdessen: Die
+NUMMERNSCHEIBE zeigt in der laufenden Einheit den Stand (`.aex-v2-num.offen`, nur in
+`renderActiveWorkout`): noch nicht erledigte Uebungen nur als 2px-Ring in der Muskelgruppenfarbe
+(`--c`) mit Zahl in dieser Farbe, erledigte gefuellt wie bisher (gruen), uebersprungene grau
+gefuellt. Vorschau/Gymtag-Detail unveraendert gefuellt. GEMESSEN (375px): Uebung 1 erledigt
+gefuellt rgb(34,197,94), Uebung 2 (aktuell, Ring) und 3 transparent mit Ring; keine Konsolenfehler.
 
 ### Keine Kopfleiste mehr in der laufenden Einheit
 10.10.2026, Leonard-Wunsch (v429): Die feste Leiste oben (`#wo-sticky-bar`, gruen mit Punkt,
