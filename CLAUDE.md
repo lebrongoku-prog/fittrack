@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v499**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v500**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -393,6 +393,16 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   waehrend der Einheit ist die Wochenkarte ohnehin aus). Ohne Gymtag kein Klapp-Titel. GEMESSEN
   (375px): zu 0 Karten, auf 3 Karten zwischen „Heute" und „Diese Woche", Neuzeichnen behaelt den
   Zustand, zu → 0px; laufende Einheit 3 Karten ohne Klapp-Titel; keine Konsolenfehler.
+
+- **v500 (04.11.2026, Leonard-Wunsch):** AUCH DER LAUF IST EIN QUADRAT — Gym und Lauf
+  unterscheiden sich nur noch in der Farbe (Gym #0F766E, Lauf #4ADE80). Umgestellt: Wochentage
+  der Laufwoche (`.ppv-wd`, 7px), Lauf-Reihe der Kombi-Karte (`.ppv-k-dot`, 5px), Zeichen in
+  „Diese Woche" (`.wz-zeichen`, 3px) und die Scheiben der Liste der Seite „Laufen"
+  (`.lauf-wz-tag`, 4px). Ein Tag ohne Einheit bleibt rund. NOCH NICHT umgestellt: der
+  Trainingskalender (Laufkreis `.cal-day.run::after`) — dafuer liegen Leonard vier Vorschlaege
+  fuer Tage mit Gym UND Lauf vor (A verschachtelt, B diagonal geteilt, C nebeneinander,
+  D versetzt). Im Glas-Modus unterschied dort bisher allein die FORM die Sportarten.
+  Unveraendert rund: Laufplan-Detail-Scheibe (`.lp-scheibe`, Tabfarbe) und Wettkampf-Zeitstrahl.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
