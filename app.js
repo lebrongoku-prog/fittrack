@@ -5531,10 +5531,10 @@ function laufKmDiagrammHTML(plan, welches) {
   const offen = _kmOffen(welches);
   // Der DURCHSCHNITT steht seit v440 oben rechts im Kopf — nur aufgeklappt sichtbar (CSS).
   const schnitt = _kmSchnitt(daten, cfg.nurPlan);
-  const kopf = cfg.titelAussen ? '' : `<div class="ex-item-body-label ex-chart-head">
-        <button type="button" class="ex-chart-collapse" onclick="toggleKmDiagramm('${welches}')"
-               aria-expanded="${offen ? 'true' : 'false'}">Wochenkilometer<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
-        ${schnitt != null ? `<span class="km-schnitt" onclick="toggleSchnittLinie(event)" role="button" title="Durchschnittslinie ein-/ausblenden">Ø ${fmtKm(Math.round(schnitt * 10) / 10)}</span>` : ''}
+  // v514 (Leonard-Wunsch): In der Karte „Diese Woche" KEINE Ueberschrift mehr — die ganze Karte
+  // klappt das Diagramm (`wochenKarteTipp`). Es bleibt nur der Ø-Wert rechts darueber.
+  const kopf = (cfg.titelAussen || schnitt == null) ? '' : `<div class="ex-item-body-label ex-chart-head">
+        <span class="km-schnitt" onclick="toggleSchnittLinie(event)" role="button" title="Durchschnittslinie ein-/ausblenden">Ø ${fmtKm(Math.round(schnitt * 10) / 10)}</span>
       </div>`;
   return `<div class="ex-chart-block${offen ? '' : ' collapsed'}" id="${cfg.block}">
       ${kopf}
@@ -5553,8 +5553,6 @@ function toggleKmDiagramm(welches) {
   const block = document.getElementById(cfg.block);
   if (!block) return;
   block.classList.toggle('collapsed', !offen);
-  const knopf = block.querySelector('.ex-chart-collapse');
-  if (knopf) knopf.setAttribute('aria-expanded', offen ? 'true' : 'false');
   // Erst beim Aufklappen zeichnen: Ein verstecktes Canvas hat keine Breite, Chart.js behielte
   // sonst die alten Masse (dieselbe Regel wie bei `toggleChartBlock`).
   if (!offen) return;
@@ -5890,7 +5888,8 @@ function renderGymWoche(aktivLaeuft) {
     ? `<button type="button" class="chart-card-v2-title lauf-wochen-titel" id="gym-wochen-titel"
                onclick="laufWocheZurueck('gym-wochen-scroll')">Diese Woche</button>`
     : '<span class="chart-card-v2-title" id="gym-wochen-titel">Diese Woche</span>';
-  el.innerHTML = `<div class="chart-card-v2 lauf-wochen-karte gym-wochen-karte">
+  el.innerHTML = `<div class="chart-card-v2 lauf-wochen-karte gym-wochen-karte${mitDiagramm ? ' klappt' : ''}"
+       onclick="wochenKarteTipp(event, 'gym')">
     <div class="chart-card-v2-head">
       ${titelHTML}
       <button type="button" class="info-btn cal-reset-btn lauf-wochen-zurueck" id="gym-wochen-zurueck"
@@ -5904,11 +5903,9 @@ function renderGymWoche(aktivLaeuft) {
     </div>
     ${anzeige}
     ${mitDiagramm ? `<div class="ex-chart-block${_laufKmOffen ? '' : ' collapsed'}" id="gym-vol-block">
-      <div class="ex-item-body-label ex-chart-head">
-        <button type="button" class="ex-chart-collapse" onclick="toggleGymVolDiagramm()"
-               aria-expanded="${_laufKmOffen}">Wochenvolumen<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
-        ${schnitt != null ? `<span class="km-schnitt" onclick="toggleSchnittLinie(event)" role="button" title="Durchschnittslinie ein-/ausblenden">Ø ${fmtVol(schnitt)}</span>` : ''}
-      </div>
+      ${schnitt != null ? `<div class="ex-item-body-label ex-chart-head">
+        <span class="km-schnitt" onclick="toggleSchnittLinie(event)" role="button" title="Durchschnittslinie ein-/ausblenden">Ø ${fmtVol(schnitt)}</span>
+      </div>` : ''}
       <div class="ex-chart-body"><div class="ex-chart-wrap"><canvas id="gym-vol-chart"></canvas></div></div>
     </div>` : ''}
   </div>`;
@@ -5921,13 +5918,21 @@ function renderGymWoche(aktivLaeuft) {
   _zeichneGymVolDiagramm(montage[startIdx], schnitt);
 }
 
+// v514 (04.11.2026, Leonard-Wunsch): Ein Tipp auf die Karte „Diese Woche" (Seiten „Gym" und
+// „Laufen") klappt das Wochendiagramm auf bzw. zu — standardmaessig zu. Tipps auf Bedienelemente
+// in der Karte (Zeilen mit Pfeil, Titel, Zurueck-Knopf, Ø-Wert, Diagramm) behalten ihre eigene
+// Wirkung und klappen nicht.
+function wochenKarteTipp(e, sport) {
+  if (e.target.closest('button, [role="button"], a, canvas')) return;
+  if (!e.currentTarget.classList.contains('klappt')) return;   // Karte ohne Diagramm
+  if (sport === 'gym') toggleGymVolDiagramm(); else toggleKmDiagramm('lauf');
+}
+
 function toggleGymVolDiagramm() {
   _laufKmOffen = !_laufKmOffen;
   const block = document.getElementById('gym-vol-block');
   if (!block) return;
   block.classList.toggle('collapsed', !_laufKmOffen);
-  const knopf = block.querySelector('.ex-chart-collapse');
-  if (knopf) knopf.setAttribute('aria-expanded', String(_laufKmOffen));
   if (!_laufKmOffen) return;
   const sc = document.getElementById('gym-wochen-scroll');
   const d = _gymWochenDaten || [];
@@ -6080,7 +6085,8 @@ function renderLaufKalenderSeite() {
   // eine andere als die laufende Woche im Bild ist. Dieselbe runde Form mit Kreispfeil wie im
   // Kopf des Uebersichts-Kalenders (`.cal-reset-btn`) — die App kennt damit nur EIN Zeichen fuer
   // „zurueck zur aktuellen Ansicht".
-  const woche = `<div class="chart-card-v2 lauf-wochen-karte">
+  const woche = `<div class="chart-card-v2 lauf-wochen-karte${laufKmDiagrammHTML(plan) ? ' klappt' : ''}"
+       onclick="wochenKarteTipp(event, 'lauf')">
     <div class="chart-card-v2-head">
       ${titelHTML}
       <button type="button" class="info-btn cal-reset-btn lauf-wochen-zurueck" id="lauf-wochen-zurueck"

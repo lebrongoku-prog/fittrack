@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v513**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v514**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -514,6 +514,16 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   liefert es als „rgb(…)", und `_hexZuRgb` fiel dann auf 0,102,255 zurueck. Es liest jetzt auch
   rgb(). Die Linie war schon richtig. GEMESSEN: gespeicherte Ansicht „lauf/2025" → Start
   „Trainingskalender · Aktuell"; Flaeche 245,158,11; keine Konsolenfehler.
+
+- **v514 (04.11.2026, Leonard-Wunsch):** Die Karten „Diese Woche" der Seiten „Gym" und „Laufen"
+  klappen ihr Wochendiagramm per Tipp auf die KARTE auf und zu (`wochenKarteTipp(event, sport)`,
+  Klasse `.klappt` nur mit Diagramm); Start zugeklappt, Zustand weiter gemeinsam (`_laufKmOffen`).
+  Tipps auf Bedienelemente (Zeilen, Titel, Zurueck-Knopf, Ø-Wert, Canvas) klappen nicht. Die
+  Ueberschriften „Wochenvolumen"/„Wochenkilometer" samt Pfeil sind dort entfallen; zugeklappt ist
+  der Block ganz weg (`display: none`), aufgeklappt steht nur der Ø-Wert rechts ueber den Saeulen.
+  Laufplan-Detail unveraendert. GEMESSEN (Laufen, Testplan): zu → Tipp auf Karte → auf; Tipp auf
+  Zeile und Ø-Wert bleibt auf; erneuter Tipp → zu; Gym ohne Plan ohne `.klappt`; keine
+  Konsolenfehler. NICHT gemessen: Gym MIT Diagramm (keine Testdaten, gleicher Codepfad).
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

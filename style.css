@@ -2601,6 +2601,11 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,2
 .lp-km-karte .ex-chart-wrap { margin: 0; }
 .lauf-wochen-karte .ex-chart-wrap { margin-bottom: 0; }
 .lauf-wochen-karte .ex-chart-block.collapsed .ex-chart-head { margin-bottom: 0; }
+/* v514: Zugeklappt steht vom Diagramm gar nichts mehr da (die Ueberschrift ist entfallen, die
+   Karte selbst ist der Knopf). Der Ø-Wert steht aufgeklappt rechts ueber den Saeulen. */
+.lauf-wochen-karte .ex-chart-block.collapsed { display: none; }
+.lauf-wochen-karte.klappt { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.lauf-wochen-karte .ex-chart-head { justify-content: flex-end; }
 /* GLEICHE ABSTAENDE UEBERALL: 18px (23.09.2026, Leonard-Wunsch — „zu eng beieinander").
    Vorher standen im Stapel drei verschiedene Werte: 10px vom Kartenkopf zur ersten Zeile, 16px
    zwischen den Zeilen (8px Aussenabstand + 8px Polster) und 10px von der letzten Zeile zur
