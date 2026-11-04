@@ -1386,7 +1386,10 @@ html.glas .screen:not(#screen-mehr) .cal-day.planned::before { box-shadow: inset
    auf der halbweissen Flaeche. */
 html.glas .screen:not(#screen-mehr) .cal-day.done::before    { background: rgba(255,255,255,.6); box-shadow: none; }
 html.glas .screen:not(#screen-mehr) .cal-day.run::after      { background: #fff; }
-html.glas .screen:not(#screen-mehr) .cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 1.68px #fff; }
+html.glas .screen:not(#screen-mehr) .cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 2.52px #fff; }
+/* Geteilter Kern (Variante B, v501): Die Ringe der geplanten Haelften fuellen ueber `background`. */
+html.glas .screen:not(#screen-mehr) .cal-day.planned:not(.done):is(.run, .run-planned)::before { background: rgba(255,255,255,.6); box-shadow: none; }
+html.glas .screen:not(#screen-mehr) .cal-day.run-planned:is(.planned, .done)::after { background: #fff; box-shadow: none; }
 /* Planname und Planbalken ueber und unter dem Raster ebenso weiss (Leonard-Entscheidung
    18.09.2026). Im gemeinsamen Trainingskalender unterscheidet die beiden Balken dann nur ihre
    Lage — die Gym-Spur steht immer ueber der Lauf-Spur. Archivierte bleiben halb durchsichtig. */
@@ -3012,24 +3015,40 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
   content: ''; position: absolute; inset: 4.2px;
   border-radius: 3px; background: #0F766E;
 }
-/* Gemeinsamer Kalender — DREI Schichten im selben Kaestchen:
-   Flaeche = laut Plan vorgesehen · gruener Kern = Krafttraining absolviert ·
-   kleines Quadrat mittig = gelaufen. So bleibt an einem Tag mit beidem beides sichtbar.
-   GROESSE des Lauf-Quadrats: Es verhaelt sich zum Trainingskern wie der Kern zum ganzen
-   Kaestchen. Kaestchen 25,2px, Kern 16,8px (inset 4,2) → 16,8 × 16,8/25,2 = 11,2px, also inset 7px.
-   CSS kann nicht durch eine Laenge teilen, der Wert steht deshalb fest — beim Aendern von
-   --cal-cell oder dem Kern-Inset (`.cal-day.done::before`) hier nachrechnen. */
+/* LAUF = QUADRAT wie das Gym (v501, 04.11.2026, Leonard-Wahl „Variante B" aus vier
+   gezeichneten Vorschlaegen — A verschachtelt, C nebeneinander, D versetzt). Steht an einem Tag
+   nur EINE Sportart, nimmt sie das volle Kern-Quadrat (inset 4,2px, 16,8px): gefuellt =
+   absolviert, Umriss 2,52px = geplant — dieselben Masse wie beim Gym, nur in #4ADE80.
+   Stehen BEIDE an, ist der Kern DIAGONAL GETEILT: oben links Gym (`::before`), unten rechts
+   Lauf (`::after`). Geschnitten wird per `clip-path`; der Umriss einer geplanten Haelfte ist ein
+   DREIECKSRING (`polygon(evenodd, aussen, innen)`), Strich 15 % der Kante = 2,52px an allen drei
+   Seiten (innere Kathete 100 % − 15 % × (2 + √2) = 48,79 %). Die Fuellung kommt dann aus
+   `background`, nicht aus `box-shadow` — ein inset-Schatten liefe nicht an der Diagonale entlang.
+   ABSOLVIERT VOR GEPLANT (Leonard-Vorgabe): Ist nur eine Haelfte erledigt, liegt sie obenauf
+   (`z-index`) — der Ring der anderen beruehrt sie an der Diagonale, verdeckt sie aber nie. */
 .cal-day.run::after, .cal-day.run-planned::after {
-  content: ''; position: absolute; inset: 7px;
-  /* KREIS und FESTE Farbe des Laufen-Tabs (Violett) — nicht `var(--accent)`: Der Lauf
-     gehoert zu seiner eigenen Domaene und soll in jedem Kalender gleich aussehen, auch
-     wenn die Karte spaeter in einem anders eingefaerbten Tab steht. */
-  /* Helles Gruen (Leonard-Wunsch 01.09.2026) — hebt sich vom dunklen Trainingskern ab,
-     bleibt aber in derselben Farbfamilie. Fest verdrahtet, damit der Lauf in jedem
-     Kalender gleich aussieht. */
-  border-radius: 50%; background: #4ADE80;
+  content: ''; position: absolute; inset: 4.2px;
+  /* Helles Gruen, fest verdrahtet (nicht `var(--accent)`), damit der Lauf in jedem Kalender
+     gleich aussieht. */
+  border-radius: 3px; background: #4ADE80;
 }
-.cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 1.68px #4ADE80; }
+.cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 2.52px #4ADE80; }
+.cal-day:is(.planned, .done):is(.run, .run-planned)::before {
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+.cal-day:is(.planned, .done):is(.run, .run-planned)::after {
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+.cal-day.planned:not(.done):is(.run, .run-planned)::before {
+  background: #0F766E; box-shadow: none;
+  clip-path: polygon(evenodd, 0 0, 100% 0, 0 100%, 0 0, 15% 15%, 15% 63.79%, 63.79% 15%, 15% 15%);
+}
+.cal-day.run-planned:is(.planned, .done)::after {
+  background: #4ADE80; box-shadow: none;
+  clip-path: polygon(evenodd, 100% 0, 100% 100%, 0 100%, 100% 0, 85% 36.21%, 36.21% 85%, 85% 85%, 85% 36.21%);
+}
+.cal-day.done:is(.run, .run-planned)::before { z-index: 1; }
+.cal-day.run:is(.planned, .done)::after { z-index: 1; }
 /* Wettkampftag: das GANZE Kaestchen hellgruen — der auffaelligste Zustand im Kalender, weil
    es der eine Tag ist, auf den ein Laufplan hinarbeitet (Leonard-Wunsch 04.09.2026). Steht vor
    den Zustandsregeln fuer heute/ausgewaehlt, damit deren Rahmen weiter obenauf liegen. */
@@ -3238,16 +3257,16 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 /* Die Muster der Legende bilden die Kaestchen nach — sie muessen mitwandern, wenn sich der
    Kalender aendert. Massstab: 13px statt 21px, alle Insets entsprechend verkleinert.
    `k-planned` = umrandetes Quadrat (geplanter Gymtag), `k-core` = gefuellt (trainiert),
-   `k-run` = Kreis (gelaufen), `k-run-planned` = leerer Kreis, `k-race` = ganze Flaeche. */
+   `k-run` = hellgruenes Quadrat (gelaufen), `k-run-planned` = umrandet, `k-race` = ganze Flaeche. */
 .cal-legend i.k-planned::before {
   content: ''; position: absolute; inset: 2px; border-radius: 1.5px;
   box-shadow: inset 0 0 0 1.3px #0F766E;
 }
 .cal-legend i.k-core::before { content: ''; position: absolute; inset: 2px; border-radius: 1.5px; background: #0F766E; box-shadow: none; }
 .cal-legend i.k-run::after, .cal-legend i.k-run-planned::after {
-  content: ''; position: absolute; inset: 3.6px; border-radius: 50%; background: #4ADE80;
+  content: ''; position: absolute; inset: 2px; border-radius: 1.5px; background: #4ADE80;
 }
-.cal-legend i.k-run-planned::after { background: transparent; box-shadow: inset 0 0 0 1.2px #4ADE80; }
+.cal-legend i.k-run-planned::after { background: transparent; box-shadow: inset 0 0 0 1.3px #4ADE80; }
 .cal-legend i.k-race { background: #4ADE80; }
 /* Die beiden Planspuren als Muster: ein kurzer Balken statt eines Kaestchens. */
 .cal-legend i.k-plan-gym, .cal-legend i.k-plan-lauf {

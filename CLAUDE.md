@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v500**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v501**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -403,6 +403,18 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   fuer Tage mit Gym UND Lauf vor (A verschachtelt, B diagonal geteilt, C nebeneinander,
   D versetzt). Im Glas-Modus unterschied dort bisher allein die FORM die Sportarten.
   Unveraendert rund: Laufplan-Detail-Scheibe (`.lp-scheibe`, Tabfarbe) und Wettkampf-Zeitstrahl.
+
+- **v501 (04.11.2026, Leonard-Wahl „Variante B"):** AUCH IM TRAININGSKALENDER ist der Lauf
+  ein Quadrat. Eine Sportart allein nimmt das volle Kern-Quadrat (inset 4.2px; geplant = Umriss
+  2.52px, beide Sportarten gleich). Stehen BEIDE an, ist der Kern DIAGONAL GETEILT: oben links
+  Gym (`::before`), unten rechts Lauf (`::after`), per `clip-path`; eine geplante Haelfte ist ein
+  Dreiecksring (`polygon(evenodd, …)`, Fuellung ueber `background` statt `box-shadow`). Ist nur
+  eine Haelfte absolviert, liegt sie obenauf (`z-index: 1`, Leonard-Vorgabe). Legende und
+  Erklaertext in `#modal-cal-info` nachgezogen. Glas-Modus: Gym 60-%-Weiss, Lauf weiss — an einem
+  Tag mit nur einer Sportart unterscheidet sie dort allein die Deckkraft. Wettkampftag
+  (`#4ADE80`) verdeckt ein gelaufenes Quadrat wie vorher den Kreis. GEMESSEN: alle neun
+  Klassenkombinationen (clip-path, Farbe, z-index) und Bild; Glas-Werte; keine Konsolenfehler.
+  Die Beschreibungen weiter unten zum Laufkreis im Kalender sind Vorgeschichte.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
