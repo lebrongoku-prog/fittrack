@@ -2406,6 +2406,12 @@ html.glas .screen:not(#screen-mehr) .aex-v2.aktuell { box-shadow: 0 0 0 2px rgba
   box-shadow: var(--shadow); padding: 14px;
 }
 .chart-card-v2-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+/* Trainingskalender (v508, 04.11.2026, Leonard-Wunsch): Titelzeile → Monatsnamen derselbe
+   sichtbare Abstand wie Monate → Raster und Wochentage → Raster (6px). Zusammen mit den 5px
+   Polster oben im Scroller (`--cal-pad-y`) ergeben 0.5px hier genau 6px bis zur Monatsschrift
+   (vorher 10px = 15.5px). */
+#ov-cal-card > .chart-card-v2-head,
+#plans-cal-card > .chart-card-v2-head { margin-bottom: 0.5px; }
 /* Kleines „i" hinter einem Kartentitel, öffnet die Lesehilfe. margin-right:auto hält es
    direkt am Titel — der Kopf verteilt seine Kinder sonst auf beide Ränder. */
 .info-btn {
