@@ -5552,12 +5552,12 @@ function toggleKmDiagramm(welches) {
   _laufKmOffen = offen;
   const block = document.getElementById(cfg.block);
   if (!block) return;
-  block.classList.toggle('collapsed', !offen);
   // Erst beim Aufklappen zeichnen: Ein verstecktes Canvas hat keine Breite, Chart.js behielte
   // sonst die alten Masse (dieselbe Regel wie bei `toggleChartBlock`).
-  if (!offen) return;
-  const sc = document.getElementById('lauf-wochen-scroll');
-  _zeichneLaufKmDiagramm(sc && sc._montage ? sc._montage[Math.max(0, sc._idx)] : null);
+  _wochenDiagrammKlappen(block, offen, () => {
+    const sc = document.getElementById('lauf-wochen-scroll');
+    _zeichneLaufKmDiagramm(sc && sc._montage ? sc._montage[Math.max(0, sc._idx)] : null);
+  });
 }
 
 // Farben der Saeulen. ZWEI Unterscheidungen zugleich:
@@ -5922,6 +5922,34 @@ function renderGymWoche(aktivLaeuft) {
 // „Laufen") klappt das Wochendiagramm auf bzw. zu — standardmaessig zu. Tipps auf Bedienelemente
 // in der Karte (Zeilen mit Pfeil, Titel, Zurueck-Knopf, Ø-Wert, Diagramm) behalten ihre eigene
 // Wirkung und klappen nicht.
+// v516 (Leonard-Wunsch): Auf- und Zuklappen mit derselben Bewegung wie „Heute" in der Uebersicht
+// (`toggleOvWoche`): Hoehe samt Polster des Diagrammkoerpers ueber `_boxFahren` (200ms), Token
+// `_klappNr`. Beim Aufklappen wird ZUERST gezeichnet (`zeichnen`, ein verstecktes Canvas hat
+// keine Breite), dann gefahren; beim Zuklappen faellt `.collapsed` erst am Ende. Der Ø-Wert
+// blendet mit — er liegt ausserhalb des gefahrenen Koerpers.
+function _wochenDiagrammKlappen(block, offen, zeichnen) {
+  const body = block.querySelector('.ex-chart-body');
+  const schnitt = block.querySelector('.km-schnitt');
+  const nr = (block._klappNr || 0) + 1;
+  block._klappNr = nr;
+  const von = block.classList.contains('collapsed') ? 0 : body.getBoundingClientRect().height;
+  body.getAnimations().forEach(a => a.cancel());
+  if (schnitt) schnitt.getAnimations().forEach(a => a.cancel());
+  block.classList.remove('collapsed');
+  if (offen) zeichnen();
+  const voll = body.getBoundingClientRect().height;
+  const fertig = () => {
+    if (block._klappNr !== nr) return;
+    body.style.overflow = '';
+    block.classList.toggle('collapsed', !offen);
+  };
+  if (_bewegungReduziert() || !body.animate) { fertig(); return; }
+  body.style.overflow = 'hidden';
+  _boxFahren(body, von, offen ? voll : 0, fertig);
+  if (schnitt) schnitt.animate([{ opacity: offen ? 0 : 1 }, { opacity: offen ? 1 : 0 }],
+    { duration: KLAPP_MS, easing: 'ease', fill: 'forwards' }).onfinish = function () { this.cancel(); };
+}
+
 function wochenKarteTipp(e, sport) {
   if (e.target.closest('button, [role="button"], a, canvas')) return;
   if (!e.currentTarget.classList.contains('klappt')) return;   // Karte ohne Diagramm
@@ -5942,13 +5970,13 @@ function toggleGymVolDiagramm() {
   _laufKmOffen = !_laufKmOffen;
   const block = document.getElementById('gym-vol-block');
   if (!block) return;
-  block.classList.toggle('collapsed', !_laufKmOffen);
-  if (!_laufKmOffen) return;
-  const sc = document.getElementById('gym-wochen-scroll');
-  const d = _gymWochenDaten || [];
-  const vorbei = d.filter(x => x.vorbei);
-  _zeichneGymVolDiagramm(sc && sc._montage ? sc._montage[Math.max(0, sc._idx)] : null,
-    vorbei.length ? vorbei.reduce((a, x) => a + x.vol, 0) / vorbei.length : null);
+  _wochenDiagrammKlappen(block, _laufKmOffen, () => {
+    const sc = document.getElementById('gym-wochen-scroll');
+    const d = _gymWochenDaten || [];
+    const vorbei = d.filter(x => x.vorbei);
+    _zeichneGymVolDiagramm(sc && sc._montage ? sc._montage[Math.max(0, sc._idx)] : null,
+      vorbei.length ? vorbei.reduce((a, x) => a + x.vol, 0) / vorbei.length : null);
+  });
 }
 // Farben: gezeigte Woche voll, die uebrigen gedaempft — wie beim Lauf, im Gym-Gruen.
 function _gymVolFarben(daten, hervorIdx, aufGlas) {

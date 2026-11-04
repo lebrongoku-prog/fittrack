@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v515**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v516**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -531,6 +531,15 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Seitenpunkte (`.ex-chart-head` absolut, top −21.5px, Block ohne padding-top), das Diagramm
   beginnt 10px unter den Punkten statt 44px. GEMESSEN (Laufen): Mitte Ø = Mitte Punkte (410.3px),
   Ø rechts buendig im Kartenpolster und antippbar; Titel auf/zu; keine Konsolenfehler.
+
+- **v516 (04.11.2026, Leonard-Wunsch):** Das Wochendiagramm der Karten „Diese Woche" (Gym und
+  Laufen) klappt MIT BEWEGUNG wie „Heute" in der Uebersicht (`_wochenDiagrammKlappen`:
+  `_boxFahren` auf `.ex-chart-body`, 200ms, Token `_klappNr`; aufklappen = erst zeichnen, dann
+  fahren; zuklappen = `.collapsed` erst am Ende; der Ø-Wert blendet mit). Der Abstand zu den
+  Seitenpunkten liegt dafuer als Polster im Koerper (8px + 2px Rand des Diagramms = 10px), der
+  Block traegt keinen Aussenabstand mehr (zugeklappt Hoehe 0). GEMESSEN (Laufen): Keyframes
+  0/0 → 162/10px und zurueck, Abstand 10.0px, Ø mittig zu den Punkten, dreimal in 60ms-Abstand
+  endet sauber ohne Inline-Reste; keine Konsolenfehler. Gym mit Diagramm nicht gemessen.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

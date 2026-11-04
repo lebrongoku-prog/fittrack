@@ -2603,14 +2603,20 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,2
 .lauf-wochen-karte .ex-chart-block.collapsed .ex-chart-head { margin-bottom: 0; }
 /* v514: Zugeklappt steht vom Diagramm gar nichts mehr da (die Ueberschrift ist entfallen, die
    Karte selbst ist der Knopf). Der Ø-Wert steht aufgeklappt rechts ueber den Saeulen. */
-.lauf-wochen-karte .ex-chart-block.collapsed { display: none; }
+/* v516: zugeklappt bleibt der Block LEER stehen (Koerper und Ø per globaler `.collapsed`-Regel
+   aus) — so laesst sich der Koerper mit Bewegung auf- und zufahren (`_wochenDiagrammKlappen`). */
 .lauf-wochen-karte.klappt { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 /* v515 (Leonard-Wunsch): Der Platz der entfallenen Ueberschrift ist weg. Der Ø-Wert steht nicht
    mehr in einer eigenen Zeile, sondern rechts auf HOEHE DER SEITENPUNKTE (Mitte 12.5px ueber dem
    Block: 10px Abstand + halber 5px-Punkt; Kopf 18px hoch → top −21.5px). Das Diagramm beginnt
    dadurch 10px unter den Punkten statt 44px (gemessen). */
-.lauf-wochen-karte .ex-chart-block { position: relative; padding-top: 0; }
-.lauf-wochen-karte .ex-chart-head { position: absolute; right: 0; top: -21.5px; margin: 0; justify-content: flex-end; }
+.lauf-wochen-karte .ex-chart-block { position: relative; margin-top: 0; padding-top: 0; }
+/* v516: Die 10px zu den Punkten traegt der KOERPER als Polster (8px, die 2px Rand des Diagramms
+   verschmelzen im Polster nicht mehr mit) — er wird gefahren, der Abstand
+   faehrt mit. Der Ø-Wert ist relativ zum Block (Oberkante = Unterkante der Punkte) gesetzt:
+   Mitte 2.5px darueber, Kopf 18px hoch → top −11.5px. */
+.lauf-wochen-karte .ex-chart-body { padding-top: 8px; }   /* + 2px margin-top von .ex-chart-wrap = 10px */
+.lauf-wochen-karte .ex-chart-head { position: absolute; right: 0; top: -11.5px; margin: 0; justify-content: flex-end; }
 /* GLEICHE ABSTAENDE UEBERALL: 18px (23.09.2026, Leonard-Wunsch — „zu eng beieinander").
    Vorher standen im Stapel drei verschiedene Werte: 10px vom Kartenkopf zur ersten Zeile, 16px
    zwischen den Zeilen (8px Aussenabstand + 8px Polster) und 10px von der letzten Zeile zur
