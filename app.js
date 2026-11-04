@@ -7485,42 +7485,43 @@ function showCalDay(key, id) {
   const heute0 = new Date(); heute0.setHours(0, 0, 0, 0);
   const kommt = new Date(y, m-1, d).getTime() > heute0.getTime();
 
-  // ── Spalte Gym ───────────────────────────────────────────────────
-  let gymHTML = '';
+  // v523 (04.11.2026, Leonard-Wahl „Variante A" aus vier gezeichneten Vorschlaegen — B Zeilen wie
+  // „Diese Woche", C farbige Pillen, D Tag-Symbol links): je Sportart eine KACHEL
+  // (`_calKachel`): Kopf mit Zeichen und Sportart, darunter Titel und eine Zusatzzeile. Eine
+  // Kachel mit Ziel ist als Ganzes ein Knopf. Zustand am Zeichen: gefuellt = erledigt, Umriss =
+  // geplant, rot = verpasst, grau = verschoben/uebersprungen; ohne Einheit „leer".
+  // ── Gym ──────────────────────────────────────────────────────────
+  let gym = null;
   if (modus.kraft) {
     if (entry) {
       // getWorkouts() ist neueste-zuerst; bei mehreren Einheiten am selben Tag zaehlt die
       // zuletzt begonnene.
-      const woIdx = DB.getWorkouts().findIndex(w => _dayKeyOf(w.startTs) === key);
+      const alle = DB.getWorkouts();
+      const woIdx = alle.findIndex(w => _dayKeyOf(w.startTs) === key);
+      const wo = woIdx >= 0 ? alle[woIdx] : null;
       const vonIdx = gymVer.istNachPlan[wiTag];
-      const name = entry.names.join(', ')
-        + (vonIdx != null ? ' · ' + _verschiebWort(vonIdx, wiTag)
-          : (plan.known && !plan.planned ? ' · zusätzlich' : ''));
-      // Oeffnet die bestehende Detailansicht der Einheit (`#modal-hist-detail`).
-      // `stopPropagation` ist Pflicht: Sonst raeumt initCalendarDeselect die Beschreibung im
-      // selben Klick weg.
-      gymHTML = woIdx >= 0
-        ? `<button type="button" class="cal-detail-tag"
-                   onclick="event.stopPropagation();showHistDetail(${woIdx})"><span
-                   class="cal-detail-tagname">${name}</span><span
-                   class="cal-detail-chev">▾</span></button>`
-        : `<div class="cal-detail-tag-txt">${name}</div>`;
+      const zusatz = vonIdx != null ? _verschiebWort(vonIdx, wiTag)
+        : (plan.known && !plan.planned ? 'zusätzlich' : '');
+      const anz = wo ? (wo.exercises || []).length : 0;
+      gym = { zustand: 'erledigt', titel: entry.names.join(', '),
+              sub: [wo ? `${anz} ${anz === 1 ? 'Übung' : 'Übungen'}` : '', wo && wo.duration ? fmtDur(wo.duration) : '', zusatz].filter(Boolean).join(' · '),
+              // Oeffnet die bestehende Detailansicht (`#modal-hist-detail`).
+              tipp: woIdx >= 0 ? `showHistDetail(${woIdx})` : '' };
     } else if (plan.planned && gymVer.planNachIst[wiTag] != null) {
       const j = gymVer.planNachIst[wiTag];
-      gymHTML = `<div class="cal-detail-tag-txt">${plan.name ? escapeHtml(plan.name) : 'Training'} · `
-              + `${_verschiebWort(wiTag, j) === 'vorgezogen' ? 'vorgezogen auf' : 'nachgeholt am'} ${WOCHENTAGE_KURZ[j]}</div>`;
+      gym = { zustand: 'verschoben', titel: plan.name ? escapeHtml(plan.name) : 'Training',
+              sub: `${_verschiebWort(wiTag, j) === 'vorgezogen' ? 'vorgezogen auf' : 'nachgeholt am'} ${WOCHENTAGE_KURZ[j]}` };
     } else if (plan.planned) {
-      gymHTML = `<div class="cal-detail-tag-txt">geplant: ${plan.name ? escapeHtml(plan.name) : 'Training'}`
-              + (kommt ? '' : ' · nicht trainiert') + '</div>';
+      gym = { zustand: kommt ? 'offen' : 'verpasst', titel: plan.name ? escapeHtml(plan.name) : 'Training',
+              sub: kommt ? 'geplant' : 'nicht trainiert' };
     } else if (plan.known) {
-      // Nur INNERHALB eines Plans — ohne abdeckenden Plan bleibt die Spalte leer, „kein
-      // Training" sagte nichts aus (Leonard-Wunsch 04.09.2026).
-      gymHTML = `<div class="cal-detail-tag-txt">Kein Gym geplant</div>`;
+      // Nur INNERHALB eines Plans — ohne abdeckenden Plan bleibt die Kachel weg.
+      gym = { zustand: 'leer', titel: 'Kein Gym geplant', sub: '' };
     }
   }
 
-  // ── Spalte Laufen ────────────────────────────────────────────────
-  let laufHTML = '';
+  // ── Laufen ───────────────────────────────────────────────────────
+  let lauf = null;
   let wkHTML = '';
   if (modus.lauf) {
     // Ein Wettkampf AUS EINEM PLAN nennt dessen Namen; ein eigenstaendiger (`ft_races`) hat
@@ -7531,57 +7532,56 @@ function showCalDay(key, id) {
       const eigen = DB.getRaces().find(r => r.date === key);
       if (eigen) wkHTML = `<div class="cal-detail-run wettkampf">🏁 Wettkampf${eigen.name ? ' · ' + escapeHtml(eigen.name) : ''}</div>`;
     }
-    const lauf = runNachTag()[key];
+    const l = runNachTag()[key];
     const gepl = runGeplanteTage()[key];
     // Notiz-Marke (v440): bei einem Lauf die Notiz SEINER geplanten Einheit (auch vorgezogen/nachgeholt).
-    const notizU = lauf ? (runGeplantFuerLauf(key) || {}).einheit : gepl && gepl.einheit;
+    const notizU = l ? (runGeplantFuerLauf(key) || {}).einheit : gepl && gepl.einheit;
     const notiz = notizU && notizU.note ? NOTIZ_ICON : '';
-    if (lauf) {
-      // Lauf: Strecke und Zeit. Intervalltraining hat keine sinnvolle Strecke — dort
-      // stehen Dauer und Maximalpuls (Leonard-Wunsch 01.09.2026).
-      const werte = lauf.art === 'hiit'
-        ? [fmtMin(lauf.minutes), lauf.maxHR ? `max. ${Math.round(lauf.maxHR)} bpm` : null].filter(Boolean).join(' · ')
-        : `${fmtKm(lauf.km)} · ${fmtMin(lauf.minutes)}`;
-      const bez = lauf.art === 'hiit' ? 'HIIT: ' : '';
+    if (l) {
+      // Intervalltraining hat keine sinnvolle Strecke — dort Dauer und Maximalpuls.
+      const hiit = l.art === 'hiit';
+      const kmh = l.kmh || (l.km && l.minutes ? l.km / (l.minutes / 60) : 0);
       const vonIdx = laufVer.laufNachPlan[wiTag];
-      const zusatz = vonIdx != null ? ' · ' + _verschiebWort(vonIdx, wiTag) : '';
-      laufHTML = `<button type="button" class="cal-detail-tag"
-                          onclick="event.stopPropagation();showRunDetail('${key}')"><span
-                          class="cal-detail-tagname">${bez}${werte}${zusatz}${notiz}</span><span
-                          class="cal-detail-chev">▾</span></button>`;
+      lauf = { zustand: 'erledigt',
+               titel: (hiit ? `HIIT ${fmtMin(l.minutes)}` : fmtKm(l.km)) + notiz,
+               sub: [hiit ? (l.maxHR ? `max. ${Math.round(l.maxHR)} bpm` : '') : fmtMin(l.minutes),
+                     !hiit && kmh ? fmtPace(kmh) : '',
+                     vonIdx != null ? _verschiebWort(vonIdx, wiTag) : ''].filter(x => x && x !== '–').join(' · '),
+               tipp: `showRunDetail('${key}')` };
     } else if (gepl && laufVer.planNachLauf[wiTag] != null) {
       const j = laufVer.planNachLauf[wiTag];
-      laufHTML = `<div class="cal-detail-tag-txt">Lauf · ${_verschiebWort(wiTag, j) === 'vorgezogen' ? 'vorgezogen auf' : 'nachgeholt am'} ${WOCHENTAGE_KURZ[j]}</div>`;
+      lauf = { zustand: 'verschoben', titel: 'Lauf',
+               sub: `${_verschiebWort(wiTag, j) === 'vorgezogen' ? 'vorgezogen auf' : 'nachgeholt am'} ${WOCHENTAGE_KURZ[j]}` };
     } else if (gepl) {
       const u = gepl.einheit;
       const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null].filter(Boolean).join(' · ') : '';
-      const text = gepl.uebersprungen ? 'Lauf · übersprungen' : `geplant${soll ? ': ' + soll : ''}`;
-      // MIT NOTIZ wird die Zeile ein KNOPF wie bei einer absolvierten Einheit (v443, Leonard-Wunsch):
-      // Er oeffnet das Fenster der Einheit mit Vorgabe und Notiz (`openRunSkip`).
-      laufHTML = notiz
-        ? `<button type="button" class="cal-detail-tag"
-                   onclick="event.stopPropagation();openRunSkip('${key}')"><span
-                   class="cal-detail-tagname">${text}${notiz}</span><span
-                   class="cal-detail-chev">▾</span></button>`
-        : `<div class="cal-detail-tag-txt">${text}</div>`;
+      lauf = { zustand: gepl.uebersprungen ? 'verschoben' : (kommt ? 'offen' : 'verpasst'),
+               titel: (soll || 'Lauf') + notiz,
+               sub: gepl.uebersprungen ? 'übersprungen' : (kommt ? 'geplant' : 'nicht gelaufen'),
+               // MIT NOTIZ oeffnet die Kachel das Fenster der Einheit (Vorgabe + Notiz, v443).
+               tipp: notiz ? `openRunSkip('${key}')` : '' };
     } else if (_laufplanDeckt(key)) {
-      // Gegenstueck zu „Kein Gym geplant": nur INNERHALB eines Laufplans (Leonard-Wunsch
-      // 06.09.2026).
-      laufHTML = `<div class="cal-detail-tag-txt">Kein Lauf geplant</div>`;
+      // Gegenstueck zu „Kein Gym geplant": nur INNERHALB eines Laufplans.
+      lauf = { zustand: 'leer', titel: 'Kein Lauf geplant', sub: '' };
     }
   }
 
-  // Eine LEERE Spalte wird gar nicht erst gezeichnet (Leonard-Wunsch 06.09.2026): Sonst hielte
-  // sie ihren Platz und die Laufinfo stuende rechts, obwohl links nichts steht — ein Tag mit
-  // Lauf, aber ohne Gym sah dadurch aus, als fehle etwas. Bleibt nur eine Spalte uebrig, nimmt
-  // sie die volle Breite und beginnt damit wieder links.
-  const spaltenHTML = [
-    (modus.kraft && gymHTML) ? `<div class="cal-detail-spalte gym">${gymHTML}</div>` : '',
-    (modus.lauf && laufHTML) ? `<div class="cal-detail-spalte lauf">${laufHTML}</div>` : '',
-  ].filter(Boolean);
-  const spalten = spaltenHTML.length ? `<div class="cal-detail-spalten">${spaltenHTML.join('')}</div>` : '';
+  // Eine LEERE Kachel wird gar nicht erst gezeichnet; bleibt nur eine, nimmt sie die volle Breite.
+  const kacheln = [gym && _calKachel('gym', gym), lauf && _calKachel('lauf', lauf)].filter(Boolean);
+  const kachelHTML = kacheln.length ? `<div class="cal-kacheln">${kacheln.join('')}</div>` : '';
 
-  _calFussSetzen(el, `<div class="cal-detail-datum"><strong>${dateStr}</strong></div>${wkHTML}${spalten}`);
+  _calFussSetzen(el, `<div class="cal-detail-datum"><strong>${dateStr}</strong></div>${wkHTML}${kachelHTML}`);
+}
+
+// Eine Kachel der Kalender-Fusszeile (v523). Mit Ziel ein <button>; `stopPropagation` ist Pflicht,
+// sonst raeumt initCalendarDeselect die Beschreibung im selben Klick weg.
+function _calKachel(sport, k) {
+  const inhalt = `<span class="cal-kachel-kopf"><span class="cal-kachel-ic ${k.zustand}"></span>${sport === 'gym' ? 'Gym' : 'Lauf'}${k.tipp ? '<span class="cal-detail-chev">▾</span>' : ''}</span>
+      <span class="cal-kachel-titel">${k.titel}</span>${k.sub ? `<span class="cal-kachel-sub">${k.sub}</span>` : ''}`;
+  const cls = `cal-kachel ${sport} ${k.zustand}`;
+  return k.tipp
+    ? `<button type="button" class="${cls}" onclick="event.stopPropagation();${k.tipp}">${inhalt}</button>`
+    : `<div class="${cls}">${inhalt}</div>`;
 }
 
 // Liegt der Tag in der Laufzeit eines Laufplans? Gegenstueck zu `plan.known` beim Gymplan —

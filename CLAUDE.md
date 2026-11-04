@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v522**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v523**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -582,6 +582,20 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Trainingskalender (3.02px), auch im Glas-Modus; absolvierte Haelften bleiben gefuellte Dreiecke.
   Die `polygon(evenodd, …)`-Ringe sind entfallen. GEMESSEN (Bild): alle vier Zustaende in beiden;
   keine Konsolenfehler.
+
+- **v523 (04.11.2026, Leonard-Wahl „Variante A" aus vier gezeichneten Vorschlaegen — B Zeilen wie
+  „Diese Woche", C farbige Pillen, D Tag-Symbol links):** Die KALENDER-FUSSZEILE zeigt unter dem
+  Datum je Sportart eine KACHEL (`_calKachel`, `.cal-kacheln`/`.cal-kachel`): getoent (Gym #E1F5EE,
+  Lauf #EAFBF0, „Kein … geplant" grau), Kopf mit 12px-Zeichen im Zustand (gefuellt erledigt,
+  Umriss geplant, rot verpasst, grau verschoben/uebersprungen) + Sportart + Pfeil, Titel
+  (Gymtag-Name bzw. km/„HIIT 28min"/Vorgabe) und Zusatzzeile (Gym „5 Übungen · 1h 5min" +
+  vorgezogen/zusaetzlich; Lauf „52min · 5'12'' /km" bzw. Puls; geplant/nicht trainiert/nicht
+  gelaufen/übersprungen/vorgezogen auf Mo). Mit Ziel ist die ganze Kachel ein Knopf (Einheit,
+  Laufdetail, bei Notiz `openRunSkip`). Eine Sportart allein nimmt die volle Breite. Glas
+  14-%-Weiss mit weisser Schrift. ENTFALLEN: `.cal-detail-spalten`/`-spalte`, `.cal-detail-tag`/
+  `-tag-txt`/`-tagname` samt Glas-Regel. Die Abschnitte zur zweispaltigen Fusszeile sind
+  Vorgeschichte. GEMESSEN: Di erledigt beide (Knopf → Laufdetail), Mo verpasst/kein Lauf, Do
+  geplant, So kein Gym/Lauf; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
