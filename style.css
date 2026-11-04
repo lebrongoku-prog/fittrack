@@ -1380,13 +1380,13 @@ html.glas .screen:not(#screen-mehr) .cal-day.leer-woche { background: rgba(248,1
    voll weiss, und ein Tag mit Gym UND Lauf saehe aus wie ein reiner Gymtag. Dieselbe
    Abstufung wie im hellen Modus, wo der Kreis heller ist als das Quadrat. Der Umriss des
    geplanten Gymtags bekommt denselben Wert wie die Fuellung. */
-html.glas .screen:not(#screen-mehr) .cal-day.planned::before { box-shadow: inset 0 0 0 2.52px rgba(255,255,255,.6); }
+html.glas .screen:not(#screen-mehr) .cal-day.planned::before { box-shadow: inset 0 0 0 3.02px rgba(255,255,255,.6); }
 /* Ein absolvierter Tag ist meist AUCH geplant — beide Regeln treffen dasselbe `::before`. Im
    hellen Modus faellt der Ring in derselben Farbe nicht auf, hier laege er als hellerer Rand
    auf der halbweissen Flaeche. */
 html.glas .screen:not(#screen-mehr) .cal-day.done::before    { background: rgba(255,255,255,.6); box-shadow: none; }
 html.glas .screen:not(#screen-mehr) .cal-day.run::after      { background: #fff; }
-html.glas .screen:not(#screen-mehr) .cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 2.52px #fff; }
+html.glas .screen:not(#screen-mehr) .cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 3.02px #fff; }
 /* Geteilter Kern (Variante B, v501): Die Ringe der geplanten Haelften fuellen ueber `background`. */
 html.glas .screen:not(#screen-mehr) .cal-day.planned:not(.done):is(.run, .run-planned, .wettkampf)::before { background: rgba(255,255,255,.6); box-shadow: none; }
 html.glas .screen:not(#screen-mehr) .cal-day.run-planned:not(.wettkampf):is(.planned, .done)::after { background: #fff; box-shadow: none; }
@@ -2981,7 +2981,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
   display: flex; gap: var(--cal-gap); margin-bottom: var(--cal-months-gap);
   height: var(--cal-months-h);
 }
-.cal-month { width: var(--cal-cell, 19px); flex: 0 0 var(--cal-cell, 19px); font-size: var(--fs-text); line-height: var(--cal-months-h); color: var(--text3); white-space: nowrap; }
+.cal-month { width: var(--cal-cell, 19px); flex: 0 0 var(--cal-cell, 19px); font-size: var(--fs-betont); line-height: var(--cal-months-h); color: var(--text3); white-space: nowrap; }
 /* Liegt absolut ueber dem linken Rand von `.cal-body` — bewusst NICHT als Flex-/Grid-Spalte,
    damit `.cal-scroll` ein gewoehnlicher Block bleiben kann (siehe oben).
    Der obere Abstand bildet die Monatszeile im Scroller nach, damit „Mo" auf einer Linie mit
@@ -2996,7 +2996,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
   width: var(--cal-label-w);
   display: flex; flex-direction: column; gap: var(--cal-gap);
 }
-.cal-daylabels span { height: var(--cal-cell, 19px); font-size: var(--fs-text); line-height: var(--cal-cell, 19px); color: var(--text3); }
+.cal-daylabels span { height: var(--cal-cell, 19px); font-size: var(--fs-betont); line-height: var(--cal-cell, 19px); color: var(--text3); }
 .cal-grid { display: flex; gap: var(--cal-gap); }
 .cal-week { display: flex; flex-direction: column; gap: var(--cal-gap); }
 /* Zwei Schichten pro Tag: die Fläche sagt, ob laut Plan ein Training vorgesehen war,
@@ -3004,7 +3004,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
    der Kalender beantwortet nur „trainiert oder nicht". */
 .cal-day {
   position: relative;
-  width: var(--cal-cell, 19px); height: var(--cal-cell, 19px); border-radius: 6px; display: block;
+  width: var(--cal-cell, 19px); height: var(--cal-cell, 19px); border-radius: 7.2px; display: block;
   background: var(--border);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
@@ -3014,12 +3014,12 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
    `.cal-day.done::before` steht spaeter in der Datei und gewinnt damit bei gleicher
    Spezifitaet: Ein geplanter UND absolvierter Tag ist gefuellt. */
 .cal-day.planned::before {
-  content: ''; position: absolute; inset: 4.2px;
+  content: ''; position: absolute; inset: 5.04px;
   /* 2,52px statt 1,68px: Beide Umrandungen waren absolut gleich dick, das Quadrat ist mit 16,8px
      aber 1,5-mal so gross wie der 11,2px-Kreis — die gleiche Strichstaerke wirkt darauf
      duenner. 1,68 × 16,8/11,2 = 2,52px stellt das Verhaeltnis her (Leonard-Meldung 04.09.2026).
      Beim Aendern von --cal-cell oder einem der beiden Insets hier nachrechnen. */
-  border-radius: 3px; box-shadow: inset 0 0 0 2.52px #0F766E;
+  border-radius: 3.6px; box-shadow: inset 0 0 0 3.02px #0F766E;
 }
 /* Rahmen + Beschriftung der Plan-Zeiträume — dasselbe Grün wie die trainierten Kerne. */
 .cal-scroll { --cal-plan-color: #0F766E; }
@@ -3035,24 +3035,27 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
      JS: `renderTrainingCalendar` liest beide und rechnet damit die Spaltenbreite fuer die
      Plan-Laufzeiten und die Scrollposition. FESTE Groesse in jeder Ausrichtung — das Raster
      scrollt im Querformat genauso waagerecht wie im Hochformat (Leonard-Wunsch 01.09.2026). */
-  --cal-gap: 3.6px;
-  --cal-cell: 25.2px;
+  /* v506 (04.11.2026, Leonard-Wunsch): das GANZE Raster 20 % groesser — Kaestchen 25.2 → 30.24px,
+     Abstaende, Wochentagsspalte, Monatszeile, Schrift (15 → 18px), Marken (inset 4.2 → 5.04px,
+     Strich 2.52 → 3.02px, Radius 3 → 3.6px) und Heute-/Auswahlring mit. Verhaeltnisse unveraendert. */
+  --cal-gap: 4.32px;
+  --cal-cell: 30.24px;
   /* Abstand zwischen der Wochentagsspalte und dem Scroller. */
-  --cal-label-gap: 4.8px;
+  --cal-label-gap: 5.76px;
   /* Breite der Wochentagsspalte. Sie steht ausserhalb des Scrollers — die Platzrechnung
      misst den Scroller und muss sie deshalb NICHT abziehen. */
-  --cal-label-w: 28.8px;
+  --cal-label-w: 34.56px;
   /* Feste Hoehe der Monatszeile statt gemessener Schrifthoehe: Die Wochentagsspalte nutzt
      denselben Wert als oberen Abstand — nur so liegen „Mo" und die erste Rasterzeile
      garantiert auf einer Linie. */
-  --cal-months-h: 19.2px;
-  --cal-months-gap: 12px;
+  --cal-months-h: 23.04px;
+  --cal-months-gap: 14.4px;
 }
 /* Der Kern behaelt sein Groessenverhaeltnis zum Kaestchen (frueher 3px bei 16px) —
    daher 4,2px und keine runde Zahl. */
 .cal-day.done::before {
-  content: ''; position: absolute; inset: 4.2px;
-  border-radius: 3px; background: #0F766E;
+  content: ''; position: absolute; inset: 5.04px;
+  border-radius: 3.6px; background: #0F766E;
 }
 /* LAUF = QUADRAT wie das Gym (v501, 04.11.2026, Leonard-Wahl „Variante B" aus vier
    gezeichneten Vorschlaegen — A verschachtelt, C nebeneinander, D versetzt). Steht an einem Tag
@@ -3066,12 +3069,12 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
    ABSOLVIERT VOR GEPLANT (Leonard-Vorgabe): Ist nur eine Haelfte erledigt, liegt sie obenauf
    (`z-index`) — der Ring der anderen beruehrt sie an der Diagonale, verdeckt sie aber nie. */
 .cal-day.run::after, .cal-day.run-planned::after {
-  content: ''; position: absolute; inset: 4.2px;
+  content: ''; position: absolute; inset: 5.04px;
   /* Helles Gruen, fest verdrahtet (nicht `var(--accent)`), damit der Lauf in jedem Kalender
      gleich aussieht. */
-  border-radius: 3px; background: #4ADE80;
+  border-radius: 3.6px; background: #4ADE80;
 }
-.cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 2.52px #4ADE80; }
+.cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 3.02px #4ADE80; }
 .cal-day:is(.planned, .done):is(.run, .run-planned, .wettkampf)::before {
   clip-path: polygon(0 0, 100% 0, 0 100%);
 }
@@ -3099,7 +3102,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
    GEFUELLTES Quadrat in der Groesse des Laufzeichens — es tritt an dessen Stelle (gelaufen wie
    geplant). Mit Gym am selben Tag ist es die untere rechte Haelfte, wie der Lauf. */
 .cal-day.wettkampf::after {
-  content: ''; position: absolute; inset: 4.2px; border-radius: 3px;
+  content: ''; position: absolute; inset: 5.04px; border-radius: 3.6px;
   background: #EAB308; box-shadow: none;
 }
 /* Fusszeile zum Lauf: gleiche Groesse UND gleiche Schriftfarbe wie die Angaben zur
@@ -3244,8 +3247,8 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .cal-day.outside { opacity: .25; pointer-events: none; }
 /* Ringe INNEN zeichnen (inset). Aussen ragten sie 1,5px ueber das Kaestchen hinaus und
    wurden in der ersten Spalte am linken Rand des Scrollers abgeschnitten. */
-.cal-day.today { box-shadow: inset 0 0 0 1.6px var(--accent); }
-.cal-day.sel   { box-shadow: inset 0 0 0 1.6px var(--text); }
+.cal-day.today { box-shadow: inset 0 0 0 1.92px var(--accent); }
+.cal-day.sel   { box-shadow: inset 0 0 0 1.92px var(--text); }
 /* Plan-Laufzeiten: senkrechte Linie an Anfang und Ende, Name darunter. Beide liegen
    absolut auf Positionen, die das JS in Vielfachen der Spaltenbreite (--cal-cell + 3px)
    rechnet. Der Versatz links entspricht den Tages-Labels. */

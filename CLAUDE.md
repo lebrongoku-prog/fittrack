@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v505**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v506**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -446,6 +446,16 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
 - **v505 (04.11.2026, Leonard-Wunsch):** Auch die Einzelkarten (Gymwoche/Laufwoche, in
   Uebersicht und ueberall, wo `.ppv-col.offen` erscheint) haben 4px-Konturen statt 5.94px, auch
   im Glas-Modus. Alle Wochenkarten damit einheitlich 4px.
+
+- **v506 (04.11.2026, Leonard-Wunsch „das ganze Raster"):** Der TRAININGSKALENDER (beide
+  Instanzen) ist samt Inhalt 20 % groesser: `--cal-cell` 25.2 → 30.24px, `--cal-gap` 3.6 → 4.32,
+  `--cal-label-w` 28.8 → 34.56, `--cal-label-gap` 4.8 → 5.76, `--cal-months-h` 19.2 → 23.04,
+  `--cal-months-gap` 12 → 14.4; Schrift der Wochentage und Monate 15 → 18px (`--fs-betont`, eine
+  Stufe hoeher); Kaestchenradius 6 → 7.2px; Marken inset 4.2 → 5.04px, Radius 3 → 3.6px, Strich
+  2.52 → 3.02px (auch Glas); Heute-/Auswahlring 1.6 → 1.92px. Prozent-Dreiecke skalieren von selbst.
+  Die Masse weiter oben (25.2/16.8/2.52px …) sind Vorgeschichte. GEMESSEN: Kaestchen 30.24px,
+  Spalte 34.56px, „Mo" buendig zur ersten Zeile, auf 375px rund 8 statt 10 Wochen sichtbar, kein
+  Ueberlauf, Karte aufgeklappt 342px; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
