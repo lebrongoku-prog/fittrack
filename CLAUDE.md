@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v501**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v502**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -415,6 +415,24 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   (`#4ADE80`) verdeckt ein gelaufenes Quadrat wie vorher den Kreis. GEMESSEN: alle neun
   Klassenkombinationen (clip-path, Farbe, z-index) und Bild; Glas-Werte; keine Konsolenfehler.
   Die Beschreibungen weiter unten zum Laufkreis im Kalender sind Vorgeschichte.
+
+- **v502 (04.11.2026, Leonard-Wunsch):**
+  1. KOMBI-WOCHENKARTE der Uebersicht EINZEILIG (`buildWochenKombi`, `.ppv-kombi.einzeilig`,
+     `.ppv-k-reihe.beide`): je Tag EIN Quadrat (36px) wie im Kalender — eine Sportart fuellt es,
+     beide teilen es diagonal (`.kt.gym` oben links, `.kt.lauf` unten rechts, `.ppv-k-dot.geteilt`).
+     Gefuellt = absolviert, Umriss = offen (geteilt: Dreiecksring 8 %), verschoben = nur das
+     graue Quadrat; absolvierte Haelfte obenauf. Tag ohne Einheit rund. Die Sportsymbole vor den
+     Reihen sind entfallen. Glas: Gym 60-%-, Lauf 92-%-Weiss. Die alten Zwei-Reihen-Regeln
+     (`.ppv-k-reihe.gym/.lauf`, `.ppv-k-ic`, Naht des Heute-Feldes) haben keinen Aufrufer mehr.
+  2. WETTKAMPF im Kalender = GOLDEN GEFUELLTES Quadrat (#EAB308, auch im Glas-Modus) in der
+     Groesse des Laufzeichens (`.cal-day.wettkampf::after`) statt gruener Flaeche; es ersetzt das
+     Laufzeichen und ist mit Gym die untere rechte Haelfte. Wie bisher nur in Kalendern, die
+     Laeufe zeigen (`modus.lauf`). Legende `k-race` nachgezogen.
+  3. Die Einzelkarten (Gymwoche/Laufwoche) der Uebersicht sind STUMM (`onTap: false`): Ein Tipp
+     auf den Fortschrittsbalken fuehrt nicht mehr in den Trainings-Tab. Filtertitel und
+     Wochentage bleiben antippbar; die leeren Karten fuehren weiter in den Plan-Tab.
+  GEMESSEN: Kombi-Karte mit allen Zustaenden (Bild), weiter 157.3px; Wettkampf-Kombinationen
+  (Farbe, clip-path, z-index); Laufkarte `karte-inert` ohne onclick; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

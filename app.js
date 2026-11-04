@@ -1215,20 +1215,16 @@ function rueckblickAusblenden() {
 function renderWochenKarte() {
   const el = document.getElementById('ov-week-card');
   if (!el) return;
-  // Jede Karte ist EIN Ziel und fuehrt in den TRAININGS-Tab auf die Seite IHRER Sportart
-  // (Leonard-Wunsch 09.09.2026 — vorher in den Plan-Tab auf die Planbearbeitung). Damit
-  // verhalten sich jetzt ALLE drei Zustaende der Karte gleich: Der gemeinsame Zustand fuehrt
-  // seine Reihen schon seit dem 08.09.2026 dorthin. Aus der Wochenuebersicht will man zum
-  // Training, nicht in die Planbearbeitung.
+  // Die Karte selbst ist STUMM (v502, 04.11.2026, Leonard-Wunsch): Ein Tipp auf den
+  // Fortschrittsbalken fuehrte vorher in den Trainings-Tab — jetzt loesen nur noch der
+  // Filtertitel und die Wochentage etwas aus.
   // AUSNAHME: Die LEEREN Karten fuehren weiter in den Plan-Tab — dort steht „Tippe, um einen
-  // Plan anzulegen", und anlegen kann man ihn nur da. Der Trainings-Tab haette ohne Plan
-  // nichts zu zeigen.
+  // Plan anzulegen", und anlegen kann man ihn nur da.
   const zurPlanSeite = (seite) => `setPlansView('${seite}');wischeZuTab('plans')`;
-  const zurTrainingsSeite = (seite) => `setWorkoutsView('${seite}');wischeZuTab('workouts')`;
   if (_wochenFilter === 'gym') {
     const active = getActivePlan();
     el.innerHTML = active
-      ? buildPlanCard(active, zurTrainingsSeite('gym'), /*hideToday*/ false, /*hideStatus*/ true,
+      ? buildPlanCard(active, false, /*hideToday*/ false, /*hideStatus*/ true,
                       /*hideMeta*/ true, { filterOnTap: 'toggleWochenFilter',
                       selectedIdx: _ovTag, dayOnTap: 'waehleUebersichtTag' })
       : leereWochenKarte('Kein aktiver Trainingsplan',
@@ -1236,7 +1232,7 @@ function renderWochenKarte() {
   } else if (_wochenFilter === 'lauf') {
     // `buildRunPlanCard` zeichnet die leere Karte selbst und faellt dort auf ihr Standardziel
     // zurueck, wenn kein Ziel genannt ist — deshalb hier nur bei vorhandenem Plan eines setzen.
-    el.innerHTML = buildRunPlanCard(runPlanAktiv() ? zurTrainingsSeite('laufen') : null, null,
+    el.innerHTML = buildRunPlanCard(runPlanAktiv() ? false : null, null,
                                     { filterOnTap: 'toggleWochenFilter',
                                       selectedIdx: _ovTag, dayOnTap: 'waehleUebersichtTag' });
   } else {
@@ -1298,40 +1294,34 @@ function buildWochenKombi() {
     verschoben: !!(laufVerschoben[i] && !gelaufen[i]),
   }));
 
-  // Jeder TAG ist ein Tipp-Ziel (`waehleUebersichtTag`, seit 11.10.2026 wieder) — die Reihen
-  // sind deshalb stumm, sonst laegen zwei Ziele in einer Kachel.
-  const reihe = (tage, sport, icon, sportName) => {
-    const punkte = tage.map((t, i) => {
-      const cls = ['ppv-k-col'];
-      if (t.geplant) cls.push('training');
-      if (t.erledigt) cls.push('done');
-      if (t.verschoben) cls.push('verschoben');
-      if (i === todayIdx) cls.push('today');
-      if (i === _ovTag) cls.push('selected');
-      // GEFUELLT heisst „absolviert", sonst nichts (Leonard-Meldung 12.09.2026). Alles, was
-      // geplant und noch nicht absolviert ist, traegt den Ring — heute genauso wie ein
-      // kuenftiger oder ein ausgefallener Tag. Vorher hing der Ring am Datum
-      // (`i > todayIdx`): Ein geplanter Lauf von HEUTE war damit voll eingefaerbt und sah
-      // aus wie gelaufen, obwohl er noch anstand.
-      if (t.geplant && !t.erledigt && !t.verschoben) cls.push('offen');
-      return `<div class="${cls.join(' ')}" role="button" tabindex="0" aria-label="${WOCHENTAGE_LANG[i]} wählen"
-                   onclick="event.stopPropagation();waehleUebersichtTag(${i})"><span class="ppv-k-dot"></span></div>`;
-    }).join('');
-    return `<div class="ppv-k-reihe ${sport}" aria-label="${sportName}">
-      <span class="ppv-k-ic">${icon}</span>${punkte}
-    </div>`;
-  };
+  // EINE Reihe fuer beide Sportarten (v502, 04.11.2026, Leonard-Wunsch): je Tag ein Quadrat wie
+  // im Trainingskalender — eine Sportart allein fuellt es, stehen beide an, ist es DIAGONAL
+  // GETEILT (oben links Gym, unten rechts Lauf). Zustand je Haelfte: gefuellt = absolviert,
+  // Umriss = geplant und offen; verschoben zeichnet nichts (hellgraues Quadrat). Ein Tag ganz
+  // ohne Einheit bleibt rund. Die Sportsymbole vor den Reihen sind damit entfallen.
+  // Jeder TAG ist ein Tipp-Ziel (`waehleUebersichtTag`).
+  const zustand = t => t.erledigt ? 'erledigt' : t.verschoben ? 'verschoben' : t.geplant ? 'offen' : '';
+  const punkte = WOCHENTAGE_KURZ.map((_, i) => {
+    const g = zustand(gymTage[i] || {}), l = zustand(laufTage[i]);
+    const cls = ['ppv-k-col'];
+    if (i === todayIdx) cls.push('today');
+    if (i === _ovTag) cls.push('selected');
+    const dot = ['ppv-k-dot'];
+    if (g || l) dot.push('hat');
+    if (g && l) dot.push('geteilt');
+    const teil = (sport, z) => (z && z !== 'verschoben') ? `<i class="kt ${sport} ${z}"></i>` : '';
+    return `<div class="${cls.join(' ')}" role="button" tabindex="0" aria-label="${WOCHENTAGE_LANG[i]} wählen"
+                 onclick="event.stopPropagation();waehleUebersichtTag(${i})"><span class="${dot.join(' ')}">${teil('gym', g)}${teil('lauf', l)}</span></div>`;
+  }).join('');
 
-  return `<div class="plan-card-v2 ppv-kombi karte-inert">
+  return `<div class="plan-card-v2 ppv-kombi einzeilig karte-inert">
     <div class="ppv-head">
       ${wochenFilterTitel('ppv-name')}
     </div>
     <div class="ppv-k-labels">
-      <span class="ppv-k-ic"></span>
       ${WOCHENTAGE_KURZ.map(l => `<span>${l}</span>`).join('')}
     </div>
-    ${reihe(gymTage.length ? gymTage : WOCHENTAGE_KURZ.map(() => ({})), 'gym', PPV_ICON_HANTEL, 'Gym')}
-    ${reihe(laufTage, 'lauf', PPV_ICON_LAEUFER, 'Laufen')}
+    <div class="ppv-k-reihe beide" aria-label="Gym und Laufen">${punkte}</div>
   </div>`;
 }
 

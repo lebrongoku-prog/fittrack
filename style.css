@@ -1370,7 +1370,7 @@ html.glas .screen:not(#screen-mehr) .cal-day.leer-woche { background: rgba(248,1
    Woche, damit ein Wettkampf in einer trainingsfreien Woche als Wettkampf erscheint (genau
    wie im hellen Modus, wo `.wettkampf` ebenfalls spaeter kommt).
    Dieselbe Deckkraft wie das Rot: Voll deckend uebertoente das Gruen die Marken darin. */
-html.glas .screen:not(#screen-mehr) .cal-day.wettkampf { background: rgba(74,222,128,.55); }
+
 /* KEINE SPORTFARBEN IN DEN MARKEN (18.09.2026, Leonard-Wunsch „um die Sichtbarkeit zu
    erhoehen"): Das dunkelgruene Gym-Quadrat und der hellgruene Laufkreis werden weiss —
    Gym und Lauf unterscheidet weiterhin die FORM (Quadrat gegen Kreis), geplant und absolviert
@@ -1388,8 +1388,10 @@ html.glas .screen:not(#screen-mehr) .cal-day.done::before    { background: rgba(
 html.glas .screen:not(#screen-mehr) .cal-day.run::after      { background: #fff; }
 html.glas .screen:not(#screen-mehr) .cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 2.52px #fff; }
 /* Geteilter Kern (Variante B, v501): Die Ringe der geplanten Haelften fuellen ueber `background`. */
-html.glas .screen:not(#screen-mehr) .cal-day.planned:not(.done):is(.run, .run-planned)::before { background: rgba(255,255,255,.6); box-shadow: none; }
-html.glas .screen:not(#screen-mehr) .cal-day.run-planned:is(.planned, .done)::after { background: #fff; box-shadow: none; }
+html.glas .screen:not(#screen-mehr) .cal-day.planned:not(.done):is(.run, .run-planned, .wettkampf)::before { background: rgba(255,255,255,.6); box-shadow: none; }
+html.glas .screen:not(#screen-mehr) .cal-day.run-planned:not(.wettkampf):is(.planned, .done)::after { background: #fff; box-shadow: none; }
+/* Wettkampf bleibt golden (v502) — eine eigene Aussage, wie vorher die gruene Flaeche. */
+html.glas .screen:not(#screen-mehr) .cal-day.wettkampf::after { background: #EAB308; box-shadow: none; }
 /* Planname und Planbalken ueber und unter dem Raster ebenso weiss (Leonard-Entscheidung
    18.09.2026). Im gemeinsamen Trainingskalender unterscheidet die beiden Balken dann nur ihre
    Lage — die Gym-Spur steht immer ueber der Lauf-Spur. Archivierte bleiben halb durchsichtig. */
@@ -2056,6 +2058,42 @@ html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.verschoben .ppv-wd {
 }
 html.glas .screen:not(#screen-mehr) .ppv-k-labels { color: rgba(255,255,255,.75); }
 html.glas .screen:not(#screen-mehr) .ppv-k-ic { color: rgba(255,255,255,.85); }
+/* KOMBI-KARTE EINZEILIG (v502, 04.11.2026, Leonard-Wunsch): eine Reihe Quadrate wie im
+   Trainingskalender (Variante B) — eine Sportart allein fuellt das Quadrat, beide teilen es
+   diagonal (oben links Gym `.kt.gym`, unten rechts Lauf `.kt.lauf`). Gefuellt = absolviert,
+   Umriss = offen; eine absolvierte Haelfte liegt obenauf (`z-index`). Tag ohne Einheit rund.
+   Keine Symbolspalte mehr, das Raster hat nur noch die sieben Tage. Der Ring einer GETEILTEN
+   offenen Haelfte ist ein Dreiecksring (8 % = 2.9px, innere Kathete 100 % − 8 % × (2 + √2)). */
+.ppv-kombi.einzeilig .ppv-k-labels,
+.ppv-kombi.einzeilig .ppv-k-reihe { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.ppv-k-reihe.beide .ppv-k-col.today,
+.ppv-k-reihe.beide .ppv-k-col.selected { border-radius: 9.9px; }
+.ppv-k-reihe.beide .ppv-k-dot { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; }
+.ppv-k-reihe.beide .ppv-k-dot.hat { border-radius: 6px; }
+.ppv-k-dot .kt { position: absolute; inset: 0; border-radius: inherit; }
+.ppv-k-dot .kt.gym.erledigt  { background: #0F766E; }
+.ppv-k-dot .kt.lauf.erledigt { background: #4ADE80; }
+.ppv-k-dot .kt.gym.offen  { box-shadow: inset 0 0 0 2.2px #0F766E; }
+.ppv-k-dot .kt.lauf.offen { box-shadow: inset 0 0 0 2.2px #4ADE80; }
+.ppv-k-dot.geteilt .kt.gym  { clip-path: polygon(0 0, 100% 0, 0 100%); }
+.ppv-k-dot.geteilt .kt.lauf { clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+.ppv-k-dot.geteilt .kt.erledigt { z-index: 1; }
+.ppv-k-dot.geteilt .kt.gym.offen {
+  box-shadow: none; background: #0F766E;
+  clip-path: polygon(evenodd, 0 0, 100% 0, 0 100%, 0 0, 8% 8%, 8% 80.69%, 80.69% 8%, 8% 8%);
+}
+.ppv-k-dot.geteilt .kt.lauf.offen {
+  box-shadow: none; background: #4ADE80;
+  clip-path: polygon(evenodd, 100% 0, 100% 100%, 0 100%, 100% 0, 92% 19.31%, 19.31% 92%, 92% 92%, 92% 19.31%);
+}
+/* Glas: wie im Kalender Gym 60-%-, Lauf 92-%-Weiss — sonst waeren die Haelften gleich. */
+html.glas .screen:not(#screen-mehr) .ppv-k-reihe.beide .ppv-k-dot { background: rgba(255,255,255,.22); }
+html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.gym.erledigt  { background: rgba(255,255,255,.6); }
+html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.lauf.erledigt { background: rgba(255,255,255,.92); }
+html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.gym.offen  { box-shadow: inset 0 0 0 2.2px rgba(255,255,255,.6); }
+html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.lauf.offen { box-shadow: inset 0 0 0 2.2px rgba(255,255,255,.92); }
+html.glas .screen:not(#screen-mehr) .ppv-k-dot.geteilt .kt.gym.offen  { box-shadow: none; background: rgba(255,255,255,.6); }
+html.glas .screen:not(#screen-mehr) .ppv-k-dot.geteilt .kt.lauf.offen { box-shadow: none; background: rgba(255,255,255,.92); }
 html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 /* ═══════════════════════════════════
    WORKOUT (Active session) – Mockup v2
@@ -3033,22 +3071,22 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
   border-radius: 3px; background: #4ADE80;
 }
 .cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 2.52px #4ADE80; }
-.cal-day:is(.planned, .done):is(.run, .run-planned)::before {
+.cal-day:is(.planned, .done):is(.run, .run-planned, .wettkampf)::before {
   clip-path: polygon(0 0, 100% 0, 0 100%);
 }
-.cal-day:is(.planned, .done):is(.run, .run-planned)::after {
+.cal-day:is(.planned, .done):is(.run, .run-planned, .wettkampf)::after {
   clip-path: polygon(100% 0, 100% 100%, 0 100%);
 }
-.cal-day.planned:not(.done):is(.run, .run-planned)::before {
+.cal-day.planned:not(.done):is(.run, .run-planned, .wettkampf)::before {
   background: #0F766E; box-shadow: none;
   clip-path: polygon(evenodd, 0 0, 100% 0, 0 100%, 0 0, 15% 15%, 15% 63.79%, 63.79% 15%, 15% 15%);
 }
-.cal-day.run-planned:is(.planned, .done)::after {
+.cal-day.run-planned:not(.wettkampf):is(.planned, .done)::after {
   background: #4ADE80; box-shadow: none;
   clip-path: polygon(evenodd, 100% 0, 100% 100%, 0 100%, 100% 0, 85% 36.21%, 36.21% 85%, 85% 85%, 85% 36.21%);
 }
-.cal-day.done:is(.run, .run-planned)::before { z-index: 1; }
-.cal-day.run:is(.planned, .done)::after { z-index: 1; }
+.cal-day.done:is(.run, .run-planned, .wettkampf)::before { z-index: 1; }
+.cal-day:is(.run, .wettkampf):is(.planned, .done)::after { z-index: 1; }
 /* Wettkampftag: das GANZE Kaestchen hellgruen — der auffaelligste Zustand im Kalender, weil
    es der eine Tag ist, auf den ein Laufplan hinarbeitet (Leonard-Wunsch 04.09.2026). Steht vor
    den Zustandsregeln fuer heute/ausgewaehlt, damit deren Rahmen weiter obenauf liegen. */
@@ -3056,7 +3094,13 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
    Zustandsregeln fuer Wettkampf, geplant und trainiert — die zeichnen ihre Marken darauf.
    Nur abgelaufene Wochen mit laufendem Plan bekommen sie, das entscheidet das JS. */
 .cal-day.leer-woche { background: #FECACA; }
-.cal-day.wettkampf { background: #4ADE80; }
+/* Seit v502 (04.11.2026, Leonard-Wunsch) KEINE gruene Flaeche mehr, sondern ein GOLDEN
+   GEFUELLTES Quadrat in der Groesse des Laufzeichens — es tritt an dessen Stelle (gelaufen wie
+   geplant). Mit Gym am selben Tag ist es die untere rechte Haelfte, wie der Lauf. */
+.cal-day.wettkampf::after {
+  content: ''; position: absolute; inset: 4.2px; border-radius: 3px;
+  background: #EAB308; box-shadow: none;
+}
 /* Fusszeile zum Lauf: gleiche Groesse UND gleiche Schriftfarbe wie die Angaben zur
    Trainingseinheit darueber — sie erbt beides von `.cal-detail`. */
 /* Fusszeile in ZWEI Spalten: links Gym, rechts Laufen (Leonard-Wunsch 06.09.2026).
@@ -3257,7 +3301,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 /* Die Muster der Legende bilden die Kaestchen nach — sie muessen mitwandern, wenn sich der
    Kalender aendert. Massstab: 13px statt 21px, alle Insets entsprechend verkleinert.
    `k-planned` = umrandetes Quadrat (geplanter Gymtag), `k-core` = gefuellt (trainiert),
-   `k-run` = hellgruenes Quadrat (gelaufen), `k-run-planned` = umrandet, `k-race` = ganze Flaeche. */
+   `k-run` = hellgruenes Quadrat (gelaufen), `k-run-planned` = umrandet, `k-race` = goldenes Quadrat. */
 .cal-legend i.k-planned::before {
   content: ''; position: absolute; inset: 2px; border-radius: 1.5px;
   box-shadow: inset 0 0 0 1.3px #0F766E;
@@ -3267,7 +3311,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
   content: ''; position: absolute; inset: 2px; border-radius: 1.5px; background: #4ADE80;
 }
 .cal-legend i.k-run-planned::after { background: transparent; box-shadow: inset 0 0 0 1.3px #4ADE80; }
-.cal-legend i.k-race { background: #4ADE80; }
+.cal-legend i.k-race::after { content: ''; position: absolute; inset: 2px; border-radius: 1.5px; background: #EAB308; }
 /* Die beiden Planspuren als Muster: ein kurzer Balken statt eines Kaestchens. */
 .cal-legend i.k-plan-gym, .cal-legend i.k-plan-lauf {
   flex-basis: 20px; width: 20px; height: 5px; border-radius: 3px; background: #0F766E;
