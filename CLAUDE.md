@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v521**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v522**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -573,6 +573,15 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Lesehilfe `#modal-cal-info` und alle Legenden-Regeln `.cal-legend*` (nur dort genutzt). Der
   Kreispfeil der Uebersicht bleibt. Alle Abschnitte zur Lesehilfe/Legende sind Vorgeschichte.
   GEMESSEN: Gymplan und Laufplan je 0 Info-Knoepfe; keine Konsolenfehler.
+
+- **v522 (04.11.2026, Leonard-Wahl „Variante A" aus fuenf Vorschlaegen — B getoente Haelften,
+  C Rahmen mit Haarlinie, D Ecken-Marker, E getrennte Dreiecke):** An Tagen mit Gym UND Lauf ist
+  eine GEPLANTE Haelfte kein Dreiecksring mehr, sondern ihr Stueck des Aussenrahmens: Gym oben +
+  links, Lauf unten + rechts (zwei einseitige inset-Schatten, der Dreiecks-`clip-path` teilt die
+  Ecken an der Schraege). Die Diagonale faellt weg. Gilt in der Kombi-Wochenkarte (4px) und im
+  Trainingskalender (3.02px), auch im Glas-Modus; absolvierte Haelften bleiben gefuellte Dreiecke.
+  Die `polygon(evenodd, …)`-Ringe sind entfallen. GEMESSEN (Bild): alle vier Zustaende in beiden;
+  keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
