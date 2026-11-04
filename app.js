@@ -7733,17 +7733,6 @@ function _maxDerVorherigenEinheit(ws, abIndex, exId) {
   return null;
 }
 
-// Eine Zeile Einordnung: Wie steht der schwerste Satz zur letzten Einheit? Das ist die
-// Frage, für die man eine vergangene Einheit überhaupt aufmacht — die reinen Zahlen
-// stehen ohnehin darunter.
-function _fortschrittZeile(jetzt, vorher) {
-  if (!jetzt) return '';                                   // Körpergewichtsübung
-  if (vorher === null) return '<div class="hd-delta hd-delta-flat">erste Gym Session mit dieser Übung</div>';
-  const d = Math.round((jetzt - vorher) * 100) / 100;
-  if (d > 0) return `<div class="hd-delta hd-delta-up">▲ +${fmtKg(d)} kg zur letzten Gym Session</div>`;
-  if (d < 0) return `<div class="hd-delta hd-delta-down">▼ ${fmtKg(d)} kg zur letzten Gym Session</div>`;
-  return '';   // gleich geblieben: keine Zeile (Leonard-Wunsch) — nur Veränderung ist eine Meldung wert
-}
 
 function showHistDetail(i, highlightExId) {
   const ws = DB.getWorkouts();
@@ -7758,50 +7747,67 @@ function showHistDetail(i, highlightExId) {
 
   const uebungen = w.exercises || [];
   const saetze = uebungen.reduce((n, ex) => n + (Array.isArray(ex.sets) ? ex.sets.length : 0), 0);
-  const kopf = `<div class="hd-stats">
-    <div class="hd-stat"><b>${fmtDur(w.duration)}</b><span>Dauer</span></div>
-    <div class="hd-stat"><b>${fmtVol(calcVolume(w))}</b><span>Volumen</span></div>
-    <div class="hd-stat"><b>${saetze}</b><span>Sätze</span></div>
-  </div>`;
+  // v525 (04.11.2026, Leonard-Wahl „Variante A" aus vier gezeichneten Vorschlaegen — B Mini-
+  // Tabellen, C Highlights zuerst, D heute gegen letztes Mal): KOPF wie in der Laufdetailansicht
+  // (`.rd-kopf`, hier im Verlauf des Gym-Knopfs): Volumen gross samt Veraenderung zur letzten
+  // Gym Session DESSELBEN Gymtags, darunter Dauer, Saetze und Uebungen.
+  const vol = calcVolume(w);
+  const vorige = w.planDayId ? ws.slice(i + 1).find(x => x.planDayId === w.planDayId) : null;
+  const vorVol = vorige ? calcVolume(vorige) : 0;
+  let trend = '';
+  if (vorVol > 0) {
+    const pct = Math.round((vol - vorVol) / vorVol * 100);
+    trend = `${pct > 0 ? '+' : pct < 0 ? '−' : '±'}${Math.abs(pct)} %`;
+  }
+  const zeile = [w.duration ? fmtDur(w.duration) : '', `${saetze} ${saetze === 1 ? 'Satz' : 'Sätze'}`,
+                 `${uebungen.length} ${uebungen.length === 1 ? 'Übung' : 'Übungen'}`].filter(Boolean).join(' · ');
+  const kopf = `<div class="rd-kopf gym">
+      <span class="rd-kopf-etikett">Volumen</span>
+      <div class="rd-kopf-reihe">
+        <span class="rd-kopf-wert">${fmtVol(vol)}</span>
+        ${trend ? `<span class="rd-kopf-zeile">${trend}</span>` : ''}
+      </div>
+      <span class="rd-kopf-zeile">${zeile}</span>
+    </div>`;
 
-  const schritte = uebungen.map((ex, idx) => {
+  // JE UEBUNG EINE ZEILE: Farbmarke der Muskelgruppe, Name (+ PR), Saetze kompakt, rechts die
+  // Veraenderung des schwersten Satzes zur letzten Gym Session mit dieser Uebung. Ein Tipp klappt
+  // Notiz und Verlaufsdiagramm auf (`toggleHdZeile`).
+  const zeilen = uebungen.map((ex, idx) => {
     const id = ex.exId || ex.id;
     const exData = getEx(id);
     const farbe = muscleColor(exData ? exData.muscle : 'chest');
-    const pr = prByExId[id];
     const sets = Array.isArray(ex.sets) ? ex.sets : [];
     // Reihenfolge Wiederholungen × Gewicht — so wird der Satz gesprochen („8 mal 92 Kilo").
-    // Ohne Gewicht (Körpergewichtsübung) nur die Wiederholungen.
-    const chips = sets.map(s => s.weight
-      ? `<span class="hd-chip">${s.reps || '–'}<i>×</i>${s.weight}<i> kg</i></span>`
-      : `<span class="hd-chip">${s.reps || '–'}<i> Wdh.</i></span>`).join('');
-    const prChip = pr ? `<span class="hd-pr">🏆 PR ${pr.weight} kg</span>` : '';
-    const delta = _fortschrittZeile(_maxGewicht(ex), _maxDerVorherigenEinheit(ws, i, id));
-    // Die Umrandung sitzt auf dem Inhalt, nicht auf dem ganzen Schritt — sonst liefe sie
-    // um die Nummernscheibe herum, die links auf der Linie sitzt.
-    const hervor = (highlightExId && id === highlightExId) ? ' hd-step-hl' : '';
-    return `<div class="hd-step" style="--mc:${farbe}">
-      <div class="hd-step-num">${idx + 1}</div>
-      <div class="hd-step-body${hervor}">
-        <div class="hd-step-title">${escapeHtml((exData && exData.name) || ex.name || '')}${prChip}</div>
+    const saetzeText = sets.map(s => s.weight ? `${s.reps || '–'}×${s.weight}` : `${s.reps || '–'} Wdh.`).join(' · ');
+    const jetzt = _maxGewicht(ex), vorher = _maxDerVorherigenEinheit(ws, i, id);
+    let delta = '';
+    if (jetzt && vorher === null) delta = '<span class="hd-zeile-delta neu">neu</span>';
+    else if (jetzt) {
+      const d = Math.round((jetzt - vorher) * 100) / 100;
+      if (d > 0) delta = `<span class="hd-zeile-delta up">▲ +${fmtKg(d)} kg</span>`;
+      else if (d < 0) delta = `<span class="hd-zeile-delta down">▼ ${fmtKg(d)} kg</span>`;
+    }
+    const offen = highlightExId && id === highlightExId;
+    return `<div class="hd-zeile${offen ? ' offen hd-zeile-hl' : ''}">
+      <button type="button" class="hd-zeile-kopf" onclick="toggleHdZeile(this)" aria-expanded="${offen ? 'true' : 'false'}">
+        <span class="hd-zeile-marke" style="background:${farbe}"></span>
+        <span class="hd-zeile-text">
+          <span class="hd-zeile-name">${escapeHtml((exData && exData.name) || ex.name || '')}${prByExId[id] ? '<span class="hd-pr">PR</span>' : ''}</span>
+          <span class="hd-zeile-saetze">${saetzeText}</span>
+        </span>
         ${delta}
-        <div class="hd-cols">
-          <div class="hd-chips">${chips}</div>
-          <div class="hd-right">
-            ${ex.notes ? `<div class="hd-note">${ex.notes}</div>` : ''}
-            ${exChartHTML(id, `hd-chart-${idx}`, { collapsible: true, zu: true })}
-          </div>
-        </div>
+        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
+      </button>
+      <div class="hd-zeile-mehr">
+        ${ex.notes ? `<div class="hd-note">${ex.notes}</div>` : ''}
+        ${exChartHTML(id, `hd-chart-${idx}`)}
       </div>
     </div>`;
   }).join('');
 
   document.getElementById('hist-detail-body').innerHTML =
-    kopf +
-    `<div class="hd-rail">
-       <button class="hd-toggle-all" id="hd-toggle-all" onclick="toggleAllHdCharts()">Alle ausklappen</button>
-       ${schritte}
-     </div>` +
+    kopf + `<div class="hd-liste">${zeilen}</div>` +
     `<button class="btn btn-danger btn-full" style="margin-top:18px" onclick="deleteSession(${i})">🗑 Gym Session löschen</button>`;
   openModal('modal-hist-detail');
   _renderHdCharts();
@@ -7814,32 +7820,37 @@ let _hdCharts = [];
 function _renderHdCharts() {
   _hdCharts.forEach(c => c.destroy());
   _hdCharts = [];
-  document.querySelectorAll('#hist-detail-body .ex-chart-block:not(.collapsed) canvas').forEach(cv => {
+  // Nur die Diagramme AUFGEKLAPPTER Uebungen (v525) — ein verstecktes Canvas hat keine Breite.
+  document.querySelectorAll('#hist-detail-body .hd-zeile.offen .ex-chart-block canvas').forEach(cv => {
     const chart = _zeichneExDiagramm(cv, cv.dataset.ex);
     if (chart) _hdCharts.push(chart);
   });
 }
 
-// Ein Knopf fuer alle: Sind alle zu, klappt er alle auf — sonst klappt er alle zu.
-function toggleAllHdCharts() {
-  const bloecke = [...document.querySelectorAll('#hist-detail-body .ex-chart-block')];
-  if (!bloecke.length) return;
-  const istZu = b => b.classList.contains('collapsed') || b.dataset.zu === '1';
-  const alleZu = bloecke.every(istZu);
-  // Nur die Bloecke, deren Zustand sich aendert, bewegen sich — alle gleichzeitig.
-  bloecke.filter(b => istZu(b) === alleZu).forEach(b => _hdBlockKlappen(b, alleZu));
-  if (alleZu) _renderHdCharts();
-  _syncHdToggleAllLabel();
-}
-
-// Beschriftung folgt dem tatsaechlichen Zustand — auch wenn einzelne Diagramme
-// ueber ihre eigene Ueberschrift umgeschaltet wurden.
-function _syncHdToggleAllLabel() {
-  const btn = document.getElementById('hd-toggle-all');
-  if (!btn) return;
-  const bloecke = [...document.querySelectorAll('#hist-detail-body .ex-chart-block')];
-  const alleZu = bloecke.length > 0 && bloecke.every(b => b.classList.contains('collapsed') || b.dataset.zu === '1');
-  btn.textContent = alleZu ? 'Alle ausklappen' : 'Alle einklappen';
+// Eine Uebung der Detailansicht auf- bzw. zuklappen (v525): gleiche Bewegung wie „Heute" in der
+// Uebersicht (`_boxFahren`, 200ms, Token `_klappNr`). Beim Aufklappen wird ZUERST gezeichnet
+// (das Canvas braucht eine Breite), beim Zuklappen faellt `.offen` erst am Ende.
+function toggleHdZeile(btn) {
+  const zeile = btn.closest('.hd-zeile');
+  const mehr = zeile && zeile.querySelector('.hd-zeile-mehr');
+  if (!mehr) return;
+  const auf = btn.getAttribute('aria-expanded') !== 'true';
+  btn.setAttribute('aria-expanded', String(auf));
+  const nr = (mehr._klappNr || 0) + 1;
+  mehr._klappNr = nr;
+  const von = zeile.classList.contains('offen') ? mehr.getBoundingClientRect().height : 0;
+  mehr.getAnimations().forEach(a => a.cancel());
+  zeile.classList.add('offen');
+  if (auf) _renderHdCharts();
+  const voll = mehr.getBoundingClientRect().height;
+  const fertig = () => {
+    if (mehr._klappNr !== nr) return;
+    mehr.style.overflow = '';
+    zeile.classList.toggle('offen', auf);
+  };
+  if (_bewegungReduziert() || !mehr.animate) { fertig(); return; }
+  mehr.style.overflow = 'hidden';
+  _boxFahren(mehr, von, auf ? voll : 0, fertig);
 }
 
 function deleteSession(i) {
@@ -9729,16 +9740,13 @@ function exStatsHTML(exId) {
 // Entwicklung der Uebung — umschaltbar zwischen schwerstem Satz und Gesamtwiederholungen.
 // Die Wahl bleibt je Uebung gespeichert (getExChartMode). Erst ab zwei Einheiten sinnvoll:
 // ein einzelner Punkt ist keine Entwicklung. Gezeichnet wird ueber _zeichneExDiagramm().
-function exChartHTML(exId, canvasId, opts) {
-  opts = opts || {};
+function exChartHTML(exId, canvasId) {
   const mode = getExChartMode(exId);
   const enough = exHistPoints(exId, mode).length >= 2;
-  // Einklappbare Variante (Einheiten-Detailansicht): die Ueberschrift wird zur Schaltflaeche.
-  const kopf = opts.collapsible
-    ? `<button class="ex-chart-collapse" onclick="toggleChartBlock(this)">Entwicklung<span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>`
-    : '<span>Entwicklung</span>';
-  // v482: In der Einheiten-Detailansicht starten die Diagramme eingeklappt (`opts.zu`).
-  return `<div class="ex-chart-block${opts.zu ? ' collapsed' : ''}">
+  // Die einklappbare Variante der Einheiten-Detailansicht (`opts.collapsible`/`opts.zu`) ist mit
+  // v525 entfallen — dort klappt jetzt die ganze Uebungszeile.
+  const kopf = '<span>Entwicklung</span>';
+  return `<div class="ex-chart-block">
     <div class="ex-item-body-label ex-chart-head">
       ${kopf}
       <div class="stats-mode-toggle ex-chart-toggle" data-ex="${exId}">
@@ -9753,45 +9761,6 @@ function exChartHTML(exId, canvasId, opts) {
       <div class="ex-chart-empty" data-ex="${exId}"${enough ? ' style="display:none"' : ''}>${exChartEmptyText(mode)}</div>
     </div>
   </div>`;
-}
-
-// Ein-/Ausklappen eines einzelnen Diagramms. Beim Aufklappen neu zeichnen: Ein verstecktes
-// Canvas hat keine Breite, Chart.js behielte sonst die alten Masse.
-function toggleChartBlock(btn) {
-  const block = btn.closest('.ex-chart-block');
-  if (!block) return;
-  const auf = block.classList.contains('collapsed') || block.dataset.zu === '1';
-  _hdBlockKlappen(block, auf);
-  if (auf) _renderHdCharts();
-  _syncHdToggleAllLabel();
-}
-
-// Das Diagramm klappt MIT BEWEGUNG auf und zu (30.09.2026, Leonard-Wunsch) — gleiche 200ms,
-// Kurve und Notbremse wie die Uebungskarten (`_klappBewegung`). Gefahren wird die Hoehe des
-// ganzen Blocks (Ueberschrift + Diagramm), `overflow: hidden` beschneidet waehrenddessen.
-// AUF: Die Klasse faellt sofort, damit das Canvas eine Breite hat und gleich gezeichnet werden
-// kann; der Block waechst von seiner Kopfhoehe. ZU: Die Klasse wird nur zum MESSEN gesetzt und
-// erst am Ende der Bewegung endgueltig — sonst schrumpfte eine leere Flaeche.
-// `data-zu` merkt ein laufendes Zuklappen, damit ein zweiter Tipp waehrenddessen richtig herum
-// wieder aufklappt; `_klappNr` entwertet den Abschluss einer abgebrochenen Bewegung.
-function _hdBlockKlappen(block, auf) {
-  const nr = (block._klappNr || 0) + 1;
-  block._klappNr = nr;
-  const setzen = () => { block.classList.toggle('collapsed', !auf); delete block.dataset.zu; };
-  if (_bewegungReduziert() || !block.animate) { setzen(); return; }
-  const von = block.getBoundingClientRect().height;
-  block.getAnimations().forEach(a => a.cancel());
-  block.classList.toggle('collapsed', !auf);
-  const bis = block.getBoundingClientRect().height;
-  if (!auf) { block.classList.remove('collapsed'); block.dataset.zu = '1'; }
-  else delete block.dataset.zu;
-  if (Math.abs(bis - von) < 1) { setzen(); return; }
-  block.style.overflow = 'hidden';
-  _klappBewegung(block, [{ height: von + 'px' }, { height: bis + 'px' }], () => {
-    if (block._klappNr !== nr) return;
-    block.style.overflow = '';
-    setzen();
-  });
 }
 
 function buildExItemHTML(ex, context) {

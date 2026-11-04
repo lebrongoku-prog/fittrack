@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v524**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v525**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -604,6 +604,24 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   traegt die Kachelfarbe (Gym #0F766E auf 14-%-Gym-Gruen, Lauf #22A05B auf 22-%-Lauf-Gruen; Glas
   weiss auf 18-%-Weiss). GEMESSEN: Mo erledigt ohne Zusatz, Di beide grau ohne Zusatz, Pfeilfarben;
   keine Konsolenfehler.
+
+- **v525 (04.11.2026, Leonard-Wahl „Variante A" aus vier gezeichneten Vorschlaegen — B Mini-
+  Tabellen, C Highlights zuerst, D heute gegen letztes Mal):** Die DETAILANSICHT EINER GYM SESSION
+  (`showHistDetail`) hat einen Kopf wie die Laufdetailansicht (`.rd-kopf.gym`, Verlauf
+  #0B4F49 → #14B8A6): „VOLUMEN" gross, daneben die Veraenderung zur letzten Gym Session DESSELBEN
+  Gymtags („+4 %"), darunter „1h 5min · 15 Sätze · 5 Übungen". Darunter JE UEBUNG EINE ZEILE
+  (`.hd-zeile`): Farbmarke der Muskelgruppe, Name + „PR", Saetze kompakt („8×60 · 8×60 · 7×62.5"),
+  rechts „▲ +5 kg" (gruen) / „▼ …" (rot) / „neu" gegen die letzte Gym Session mit der Uebung,
+  Pfeil. Ein Tipp klappt Notiz und Verlaufsdiagramm auf (`toggleHdZeile`, `_boxFahren` 200ms,
+  `_renderHdCharts` zeichnet nur offene Zeilen). Aus der PR-Liste: Zeile umrandet und offen.
+  ENTFALLEN: der Zeitstrahl mit Nummernscheiben und die drei Kacheln dort, „Alle ausklappen“
+  (`toggleAllHdCharts`, `_syncHdToggleAllLabel`), `toggleChartBlock`, `_hdBlockKlappen`,
+  `_fortschrittZeile`, die einklappbare Variante von `exChartHTML` (`opts`) und die CSS-Regeln
+  `.hd-rail`/`.hd-step*`/`.hd-chip*`/`.hd-cols`/`.hd-right`/`.hd-delta*`/`.hd-toggle-all`.
+  Die Abschnitte zum Zeitstrahl der Einheiten-Detailansicht sind Vorgeschichte (der
+  Wettkampf-Zeitstrahl `.wk-strahl` hat eigene Klassen und bleibt). GEMESSEN: Kopf „8.1 t +4 %",
+  5 Zeilen mit Deltas, Tipp → Notiz + Diagramm (494px breit), zweiter Tipp → zu; PR-Weg
+  umrandet und offen; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

@@ -1237,57 +1237,42 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .hd-stat b { display: block; font-size: var(--fs-betont); font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
 .hd-stat span { display: block; font-size: var(--fs-etikett); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text3); margin-top: 2px; }
 
-/* Senkrechte Linie hinter den Nummernscheiben. Der Einzug muss zur Position der Scheiben
-   passen (left: -30px im Schritt), sonst hängen sie neben der Linie. */
-.hd-rail { position: relative; padding-left: 30px; }
-.hd-rail::before {
-  content: ""; position: absolute; left: 10px; top: 6px; bottom: 8px;
-  width: 2px; background: var(--border);
+/* DETAILANSICHT EINER GYM SESSION (v525, Leonard-Wahl „Variante A"): Kopf `.rd-kopf.gym` wie in
+   der Laufdetailansicht, darunter je Uebung EINE Zeile (`.hd-zeile`) — Farbmarke der
+   Muskelgruppe, Name (+ PR), Saetze kompakt, rechts die Veraenderung des schwersten Satzes, Pfeil.
+   Ein Tipp klappt Notiz und Verlaufsdiagramm auf (`.hd-zeile-mehr`, `toggleHdZeile`).
+   Der fruehere Zeitstrahl (`.hd-rail`, `.hd-step*`, `.hd-chip*`, `.hd-cols`, `.hd-right`,
+   `.hd-delta*`, `.hd-toggle-all`) ist entfallen. */
+.rd-kopf.gym { background: linear-gradient(135deg, #0B4F49, #14B8A6); }
+.hd-liste { display: flex; flex-direction: column; }
+.hd-zeile + .hd-zeile { border-top: 1px solid var(--border); }
+.hd-zeile-kopf {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 0;
+  border: none; background: none; font: inherit; color: var(--text); text-align: left;
+  cursor: pointer; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
 }
-.hd-step { position: relative; margin-bottom: 14px; }
-.hd-step:last-child { margin-bottom: 0; }
-.hd-step-num {
-  position: absolute; left: -30px; top: 0; width: 22px; height: 22px; border-radius: 50%;
-  background: var(--mc, var(--accent)); color: #fff;
-  font-size: var(--fs-etikett); font-weight: 800;
-  display: flex; align-items: center; justify-content: center;
-}
-.hd-step-title { font-size: var(--fs-text); font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.hd-zeile-kopf:active { opacity: .7; }
+.hd-zeile-marke { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+.hd-zeile-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.hd-zeile-name { font-size: var(--fs-text); font-weight: 700; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.hd-zeile-saetze { font-size: var(--fs-neben); color: var(--text2); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.hd-zeile-delta { font-size: var(--fs-neben); font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+.hd-zeile-delta.up   { color: var(--green); }
+.hd-zeile-delta.down { color: var(--red); }
+.hd-zeile-delta.neu  { color: var(--text3); font-weight: 600; }
+.hd-zeile-kopf .aex-v2-chev { flex-shrink: 0; }
+.hd-zeile-kopf[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
+.hd-zeile-mehr { display: none; padding: 0 0 12px 22px; }
+.hd-zeile.offen .hd-zeile-mehr { display: block; }
+.hd-zeile-mehr > * + * { margin-top: 8px; }
 .hd-pr { background: var(--accent-bg); color: var(--accent); padding: 2px 8px; border-radius: 999px; font-size: var(--fs-etikett); font-weight: 700; }
-/* Einordnung gegenüber der letzten Einheit derselben Übung. */
-/* Abstand liegt oben statt unten, damit die Chips auch dann sauber sitzen, wenn die
-   Zeile fehlt (Übung unverändert oder ohne Gewicht). */
-.hd-delta { font-size: var(--fs-neben); font-weight: 700; margin: 5px 0 0; }
-.hd-delta-up   { color: var(--green); }
-.hd-delta-down { color: var(--text3); }
-.hd-delta-flat { color: var(--text3); font-weight: 600; }
-/* Aufbau wie in der aufgeklappten Uebungskarte: links die Saetze untereinander,
-   rechts die Notiz. Unter 460px untereinander — genau wie `.aex-v2-body`. */
-.hd-cols { display: flex; gap: 12px; align-items: flex-start; margin-top: 5px; }
-.hd-chips { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; flex: 0 0 auto; }
-.hd-chip {
-  background: var(--card2); border-radius: 7px; padding: 4px 8px;
-  font-size: var(--fs-neben); font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums;
-}
-.hd-chip i { font-style: normal; color: var(--text3); font-weight: 600; }
-/* Rechte Spalte: Notiz (falls vorhanden) und darunter das Verlaufsdiagramm. Ohne Notiz
-   beginnt das Diagramm genau dort, wo sonst die Notiz staende. */
-.hd-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .hd-note {
   font-size: var(--fs-neben); color: var(--text3); line-height: 1.45;
   background: var(--card2); border-radius: 10px; padding: 10px 12px;
 }
-@media (max-width: 460px) {
-  .hd-cols { flex-direction: column; gap: 8px; }
-  .hd-note { width: 100%; }
-}
-/* Über die PR-Liste geöffnet: die Übung, die den Bestwert hält, wird umrandet — sonst
-   müsste man sie in der Liste aller Übungen suchen. Die Umrandung sitzt auf dem Inhalt,
-   damit sie nicht um die Nummernscheibe auf der Linie herumläuft. */
-.hd-step-hl {
-  border: 2px solid var(--accent); background: var(--accent-bg);
-  border-radius: 10px; padding: 8px 10px; margin: -4px -8px 0;
-}
+/* Ueber die PR-Liste geoeffnet: die Uebung mit dem Bestwert ist umrandet und aufgeklappt. */
+.hd-zeile-hl { border: 2px solid var(--accent) !important; background: var(--accent-bg); border-radius: 10px; padding: 0 10px; }
+.hd-zeile-hl + .hd-zeile { border-top: none; }
 
 /* ─── Ausklapp-Knopf auf farbigem Tab-Hintergrund ───────────────────────────────
    Uebernommen aus der Health-Command-Center-App (Leonard-Wunsch 28.08.2026).
@@ -4446,18 +4431,6 @@ html.glas #screen-runplan-detail .lp-notiz .notiz-ic { color: inherit; }
 /* In der Einheiten-Detailansicht ist der Platz schmaler als im Katalog. */
 #hist-detail-body .ex-chart-wrap { height: 120px; margin: 2px 0 0; }
 #hist-detail-body .ex-chart-empty { margin-bottom: 0; }
-/* „Alle ein-/ausklappen": rechtsbuendig unter der Saetze-Kachel, auf Hoehe des ersten
-   Uebungstitels. Absolut, damit es die Zeitleiste nicht nach unten schiebt. */
-.hd-toggle-all {
-  /* z-index NOETIG: Die `.hd-step`s sind ebenfalls positioniert (fuer die Nummernscheibe)
-     und stehen im Markup NACH dem Knopf — ohne eigene Ebene liegt der erste Uebungstitel
-     darueber und schluckt den Tipp. */
-  position: absolute; top: 0; right: 0; z-index: 1;
-  background: none; border: none; padding: 0; font-family: inherit;
-  font-size: var(--fs-etikett); font-weight: 700; color: var(--accent);
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
-.hd-toggle-all:active { opacity: .6; }
 .ex-chart-toggle .stats-mode-pill.active,
 .vol-unit-toggle .stats-mode-pill.active { background: var(--accent); color: #fff; }
 
