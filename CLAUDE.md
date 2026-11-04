@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v508**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v509**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -467,6 +467,12 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   6px sichtbar (vorher 15.5px): `#ov-cal-card`/`#plans-cal-card > .chart-card-v2-head
   { margin-bottom: 0.5px }`, dazu die 5px `--cal-pad-y`. GEMESSEN in beiden Kalendern: Titel →
   Monat 6.0px, Monat → Raster 6.0px; keine Konsolenfehler.
+
+- **v509 (04.11.2026, Leonard-Wunsch):** Das Feld hinter heute/dem gewaehlten Tag in der
+  Kombi-Karte ist so hoch wie in Gym- und Laufwoche: 42.6 → 56.1px (`.ppv-k-reihe.beide
+  .ppv-k-col.today/.selected { padding: 10.05px 0; margin: 0 }`). Die Karte bleibt 157.3px,
+  die verteilten Abstaende geben nach (Wochentage → Feld 17.5px = Feld → Kartenrand); keine
+  Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

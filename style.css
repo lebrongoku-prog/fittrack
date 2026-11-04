@@ -2067,8 +2067,11 @@ html.glas .screen:not(#screen-mehr) .ppv-k-ic { color: rgba(255,255,255,.85); }
    innere Kathete 100 % − 11.11 % × (2 + √2). Der Ring eines ganzen Quadrats ebenso 4px. */
 .ppv-kombi.einzeilig .ppv-k-labels,
 .ppv-kombi.einzeilig .ppv-k-reihe { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+/* v509 (Leonard-Wunsch): Das Feld fuer heute/gewaehlt ist so hoch wie in Gym- und Laufwoche
+   (56.1px = 39.6px Quadrat + 2 × 8.25px): Polster (56.1 − 36) / 2 = 10.05px, im Fluss (kein
+   negativer Rand) — die Reihe waechst, die verteilten Abstaende der festen Karte geben nach. */
 .ppv-k-reihe.beide .ppv-k-col.today,
-.ppv-k-reihe.beide .ppv-k-col.selected { border-radius: 9.9px; }
+.ppv-k-reihe.beide .ppv-k-col.selected { border-radius: 9.9px; padding: 10.05px 0; margin: 0; }
 .ppv-k-reihe.beide .ppv-k-dot { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; }
 .ppv-k-reihe.beide .ppv-k-dot.hat { border-radius: 6px; }
 .ppv-k-dot .kt { position: absolute; inset: 0; border-radius: inherit; }
