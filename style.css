@@ -2064,8 +2064,8 @@ html.glas .screen:not(#screen-mehr) .ppv-k-ic { color: rgba(255,255,255,.85); }
    diagonal (oben links Gym `.kt.gym`, unten rechts Lauf `.kt.lauf`). Gefuellt = absolviert,
    Umriss = offen; eine absolvierte Haelfte liegt obenauf (`z-index`). Tag ohne Einheit rund.
    Keine Symbolspalte mehr, das Raster hat nur noch die sieben Tage. Der Ring einer GETEILTEN
-   offenen Haelfte ist ein Dreiecksring (15 % = 5.4px wie im Kalender, seit v503; innere Kathete
-   100 % − 15 % × (2 + √2)). Der Ring eines ganzen Quadrats ebenso 15 % (5.4px). */
+   offenen Haelfte ist ein Dreiecksring, seit v504 4px (11.11 % von 36px, Leonard-Wunsch; v503 15 %);
+   innere Kathete 100 % − 11.11 % × (2 + √2). Der Ring eines ganzen Quadrats ebenso 4px. */
 .ppv-kombi.einzeilig .ppv-k-labels,
 .ppv-kombi.einzeilig .ppv-k-reihe { grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .ppv-k-reihe.beide .ppv-k-col.today,
@@ -2075,25 +2075,25 @@ html.glas .screen:not(#screen-mehr) .ppv-k-ic { color: rgba(255,255,255,.85); }
 .ppv-k-dot .kt { position: absolute; inset: 0; border-radius: inherit; }
 .ppv-k-dot .kt.gym.erledigt  { background: #0F766E; }
 .ppv-k-dot .kt.lauf.erledigt { background: #4ADE80; }
-.ppv-k-dot .kt.gym.offen  { box-shadow: inset 0 0 0 5.4px #0F766E; }
-.ppv-k-dot .kt.lauf.offen { box-shadow: inset 0 0 0 5.4px #4ADE80; }
+.ppv-k-dot .kt.gym.offen  { box-shadow: inset 0 0 0 4px #0F766E; }
+.ppv-k-dot .kt.lauf.offen { box-shadow: inset 0 0 0 4px #4ADE80; }
 .ppv-k-dot.geteilt .kt.gym  { clip-path: polygon(0 0, 100% 0, 0 100%); }
 .ppv-k-dot.geteilt .kt.lauf { clip-path: polygon(100% 0, 100% 100%, 0 100%); }
 .ppv-k-dot.geteilt .kt.erledigt { z-index: 1; }
 .ppv-k-dot.geteilt .kt.gym.offen {
   box-shadow: none; background: #0F766E;
-  clip-path: polygon(evenodd, 0 0, 100% 0, 0 100%, 0 0, 15% 15%, 15% 63.79%, 63.79% 15%, 15% 15%);
+  clip-path: polygon(evenodd, 0 0, 100% 0, 0 100%, 0 0, 11.11% 11.11%, 11.11% 73.18%, 73.18% 11.11%, 11.11% 11.11%);
 }
 .ppv-k-dot.geteilt .kt.lauf.offen {
   box-shadow: none; background: #4ADE80;
-  clip-path: polygon(evenodd, 100% 0, 100% 100%, 0 100%, 100% 0, 85% 36.21%, 36.21% 85%, 85% 85%, 85% 36.21%);
+  clip-path: polygon(evenodd, 100% 0, 100% 100%, 0 100%, 100% 0, 88.89% 26.82%, 26.82% 88.89%, 88.89% 88.89%, 88.89% 26.82%);
 }
 /* Glas: wie im Kalender Gym 60-%-, Lauf 92-%-Weiss — sonst waeren die Haelften gleich. */
 html.glas .screen:not(#screen-mehr) .ppv-k-reihe.beide .ppv-k-dot { background: rgba(255,255,255,.22); }
 html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.gym.erledigt  { background: rgba(255,255,255,.6); }
 html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.lauf.erledigt { background: rgba(255,255,255,.92); }
-html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.gym.offen  { box-shadow: inset 0 0 0 5.4px rgba(255,255,255,.6); }
-html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.lauf.offen { box-shadow: inset 0 0 0 5.4px rgba(255,255,255,.92); }
+html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.gym.offen  { box-shadow: inset 0 0 0 4px rgba(255,255,255,.6); }
+html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.lauf.offen { box-shadow: inset 0 0 0 4px rgba(255,255,255,.92); }
 html.glas .screen:not(#screen-mehr) .ppv-k-dot.geteilt .kt.gym.offen  { box-shadow: none; background: rgba(255,255,255,.6); }
 html.glas .screen:not(#screen-mehr) .ppv-k-dot.geteilt .kt.lauf.offen { box-shadow: none; background: rgba(255,255,255,.92); }
 html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
@@ -3081,11 +3081,11 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
 }
 .cal-day.planned:not(.done):is(.run, .run-planned, .wettkampf)::before {
   background: #0F766E; box-shadow: none;
-  clip-path: polygon(evenodd, 0 0, 100% 0, 0 100%, 0 0, 15% 15%, 15% 63.79%, 63.79% 15%, 15% 15%);
+  clip-path: polygon(evenodd, 0 0, 100% 0, 0 100%, 0 0, 11.11% 11.11%, 11.11% 73.18%, 73.18% 11.11%, 11.11% 11.11%);
 }
 .cal-day.run-planned:not(.wettkampf):is(.planned, .done)::after {
   background: #4ADE80; box-shadow: none;
-  clip-path: polygon(evenodd, 100% 0, 100% 100%, 0 100%, 100% 0, 85% 36.21%, 36.21% 85%, 85% 85%, 85% 36.21%);
+  clip-path: polygon(evenodd, 100% 0, 100% 100%, 0 100%, 100% 0, 88.89% 26.82%, 26.82% 88.89%, 88.89% 88.89%, 88.89% 26.82%);
 }
 .cal-day.done:is(.run, .run-planned, .wettkampf)::before { z-index: 1; }
 .cal-day:is(.run, .wettkampf):is(.planned, .done)::after { z-index: 1; }
