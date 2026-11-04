@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v520**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v521**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -567,6 +567,12 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Woche" sind 36px mit Radius 6px wie in der Kombi-Wochenkarte (`.lauf-wochen-karte .lauf-wz-tag`;
   vorher 30px/4px). GEMESSEN: Gym 0 Balken, alle Quadrate 36x36 auf beiden Seiten; keine
   Konsolenfehler.
+
+- **v521 (04.11.2026, Leonard-Wunsch):** Der Trainingskalender im PLAN-TAB (Gymplan und
+  Laufplan) hat KEINEN ⓘ-Knopf mehr; rechts steht nur die Kennzahl. Mit ihm entfallen die
+  Lesehilfe `#modal-cal-info` und alle Legenden-Regeln `.cal-legend*` (nur dort genutzt). Der
+  Kreispfeil der Uebersicht bleibt. Alle Abschnitte zur Lesehilfe/Legende sind Vorgeschichte.
+  GEMESSEN: Gymplan und Laufplan je 0 Info-Knoepfe; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

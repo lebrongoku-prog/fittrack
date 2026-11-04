@@ -6825,7 +6825,7 @@ function calendarInnerHTML(id) {
   const rechtsKnopf = id === 'cal'
     ? `<button class="info-btn cal-reset-btn" onclick="calZurAktuellenAnsicht()"
                aria-label="Zur aktuellen Ansicht" title="Zur aktuellen Ansicht">${CAL_RESET_SVG}</button>`
-    : `<button class="info-btn" onclick="openModal('modal-cal-info')" aria-label="Was bedeuten die Farben?">i</button>`;
+    : '';   // v521 (Leonard-Wunsch): im Plan-Tab keine Lesehilfe mehr (samt `#modal-cal-info`)
   return `<div class="chart-card-v2-head">
       <span class="cal-head-left">${titel}${jahrFeld}</span>
       <span class="cal-head-right">
