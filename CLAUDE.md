@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v504**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v505**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -442,6 +442,10 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
 - **v504 (04.11.2026, Leonard-Wunsch):** In der Kombi-Karte „Trainingswoche" sind die Konturen
   4px breit (ganzes Quadrat und Dreiecksring, 11.11 % von 36px; v503 5.4px), auch im Glas-Modus.
   Die Einzelkarten (Gymwoche/Laufwoche) bleiben bei 5.94px.
+
+- **v505 (04.11.2026, Leonard-Wunsch):** Auch die Einzelkarten (Gymwoche/Laufwoche, in
+  Uebersicht und ueberall, wo `.ppv-col.offen` erscheint) haben 4px-Konturen statt 5.94px, auch
+  im Glas-Modus. Alle Wochenkarten damit einheitlich 4px.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
