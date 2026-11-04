@@ -749,9 +749,11 @@ function getExercisePR(exId) {
 
 let currentScreen = 'overview';
 
-// Vier Haupt-Tabs. „Mehr" (Sicherung, Import/Export, Diagnose) ist kein Tab mehr, sondern
+// Drei Haupt-Tabs. „Mehr" (Sicherung, Import/Export, Diagnose) ist kein Tab mehr, sondern
 // ein Overlay hinter dem Zahnrad in der Übersicht — es wird selten und nie im Training gebraucht.
-const TAB_ORDER = ['overview', 'workouts', 'exercises', 'plans'];
+// Seit v512 (04.11.2026, Leonard-Wunsch) ist auch „Übungen" kein Tab mehr: Katalog und Stats sind
+// Vollbildseiten hinter zwei Knoepfen auf der Seite „Gymplan" (`OVERLAY_SCREENS`).
+const TAB_ORDER = ['overview', 'workouts', 'plans'];
 
 // Wenn JS gerade einen Scroll programmatisch ausloest, soll der Scroll-Listener
 // nicht zusaetzlich currentScreen/Theme/Renderer triggern (vermeidet Doppel-Render).
@@ -886,7 +888,15 @@ const OVERLAY_SCREENS = {
   // hinter den Knoepfen oben rechts (Gymtage auf „Gymplan", Pokal auf „Laufplan").
   'gymtage':        'screen-gymtage',
   'wettkaempfe':    'screen-wettkaempfe',
+  // v512: der fruehere Tab „Übungen" — Katalog (Name bleibt 'exercises', viele Stellen fragen
+  // `currentScreen === 'exercises'`) und Stats, beide hinter Knoepfen auf „Gymplan".
+  'exercises':      'screen-exercises',
+  'stats':          'screen-stats',
 };
+function openUebungenSeite()   { showScreen('exercises'); }
+function closeUebungenSeite()  { showScreen('plans'); }
+function openStatsSeite()      { showScreen('stats'); }
+function closeStatsSeite()     { showScreen('plans'); }
 function openGymtageSeite()    { showScreen('gymtage'); }
 function closeGymtageSeite()   { showScreen('plans'); }
 function openWettkampfSeite()  { showScreen('wettkaempfe'); }
@@ -899,7 +909,7 @@ function _applyTabState(name) {
   if (navEl) navEl.classList.add('active');
 
   // Body-Theme: plan-detail UND day-detail teilen sich Theme + Akzentfarbe mit der Plans-Liste (Amber).
-  const themeName = ['plan-detail', 'day-detail', 'runplan-detail', 'gymtage', 'wettkaempfe'].includes(name) ? 'plans' : name;
+  const themeName = ['plan-detail', 'day-detail', 'runplan-detail', 'gymtage', 'wettkaempfe', 'exercises', 'stats'].includes(name) ? 'plans' : name;
   document.body.className = 'theme-' + themeName;
   // _applyTabState wird bei Tableisten-Klick + initialem App-Start aufgerufen —
   // dort ist KEIN Crossfade gewuenscht (sofortiger Wechsel). Beim Swipe-Snap
@@ -933,6 +943,7 @@ function _applyTabState(name) {
   else if (name === 'mehr') renderMehr();
   else if (name === 'gymtage') renderLibDays();
   else if (name === 'wettkaempfe') { syncWkAnsichtBtn(); renderWettkaempfe(); }
+  else if (name === 'stats') renderStatsPage();
 
   ensureTimerActive();
 
@@ -2241,7 +2252,7 @@ function wischeZuTab(name) {
   const idx = TAB_ORDER.indexOf(name);
   // Aus einem Vollbild-Overlay heraus gibt es nichts zu wischen (der Tab-Container liegt
   // darunter) — dort bleibt es beim harten Wechsel.
-  const imOverlay = ['plan-detail', 'day-detail', 'mehr'].includes(currentScreen);
+  const imOverlay = !!OVERLAY_SCREENS[currentScreen];
   if (!container || idx < 0 || imOverlay || container.clientWidth <= 0) { showScreen(name); return; }
   if (currentScreen === name) return;
   // Wer Bewegung reduziert haben moechte, bekommt den Sprung.
@@ -8656,6 +8667,8 @@ function renderPlansScreen() {
   });
   // v480: Knopf „Gymtage" nur auf „Gymplan", Pokal „Wettkämpfe" nur auf „Laufplan".
   zeige(document.getElementById('plans-gymtage-btn'), plansViewMode === 'plans');
+  zeige(document.getElementById('plans-uebungen-btn'), plansViewMode === 'plans');   // v512
+  zeige(document.getElementById('plans-stats-btn'), plansViewMode === 'plans');
   zeige(document.getElementById('plans-races-btn'), plansViewMode === 'runplans');
   const seite = PLANS_SEITEN[plansViewMode] || PLANS_SEITEN.plans;
   const h1 = document.getElementById('plans-h1');
@@ -9828,31 +9841,9 @@ function renderExercises() {
   _renderOpenExerciseChart();
 }
 
-// Seiten des Übungen-Tabs: Katalog oder Stats (Aufbau analog zum Pläne-Tab).
-let exercisesViewMode = 'list';   // 'list' | 'stats'
-function setExercisesView(mode) {
-  const neu = (mode === 'stats') ? 'stats' : 'list';
-  if (neu !== exercisesViewMode) { _seitenWechsel('screen-exercises', 'exercises', () => _setExercisesView(neu)); return; }
-  _setExercisesView(neu);
-}
-function _setExercisesView(mode) {
-  exercisesViewMode = mode;
-  renderExercisesScreen();
-  seitenleisteAktualisieren();
-}
+// Katalog der Übungen (v512 eine Vollbildseite; die Stats haben ihre eigene, `renderStatsPage`).
 function renderExercisesScreen() {
-  const stats = exercisesViewMode === 'stats';
-  const viewL = document.getElementById('ex-view-list');
-  const viewS = document.getElementById('ex-view-stats');
-  if (viewL) viewL.style.display = stats ? 'none' : '';
-  if (viewS) viewS.style.display = stats ? '' : 'none';
-  // Kopfzeilen-Knöpfe gehören zum Katalog, nicht zu den Auswertungen. Sie werden
-  // unsichtbar geschaltet statt ausgeblendet — sonst schrumpft der Kopf um ihre Höhe
-  // und der Seitenwechsler springt beim Wechsel auf die Stats-Seite nach oben.
-  const kopfAktionen = document.getElementById('ex-head-actions');
-  if (kopfAktionen) kopfAktionen.style.visibility = stats ? 'hidden' : '';
-  if (stats) renderStatsPage();
-  else renderExercises();
+  renderExercises();
 }
 
 // Gewichtsentwicklung einer Übung: pro Einheit das höchste Gewicht, chronologisch.
@@ -12102,9 +12093,6 @@ const SEITEN_LEISTE = {
   workouts:  { seiten: () => [['gym', 'Gym'], ['laufen', 'Laufen']],
                aktiv:  () => workoutsViewMode,
                setzen: (k) => setWorkoutsView(k) },
-  exercises: { seiten: () => [['list', 'Übungen'], ['stats', 'Stats']],
-               aktiv:  () => exercisesViewMode,
-               setzen: (k) => setExercisesView(k) },
   plans:     { seiten: () => Object.keys(PLANS_SEITEN).map(k => [k, PLANS_SEITEN[k].titel]),
                aktiv:  () => plansViewMode,
                setzen: (k) => setPlansView(k) },
@@ -12691,6 +12679,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initOverlayEdgeSwipe('screen-mehr', closeMehr);
   initOverlayEdgeSwipe('screen-gymtage', closeGymtageSeite);
   initOverlayEdgeSwipe('screen-wettkaempfe', closeWettkampfSeite);
+  initOverlayEdgeSwipe('screen-exercises', closeUebungenSeite);
+  initOverlayEdgeSwipe('screen-stats', closeStatsSeite);
 });
 
 // Edge-Swipe-Back fuer Plan-Detail-Overlay.

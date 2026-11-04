@@ -129,83 +129,6 @@
     <div id="wo-view-laufen" style="display:none"></div>
   </div>
 
-  <!-- ══ SCREEN: ÜBUNGEN (Catalog) ══ -->
-  <div id="screen-exercises" class="screen">
-    <div class="ph">
-      <div class="ph-left">
-        <h1>Übungen</h1>
-      </div>
-      <div class="ph-actions" id="ex-head-actions">
-        <div class="ex-sort-btn" id="ex-plan-filter-btn" onclick="toggleExPlanFilter()" title="Nur Übungen aus dem aktiven Trainingsplan">
-          <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-        </div>
-        <div class="ex-sort-btn" id="ex-collapse-all-btn" data-state="collapsed" onclick="toggleAllExGroups()" title="Alle ein-/ausklappen">
-          <svg class="ex-coll-ic-expand" viewBox="0 0 24 24"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>
-          <svg class="ex-coll-ic-collapse" viewBox="0 0 24 24"><polyline points="7 11 12 6 17 11"/><polyline points="7 18 12 13 17 18"/></svg>
-        </div>
-        <div class="ex-add-btn" onclick="openNewExModal('exercises')" title="Neue Übung erstellen">
-          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        </div>
-      </div>
-    </div>
-    <div id="ex-view-list">
-      <div class="ex-search-wrap">
-        <input class="ex-search-bar" type="search" id="ex-catalog-search" placeholder="🔍 Übung suchen…" oninput="filterExerciseCatalog()" autocomplete="off">
-      </div>
-      <div id="exercises-groups"></div>
-    </div>
-
-    <!-- Seite „Stats" — aus der Übersicht hierher verschoben -->
-    <div id="ex-view-stats" style="display:none">
-      <div class="chart-card-v2 lg-span-2">
-        <div class="chart-card-v2-head">
-          <span class="chart-card-v2-title" id="vol-card-title">Volumenentwicklung</span>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
-            <div class="hist-action-dd" onclick="openHistRangeDropdown()" id="hist-range-btn">
-              <svg viewBox="0 0 24 24" style="stroke:var(--accent);fill:none;stroke-width:1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <span id="hist-range-label">30 Tage</span>
-              <svg viewBox="0 0 24 24" style="stroke:var(--accent);fill:none;stroke-width:1.8;width:12px;height:12px"><polyline points="6 9 12 15 18 9"/></svg>
-            </div>
-            <div class="stats-mode-toggle vol-unit-toggle" id="vol-unit-toggle">
-              <div class="stats-mode-pill active" data-unit="kg" onclick="setVolumeUnit('kg')">Kg</div>
-              <div class="stats-mode-pill" data-unit="sets" onclick="setVolumeUnit('sets')">Sätze</div>
-            </div>
-          </div>
-        </div>
-        <div class="chart-wrap">
-          <canvas id="volume-chart"></canvas>
-        </div>
-      </div>
-
-      <div class="chart-card-v2 lg-col1 muscle-card">
-        <div class="chart-card-v2-head">
-          <span class="chart-card-v2-title" id="muscle-card-title">Volumen pro Muskelgruppe</span>
-          <button class="info-btn" onclick="openModal('modal-muscle-info')" aria-label="Wie ist diese Auswertung zu lesen?">i</button>
-        </div>
-        <div class="muscle-bars-v2" id="muscle-bars">
-          <p style="font-size:var(--fs-neben);color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>
-        </div>
-      </div>
-
-      <div class="chart-card-v2 lg-col2">
-        <div class="chart-card-v2-head">
-          <span class="chart-card-v2-title" id="pr-card-title">PRs & Bestleistungen</span>
-        </div>
-        <div class="pr-list-v2" id="hist-pr-list">
-          <p style="font-size:var(--fs-neben);color:var(--text3);text-align:center;padding:8px 0">Noch keine PRs</p>
-        </div>
-      </div>
-
-      <!-- Letzte Einheiten (kompakter Rueckblick) — aus der Uebersicht hierher verschoben -->
-      <div class="plan-section-card lg-col1" id="ov-recent-sessions-card">
-        <div class="plan-section-head">
-          <h3>Letzte Einheiten</h3>
-        </div>
-        <div id="ov-recent-sessions-list"></div>
-      </div>
-    </div>
-  </div>
-
   <!-- ══ SCREEN: TRAININGSPLÄNE (Liste) ══ -->
   <div id="screen-plans" class="screen">
     <div class="ph">
@@ -218,6 +141,9 @@
              eigenen Seiten mehr, sondern Vollbildseiten hinter diesen Knöpfen. Sichtbarkeit
              setzt renderPlansScreen. -->
         <div class="ex-add-btn" id="plans-gymtage-btn" onclick="openGymtageSeite()" title="Gymtage" aria-label="Gymtage"><svg viewBox="0 0 24 24"><rect x="2" y="9" width="3" height="6" rx="1"/><rect x="5" y="6" width="3.5" height="12" rx="1"/><rect x="15.5" y="6" width="3.5" height="12" rx="1"/><rect x="19" y="9" width="3" height="6" rx="1"/><line x1="8.5" y1="12" x2="15.5" y2="12"/></svg></div>
+        <!-- v512: Übungen und Stats (vorher eigener Tab) — nur auf „Gymplan", wie die Gymtage. -->
+        <div class="ex-add-btn" id="plans-uebungen-btn" onclick="openUebungenSeite()" title="Übungen" aria-label="Übungen"><svg viewBox="0 0 24 24"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg></div>
+        <div class="ex-add-btn" id="plans-stats-btn" onclick="openStatsSeite()" title="Stats" aria-label="Stats"><svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="20"/><rect x="5.5" y="12" width="3" height="6" rx="0.5"/><rect x="10.5" y="7" width="3" height="11" rx="0.5"/><rect x="15.5" y="4" width="3" height="14" rx="0.5"/></svg></div>
         <div class="ex-add-btn" id="plans-races-btn" onclick="openWettkampfSeite()" title="Wettkämpfe" aria-label="Wettkämpfe" style="display:none"><svg viewBox="0 0 24 24"><path d="M7 3h10v6a5 5 0 0 1-10 0V3z"/><path d="M7 5H3.5v1.5A4 4 0 0 0 7.5 10.5"/><path d="M17 5h3.5v1.5a4 4 0 0 1-4 4"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="7.5" y1="21" x2="16.5" y2="21"/><line x1="9" y1="18" x2="15" y2="18"/></svg></div>
         <!-- Archiv der gezeigten Seite (Gympläne, Laufpläne). Sichtbar nur, wenn es
              dort überhaupt archivierte Einträge gibt; gefüllt, solange das Archiv offen ist.
@@ -399,6 +325,92 @@
       </div>
     </div>
     <div id="races-list"></div>
+  </div>
+
+  <!-- ══ OVERLAY: ÜBUNGEN (v512, vorher Seite „Katalog" des eigenen Tabs „Übungen") ══ -->
+  <div id="screen-exercises" class="screen plan-detail-overlay">
+    <div class="ph plan-detail-ph">
+      <button class="sheet-back-btn" onclick="closeUebungenSeite()" aria-label="Zurück">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="ph-left"><h1>Übungen</h1></div>
+      <div class="ph-actions" id="ex-head-actions">
+        <div class="ex-sort-btn" id="ex-plan-filter-btn" onclick="toggleExPlanFilter()" title="Nur Übungen aus dem aktiven Trainingsplan">
+          <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        </div>
+        <div class="ex-sort-btn" id="ex-collapse-all-btn" data-state="collapsed" onclick="toggleAllExGroups()" title="Alle ein-/ausklappen">
+          <svg class="ex-coll-ic-expand" viewBox="0 0 24 24"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>
+          <svg class="ex-coll-ic-collapse" viewBox="0 0 24 24"><polyline points="7 11 12 6 17 11"/><polyline points="7 18 12 13 17 18"/></svg>
+        </div>
+        <div class="ex-add-btn" onclick="openNewExModal('exercises')" title="Neue Übung erstellen">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+      </div>
+    </div>
+    <div id="ex-view-list">
+      <div class="ex-search-wrap">
+        <input class="ex-search-bar" type="search" id="ex-catalog-search" placeholder="🔍 Übung suchen…" oninput="filterExerciseCatalog()" autocomplete="off">
+      </div>
+      <div id="exercises-groups"></div>
+    </div>
+  </div>
+
+  <!-- ══ OVERLAY: STATS (v512, vorher Seite „Stats" des eigenen Tabs „Übungen") ══ -->
+  <div id="screen-stats" class="screen plan-detail-overlay">
+    <div class="ph plan-detail-ph">
+      <button class="sheet-back-btn" onclick="closeStatsSeite()" aria-label="Zurück">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="ph-left"><h1>Stats</h1></div>
+    </div>
+    <div id="ex-view-stats">
+      <div class="chart-card-v2 lg-span-2">
+        <div class="chart-card-v2-head">
+          <span class="chart-card-v2-title" id="vol-card-title">Volumenentwicklung</span>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+            <div class="hist-action-dd" onclick="openHistRangeDropdown()" id="hist-range-btn">
+              <svg viewBox="0 0 24 24" style="stroke:var(--accent);fill:none;stroke-width:1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span id="hist-range-label">30 Tage</span>
+              <svg viewBox="0 0 24 24" style="stroke:var(--accent);fill:none;stroke-width:1.8;width:12px;height:12px"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="stats-mode-toggle vol-unit-toggle" id="vol-unit-toggle">
+              <div class="stats-mode-pill active" data-unit="kg" onclick="setVolumeUnit('kg')">Kg</div>
+              <div class="stats-mode-pill" data-unit="sets" onclick="setVolumeUnit('sets')">Sätze</div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="volume-chart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card-v2 lg-col1 muscle-card">
+        <div class="chart-card-v2-head">
+          <span class="chart-card-v2-title" id="muscle-card-title">Volumen pro Muskelgruppe</span>
+          <button class="info-btn" onclick="openModal('modal-muscle-info')" aria-label="Wie ist diese Auswertung zu lesen?">i</button>
+        </div>
+        <div class="muscle-bars-v2" id="muscle-bars">
+          <p style="font-size:var(--fs-neben);color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>
+        </div>
+      </div>
+
+      <div class="chart-card-v2 lg-col2">
+        <div class="chart-card-v2-head">
+          <span class="chart-card-v2-title" id="pr-card-title">PRs & Bestleistungen</span>
+        </div>
+        <div class="pr-list-v2" id="hist-pr-list">
+          <p style="font-size:var(--fs-neben);color:var(--text3);text-align:center;padding:8px 0">Noch keine PRs</p>
+        </div>
+      </div>
+
+      <!-- Letzte Einheiten (kompakter Rueckblick) — aus der Uebersicht hierher verschoben -->
+      <div class="plan-section-card lg-col1" id="ov-recent-sessions-card">
+        <div class="plan-section-head">
+          <h3>Letzte Einheiten</h3>
+        </div>
+        <div id="ov-recent-sessions-list"></div>
+      </div>
+    </div>
   </div>
 
   <!-- OVERLAY: EINSTELLUNGEN (frueher der Tab "Mehr") -->
@@ -597,10 +609,6 @@
   <div class="nav-btn" id="nav-workouts" onclick="onNavTap('workouts')">
     <svg viewBox="0 0 24 24"><path d="M6 9v6M4 7v10M18 9v6M20 7v10M9 12h6"/></svg>
     <span>Training</span>
-  </div>
-  <div class="nav-btn" id="nav-exercises" onclick="onNavTap('exercises')">
-    <svg viewBox="0 0 24 24"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>
-    <span>Übungen</span>
   </div>
   <div class="nav-btn" id="nav-plans" onclick="onNavTap('plans')">
     <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>

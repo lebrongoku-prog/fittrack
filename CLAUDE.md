@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v511**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v512**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -487,6 +487,23 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
 - **v511 (04.11.2026, Leonard-Wunsch):** Monatstoenung markanter: grau #CBD5E1 → #A9B6C8, rote
   Woche #FCA5A5 → #F87171, Glas 34 → 48 % Weiss bzw. Rot rgba(220,38,38,.75). Standard bleibt AUS
   (nach jedem App-Start, `_calMonateAn` leer) — gemessen.
+
+- **v512 (04.11.2026, Leonard-Wunsch): DER TAB „ÜBUNGEN" IST ENTFALLEN.** `TAB_ORDER` hat nur
+  noch `overview`/`workouts`/`plans`, die Tableiste drei Knoepfe (`#nav-exercises` weg). Katalog
+  und Stats sind VOLLBILDSEITEN wie Gymtage (`OVERLAY_SCREENS`): `exercises` → `#screen-exercises`
+  (Name bewusst behalten, viele Stellen fragen `currentScreen === 'exercises'`; Kopf mit
+  Zurueck-Pfeil, Filter, Alle ein-/ausklappen, „+") und `stats` → `#screen-stats`
+  (`#ex-view-stats`, `renderStatsPage`). Erreichbar ueber zwei quadratische Knoepfe auf der Seite
+  „Gymplan" (`#plans-uebungen-btn` Liste, `#plans-stats-btn` Saeulen) zwischen Hantel und „+"
+  (nur auf „Gymplan", `renderPlansScreen`). Zurueck (Pfeil und Wischen vom Rand) → Plan-Tab.
+  Theme der beiden Seiten = Plan-Tab (Amber) statt Marineblau. ENTFALLEN: `exercisesViewMode`,
+  `setExercisesView`, `SEITEN_LEISTE.exercises`, das `--sl-pad` des Screens; `wischeZuTab` erkennt
+  Overlays jetzt ueber `OVERLAY_SCREENS`. `body.theme-exercises` und `THEME_GRADIENTS.exercises`
+  sind ohne Wirkung stehen geblieben. Alle Erwaehnungen des Übungen-TABS weiter oben (Kopf des
+  Übungen-Tabs, Seitenschalter Katalog | Stats, vier Tabs) sind Vorgeschichte.
+  GEMESSEN (375px): Gymplan-Kopf mit 4 Knoepfen ohne Ueberlauf, Laufplan ohne die neuen; Tipp
+  oeffnet Übungen (Gruppe klappt auf), Zurueck → Plan-Tab, Stats mit 4 Karten; Tableiste 3 × 125px,
+  Tab-Container 3 Seiten breit; keine Konsolenfehler. NICHT gesehen: Wischen zwischen den Tabs.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

@@ -454,7 +454,7 @@ body.theme-plans .hist-action-dd {
    Fest je Tab statt ueber `html.sl-an`: so aendert sich das Polster eines Tabs nie,
    auch nicht waehrend man in einem anderen steht — sonst spraenge beim Tabwechsel die
    gemerkte Scrollposition der Nachbartabs. */
-#screen-workouts, #screen-exercises, #screen-plans { --sl-pad: calc(var(--sl-h) + 6px); }
+#screen-workouts, #screen-plans { --sl-pad: calc(var(--sl-h) + 6px); }
 
 /* Active-Klasse hat keine Animation mehr — der Browser animiert per Snap-Scroll selbst. */
 .screen.active { /* nur als Marker fuer JS-Logik vorhanden */ }
@@ -491,7 +491,6 @@ body.theme-plans .hist-action-dd {
    smooth interpolierende Background-Schicht statt zwei harter Gradient-Blaetter. */
 #screen-overview,
 #screen-workouts,
-#screen-exercises,
 #screen-plans     { background: transparent; }
 #screen-mehr      { background: var(--bg); }
 /* Plan-Detail teilt Theme mit Plans (Amber). */
@@ -499,7 +498,9 @@ body.theme-plans .hist-action-dd {
 #screen-day-detail     { background: linear-gradient(135deg, #78350F, #F59E0B); }
 #screen-runplan-detail { background: linear-gradient(135deg, #78350F, #F59E0B); }
 #screen-gymtage,
-#screen-wettkaempfe    { background: linear-gradient(135deg, #78350F, #F59E0B); }   /* v480 */
+#screen-wettkaempfe,
+#screen-exercises,
+#screen-stats          { background: linear-gradient(135deg, #78350F, #F59E0B); }   /* v480, v512 */
 
 /* ─── Bottom Nav ─── */
 #bottom-nav {
@@ -4312,6 +4313,8 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
   #screen-plans.active,
   #screen-gymtage.active,
   #screen-wettkaempfe.active,
+  #screen-exercises.active,
+  #screen-stats.active,
   #screen-runplan-detail.active,
   #screen-plan-detail.active { display: block; }
   /* Plan-Detail nutzt das gleiche Theme wie Plans-Liste (Amber). Die mehr-section-Logik mit
