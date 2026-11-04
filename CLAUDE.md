@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v512**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v513**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -504,6 +504,16 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   GEMESSEN (375px): Gymplan-Kopf mit 4 Knoepfen ohne Ueberlauf, Laufplan ohne die neuen; Tipp
   oeffnet Übungen (Gruppe klappt auf), Zurueck → Plan-Tab, Stats mit 4 Karten; Tableiste 3 × 125px,
   Tab-Container 3 Seiten breit; keine Konsolenfehler. NICHT gesehen: Wischen zwischen den Tabs.
+
+- **v513 (04.11.2026, Leonard-Wunsch):** (1) Jeder Trainingskalender startet IMMER bei
+  „Aktuell", der der Uebersicht zusaetzlich beim gemeinsamen „Trainingskalender": `ft_cal_ansicht`
+  wird nicht mehr gelesen (`_calAnsichtLaden` entfallen, `_calJahre = {}`, `_calFilter = 'beide'`);
+  `_calAnsichtSpeichern` loescht den alten Eintrag nur noch. Die Abschnitte zur gespeicherten
+  Kalenderansicht (15.09.2026) sind Vorgeschichte. (2) BUG: Die Flaeche unter der
+  Volumenentwicklung war blau — `--accent` ist per `@property` als <color> registriert, der Browser
+  liefert es als „rgb(…)", und `_hexZuRgb` fiel dann auf 0,102,255 zurueck. Es liest jetzt auch
+  rgb(). Die Linie war schon richtig. GEMESSEN: gespeicherte Ansicht „lauf/2025" → Start
+  „Trainingskalender · Aktuell"; Flaeche 245,158,11; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

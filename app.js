@@ -4572,8 +4572,14 @@ function _volPunkte(ws, einteilung, isKg) {
 }
 
 // "#rrggbb" → "r,g,b" fuer rgba(); andere Schreibweisen fallen auf das Standardblau zurueck.
+// Liest auch „rgb(r, g, b)": `--accent` ist per `@property` als <color> registriert, und dann
+// liefert getComputedStyle den Wert als rgb() statt als Hex. Vorher fiel das auf Blau
+// (0,102,255) zurueck — die Flaeche unter der Volumenentwicklung war deshalb blau statt in der
+// Tabfarbe (Leonard-Meldung v513).
 function _hexZuRgb(hex) {
-  const h = hex.replace('#','');
+  const rgb = String(hex).trim().match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+  if (rgb) return [rgb[1], rgb[2], rgb[3]].join(',');
+  const h = hex.replace('#','').trim();
   if (h.length !== 6) return '0,102,255';
   return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)].join(',');
 }
@@ -6627,19 +6633,13 @@ function _verschiebWort(planIdx, istIdx) { return istIdx < planIdx ? 'vorgezogen
 // Position nach ein paar Tagen nicht mehr zu „heute" passt.
 // Eine reine Anzeige-Einstellung dieses Geraets: NICHT in der Drive-Sicherung (wie
 // `ft_ex_chart_modes`). Die Wochenkarte der Uebersicht behaelt ihren Filter NICHT.
-function _calAnsichtLaden() {
-  try {
-    const a = JSON.parse(localStorage.getItem('ft_cal_ansicht') || '{}');
-    return (a && typeof a === 'object') ? a : {};
-  } catch (e) { return {}; }
-}
 function _calAnsichtSpeichern() {
-  try {
-    localStorage.setItem('ft_cal_ansicht', JSON.stringify({ filter: _calFilter, jahre: _calJahre }));
-  } catch (e) {}
+  try { localStorage.removeItem('ft_cal_ansicht'); } catch (e) {}   // v513: nicht mehr gespeichert
 }
-let _calFilter = ['beide', 'kraft', 'lauf'].includes(_calAnsichtLaden().filter)
-  ? _calAnsichtLaden().filter : 'beide';           // 'beide' | 'kraft' | 'lauf'
+// SEIT v513 (04.11.2026, Leonard-Wunsch) startet JEDER Kalender wieder bei „Aktuell" und der der
+// Uebersicht beim gemeinsamen Trainingskalender — die gespeicherte Ansicht wird nicht mehr
+// gelesen (und nicht mehr geschrieben, `_calAnsichtSpeichern` raeumt den alten Eintrag ab).
+let _calFilter = 'beide';                          // 'beide' | 'kraft' | 'lauf'
 const _CAL_FILTER_FOLGE = { beide: 'kraft', kraft: 'lauf', lauf: 'beide' };
 // Der Titel BENENNT den Filter, statt ihn als Zusatz anzuhaengen (Leonard-Wunsch 01.09.2026).
 const _CAL_FILTER_TITEL = { beide: 'Trainingskalender', kraft: 'Gymkalender', lauf: 'Laufkalender' };
@@ -6843,15 +6843,7 @@ const _calScrollPos = {};
 // Seit dem 14.09.2026 gibt es neben den Jahren die Ansicht 'aktuell' — und sie ist der STANDARD
 // (Leonard-Wunsch). Liefert deshalb eine Jahreszahl ODER den Text 'aktuell'.
 // Beim Laden nur gueltige Werte uebernehmen: 'aktuell' oder eine Jahreszahl.
-const _calJahre = (() => {
-  const gespeichert = _calAnsichtLaden().jahre || {};
-  const jahre = {};
-  ['cal', 'pcal'].forEach(id => {
-    const w = gespeichert[id];
-    if (w === 'aktuell' || (Number.isInteger(w) && w > 2000)) jahre[id] = w;
-  });
-  return jahre;
-})();
+const _calJahre = {};   // v513: Start immer 'aktuell' (siehe `_calFilter`)
 function calJahr(id) { return _calJahre[id] || 'aktuell'; }
 // Zuletzt gezeichneter Zeitraum je Kalender — aendert er sich (anderer Filter, andere Plan-Seite,
 // neuer Plan), gehoert die gemerkte Scrollposition nicht mehr dazu.
