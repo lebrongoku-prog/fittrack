@@ -6745,6 +6745,21 @@ function _neuZeichnenEinblenden(schluessel, huelle, teile, zeichnen) {
     });
 }
 
+// MONATE ABHEBEN (v510, 04.11.2026, Leonard-Wahl „Variante A" aus vier gezeichneten Vorschlaegen —
+// B Treppenlinie, C ein Monat im Fokus, D Erster umrandet): Ein Tipp auf einen Monatsnamen toent
+// jeden zweiten Monat dunkler, ein weiterer Tipp nimmt es zurueck. Je Kalender ein eigener Zustand
+// (wie `_calJahre`), NICHT gespeichert. Die Klasse sitzt am Scroller, der beim Neuzeichnen des
+// Rasters stehen bleibt; `_calMonateSetzen` setzt sie nach jedem Zeichnen trotzdem neu.
+const _calMonateAn = {};
+function _calMonateSetzen(id) {
+  const sc = document.getElementById(id + '-scroll');
+  if (sc) sc.classList.toggle('monate-an', !!_calMonateAn[id]);
+}
+function toggleCalMonate(id) {
+  _calMonateAn[id] = !_calMonateAn[id];
+  _calMonateSetzen(id);
+}
+
 function calendarInnerHTML(id) {
   // Nur der Kalender der Uebersicht zeigt beide Sportarten — nur dort ist der Titel ein Filter.
   const titel = id === 'cal'
@@ -6985,6 +7000,7 @@ function renderTrainingCalendar(id, cardId) {
   if (detailEl) detailEl.innerHTML = '';
   const monthsEl = document.getElementById(id + '-months');
   if (monthsEl) monthsEl.innerHTML = raster.monate;
+  _calMonateSetzen(id);
 
   _calKopfSetzen(id, z);
 
@@ -7115,6 +7131,9 @@ function _calRasterHTML(id, z) {
       && !(ver && !lauf && ver.lauf.planNachLauf[wi] != null);
     const wettkampf = !ausserhalb && wettkampfTage[key];
     const cls = ['cal-day'];
+    // Jeder zweite Monat traegt `m-zwei` — getoent wird er erst, wenn die Monatstrennung an ist
+    // (`toggleCalMonate`, v510). Der Monatsindex wechselt auch ueber den Jahreswechsel (Dez 11 → Jan 0).
+    if (day.getMonth() % 2) cls.push('m-zwei');
     if (ausserhalb) cls.push('outside');
     else if (leereWoche) cls.push('leer-woche');
     if (modus.kraft && plan.planned && !ausserhalb && !gymVerschoben) cls.push('planned');
@@ -7143,7 +7162,10 @@ function _calRasterHTML(id, z) {
     const weekStart = new Date(start); weekStart.setDate(start.getDate() + w * 7);
     const monatsErster = _calMonatsErster(z, weekStart, w);
     const zeigeMonat = !!monatsErster && monatsErster.getMonth() !== letzterMonat;
-    monate += `<span class="cal-month">${zeigeMonat ? monatsErster.toLocaleDateString('de-DE',{month:'short'}) : ''}</span>`;
+    monate += zeigeMonat
+      ? `<span class="cal-month an" role="button" tabindex="0" onclick="toggleCalMonate('${id}')"
+               aria-label="Monate abheben">${monatsErster.toLocaleDateString('de-DE',{month:'short'})}</span>`
+      : '<span class="cal-month"></span>';
     if (zeigeMonat) letzterMonat = monatsErster.getMonth();
 
     const leereWoche = wocheOhneTraining(weekStart);

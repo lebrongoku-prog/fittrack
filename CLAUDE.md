@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v509**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v510**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -473,6 +473,16 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   .ppv-k-col.today/.selected { padding: 10.05px 0; margin: 0 }`). Die Karte bleibt 157.3px,
   die verteilten Abstaende geben nach (Wochentage → Feld 17.5px = Feld → Kartenrand); keine
   Konsolenfehler.
+
+- **v510 (04.11.2026, Leonard-Wahl „Variante A" aus vier gezeichneten Vorschlaegen — B
+  Treppenlinie, C ein Monat im Fokus, D Erster umrandet):** Ein Tipp auf einen MONATSNAMEN im
+  Trainingskalender (beide Instanzen; `.cal-month.an`, `toggleCalMonate(id)`) toent jeden zweiten
+  Monat dunkler (`.m-zwei` an jeder Zelle mit ungeradem Monatsindex, wirksam nur unter
+  `.monate-an` am Scroller): grau #E2E8F0 → #CBD5E1, rote Woche #FECACA → #FCA5A5, Glas 16 → 34 %
+  Weiss bzw. Rot 55 → 80 %. Ein zweiter Tipp nimmt es zurueck. Je Kalender eigener Zustand
+  (`_calMonateAn`), NICHT gespeichert; bleibt beim Neuzeichnen stehen (`_calMonateSetzen`).
+  Die Marken bleiben unveraendert. GEMESSEN: echter Tipp an/aus, Neuzeichnen behaelt den Zustand;
+  keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

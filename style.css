@@ -1364,6 +1364,8 @@ html.glas .screen:not(#screen-mehr) .cal-day { background: rgba(255,255,255,.16)
    die Regel darueber faerbt sonst JEDES Kaestchen weiss. Kraeftiger als im hellen Modus,
    sonst geht das Rot im Farbverlauf dahinter unter. */
 html.glas .screen:not(#screen-mehr) .cal-day.leer-woche { background: rgba(248,113,113,.55); }
+html.glas .screen:not(#screen-mehr) .monate-an .cal-day.m-zwei { background: rgba(255,255,255,.34); }
+html.glas .screen:not(#screen-mehr) .monate-an .cal-day.m-zwei.leer-woche { background: rgba(248,113,113,.8); }
 /* Und ebenso der Wettkampftag (Leonard-Meldung 06.09.2026): Er hatte als einziger Zustand
    KEINE Glas-Regel, die allgemeine `.cal-day`-Regel darueber faerbte ihn deshalb weiss wie
    jedes andere Kaestchen — im Transparenz-Modus war er unsichtbar. Steht NACH der roten
@@ -3110,6 +3112,13 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
    Zustandsregeln fuer Wettkampf, geplant und trainiert — die zeichnen ihre Marken darauf.
    Nur abgelaufene Wochen mit laufendem Plan bekommen sie, das entscheidet das JS. */
 .cal-day.leer-woche { background: #FECACA; }
+/* MONATE ABHEBEN (v510, Leonard-Wahl Variante A): Ist die Trennung an (`.monate-an` am Scroller),
+   ist jeder zweite Monat (`.m-zwei`) eine Stufe dunkler — grau wie rot. Steht hier, damit es die
+   Grundflaeche und die rote Woche ueberschreibt; die Marken darin bleiben unveraendert. */
+.monate-an .cal-day.m-zwei { background: #CBD5E1; }
+.monate-an .cal-day.m-zwei.leer-woche { background: #FCA5A5; }
+.cal-month.an { cursor: pointer; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
+.cal-month.an:active { opacity: .6; }
 /* Seit v502 (04.11.2026, Leonard-Wunsch) KEINE gruene Flaeche mehr, sondern ein GOLDEN
    GEFUELLTES Quadrat in der Groesse des Laufzeichens — es tritt an dessen Stelle (gelaufen wie
    geplant). Mit Gym am selben Tag ist es die untere rechte Haelfte, wie der Lauf. */
