@@ -1118,7 +1118,16 @@ body.theme-plans .hist-action-dd {
 #screen-gymtage .plan-detail-ph,
 #screen-wettkaempfe .plan-detail-ph,
 #screen-exercises .plan-detail-ph,
-#screen-stats .plan-detail-ph { align-items: center; }
+#screen-stats .plan-detail-ph,
+#screen-plan-detail .plan-detail-ph,
+#screen-runplan-detail .plan-detail-ph { align-items: center; }
+/* v518: dasselbe in den drei Detailansichten (Gymplan, Gymtag, Laufplan). Gym- und Laufplan haben
+   keine Datumszeile mehr unter dem Titel. Der Gymtag behaelt seine Zeile „N Übungen • M Sätze":
+   Dort bleibt der Kopf oben ausgerichtet und der Knopf ruckt auf die Mitte des TITELS (Titel
+   30.5px hoch → Mitte 15.25px, Knopf 36px → −2.75px), die Zeile haengt darunter. */
+#screen-plan-detail .plan-detail-ph > .sheet-back-btn,
+#screen-runplan-detail .plan-detail-ph > .sheet-back-btn { margin-top: 0; }
+#screen-day-detail .plan-detail-ph > .sheet-back-btn { margin-top: -2.75px; }
 #screen-gymtage .plan-detail-ph > .sheet-back-btn, #screen-gymtage .plan-detail-ph > .ph-actions,
 #screen-wettkaempfe .plan-detail-ph > .sheet-back-btn, #screen-wettkaempfe .plan-detail-ph > .ph-actions,
 #screen-exercises .plan-detail-ph > .sheet-back-btn, #screen-exercises .plan-detail-ph > .ph-actions,

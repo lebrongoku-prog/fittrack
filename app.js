@@ -6242,11 +6242,8 @@ function renderRunPlanDetail() {
   const p = DB.getRunPlans().find(x => x.id === editingRunPlanId);
   if (!p) { showScreen('plans'); return; }
   const wochen = runPlanWochen(p);
-  const zeitraum = (p.startDate && p.endDate) ? fmtDateRange(p.startDate, p.endDate) : '—';
+  // v518 (Leonard-Wunsch): keine Zeile mit Zeitraum/Wochen mehr unter dem Titel.
   document.getElementById('runplan-detail-title').textContent = p.name || 'Laufplan';
-  document.getElementById('runplan-detail-subline').innerHTML =
-    `${zeitraum} · ${wochen} ${wochen === 1 ? 'Woche' : 'Wochen'}`
-    + (p.archived ? ` <span class="plan-status-chip plan-status-chip-archived" style="margin-left:8px">Archiviert</span>` : '');
 
   const tageWahl = WOCHENTAGE_KURZ.map((n, i) =>
     `<button type="button" class="lp-tagwahl${(p.runDays || []).includes(i) ? ' an' : ''}" onclick="toggleRunDay('${p.id}',${i})">${n}</button>`).join('');
@@ -8145,9 +8142,7 @@ function renderPlanDetail() {
 
   // Header
   document.getElementById('plan-detail-title').textContent = plan.name;
-  const status = planStatus(plan);
-  document.getElementById('plan-detail-subline').innerHTML =
-    `${fmtDateRange(plan.startDate, plan.endDate)} <span class="plan-status-chip plan-status-chip-${status}" style="margin-left:8px">${PLAN_STATUS_LABEL[status]}</span>`;
+  // v518 (Leonard-Wunsch): keine Zeile mit Zeitraum und Status mehr unter dem Titel.
 
   // Program form
   document.getElementById('prog-name').value = plan.name || '';

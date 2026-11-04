@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v517**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v518**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -548,6 +548,13 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   62px` fuer dieselbe Kopfhoehe). Vorher lag die Titelmitte 6.7px ueber der Knopfmitte.
   Plan-, Gymtag- und Laufplan-Detail unveraendert (oben ausgerichtet). GEMESSEN: alle vier Seiten
   Knopf = Titel = Aktion bei 43.0px, Kopf 70px; keine Konsolenfehler.
+
+- **v518 (04.11.2026, Leonard-Wunsch):** Gymplan- und Laufplan-Detail haben KEINE Zeile mehr
+  unter dem Titel (`#plan-detail-subline` mit Zeitraum + Statuschip und `#runplan-detail-subline`
+  mit Zeitraum/Wochen samt Archiv-Chip sind entfallen); Titel und Zurueck-Knopf stehen mittig
+  (`align-items: center`). Das Gymtag-Detail behaelt „N Übungen • M Sätze": Kopf oben
+  ausgerichtet, Knopf `margin-top: −2.75px` auf die Titelmitte, die Zeile haengt darunter.
+  GEMESSEN: Gymplan/Laufplan Knopf = Titel 42.0px, Gymtag 39.3px; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
