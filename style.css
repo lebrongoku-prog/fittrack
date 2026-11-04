@@ -1111,6 +1111,20 @@ body.theme-plans .hist-action-dd {
 .plan-detail-ph .ph-left { flex: 1; min-width: 0; }
 /* v480: Knoepfe rechts in den Vollbildseiten Gymtage/Wettkaempfe mittig zum Zurueck-Pfeil. */
 .plan-detail-ph .ph-actions { margin-top: 3px; }
+/* v517 (Leonard-Wunsch): Auf den Seiten hinter den Knoepfen oben rechts (Gymtage, Wettkaempfe,
+   Übungen, Stats) stehen Zurueck-Knopf, Titel und Knoepfe rechts MITTIG auf einer Linie. Vorher
+   oben ausgerichtet — die Titelmitte lag 6.7px ueber der Knopfmitte. Die Detailansichten mit
+   Unterzeile (Plan-, Gymtag-, Laufplan-Detail) bleiben oben ausgerichtet. */
+#screen-gymtage .plan-detail-ph,
+#screen-wettkaempfe .plan-detail-ph,
+#screen-exercises .plan-detail-ph,
+#screen-stats .plan-detail-ph { align-items: center; }
+#screen-gymtage .plan-detail-ph > .sheet-back-btn, #screen-gymtage .plan-detail-ph > .ph-actions,
+#screen-wettkaempfe .plan-detail-ph > .sheet-back-btn, #screen-wettkaempfe .plan-detail-ph > .ph-actions,
+#screen-exercises .plan-detail-ph > .sheet-back-btn, #screen-exercises .plan-detail-ph > .ph-actions,
+#screen-stats .plan-detail-ph > .sheet-back-btn { margin-top: 0; }
+/* Stats hat rechts keine 38px-Knoepfe — gleiche Kopfhoehe wie die anderen drei (16 + 38 + 8px). */
+#screen-stats .plan-detail-ph { min-height: 62px; }
 body.theme-plans .plan-detail-ph .sheet-back-btn { background: rgba(255,255,255,0.95); }
 body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark); }
 
@@ -3009,7 +3023,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
   display: flex; gap: var(--cal-gap); margin-bottom: var(--cal-months-gap);
   height: var(--cal-months-h);
 }
-.cal-month { width: var(--cal-cell, 19px); flex: 0 0 var(--cal-cell, 19px); font-size: var(--fs-betont); line-height: var(--cal-months-h); color: var(--text3); white-space: nowrap; }
+.cal-month { width: var(--cal-cell, 19px); flex: 0 0 var(--cal-cell, 19px); font-size: var(--fs-text);   /* v517 wieder 15px */ line-height: var(--cal-months-h); color: var(--text3); white-space: nowrap; }
 /* Liegt absolut ueber dem linken Rand von `.cal-body` — bewusst NICHT als Flex-/Grid-Spalte,
    damit `.cal-scroll` ein gewoehnlicher Block bleiben kann (siehe oben).
    Der obere Abstand bildet die Monatszeile im Scroller nach, damit „Mo" auf einer Linie mit
@@ -3024,7 +3038,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
   width: var(--cal-label-w);
   display: flex; flex-direction: column; gap: var(--cal-gap);
 }
-.cal-daylabels span { height: var(--cal-cell, 19px); font-size: var(--fs-betont); line-height: var(--cal-cell, 19px); color: var(--text3); }
+.cal-daylabels span { height: var(--cal-cell, 19px); font-size: var(--fs-text);   /* v517 wieder 15px */ line-height: var(--cal-cell, 19px); color: var(--text3); }
 .cal-grid { display: flex; gap: var(--cal-gap); }
 .cal-week { display: flex; flex-direction: column; gap: var(--cal-gap); }
 /* Zwei Schichten pro Tag: die Fläche sagt, ob laut Plan ein Training vorgesehen war,
