@@ -51,7 +51,7 @@
     <div class="ph">
       <div class="ph-left">
         <h1>FitTrack</h1>
-        <div class="ph-sub" id="ov-week-info" style="display:none">Woche 1 • <span class="ph-sub-accent">0 von 3</span> Einheiten absolviert</div>
+        <div class="ph-sub" id="ov-week-info" style="display:none">Woche 1 • <span class="ph-sub-accent">0 von 3</span> Gym Sessions absolviert</div>
       </div>
       <!-- Sicherungs-Status neben dem Titel: die Trainingshistorie ist der einzige Teil der
            App, der sich nicht wiederherstellen lässt. Gefüllt von renderBackupLine(). -->
@@ -404,7 +404,7 @@
       <!-- Letzte Einheiten (kompakter Rueckblick) — aus der Uebersicht hierher verschoben -->
       <div class="plan-section-card lg-col1" id="ov-recent-sessions-card">
         <div class="plan-section-head">
-          <h3>Letzte Einheiten</h3>
+          <h3>Letzte Gym Sessions</h3>
         </div>
         <div id="ov-recent-sessions-list"></div>
       </div>
@@ -873,13 +873,13 @@
 <div id="modal-finish" class="overlay hidden">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-title">Einheit beenden?</div>
+    <div class="sheet-title">Gym Session beenden?</div>
     <div class="sheet-body">
-      <p style="font-size:var(--fs-text);color:var(--text2);margin-bottom:20px;line-height:1.5">Deine Einheit wird gespeichert. Neue Bestleistungen werden erkannt und angezeigt.</p>
+      <p style="font-size:var(--fs-text);color:var(--text2);margin-bottom:20px;line-height:1.5">Deine Gym Session wird gespeichert. Neue Bestleistungen werden erkannt und angezeigt.</p>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <button class="btn btn-primary btn-full" onclick="finishWorkout()">Einheit speichern</button>
+        <button class="btn btn-primary btn-full" onclick="finishWorkout()">Gym Session speichern</button>
         <button class="btn btn-ghost btn-full" onclick="closeModal('modal-finish')">Weiter trainieren</button>
-        <button class="btn btn-danger btn-full" onclick="discardWorkout()">Einheit verwerfen</button>
+        <button class="btn btn-danger btn-full" onclick="discardWorkout()">Gym Session verwerfen</button>
       </div>
     </div>
   </div>
@@ -890,7 +890,7 @@
 <div id="modal-summary" class="overlay hidden">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-title" id="summary-title">Einheit abgeschlossen</div>
+    <div class="sheet-title" id="summary-title">Gym Session abgeschlossen</div>
     <div class="sheet-body">
       <div id="summary-body"></div>
       <button class="btn btn-primary btn-full" style="margin-top:16px" onclick="closeModal('modal-summary')">Fertig</button>
@@ -902,7 +902,7 @@
 <div id="modal-hist-detail" class="overlay hidden">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-title" id="hist-detail-title">Einheit</div>
+    <div class="sheet-title" id="hist-detail-title">Gym Session</div>
     <div class="sheet-body" id="hist-detail-body"></div>
   </div>
 </div>

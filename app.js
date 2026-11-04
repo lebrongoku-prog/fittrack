@@ -1020,7 +1020,7 @@ function renderOverview() {
 
   // ─ Header subline ─
   const subEl = document.getElementById('ov-week-info');
-  subEl.innerHTML = `Woche ${prog.num} • <span class="ph-sub-accent">${wStatus.done} von ${wStatus.planned||plan.length}</span> Einheiten absolviert`;
+  subEl.innerHTML = `Woche ${prog.num} • <span class="ph-sub-accent">${wStatus.done} von ${wStatus.planned||plan.length}</span> Gym Sessions absolviert`;
 
   // Die Herocard „Heute" der Uebersicht ist am 04.10.2026 entfallen (Leonard-Wunsch, v428).
   ensureTimerActive();
@@ -1391,8 +1391,8 @@ function maybePromptBackup() {
   if (DB.getWorkouts().length < 10) return;
   localStorage.setItem('ft_backup_prompted', '1');
   setTimeout(() => {
-    confirmAction('Deine Einheiten sichern?',
-      'Du hast inzwischen zehn Einheiten aufgezeichnet. Sie liegen bisher nur auf diesem Gerät — beim Zurücksetzen des Browsers oder einem Gerätewechsel wären sie weg. Sicherung über Google Drive jetzt einrichten?',
+    confirmAction('Deine Gym Sessions sichern?',
+      'Du hast inzwischen zehn Gym Sessions aufgezeichnet. Sie liegen bisher nur auf diesem Gerät — beim Zurücksetzen des Browsers oder einem Gerätewechsel wären sie weg. Sicherung über Google Drive jetzt einrichten?',
       () => showScreen('mehr'),
       { confirmLabel: 'Einrichten' });
   }, 900);
@@ -1406,7 +1406,7 @@ function renderRecentSessions() {
   const ws = DB.getWorkouts()
     .slice(0, 3);
   if (!ws.length) {
-    container.innerHTML = '<p style="font-size:var(--fs-neben);color:var(--text3);padding:8px 0;text-align:center;margin:0">Noch keine Einheiten</p>';
+    container.innerHTML = '<p style="font-size:var(--fs-neben);color:var(--text3);padding:8px 0;text-align:center;margin:0">Noch keine Gym Sessions</p>';
     return;
   }
   // Tagname vergangener Sessions aus dem GLOBALEN Tag-Store auflösen (nicht aus dem aktiven
@@ -1625,7 +1625,7 @@ function confirmActiveWorkoutDataLoss(planDayId, exIdsToRemove, onConfirm) {
   const names = affected.map(ae => `„${ae.name}"`).join(', ');
   confirmAction(
     'Übung mit eingetragenen Daten entfernen?',
-    `${names} hat in der laufenden Einheit schon eingetragene Sätze. Beim Entfernen aus dem Plan wird die Übung auch aus der laufenden Einheit gestrichen — die Daten gehen verloren. Trotzdem entfernen?`,
+    `${names} hat in der laufenden Gym Session schon eingetragene Sätze. Beim Entfernen aus dem Plan wird die Übung auch aus der laufenden Gym Session gestrichen — die Daten gehen verloren. Trotzdem entfernen?`,
     onConfirm,
     { danger: true, confirmLabel: 'Entfernen' }
   );
@@ -1633,8 +1633,8 @@ function confirmActiveWorkoutDataLoss(planDayId, exIdsToRemove, onConfirm) {
 
 function startWorkout(dayId) {
   if (DB.getActive()) {
-    confirmAction('Es läuft bereits eine Einheit',
-      'Es läuft noch eine Einheit. Neu starten? Die aktuelle wird verworfen.',
+    confirmAction('Es läuft bereits eine Gym Session',
+      'Es läuft noch eine Gym Session. Neu starten? Die aktuelle wird verworfen.',
       () => { stopTimer(); DB.clearActive(); _doStartWorkout(dayId); },
       { danger: true, confirmLabel: 'Neu starten' }
     );
@@ -2030,8 +2030,8 @@ function buildHeuteHero(planDay, selDay, opts) {
     if (blockiert) {
       knopf = laufIdx >= 0
         ? `<button class="hero-v2-btn" data-sport="gym" onclick="jumpToWorkoutDay(${laufIdx})">
-             ${HERO_ICON_HANTEL}Zur laufenden Einheit</button>`
-        : `<button class="hero-v2-btn" data-sport="gym" disabled>${HERO_ICON_HANTEL}Einheit läuft</button>`;
+             ${HERO_ICON_HANTEL}Zur laufenden Gym Session</button>`
+        : `<button class="hero-v2-btn" data-sport="gym" disabled>${HERO_ICON_HANTEL}Gym Session läuft</button>`;
     } else if (planDay && opts.inhaltKnopf) {
       // UEBERSICHT, „Variante B" (v466, 23.10.2026, Leonard-Wahl aus vier gezeichneten
       // Vorschlaegen): Der Knopf nennt den Gymtag — seit v467 nur „Push", ohne „starten" — und wird nach dem Training
@@ -2043,7 +2043,7 @@ function buildHeuteHero(planDay, selDay, opts) {
         : `<button class="hero-v2-btn" data-sport="gym" onclick="startWorkout('${planDay.id}')">${HERO_ICON_HANTEL}<span class="hb-txt">${escapeHtml(planDay.name)}</span></button>`;
     } else if (planDay) {
       const start = opts.previewOnClick || `startWorkout('${planDay.id}')`;
-      knopf = `<button class="hero-v2-btn" data-sport="gym" onclick="${start}">${HERO_ICON_HANTEL}Einheit starten</button>`;
+      knopf = `<button class="hero-v2-btn" data-sport="gym" onclick="${start}">${HERO_ICON_HANTEL}Gym Session starten</button>`;
     } else {
       // KEIN Gym geplant: grauer Knopf ohne Verlauf (Leonard-Wunsch 07.09.2026). Die
       // Sportfarbe ist ein Versprechen — sie gehoert dem Tag, an dem etwas ansteht.
@@ -2180,14 +2180,14 @@ const PPV_ICON_LAEUFER = `<span class="ppv-name-ic">${heroRunnerSvg()}</span>`;
 
 // Knopf „Kein Gym" (v471): erst nachfragen, dann wie bisher ein freies Training starten.
 function freiesTrainingFragen() {
-  if (DB.getActive()) { showToast('Es läuft bereits eine Einheit'); return; }
+  if (DB.getActive()) { showToast('Es läuft bereits eine Gym Session'); return; }
   confirmAction('Freies Training starten?', 'Heute ist kein Gym geplant. Möchtest du trotzdem ein freies Training starten?',
     startFreeWorkout, { confirmLabel: 'Freies Training starten' });
 }
 
 // Freies Training: Einheit ohne Trainingstag, Übungen werden unterwegs hinzugefügt.
 function startFreeWorkout() {
-  if (DB.getActive()) { showToast('Es läuft bereits eine Einheit'); return; }
+  if (DB.getActive()) { showToast('Es läuft bereits eine Gym Session'); return; }
   const vonAussen = _woStartVorbereiten();
   const wo = {
     id: 'wo_' + Date.now(), planDayId: null, planDayName: 'Freies Training',
@@ -2441,7 +2441,7 @@ function _renderGymSeite() {
   const subEl = document.getElementById('wo-sub-text');
   if (activeOnSelected) {
     dotEl.style.display = 'inline-block';
-    subEl.textContent = 'Laufende Einheit';
+    subEl.textContent = 'Laufende Gym Session';
   } else if (planDay) {
     dotEl.style.display = 'none';
     subEl.textContent = 'Vorschau';
@@ -3408,7 +3408,7 @@ function toggleSetDone(ei, si) {
   DB.saveActive(wo);
   // ACHTUNG Reihenfolge: `ensureTimerActive` liest den Zustand aus dem Speicher — erst nach
   // `saveActive` aufrufen, sonst sieht es die Einheit noch als pausiert.
-  if (pauseBeendet) { ensureTimerActive(); updateTimerDisplay(); showToast('Einheit fortgesetzt'); }
+  if (pauseBeendet) { ensureTimerActive(); updateTimerDisplay(); showToast('Gym Session fortgesetzt'); }
   renderWorkoutsScreen();
   // Kurze Rueckmeldung auf den Tipp (16.09.2026, Leonard-Wunsch) — nur beim SETZEN des Hakens.
   // Beim Zuruecknehmen waere ein Puls eine Belohnung fuer das Gegenteil.
@@ -4122,7 +4122,7 @@ function addExToWorkout(exId) {
   if (!wo) {
     // Defensive: openAddExModal('active') ohne laufendes Workout — abbrechen
     closeModal('modal-add-ex');
-    showToast('Keine laufende Einheit');
+    showToast('Keine laufende Gym Session');
     return;
   }
   // 1) Übung dem aktiven Workout hinzufügen
@@ -4188,7 +4188,7 @@ function finishWorkout() {
   // Drive-Sync: einziger automatischer Auslöser ist das Workout-Ende.
   // Bei dieser Gelegenheit landen ALLE aufgelaufenen lokalen Änderungen
   // (auch reine Plan-/Übungs-/Wochenplan-Änderungen seit dem letzten Sync) in der Cloud.
-  if (driveIsEnabled()) driveTriggerSync('Einheit beendet');
+  if (driveIsEnabled()) driveTriggerSync('Gym Session beendet');
 }
 
 // Abschlussansicht einer gespeicherten Einheit.
@@ -4213,9 +4213,9 @@ function renderWorkoutSummary(wo, prevWorkouts, setChanges) {
     if (prevVol > 0 && Math.abs(diff) >= 1) {
       const up = diff > 0;
       deltaHTML = `<div class="sum-delta ${up ? 'up' : 'down'}">
-        ${up ? '▲' : '▼'} ${fmtVol(Math.abs(diff))} Volumen gegenüber der letzten Einheit</div>`;
+        ${up ? '▲' : '▼'} ${fmtVol(Math.abs(diff))} Volumen gegenüber der letzten Gym Session</div>`;
     } else if (prevVol > 0) {
-      deltaHTML = `<div class="sum-delta flat">Gleiches Volumen wie bei der letzten Einheit</div>`;
+      deltaHTML = `<div class="sum-delta flat">Gleiches Volumen wie bei der letzten Gym Session</div>`;
     }
   }
 
@@ -4248,11 +4248,11 @@ function renderWorkoutSummary(wo, prevWorkouts, setChanges) {
   const setChangeHTML = (setChanges && setChanges.length)
     ? `<div class="sum-planupd">
          <div class="sum-planupd-head">Trainingstag angepasst</div>
-         ${setChanges.map(c => `<div class="sum-planupd-row">${escapeHtml(c.name)}: <strong>${c.after} ${c.after === 1 ? 'Satz' : 'Sätze'}</strong> statt ${c.before} — gilt ab der nächsten Einheit</div>`).join('')}
+         ${setChanges.map(c => `<div class="sum-planupd-row">${escapeHtml(c.name)}: <strong>${c.after} ${c.after === 1 ? 'Satz' : 'Sätze'}</strong> statt ${c.before} — gilt ab der nächsten Gym Session</div>`).join('')}
        </div>`
     : '';
 
-  if (titleEl) titleEl.textContent = prs.length ? 'Stark — neue Bestleistung' : 'Einheit abgeschlossen';
+  if (titleEl) titleEl.textContent = prs.length ? 'Stark — neue Bestleistung' : 'Gym Session abgeschlossen';
 
   body.innerHTML = `
     <div class="sum-day">${pd(escapeHtml(wo.planDayName || 'Freies Training'))}</div>
@@ -4322,8 +4322,8 @@ function discardWorkout() {
   // Erst das aktuell offene Finish-Modal schließen, sonst überdeckt es das Confirm-Modal
   closeModal('modal-finish');
   setTimeout(() => {
-    confirmAction('Einheit verwerfen?',
-      'Die laufende Einheit wirklich verwerfen? Alle Eingaben gehen verloren.',
+    confirmAction('Gym Session verwerfen?',
+      'Die laufende Gym Session wirklich verwerfen? Alle Eingaben gehen verloren.',
       () => {
         // Dieselbe Rueckwaerts-Bewegung wie beim Beenden (Leonard-Entscheidung 15.09.2026) —
         // vormerken, solange `wo-running` noch steht.
@@ -4335,7 +4335,7 @@ function discardWorkout() {
         DB.clearActive();
         syncWorkoutActiveUI();
         expandedAexIds.clear();   // Card-Collapse-State leeren — naechstes Workout startet sauber
-        showToast('Einheit verworfen');
+        showToast('Gym Session verworfen');
         if (currentScreen === 'overview') renderOverview();
         else if (currentScreen === 'workouts') renderWorkoutsScreen();
       },
@@ -6324,7 +6324,7 @@ function renderRunPlanDetail() {
 
     <div class="mehr-section">
       <div class="mehr-section-kopf">
-        <div class="mehr-section-title">Einheiten</div>
+        <div class="mehr-section-title">Läufe</div>
         ${wochen ? `<button type="button" id="lp-alle-btn" class="lp-alle-btn"
                 aria-expanded="${_alleRunWochenOffen(p.id)}" onclick="toggleAlleRunWochen('${p.id}')">
           <span class="lp-alle-txt">${_alleRunWochenOffen(p.id) ? 'Alle zuklappen' : 'Alle aufklappen'}</span>
@@ -6349,7 +6349,7 @@ function renderRunPlanDetail() {
           <div class="mehr-row-icon" style="background:var(--red-bg)">🗑</div>
           <div class="mehr-row-info">
             <div class="mehr-row-label" style="color:var(--red,#d33)">Plan löschen</div>
-            <div class="mehr-row-sub">Alle geplanten Einheiten dieses Plans gehen verloren</div>
+            <div class="mehr-row-sub">Alle geplanten Läufe dieses Plans gehen verloren</div>
           </div>
           <div class="mehr-row-action">›</div>
         </div>
@@ -6941,7 +6941,7 @@ function calJahre() {
 // endet die Zaehlung an seinem letzten Tag — Einheiten danach gehoeren nicht mehr dazu. Fuer den
 // laufenden Plan aendert das nichts, sein Ende liegt nach heute.
 function _calPlanStand(sport, plan, bereichVon, today) {
-  const wort = sport === 'gym' ? (n => n === 1 ? 'Einheit' : 'Einheiten') : (n => n === 1 ? 'Lauf' : 'Läufe');
+  const wort = sport === 'gym' ? (n => n === 1 ? 'Gym Session' : 'Gym Sessions') : (n => n === 1 ? 'Lauf' : 'Läufe');
   const vonDatum = plan ? _calLokalTag(plan.startDate) : bereichVon;
   const ende = (plan && plan.endDate) ? _calLokalTag(plan.endDate) : null;
   const letzter = (ende && ende < today) ? ende : today;
@@ -7281,7 +7281,7 @@ function _calKopfSetzen(id, z) {
     if (modus.kraft) {
       const einheiten = DB.getWorkouts().filter(w => new Date(w.startTs).getFullYear() === jahr).length
         + DB.getManualDays().filter(imJahr).length;
-      kennzahl = teil('gym', `${einheiten} ${einheiten === 1 ? 'Einheit' : 'Einheiten'}`)
+      kennzahl = teil('gym', `${einheiten} ${einheiten === 1 ? 'Gym Session' : 'Gym Sessions'}`)
         + (modus.lauf ? ' · ' + teil('lauf', laufText) : '');
     } else {
       kennzahl = teil('lauf', laufText);
@@ -7749,10 +7749,10 @@ function _maxDerVorherigenEinheit(ws, abIndex, exId) {
 // stehen ohnehin darunter.
 function _fortschrittZeile(jetzt, vorher) {
   if (!jetzt) return '';                                   // Körpergewichtsübung
-  if (vorher === null) return '<div class="hd-delta hd-delta-flat">erste Einheit mit dieser Übung</div>';
+  if (vorher === null) return '<div class="hd-delta hd-delta-flat">erste Gym Session mit dieser Übung</div>';
   const d = Math.round((jetzt - vorher) * 100) / 100;
-  if (d > 0) return `<div class="hd-delta hd-delta-up">▲ +${fmtKg(d)} kg zur letzten Einheit</div>`;
-  if (d < 0) return `<div class="hd-delta hd-delta-down">▼ ${fmtKg(d)} kg zur letzten Einheit</div>`;
+  if (d > 0) return `<div class="hd-delta hd-delta-up">▲ +${fmtKg(d)} kg zur letzten Gym Session</div>`;
+  if (d < 0) return `<div class="hd-delta hd-delta-down">▼ ${fmtKg(d)} kg zur letzten Gym Session</div>`;
   return '';   // gleich geblieben: keine Zeile (Leonard-Wunsch) — nur Veränderung ist eine Meldung wert
 }
 
@@ -7813,7 +7813,7 @@ function showHistDetail(i, highlightExId) {
        <button class="hd-toggle-all" id="hd-toggle-all" onclick="toggleAllHdCharts()">Alle ausklappen</button>
        ${schritte}
      </div>` +
-    `<button class="btn btn-danger btn-full" style="margin-top:18px" onclick="deleteSession(${i})">🗑 Einheit löschen</button>`;
+    `<button class="btn btn-danger btn-full" style="margin-top:18px" onclick="deleteSession(${i})">🗑 Gym Session löschen</button>`;
   openModal('modal-hist-detail');
   _renderHdCharts();
 }
@@ -7863,7 +7863,7 @@ function deleteSession(i) {
   closeModal('modal-hist-detail');
   setTimeout(() => {
     confirmAction(
-      'Einheit löschen?',
+      'Gym Session löschen?',
       `${dayName} vom ${dateStr} wirklich löschen? Volumen und Bestleistungen werden neu berechnet.`,
       () => {
         const ws2 = DB.getWorkouts();
@@ -7872,7 +7872,7 @@ function deleteSession(i) {
         trashPut('workout', `${dayName} · ${dateStr}`, removed);
         // Aktuellen Screen neu rendern, damit Stats/Charts/Listen aktualisiert werden
         if (currentScreen === 'overview') renderOverview();
-        showUndoToast('Einheit gelöscht', () => {
+        showUndoToast('Gym Session gelöscht', () => {
           const ws3 = DB.getWorkouts();
           ws3.splice(i, 0, removed);
           DB.saveWorkouts(ws3);
@@ -7955,7 +7955,7 @@ function planMetaZeile(sport, p, text) {
   if (!_planBeendet(p)) return `<div class="ppv-meta">${text}</div>`;
   const st = _calPlanStand(sport, p, null, new Date());
   if (!st.geplant) return `<div class="ppv-meta">${text}</div>`;
-  const quote = Math.round(st.absolviert / st.geplant * 100) + '\u00A0% der Einheiten';
+  const quote = Math.round(st.absolviert / st.geplant * 100) + '\u00A0% der ' + (sport === 'lauf' ? 'Läufe' : 'Gym Sessions');
   return `<div class="ppv-meta mit-quote"><div class="ppv-meta-in">` +
     `<span class="ppv-meta-teil">${text}</span><span class="ppv-meta-teil">${quote}</span></div></div>`;
 }
@@ -8386,7 +8386,7 @@ function deleteCurrentPlan() {
   if (!plan) return;
   confirmAction(
     'Trainingsplan löschen?',
-    `"${plan.name}" und alle zugehörigen Trainingstage werden unwiderruflich gelöscht. Bereits absolvierte Einheiten bleiben im Verlauf erhalten.`,
+    `"${plan.name}" und alle zugehörigen Trainingstage werden unwiderruflich gelöscht. Bereits absolvierte Gym Sessions bleiben im Verlauf erhalten.`,
     () => {
       const deletedId = editingPlanId;
       const removed = DB.getPlans().find(p => p.id === deletedId);
@@ -9705,7 +9705,7 @@ function stillstandHinweisHTML(exId) {
   const st = stillstandIndex()[exId];
   if (!st) return '';
   const datum = new Date(st.best.ts).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
-  return `<div class="ex-stillstand">Seit ${st.seit} Einheiten kein neuer Bestwert. Bisher bester Satz: ${fmtKg(st.best.kg)} kg × ${st.best.wdh} am ${datum}.</div>`;
+  return `<div class="ex-stillstand">Seit ${st.seit} Gym Sessions kein neuer Bestwert. Bisher bester Satz: ${fmtKg(st.best.kg)} kg × ${st.best.wdh} am ${datum}.</div>`;
 }
 
 // Bestleistung + letzte Ausfuehrung. Gemeinsamer Baustein von Uebungskatalog und
@@ -9816,7 +9816,7 @@ function buildExItemHTML(ex, context) {
   const planTag = usingDays.length
     ? '<span class="ex-item-plan-tag">Im aktuellen Plan</span>' : '';
   const stillstandTag = stillstandIndex()[ex.id]
-    ? '<span class="ex-item-stillstand-tag" title="Seit mehreren Einheiten kein neuer Bestwert">Stillstand</span>' : '';
+    ? '<span class="ex-item-stillstand-tag" title="Seit mehreren Gym Sessions kein neuer Bestwert">Stillstand</span>' : '';
   const usingBlock = usingDays.length
     ? `<div class="ex-item-using">
          <div class="ex-item-using-label">Verwendet in:</div>
@@ -9937,8 +9937,8 @@ function setExChartMode(exId, mode) {
 }
 function exChartEmptyText(mode) {
   return mode === 'reps'
-    ? 'Ab der zweiten Einheit mit dieser Übung erscheint hier die Entwicklung der Wiederholungen.'
-    : 'Ab der zweiten Einheit mit dieser Übung erscheint hier die Gewichtsentwicklung.';
+    ? 'Ab der zweiten Gym Session mit dieser Übung erscheint hier die Entwicklung der Wiederholungen.'
+    : 'Ab der zweiten Gym Session mit dieser Übung erscheint hier die Gewichtsentwicklung.';
 }
 
 // Farbe mit Transparenz versehen — akzeptiert „#rrggbb" und „rgb(r, g, b)".
@@ -10488,7 +10488,7 @@ function importData(event) {
           DB.saveWorkouts(data.workouts);
           DB.savePlan(data.plan);
           DB.saveExercises(data.exercises);
-          showToast(`${data.workouts.length} Einheiten importiert ✓`);
+          showToast(`${data.workouts.length} Gym Sessions importiert ✓`);
           renderMehr();
         },
         { danger: true, confirmLabel: 'Importieren' }
@@ -10926,7 +10926,7 @@ function runUndo() {
 // Zweite Sicherung neben „Rückgängig": Die Einblendung fängt den Fehlgriff ab, der
 // Papierkorb die Fehlentscheidung von vorgestern. Gelöschtes bleibt 30 Tage liegen.
 const TRASH_KEEP_DAYS = 30;
-const TRASH_LABELS = { workout: 'Einheit', plan: 'Plan', day: 'Trainingstag', exercise: 'Übung', runplan: 'Laufplan' };
+const TRASH_LABELS = { workout: 'Gym Session', plan: 'Plan', day: 'Trainingstag', exercise: 'Übung', runplan: 'Laufplan' };
 
 function trashPut(type, label, payload) {
   const trash = DB.getTrash();
@@ -11519,7 +11519,7 @@ async function driveSync(reason = 'manuell') {
       driveApplyCloudData(data);
       driveSetLastCloudEtag(cloudMeta.modifiedTime);
       driveSetLastPushed(Date.now());
-      driveLog('ok', `Aus Cloud geladen ✓ (${(data.workouts || []).length} Einheiten)`);
+      driveLog('ok', `Aus Cloud geladen ✓ (${(data.workouts || []).length} Gym Sessions)`);
       // UI neu rendern
       try { showScreen(currentScreen || 'overview'); } catch {}
       renderDriveStatus();
@@ -11554,8 +11554,8 @@ async function driveSync(reason = 'manuell') {
 function driveShowConflictDialog() {
   if (!driveConflictData) return;
   const { local, cloud, cloudMeta } = driveConflictData;
-  const localMeta = `${(local.workouts || []).length} Einheiten<br>Stand: ${new Date(driveGetLastLocalChange()).toLocaleString('de-DE')}`;
-  const cloudMetaStr = `${(cloud.workouts || []).length} Einheiten<br>Stand: ${new Date(cloudMeta.modifiedTime).toLocaleString('de-DE')}`;
+  const localMeta = `${(local.workouts || []).length} Gym Sessions<br>Stand: ${new Date(driveGetLastLocalChange()).toLocaleString('de-DE')}`;
+  const cloudMetaStr = `${(cloud.workouts || []).length} Gym Sessions<br>Stand: ${new Date(cloudMeta.modifiedTime).toLocaleString('de-DE')}`;
   document.getElementById('conflict-local-meta').innerHTML = localMeta;
   document.getElementById('conflict-cloud-meta').innerHTML = cloudMetaStr;
   openModal('modal-drive-conflict');

@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v518**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v519**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -556,6 +556,11 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   ausgerichtet, Knopf `margin-top: −2.75px` auf die Titelmitte, die Zeile haengt darunter.
   GEMESSEN: Gymplan/Laufplan Knopf = Titel 42.0px, Gymtag 39.3px; keine Konsolenfehler.
 
+- **v519 (04.11.2026, Leonard-Wunsch):** „Einheit(en)" heisst in der ganzen UI „Gym Session(s)",
+  Laufplan-Detail „Läufe" (siehe „Sprache in der Oberfläche"). 52 Textstellen (44 app.js, 8
+  index.html), nur Zeichenketten, keine Bezeichner/Kommentare. GEMESSEN: kein „Einheit" mehr im
+  gerenderten DOM, Kalender-Kennzahl „24 Gym Sessions · 0 Läufe"; keine Konsolenfehler.
+
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
 - `resolvePlanDays(plan)` löst `dayIds` → Tag-Objekte auf. Archivierte Pläne halten einen eingefrorenen Snapshot in `plan.archivedDays`.
@@ -714,8 +719,13 @@ Plankopie ergibt „Push (2)" usw.; Glas-Modus und Querformat 1100px sauber; kei
 ## Sprache in der Oberfläche
 
 Drei Begriffe, konsequent durchgehalten — nicht mischen:
-**Plan** (der Zeitraum) · **Trainingstag** (die wiederverwendbare Vorlage) · **Einheit** (eine absolvierte Trainingseinheit).
-„Session" und „Workout" kommen in der UI NICHT mehr vor (Bezeichner im Code heißen weiter `workout`/`wo`).
+**Plan** (der Zeitraum) · **Trainingstag** (die wiederverwendbare Vorlage) · **Gym Session** (eine absolvierte Krafteinheit).
+SEIT v519 (04.11.2026, Leonard-Wunsch) heisst die absolvierte Krafteinheit in der UI UEBERALL
+„Gym Session" / „Gym Sessions" (vorher „Einheit"/„Einheiten") — auch in der Einzahl („Gym Session
+starten", „Gym Session abgeschlossen"), in Toasts, Dialogen, Kalender-Kennzahl, Papierkorb und
+Cloud-Sync. Im LAUFPLAN-Detail heissen die geplanten Laeufe „Läufe" (Abschnitt und Loeschhinweis),
+die Quote beendeter Laufplaene „% der Läufe". Bezeichner und Kommentare im Code sagen weiter
+„Einheit"/`workout`. „Workout" kommt in der UI nicht vor.
 Nav-Labels: Übersicht · Training · Übungen · Plan.
 Das Wort **„Ruhetag" kommt in der UI NICHT mehr vor** (06.09.2026, Leonard-Wunsch): Ein Tag ohne
 Krafttraining heisst „Kein Gym" bzw. „Kein Gym geplant", einer ohne Lauf „Kein Lauf" bzw.
