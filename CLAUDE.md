@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v519**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v520**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -560,6 +560,13 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Laufplan-Detail „Läufe" (siehe „Sprache in der Oberfläche"). 52 Textstellen (44 app.js, 8
   index.html), nur Zeichenketten, keine Bezeichner/Kommentare. GEMESSEN: kein „Einheit" mehr im
   gerenderten DOM, Kalender-Kennzahl „24 Gym Sessions · 0 Läufe"; keine Konsolenfehler.
+
+- **v520 (04.11.2026, Leonard-Wunsch):** (1) Die Karte „Diese Woche" der Seite „Gym" hat KEINE
+  Volumenbalken mehr unter den Zeilen (`_gymWochenZeileHTML` ohne Balken, `maxVol` entfallen);
+  die Seite „Laufen" behaelt ihre Laengenbalken. (2) Die Wochentag-Quadrate beider Karten „Diese
+  Woche" sind 36px mit Radius 6px wie in der Kombi-Wochenkarte (`.lauf-wochen-karte .lauf-wz-tag`;
+  vorher 30px/4px). GEMESSEN: Gym 0 Balken, alle Quadrate 36x36 auf beiden Seiten; keine
+  Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

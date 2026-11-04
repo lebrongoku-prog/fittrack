@@ -2731,6 +2731,9 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
    unterscheiden sich nur noch in der Farbe (Gym #0F766E, Lauf #4ADE80). Ein Tag ohne Einheit
    bleibt rund. Der Trainingskalender ist davon (noch) ausgenommen. */
 .lauf-wz-tag { border-radius: 4px; }
+/* v520 (Leonard-Wunsch): In den Karten „Diese Woche" der Seiten „Gym" und „Laufen" sind die
+   Wochentag-Quadrate so gross wie in der Kombi-Wochenkarte der Uebersicht (36px, Radius 6px). */
+.lauf-wochen-karte .lauf-wz-tag { width: 36px; height: 36px; border-radius: 6px; }
 .plan-card-v2 .ppv-col.training .ppv-wd,
 .plan-card-v2 .ppv-col.done .ppv-wd,
 .plan-card-v2 .ppv-col.verschoben .ppv-wd { border-radius: 7px; }

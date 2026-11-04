@@ -5818,20 +5818,15 @@ function _gymWochenZeilenDaten(mo, istAktuell, planIndex, ws, tageById) {
   return zeilen;
 }
 
-function _gymWochenZeileHTML(z, todayIdx, maxVol) {
+function _gymWochenZeileHTML(z, todayIdx) {
   const feld = `<span class="lauf-wz-feld${z.i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag gym ${z.zustand}">${WOCHENTAGE_KURZ[z.i]}</span></span>`;
-  const breit = v => Math.max(3, Math.min(100, v / maxVol * 100)).toFixed(1);
-  const balken = maxVol && (z.soll || z.ist) ? `<div class="lauf-wz-balken gym" aria-hidden="true">
-      ${z.soll ? `<i class="soll" style="width:${breit(z.soll)}%"></i>` : ''}
-      ${z.ist ? `<i class="ist" style="width:${breit(z.ist)}%"></i>` : ''}
-    </div>` : '';
+  // v520 (Leonard-Wunsch): KEIN Volumenbalken mehr unter der Zeile.
   const inhalt = `${feld}<div class="lauf-wz-rechts">
       <div class="lauf-wz-oben">
         <div class="lauf-wz-mitte"><div class="lauf-wz-soll">${escapeHtml(z.name)}${z.hinweis ? `<span class="lauf-wz-von">${z.hinweis}</span>` : ''}</div></div>
         ${z.rechts ? `<span class="lauf-wz-ist${z.zustand === 'verpasst' ? ' verpasst' : ''}">${z.rechts}</span>` : ''}
         ${z.tipp ? '<span class="cal-detail-chev">▾</span>' : ''}
       </div>
-      ${balken}
     </div>`;
   return _wzKnopf('lauf-wz', z.tipp, inhalt);
 }
@@ -5859,11 +5854,10 @@ function renderGymWoche(aktivLaeuft) {
   DB.getTrainingDays().forEach(t => { tageById[t.id] = t; });
   planIndex.forEach(p => (p.days || []).forEach(t => { if (t && !tageById[t.id]) tageById[t.id] = t; }));
   const wochen = montage.map(mo => ({ mo, zeilen: _gymWochenZeilenDaten(mo, mo.getTime() === heuteMo.getTime(), planIndex, ws, tageById) }));
-  const maxVol = Math.max(0, ...wochen.flatMap(w => w.zeilen.flatMap(z => [z.soll, z.ist])));
   const todayIdx = (new Date().getDay() + 6) % 7;
   const seitenHTML = wochen.map(w => {
     const ist = w.mo.getTime() === heuteMo.getTime();
-    const zeilen = w.zeilen.map(z => _gymWochenZeileHTML(z, ist ? todayIdx : -1, maxVol));
+    const zeilen = w.zeilen.map(z => _gymWochenZeileHTML(z, ist ? todayIdx : -1));
     return `<div class="lauf-wochen-seite">${zeilen.length
       ? `<div class="lauf-wochenliste">${zeilen.join('')}</div>`
       : '<div class="lauf-wochenliste"><div class="lauf-wz-leer gym-woche-leer">Kein Gym geplant</div></div>'}</div>`;
