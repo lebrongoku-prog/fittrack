@@ -2605,7 +2605,12 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,2
    Karte selbst ist der Knopf). Der Ø-Wert steht aufgeklappt rechts ueber den Saeulen. */
 .lauf-wochen-karte .ex-chart-block.collapsed { display: none; }
 .lauf-wochen-karte.klappt { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.lauf-wochen-karte .ex-chart-head { justify-content: flex-end; }
+/* v515 (Leonard-Wunsch): Der Platz der entfallenen Ueberschrift ist weg. Der Ø-Wert steht nicht
+   mehr in einer eigenen Zeile, sondern rechts auf HOEHE DER SEITENPUNKTE (Mitte 12.5px ueber dem
+   Block: 10px Abstand + halber 5px-Punkt; Kopf 18px hoch → top −21.5px). Das Diagramm beginnt
+   dadurch 10px unter den Punkten statt 44px (gemessen). */
+.lauf-wochen-karte .ex-chart-block { position: relative; padding-top: 0; }
+.lauf-wochen-karte .ex-chart-head { position: absolute; right: 0; top: -21.5px; margin: 0; justify-content: flex-end; }
 /* GLEICHE ABSTAENDE UEBERALL: 18px (23.09.2026, Leonard-Wunsch — „zu eng beieinander").
    Vorher standen im Stapel drei verschiedene Werte: 10px vom Kartenkopf zur ersten Zeile, 16px
    zwischen den Zeilen (8px Aussenabstand + 8px Polster) und 10px von der letzten Zeile zur

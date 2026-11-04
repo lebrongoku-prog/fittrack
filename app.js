@@ -5886,7 +5886,7 @@ function renderGymWoche(aktivLaeuft) {
       : '<div class="lauf-wochen-leiste gym" aria-hidden="true"><i></i></div>';
   const titelHTML = montage.length > 1
     ? `<button type="button" class="chart-card-v2-title lauf-wochen-titel" id="gym-wochen-titel"
-               onclick="laufWocheZurueck('gym-wochen-scroll')">Diese Woche</button>`
+               onclick="wochenTitelTipp(event, 'gym')">Diese Woche</button>`
     : '<span class="chart-card-v2-title" id="gym-wochen-titel">Diese Woche</span>';
   el.innerHTML = `<div class="chart-card-v2 lauf-wochen-karte gym-wochen-karte${mitDiagramm ? ' klappt' : ''}"
        onclick="wochenKarteTipp(event, 'gym')">
@@ -5926,6 +5926,16 @@ function wochenKarteTipp(e, sport) {
   if (e.target.closest('button, [role="button"], a, canvas')) return;
   if (!e.currentTarget.classList.contains('klappt')) return;   // Karte ohne Diagramm
   if (sport === 'gym') toggleGymVolDiagramm(); else toggleKmDiagramm('lauf');
+}
+
+// v515 (Leonard-Wunsch): Auch der TITEL „Diese Woche" klappt das Diagramm. Hat die Karte keines,
+// fuehrt er wie bisher zur laufenden Woche zurueck (dafuer gibt es sonst den Kreispfeil-Knopf).
+function wochenTitelTipp(e, sport) {
+  e.stopPropagation();
+  const karte = e.currentTarget.closest('.lauf-wochen-karte');
+  if (karte && karte.classList.contains('klappt')) {
+    if (sport === 'gym') toggleGymVolDiagramm(); else toggleKmDiagramm('lauf');
+  } else laufWocheZurueck(sport === 'gym' ? 'gym-wochen-scroll' : 'lauf-wochen-scroll');
 }
 
 function toggleGymVolDiagramm() {
@@ -6079,7 +6089,7 @@ function renderLaufKalenderSeite() {
       : '<div class="lauf-wochen-leiste" aria-hidden="true"><i></i></div>';
   const titelHTML = montage.length > 1
     ? `<button type="button" class="chart-card-v2-title lauf-wochen-titel" id="lauf-wochen-titel"
-               onclick="laufWocheZurueck()">Diese Woche</button>`
+               onclick="wochenTitelTipp(event, 'lauf')">Diese Woche</button>`
     : '<span class="chart-card-v2-title" id="lauf-wochen-titel">Diese Woche</span>';
   // Zurueck-Knopf LINKS NEBEN DEM DATUM (22.09.2026, Leonard-Wunsch): Er erscheint erst, sobald
   // eine andere als die laufende Woche im Bild ist. Dieselbe runde Form mit Kreispfeil wie im

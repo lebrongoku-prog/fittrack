@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v514**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v515**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -524,6 +524,13 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Laufplan-Detail unveraendert. GEMESSEN (Laufen, Testplan): zu → Tipp auf Karte → auf; Tipp auf
   Zeile und Ø-Wert bleibt auf; erneuter Tipp → zu; Gym ohne Plan ohne `.klappt`; keine
   Konsolenfehler. NICHT gemessen: Gym MIT Diagramm (keine Testdaten, gleicher Codepfad).
+
+- **v515 (04.11.2026, Leonard-Wunsch):** (1) Auch der TITEL „Diese Woche" klappt das
+  Wochendiagramm (`wochenTitelTipp`); ohne Diagramm fuehrt er wie vorher zur laufenden Woche
+  zurueck — sonst erledigt das der Kreispfeil-Knopf. (2) Der Ø-Wert steht rechts auf Hoehe der
+  Seitenpunkte (`.ex-chart-head` absolut, top −21.5px, Block ohne padding-top), das Diagramm
+  beginnt 10px unter den Punkten statt 44px. GEMESSEN (Laufen): Mitte Ø = Mitte Punkte (410.3px),
+  Ø rechts buendig im Kartenpolster und antippbar; Titel auf/zu; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
