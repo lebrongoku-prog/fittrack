@@ -3037,19 +3037,22 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
      scrollt im Querformat genauso waagerecht wie im Hochformat (Leonard-Wunsch 01.09.2026). */
   /* v506 (04.11.2026, Leonard-Wunsch): das GANZE Raster 20 % groesser — Kaestchen 25.2 → 30.24px,
      Abstaende, Wochentagsspalte, Monatszeile, Schrift (15 → 18px), Marken (inset 4.2 → 5.04px,
-     Strich 2.52 → 3.02px, Radius 3 → 3.6px) und Heute-/Auswahlring mit. Verhaeltnisse unveraendert. */
+     Strich 2.52 → 3.02px, Radius 3 → 3.6px) und Heute-/Auswahlring mit. Verhaeltnisse unveraendert.
+     v507 (Leonard-Wunsch): Monate → Raster und Wochentage → Raster enger, sichtbar je rund 6px statt
+     15px — `--cal-months-gap` 14.4 → 5px, `--cal-label-w` 34.56 → 28px ("Mo" misst 25.4px),
+     `--cal-label-gap` 5.76 → 3px. */
   --cal-gap: 4.32px;
   --cal-cell: 30.24px;
   /* Abstand zwischen der Wochentagsspalte und dem Scroller. */
-  --cal-label-gap: 5.76px;
+  --cal-label-gap: 3px;
   /* Breite der Wochentagsspalte. Sie steht ausserhalb des Scrollers — die Platzrechnung
      misst den Scroller und muss sie deshalb NICHT abziehen. */
-  --cal-label-w: 34.56px;
+  --cal-label-w: 28px;
   /* Feste Hoehe der Monatszeile statt gemessener Schrifthoehe: Die Wochentagsspalte nutzt
      denselben Wert als oberen Abstand — nur so liegen „Mo" und die erste Rasterzeile
      garantiert auf einer Linie. */
   --cal-months-h: 23.04px;
-  --cal-months-gap: 14.4px;
+  --cal-months-gap: 5px;
 }
 /* Der Kern behaelt sein Groessenverhaeltnis zum Kaestchen (frueher 3px bei 16px) —
    daher 4,2px und keine runde Zahl. */

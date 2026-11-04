@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v506**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v507**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -456,6 +456,12 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Die Masse weiter oben (25.2/16.8/2.52px …) sind Vorgeschichte. GEMESSEN: Kaestchen 30.24px,
   Spalte 34.56px, „Mo" buendig zur ersten Zeile, auf 375px rund 8 statt 10 Wochen sichtbar, kein
   Ueberlauf, Karte aufgeklappt 342px; keine Konsolenfehler.
+
+- **v507 (04.11.2026, Leonard-Wunsch):** Im Trainingskalender stehen Monate und Wochentage
+  naeher am Raster: sichtbarer Abstand Monatsschrift → Raster 15.4 → 6.0px (`--cal-months-gap`
+  14.4 → 5px), Wochentagsschrift → Raster 14.9 → 5.6px (`--cal-label-w` 34.56 → 28px, breitester
+  Wochentag „Mo" 25.4px; `--cal-label-gap` 5.76 → 3px). „Mo" weiter buendig zur ersten Zeile;
+  keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
