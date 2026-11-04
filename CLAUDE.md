@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v510**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v511**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -483,6 +483,10 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   (`_calMonateAn`), NICHT gespeichert; bleibt beim Neuzeichnen stehen (`_calMonateSetzen`).
   Die Marken bleiben unveraendert. GEMESSEN: echter Tipp an/aus, Neuzeichnen behaelt den Zustand;
   keine Konsolenfehler.
+
+- **v511 (04.11.2026, Leonard-Wunsch):** Monatstoenung markanter: grau #CBD5E1 → #A9B6C8, rote
+  Woche #FCA5A5 → #F87171, Glas 34 → 48 % Weiss bzw. Rot rgba(220,38,38,.75). Standard bleibt AUS
+  (nach jedem App-Start, `_calMonateAn` leer) — gemessen.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
