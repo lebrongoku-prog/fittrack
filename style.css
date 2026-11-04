@@ -1430,6 +1430,7 @@ html.glas .screen:not(#screen-mehr) .cal-kachel { background: rgba(255,255,255,.
 html.glas .screen:not(#screen-mehr) .cal-kachel-kopf,
 html.glas .screen:not(#screen-mehr) .cal-kachel-titel { color: #fff; }
 html.glas .screen:not(#screen-mehr) .cal-kachel-sub { color: rgba(255,255,255,.8); }
+html.glas .screen:not(#screen-mehr) .cal-kachel .cal-detail-chev { color: #fff; background: rgba(255,255,255,.18); }
 html.glas .screen:not(#screen-mehr) .cal-kachel-ic.erledigt { background: #fff; }
 html.glas .screen:not(#screen-mehr) .cal-kachel-ic.offen { box-shadow: inset 0 0 0 2px #fff; }
 html.glas .screen:not(#screen-mehr) .cal-kachel-ic.verpasst { box-shadow: inset 0 0 0 2px #FCA5A5; }
@@ -3196,6 +3197,9 @@ button.cal-kachel:active { opacity: .7; }
 .cal-kachel.gym  .cal-kachel-kopf { color: #0F766E; }
 .cal-kachel.lauf .cal-kachel-kopf { color: #22A05B; }
 .cal-kachel-kopf .cal-detail-chev { margin-left: auto; }
+/* v524 (Leonard-Wunsch): Der Pfeil traegt die Farbe seiner Kachel. */
+.cal-kachel.gym  .cal-detail-chev { color: #0F766E; background: rgba(15,118,110,.14); }
+.cal-kachel.lauf .cal-detail-chev { color: #22A05B; background: rgba(74,222,128,.22); }
 .cal-kachel-ic { width: 12px; height: 12px; border-radius: 3px; box-sizing: border-box; flex-shrink: 0; }
 .cal-kachel.gym  .cal-kachel-ic.erledigt { background: #0F766E; }
 .cal-kachel.lauf .cal-kachel-ic.erledigt { background: #4ADE80; }

@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v523**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v524**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -596,6 +596,14 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   `-tag-txt`/`-tagname` samt Glas-Regel. Die Abschnitte zur zweispaltigen Fusszeile sind
   Vorgeschichte. GEMESSEN: Di erledigt beide (Knopf → Laufdetail), Mo verpasst/kein Lauf, Do
   geplant, So kein Gym/Lauf; keine Konsolenfehler.
+
+- **v524 (04.11.2026, Leonard-Wunsch):** In den Kacheln der Kalender-Fusszeile steht KEIN
+  „vorgezogen"/„nachgeholt" mehr — weder an der Einheit noch am verschobenen Plantag (der nur noch
+  grau mit Titel erscheint; beim Lauf die Vorgabe, z. B. „10 km"). „zusätzlich" bleibt.
+  `_verschiebWort` hatte danach keinen Aufrufer mehr und ist entfallen. Der Pfeil im Kachelkopf
+  traegt die Kachelfarbe (Gym #0F766E auf 14-%-Gym-Gruen, Lauf #22A05B auf 22-%-Lauf-Gruen; Glas
+  weiss auf 18-%-Weiss). GEMESSEN: Mo erledigt ohne Zusatz, Di beide grau ohne Zusatz, Pfeilfarben;
+  keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

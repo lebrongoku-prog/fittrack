@@ -6655,8 +6655,6 @@ function _calGymVerschiebungen(mo, planIndex, byDay, ws) {
   });
   return out;
 }
-// „vorgezogen" oder „nachgeholt", je nachdem, ob der Ist-Tag vor oder nach dem Plantag liegt.
-function _verschiebWort(planIdx, istIdx) { return istIdx < planIdx ? 'vorgezogen' : 'nachgeholt'; }
 
 // Kalender-Innenleben. Eine Quelle fuer beide Einbauorte (Uebersicht + Plaene-Tab);
 // die IDs bekommen ein Praefix, damit zwei Instanzen nebeneinander bestehen koennen.
@@ -7499,18 +7497,16 @@ function showCalDay(key, id) {
       const alle = DB.getWorkouts();
       const woIdx = alle.findIndex(w => _dayKeyOf(w.startTs) === key);
       const wo = woIdx >= 0 ? alle[woIdx] : null;
-      const vonIdx = gymVer.istNachPlan[wiTag];
-      const zusatz = vonIdx != null ? _verschiebWort(vonIdx, wiTag)
-        : (plan.known && !plan.planned ? 'zusätzlich' : '');
+      // v524 (Leonard-Wunsch): kein „vorgezogen"/„nachgeholt" mehr in der Kachel; „zusätzlich"
+      // bleibt nur fuer eine Einheit, die keinen Plantag abdeckt.
+      const zusatz = gymVer.istNachPlan[wiTag] == null && plan.known && !plan.planned ? 'zusätzlich' : '';
       const anz = wo ? (wo.exercises || []).length : 0;
       gym = { zustand: 'erledigt', titel: entry.names.join(', '),
               sub: [wo ? `${anz} ${anz === 1 ? 'Übung' : 'Übungen'}` : '', wo && wo.duration ? fmtDur(wo.duration) : '', zusatz].filter(Boolean).join(' · '),
               // Oeffnet die bestehende Detailansicht (`#modal-hist-detail`).
               tipp: woIdx >= 0 ? `showHistDetail(${woIdx})` : '' };
     } else if (plan.planned && gymVer.planNachIst[wiTag] != null) {
-      const j = gymVer.planNachIst[wiTag];
-      gym = { zustand: 'verschoben', titel: plan.name ? escapeHtml(plan.name) : 'Training',
-              sub: `${_verschiebWort(wiTag, j) === 'vorgezogen' ? 'vorgezogen auf' : 'nachgeholt am'} ${WOCHENTAGE_KURZ[j]}` };
+      gym = { zustand: 'verschoben', titel: plan.name ? escapeHtml(plan.name) : 'Training', sub: '' };
     } else if (plan.planned) {
       gym = { zustand: kommt ? 'offen' : 'verpasst', titel: plan.name ? escapeHtml(plan.name) : 'Training',
               sub: kommt ? 'geplant' : 'nicht trainiert' };
@@ -7541,25 +7537,24 @@ function showCalDay(key, id) {
       // Intervalltraining hat keine sinnvolle Strecke — dort Dauer und Maximalpuls.
       const hiit = l.art === 'hiit';
       const kmh = l.kmh || (l.km && l.minutes ? l.km / (l.minutes / 60) : 0);
-      const vonIdx = laufVer.laufNachPlan[wiTag];
       lauf = { zustand: 'erledigt',
                titel: (hiit ? `HIIT ${fmtMin(l.minutes)}` : fmtKm(l.km)) + notiz,
                sub: [hiit ? (l.maxHR ? `max. ${Math.round(l.maxHR)} bpm` : '') : fmtMin(l.minutes),
-                     !hiit && kmh ? fmtPace(kmh) : '',
-                     vonIdx != null ? _verschiebWort(vonIdx, wiTag) : ''].filter(x => x && x !== '–').join(' · '),
+                     !hiit && kmh ? fmtPace(kmh) : ''].filter(x => x && x !== '–').join(' · '),
                tipp: `showRunDetail('${key}')` };
-    } else if (gepl && laufVer.planNachLauf[wiTag] != null) {
-      const j = laufVer.planNachLauf[wiTag];
-      lauf = { zustand: 'verschoben', titel: 'Lauf',
-               sub: `${_verschiebWort(wiTag, j) === 'vorgezogen' ? 'vorgezogen auf' : 'nachgeholt am'} ${WOCHENTAGE_KURZ[j]}` };
     } else if (gepl) {
       const u = gepl.einheit;
       const soll = u ? [u.km ? fmtKm(u.km) : null, u.minutes ? fmtMin(u.minutes) : null].filter(Boolean).join(' · ') : '';
-      lauf = { zustand: gepl.uebersprungen ? 'verschoben' : (kommt ? 'offen' : 'verpasst'),
-               titel: (soll || 'Lauf') + notiz,
-               sub: gepl.uebersprungen ? 'übersprungen' : (kommt ? 'geplant' : 'nicht gelaufen'),
-               // MIT NOTIZ oeffnet die Kachel das Fenster der Einheit (Vorgabe + Notiz, v443).
-               tipp: notiz ? `openRunSkip('${key}')` : '' };
+      if (laufVer.planNachLauf[wiTag] != null) {
+        // Verschoben: nur die Vorgabe, grau — „Lauf" stuende sonst doppelt (Kopf und Titel).
+        lauf = { zustand: 'verschoben', titel: soll || 'Lauf', sub: '' };
+      } else {
+        lauf = { zustand: gepl.uebersprungen ? 'verschoben' : (kommt ? 'offen' : 'verpasst'),
+                 titel: (soll || 'Lauf') + notiz,
+                 sub: gepl.uebersprungen ? 'übersprungen' : (kommt ? 'geplant' : 'nicht gelaufen'),
+                 // MIT NOTIZ oeffnet die Kachel das Fenster der Einheit (Vorgabe + Notiz, v443).
+                 tipp: notiz ? `openRunSkip('${key}')` : '' };
+      }
     } else if (_laufplanDeckt(key)) {
       // Gegenstueck zu „Kein Gym geplant": nur INNERHALB eines Laufplans.
       lauf = { zustand: 'leer', titel: 'Kein Lauf geplant', sub: '' };
