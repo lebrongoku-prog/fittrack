@@ -2728,8 +2728,9 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
 /* v527/v528 (Leonard-Wunsch): Auf den Seiten „Gym" UND „Laufen" sind die Quadrate 80 % so hoch
    wie der Knopf der Karte „Heute" darueber (63.6 × 0.8 = 50.88px, Radius im Verhaeltnis 6/36),
    Wochentag und Name in der Knopfschrift (18px). SEIT v529 (Leonard-Wunsch) 30 % kleiner:
-   35.62px, Radius 5.94px — auch in der Liste der Uebersicht. */
-.lauf-wochen-karte .lauf-wz-tag { width: 35.62px; height: 35.62px; border-radius: 5.94px; font-size: var(--fs-betont); }
+   35.62px, Radius 5.94px — auch in der Liste der Uebersicht. SEIT v530 noch einmal 30 % kleiner
+   (24.93px, Radius 4.16px), der Wochentag IM Quadrat in Standardschrift (15px). */
+.lauf-wochen-karte .lauf-wz-tag { width: 24.93px; height: 24.93px; border-radius: 4.16px; font-size: var(--fs-text); }
 .lauf-wochen-karte .lauf-wz-soll { font-size: var(--fs-betont); }
 .plan-card-v2 .ppv-col.training .ppv-wd,
 .plan-card-v2 .ppv-col.done .ppv-wd,
@@ -2795,7 +2796,7 @@ html.glas .screen:not(#screen-mehr) .wz-flach.gewaehlt .wz-flach-tag { color: #f
 /* v528 (Leonard-Wunsch, „nur groesser"): In der aufgeklappten Karte „Heute" der Uebersicht sind
    die Zeichen so gross wie die Quadrate der Seiten „Gym"/„Laufen" (50.88px), Wochentag und Namen
    18px. Aufbau unveraendert (Wochentag als Text, Einheiten nebeneinander). */
-.wz-flach-liste .wz-zeichen { width: 35.62px; height: 35.62px; border-radius: 5.94px; }
+.wz-flach-liste .wz-zeichen { width: 24.93px; height: 24.93px; border-radius: 4.16px; }
 .wz-flach-liste .wz-flach-tag { width: 34px; font-size: var(--fs-betont); }
 .wz-flach-liste .wz-einheit { font-size: var(--fs-betont); gap: 10px; }
 .lauf-wz-tag.verschoben { background: var(--card2); color: var(--text2); }
