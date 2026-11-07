@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v528**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v529**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -643,6 +643,8 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   ebenfalls 50.88px, Wochentag (Spalte 34px) und Einheiten 18px; an einem Tag mit Gym und Lauf
   stehen die beiden Einheiten jetzt untereinander. GEMESSEN (375px): alle drei Stellen 50.9px/18px,
   kein Ueberlauf; keine Konsolenfehler.
+- **v529 (07.11.2026, Leonard-Wunsch):** Dieselben Symbole an allen drei Stellen 30 % kleiner:
+  35.62px, Radius 5.94px; Schrift bleibt 18px.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
