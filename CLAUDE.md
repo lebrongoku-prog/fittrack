@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v530**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v531**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -648,6 +648,11 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
 - **v530 (07.11.2026, Leonard-Wunsch):** Noch einmal 30 % kleiner: 24.93px, Radius 4.16px. Der
   Wochentag IM Quadrat (Seiten „Gym"/„Laufen") steht in Standardschrift 15px (`--fs-text`); Namen
   und der Wochentag-Text der Uebersicht bleiben 18px.
+- **v531 (07.11.2026, Leonard-Wunsch):** Die Wochentage in der aufgeklappten Karte „Heute" der
+  Uebersicht und in den Quadraten der Karten „Diese Woche" (Gym/Laufen) sind formatiert wie in
+  der Karte „Trainingswoche": 15px, halbfett (600). In der Uebersicht auch grau (`--text3`, Glas
+  75-%-Weiss), die gewaehlte Zeile ohne Fettdruck/Akzentfarbe; IN den Quadraten bleibt die Farbe
+  des Zustands (weiss auf gefuellt, gruen/rot im Ring), sonst waere sie unlesbar.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

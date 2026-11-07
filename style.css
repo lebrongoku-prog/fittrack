@@ -2730,7 +2730,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
    Wochentag und Name in der Knopfschrift (18px). SEIT v529 (Leonard-Wunsch) 30 % kleiner:
    35.62px, Radius 5.94px — auch in der Liste der Uebersicht. SEIT v530 noch einmal 30 % kleiner
    (24.93px, Radius 4.16px), der Wochentag IM Quadrat in Standardschrift (15px). */
-.lauf-wochen-karte .lauf-wz-tag { width: 24.93px; height: 24.93px; border-radius: 4.16px; font-size: var(--fs-text); }
+.lauf-wochen-karte .lauf-wz-tag { width: 24.93px; height: 24.93px; border-radius: 4.16px; font-size: var(--fs-text); font-weight: 600; }
 .lauf-wochen-karte .lauf-wz-soll { font-size: var(--fs-betont); }
 .plan-card-v2 .ppv-col.training .ppv-wd,
 .plan-card-v2 .ppv-col.done .ppv-wd,
@@ -2797,7 +2797,11 @@ html.glas .screen:not(#screen-mehr) .wz-flach.gewaehlt .wz-flach-tag { color: #f
    die Zeichen so gross wie die Quadrate der Seiten „Gym"/„Laufen" (50.88px), Wochentag und Namen
    18px. Aufbau unveraendert (Wochentag als Text, Einheiten nebeneinander). */
 .wz-flach-liste .wz-zeichen { width: 24.93px; height: 24.93px; border-radius: 4.16px; }
-.wz-flach-liste .wz-flach-tag { width: 34px; font-size: var(--fs-betont); }
+/* v531 (Leonard-Wunsch): Wochentage wie in der Karte „Trainingswoche" (`.ppv-k-labels`): 15px,
+   halbfett, grau — auch in der gewaehlten Zeile (das Feld dahinter bleibt die Markierung). */
+.wz-flach-liste .wz-flach-tag,
+.wz-flach-liste .wz-flach.gewaehlt .wz-flach-tag { width: 28px; font-size: var(--fs-text); font-weight: 600; color: var(--text3); }
+html.glas .screen:not(#screen-mehr) .wz-flach-liste .wz-flach-tag { color: rgba(255,255,255,.75); }
 .wz-flach-liste .wz-einheit { font-size: var(--fs-betont); gap: 10px; }
 .lauf-wz-tag.verschoben { background: var(--card2); color: var(--text2); }
 /* VERPASST (26.09.2026, Leonard-Wunsch): ein geplanter Lauftag, der vorbei ist und nicht
