@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v526**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v527**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -631,6 +631,11 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   aus dem Gymtag, Werte aus der letzten Gym Session); Tipp klappt Notiz und Verlauf auf. Kein
   Loeschen, keine Deltas. Verpasste Tage bleiben ohne Tipp. GEMESSEN (375px): 13 offene Zeilen
   antippbar, Fenster wie beschrieben, Aufklappen ok; keine Konsolenfehler.
+- **v527 (07.11.2026, Leonard-Wunsch):** In der Karte „Diese Woche" der Seite „Gym" sind die
+  Wochentag-Quadrate so hoch wie der Knopf der Karte „Heute" (63.6px, Radius 10.6px), Wochentag
+  und Gymtag-Name 18px (`--fs-betont`, wie die Knopfschrift) — `.gym-wochen-karte`. Die Seite
+  „Laufen" bleibt bei 36px/15px. GEMESSEN (375px): Knopf 63.6 = Quadrat 63.6px, alle 18px, kein
+  Ueberlauf (langer Name bricht zweizeilig um); keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

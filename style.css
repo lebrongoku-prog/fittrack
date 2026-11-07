@@ -2725,6 +2725,11 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
 /* v520 (Leonard-Wunsch): In den Karten „Diese Woche" der Seiten „Gym" und „Laufen" sind die
    Wochentag-Quadrate so gross wie in der Kombi-Wochenkarte der Uebersicht (36px, Radius 6px). */
 .lauf-wochen-karte .lauf-wz-tag { width: 36px; height: 36px; border-radius: 6px; }
+/* v527 (Leonard-Wunsch): Auf der Seite „Gym" sind die Quadrate so hoch wie der Knopf der Karte
+   „Heute" darueber (63.6px, Radius im selben Verhaeltnis wie 6/36), Wochentag und Gymtag-Name in
+   dessen Schrift (18px). Die Seite „Laufen" bleibt bei 36px. */
+.gym-wochen-karte .lauf-wz-tag { width: 63.6px; height: 63.6px; border-radius: 10.6px; font-size: var(--fs-betont); }
+.gym-wochen-karte .lauf-wz-soll { font-size: var(--fs-betont); }
 .plan-card-v2 .ppv-col.training .ppv-wd,
 .plan-card-v2 .ppv-col.done .ppv-wd,
 .plan-card-v2 .ppv-col.verschoben .ppv-wd { border-radius: 7px; }
