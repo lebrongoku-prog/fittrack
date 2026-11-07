@@ -2731,7 +2731,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
    35.62px, Radius 5.94px — auch in der Liste der Uebersicht. SEIT v530 noch einmal 30 % kleiner
    (24.93px, Radius 4.16px), der Wochentag IM Quadrat in Standardschrift (15px). */
 .lauf-wochen-karte .lauf-wz-tag { width: 24.93px; height: 24.93px; border-radius: 4.16px; font-size: var(--fs-text); font-weight: 600; }
-.lauf-wochen-karte .lauf-wz-soll { font-size: var(--fs-betont); }
+.lauf-wochen-karte .lauf-wz-soll { font-size: var(--fs-titel); }   /* v532: 16px */
 .plan-card-v2 .ppv-col.training .ppv-wd,
 .plan-card-v2 .ppv-col.done .ppv-wd,
 .plan-card-v2 .ppv-col.verschoben .ppv-wd { border-radius: 7px; }
@@ -2802,7 +2802,7 @@ html.glas .screen:not(#screen-mehr) .wz-flach.gewaehlt .wz-flach-tag { color: #f
 .wz-flach-liste .wz-flach-tag,
 .wz-flach-liste .wz-flach.gewaehlt .wz-flach-tag { width: 28px; font-size: var(--fs-text); font-weight: 600; color: var(--text3); }
 html.glas .screen:not(#screen-mehr) .wz-flach-liste .wz-flach-tag { color: rgba(255,255,255,.75); }
-.wz-flach-liste .wz-einheit { font-size: var(--fs-betont); gap: 10px; }
+.wz-flach-liste .wz-einheit { font-size: var(--fs-titel); gap: 10px; }   /* v532: 16px */
 .lauf-wz-tag.verschoben { background: var(--card2); color: var(--text2); }
 /* VERPASST (26.09.2026, Leonard-Wunsch): ein geplanter Lauftag, der vorbei ist und nicht
    gelaufen wurde. Dieselbe Form wie „offen", nur in Rot — die App kennt ROT als Warnfarbe

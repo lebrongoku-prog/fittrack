@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v531**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v532**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -653,6 +653,8 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   der Karte „Trainingswoche": 15px, halbfett (600). In der Uebersicht auch grau (`--text3`, Glas
   75-%-Weiss), die gewaehlte Zeile ohne Fettdruck/Akzentfarbe; IN den Quadraten bleibt die Farbe
   des Zustands (weiss auf gefuellt, gruen/rot im Ring), sonst waere sie unlesbar.
+- **v532 (07.11.2026, Leonard-Wunsch):** Die Angaben der Einheiten (Gymtag-Name bzw. Laufziel) in
+  diesen drei Karten sind 16px (`--fs-titel`) statt 18px.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
