@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v525**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v526**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -622,6 +622,15 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Wettkampf-Zeitstrahl `.wk-strahl` hat eigene Klassen und bleibt). GEMESSEN: Kopf „8.1 t +4 %",
   5 Zeilen mit Deltas, Tipp → Notiz + Diagramm (494px breit), zweiter Tipp → zu; PR-Weg
   umrandet und offen; keine Konsolenfehler.
+
+- **v526 (07.11.2026, Leonard-Wunsch):** In der Karte „Diese Woche" der Seite „Gym" ist jeder
+  OFFENE Plantag (heute oder kuenftig, noch nicht trainiert) ein Knopf mit Pfeil und oeffnet
+  `showGymtagVorschau(dayId, ts)` im selben Fenster wie eine Gym Session (`#modal-hist-detail`):
+  Titel „Push — So., 8. Nov. 2026", gruener Kopf „GEPLANT · 3 Übungen" mit „6 Sätze · Ø 1h 0min",
+  darunter je Uebung eine `.hd-zeile` mit den vorgeschlagenen Saetzen (`displaySetsForPe` — Anzahl
+  aus dem Gymtag, Werte aus der letzten Gym Session); Tipp klappt Notiz und Verlauf auf. Kein
+  Loeschen, keine Deltas. Verpasste Tage bleiben ohne Tipp. GEMESSEN (375px): 13 offene Zeilen
+  antippbar, Fenster wie beschrieben, Aufklappen ok; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

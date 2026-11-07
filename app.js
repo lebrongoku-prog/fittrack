@@ -5813,7 +5813,9 @@ function _gymWochenZeilenDaten(mo, istAktuell, planIndex, ws, tageById) {
     const verpasst = von < heuteMs;
     zeilen.push({ i, zustand: verpasst ? 'verpasst' : 'offen', name: tag ? tag.name : (info.name || 'Gymtag'),
       hinweis: '', rechts: verpasst ? 'nicht trainiert' : '',
-      soll: _gymVorVolumen(ws, info.planDayId, Math.min(von, Date.now())), ist: 0, tipp: '' });
+      soll: _gymVorVolumen(ws, info.planDayId, Math.min(von, Date.now())), ist: 0,
+      // v526 (Leonard-Wunsch): Ein OFFENER Plantag oeffnet die Vorschau seiner Uebungen.
+      tipp: !verpasst && tag ? `showGymtagVorschau('${tag.id}', ${von})` : '' });
   }
   return zeilen;
 }
@@ -7809,6 +7811,56 @@ function showHistDetail(i, highlightExId) {
   document.getElementById('hist-detail-body').innerHTML =
     kopf + `<div class="hd-liste">${zeilen}</div>` +
     `<button class="btn btn-danger btn-full" style="margin-top:18px" onclick="deleteSession(${i})">🗑 Gym Session löschen</button>`;
+  openModal('modal-hist-detail');
+  _renderHdCharts();
+}
+
+// v526 (07.11.2026, Leonard-Wunsch): Vorschau eines noch ANSTEHENDEN Gymtags im selben Fenster
+// wie die Detailansicht einer Gym Session — gleicher Kopf, gleiche Zeilen, gleiches Aufklappen
+// (Verlaufsdiagramm). Die Saetze zeigen, was die Gym Session beim Start vorschlaegt
+// (`displaySetsForPe`: Anzahl aus dem Gymtag, Werte aus der letzten Gym Session). Kein Loeschen.
+function showGymtagVorschau(dayId, ts) {
+  let tag = DB.getTrainingDays().find(t => t.id === dayId);
+  if (!tag) _calPlanIndex().some(p => (tag = (p.days || []).find(t => t && t.id === dayId)));
+  if (!tag) return;
+  document.getElementById('hist-detail-title').textContent = `${tag.name} — ${fmtDate(ts)}`;
+  const uebungen = tag.exercises || [];
+  const saetze = uebungen.reduce((n, pe) => n + peSets(pe).length, 0);
+  const dauern = DB.getWorkouts().filter(w => w.planDayId === dayId && w.duration).map(w => w.duration);
+  const zeile = [`${saetze} ${saetze === 1 ? 'Satz' : 'Sätze'}`,
+                 dauern.length ? 'Ø ' + fmtDur(Math.round(dauern.reduce((a, b) => a + b, 0) / dauern.length)) : '']
+                 .filter(Boolean).join(' · ');
+  const kopf = `<div class="rd-kopf gym">
+      <span class="rd-kopf-etikett">Geplant</span>
+      <div class="rd-kopf-reihe">
+        <span class="rd-kopf-wert">${uebungen.length} ${uebungen.length === 1 ? 'Übung' : 'Übungen'}</span>
+      </div>
+      <span class="rd-kopf-zeile">${zeile}</span>
+    </div>`;
+  const zeilen = uebungen.map((pe, idx) => {
+    const id = pe.exId || pe.id;
+    const exData = getEx(id);
+    const farbe = muscleColor(exData ? exData.muscle : 'chest');
+    const sets = displaySetsForPe(pe, getLastExData(id));
+    const saetzeText = sets.map(s => s.weight ? `${s.reps || '–'}×${s.weight}` : `${s.reps || '–'} Wdh.`).join(' · ');
+    return `<div class="hd-zeile">
+      <button type="button" class="hd-zeile-kopf" onclick="toggleHdZeile(this)" aria-expanded="false">
+        <span class="hd-zeile-marke" style="background:${farbe}"></span>
+        <span class="hd-zeile-text">
+          <span class="hd-zeile-name">${escapeHtml((exData && exData.name) || pe.name || '')}</span>
+          <span class="hd-zeile-saetze">${saetzeText}</span>
+        </span>
+        <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
+      </button>
+      <div class="hd-zeile-mehr">
+        ${pe.notes ? `<div class="hd-note">${escapeHtml(pe.notes)}</div>` : ''}
+        ${exChartHTML(id, `hd-chart-${idx}`)}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('hist-detail-body').innerHTML = kopf + (zeilen
+    ? `<div class="hd-liste">${zeilen}</div>`
+    : '<div class="hd-note">Dieser Gymtag hat noch keine Übungen.</div>');
   openModal('modal-hist-detail');
   _renderHdCharts();
 }
