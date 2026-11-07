@@ -5380,6 +5380,12 @@ function _wocheAnfahren(id, mo) {
   if (!sc || !sc.clientWidth || !sc._montage || !mo) return;
   const i = sc._montage.findIndex(m => m.getTime() === mo.getTime());
   if (i < 0) return;
+  // v534 (Leonard-Wunsch): Titel, Datum und Saeule springen SOFORT auf die Zielwoche; die Wochen,
+  // ueber die die Karte dabei wischt, werden nicht mehr angezeigt (lenkte ab). `_zielIdx` haelt
+  // den Scroll-Handler davon ab, bis die Karte eingerastet ist oder der Finger uebernimmt.
+  sc._zielIdx = i;
+  sc._idx = i;
+  _laufWochenAnzeige(sc, i);
   sc.scrollTo({ left: i * sc.clientWidth, behavior: _bewegungReduziert() ? 'auto' : 'smooth' });
 }
 // onClick-Handler fuer Chart.js: Index der getippten Saeule → Montag → Scroller.
@@ -5446,16 +5452,20 @@ function _laufWochenWischEinrichten(sc, montage, aktIdx, startIdx, kfg) {
       const i1 = Math.max(0, Math.min(grenze, Math.ceil(x)));
       setzeHoehe(i0, i1);
       const idx = Math.max(0, Math.min(grenze, Math.round(x)));
-      if (idx !== sc._idx) { sc._idx = idx; _laufWochenAnzeige(sc, idx); }
+      if (sc._zielIdx == null && idx !== sc._idx) { sc._idx = idx; _laufWochenAnzeige(sc, idx); }
       // Einrasten: ~90ms nach dem letzten Scroll-Tick, wie beim Tabwechsel.
       clearTimeout(settle);
       settle = setTimeout(() => {
         const j = Math.max(0, Math.min(grenze, Math.round(sc.scrollLeft / Math.max(1, sc.clientWidth))));
+        // Fahrt zur Zielwoche (v534) beendet: ab jetzt folgt die Anzeige wieder dem Scrollen.
+        if (sc._zielIdx != null) { sc._zielIdx = null; if (j !== sc._idx) { sc._idx = j; _laufWochenAnzeige(sc, j); } }
         nrSetzen(j + 1);
         setzeHoehe(j, j);
       }, 90);
     });
   }, { passive: true });
+  // Wer waehrend der Fahrt selbst wischt, bekommt die gewohnte mitlaufende Anzeige zurueck.
+  sc.addEventListener('pointerdown', () => { sc._zielIdx = null; }, { passive: true });
 }
 
 // ── AUSKLAPPBARES DIAGRAMM DER GEPLANTEN WOCHENKILOMETER (22.09.2026, Leonard-Wunsch) ──

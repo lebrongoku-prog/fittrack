@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v533**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v534**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -663,6 +663,13 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Gym W5 → Seite 4, W1 → 0; Laufen W6 → 5, W2 → 1; keine Konsolenfehler. TESTHINWEIS: Weiches
   `scrollTo` laeuft in der Browser-Ansicht nicht (bleibt stehen) — dort `_bewegungReduziert`
   voruebergehend auf true stellen.
+- **v534 (07.11.2026, Leonard-Wunsch):** Beim Saeulen-Tipp springen Hervorhebung, Titel und Datum
+  der Karte SOFORT auf die Zielwoche; die Wochen dazwischen leuchten beim Wischen nicht mehr auf
+  (`sc._zielIdx` sperrt die mitlaufende Anzeige im Scroll-Handler bis zum Einrasten; ein
+  `pointerdown` am Scroller hebt die Sperre auf). Wischen mit dem Finger unveraendert. GEMESSEN
+  (rAF synchron, Scroll von Hand): Tipp W5 aus W1 → sofort „Woche 5 · 16.–22. Nov" und Saeule 5,
+  Zwischenstaende 2–4 ohne Wechsel, nach dem Einrasten Sperre weg; Finger danach wieder
+  mitlaufend; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
