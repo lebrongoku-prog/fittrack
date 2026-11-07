@@ -2725,11 +2725,11 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
 /* v520 (Leonard-Wunsch): In den Karten „Diese Woche" der Seiten „Gym" und „Laufen" sind die
    Wochentag-Quadrate so gross wie in der Kombi-Wochenkarte der Uebersicht (36px, Radius 6px). */
 .lauf-wochen-karte .lauf-wz-tag { width: 36px; height: 36px; border-radius: 6px; }
-/* v527 (Leonard-Wunsch): Auf der Seite „Gym" sind die Quadrate so hoch wie der Knopf der Karte
-   „Heute" darueber (63.6px, Radius im selben Verhaeltnis wie 6/36), Wochentag und Gymtag-Name in
-   dessen Schrift (18px). Die Seite „Laufen" bleibt bei 36px. */
-.gym-wochen-karte .lauf-wz-tag { width: 63.6px; height: 63.6px; border-radius: 10.6px; font-size: var(--fs-betont); }
-.gym-wochen-karte .lauf-wz-soll { font-size: var(--fs-betont); }
+/* v527/v528 (Leonard-Wunsch): Auf den Seiten „Gym" UND „Laufen" sind die Quadrate 80 % so hoch
+   wie der Knopf der Karte „Heute" darueber (63.6 × 0.8 = 50.88px, Radius im Verhaeltnis 6/36),
+   Wochentag und Name in der Knopfschrift (18px). */
+.lauf-wochen-karte .lauf-wz-tag { width: 50.88px; height: 50.88px; border-radius: 8.48px; font-size: var(--fs-betont); }
+.lauf-wochen-karte .lauf-wz-soll { font-size: var(--fs-betont); }
 .plan-card-v2 .ppv-col.training .ppv-wd,
 .plan-card-v2 .ppv-col.done .ppv-wd,
 .plan-card-v2 .ppv-col.verschoben .ppv-wd { border-radius: 7px; }
@@ -2791,6 +2791,12 @@ html.glas .screen:not(#screen-mehr) .wz-zeichen.verschoben { background: rgba(25
 .wz-flach.gewaehlt .wz-flach-tag { color: var(--accent-dark); font-weight: 800; }
 html.glas .screen:not(#screen-mehr) .wz-flach.gewaehlt { background: rgba(255,255,255,.18); }
 html.glas .screen:not(#screen-mehr) .wz-flach.gewaehlt .wz-flach-tag { color: #fff; }
+/* v528 (Leonard-Wunsch, „nur groesser"): In der aufgeklappten Karte „Heute" der Uebersicht sind
+   die Zeichen so gross wie die Quadrate der Seiten „Gym"/„Laufen" (50.88px), Wochentag und Namen
+   18px. Aufbau unveraendert (Wochentag als Text, Einheiten nebeneinander). */
+.wz-flach-liste .wz-zeichen { width: 50.88px; height: 50.88px; border-radius: 8.48px; }
+.wz-flach-liste .wz-flach-tag { width: 34px; font-size: var(--fs-betont); }
+.wz-flach-liste .wz-einheit { font-size: var(--fs-betont); gap: 10px; }
 .lauf-wz-tag.verschoben { background: var(--card2); color: var(--text2); }
 /* VERPASST (26.09.2026, Leonard-Wunsch): ein geplanter Lauftag, der vorbei ist und nicht
    gelaufen wurde. Dieselbe Form wie „offen", nur in Rot — die App kennt ROT als Warnfarbe
