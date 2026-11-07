@@ -5372,6 +5372,25 @@ function _laufWochenBreitePruefen() {
   });
 }
 
+// v533 (Leonard-Wunsch): Ein Tipp auf eine Saeule der Diagramme „Wochenkilometer"/„Wochenvolumen"
+// (Seiten „Laufen"/„Gym") wischt die Karte „Diese Woche" darueber zu DIESER Woche. Gesucht wird
+// ueber den MONTAG — der Scroller kann eine Seite mehr haben als das Diagramm Saeulen.
+function _wocheAnfahren(id, mo) {
+  const sc = document.getElementById(id);
+  if (!sc || !sc.clientWidth || !sc._montage || !mo) return;
+  const i = sc._montage.findIndex(m => m.getTime() === mo.getTime());
+  if (i < 0) return;
+  sc.scrollTo({ left: i * sc.clientWidth, behavior: _bewegungReduziert() ? 'auto' : 'smooth' });
+}
+// onClick-Handler fuer Chart.js: Index der getippten Saeule → Montag → Scroller.
+function _saeuleWischt(scrollerId) {
+  return (evt, els, chart) => {
+    const ziel = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, false);
+    if (!ziel.length || !chart._daten || !chart._daten[ziel[0].index]) return;
+    _wocheAnfahren(scrollerId, chart._daten[ziel[0].index].mo);
+  };
+}
+
 // Zurueck zur laufenden Woche — der Kartentitel ist dafuer ein Knopf.
 function laufWocheZurueck(id) {
   const sc = document.getElementById(id || 'lauf-wochen-scroll');
@@ -5728,6 +5747,7 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
     plugins: [_balkenWertePlugin(v => String(Math.round(v)), schrift), _tooltipZweiterTipp],   // v488: ganze km
     options: {
       responsive: true, maintainAspectRatio: false, events: ['click'],
+      onClick: welches === 'lauf' ? _saeuleWischt('lauf-wochen-scroll') : undefined,   // v533
       layout: { padding: { top: 16 } },
       interaction: { mode: 'index', intersect: false },
       plugins: {
@@ -5995,11 +6015,11 @@ function _zeichneGymVolDiagramm(mo, schnitt) {
   const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)');
   const hervorIdx = mo ? daten.findIndex(d => d.mo.getTime() === mo.getTime()) : -1;
   _gymVolChart = _gymVolChartBauen(canvas, daten, _gymVolFarben(daten, hervorIdx, aufGlas),
-    aufGlas ? 'rgba(255,255,255,0.92)' : '#0F766E', schnitt, aufGlas);
+    aufGlas ? 'rgba(255,255,255,0.92)' : '#0F766E', schnitt, aufGlas, _saeuleWischt('gym-wochen-scroll'));
   if (_gymVolChart) { _gymVolChart._daten = daten; _gymVolChart._glas = aufGlas; }
 }
 // Gemeinsamer Kern (v476): Seite „Gym" und Detailansicht des Gymplans.
-function _gymVolChartBauen(canvas, daten, farben, vollFarbe, schnitt, aufGlas) {
+function _gymVolChartBauen(canvas, daten, farben, vollFarbe, schnitt, aufGlas, beimTipp) {
   if (typeof Chart === 'undefined') return null;
   const schrift = aufGlas ? 'rgba(255,255,255,0.8)' : '#64748B';
   const raster  = aufGlas ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.06)';
@@ -6018,7 +6038,7 @@ function _gymVolChartBauen(canvas, daten, farben, vollFarbe, schnitt, aufGlas) {
     data: { labels: daten.map((_, i) => 'W' + (i + 1)), datasets: sets },
     plugins: [_balkenWertePlugin(v => inTonnen ? _kmZahl(v / 1000) : String(Math.round(v)), schrift), _tooltipZweiterTipp],
     options: {
-      responsive: true, maintainAspectRatio: false, events: ['click'],
+      responsive: true, maintainAspectRatio: false, events: ['click'], onClick: beimTipp,
       layout: { padding: { top: 16 } },
       interaction: { mode: 'index', intersect: false },
       plugins: { legend: { display: false }, tooltip: { filter: it => it.datasetIndex === 0, callbacks: {

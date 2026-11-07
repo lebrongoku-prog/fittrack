@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v532**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v533**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -655,6 +655,14 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   des Zustands (weiss auf gefuellt, gruen/rot im Ring), sonst waere sie unlesbar.
 - **v532 (07.11.2026, Leonard-Wunsch):** Die Angaben der Einheiten (Gymtag-Name bzw. Laufziel) in
   diesen drei Karten sind 16px (`--fs-titel`) statt 18px.
+- **v533 (07.11.2026, Leonard-Wunsch):** Ein Tipp auf eine SAEULE der Diagramme „Wochenkilometer"
+  (Seite „Laufen") und „Wochenvolumen" (Seite „Gym") wischt die Karte „Diese Woche" darueber zu
+  dieser Woche (`_saeuleWischt(scrollerId)` als `onClick`, `_wocheAnfahren` sucht den Montag in
+  `sc._montage`; weich, bei reduzierter Bewegung sofort). Der Tooltip erscheint wie bisher.
+  Detailansichten der Plaene unveraendert. GEMESSEN (Bewegung reduziert, `chart._eventHandler`):
+  Gym W5 → Seite 4, W1 → 0; Laufen W6 → 5, W2 → 1; keine Konsolenfehler. TESTHINWEIS: Weiches
+  `scrollTo` laeuft in der Browser-Ansicht nicht (bleibt stehen) — dort `_bewegungReduziert`
+  voruebergehend auf true stellen.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
