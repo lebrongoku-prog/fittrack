@@ -970,11 +970,21 @@ function showScreen(name) {
   // mit dem Laufplan-Detail waere es der vierte gleichlautende Block gewesen (04.09.2026).
   const tabContainer = document.getElementById('tab-container');
   const overlayEls = Object.values(OVERLAY_SCREENS).map(id => document.getElementById(id)).filter(Boolean);
-  overlayEls.forEach(el => el.classList.remove('active'));
+  // v536 (Leonard-Wunsch): Die Gymtag-Detailansicht liegt UEBER der Vollbildseite, von der sie
+  // geoeffnet wurde (Gymtage oder Gymplan-Detail). Diese bleibt als `.darunter` stehen — beim
+  // Zurueckwischen sieht man sie statt des Plan-Tabs, und beim Zurueckgehen faehrt sie nicht
+  // noch einmal herein. Jeder andere Wechsel raeumt `.darunter` ab.
+  const vorherEl = OVERLAY_SCREENS[currentScreen] ? document.getElementById(OVERLAY_SCREENS[currentScreen]) : null;
+  const stapeln = name === 'day-detail' && vorherEl && currentScreen !== name;
+  const zielEl = OVERLAY_SCREENS[name] ? document.getElementById(OVERLAY_SCREENS[name]) : null;
+  const warDarunter = !!(zielEl && zielEl.classList.contains('darunter'));
+  overlayEls.forEach(el => { el.classList.remove('active'); if (!(stapeln && el === vorherEl)) el.classList.remove('darunter'); });
+  if (stapeln) vorherEl.classList.add('darunter');
   if (OVERLAY_SCREENS[name]) {
     currentScreen = name;
-    const el = document.getElementById(OVERLAY_SCREENS[name]);
-    if (el) { el.classList.add('active'); el.scrollTop = 0; }  // oben starten, nicht die alte Position zeigen
+    const el = zielEl;
+    // oben starten, nicht die alte Position zeigen — AUSSER bei der Rueckkehr auf die Seite darunter
+    if (el) { el.classList.add('active'); if (!warDarunter) el.scrollTop = 0; }
     _applyTabState(name);
     return;
   }

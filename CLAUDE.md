@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v535**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v536**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -684,6 +684,17 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   `_snapshotStores`. GEMESSEN (375px): Stern trifft (elementFromPoint), an/aus, Seite zeigt 2
   Kacheln, Abwaehlen im Fenster nimmt die Kachel sofort raus; Glas 12-%-Weiss mit weisser Schrift;
   keine Konsolenfehler.
+- **v536 (08.11.2026, Leonard-Meldung):** Beim Zurueckwischen aus der GYMTAG-DETAILANSICHT stand
+  darunter der Plan-Tab („Gymplan"), erst danach fuhr „Gymtage" herein. Jetzt bleibt die
+  Vollbildseite, von der das Detail geoeffnet wurde (Gymtage oder Gymplan-Detail via ✎), als
+  `.darunter` liegen (`showScreen`: nur bei `name === 'day-detail'` von einem Overlay aus;
+  CSS `.plan-detail-overlay.darunter:not(.active)` = translateX(0), sichtbar, ohne Transition,
+  z-index 39). Wischen zeigt sie darunter, Pfeil und Wisch lassen sie ruhig stehen, ihre
+  Scrollposition bleibt (`scrollTop` nur ohne `.darunter` auf 0). Jeder andere Wechsel raeumt
+  `.darunter` ab. Alle uebrigen Overlays liegen direkt ueber ihrem Ruecksprung-Tab (geprueft).
+  GEMESSEN (375px, Touch-Ereignisse von Hand): mitten im Wisch trifft `elementFromPoint` Gymtage;
+  danach Gymtage aktiv; Weg ueber Gymplan-Detail ebenso, `editingPlanId` bleibt; Wechsel in einen
+  Tab blendet beide aus; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

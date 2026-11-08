@@ -483,6 +483,14 @@ body.theme-plans .hist-action-dd {
   visibility: visible;
   transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1), visibility 0s linear 0s;
 }
+/* v536: Vollbildseite UNTER der Gymtag-Detailansicht (Gymtage bzw. Gymplan-Detail) — steht
+   ohne Bewegung an ihrem Platz, eine Ebene tiefer, damit Zurueckwischen sie zeigt. */
+.plan-detail-overlay.darunter:not(.active) {
+  transform: translateX(0);
+  visibility: visible;
+  transition: none;
+  z-index: 39;
+}
 
 /* Per-Screen-Hintergruende — damit der korrekte Theme-Verlauf bereits waehrend
    des horizontalen Swipes sichtbar ist, nicht erst nach Snap-Abschluss. */
