@@ -409,6 +409,9 @@ const DB = {
               .sort((a, b) => a.date.localeCompare(b.date));
   },
   saveRaces(v) { _speicherSchreiben('ft_races', v); },
+  // v535: favorisierte Laeufe als Liste von Tagen 'YYYY-MM-DD' (die Werte stehen in der Tabelle).
+  getRunFavs() { return _speicherLesen('ft_run_favs', []); },
+  saveRunFavs(v) { _speicherSchreiben('ft_run_favs', v); },
 
   // ── Laufen ──────────────────────────────────────────────────────
   // Laufplaene liegen LOKAL wie alle FitTrack-Daten (Drive-Sicherung inklusive). Aus der
@@ -888,6 +891,7 @@ const OVERLAY_SCREENS = {
   // hinter den Knoepfen oben rechts (Gymtage auf „Gymplan", Pokal auf „Laufplan").
   'gymtage':        'screen-gymtage',
   'wettkaempfe':    'screen-wettkaempfe',
+  'lauf-favoriten': 'screen-lauf-favoriten',   // v535: Stern-Knopf auf „Laufplan"
   // v512: der fruehere Tab „Übungen" — Katalog (Name bleibt 'exercises', viele Stellen fragen
   // `currentScreen === 'exercises'`) und Stats, beide hinter Knoepfen auf „Gymplan".
   'exercises':      'screen-exercises',
@@ -901,6 +905,8 @@ function openGymtageSeite()    { showScreen('gymtage'); }
 function closeGymtageSeite()   { showScreen('plans'); }
 function openWettkampfSeite()  { showScreen('wettkaempfe'); }
 function closeWettkampfSeite() { showScreen('plans'); }
+function openLaufFavoriten()   { showScreen('lauf-favoriten'); }
+function closeLaufFavoriten()  { showScreen('plans'); }
 
 function _applyTabState(name) {
   _entwurfPruefen();   // Leiste „Speichern" nur in den beiden Plan-Detailansichten (v463)
@@ -909,7 +915,7 @@ function _applyTabState(name) {
   if (navEl) navEl.classList.add('active');
 
   // Body-Theme: plan-detail UND day-detail teilen sich Theme + Akzentfarbe mit der Plans-Liste (Amber).
-  const themeName = ['plan-detail', 'day-detail', 'runplan-detail', 'gymtage', 'wettkaempfe', 'exercises', 'stats'].includes(name) ? 'plans' : name;
+  const themeName = ['plan-detail', 'day-detail', 'runplan-detail', 'gymtage', 'wettkaempfe', 'lauf-favoriten', 'exercises', 'stats'].includes(name) ? 'plans' : name;
   document.body.className = 'theme-' + themeName;
   // _applyTabState wird bei Tableisten-Klick + initialem App-Start aufgerufen —
   // dort ist KEIN Crossfade gewuenscht (sofortiger Wechsel). Beim Swipe-Snap
@@ -944,6 +950,7 @@ function _applyTabState(name) {
   else if (name === 'gymtage') renderLibDays();
   else if (name === 'wettkaempfe') { syncWkAnsichtBtn(); renderWettkaempfe(); }
   else if (name === 'stats') renderStatsPage();
+  else if (name === 'lauf-favoriten') renderLaufFavoriten();
 
   ensureTimerActive();
 
@@ -4751,6 +4758,7 @@ async function runLaeufeLaden({ interactive = false } = {}) {
     // eingetragenen Termin eine Karte mit Werten. Ohne das bliebe sie nach dem eigenen
     // „Laufdaten holen" unveraendert stehen (06.09.2026).
     else if (currentScreen === 'wettkaempfe') renderWettkaempfe();
+    else if (currentScreen === 'lauf-favoriten') renderLaufFavoriten();
   }
 }
 
@@ -4843,14 +4851,14 @@ function showRunDetail(key) {
   document.getElementById('run-detail-title').textContent =
     `${hiit ? 'Intervalltraining' : 'Lauf'} — ${fmtDate(new Date(y, m - 1, d).getTime())}`;
 
-  document.getElementById('run-detail-body').innerHTML = laufDetailInhalt(key, l);
+  document.getElementById('run-detail-body').innerHTML = laufDetailInhalt(key, l, { stern: true });
   openModal('modal-run-detail');
 }
 
 // Der INHALT der Laufdetailansicht ohne Titel — gemeinsam mit den Wettkampfkarten im Plan-Tab
 // (28.09.2026, Leonard-Wunsch „die neue Detailansicht auch dort"). Eine Quelle, damit ein
 // Wettkampf genauso aussieht wie jeder andere Lauf und die beiden nicht auseinanderlaufen.
-function laufDetailInhalt(key, l) {
+function laufDetailInhalt(key, l, opts) {
   const hiit = l.art === 'hiit';
   // Auch ein vorgezogener bzw. nachgeholter Lauf wird gegen SEINE geplante Einheit verglichen.
   const geplant = runGeplantFuerLauf(key);
@@ -4860,7 +4868,7 @@ function laufDetailInhalt(key, l) {
     l.maxHR != null          ? { wert: `${Math.round(l.maxHR)}`,   label: 'Max Puls' } : null,
     !hiit && l.elevM != null ? { wert: `${Math.round(l.elevM)} m`, label: 'Höhe' } : null,
   ].filter(Boolean);
-  return _laufDetailKopf(l, hiit)
+  return _laufDetailKopf(l, hiit, opts && opts.stern ? key : null)
     + (kacheln.length ? `<div class="hd-stats run-detail-stats">`
         + kacheln.map(k => `<div class="hd-stat"><b>${k.wert}</b><span>${k.label}</span></div>`).join('')
         + `</div>` : '')
@@ -4873,7 +4881,7 @@ function laufDetailInhalt(key, l) {
 
 // Gruener Kopf: der Hauptwert gross, darunter die uebrigen Eckdaten in einer Zeile. Das Tempo in
 // km/h ist entfallen — es sagte dasselbe wie die Pace (Leonard-Wunsch 28.09.2026).
-function _laufDetailKopf(l, hiit) {
+function _laufDetailKopf(l, hiit, sternKey) {
   const lKmh = l.kmh || (l.km && l.minutes ? l.km / (l.minutes / 60) : 0);
   const [etikett, wert, zeile] = hiit
     ? ['Dauer', fmtMin(l.minutes), 'Intervalltraining']
@@ -4881,13 +4889,63 @@ function _laufDetailKopf(l, hiit) {
        [l.km != null ? fmtMin(l.minutes) : null, lKmh ? fmtPace(lKmh) : null].filter(x => x && x !== '–').join(' · ')];
   // Dauer und Pace stehen seit dem 28.09.2026 in DERSELBEN Zeile wie der Hauptwert (Leonard-Wunsch);
   // auf der Grundlinie ausgerichtet, bei zu wenig Platz bricht der Zusatz als Ganzes um.
-  return `<div class="rd-kopf">
+  // v535 (Leonard-Wahl „1B"): Stern oben rechts im Kopf — nur im Detailfenster (`sternKey`),
+  // nicht in den Wettkampfkarten und Favoriten-Kacheln, die denselben Kopf nutzen.
+  const stern = sternKey ? _laufSternKnopf(sternKey) : '';
+  return `<div class="rd-kopf${stern ? ' mit-stern' : ''}">${stern}
       <span class="rd-kopf-etikett">${etikett}</span>
       <div class="rd-kopf-reihe">
         <span class="rd-kopf-wert">${wert}</span>
         ${zeile ? `<span class="rd-kopf-zeile">${zeile}</span>` : ''}
       </div>
     </div>`;
+}
+
+// ── FAVORISIERTE LAEUFE (v535, 08.11.2026, Leonard-Wahl „1B + 2B") ──
+// Stern oben rechts im gruenen Kopf der Laufdetailansicht merkt einen Lauf vor; die Seite
+// „Favoriten" (Stern-Knopf auf „Laufplan") zeigt sie als Kacheln mit demselben gruenen Kopf.
+const LAUF_STERN_SVG = '<svg viewBox="0 0 24 24"><polygon points="12 2.8 14.9 8.7 21.4 9.6 16.7 14.2 17.8 20.6 12 17.6 6.2 20.6 7.3 14.2 2.6 9.6 9.1 8.7"/></svg>';
+function laufIstFavorit(key) { return DB.getRunFavs().includes(key); }
+function _laufSternKnopf(key) {
+  const an = laufIstFavorit(key);
+  return `<button type="button" class="rd-stern${an ? ' an' : ''}" aria-pressed="${an}"
+    aria-label="${an ? 'Aus Favoriten entfernen' : 'Zu Favoriten'}"
+    onclick="event.stopPropagation();toggleLaufFavorit('${key}', this)">${LAUF_STERN_SVG}</button>`;
+}
+function toggleLaufFavorit(key, btn) {
+  const favs = DB.getRunFavs();
+  const an = !favs.includes(key);
+  DB.saveRunFavs(an ? [...favs, key] : favs.filter(k => k !== key));
+  if (btn) {
+    btn.classList.toggle('an', an);
+    btn.setAttribute('aria-pressed', String(an));
+    btn.setAttribute('aria-label', an ? 'Aus Favoriten entfernen' : 'Zu Favoriten');
+  }
+  showToast(an ? 'Zu Favoriten hinzugefügt' : 'Aus Favoriten entfernt');
+  if (currentScreen === 'lauf-favoriten') renderLaufFavoriten();
+}
+function renderLaufFavoriten() {
+  const el = document.getElementById('lauf-favoriten-list');
+  if (!el) return;
+  const favs = [...DB.getRunFavs()].sort().reverse();   // neueste zuerst
+  if (!favs.length) {
+    el.innerHTML = `<div class="plan-day-empty" style="margin:24px 14px">Noch keine Favoriten — tippe in einem gelaufenen Lauf auf den Stern.</div>`;
+    return;
+  }
+  const laeufe = runNachTag();
+  el.innerHTML = favs.map(key => {
+    const l = laeufe[key];
+    const [y, m, d] = key.split('-').map(Number);
+    const datum = fmtDate(new Date(y, m - 1, d).getTime());
+    if (!l) return `<div class="chart-card-v2 fav-card fav-leer"><div class="fav-unter">${datum}</div>
+      <div class="wk-leer">Laufdaten fehlen — in den Einstellungen unter „Laufdaten" aktualisieren.</div></div>`;
+    const teile = [datum, l.avgHR != null ? `Ø ${Math.round(l.avgHR)} bpm` : '',
+                   l.elevM != null && l.art !== 'hiit' ? `${Math.round(l.elevM)} m` : ''].filter(Boolean);
+    return `<div class="chart-card-v2 fav-card" role="button" onclick="showRunDetail('${key}')">
+      ${_laufDetailKopf(l, l.art === 'hiit')}
+      <div class="fav-unter"><span>${teile.join(' · ')}</span><span class="cal-detail-chev">▾</span></div>
+    </div>`;
+  }).join('');
 }
 
 // ── Laufplaene ─────────────────────────────────────────────────────
@@ -8783,6 +8841,7 @@ function renderPlansScreen() {
   zeige(document.getElementById('plans-uebungen-btn'), plansViewMode === 'plans');   // v512
   zeige(document.getElementById('plans-stats-btn'), plansViewMode === 'plans');
   zeige(document.getElementById('plans-races-btn'), plansViewMode === 'runplans');
+  zeige(document.getElementById('plans-favs-btn'), plansViewMode === 'runplans');   // v535
   const seite = PLANS_SEITEN[plansViewMode] || PLANS_SEITEN.plans;
   const h1 = document.getElementById('plans-h1');
   if (h1) h1.textContent = seite.titel;
@@ -11119,6 +11178,7 @@ function _snapshotStores() {
     workouts: JSON.parse(JSON.stringify(DB.getWorkouts())),
     runPlans: JSON.parse(JSON.stringify(DB.getRunPlans())),
     races: JSON.parse(JSON.stringify(DB.getRaces())),
+    runFavs: JSON.parse(JSON.stringify(DB.getRunFavs())),
     // Papierkorb mitsichern: sonst bliebe nach einem „Rückgängig" der Eintrag dort liegen
     // und dasselbe Objekt existierte zweimal.
     trash: JSON.parse(JSON.stringify(DB.getTrash())),
@@ -11131,6 +11191,7 @@ function _restoreStores(snap) {
   DB.saveWorkouts(snap.workouts);
   DB.saveRunPlans(snap.runPlans || []);
   DB.saveRaces(snap.races || []);
+  DB.saveRunFavs(snap.runFavs || []);
   DB.saveTrash(snap.trash || []);
 }
 function withUndo(label, fn, afterRestore) {
@@ -11425,6 +11486,7 @@ function collectLocalData() {
     manualDays: DB.getManualDays(),       // v4: nachgetragene Tage ohne Aufzeichnung
     races: DB.getRaces(),                 // v4: eigenstaendige Wettkampftage ohne Laufplan
     runPlans: DB.getRunPlans(),           // v4: Laufplaene (die Laeufe selbst stehen in der Tabelle)
+    runFavs: DB.getRunFavs(),             // v535: favorisierte Laeufe (nur die Tage)
   };
 }
 
@@ -11468,6 +11530,7 @@ function driveApplyCloudData(data) {
   if (Array.isArray(data.manualDays)) localStorage.setItem('ft_manual_days', JSON.stringify(data.manualDays));
   if (Array.isArray(data.races)) localStorage.setItem('ft_races', JSON.stringify(data.races));
   if (Array.isArray(data.runPlans)) localStorage.setItem('ft_runplans', JSON.stringify(data.runPlans));
+  if (Array.isArray(data.runFavs)) localStorage.setItem('ft_run_favs', JSON.stringify(data.runFavs));
   // Legacy-Keys bei v1-Migration sauber halten (sonst würde migrateToMultiPlan beim nächsten App-Start nochmal greifen)
   if (Array.isArray(data.plan)) {
     localStorage.removeItem('ft_program');
@@ -12750,6 +12813,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initOverlayEdgeSwipe('screen-mehr', closeMehr);
   initOverlayEdgeSwipe('screen-gymtage', closeGymtageSeite);
   initOverlayEdgeSwipe('screen-wettkaempfe', closeWettkampfSeite);
+  initOverlayEdgeSwipe('screen-lauf-favoriten', closeLaufFavoriten);
   initOverlayEdgeSwipe('screen-exercises', closeUebungenSeite);
   initOverlayEdgeSwipe('screen-stats', closeStatsSeite);
 });

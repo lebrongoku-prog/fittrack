@@ -145,6 +145,8 @@
         <div class="ex-add-btn" id="plans-uebungen-btn" onclick="openUebungenSeite()" title="Übungen" aria-label="Übungen"><svg viewBox="0 0 24 24"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg></div>
         <div class="ex-add-btn" id="plans-stats-btn" onclick="openStatsSeite()" title="Stats" aria-label="Stats"><svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="20"/><rect x="5.5" y="12" width="3" height="6" rx="0.5"/><rect x="10.5" y="7" width="3" height="11" rx="0.5"/><rect x="15.5" y="4" width="3" height="14" rx="0.5"/></svg></div>
         <div class="ex-add-btn" id="plans-races-btn" onclick="openWettkampfSeite()" title="Wettkämpfe" aria-label="Wettkämpfe" style="display:none"><svg viewBox="0 0 24 24"><path d="M7 3h10v6a5 5 0 0 1-10 0V3z"/><path d="M7 5H3.5v1.5A4 4 0 0 0 7.5 10.5"/><path d="M17 5h3.5v1.5a4 4 0 0 1-4 4"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="7.5" y1="21" x2="16.5" y2="21"/><line x1="9" y1="18" x2="15" y2="18"/></svg></div>
+        <!-- v535: favorisierte Läufe, nur auf „Laufplan". -->
+        <div class="ex-add-btn" id="plans-favs-btn" onclick="openLaufFavoriten()" title="Favoriten" aria-label="Favoriten" style="display:none"><svg viewBox="0 0 24 24"><polygon points="12 2.8 14.9 8.7 21.4 9.6 16.7 14.2 17.8 20.6 12 17.6 6.2 20.6 7.3 14.2 2.6 9.6 9.1 8.7"/></svg></div>
         <!-- Archiv der gezeigten Seite (Gympläne, Laufpläne). Sichtbar nur, wenn es
              dort überhaupt archivierte Einträge gibt; gefüllt, solange das Archiv offen ist.
              Beides setzt syncPlansArchivBtn. -->
@@ -323,6 +325,17 @@
       </div>
     </div>
     <div id="races-list"></div>
+  </div>
+
+  <!-- ══ OVERLAY: FAVORISIERTE LÄUFE (v535) ══ -->
+  <div id="screen-lauf-favoriten" class="screen plan-detail-overlay">
+    <div class="ph plan-detail-ph">
+      <button class="sheet-back-btn" onclick="closeLaufFavoriten()" aria-label="Zurück">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="ph-left"><h1>Favoriten</h1></div>
+    </div>
+    <div id="lauf-favoriten-list"></div>
   </div>
 
   <!-- ══ OVERLAY: ÜBUNGEN (v512, vorher Seite „Katalog" des eigenen Tabs „Übungen") ══ -->

@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v534**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v535**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -670,6 +670,20 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   (rAF synchron, Scroll von Hand): Tipp W5 aus W1 → sofort „Woche 5 · 16.–22. Nov" und Saeule 5,
   Zwischenstaende 2–4 ohne Wechsel, nach dem Einrasten Sperre weg; Finger danach wieder
   mitlaufend; keine Konsolenfehler.
+- **v535 (08.11.2026, Leonard-Wahl „1B + 2B" aus je drei/vier gezeichneten Vorschlaegen):**
+  FAVORISIERTE LAEUFE. (1) In der Laufdetailansicht (`showRunDetail`) steht oben rechts im gruenen
+  Kopf ein runder Stern (`.rd-stern`, `_laufSternKnopf`, `toggleLaufFavorit`; leer weisser Umriss
+  auf 25-%-Weiss, gemerkt gelb #FDE047) — nur dort: `laufDetailInhalt(key, l, { stern: true })`,
+  die Wettkampfkarten und Favoriten-Kacheln nutzen denselben Kopf OHNE Stern. Toast beim Umschalten.
+  (2) Stern-Knopf `#plans-favs-btn` auf der Seite „Laufplan" (neben dem Pokal) oeffnet die
+  Vollbildseite `lauf-favoriten` → `#screen-lauf-favoriten` (`renderLaufFavoriten`, Theme Plan-Tab,
+  Zurueck und Wischen vom Rand): je Lauf eine Kachel `.fav-card` mit dem gruenen Kopf
+  (`_laufDetailKopf`) und darunter „Datum · Ø Puls · Hoehe" plus Pfeil, neueste zuerst; Tipp oeffnet
+  das Detailfenster. Ohne Laufdaten zum Tag ein Hinweis statt Kopf. Gespeichert in `ft_run_favs`
+  (Tage 'YYYY-MM-DD', `DB.getRunFavs/saveRunFavs`), in Drive-Sicherung (`runFavs`) und
+  `_snapshotStores`. GEMESSEN (375px): Stern trifft (elementFromPoint), an/aus, Seite zeigt 2
+  Kacheln, Abwaehlen im Fenster nimmt die Kachel sofort raus; Glas 12-%-Weiss mit weisser Schrift;
+  keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

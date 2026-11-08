@@ -499,6 +499,7 @@ body.theme-plans .hist-action-dd {
 #screen-runplan-detail { background: linear-gradient(135deg, #78350F, #F59E0B); }
 #screen-gymtage,
 #screen-wettkaempfe,
+#screen-lauf-favoriten,
 #screen-exercises,
 #screen-stats          { background: linear-gradient(135deg, #78350F, #F59E0B); }   /* v480, v512 */
 
@@ -1119,6 +1120,7 @@ body.theme-plans .hist-action-dd {
 #screen-wettkaempfe .plan-detail-ph,
 #screen-exercises .plan-detail-ph,
 #screen-stats .plan-detail-ph,
+#screen-lauf-favoriten .plan-detail-ph,
 #screen-plan-detail .plan-detail-ph,
 #screen-runplan-detail .plan-detail-ph { align-items: center; }
 /* v518: dasselbe in den drei Detailansichten (Gymplan, Gymtag, Laufplan). Gym- und Laufplan haben
@@ -1131,9 +1133,11 @@ body.theme-plans .hist-action-dd {
 #screen-gymtage .plan-detail-ph > .sheet-back-btn, #screen-gymtage .plan-detail-ph > .ph-actions,
 #screen-wettkaempfe .plan-detail-ph > .sheet-back-btn, #screen-wettkaempfe .plan-detail-ph > .ph-actions,
 #screen-exercises .plan-detail-ph > .sheet-back-btn, #screen-exercises .plan-detail-ph > .ph-actions,
-#screen-stats .plan-detail-ph > .sheet-back-btn { margin-top: 0; }
+#screen-stats .plan-detail-ph > .sheet-back-btn,
+#screen-lauf-favoriten .plan-detail-ph > .sheet-back-btn { margin-top: 0; }
 /* Stats hat rechts keine 38px-Knoepfe — gleiche Kopfhoehe wie die anderen drei (16 + 38 + 8px). */
-#screen-stats .plan-detail-ph { min-height: 62px; }
+#screen-stats .plan-detail-ph,
+#screen-lauf-favoriten .plan-detail-ph { min-height: 62px; }
 body.theme-plans .plan-detail-ph .sheet-back-btn { background: rgba(255,255,255,0.95); }
 body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark); }
 
@@ -3244,6 +3248,26 @@ button.cal-kachel:active { opacity: .7; }
 .rd-kopf-wert { font-size: 28px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .rd-kopf-reihe { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 12px; row-gap: 2px; }
 .rd-kopf-zeile { font-size: var(--fs-text); font-weight: 600; opacity: .92; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* v535 (Leonard-Wahl „1B"): Stern oben rechts im gruenen Kopf der Laufdetailansicht. Leer = weisser
+   Umriss auf 25-%-Weiss, gemerkt = gelb gefuellt. Der Kopf haelt rechts Platz frei. */
+.rd-kopf.mit-stern { position: relative; padding-right: 56px; }
+.rd-stern {
+  position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; padding: 0;
+  border: none; border-radius: 50%; background: rgba(255,255,255,.25); color: #fff;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.rd-stern svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.rd-stern.an svg { fill: #FDE047; stroke: #FDE047; }
+.rd-stern:active { transform: scale(.9); }
+/* v535 (Leonard-Wahl „2B"): Seite „Favoriten" — je Lauf eine Kachel mit dem gruenen Kopf der
+   Laufdetailansicht, darunter Datum, Puls und Hoehe; Tipp oeffnet das Detailfenster. */
+.fav-card { padding: 0; overflow: hidden; cursor: pointer; }
+.fav-card .rd-kopf { margin: 0; border-radius: 0; }
+.fav-unter { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 14px; font-size: var(--fs-neben); color: var(--text2); }
+.fav-leer { padding: 14px; cursor: default; }
+.fav-leer .fav-unter { padding: 0 0 4px; font-weight: 600; color: var(--text); }
 /* Wochenrueckblick in der Uebersicht (27.09.2026). Die Kacheln sind `.hd-stats` wie in den
    Detailansichten, hier zwei je Zeile — so passt die Zusatzzeile („+8 % zur Vorwoche")
    ohne Umbruch in die Kachel. */
@@ -4355,6 +4379,7 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
   #screen-plans.active,
   #screen-gymtage.active,
   #screen-wettkaempfe.active,
+  #screen-lauf-favoriten.active,
   #screen-exercises.active,
   #screen-stats.active,
   #screen-runplan-detail.active,
