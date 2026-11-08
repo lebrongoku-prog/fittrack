@@ -662,10 +662,45 @@ function getWeekStreak() {
   return streak;
 }
 
+// ── UNTERSTUETZTE UEBUNGEN (v537, 08.11.2026, Leonard-Wahl „A") ──
+// Bei Uebungen mit Unterstuetzung (z. B. Klimmzuege an der Maschine, `ex.assisted`) traegt man
+// das UNTERSTUETZUNGSGEWICHT ein — weniger heisst Fortschritt. Gerechnet wird mit der tatsaechlich
+// bewegten Last: Koerpergewicht minus Unterstuetzung. Das Koerpergewicht steht in den
+// Einstellungen (`ft_koerpergewicht`) und wird beim Start jeder Gym Session mitgespeichert
+// (`wo.bw`), damit alte Gym Sessions mit ihrem damaligen Wert gerechnet werden. Gym Sessions
+// ohne `bw` (vor v537) rechnen mit dem aktuellen Wert.
+// ANGEZEIGT wird weiter, was an der Maschine steht; in alle VERGLEICHE und SUMMEN (Volumen,
+// Bestleistung, Stillstand, Verlauf, Veraenderung) geht die bewegte Last ein.
+function koerpergewicht() {
+  let roh = localStorage.getItem('ft_koerpergewicht') || '';
+  try { roh = JSON.parse(roh); } catch (e) { /* aelterer Klartext */ }
+  const v = parseFloat(String(roh == null ? '' : roh).replace(',', '.'));
+  return v > 0 ? v : 0;
+}
+function _bwVon(w) { return (w && w.bw > 0) ? w.bw : koerpergewicht(); }
+function _istUnterstuetzt(exId) { const e = getEx(exId); return !!(e && e.assisted); }
+// Bewegte Last eines Satzes. `exId` entscheidet ueber die Umrechnung, `bw` ist das
+// Koerpergewicht der Gym Session. Ohne Koerpergewicht zaehlt ein unterstuetzter Satz 0.
+function satzKg(exId, weight, bw) {
+  const g = parseFloat(String(weight == null ? '' : weight).replace(',', '.')) || 0;
+  if (!_istUnterstuetzt(exId)) return g;
+  return bw > 0 ? Math.max(0, bw - g) : 0;
+}
+// Schwerster Satz einer Uebung in einer Gym Session — in bewegter Last.
+function _uebungMaxKg(ex, w) {
+  const id = ex.exId || ex.id, bw = _bwVon(w);
+  return Math.max(0, ...(ex.sets || []).map(s => satzKg(id, s.weight, bw)));
+}
+// „ eff." hinter Bestleistungen unterstuetzter Uebungen — dort steht die bewegte Last, nicht das
+// Gewicht an der Maschine.
+function kgZusatz(exId) { return _istUnterstuetzt(exId) ? ' kg eff.' : ' kg'; }
+
 function calcVolume(workout) {
+  const bw = _bwVon(workout);
   return workout.exercises.reduce((acc, ex) => {
     if (!Array.isArray(ex.sets)) return acc;
-    return acc + ex.sets.reduce((a, s) => a + (parseFloat(s.weight)||0) * (parseInt(s.reps)||0), 0);
+    const id = ex.exId || ex.id;
+    return acc + ex.sets.reduce((a, s) => a + satzKg(id, s.weight, bw) * (parseInt(s.reps)||0), 0);
   }, 0);
 }
 
@@ -676,7 +711,8 @@ function calcMuscleVolume(workouts) {
       if (!Array.isArray(ex.sets)) return;
       const exData = getEx(ex.exId || ex.id);
       const muscle = exData ? exData.muscle : 'other';
-      const exVol = ex.sets.reduce((a,s) => a + (parseFloat(s.weight)||0)*(parseInt(s.reps)||0), 0);
+      const id = ex.exId || ex.id, bw = _bwVon(w);
+      const exVol = ex.sets.reduce((a,s) => a + satzKg(id, s.weight, bw)*(parseInt(s.reps)||0), 0);
       vol[muscle] = (vol[muscle] || 0) + exVol;
     });
   });
@@ -686,13 +722,13 @@ function calcMuscleVolume(workouts) {
 function detectPRs(workout, allPrevWorkouts) {
   const prs = [];
   workout.exercises.forEach(ex => {
-    const maxW = Math.max(...(ex.sets || []).map(s => parseFloat(s.weight)||0));
+    const maxW = _uebungMaxKg(ex, workout);
     if (!maxW) return;
     let prevMax = 0;
     allPrevWorkouts.forEach(w => {
       const match = (w.exercises || []).find(e => (e.exId||e.id) === (ex.exId||ex.id));
       if (match && Array.isArray(match.sets)) {
-        const m = Math.max(...match.sets.map(s => parseFloat(s.weight)||0));
+        const m = _uebungMaxKg(match, w);
         if (m > prevMax) prevMax = m;
       }
     });
@@ -708,9 +744,15 @@ function getLastExData(exId) {
   for (const w of ws) {
     const ex = w.exercises.find(e => (e.exId||e.id) === exId);
     if (ex && Array.isArray(ex.sets) && ex.sets.length) {
-      const maxW = Math.max(...ex.sets.map(s => parseFloat(s.weight)||0));
+      // maxWeight = Gewicht AN DER MASCHINE des staerksten Satzes (bei Unterstuetzung also der
+      // Satz mit der geringsten Unterstuetzung); maxEff = dessen bewegte Last (v537).
+      const bw = _bwVon(w);
+      let bestSatz = ex.sets[0], bestEff = -1;
+      ex.sets.forEach(s => { const e = satzKg(exId, s.weight, bw); if (e > bestEff) { bestEff = e; bestSatz = s; } });
+      const maxW = _istUnterstuetzt(exId) ? (parseFloat(bestSatz.weight) || 0)
+                                          : Math.max(...ex.sets.map(s => parseFloat(s.weight)||0));
       const repsStr = ex.sets.map(s => s.reps||'?').join('/');
-      return { maxWeight: maxW, sets: ex.sets, repsStr, date: w.startTs };
+      return { maxWeight: maxW, maxEff: Math.max(0, bestEff), sets: ex.sets, repsStr, date: w.startTs };
     }
   }
   return null;
@@ -735,10 +777,11 @@ function getExercisePR(exId) {
   const ws = DB.getWorkouts();
   let maxW = 0;
   ws.forEach(w => {
+    const bw = _bwVon(w);
     w.exercises.forEach(we => {
       if ((we.exId || we.id) !== exId) return;
       we.sets.forEach(s => {
-        const v = parseFloat(s.weight) || 0;
+        const v = satzKg(exId, s.weight, bw);   // bewegte Last (v537)
         if (v > maxW) maxW = v;
       });
     });
@@ -1695,6 +1738,7 @@ function _doStartWorkout(dayId) {
   const wo = {
     id:'wo_'+Date.now(), planDayId: dayId, planDayName: day ? day.name : 'Freies Training',
     startTs: Date.now(), dayIdx: (new Date().getDay()+6) % 7, exercises,
+    bw: koerpergewicht() || undefined,   // v537: Koerpergewicht dieser Gym Session
   };
   DB.saveActive(wo);
   // Erste Übung offen starten — im Training will man sofort eintragen können,
@@ -2209,6 +2253,7 @@ function startFreeWorkout() {
   const wo = {
     id: 'wo_' + Date.now(), planDayId: null, planDayName: 'Freies Training',
     startTs: Date.now(), dayIdx: (new Date().getDay()+6) % 7, exercises: [],
+    bw: koerpergewicht() || undefined,   // v537
   };
   DB.saveActive(wo);
   expandedAexIds.clear();
@@ -2885,14 +2930,14 @@ function renderActiveWorkout() {
     // Höchstgewicht über der letzten Einheit liegt — die Differenz dazu. Progressive
     // Steigerung ist der Zweck des Tagebuchs; das Rechnen dafür gehört nicht in den Kopf.
     const prW = getExercisePR(ex.exId || ex.id);
-    const todayMax = Math.max(0, ...(ex.sets || []).map(s => parseFloat(s.weight) || 0));
-    const diffToLast = (last && todayMax > 0) ? +(todayMax - last.maxWeight).toFixed(1) : 0;
+    const todayMax = _uebungMaxKg(ex, wo);   // bewegte Last (v537)
+    const diffToLast = (last && todayMax > 0) ? +(todayMax - last.maxEff).toFixed(1) : 0;
     // Die Differenz gehoert zur ZULETZT-Zeile — sie vergleicht ja mit genau dieser Einheit
     // (Leonard-Wunsch 05.09.2026). „Best" steht allein auf der Zeile darunter.
     const diffStr = diffToLast > 0
       ? `<span class="aex-cmp-up">+${diffToLast} kg</span>`
       : (diffToLast < 0 ? `<span class="aex-cmp-down">${diffToLast} kg</span>` : '');
-    const cmpStr = prW ? `<div class="aex-v2-cmp"><span class="aex-cmp-pr">Best ${prW} kg</span></div>` : '';
+    const cmpStr = prW ? `<div class="aex-v2-cmp"><span class="aex-cmp-pr">Best ${fmtKg(prW)}${kgZusatz(ex.exId || ex.id)}</span></div>` : '';
     // Pro-Satz-Tabelle als ZEILEN: je Satz eine Zeile (Wdh | kg | Haken); erledigte Sätze sind
     // gesperrt/markiert. Der Haken ist im Training die wichtigste Interaktion — er beantwortet
     // „welcher Satz kommt jetzt?" und startet die Satzpause.
@@ -3414,7 +3459,7 @@ function toggleSetDone(ei, si) {
   // Satz. Zwischen den Sätzen wäre die Animation eine Unterbrechung; am Ende der Übung
   // ist sie der Abschluss. Gewertet wird der schwerste Satz der Übung.
   if (allDone && !ex.prCelebrated) {
-    const best = ex.sets.reduce((m, s) => Math.max(m, parseFloat(String(s.weight).replace(',', '.')) || 0), 0);
+    const best = _uebungMaxKg(ex, wo);   // bewegte Last (v537)
     const prevBest = getExercisePR(exId) || 0;   // bestes Gewicht aus GESPEICHERTEN Einheiten
     if (best > 0 && best > prevBest) {
       ex.prCelebrated = true;
@@ -4180,6 +4225,7 @@ function finishWorkout() {
   const setChanges = syncSetCountsToPlanDay(wo.planDayId, cleanEx);
 
   const finalWo = { ...wo, exercises: cleanEx, duration, endTs: Date.now(), prs };
+  if (!(finalWo.bw > 0) && koerpergewicht()) finalWo.bw = koerpergewicht();   // v537
   // Steht die laufende Einheit gerade auf dem Bildschirm, bleibt die Seite bis zum Schliessen
   // der Abschlussansicht so stehen und wechselt DANN mit Bewegung (15.09.2026, Leonard-Wunsch).
   // MUSS vor `DB.clearActive` stehen — danach ist `wo-running` schon weg.
@@ -4241,7 +4287,7 @@ function renderWorkoutSummary(wo, prevWorkouts, setChanges) {
   const prCardHTML = topPR
     ? `<div class="pr-card">
          <div class="pr-card-lbl">Neue Bestleistung</div>
-         <div class="pr-card-val">${fmtKg(topPR.weight)} kg</div>
+         <div class="pr-card-val">${fmtKg(topPR.weight)}${kgZusatz(topPR.exId)}</div>
          <div class="pr-card-name">${escapeHtml(topPR.name)}</div>
          <div class="pr-card-foot">${topPR.prev > 0 ? `+${fmtKg(topPR.weight - topPR.prev)} kg zum bisherigen Rekord` : 'Erster Eintrag für diese Übung'}</div>
          <button class="pr-card-btn" onclick="sharePRCard('${escapeHtml(String(topPR.name)).replace(/'/g, "\\'")}',${topPR.weight},${topPR.prev || 0},${wo.startTs})">Als Bild sichern</button>
@@ -4256,7 +4302,7 @@ function renderWorkoutSummary(wo, prevWorkouts, setChanges) {
        <div class="sum-pr-list">${restPRs.map(p => {
          const prev = p.prev > 0 ? ` <span class="sum-pr-prev">statt ${p.prev} kg</span>` : '';
          return `<div class="sum-pr-row"><span class="sum-pr-name">${escapeHtml(p.name)}</span>
-                 <span class="sum-pr-val">${p.weight} kg${prev}</span></div>`;
+                 <span class="sum-pr-val">${fmtKg(p.weight)}${kgZusatz(p.exId)}${prev}</span></div>`;
        }).join('')}</div>`
     : '';
 
@@ -7774,7 +7820,7 @@ function getAllPRs() {
     w.exercises.forEach(ex => {
       if (!Array.isArray(ex.sets)) return;
       const id = ex.exId || ex.id;
-      const maxW = Math.max(...ex.sets.map(s => parseFloat(s.weight)||0));
+      const maxW = _uebungMaxKg(ex, w);   // bewegte Last (v537)
       if (!maxW) return;
       if (!histMap[id]) histMap[id] = [];
       histMap[id].push({ name: ex.name, weight: maxW, date: w.startTs, sets: ex.sets });
@@ -7800,7 +7846,7 @@ function prHTML(pr, number) {
     <div>
       <div class="pr-v2-name">${escapeHtml(pr.name)}</div>
     </div>
-    <div class="pr-v2-val" style="color:${valColor}">${fmtKg(pr.weight)} kg</div>
+    <div class="pr-v2-val" style="color:${valColor}">${fmtKg(pr.weight)}${kgZusatz(pr.exId)}</div>
     <span class="pr-v2-arrow">›</span>
   </div>`;
 }
@@ -7816,10 +7862,7 @@ function showHistDetailForEx(exId, bestTs) {
 }
 
 // Schwerster Satz einer Übung innerhalb einer Einheit (0 = kein Gewicht eingetragen).
-function _maxGewicht(ex) {
-  const sets = Array.isArray(ex.sets) ? ex.sets : [];
-  return Math.max(0, ...sets.map(s => parseFloat(s.weight) || 0));
-}
+function _maxGewicht(ex, w) { return _uebungMaxKg(ex, w); }   // bewegte Last (v537)
 
 // Höchstgewicht derselben Übung in der letzten Einheit DAVOR. ws ist neueste-zuerst,
 // ältere Einheiten stehen also HINTER abIndex. null = die Übung war vorher nie dabei.
@@ -7827,7 +7870,7 @@ function _maxDerVorherigenEinheit(ws, abIndex, exId) {
   for (let k = abIndex + 1; k < ws.length; k++) {
     const ex = (ws[k].exercises || []).find(e => (e.exId || e.id) === exId);
     if (!ex) continue;
-    const m = _maxGewicht(ex);
+    const m = _maxGewicht(ex, ws[k]);
     if (m > 0) return m;
   }
   return null;
@@ -7880,7 +7923,7 @@ function showHistDetail(i, highlightExId) {
     const sets = Array.isArray(ex.sets) ? ex.sets : [];
     // Reihenfolge Wiederholungen × Gewicht — so wird der Satz gesprochen („8 mal 92 Kilo").
     const saetzeText = sets.map(s => s.weight ? `${s.reps || '–'}×${s.weight}` : `${s.reps || '–'} Wdh.`).join(' · ');
-    const jetzt = _maxGewicht(ex), vorher = _maxDerVorherigenEinheit(ws, i, id);
+    const jetzt = _maxGewicht(ex, w), vorher = _maxDerVorherigenEinheit(ws, i, id);
     let delta = '';
     if (jetzt && vorher === null) delta = '<span class="hd-zeile-delta neu">neu</span>';
     else if (jetzt) {
@@ -8042,8 +8085,28 @@ function deleteSession(i) {
 
  // Toggle für die kollabierbare "Andere Trainingstage"-Sektion
 
+// ── Koerpergewicht (v537) — siehe „Unterstuetzte Uebungen" bei `calcVolume`. ──
+function saveKoerpergewicht(wert) {
+  const v = parseFloat(String(wert || '').replace(',', '.'));
+  if (String(wert || '').trim() === '') { _speicherSchreiben('ft_koerpergewicht', ''); showToast('Körpergewicht entfernt'); }
+  else if (!(v > 20 && v < 400)) { showToast('Bitte ein Gewicht in kg eingeben'); }
+  else { _speicherSchreiben('ft_koerpergewicht', Math.round(v * 10) / 10); showToast(`Körpergewicht: ${fmtKg(v)} kg`); }
+  _kgFeldZeichnen();
+  _stillstandCache.roh = null;
+}
+function _kgFeldZeichnen() {
+  const f = document.getElementById('koerpergewicht-feld');
+  if (f && document.activeElement !== f) f.value = koerpergewicht() ? fmtKg(koerpergewicht()) : '';
+}
+// Nach dem Anlegen einer unterstuetzten Uebung: ohne Koerpergewicht laesst sich nichts rechnen.
+function _kgNachfragen() {
+  if (koerpergewicht() || !DB.getExercises().some(e => e.assisted)) return;
+  setTimeout(() => promptForName('Dein Körpergewicht in kg', '', v => saveKoerpergewicht(v)), 260);
+}
+
 function renderMehr() {
   renderAppVersion();
+  _kgFeldZeichnen();
   // Einstellungen-Overlay: Cloud-Sync, Papierkorb, Daten & Sicherheit.
   // Trainingsplan-Daten/Wochenplan/Trainingstage sind in den Plan-Detail-Screen umgezogen.
   if (typeof renderDriveStatus === 'function') renderDriveStatus();
@@ -9819,14 +9882,17 @@ let _stillstandCache = { roh: null, index: null };
 // exId → { best, seit } fuer alle stagnierenden Uebungen. Zwischengespeichert, solange sich die
 // Einheiten nicht aendern — der Katalog fragt fuer jede Zeile.
 function stillstandIndex() {
-  const roh = localStorage.getItem('ft_workouts') || '';
+  // Schluessel mit Koerpergewicht und Unterstuetzungs-Uebungen (v537): beides aendert die Rechnung.
+  const roh = (localStorage.getItem('ft_workouts') || '') + '|' + koerpergewicht() + '|'
+    + DB.getExercises().filter(e => e.assisted).map(e => e.id).join(',');
   if (_stillstandCache.roh === roh) return _stillstandCache.index;
   const verlauf = {};   // exId → [{ ts, kg, wdh }] je Einheit: schwerster Satz und seine Wdh.
   DB.getWorkouts().forEach(w => (w.exercises || []).forEach(ex => {
     if (ex.skipped || !Array.isArray(ex.sets)) return;
     let kg = 0, wdh = 0;
+    const bw = _bwVon(w), exId = ex.exId || ex.id;
     ex.sets.forEach(satz => {
-      const g = parseFloat(satz.weight) || 0, r = parseInt(satz.reps, 10) || 0;
+      const g = satzKg(exId, satz.weight, bw), r = parseInt(satz.reps, 10) || 0;
       if (!g || !r) return;
       if (g > kg || (g === kg && r > wdh)) { kg = g; wdh = r; }
     });
@@ -9865,7 +9931,7 @@ function exStatsHTML(exId) {
   const pr = getExercisePR(exId);
   const last = getLastExData(exId);
   const prVal = pr != null
-    ? `<div class="ex-stat-val">${pr} kg</div>`
+    ? `<div class="ex-stat-val">${fmtKg(pr)}${kgZusatz(exId)}</div>`
     : `<div class="ex-stat-val muted">Noch keine</div>`;
   let lastVal;
   if (last) {
@@ -9996,7 +10062,7 @@ function getExerciseHistory(exId) {
   ws.forEach(w => {
     const we = (w.exercises || []).find(e => (e.exId || e.id) === exId);
     if (!we || !Array.isArray(we.sets) || !we.sets.length) return;
-    const maxW = Math.max(...we.sets.map(s => parseFloat(s.weight) || 0));
+    const maxW = _uebungMaxKg(we, w);   // bewegte Last (v537)
     const reps = we.sets.reduce((a, s) => a + (parseInt(s.reps) || 0), 0);
     if (maxW > 0 || reps > 0) out.push({ ts: w.startTs, maxW, reps, setCount: we.sets.length });
   });
@@ -10264,6 +10330,7 @@ function editExerciseFromCatalog(id) {
   if (!ex) return;
   document.getElementById('new-ex-name').value = ex.name;
   document.getElementById('new-ex-muscle').value = ex.muscle || 'chest';
+  document.getElementById('new-ex-assisted').checked = !!ex.assisted;   // v537
   document.querySelector('#modal-new-ex .sheet-title').textContent = 'Übung bearbeiten';
   openModal('modal-new-ex');
 }
@@ -10515,6 +10582,7 @@ function openNewExModal(context) {
   editingExerciseId = null;
   document.getElementById('new-ex-name').value = '';
   document.getElementById('new-ex-muscle').value = 'chest';
+  document.getElementById('new-ex-assisted').checked = false;   // v537
   const titleEl = document.querySelector('#modal-new-ex .sheet-title');
   if (titleEl) titleEl.textContent = 'Neue Übung erstellen';
   openModal('modal-new-ex');
@@ -10535,12 +10603,14 @@ function saveNewEx() {
       ex.category = muscle === 'legs' ? 'legs'
                   : (muscle === 'back' || muscle === 'biceps') ? 'pull'
                   : 'push';
+      ex.assisted = document.getElementById('new-ex-assisted').checked || undefined;   // v537
       DB.saveExercises(exs);
     }
     editingExerciseId = null;
     closeModal('modal-new-ex');
     if (currentScreen === 'exercises') renderExercisesScreen();
     showToast('Übung aktualisiert');
+    _kgNachfragen();
     return;
   }
 
@@ -10550,8 +10620,10 @@ function saveNewEx() {
   const cat = muscle === 'legs' ? 'legs'
             : (muscle === 'back' || muscle === 'biceps') ? 'pull'
             : 'push';
-  exs.push({ id, name, muscle, category: cat, isCustom: true, notes: '' });
+  const assisted = document.getElementById('new-ex-assisted').checked;   // v537
+  exs.push({ id, name, muscle, category: cat, isCustom: true, notes: '', ...(assisted ? { assisted: true } : {}) });
   DB.saveExercises(exs);
+  if (assisted) _kgNachfragen();
   closeModal('modal-new-ex');
 
   if (newExContext === 'exercises' || currentScreen === 'exercises') {
@@ -11497,6 +11569,7 @@ function collectLocalData() {
     races: DB.getRaces(),                 // v4: eigenstaendige Wettkampftage ohne Laufplan
     runPlans: DB.getRunPlans(),           // v4: Laufplaene (die Laeufe selbst stehen in der Tabelle)
     runFavs: DB.getRunFavs(),             // v535: favorisierte Laeufe (nur die Tage)
+    koerpergewicht: koerpergewicht() || null,   // v537
   };
 }
 
@@ -11541,6 +11614,7 @@ function driveApplyCloudData(data) {
   if (Array.isArray(data.races)) localStorage.setItem('ft_races', JSON.stringify(data.races));
   if (Array.isArray(data.runPlans)) localStorage.setItem('ft_runplans', JSON.stringify(data.runPlans));
   if (Array.isArray(data.runFavs)) localStorage.setItem('ft_run_favs', JSON.stringify(data.runFavs));
+  if (data.koerpergewicht > 0) localStorage.setItem('ft_koerpergewicht', String(data.koerpergewicht));
   // Legacy-Keys bei v1-Migration sauber halten (sonst würde migrateToMultiPlan beim nächsten App-Start nochmal greifen)
   if (Array.isArray(data.plan)) {
     localStorage.removeItem('ft_program');

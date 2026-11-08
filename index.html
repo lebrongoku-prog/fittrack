@@ -516,6 +516,21 @@
       <!-- Welcher Stand läuft gerade? Beantwortet die wiederkehrende Frage, ob ein Update
            schon angekommen ist — die PWA aktualisiert sich sonst erst beim zweiten Start. -->
       <div class="mehr-section">
+        <div class="mehr-section-title">Körpergewicht</div>
+        <div class="mehr-card">
+          <div class="mehr-row kg-zeile">
+            <div class="mehr-row-icon" style="background:var(--accent-bg)">⚖️</div>
+            <div class="mehr-row-info">
+              <div class="mehr-row-label">Aktuelles Körpergewicht</div>
+              <div class="mehr-row-sub">Für Übungen mit Unterstützung, wird je Gym Session mitgespeichert</div>
+            </div>
+            <input class="form-input kg-feld" id="koerpergewicht-feld" type="text" inputmode="decimal"
+                   placeholder="kg" onchange="saveKoerpergewicht(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="mehr-section">
         <div class="mehr-section-title">App-Version</div>
         <div class="mehr-card">
           <div class="mehr-row">
@@ -685,6 +700,12 @@
           <option value="core">Bauch</option>
         </select>
       </div>
+      <!-- v537: Übung mit Unterstützung (z. B. Klimmzüge an der Maschine) -->
+      <label class="form-check">
+        <input type="checkbox" id="new-ex-assisted">
+        <span><b>Mit Unterstützung</b>
+          <small>Eingetragen wird die Unterstützung der Maschine. Gerechnet wird mit Körpergewicht minus Unterstützung — weniger Unterstützung zählt als Fortschritt.</small></span>
+      </label>
       <button class="btn btn-primary btn-full" onclick="saveNewEx()">Übung erstellen</button>
     </div>
   </div>

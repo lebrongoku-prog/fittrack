@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v536**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v537**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -695,6 +695,23 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   GEMESSEN (375px, Touch-Ereignisse von Hand): mitten im Wisch trifft `elementFromPoint` Gymtage;
   danach Gymtage aktiv; Weg ueber Gymplan-Detail ebenso, `editingPlanId` bleibt; Wechsel in einen
   Tab blendet beide aus; keine Konsolenfehler.
+- **v537 (08.11.2026, Leonard-Wahl „A" mit Koerpergewicht je Gym Session):** UEBUNGEN MIT
+  UNTERSTUETZUNG (z. B. Klimmzuege an der Maschine). Im Uebungsdialog (`#modal-new-ex`) Schalter
+  „Mit Unterstützung" (`#new-ex-assisted` → `ex.assisted`). Eingetragen wird weiter die
+  Unterstuetzung; gerechnet wird mit der BEWEGTEN LAST = Koerpergewicht − Unterstuetzung
+  (`satzKg(exId, weight, bw)`, `_uebungMaxKg(ex, w)`). Koerpergewicht in den Einstellungen
+  (Abschnitt „Körpergewicht", `#koerpergewicht-feld`, `saveKoerpergewicht`, `ft_koerpergewicht`,
+  Drive-Sicherung `koerpergewicht`); fehlt es beim Anlegen einer unterstuetzten Uebung, fragt
+  `_kgNachfragen` danach. JEDE GYM SESSION speichert `wo.bw` beim Start (Rueckfall in
+  `finishWorkout`); Sessions ohne `bw` rechnen mit dem aktuellen Wert (`_bwVon`). Umgestellt:
+  `calcVolume`, `calcMuscleVolume`, `detectPRs`, `getExercisePR`, `getLastExData` (`maxWeight` =
+  Maschinengewicht des staerksten Satzes, neu `maxEff`), Live-Karte (Differenz und „Best"),
+  `celebratePR`, `getAllPRs`, `stillstandIndex` (Cache-Schluessel mit Koerpergewicht),
+  `getExerciseHistory`, `_maxGewicht(ex, w)`. ANZEIGE: Saetze und „Zuletzt … @ 25 kg" zeigen das
+  Maschinengewicht; Bestleistungen der Uebung stehen als bewegte Last mit „kg eff." (`kgZusatz`).
+  GEMESSEN: BW 80, 2×8 @ 30 → 50 kg, Vol. 800; BW 78, 8+6 @ 25 → 53 kg, Vol. 742, PR 53 statt 50,
+  Detail „▲ +3 kg", Verlauf 50/53, Live 20 kg → „+7 kg", Katalog „53 kg eff."; Abfrage nach
+  Koerpergewicht erscheint; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
