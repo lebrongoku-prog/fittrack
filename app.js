@@ -5796,7 +5796,10 @@ const _tooltipZweiterTipp = {
   },
 };
 document.addEventListener('pointerdown', e => {
+  const imFenster = _tippImFenster(e);
   _tipDiagramme.forEach(c => {
+    // v539: Ein Tipp in ein Fenster laesst die Diagramme im HINTERGRUND in Ruhe.
+    if (imFenster && !c.canvas.closest('.overlay')) return;
     if (c.canvas !== e.target && c.tooltip && c.tooltip.getActiveElements().length) _tipAus(c);
   });
 }, true);
@@ -12583,9 +12586,9 @@ function initSeitenleiste() {
     if (!(t instanceof Element)) return;
 
     // Aktiv oder passiv: Ein Tipp auf den Schalter holt ihn zurueck, ein Tipp irgendwo
-    // daneben schickt ihn in den passiven Modus.
+    // daneben schickt ihn in den passiven Modus — nicht aber ein Tipp in ein Fenster (v539).
     if (t.closest('#seitenleiste')) seitenleistePassiv(false);
-    else seitenleistePassiv(true);
+    else if (!_tippImFenster(e)) seitenleistePassiv(true);
 
     const knopf = t.closest('#seitenleiste .seg-btn');
     if (!knopf) return;
@@ -12740,10 +12743,21 @@ function _initKeineTippAnimationAufDiagramm() {
   document.addEventListener('pointercancel', loesen, { passive: true, capture: true });
 }
 
+// v539 (08.11.2026, Leonard-Wunsch): Lag der Tipp in einem Fenster (`.overlay` — Blatt ODER
+// abgedunkelte Flaeche daneben)? Dann darf er den Hintergrund nicht beeinflussen: keine
+// zugeklappte Kalender-Fusszeile, kein passiver Seitenschalter, kein geschlossenes Zahlenfeld.
+// Ueber `composedPath`, weil ein Fenster seinen Inhalt beim Tipp neu zeichnen oder sich schon
+// schliessen kann — das Ziel haengt dann nicht mehr im DOM, der Pfad kennt es trotzdem.
+function _tippImFenster(e) {
+  const pfad = e.composedPath ? e.composedPath() : [];
+  return pfad.some(n => n && n.classList && n.classList.contains('overlay'));
+}
+
 // Tipp ausserhalb des Kalenders hebt die Tagesauswahl wieder auf.
 function initCalendarDeselect() {
   document.addEventListener('click', (e) => {
     if (e.target.closest && e.target.closest('.cal-scroll')) return;   // im Raster: Auswahl behalten
+    if (_tippImFenster(e)) return;   // v539: Tipp im Fenster laesst die Fusszeile offen
     // KEIN Vorab-Abbruch, wenn gerade keine Zelle markiert ist: Beim Neuzeichnen des
     // Rasters verliert die Zelle ihr .sel, die Beschreibung darunter bleibt aber stehen.
     // Ein Abbruch liess den Text dann fuer immer stehen.
