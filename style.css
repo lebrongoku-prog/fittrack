@@ -2748,7 +2748,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
    Wochentag und Name in der Knopfschrift (18px). SEIT v529 (Leonard-Wunsch) 30 % kleiner:
    35.62px, Radius 5.94px — auch in der Liste der Uebersicht. SEIT v530 noch einmal 30 % kleiner
    (24.93px, Radius 4.16px), der Wochentag IM Quadrat in Standardschrift (15px). */
-.lauf-wochen-karte .lauf-wz-tag { width: 24.93px; height: 24.93px; border-radius: 4.16px; font-size: var(--fs-text); font-weight: 600; }
+.lauf-wochen-karte .lauf-wz-tag { width: 24.93px; height: 24.93px; border-radius: 4.16px; font-size: 12px; font-weight: 600; }   /* v538: 12px (Leonard-Wunsch, ausserhalb der Skala) */
 .lauf-wochen-karte .lauf-wz-soll { font-size: var(--fs-titel); }   /* v532: 16px */
 .plan-card-v2 .ppv-col.training .ppv-wd,
 .plan-card-v2 .ppv-col.done .ppv-wd,

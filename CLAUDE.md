@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v537**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v538**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -712,6 +712,9 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   GEMESSEN: BW 80, 2×8 @ 30 → 50 kg, Vol. 800; BW 78, 8+6 @ 25 → 53 kg, Vol. 742, PR 53 statt 50,
   Detail „▲ +3 kg", Verlauf 50/53, Live 20 kg → „+7 kg", Katalog „53 kg eff."; Abfrage nach
   Koerpergewicht erscheint; keine Konsolenfehler.
+- **v538 (08.11.2026, Leonard-Wunsch):** Die Wochentage IN den Quadraten der Karten „Diese Woche"
+  (Seiten „Gym" und „Laufen", `.lauf-wochen-karte .lauf-wz-tag`) sind 12px statt 15px — bewusst
+  ausserhalb der Schriftskala (ausdruecklicher Wunsch). Halbfett und Zustandsfarben unveraendert.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
