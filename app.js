@@ -1916,7 +1916,7 @@ function buildRunPlanCard(onTap, plan, opts) {
   return `<div class="plan-card-v2 run-plan plan-status-${status}${laeuft ? ' active' : ''}${inert ? ' karte-inert' : ''}"${kartenTipp}>
     <div class="ppv-head">
       ${opts.filterOnTap ? wochenFilterTitel('ppv-name')
-        : `<div class="ppv-name">${PPV_ICON_LAEUFER}${escapeHtml(p.name || 'Laufplan')}</div>`}
+        : `<div class="ppv-name">${escapeHtml(p.name || 'Laufplan')}</div>`}
       ${laeuft ? '' : `<span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>`}
     </div>
     ${laeuft ? '' : planMetaZeile('lauf', p, `${fmtDateRange(p.startDate, p.endDate)}${wochen ? ` · ${wochen} Wochen` : ''}`)}
@@ -1927,27 +1927,6 @@ function buildRunPlanCard(onTap, plan, opts) {
 
 
 
-// Laufsymbol fuer die Herocard — Gegenstueck zu `heroDumbbellSvg`, nach Leonards Vorlage
-// (Strichfigur im Laufschritt mit drei Tempolinien).
-function heroRunnerSvg() {
-  // KEINE Farbe im SVG: Der Aufrufer bestimmt sie ueber `color` (in der Herocard das
-  // Hellgruen der Laufkreise). Beim Hantel-Symbol steht dort `var(--accent)`, weil es der
-  // Tabfarbe folgen soll — der Lauf hat seine eigene Farbe.
-  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="82" cy="26" r="11" fill="currentColor"/>
-    <path d="M74 44 L92 38 L104 52" stroke="currentColor" stroke-width="11"
-          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <path d="M74 44 L52 52 L58 70 L44 96" stroke="currentColor" stroke-width="12"
-          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <path d="M58 70 L80 78 L86 100" stroke="currentColor" stroke-width="12"
-          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <path d="M24 40 h20 M12 56 h30 M24 72 h20" stroke="currentColor" stroke-width="8"
-          stroke-linecap="round" fill="none" opacity="0.85"/>
-  </svg>`;
-}
-
-// `heroDumbbellSvg()` ist am 06.09.2026 entfallen — die grosse Hantel-Grafik gab es nur in
-// der alten Herocard. Im Knopf steht jetzt `HANTEL_SVG`, eine fuer 14px gebaute Zeichnung.
 
 
 
@@ -2050,8 +2029,8 @@ function buildHeuteHero(planDay, selDay, opts) {
     if (blockiert) {
       knopf = laufIdx >= 0
         ? `<button class="hero-v2-btn" data-sport="gym" onclick="jumpToWorkoutDay(${laufIdx})">
-             ${HERO_ICON_HANTEL}Zur laufenden Gym Session</button>`
-        : `<button class="hero-v2-btn" data-sport="gym" disabled>${HERO_ICON_HANTEL}Gym Session läuft</button>`;
+             Zur laufenden Gym Session</button>`
+        : `<button class="hero-v2-btn" data-sport="gym" disabled>Gym Session läuft</button>`;
     } else if (planDay && opts.inhaltKnopf) {
       // UEBERSICHT, „Variante B" (v466, 23.10.2026, Leonard-Wahl aus vier gezeichneten
       // Vorschlaegen): Der Knopf nennt den Gymtag — seit v467 nur „Push", ohne „starten" — und wird nach dem Training
@@ -2060,10 +2039,10 @@ function buildHeuteHero(planDay, selDay, opts) {
       const einheit = _heuteGymEinheit(planDay, selDay);
       knopf = einheit
         ? `<button class="hero-v2-btn hero-v2-btn-grau" data-sport="gym" onclick="showHistDetail(${einheit.wi})">${HERO_ICON_CHECK}<span class="hb-txt">${escapeHtml(planDay.name)}</span></button>`
-        : `<button class="hero-v2-btn" data-sport="gym" onclick="startWorkout('${planDay.id}')">${HERO_ICON_HANTEL}<span class="hb-txt">${escapeHtml(planDay.name)}</span></button>`;
+        : `<button class="hero-v2-btn" data-sport="gym" onclick="startWorkout('${planDay.id}')"><span class="hb-txt">${escapeHtml(planDay.name)}</span></button>`;
     } else if (planDay) {
       const start = opts.previewOnClick || `startWorkout('${planDay.id}')`;
-      knopf = `<button class="hero-v2-btn" data-sport="gym" onclick="${start}">${HERO_ICON_HANTEL}Gym Session starten</button>`;
+      knopf = `<button class="hero-v2-btn" data-sport="gym" onclick="${start}">Gym Session starten</button>`;
     } else {
       // KEIN Gym geplant: grauer Knopf ohne Verlauf (Leonard-Wunsch 07.09.2026). Die
       // Sportfarbe ist ein Versprechen — sie gehoert dem Tag, an dem etwas ansteht.
@@ -2073,7 +2052,7 @@ function buildHeuteHero(planDay, selDay, opts) {
       // drei Zeilen um und wurde von der Karte abgeschnitten. Gilt in allen Tabs.
       // Seit v471 (Leonard-Wunsch) heisst er „Kein Gym" und fragt vor dem Start nach
       // (`freiesTrainingFragen`) — der Knopf benennt den Tag, nicht die Aktion.
-      knopf = `<button class="hero-v2-btn hero-v2-btn-grau" data-sport="gym" onclick="freiesTrainingFragen()">${HERO_ICON_HANTEL}Kein Gym</button>`;
+      knopf = `<button class="hero-v2-btn hero-v2-btn-grau" data-sport="gym" onclick="freiesTrainingFragen()">Kein Gym</button>`;
     }
     // Zweite Zeile unter dem Namen: Umfang des Tages (Leonard-Wunsch 07.09.2026). Sie steht
     // NUR auf der Seite „Gym" im Trainings-Tab (`opts.sport === 'gym'`) — in der Uebersicht
@@ -2120,7 +2099,7 @@ function buildHeuteHero(planDay, selDay, opts) {
       <button class="hero-v2-btn hero-v2-btn-lauf${gepl && !gelaufen ? '' : ' hero-v2-btn-grau'}" data-sport="lauf"
               onclick="runLaeufeLaden({interactive:true})"
               ${runLaden ? 'disabled' : ''}>
-        ${HERO_ICON_LAEUFER}${runLaden ? 'Lese …' : 'Lauf erledigt'}
+        ${runLaden ? 'Lese …' : 'Lauf erledigt'}
       </button>
     </div>`);
     }
@@ -2162,12 +2141,12 @@ function _heuteLaufKnopf(tagD, gepl) {
       onclick="${onclick}" ${runLaden && onclick === holen ? 'disabled' : ''}>${icon}<span class="hb-txt">${runLaden && onclick === holen ? 'Lese …' : text}</span></button>`;
   if (lauf) return knopf(true, `showRunDetail('${key}')`, HERO_ICON_CHECK,
     lauf.art === 'hiit' ? `HIIT ${fmtMin(lauf.minutes)}` : fmtKm(lauf.km));   // v482: ohne "gelaufen" 
-  if (!gepl) return knopf(true, holen, HERO_ICON_LAEUFER, 'Kein Lauf');
+  if (!gepl) return knopf(true, holen, '', 'Kein Lauf');
   const u = gepl.einheit;
   const tipp = istHeute ? holen : `openRunSkip('${key}')`;
-  if (gepl.uebersprungen) return knopf(true, `openRunSkip('${key}')`, HERO_ICON_LAEUFER, 'Lauf übersprungen');
+  if (gepl.uebersprungen) return knopf(true, `openRunSkip('${key}')`, '', 'Lauf übersprungen');
   const ziel = u && u.km ? fmtKm(u.km) : u && u.minutes ? fmtMin(u.minutes) : '';
-  return knopf(false, tipp, HERO_ICON_LAEUFER, ziel || 'Lauf');   // v467: ohne „laufen" (Leonard-Wunsch)
+  return knopf(false, tipp, '', ziel || 'Lauf');   // v467: ohne „laufen" (Leonard-Wunsch)
 }
 
 // NOTIZ-MARKE (15.10.2026, v440, Leonard-Entscheidung „A + D"): ein kleines Sprechblasen-Symbol
@@ -2177,22 +2156,13 @@ function _heuteLaufKnopf(tagD, gepl) {
 const NOTIZ_ICON = '<span class="notiz-ic" title="Mit Notiz" aria-label="Mit Notiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/></svg></span>';
 
 // Symbole im Knopf, in Textgroesse. Als Konstanten, damit alle Knoepfe dasselbe nutzen.
-// Die HANTEL loest am 06.09.2026 das Play-Dreieck ab (Leonard-Wunsch): Sie benennt die
-// Sportart statt der Aktion und ist damit das Gegenstueck zum Laeufer im Nachbarknopf.
-// Eigene, vereinfachte Zeichnung: Die fruehere grosse Hantel war fuer 72px gebaut und waere
-// bei 14px zu einem grauen Fleck geworden.
-const HANTEL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6.5 9v6M3.5 10.5v3M17.5 9v6M20.5 10.5v3M8 12h8"/></svg>';
-const HERO_ICON_HANTEL  = `<span class="hero-btn-ic">${HANTEL_SVG}</span>`;
-const HERO_ICON_LAEUFER = `<span class="hero-btn-ic">${heroRunnerSvg()}</span>`;
+// Hantel und Laeufer (Gym- und Laufknoepfe, Titel der Wochenplan-Karten) sind am 09.11.2026
+// UEBERALL entfallen (v554, Leonard-Wunsch) — samt `HANTEL_SVG`, `heroRunnerSvg` und der
+// Klasse `.ppv-name-ic`. Pause/Stop/Haken bleiben.
 const HERO_ICON_PLAY  = '<span class="hero-btn-ic"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5,3 19,12 5,21"/></svg></span>';
 const HERO_ICON_PAUSE = '<span class="hero-btn-ic"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></span>';
 const HERO_ICON_CHECK = '<span class="hero-btn-ic strich"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7"/></svg></span>';
 const HERO_ICON_STOP  = '<span class="hero-btn-ic"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></span>';
-// Dieselben Symbole vor dem Titel der Wochenplan-Karten (Leonard-Wunsch 06.09.2026) — sie
-// sagen auf einen Blick, welche Sportart die Karte zeigt. Eigene Klasse, weil sie dort der
-// TITELgroesse folgen (16px) statt der Knopfschrift.
-const PPV_ICON_HANTEL  = `<span class="ppv-name-ic">${HANTEL_SVG}</span>`;
-const PPV_ICON_LAEUFER = `<span class="ppv-name-ic">${heroRunnerSvg()}</span>`;
 
 
 // `buildRestHero` und `buildLaufHero` sind am 06.09.2026 entfallen — die Herocard „Heute"
@@ -8264,7 +8234,7 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
   return `<div class="plan-card-v2 plan-status-${status}${isCurrent ? ' active' : ''}${inert ? ' karte-inert' : ''}"${kartenTipp}>
     <div class="ppv-head">
       ${opts.filterOnTap ? wochenFilterTitel('ppv-name')
-        : `<div class="ppv-name">${PPV_ICON_HANTEL}${escapeHtml(p.name)}</div>`}
+        : `<div class="ppv-name">${escapeHtml(p.name)}</div>`}
       ${hideStatus ? '' : `<span class="plan-status-chip plan-status-chip-${status}">${PLAN_STATUS_LABEL[status]}</span>`}
     </div>
     ${hideMeta ? '' : planMetaZeile('gym', p, `${fmtDateRange(p.startDate, p.endDate)}${planWochen(p) ? ` · ${planWochen(p)} Wochen` : ''}`)}

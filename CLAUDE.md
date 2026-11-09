@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v553**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v554**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -809,6 +809,15 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   `--green-bg`/`--green`, 600, Radius 10px, Polster 2px 7px. Die weisse Sonderflaeche auf der
   getoenten Karte ist entfallen. GEMESSEN: beide Pillen rgb(220,252,231)/rgb(34,197,94), 11px, 600,
   10px, 2px 7px; keine Konsolenfehler.
+- **v554 (09.11.2026, Leonard-Wunsch):** Die GYM- UND LAUFSYMBOLE (Hantel, Laeufer) sind UEBERALL
+  entfallen: in allen Gym- und Laufknoepfen (Startblock der Uebersicht, Seiten „Gym"/„Laufen",
+  „Zur laufenden Gym Session") und vor den Titeln der Wochenplan-Karten im Plan-Tab. Mit ihnen
+  `HERO_ICON_HANTEL`/`HERO_ICON_LAEUFER`, `PPV_ICON_HANTEL`/`PPV_ICON_LAEUFER`, `HANTEL_SVG`,
+  `heroRunnerSvg` und `.ppv-name-ic`. BLEIBEN: der Haken im grauen Knopf nach erledigtem Training,
+  Pause/Stop in der laufenden Gym Session, das Symbol „Training" in der Tableiste und die
+  Seitenknoepfe oben rechts im Plan-Tab (Hantel → Gymtage). Alle Erwaehnungen der Sportsymbole
+  weiter unten sind Vorgeschichte. GEMESSEN (375px): Uebersicht, Gym, Laufen ohne SVG in den
+  Knoepfen, keine Titelsymbole; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
