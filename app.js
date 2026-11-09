@@ -2448,6 +2448,10 @@ function renderWorkoutsScreen() {
   const vL = document.getElementById('wo-view-laufen');
   if (vG) vG.style.display = workoutsViewMode === 'gym' ? '' : 'none';
   if (vL) vL.style.display = workoutsViewMode === 'laufen' ? '' : 'none';
+  // v547 (Leonard-Wunsch): Der Tabtitel nennt die gezeigte Seite — „Gym" bzw. „Laufen", wie im
+  // Plan-Tab „Gymplan"/„Laufplan". Das Nav-Label unten bleibt „Training".
+  const woH1 = document.getElementById('wo-h1');
+  if (woH1) woH1.textContent = workoutsViewMode === 'laufen' ? 'Laufen' : 'Gym';
   if (workoutsViewMode === 'laufen') { renderLaufKalenderSeite(); return; }
   _renderGymSeite();
 }

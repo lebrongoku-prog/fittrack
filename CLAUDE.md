@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v546**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v547**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -760,6 +760,10 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   (`--fs-etikett`, einzeilig mit „…" als Notbremse), Spaltenabstand 6px, Kartenpolster seitlich
   12px. GEMESSEN (375px): Spalten 99.7px, breiteste Beschriftung „Max. Herzfrequenz" 99.5px,
   breitester Wert „6'15''/km" 80.8px, nichts gekuerzt; keine Konsolenfehler.
+- **v547 (09.11.2026, Leonard-Wunsch):** Der Titel des Trainings-Tabs (`#wo-h1`) nennt die
+  gezeigte Seite — „Gym" bzw. „Laufen" (gesetzt in `renderWorkoutsScreen`), wie der Plan-Tab
+  „Gymplan"/„Laufplan". Das Nav-Label unten bleibt „Training". GEMESSEN: Gym → Laufen → Gym
+  wechselt den Titel, Nav „Training"; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
