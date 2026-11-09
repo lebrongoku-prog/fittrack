@@ -2100,13 +2100,13 @@ html.glas .screen:not(#screen-mehr) .ppv-k-ic { color: rgba(255,255,255,.85); }
 .ppv-k-dot .kt { position: absolute; inset: 0; border-radius: inherit; }
 .ppv-k-dot .kt.gym.erledigt  { background: #0F766E; }
 .ppv-k-dot .kt.lauf.erledigt { background: #4ADE80; }
-.ppv-k-dot .kt.gym.offen  { box-shadow: inset 0 0 0 4px #0F766E; }
-.ppv-k-dot .kt.lauf.offen { box-shadow: inset 0 0 0 4px #4ADE80; }
+.ppv-k-dot .kt.gym.offen  { box-shadow: inset 0 0 0 5px #0F766E; }
+.ppv-k-dot .kt.lauf.offen { box-shadow: inset 0 0 0 5px #4ADE80; }
 .ppv-k-dot.geteilt .kt.gym  { clip-path: polygon(0 0, 100% 0, 0 100%); }
 .ppv-k-dot.geteilt .kt.lauf { clip-path: polygon(100% 0, 100% 100%, 0 100%); }
 .ppv-k-dot.geteilt .kt.erledigt { z-index: 1; }
-.ppv-k-dot.geteilt .kt.gym.offen  { box-shadow: inset 4px 0 0 0 #0F766E, inset 0 4px 0 0 #0F766E; }
-.ppv-k-dot.geteilt .kt.lauf.offen { box-shadow: inset -4px 0 0 0 #4ADE80, inset 0 -4px 0 0 #4ADE80; }
+.ppv-k-dot.geteilt .kt.gym.offen  { box-shadow: inset 5px 0 0 0 #0F766E, inset 0 5px 0 0 #0F766E; }
+.ppv-k-dot.geteilt .kt.lauf.offen { box-shadow: inset -5px 0 0 0 #4ADE80, inset 0 -5px 0 0 #4ADE80; }
 /* v522 (Leonard-Wahl „Variante A" aus fuenf Vorschlaegen — B getoente Haelften, C Rahmen mit
    Haarlinie, D Ecken-Marker, E getrennte Dreiecke): Eine GEPLANTE Haelfte ist kein Dreiecksring
    mehr, sondern nur ihr Stueck des AUSSENRAHMENS — Gym oben + links, Lauf unten + rechts (zwei
@@ -2116,10 +2116,10 @@ html.glas .screen:not(#screen-mehr) .ppv-k-ic { color: rgba(255,255,255,.85); }
 html.glas .screen:not(#screen-mehr) .ppv-k-reihe.beide .ppv-k-dot { background: rgba(255,255,255,.22); }
 html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.gym.erledigt  { background: rgba(255,255,255,.6); }
 html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.lauf.erledigt { background: rgba(255,255,255,.92); }
-html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.gym.offen  { box-shadow: inset 0 0 0 4px rgba(255,255,255,.6); }
-html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.lauf.offen { box-shadow: inset 0 0 0 4px rgba(255,255,255,.92); }
-html.glas .screen:not(#screen-mehr) .ppv-k-dot.geteilt .kt.gym.offen  { box-shadow: inset 4px 0 0 0 rgba(255,255,255,.6), inset 0 4px 0 0 rgba(255,255,255,.6); }
-html.glas .screen:not(#screen-mehr) .ppv-k-dot.geteilt .kt.lauf.offen { box-shadow: inset -4px 0 0 0 rgba(255,255,255,.92), inset 0 -4px 0 0 rgba(255,255,255,.92); }
+html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.gym.offen  { box-shadow: inset 0 0 0 5px rgba(255,255,255,.6); }
+html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.lauf.offen { box-shadow: inset 0 0 0 5px rgba(255,255,255,.92); }
+html.glas .screen:not(#screen-mehr) .ppv-k-dot.geteilt .kt.gym.offen  { box-shadow: inset 5px 0 0 0 rgba(255,255,255,.6), inset 0 5px 0 0 rgba(255,255,255,.6); }
+html.glas .screen:not(#screen-mehr) .ppv-k-dot.geteilt .kt.lauf.offen { box-shadow: inset -5px 0 0 0 rgba(255,255,255,.92), inset 0 -5px 0 0 rgba(255,255,255,.92); }
 html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
 /* ═══════════════════════════════════
    WORKOUT (Active session) – Mockup v2

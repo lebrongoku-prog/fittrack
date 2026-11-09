@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v554**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v555**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -818,6 +818,9 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Seitenknoepfe oben rechts im Plan-Tab (Hantel → Gymtage). Alle Erwaehnungen der Sportsymbole
   weiter unten sind Vorgeschichte. GEMESSEN (375px): Uebersicht, Gym, Laufen ohne SVG in den
   Knoepfen, keine Titelsymbole; keine Konsolenfehler.
+- **v555 (09.11.2026, Leonard-Wunsch):** In der Kombi-Karte „Trainingswoche" sind die Umrisse
+  der offenen Gym-/Laufzeichen 5px statt 4px (ganzes Quadrat und Randstuecke geteilter Tage, auch
+  Glas). GEMESSEN: inset 5px bzw. −5px/−5px; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
