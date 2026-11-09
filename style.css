@@ -2723,11 +2723,11 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
   font-size: var(--fs-neben); font-weight: 700;
 }
 .lauf-wz-tag.gelaufen   { background: #4ADE80; color: #fff; }
-.lauf-wz-tag.offen      { background: var(--card2); box-shadow: inset 0 0 0 2px #4ADE80; color: #22A05B; }
+.lauf-wz-tag.offen      { background: var(--card2); box-shadow: inset 0 0 0 3px #4ADE80; color: #22A05B; }
 /* GYMZEILEN der Uebersicht (04.10.2026): dieselben Zustaende im Gym-Gruen #0F766E. Im
    Transparenz-Modus gewinnen die Glas-Regeln weiter unten (id im `:not()`) — dort ist alles weiss. */
 .lauf-wz-tag.gym.gelaufen { background: #0F766E; }
-.lauf-wz-tag.gym.offen    { box-shadow: inset 0 0 0 2px #0F766E; color: #0F766E; }
+.lauf-wz-tag.gym.offen    { box-shadow: inset 0 0 0 3px #0F766E; color: #0F766E; }
 /* UEBERSICHT Diese Woche: EINE FLACHE ZEILE JE TAG (11.10.2026, Leonard-Entscheidung B).
    Wochentag als Text, die Einheiten nebeneinander, je ein 14px-Zeichen (Quadrat = Gym, Kreis =
    Lauf) im Zustand: gefuellt = erledigt, Ring = offen, roter Ring = verpasst, grau = verschoben
@@ -2749,7 +2749,12 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
    35.62px, Radius 5.94px — auch in der Liste der Uebersicht. SEIT v530 noch einmal 30 % kleiner
    (24.93px, Radius 4.16px), der Wochentag IM Quadrat in Standardschrift (15px). */
 .lauf-wochen-karte .lauf-wz-tag { width: 24.93px; height: 24.93px; border-radius: 4.16px; font-size: 12px; font-weight: 600; }   /* v538: 12px (Leonard-Wunsch, ausserhalb der Skala) */
-.lauf-wochen-karte .lauf-wz-soll { font-size: var(--fs-titel); }   /* v532: 16px */
+.lauf-wochen-karte .lauf-wz-soll { font-size: var(--fs-titel); }
+/* v543 (Leonard-Wunsch): Der Wochentag steht wie in der Karte „Heute" der Uebersicht LINKS neben
+   dem Zeichen (28px, 15px, halbfett, grau), das Zeichen ist leer. Abstand Wochentag → Zeichen und
+   Zeichen → Angabe je 10px (5px Zeilenabstand + 5px Polster des Heute-Feldes). */
+.lauf-wz-wt { width: 28px; flex-shrink: 0; font-size: var(--fs-text); font-weight: 600; color: var(--text3); }
+html.glas .screen:not(#screen-mehr) .lauf-wz-wt { color: rgba(255,255,255,.75); }   /* v532: 16px */
 .plan-card-v2 .ppv-col.training .ppv-wd,
 .plan-card-v2 .ppv-col.done .ppv-wd,
 .plan-card-v2 .ppv-col.verschoben .ppv-wd { border-radius: 7px; }
@@ -2826,7 +2831,7 @@ html.glas .screen:not(#screen-mehr) .wz-flach-liste .wz-flach-tag { color: rgba(
    gelaufen wurde. Dieselbe Form wie „offen", nur in Rot — die App kennt ROT als Warnfarbe
    (Woche ohne Training im Kalender, Loeschen). Rechts steht dazu „nicht gelaufen".
    HEUTE und kuenftige Tage bleiben „offen": Dort ist noch nichts versaeumt. */
-.lauf-wz-tag.verpasst   { background: var(--red-bg); box-shadow: inset 0 0 0 2px var(--red); color: var(--red); }
+.lauf-wz-tag.verpasst   { background: var(--red-bg); box-shadow: inset 0 0 0 3px var(--red); color: var(--red); }
 .lauf-wz-mitte { flex: 1; min-width: 0; }
 .lauf-wz-soll { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: var(--fs-text); font-weight: 600; color: var(--text); }
 .lauf-wz-leer { font-weight: 400; color: var(--text3); }
@@ -2839,11 +2844,11 @@ html.glas .screen:not(#screen-mehr) .wz-flach-liste .wz-flach-tag { color: rgba(
    Kreis bleibt farbig — `--accent-dark` ist auf der Glas-Karte selbst weiss, deshalb fest
    das Gruen des Trainings-Tabs. */
 html.glas .screen:not(#screen-mehr) .lauf-wz-tag.gelaufen   { background: rgba(255,255,255,.92); color: #059669; }
-html.glas .screen:not(#screen-mehr) .lauf-wz-tag.offen      { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 2px rgba(255,255,255,.92); color: #fff; }
+html.glas .screen:not(#screen-mehr) .lauf-wz-tag.offen      { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 3px rgba(255,255,255,.92); color: #fff; }
 html.glas .screen:not(#screen-mehr) .lauf-wz-tag.verschoben { background: rgba(255,255,255,.22); color: rgba(255,255,255,.85); }
 /* Rot BLEIBT rot im Transparenz-Modus — wie die trainingsfreie Woche im Kalender; es ist eine
    Warnung, keine Sportfarbe. Nur heller, sonst geht es im Farbverlauf unter. */
-html.glas .screen:not(#screen-mehr) .lauf-wz-tag.verpasst   { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 2px #FCA5A5; color: #FCA5A5; }
+html.glas .screen:not(#screen-mehr) .lauf-wz-tag.verpasst   { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 3px #FCA5A5; color: #FCA5A5; }
 html.glas .screen:not(#screen-mehr) .lauf-wz-ist.verpasst   { color: #FCA5A5; }
 html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,255,255,.7); }
 .lauf-leer { font-size: var(--fs-neben); color: var(--text3); text-align: center; padding: 10px 0; }

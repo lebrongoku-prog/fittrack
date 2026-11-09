@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v542**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v543**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -732,6 +732,13 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   wie in der Karte „Trainingswoche" (vorher 2px). GEMESSEN: box-shadow 4px inset; keine
   Konsolenfehler.
 - **v542 (09.11.2026, Leonard-Wunsch):** Diese Konturen (`.wz-zeichen`) sind 3px statt 4px.
+- **v543 (09.11.2026, Leonard-Wunsch):** Karten „Diese Woche" (Seiten „Gym" und „Laufen") wie die
+  aufgeklappte Karte „Heute" der Uebersicht: Der Wochentag steht LINKS neben dem Zeichen
+  (`.lauf-wz-wt`, 28px breit, 15px, halbfett, `--text3`, Glas 75-%-Weiss), das Zeichen ist leer;
+  Abstaende Wochentag → Zeichen → Angabe je 10px. Umrisse der Zeichen 3px statt 2px (auch Glas).
+  Die 12px-Schrift IM Quadrat (v538) hat damit keinen Inhalt mehr. GEMESSEN (Laufen, 375px):
+  „Mo" 15px/28px, Zeichen 24.93px leer mit 3px-Umriss, Abstaende 10/10, Wochentag mittig zum
+  Zeichen; keine Konsolenfehler. Gym nutzt dieselben Regeln, nicht eigens gemessen.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
