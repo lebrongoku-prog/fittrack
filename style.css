@@ -3238,10 +3238,7 @@ button.cal-kachel:active { opacity: .7; }
 .cal-kachel.verpasst .cal-kachel-sub { color: var(--red); }
 .cal-detail-run { margin-top: 3px; }
 .cal-detail-run.wettkampf { color: var(--text); font-weight: 600; }
-/* Detailansicht eines Laufs (`#modal-run-detail`). Die Kacheln nutzen `.hd-stats` mit,
-   brechen aber nach Bedarf um: Ein Intervalltraining hat weder Strecke noch Tempo, es
-   bleiben also weniger als die drei Kacheln der Krafteinheit. */
-.run-detail-stats { grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); }
+/* Detailansicht eines Laufs (`#modal-run-detail`); Werte seit v545 in `.rd-werte` (weiter unten). */
 .run-detail-zeile {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
   padding: 9px 0; font-size: var(--fs-text); color: var(--text3);
@@ -3262,6 +3259,21 @@ button.cal-kachel:active { opacity: .7; }
 .rd-kopf-wert { font-size: 28px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .rd-kopf-reihe { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 12px; row-gap: 2px; }
 .rd-kopf-zeile { font-size: var(--fs-text); font-weight: 600; opacity: .92; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* v545 (Leonard-Wahl „Variante A", angelehnt an Apple): Wertekarte unter dem gruenen Kopf —
+   Raster aus zwei Spalten, kleine graue Beschriftung, grosser Wert in der Farbe seiner Messgroesse
+   (Zeit gelb, Pace tuerkis, Puls rot, Hoehe gruen), Einheit klein dahinter. */
+.rd-werte { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px;
+  margin-bottom: 14px; padding: 14px 16px; border-radius: 16px; background: var(--card2); }
+.rd-w span { display: block; font-size: var(--fs-neben); color: var(--text3); }
+.rd-w b { display: block; font-size: 24px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.rd-w small { font-size: var(--fs-neben); font-weight: 700; margin-left: 3px; }
+.rd-w-zeit { color: #CA8A04; }
+.rd-w-pace { color: #0D9488; }
+.rd-w-puls { color: #E11D48; }
+.rd-w-hoehe { color: #16A34A; }
+html.glas .screen:not(#screen-mehr) .rd-werte { background: rgba(255,255,255,.14); }
+html.glas .screen:not(#screen-mehr) .rd-w span { color: rgba(255,255,255,.75); }
+html.glas .screen:not(#screen-mehr) .rd-w b { color: #fff; }
 /* v535 (Leonard-Wahl „1B"): Stern oben rechts im gruenen Kopf der Laufdetailansicht. Leer = weisser
    Umriss auf 25-%-Weiss, gemerkt = gelb gefuellt. Der Kopf haelt rechts Platz frei. */
 .rd-kopf.mit-stern { position: relative; padding-right: 56px; }

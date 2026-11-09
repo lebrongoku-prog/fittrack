@@ -4919,14 +4919,21 @@ function laufDetailInhalt(key, l, opts) {
   // Auch ein vorgezogener bzw. nachgeholter Lauf wird gegen SEINE geplante Einheit verglichen.
   const geplant = runGeplantFuerLauf(key);
   const u = geplant && geplant.einheit;
-  const kacheln = [
-    l.avgHR != null          ? { wert: `${Math.round(l.avgHR)}`,   label: 'Ø Puls' } : null,
-    l.maxHR != null          ? { wert: `${Math.round(l.maxHR)}`,   label: 'Max Puls' } : null,
-    !hiit && l.elevM != null ? { wert: `${Math.round(l.elevM)} m`, label: 'Höhe' } : null,
+  // v545 (Leonard-Wahl „Variante A", angelehnt an die Apple-Trainingsansicht): Werte in EINER
+  // Karte als Raster aus zwei Spalten — kleine Beschriftung, grosser Wert, je Messgroesse eine
+  // eigene Farbe (`.rd-w-zeit/-pace/-puls/-hoehe`), Einheit klein dahinter.
+  const lKmh = l.kmh || (l.km && l.minutes ? l.km / (l.minutes / 60) : 0);
+  const pace = !hiit && lKmh ? fmtPace(lKmh).replace(' /km', '') : null;
+  const werte = [
+    l.minutes != null        ? { wert: _laufHms(l.minutes), einheit: '', label: 'Trainingszeit', art: 'zeit' } : null,
+    pace                     ? { wert: pace, einheit: '/km', label: 'Ø-Pace', art: 'pace' } : null,
+    l.avgHR != null          ? { wert: Math.round(l.avgHR), einheit: 'bpm', label: 'Ø-Herzfrequenz', art: 'puls' } : null,
+    l.maxHR != null          ? { wert: Math.round(l.maxHR), einheit: 'bpm', label: 'Max. Herzfrequenz', art: 'puls' } : null,
+    !hiit && l.elevM != null ? { wert: Math.round(l.elevM), einheit: 'm', label: 'Höhenmeter', art: 'hoehe' } : null,
   ].filter(Boolean);
   return _laufDetailKopf(l, hiit, opts && opts.stern ? key : null)
-    + (kacheln.length ? `<div class="hd-stats run-detail-stats">`
-        + kacheln.map(k => `<div class="hd-stat"><b>${k.wert}</b><span>${k.label}</span></div>`).join('')
+    + (werte.length ? `<div class="rd-werte">`
+        + werte.map(k => `<div class="rd-w"><span>${k.label}</span><b class="rd-w-${k.art}">${k.wert}${k.einheit ? `<small>${k.einheit}</small>` : ''}</b></div>`).join('')
         + `</div>` : '')
     // Der Abschnitt „Geplant" (`_laufPlanBlock`) ist am 15.10.2026 entfallen (v439, Leonard-Wunsch).
     // Die Kategorie nur noch beim Intervalltraining: Bei einem Lauf sagte sie nichts, was der
@@ -4937,19 +4944,24 @@ function laufDetailInhalt(key, l, opts) {
 
 // Gruener Kopf: der Hauptwert gross, darunter die uebrigen Eckdaten in einer Zeile. Das Tempo in
 // km/h ist entfallen — es sagte dasselbe wie die Pace (Leonard-Wunsch 28.09.2026).
+// Dauer in Minuten (mit Nachkommastellen) als „3:19:55" bzw. „45:12".
+function _laufHms(min) {
+  const sek = Math.round(min * 60), h = Math.floor(sek / 3600), m = Math.floor(sek % 3600 / 60), r = sek % 60;
+  const zz = n => String(n).padStart(2, '0');
+  return h ? `${h}:${zz(m)}:${zz(r)}` : `${m}:${zz(r)}`;
+}
 function _laufDetailKopf(l, hiit, sternKey) {
-  const lKmh = l.kmh || (l.km && l.minutes ? l.km / (l.minutes / 60) : 0);
-  const [etikett, wert, zeile] = hiit
-    ? ['Dauer', fmtMin(l.minutes), 'Intervalltraining']
-    : ['Strecke', l.km != null ? fmtKm(l.km) : fmtMin(l.minutes),
-       [l.km != null ? fmtMin(l.minutes) : null, lKmh ? fmtPace(lKmh) : null].filter(x => x && x !== '–').join(' · ')];
+  // v545 (Leonard-Wunsch): KEIN Etikett („Strecke"/„Dauer") und KEINE Pace mehr im Kopf — die
+  // Pace steht in der Wertekarte darunter. Neben der Strecke nur noch die Dauer.
+  const [wert, zeile] = hiit
+    ? [fmtMin(l.minutes), 'Intervalltraining']
+    : [l.km != null ? fmtKm(l.km) : fmtMin(l.minutes), l.km != null && l.minutes != null ? fmtMin(l.minutes) : ''];
   // Dauer und Pace stehen seit dem 28.09.2026 in DERSELBEN Zeile wie der Hauptwert (Leonard-Wunsch);
   // auf der Grundlinie ausgerichtet, bei zu wenig Platz bricht der Zusatz als Ganzes um.
   // v535 (Leonard-Wahl „1B"): Stern oben rechts im Kopf — nur im Detailfenster (`sternKey`),
   // nicht in den Wettkampfkarten und Favoriten-Kacheln, die denselben Kopf nutzen.
   const stern = sternKey ? _laufSternKnopf(sternKey) : '';
   return `<div class="rd-kopf${stern ? ' mit-stern' : ''}">${stern}
-      <span class="rd-kopf-etikett">${etikett}</span>
       <div class="rd-kopf-reihe">
         <span class="rd-kopf-wert">${wert}</span>
         ${zeile ? `<span class="rd-kopf-zeile">${zeile}</span>` : ''}

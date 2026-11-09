@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v544**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v545**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -742,6 +742,18 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
 - **v544 (09.11.2026, Leonard-Wunsch):** Der Wochentag aus v543 steht wieder IM Zeichen (12px,
   `.lauf-wz-wt` entfallen). Die 3px-Umrisse aus v543 bleiben. GEMESSEN: „Mo" im Quadrat 12px,
   Umriss 3px; keine Konsolenfehler.
+- **v545 (09.11.2026, Leonard-Wahl „Variante A" aus vier gezeichneten Vorschlaegen nach dem
+  Vorbild der Apple-Trainingsansicht — B grosser Titel, C dunkles Blatt, D Werte im Kopf):**
+  LAUFDETAILANSICHT. Unter dem gruenen Kopf eine Wertekarte `.rd-werte` (2 Spalten, `--card2`,
+  Radius 16px): kleine graue Beschriftung, Wert 24px in der Farbe seiner Messgroesse, Einheit
+  klein dahinter — Trainingszeit h:mm:ss (`_laufHms`, gelb #CA8A04), Ø-Pace (#0D9488),
+  Ø-/Max.-Herzfrequenz (#E11D48), Hoehenmeter (#16A34A); fehlende Werte fallen weg, HIIT ohne Pace
+  und Hoehe. Die alten Kacheln (`.hd-stats.run-detail-stats`) sind dort entfallen. KOPF ohne
+  Etikett „Strecke"/„Dauer" und ohne Pace (Leonard-Wunsch): Lauf „32 km 3h 20min", HIIT „28min
+  Intervalltraining". Gilt auch fuer Wettkampfkarten und Favoriten (gleicher Kopf bzw. Inhalt);
+  im Glas-Modus Karte 14-%-Weiss, Werte weiss. `.rd-kopf-etikett` lebt weiter (Gym-Session-Detail).
+  GEMESSEN (375px): Lauf 5 Werte in ihren Farben, HIIT 3 Werte, Wettkampfkarte im Glas-Modus;
+  keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
