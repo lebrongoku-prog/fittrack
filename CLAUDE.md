@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v552**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v553**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -799,11 +799,16 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   ist jede Uebung eine KARTE, hell in ihrer Muskelgruppenfarbe getoent (`muscleBg`, inline),
   Radius 12px, 8px Abstand (`.hd-liste { gap: 8px }`). Die Saetze stehen als WEISSE Chips
   („8 × 60", `_hdSatzChips`, `.hd-satz`, alle gleich, keiner hervorgehoben). Entfallen: die
-  Farbmarke `.hd-zeile-marke` und die Trennlinien. Notiz und PR-Pille stehen auf Weiss; die
+  Farbmarke `.hd-zeile-marke` und die Trennlinien. Die Notiz steht auf Weiss; die
   Hervorhebung aus der PR-Liste ist ein 2px-Ring (`.hd-zeile-hl`, inset). Der Name bleibt in der
   Textfarbe. GEMESSEN (375px, Testsession Brust/Schultern/Trizeps): Toenungen #e8f0ff/#cffafe/
   #fff3e0, Abstand 8px, Chips wie erwartet, Aufklappen zeigt Notiz (weiss) und Diagramm (311px);
   keine Konsolenfehler. NICHT gesehen: Gymtag-Vorschau (kein Gymtag im Testbestand, gleicher Baustein).
+- **v553 (09.11.2026, Leonard-Wunsch):** Die PR-Pille in der Detailansicht einer Gym Session
+  (`.hd-pr`) sieht aus wie „Im aktuellen Plan" im Uebungskatalog (`.ex-item-plan-tag`):
+  `--green-bg`/`--green`, 600, Radius 10px, Polster 2px 7px. Die weisse Sonderflaeche auf der
+  getoenten Karte ist entfallen. GEMESSEN: beide Pillen rgb(220,252,231)/rgb(34,197,94), 11px, 600,
+  10px, 2px 7px; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

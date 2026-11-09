@@ -1,5 +1,5 @@
 // FitTrack Service Worker — Offline-Support
-const CACHE = 'fittrack-v552';
+const CACHE = 'fittrack-v553';
 const ASSETS = [
   './',
   './index.html',
