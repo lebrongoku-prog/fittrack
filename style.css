@@ -1262,25 +1262,28 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
    Der fruehere Zeitstrahl (`.hd-rail`, `.hd-step*`, `.hd-chip*`, `.hd-cols`, `.hd-right`,
    `.hd-delta*`, `.hd-toggle-all`) ist entfallen. */
 .rd-kopf.gym { background: linear-gradient(135deg, #0B4F49, #14B8A6); }
-.hd-liste { display: flex; flex-direction: column; }
-.hd-zeile + .hd-zeile { border-top: 1px solid var(--border); }
+/* v552 (Leonard-Wahl „Variante B ohne gefuellte Saetze"): JEDE UEBUNG EINE KARTE, hell in ihrer
+   Muskelgruppenfarbe getoent (`MUSCLE_META[].bg`, inline), Radius 12px, 8px Abstand; die Saetze
+   als weisse Chips. Die Farbmarke vor dem Namen und die Trennlinien sind entfallen. */
+.hd-liste { display: flex; flex-direction: column; gap: 8px; }
+.hd-zeile { border-radius: 12px; padding: 0 12px; }
 .hd-zeile-kopf {
-  display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 0;
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 0;
   border: none; background: none; font: inherit; color: var(--text); text-align: left;
   cursor: pointer; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
 }
 .hd-zeile-kopf:active { opacity: .7; }
-.hd-zeile-marke { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
-.hd-zeile-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.hd-zeile-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .hd-zeile-name { font-size: var(--fs-text); font-weight: 700; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-.hd-zeile-saetze { font-size: var(--fs-neben); color: var(--text2); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.hd-zeile-saetze { display: flex; flex-wrap: wrap; gap: 5px; }
+.hd-satz { background: #fff; border-radius: 8px; padding: 3px 8px; font-size: var(--fs-neben); color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .hd-zeile-delta { font-size: var(--fs-neben); font-weight: 700; white-space: nowrap; flex-shrink: 0; }
 .hd-zeile-delta.up   { color: var(--green); }
 .hd-zeile-delta.down { color: var(--red); }
 .hd-zeile-delta.neu  { color: var(--text3); font-weight: 600; }
 .hd-zeile-kopf .aex-v2-chev { flex-shrink: 0; }
 .hd-zeile-kopf[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
-.hd-zeile-mehr { display: none; padding: 0 0 12px 22px; }
+.hd-zeile-mehr { display: none; padding: 0 0 12px; }
 .hd-zeile.offen .hd-zeile-mehr { display: block; }
 .hd-zeile-mehr > * + * { margin-top: 8px; }
 .hd-pr { background: var(--accent-bg); color: var(--accent); padding: 2px 8px; border-radius: 999px; font-size: var(--fs-etikett); font-weight: 700; }
@@ -1289,8 +1292,8 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   background: var(--card2); border-radius: 10px; padding: 10px 12px;
 }
 /* Ueber die PR-Liste geoeffnet: die Uebung mit dem Bestwert ist umrandet und aufgeklappt. */
-.hd-zeile-hl { border: 2px solid var(--accent) !important; background: var(--accent-bg); border-radius: 10px; padding: 0 10px; }
-.hd-zeile-hl + .hd-zeile { border-top: none; }
+.hd-zeile-hl { box-shadow: inset 0 0 0 2px var(--accent); }
+.hd-zeile .hd-note, .hd-zeile .hd-pr { background: #fff; }
 
 /* ─── Ausklapp-Knopf auf farbigem Tab-Hintergrund ───────────────────────────────
    Uebernommen aus der Health-Command-Center-App (Leonard-Wunsch 28.08.2026).

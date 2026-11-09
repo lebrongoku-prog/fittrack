@@ -7891,16 +7891,15 @@ function showHistDetail(i, highlightExId) {
       <span class="rd-kopf-zeile">${zeile}</span>
     </div>`;
 
-  // JE UEBUNG EINE ZEILE: Farbmarke der Muskelgruppe, Name (+ PR), Saetze kompakt, rechts die
+  // JE UEBUNG EINE KARTE (seit v552 hell in der Muskelgruppenfarbe getoent, Saetze als weisse
+  // Chips): Name (+ PR), Saetze, rechts die
   // Veraenderung des schwersten Satzes zur letzten Gym Session mit dieser Uebung. Ein Tipp klappt
   // Notiz und Verlaufsdiagramm auf (`toggleHdZeile`).
   const zeilen = uebungen.map((ex, idx) => {
     const id = ex.exId || ex.id;
     const exData = getEx(id);
-    const farbe = muscleColor(exData ? exData.muscle : 'chest');
+    const tint = muscleBg(exData ? exData.muscle : 'chest');
     const sets = Array.isArray(ex.sets) ? ex.sets : [];
-    // Reihenfolge Wiederholungen × Gewicht — so wird der Satz gesprochen („8 mal 92 Kilo").
-    const saetzeText = sets.map(s => s.weight ? `${s.reps || '–'}×${s.weight}` : `${s.reps || '–'} Wdh.`).join(' · ');
     const jetzt = _maxGewicht(ex, w), vorher = _maxDerVorherigenEinheit(ws, i, id);
     let delta = '';
     if (jetzt && vorher === null) delta = '<span class="hd-zeile-delta neu">neu</span>';
@@ -7910,12 +7909,11 @@ function showHistDetail(i, highlightExId) {
       else if (d < 0) delta = `<span class="hd-zeile-delta down">▼ ${fmtKg(d)} kg</span>`;
     }
     const offen = highlightExId && id === highlightExId;
-    return `<div class="hd-zeile${offen ? ' offen hd-zeile-hl' : ''}">
+    return `<div class="hd-zeile${offen ? ' offen hd-zeile-hl' : ''}" style="background:${tint}">
       <button type="button" class="hd-zeile-kopf" onclick="toggleHdZeile(this)" aria-expanded="${offen ? 'true' : 'false'}">
-        <span class="hd-zeile-marke" style="background:${farbe}"></span>
         <span class="hd-zeile-text">
           <span class="hd-zeile-name">${escapeHtml((exData && exData.name) || ex.name || '')}${prByExId[id] ? '<span class="hd-pr">PR</span>' : ''}</span>
-          <span class="hd-zeile-saetze">${saetzeText}</span>
+          ${_hdSatzChips(sets)}
         </span>
         ${delta}
         <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
@@ -7932,6 +7930,13 @@ function showHistDetail(i, highlightExId) {
     `<button class="btn btn-danger btn-full" style="margin-top:18px" onclick="deleteSession(${i})">🗑 Gym Session löschen</button>`;
   openModal('modal-hist-detail');
   _renderHdCharts();
+}
+
+// v552 (Leonard-Wahl „Variante B ohne gefuellte Saetze"): Saetze einer Uebung als weisse Chips
+// in Reihenfolge Wiederholungen × Gewicht — so wird der Satz gesprochen („8 × 92").
+function _hdSatzChips(sets) {
+  return `<span class="hd-zeile-saetze">${sets.map(s =>
+    `<span class="hd-satz">${s.weight ? `${s.reps || '–'} × ${s.weight}` : `${s.reps || '–'} Wdh.`}</span>`).join('')}</span>`;
 }
 
 // v526 (07.11.2026, Leonard-Wunsch): Vorschau eines noch ANSTEHENDEN Gymtags im selben Fenster
@@ -7959,15 +7964,13 @@ function showGymtagVorschau(dayId, ts) {
   const zeilen = uebungen.map((pe, idx) => {
     const id = pe.exId || pe.id;
     const exData = getEx(id);
-    const farbe = muscleColor(exData ? exData.muscle : 'chest');
+    const tint = muscleBg(exData ? exData.muscle : 'chest');
     const sets = displaySetsForPe(pe, getLastExData(id));
-    const saetzeText = sets.map(s => s.weight ? `${s.reps || '–'}×${s.weight}` : `${s.reps || '–'} Wdh.`).join(' · ');
-    return `<div class="hd-zeile">
+    return `<div class="hd-zeile" style="background:${tint}">
       <button type="button" class="hd-zeile-kopf" onclick="toggleHdZeile(this)" aria-expanded="false">
-        <span class="hd-zeile-marke" style="background:${farbe}"></span>
         <span class="hd-zeile-text">
           <span class="hd-zeile-name">${escapeHtml((exData && exData.name) || pe.name || '')}</span>
-          <span class="hd-zeile-saetze">${saetzeText}</span>
+          ${_hdSatzChips(sets)}
         </span>
         <span class="aex-v2-chev">${AEX_CHEV_SVG}</span>
       </button>
