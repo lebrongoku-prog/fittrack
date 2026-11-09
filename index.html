@@ -475,9 +475,6 @@
                   Jetzt synchronisieren
                 </span>
               </button>
-              <button class="btn btn-outline btn-full" onclick="driveTestConnection()">
-                Verbindung testen
-              </button>
             </div>
             <div class="divider" style="margin:14px 0"></div>
             <div class="drive-row" onclick="toggleDriveDebug()" style="cursor:pointer" aria-expanded="false">
@@ -579,26 +576,6 @@
             <div class="mehr-row-action">›</div>
           </div>
           <input type="file" id="import-input" accept=".json" style="display:none" onchange="importData(event)">
-          <div class="divider"></div>
-          <div class="mehr-row" onclick="document.getElementById('plan-import-input').click()" style="cursor:pointer">
-            <div class="mehr-row-icon" style="background:#e8eaff">📋</div>
-            <div class="mehr-row-info">
-              <div class="mehr-row-label">Trainingsplan importieren</div>
-              <div class="mehr-row-sub">Plan-JSON einlesen (Trainingstage + Übungen)</div>
-            </div>
-            <div class="mehr-row-action">›</div>
-          </div>
-          <input type="file" id="plan-import-input" accept=".json" style="display:none" onchange="importTrainingPlan(event)">
-          <div class="divider"></div>
-          <div class="mehr-row" onclick="document.getElementById('exercises-import-input').click()" style="cursor:pointer">
-            <div class="mehr-row-icon" style="background:#e0f7f3">🏋️</div>
-            <div class="mehr-row-info">
-              <div class="mehr-row-label">Übungen importieren</div>
-              <div class="mehr-row-sub">Übungen-JSON in die Library laden</div>
-            </div>
-            <div class="mehr-row-action">›</div>
-          </div>
-          <input type="file" id="exercises-import-input" accept=".json" style="display:none" onchange="importExercises(event)">
         </div>
       </div>
 

@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v549**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v550**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -776,6 +776,13 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Sicherungsstand und eine abgelaufene Google-Anmeldung zeigt weiter die Cloud-Sync-Karte in den
   Einstellungen (`renderDriveStatus`). Alle Erwaehnungen des Chips weiter unten sind Vorgeschichte.
   GEMESSEN (375px): kein Chip im DOM, Zahnrad und Glas-Knopf rechtsbuendig; keine Konsolenfehler.
+- **v550 (09.11.2026, Leonard-Wunsch):** In den EINSTELLUNGEN sind drei Knoepfe entfallen:
+  „Verbindung testen" (Cloud-Sync), „Trainingsplan importieren" und „Übungen importieren" (Daten &
+  Sicherheit, samt ihren unsichtbaren Dateifeldern `#plan-import-input`/`#exercises-import-input`).
+  „Daten importieren" (Backup) bleibt. Die Funktionen `driveTestConnection`, `importTrainingPlan`,
+  `importExercises` samt `apply*Import` und ihren Bestaetigungsfenstern stehen noch im Code, haben
+  aber keinen Aufrufer mehr. GEMESSEN: die drei Texte fehlen, „Daten importieren" und
+  „Jetzt synchronisieren" da; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
