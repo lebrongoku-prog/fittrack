@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v555**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v556**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -821,6 +821,12 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
 - **v555 (09.11.2026, Leonard-Wunsch):** In der Kombi-Karte „Trainingswoche" sind die Umrisse
   der offenen Gym-/Laufzeichen 5px statt 4px (ganzes Quadrat und Randstuecke geteilter Tage, auch
   Glas). GEMESSEN: inset 5px bzw. −5px/−5px; keine Konsolenfehler.
+- **v556 (09.11.2026, Leonard-Wunsch):** In der aufgeklappten Karte „Heute" der Uebersicht
+  oeffnet ein OFFENER Gym-Plantag (heute oder kuenftig) dasselbe Fenster wie auf der Seite „Gym":
+  `showGymtagVorschau(dayId, ts)` (`gymWochenZeilen`, `kurz.tipp`). Absolvierte Gym Sessions
+  oeffneten schon `showHistDetail`; verpasste Tage bleiben ohne Tipp. GEMESSEN (Testplan, alle
+  Tage Testtag): 7 Knoepfe mit Vorschau, Tipp → „Testtag — Mo., 9. Nov. 2026" mit 2 Karten;
+  absolvierte Session → `showHistDetail`; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

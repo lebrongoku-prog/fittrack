@@ -5227,8 +5227,11 @@ function gymWochenZeilen() {
         ${verpasst ? '<span class="lauf-wz-ist verpasst">nicht trainiert</span>' : ''}
       </div></div>`;
     const zustand = verpasst ? 'verpasst' : 'offen';
-    zeilen.push({ i, html: _wzKnopf('lauf-wz', '', feld(i, zustand) + rechts),
-      kurz: { sport: 'gym', zustand, text: t.planDay.name, tipp: '' } });
+    // v556 (Leonard-Wunsch): Ein OFFENER Plantag oeffnet wie auf der Seite „Gym" die Vorschau
+    // seiner Uebungen (`showGymtagVorschau`); verpasste Tage bleiben ohne Tipp.
+    const tipp = verpasst ? '' : `showGymtagVorschau('${t.planDay.id}', ${von})`;
+    zeilen.push({ i, html: _wzKnopf('lauf-wz', tipp, feld(i, zustand) + rechts),
+      kurz: { sport: 'gym', zustand, text: t.planDay.name, tipp } });
   });
   return zeilen;
 }
