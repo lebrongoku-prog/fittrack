@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v548**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v549**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -770,6 +770,12 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Spalte 99.7px, breitester Wert „6'15''/km" 95.1px, „Trainingszeit" 76.9px; nichts gekuerzt;
   keine Konsolenfehler. GRENZE: Eine Trainingszeit ab 10 Stunden oder eine Pace ab 10'00'' wuerde
   knapp werden.
+- **v549 (09.11.2026, Leonard-Wunsch):** Der SICHERUNGS-CHIP im Kopf der Uebersicht („Heute
+  gesichert"/„Anmeldung nötig"/„Keine Sicherung", `#ov-backup-line`, `renderBackupLine`, CSS
+  `.backup-chip*`) ist ENTFALLEN. Rechts im Kopf stehen nur noch Zahnrad und Glas-Knopf. Den
+  Sicherungsstand und eine abgelaufene Google-Anmeldung zeigt weiter die Cloud-Sync-Karte in den
+  Einstellungen (`renderDriveStatus`). Alle Erwaehnungen des Chips weiter unten sind Vorgeschichte.
+  GEMESSEN (375px): kein Chip im DOM, Zahnrad und Glas-Knopf rechtsbuendig; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.

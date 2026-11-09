@@ -1607,21 +1607,6 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
 /* Kein `margin-top` mehr: Die Zeile richtet sich ueber `align-items: flex-end` an der
    Unterkante aus, ein oberer Abstand haette dort keine Wirkung. */
 .ph-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-/* Genauso hoch wie die Knoepfe daneben (`.ph-gear`, 38px) — Leonard-Wunsch 01.09.2026.
-   `box-sizing` ist noetig, damit das Polster in die Hoehe hineinzaehlt. */
-.backup-chip {
-  display: flex; align-items: center; gap: 6px;
-  min-height: var(--ph-btn); box-sizing: border-box;
-  max-width: 168px; padding: 7px 10px;
-  border-radius: 11px; background: rgba(255,255,255,0.18);
-  font-size: var(--fs-etikett); font-weight: 600; color: #fff;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
-.backup-chip:active { transform: scale(.96); }
-.backup-chip .backup-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.backup-chip .backup-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; flex-shrink: 0; }
-.backup-chip.warn .backup-dot { background: #FCA5A5; }
-.backup-chip.idle .backup-dot { background: rgba(255,255,255,0.55); }
 
 /* ─── Responsive ─── */
 @media (min-width: 560px) {

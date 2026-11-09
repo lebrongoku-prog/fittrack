@@ -1093,9 +1093,6 @@ function renderOverview() {
   // ─ Liste „Diese Woche" unter der Herocard ─ (siehe `renderUebersichtWoche`)
   renderUebersichtWoche();
 
-  // ─ Sicherungs-Status ─
-  renderBackupLine();
-
   // ─ Trainingskalender (ganzes Kalenderjahr) ─
   // Wird hier gerendert, nicht in renderStatsPage: die Auswertungen liegen seit dem
   // Umbau im Übungen-Tab, der Kalender bleibt in der Übersicht.
@@ -1403,46 +1400,8 @@ function buildWochenKombi() {
 // Der Hinweis „Dein Plan endet in N Tagen" samt `extendActivePlan` ist am 06.09.2026
 // ersatzlos entfallen (Leonard-Wunsch) — mit ihm die Karte `#ov-plan-end-notice`.
 
-// Zeile „zuletzt gesichert" auf der Übersicht. Ohne eingerichtete Sicherung liegen alle
-// Daten nur im Browser-Speicher dieses Geräts — das soll sichtbar sein, bevor es weh tut.
-// Sicherungs-Status als kompaktes Chip neben dem Titel „FitTrack" (früher eine eigene
-// Kachel weiter unten). Der Platz im Kopf ist knapp, deshalb kurze Texte — die
-// ausführliche Fassung steht in den Einstellungen, die ein Tipp darauf öffnet.
-function renderBackupLine() {
-  const el = document.getElementById('ov-backup-line');
-  if (!el) return;
-  const enabled = driveIsEnabled();
-  const last = driveGetLastPushed();
-  let cls = 'backup-chip', txt, title;
-
-  if (enabled && driveReauthNeeded()) {
-    // Abgelaufene Anmeldung schlägt jede Zeitangabe: seitdem wird nichts mehr gesichert.
-    cls += ' warn';
-    txt = 'Anmeldung nötig';
-    title = 'Google-Anmeldung abgelaufen — es wird nichts mehr gesichert. Tippen zum neu Verbinden.';
-  } else if (enabled && last) {
-    const days = Math.floor((Date.now() - last) / TAG_MS);
-    txt = days <= 0 ? 'Heute gesichert' : (days === 1 ? 'Gestern gesichert' : `Vor ${days} Tagen`);
-    title = `Google Drive · ${days <= 0 ? 'heute' : days === 1 ? 'gestern' : 'vor ' + days + ' Tagen'} gesichert`;
-    if (days > 7) cls += ' warn';
-  } else if (enabled) {
-    cls += ' warn';
-    txt = 'Nicht gesichert';
-    title = 'Google Drive verbunden, aber noch nichts gesichert';
-  } else {
-    // Ohne eingerichtete Sicherung nie grün melden — das läse sich wie „alles in Ordnung".
-    const n = DB.getWorkouts().length;
-    txt = 'Keine Sicherung';
-    title = 'Keine Sicherung — alles liegt nur auf diesem Gerät';
-    cls += n >= 10 ? ' warn' : ' idle';
-  }
-  el.className = cls;
-  el.title = title;
-  el.setAttribute('role', 'button');
-  el.setAttribute('aria-label', title + ' — Einstellungen öffnen');
-  el.innerHTML = `<span class="backup-dot"></span><span class="backup-txt">${txt}</span>`;
-  el.onclick = () => showScreen('mehr');
-}
+// Der Sicherungs-Chip im Kopf der Uebersicht (`renderBackupLine`, `#ov-backup-line`) ist am
+// 09.11.2026 entfallen (v549, Leonard-Wunsch). Der Stand steht in den Einstellungen (Cloud-Sync).
 
 // Einmaliger Hinweis, wenn nach zehn Einheiten immer noch keine Sicherung eingerichtet ist.
 function maybePromptBackup() {
@@ -11492,7 +11451,6 @@ async function driveGetValidToken() {
     // Anmeldung auffordert, statt weiter „synchronisiert…" anzuzeigen.
     driveClearToken();
     driveSetReauthNeeded(true);
-    renderBackupLine();
     renderDriveStatus();
     throw err;
   }
