@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v550**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v551**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -780,9 +780,19 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   „Verbindung testen" (Cloud-Sync), „Trainingsplan importieren" und „Übungen importieren" (Daten &
   Sicherheit, samt ihren unsichtbaren Dateifeldern `#plan-import-input`/`#exercises-import-input`).
   „Daten importieren" (Backup) bleibt. Die Funktionen `driveTestConnection`, `importTrainingPlan`,
-  `importExercises` samt `apply*Import` und ihren Bestaetigungsfenstern stehen noch im Code, haben
-  aber keinen Aufrufer mehr. GEMESSEN: die drei Texte fehlen, „Daten importieren" und
+  `importExercises` samt `apply*Import` und ihren Bestaetigungsfenstern sind seit v551 ebenfalls
+  entfernt (siehe dort). GEMESSEN: die drei Texte fehlen, „Daten importieren" und
   „Jetzt synchronisieren" da; keine Konsolenfehler.
+- **v551 (09.11.2026, Leonard-Wunsch „aufraeumen"):** Der Code hinter den in v550 entfernten
+  Knoepfen ist weg: `driveTestConnection`, der ganze Trainingsplan- und Uebungs-Import
+  (`importTrainingPlan`, `_planImportFehler`, `applyPlanImport`, `_planImportTage`,
+  `_planImportWochenplan`, `importExercises`, `applyExercisesImport`, `confirm*/cancel*Import`)
+  samt gemeinsamer Bausteine (`_importDateiLesen`, `_importNameSchluessel`, `_importFindeUebung`,
+  `_importIdGeber`, `_importNeueUebung`, `_mehrzahlUebung`, `VALID_MUSCLES`) und die Fenster
+  `#modal-plan-import`/`#modal-exercises-import`. `inferMuscleFromName` lebt weiter (Migration).
+  Die Backup-Wiederherstellung („Daten importieren", `importData`) ist unberuehrt. Alle
+  Erwaehnungen des JSON-Plan-Imports weiter unten sind Vorgeschichte. GEMESSEN: Syntax ok, alle
+  Tabs und Vollbildseiten geoeffnet, keine Konsolenfehler; 321 Zeilen weniger.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
