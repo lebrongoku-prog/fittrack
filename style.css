@@ -2660,7 +2660,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,2
 /* UNTEN 4px Polster (04.10.2026, Leonard-Meldung): Das Heute-Feld ragt 4px ueber die Zeile hinaus
    (`.lauf-wz-feld`, negativer Aussenabstand). In der LETZTEN Zeile schnitt der Scroller
    (`overflow-y: hidden`) es unten ab. Die Seitenanzeige darunter rueckt dafuer um 4px hoch. */
-.lauf-wochenliste { display: flex; flex-direction: column; gap: 18px; padding: 8px 4px 4px; }
+.lauf-wochenliste { display: flex; flex-direction: column; gap: 26px; padding: 8px 4px 4px; }
 /* KEINE Trennlinien zwischen den Zeilen (23.09.2026, Leonard-Wunsch — bis dahin trug jede Zeile
    ausser der ersten eine 1px-Linie oben). Der Abstand allein trennt sie. */
 /* DIE ZEILE IST EINE WAAGERECHTE REIHE (23.09.2026, Leonard-Wunsch): links die Scheibe, rechts
