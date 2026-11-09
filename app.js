@@ -5207,7 +5207,7 @@ function laufWochenZeilen(mo, istAktuell, maxKm) {
     // bis dahin lag sie in derselben Ebene wie die Angaben und sass damit ueber dem Balken.
     // Die NOTIZ der Einheit stand bis zum 23.09.2026 unter der Vorgabe und ist entfallen
     // (Leonard-Wunsch) — sie steht weiter in der Detailansicht des Laufs und im Laufplan.
-    const feldHTML = `<span class="lauf-wz-wt">${label}</span><span class="lauf-wz-feld${i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag ${zustand}"></span></span>`;
+    const feldHTML = `<span class="lauf-wz-feld${i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag ${zustand}">${label}</span></span>`;
     const inhalt = `${feldHTML}
       <div class="lauf-wz-rechts">
         <div class="lauf-wz-oben">
@@ -5259,7 +5259,7 @@ function gymWochenZeilen() {
   const zeilen = [];
   // Die Muskelgruppen-Punkte unter dem Namen und der Hinweis „vorgezogen"/„nachgeholt" sind am
   // 04.10.2026 entfallen (Leonard-Wunsch, v427). Der verschobene Plantag faellt weiter weg.
-  const feld = (i, zustand) => `<span class="lauf-wz-wt">${WOCHENTAGE_KURZ[i]}</span><span class="lauf-wz-feld${i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag gym ${zustand}"></span></span>`;
+  const feld = (i, zustand) => `<span class="lauf-wz-feld${i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag gym ${zustand}">${WOCHENTAGE_KURZ[i]}</span></span>`;
   tage.forEach(t => {
     const i = t.idx;
     const von = t.date.getTime(), bis = von + TAG_MS - 1;
@@ -5968,7 +5968,7 @@ function _gymWochenZeilenDaten(mo, istAktuell, planIndex, ws, tageById) {
 }
 
 function _gymWochenZeileHTML(z, todayIdx) {
-  const feld = `<span class="lauf-wz-wt">${WOCHENTAGE_KURZ[z.i]}</span><span class="lauf-wz-feld${z.i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag gym ${z.zustand}"></span></span>`;
+  const feld = `<span class="lauf-wz-feld${z.i === todayIdx ? ' heute' : ''}"><span class="lauf-wz-tag gym ${z.zustand}">${WOCHENTAGE_KURZ[z.i]}</span></span>`;
   // v520 (Leonard-Wunsch): KEIN Volumenbalken mehr unter der Zeile.
   const inhalt = `${feld}<div class="lauf-wz-rechts">
       <div class="lauf-wz-oben">

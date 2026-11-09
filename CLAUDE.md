@@ -15,7 +15,7 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 | `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
 | `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
 | `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v543**) |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v544**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -739,6 +739,9 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   Die 12px-Schrift IM Quadrat (v538) hat damit keinen Inhalt mehr. GEMESSEN (Laufen, 375px):
   „Mo" 15px/28px, Zeichen 24.93px leer mit 3px-Umriss, Abstaende 10/10, Wochentag mittig zum
   Zeichen; keine Konsolenfehler. Gym nutzt dieselben Regeln, nicht eigens gemessen.
+- **v544 (09.11.2026, Leonard-Wunsch):** Der Wochentag aus v543 steht wieder IM Zeichen (12px,
+  `.lauf-wz-wt` entfallen). Die 3px-Umrisse aus v543 bleiben. GEMESSEN: „Mo" im Quadrat 12px,
+  Umriss 3px; keine Konsolenfehler.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
