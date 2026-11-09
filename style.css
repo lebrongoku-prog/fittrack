@@ -2799,13 +2799,13 @@ button.wz-einheit:active { opacity: .6; }
 .wz-zeichen { width: 14px; height: 14px; flex-shrink: 0; box-sizing: border-box; border-radius: 3px; }
 .wz-zeichen.gym.gelaufen  { background: #0F766E; }
 .wz-zeichen.lauf.gelaufen { background: #4ADE80; }
-.wz-zeichen.gym.offen     { box-shadow: inset 0 0 0 2px #0F766E; }
-.wz-zeichen.lauf.offen    { box-shadow: inset 0 0 0 2px #4ADE80; }
-.wz-zeichen.verpasst      { box-shadow: inset 0 0 0 2px var(--red); }
-.wz-zeichen.verschoben    { background: var(--card2); box-shadow: inset 0 0 0 2px var(--text3); }
+.wz-zeichen.gym.offen     { box-shadow: inset 0 0 0 4px #0F766E; }
+.wz-zeichen.lauf.offen    { box-shadow: inset 0 0 0 4px #4ADE80; }
+.wz-zeichen.verpasst      { box-shadow: inset 0 0 0 4px var(--red); }
+.wz-zeichen.verschoben    { background: var(--card2); box-shadow: inset 0 0 0 4px var(--text3); }
 html.glas .screen:not(#screen-mehr) .wz-zeichen.gelaufen { background: rgba(255,255,255,.92); }
-html.glas .screen:not(#screen-mehr) .wz-zeichen.offen    { box-shadow: inset 0 0 0 2px rgba(255,255,255,.92); }
-html.glas .screen:not(#screen-mehr) .wz-zeichen.verpasst { box-shadow: inset 0 0 0 2px #FCA5A5; }
+html.glas .screen:not(#screen-mehr) .wz-zeichen.offen    { box-shadow: inset 0 0 0 4px rgba(255,255,255,.92); }
+html.glas .screen:not(#screen-mehr) .wz-zeichen.verpasst { box-shadow: inset 0 0 0 4px #FCA5A5; }
 html.glas .screen:not(#screen-mehr) .wz-zeichen.verschoben { background: rgba(255,255,255,.22); box-shadow: none; }
 .wz-flach.gewaehlt { background: var(--accent-bg); border-radius: 10px; }
 .wz-flach.gewaehlt .wz-flach-tag { color: var(--accent-dark); font-weight: 800; }
