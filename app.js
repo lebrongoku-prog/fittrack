@@ -4932,8 +4932,8 @@ function laufDetailInhalt(key, l, opts) {
     l.minutes != null        ? { wert: _laufHms(l.minutes), einheit: '', label: 'Trainingszeit', art: 'zeit' } : null,
     pace                     ? { wert: pace, einheit: '/km', label: 'Ø-Pace', art: 'pace' } : null,
     !hiit && l.elevM != null ? { wert: Math.round(l.elevM), einheit: 'm', label: 'Höhenmeter', art: 'hoehe' } : null,
-    l.avgHR != null          ? { wert: Math.round(l.avgHR), einheit: 'bpm', label: 'Ø-Herzfrequenz', art: 'puls' } : null,
-    l.maxHR != null          ? { wert: Math.round(l.maxHR), einheit: 'bpm', label: 'Max. Herzfrequenz', art: 'puls' } : null,
+    l.avgHR != null          ? { wert: Math.round(l.avgHR), einheit: 'bpm', label: 'Ø-Puls', art: 'puls' } : null,
+    l.maxHR != null          ? { wert: Math.round(l.maxHR), einheit: 'bpm', label: 'Max. Puls', art: 'puls' } : null,
   ].filter(Boolean);
   return _laufDetailKopf(l, hiit, opts && opts.stern ? key : null)
     + (werte.length ? `<div class="rd-werte">`

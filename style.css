@@ -3264,9 +3264,9 @@ button.cal-kachel:active { opacity: .7; }
    (Zeit gelb, Pace tuerkis, Puls rot, Hoehe gruen), Einheit klein dahinter. */
 .rd-werte { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 6px;
   margin-bottom: 14px; padding: 14px 12px; border-radius: 16px; background: var(--card2); }
-.rd-w span { display: block; font-size: var(--fs-etikett); color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rd-w b { display: block; font-size: 20px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
-.rd-w small { font-size: var(--fs-etikett); font-weight: 700; margin-left: 3px; }
+.rd-w span { display: block; font-size: var(--fs-neben); color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-w b { display: block; font-size: 24px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.rd-w small { font-size: var(--fs-neben); font-weight: 700; margin-left: 3px; }
 .rd-w-zeit { color: #CA8A04; }
 .rd-w-pace { color: #0D9488; }
 .rd-w-puls { color: #E11D48; }
