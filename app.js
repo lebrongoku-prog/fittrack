@@ -6750,10 +6750,30 @@ function toggleOvKalender() {
 // GYMKALENDER IN DER GYMPLAN-DETAILANSICHT (v561, Leonard-Wunsch): zeigt den Zeitraum des
 // BEARBEITETEN Plans, damit man sieht, in welche Wochen eine Rest Week faellt. Titel klappt auf
 // und zu, Start eingeklappt, nicht gespeichert. Kalender-Id `dcal`, Karte `#pd-cal-card`.
+// SEIT v563 steht der Titel (und die Kennzahl) AUSSERHALB der Karte wie bei den uebrigen
+// Abschnitten der Detailansicht (`.mehr-section-kopf`); eingeklappt ist die Karte ganz weg.
 let _pdKalOffen = false;
 function toggleDetailKalender() {
   _pdKalOffen = !_pdKalOffen;
-  _kalKarteKlappen('pd-cal-card', 'dcal-titel', _pdKalOffen, () => renderTrainingCalendar('dcal', 'pd-cal-card'));
+  const karte = document.getElementById('pd-cal-card');
+  const btn = document.getElementById('dcal-titel');
+  if (btn) btn.setAttribute('aria-expanded', String(_pdKalOffen));
+  if (!karte) return;
+  const nr = (karte._klappNr || 0) + 1;
+  karte._klappNr = nr;
+  const von = karte.style.display === 'none' ? 0 : karte.getBoundingClientRect().height;
+  karte.getAnimations().forEach(a => a.cancel());
+  karte.style.display = '';
+  if (_pdKalOffen) renderTrainingCalendar('dcal', 'pd-cal-card');
+  const bis = _pdKalOffen ? karte.getBoundingClientRect().height : 0;
+  const fertig = () => {
+    if (karte._klappNr !== nr) return;
+    karte.style.overflow = '';
+    if (!_pdKalOffen) karte.style.display = 'none';
+  };
+  if (_bewegungReduziert() || !karte.animate || !karte.clientWidth) { fertig(); return; }
+  karte.style.overflow = 'hidden';
+  _boxFahren(karte, von, bis, fertig);
 }
 // Gemeinsames Auf-/Zuklappen einer Kalenderkarte (Uebersicht und Gymplan-Detail).
 function _kalKarteKlappen(kartenId, knopfId, offen, zeichnen) {
@@ -6899,7 +6919,8 @@ function calendarInnerHTML(id) {
     ? `<button class="info-btn cal-reset-btn" onclick="calZurAktuellenAnsicht()"
                aria-label="Zur aktuellen Ansicht" title="Zur aktuellen Ansicht">${CAL_RESET_SVG}</button>`
     : '';   // v521 (Leonard-Wunsch): im Plan-Tab keine Lesehilfe mehr (samt `#modal-cal-info`)
-  return `<div class="chart-card-v2-head">
+  // v563: Im Gymplan-Detail stehen Titel und Kennzahl im Abschnittskopf ueber der Karte.
+  const kopf = id === 'dcal' ? '' : `<div class="chart-card-v2-head">
       <span class="cal-head-left">${titel}${jahrFeld}</span>
       <span class="cal-head-right">
         ${id === 'cal'
@@ -6910,7 +6931,8 @@ function calendarInnerHTML(id) {
           : `<span class="cal-stats" id="${id}-stats"></span>`}
         ${rechtsKnopf}
       </span>
-    </div>
+    </div>`;
+  return `${kopf}
     <div class="cal-body">
       <div class="cal-daylabels"><span>Mo</span><span></span><span>Mi</span><span></span><span>Fr</span><span></span><span>So</span></div>
       <div class="cal-scroll" id="${id}-scroll">
@@ -7236,7 +7258,7 @@ function _calRasterHTML(id, z) {
   // NUR DER PLAN im Gymplan-Detail (`dcal`, v562, Leonard-Wunsch): Jeder gewaehlte Wochentag
   // (`plan.wochentage`) im Zeitraum des Plans ist „geplant" (Umriss) — ausser in Rest Weeks.
   // Absolviertes, Verschobenes, Verpasstes und rote Wochen zeigt dieser Kalender bewusst NICHT;
-  // er dient nur dem Planen. Kein Tipp auf die Tage (keine Fusszeile).
+  // er dient nur dem Planen. Ein Tipp nennt in der Fusszeile, was der PLAN vorsieht (v563).
   const nurPlan = id === 'dcal' ? DB.getPlans().find(p => p.id === editingPlanId) : null;
   const nurPlanTage = nurPlan ? _gymWochentage(nurPlan) : [];
   const planZelle = (day) => {
@@ -7248,7 +7270,11 @@ function _calRasterHTML(id, z) {
     if (ausserhalb) cls.push('outside');
     if (geplant) cls.push('planned');
     if (day.getTime() === heute.getTime()) cls.push('today');
-    return `<span class="${cls.join(' ')}" aria-label="${day.toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})}, ${geplant ? 'Gym geplant' : 'kein Gym geplant'}"></span>`;
+    const label = `${day.toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})}, ${geplant ? 'Gym geplant' : 'kein Gym geplant'}`;
+    if (ausserhalb) return `<span class="${cls.join(' ')}" aria-label="${label}"></span>`;
+    const key = _dayKeyOf(day.getTime());
+    return `<span class="${cls.join(' ')}" data-key="${key}" onclick="showCalDay('${key}','${id}')"
+                  role="button" tabindex="0" aria-label="${label}"></span>`;
   };
 
   const tagZelle = (day, leereWoche) => {
@@ -7346,9 +7372,10 @@ function _calKopfSetzen(id, z) {
   if (titelEl) {
     titelEl.textContent = modus.titel;
     // Als KLASSE, nicht als Inline-Farbe — sonst schlaege sie die Glas-Regel, die den Titel
-    // im Transparenz-Modus weiss setzt.
-    titelEl.classList.toggle('cal-titel-gym', modus.kraft && !modus.lauf);
-    titelEl.classList.toggle('cal-titel-lauf', modus.lauf && !modus.kraft);
+    // im Transparenz-Modus weiss setzt. Im Gymplan-Detail (`dcal`) ist der Titel ein
+    // Abschnittstitel und behaelt dessen Farbe.
+    titelEl.classList.toggle('cal-titel-gym', id !== 'dcal' && modus.kraft && !modus.lauf);
+    titelEl.classList.toggle('cal-titel-lauf', id !== 'dcal' && modus.lauf && !modus.kraft);
   }
   // Der Wechsler zeigt nur den Zeitraum als Text — die Reihenfolge der Stufen steht in
   // `wechselCalJahr`.
@@ -7609,6 +7636,28 @@ function showCalDay(key, id) {
     }
     scope.querySelectorAll('.cal-day.sel').forEach(c => c.classList.remove('sel'));
     if (cell) cell.classList.add('sel');
+  }
+  // v563: Im Gymplan-Detail nennt die Fusszeile nur den PLAN — Gymtag (Tipp → Vorschau),
+  // Rest Week oder „Kein Gym geplant". Absolviertes zeigt dieser Kalender bewusst nicht.
+  if (id === 'dcal') {
+    const plan = DB.getPlans().find(p => p.id === editingPlanId);
+    const tag = new Date(y, m-1, d);
+    const wi = (tag.getDay() + 6) % 7;
+    let k = { zustand: 'leer', titel: 'Kein Gym geplant', sub: '' };
+    if (plan && _gymWochentage(plan).includes(wi)) {
+      if (_istRestWoche(plan, tag)) k = { zustand: 'leer', titel: 'Rest Week', sub: '' };
+      else {
+        const eintrag = (plan.weekPlan || [])[wi];
+        const gt = eintrag && eintrag.planDayId ? resolvePlanDays(plan).find(t => t && t.id === eintrag.planDayId) : null;
+        const n = gt ? (gt.exercises || []).length : 0;
+        const saetze = gt ? (gt.exercises || []).reduce((a, e) => a + (e.targetSets || 0), 0) : 0;
+        k = gt ? { zustand: 'offen', titel: escapeHtml(gt.name), sub: `geplant · ${n} ${n === 1 ? 'Übung' : 'Übungen'} · ${saetze} Sätze`,
+                   tipp: `showGymtagVorschau('${gt.id}', ${tag.getTime()})` }
+               : { zustand: 'offen', titel: 'Kein Gymtag gewählt', sub: 'geplant' };
+      }
+    }
+    _calFussSetzen(el, `<div class="cal-detail-datum"><strong>${dateStr}</strong></div><div class="cal-kacheln">${_calKachel('gym', k)}</div>`);
+    return;
   }
   // Neben dem Ergebnis auch nennen, was fuer den Tag vorgesehen war — sonst bliebe
   // unklar, ob ein leerer Tag ein Ruhetag oder eine ausgefallene Einheit ist.
@@ -8664,9 +8713,10 @@ function toggleRestWoche(nr) {
 function _pdKalenderZeichnen() {
   const karte = document.getElementById('pd-cal-card');
   if (!karte) return;
-  karte.classList.toggle('kal-zu', !_pdKalOffen);
-  karte.classList.toggle('kal-inhalt-zu', !_pdKalOffen);
-  renderTrainingCalendar('dcal', 'pd-cal-card');
+  karte.style.display = _pdKalOffen ? '' : 'none';
+  const btn = document.getElementById('dcal-titel');
+  if (btn) btn.setAttribute('aria-expanded', String(_pdKalOffen));
+  renderTrainingCalendar('dcal', 'pd-cal-card');   // auch eingeklappt: fuellt die Kennzahl
 }
 
 function _renderAfterPlanEdit() {

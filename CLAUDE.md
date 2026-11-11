@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v562**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v563**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -110,6 +110,8 @@ grep -n "fittrack-v" sw.js
 - Ein Plan besteht GENAU aus den Tagen seines Wochenplans (`saveWeekPlanDay` → `_wochenplanSetzen`
   → `_planKopienAufraeumen`); eine Kopie ohne Wochentag fliegt raus, außer eine Session zeigt auf
   sie. Eine aussortierte Kopie derselben Vorlage wird beim erneuten Wählen WIEDER eingesetzt.
+- Reihenfolge im Gymplan-Detail: Trainingsplandaten · Gymkalender · Wochenplan ·
+  Wochenvolumen · Aktionen.
 - Plan-Detail: Chips „Wochentage" (`plan.wochentage`, `toggleGymWochentag`), darunter „Wochenplan"
   mit einer Zeile je gewähltem Tag; Tipp öffnet `openGymtagWahl(i)` („In diesem Plan" / „Weitere
   Gymtage" / „Kein Gymtag"). Abschnitt „Wochenvolumen" (`renderPlanVolumen`).
@@ -261,7 +263,11 @@ entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2`.
   `dcal` Gymplan-Detail in `#pd-cal-card` — immer Gymkalender über den Zeitraum des BEARBEITETEN
   Plans, ohne Zeitraum-Wechsler, Spalten mit „W1 … Wn" beschriftet, zeigt NUR den Plan
   (gewählte Wochentage außer Rest Weeks als Umriss, nichts Absolviertes, keine roten Wochen,
-  Tage nicht antippbar, Kennzahl „N Gym Sessions geplant"), Titel klappt auf/zu über
+  Kennzahl „N Gym Sessions geplant"; Tipp auf einen Tag nennt in der Fußzeile nur den Plan:
+  Gymtag → Vorschau, „Rest Week", „Kein Gymtag gewählt" oder „Kein Gym geplant"). Titel
+  (`#dcal-titel`) und Kennzahl (`#dcal-stats`) stehen im Abschnittskopf ÜBER der Karte wie bei
+  den anderen Abschnitten; eingeklappt ist die Karte ganz weg (`toggleDetailKalender`,
+  `_boxFahren`). Titel klappt auf/zu über
   `toggleDetailKalender`, gemeinsamer Klapp-Kern `_kalKarteKlappen`),
   `_calModus(id)`: Übersicht folgt dem Titel-Filter (Trainings-/Gym-/Laufkalender), Plan-Tab der
   Seite. Startet immer bei „Aktuell" (laufender Plan), Zeitraum-Wechsler Aktuell → Jahre.
@@ -382,3 +388,11 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   geplant". GEMESSEN: Mo/Mi/Fr/So, 12 Wochen, Rest 3+6 → 40 Umrisse, 0 gefüllt trotz 12
   Sessions; Di dazu → 50; Übersicht und Plan-Tab zeigen weiter 12 absolvierte Tage; keine
   Konsolenfehler.
+- **v563 (11.11.2026, Leonard-Wunsch):** Gymkalender im Gymplan-Detail: Tage wieder antippbar
+  (Fußzeile mit dem geplanten Gymtag samt Tipp zur Vorschau, Rest Week oder kein Gym); Titel
+  und Kennzahl außerhalb der Karte im Abschnittskopf wie die übrigen Abschnitte, Karte so
+  breit und rund wie `.mehr-card`; Abschnitt „Wochenplan" steht jetzt über „Wochenvolumen".
+  GEMESSEN (375px): Reihenfolge stimmt, Karte bündig mit Wochenplan (12/363px), Titel 11px
+  weiß in Großbuchstaben wie „Wochenplan", vier Fußzeilen-Fälle richtig, Kachel → Vorschau
+  „Push — Mo., 12. Okt. 2026", Klappen dreimal schnell endet sauber; Übersichts-Kalender
+  unverändert; keine Konsolenfehler.

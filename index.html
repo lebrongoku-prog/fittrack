@@ -187,8 +187,20 @@
       </div>
     </div>
 
-    <!-- Gymkalender des Plans (v561), einklappbar, gefuellt von _pdKalenderZeichnen() -->
-    <div class="chart-card-v2 kal-zu kal-inhalt-zu" id="pd-cal-card"></div>
+    <!-- Gymkalender des Plans (v561), einklappbar ueber den Titel, gefuellt von
+         _pdKalenderZeichnen(). Seit v563 Titel und Kennzahl im Abschnittskopf wie die uebrigen. -->
+    <div class="mehr-section" id="pd-cal-section">
+      <div class="mehr-section-kopf">
+        <button type="button" class="mehr-section-title pd-kal-titel" id="dcal-titel" onclick="toggleDetailKalender()" aria-expanded="false">Gymkalender</button>
+        <span class="mehr-section-title lp-km-schnitt" id="dcal-stats"></span>
+      </div>
+      <div class="chart-card-v2 pd-kal-karte" id="pd-cal-card" style="display:none"></div>
+    </div>
+
+    <div class="mehr-section">
+      <div class="mehr-section-title">Wochenplan</div>
+      <div class="mehr-card" id="mehr-weekplan"></div>
+    </div>
 
     <!-- Wochenvolumen (v476), gefuellt von renderPlanVolumen() -->
     <div class="mehr-section" id="plan-vol-section" hidden>
@@ -197,11 +209,6 @@
         <span class="mehr-section-title lp-km-schnitt" id="plan-vol-schnitt" onclick="toggleSchnittLinie(event)" role="button" title="Durchschnittslinie ein-/ausblenden"></span>
       </div>
       <div class="mehr-card lp-km-karte"><div class="ex-chart-wrap"><canvas id="plan-vol-chart"></canvas></div></div>
-    </div>
-
-    <div class="mehr-section">
-      <div class="mehr-section-title">Wochenplan</div>
-      <div class="mehr-card" id="mehr-weekplan"></div>
     </div>
 
     <div class="mehr-section">

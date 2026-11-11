@@ -1602,7 +1602,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
     { max-width: 520px; margin-left: auto; margin-right: auto; }
   /* Ausnahme Trainingskalender: je breiter, desto mehr Wochen ohne Scrollen sichtbar.
      Im Querformat (844–932px) blieb er sonst auf 520px stehen. */
-  #ov-cal-card, #plans-cal-card, #pd-cal-card { max-width: none; margin-left: 14px; margin-right: 14px; }
+  #ov-cal-card, #plans-cal-card { max-width: none; margin-left: 14px; margin-right: 14px; }
   .ph-left h1 { font-size: 28px; }
 }
 
@@ -2318,8 +2318,7 @@ html.glas .screen:not(#screen-mehr) .aex-v2.aktuell { box-shadow: 0 0 0 2px rgba
    Polster oben im Scroller (`--cal-pad-y`) ergeben 0.5px hier genau 6px bis zur Monatsschrift
    (vorher 10px = 15.5px). */
 #ov-cal-card > .chart-card-v2-head,
-#plans-cal-card > .chart-card-v2-head,
-#pd-cal-card > .chart-card-v2-head { margin-bottom: 0.5px; }
+#plans-cal-card > .chart-card-v2-head { margin-bottom: 0.5px; }
 /* Kleines „i" hinter einem Kartentitel, öffnet die Lesehilfe. margin-right:auto hält es
    direkt am Titel — der Kopf verteilt seine Kinder sonst auf beide Ränder. */
 .info-btn {
@@ -3242,10 +3241,8 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
    die Kennzahl ist dort der Filter-Knopf. */
 #ov-cal-card.kal-zu .cal-jahr,
 #ov-cal-card.kal-zu .cal-reset-btn { display: none; }
-#ov-cal-card.kal-inhalt-zu > :not(.chart-card-v2-head),
-#pd-cal-card.kal-inhalt-zu > :not(.chart-card-v2-head) { display: none; }
-#ov-cal-card.kal-inhalt-zu .chart-card-v2-head,
-#pd-cal-card.kal-inhalt-zu .chart-card-v2-head { margin-bottom: 0; }
+#ov-cal-card.kal-inhalt-zu > :not(.chart-card-v2-head) { display: none; }
+#ov-cal-card.kal-inhalt-zu .chart-card-v2-head { margin-bottom: 0; }
 .cal-stats-btn {
   border: none; background: none; padding: 0; margin: 0; font-family: inherit; text-align: right;
   cursor: pointer; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
@@ -3284,8 +3281,12 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 /* v561: Wochennummern im Gymkalender der Gymplan-Detailansicht, mittig ueber der Spalte;
    eine Rest Week in der Tabfarbe wie ihr Chip. */
 .cal-planname.cal-wnr { text-align: center; overflow: visible; text-overflow: clip; }
-/* v562: Die Tage im Detail-Kalender sind nicht antippbar (nur Plan, keine Fusszeile). */
-#dcal-grid .cal-day { cursor: default; }
+/* v563: Gymkalender im Gymplan-Detail als Abschnitt wie die uebrigen — Titel (Knopf) und
+   Kennzahl im `.mehr-section-kopf`, die Karte in Breite und Eckenradius wie `.mehr-card`. */
+.pd-kal-titel { background: none; border: none; padding: 0; font-family: inherit; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
+.pd-kal-titel:active { opacity: .6; }
+.chart-card-v2.pd-kal-karte { margin: 0; border-radius: var(--radius); }
 .cal-planname.cal-wnr.rest { color: var(--accent); }
 html.glas .screen:not(#screen-mehr) .cal-planname.cal-wnr.rest { color: #FDE68A; }
 /* v559: „Rest" unter dem Gym-Balken in der Spalte einer Rest Week (Farbe = Gymplan, im
