@@ -6358,6 +6358,14 @@ function renderRunPlanDetail() {
       </div>
     </div>
 
+    <div class="mehr-section">
+      <div class="mehr-section-kopf">
+        <div class="mehr-section-title" id="lcal-titel">Laufkalender</div>
+        <span class="mehr-section-title lp-km-schnitt" id="lcal-stats"></span>
+      </div>
+      <div class="chart-card-v2 pd-kal-karte" id="lp-cal-card"></div>
+    </div>
+
     ${laufKmDiagrammHTML(p, 'lp') ? `<div class="mehr-section">
       <div class="mehr-section-kopf">
         <div class="mehr-section-title">Geplante Wochenkilometer</div>
@@ -6406,6 +6414,7 @@ function renderRunPlanDetail() {
         </div>
       </div>
     </div>`;
+  renderTrainingCalendar('lcal', 'lp-cal-card');   // v565: Laufkalender des Plans
   _zeichneLpKmDiagramm();
 }
 
@@ -6784,6 +6793,7 @@ function toggleCalFilter() {
 // Plaene-Tab der gewaehlten Seite: Gymplan → Krafttraining, Laufplan → Laeufe.
 function _calModus(id) {
   if (id === 'dcal') return { kraft: true, lauf: false, titel: 'Gymkalender' };   // v561
+  if (id === 'lcal') return { kraft: false, lauf: true, titel: 'Laufkalender' };   // v565
   if (id === 'pcal') {
     // Nur zwei der vier Seiten zeigen ueberhaupt einen Kalender (Gymtage und Wettkaempfe
     // nicht) — fuer die uebrigen ist der Wert gleichgueltig.
@@ -6893,7 +6903,7 @@ function calendarInnerHTML(id) {
                aria-label="Zur aktuellen Ansicht" title="Zur aktuellen Ansicht">${CAL_RESET_SVG}</button>`
     : '';   // v521 (Leonard-Wunsch): im Plan-Tab keine Lesehilfe mehr (samt `#modal-cal-info`)
   // v563: Im Gymplan-Detail stehen Titel und Kennzahl im Abschnittskopf ueber der Karte.
-  const kopf = id === 'dcal' ? '' : `<div class="chart-card-v2-head">
+  const kopf = (id === 'dcal' || id === 'lcal') ? '' : `<div class="chart-card-v2-head">
       <span class="cal-head-left">${titel}${jahrFeld}</span>
       <span class="cal-head-right">
         ${id === 'cal'
@@ -7146,7 +7156,16 @@ function _calZeitraum(id) {
       aktPlaene = { gym: plan, lauf: null, bereich: { von: vonP, bis: bisP } };
     }
   }
-  const aktuell = (wahl === 'aktuell' || id === 'dcal') && !!aktPlaene.bereich;
+  // v565: ebenso der Laufkalender im Laufplan-Detail — immer der BEARBEITETE Laufplan.
+  if (id === 'lcal') {
+    const plan = DB.getRunPlans().find(p => p.id === editingRunPlanId);
+    if (plan && plan.startDate) {
+      const vonP = _calLokalTag(plan.startDate);
+      const bisP = plan.endDate ? _calLokalTag(plan.endDate) : new Date(vonP.getTime() + 8 * WOCHE_MS - TAG_MS);
+      aktPlaene = { gym: null, lauf: plan, bereich: { von: vonP, bis: bisP } };
+    }
+  }
+  const aktuell = (wahl === 'aktuell' || id === 'dcal' || id === 'lcal') && !!aktPlaene.bereich;
   const jahr = (typeof wahl === 'number') ? wahl : heute.getFullYear();
   const von = aktuell ? aktPlaene.bereich.von : new Date(jahr, 0, 1);
   const bis = aktuell ? aktPlaene.bereich.bis : new Date(jahr, 11, 31);
@@ -7232,18 +7251,26 @@ function _calRasterHTML(id, z) {
   // (`plan.wochentage`) im Zeitraum des Plans ist „geplant" (Umriss) — ausser in Rest Weeks.
   // Absolviertes, Verschobenes, Verpasstes und rote Wochen zeigt dieser Kalender bewusst NICHT;
   // er dient nur dem Planen. Ein Tipp nennt in der Fusszeile, was der PLAN vorsieht (v563).
-  const nurPlan = id === 'dcal' ? DB.getPlans().find(p => p.id === editingPlanId) : null;
-  const nurPlanTage = nurPlan ? _gymWochentage(nurPlan) : [];
+  // v565: Dasselbe fuer den Laufkalender im Laufplan-Detail (`lcal`): Lauftage (`runDays`) als
+  // offener Lauf-Umriss, der Wettkampftag des Plans golden.
+  const nurPlan = id === 'dcal' ? DB.getPlans().find(p => p.id === editingPlanId)
+                : id === 'lcal' ? DB.getRunPlans().find(p => p.id === editingRunPlanId) : null;
+  const nurLauf = id === 'lcal';
+  const nurPlanTage = !nurPlan ? [] : nurLauf ? (nurPlan.runDays || []) : _gymWochentage(nurPlan);
+  const nurPlanRennen = nurLauf && nurPlan && nurPlan.raceDate ? _dayKeyOf(_calLokalTag(nurPlan.raceDate).getTime()) : null;
   const planZelle = (day) => {
     const ausserhalb = !imBereich(day);
     const wi = (day.getDay() + 6) % 7;
-    const geplant = !ausserhalb && nurPlanTage.includes(wi) && !_istRestWoche(nurPlan, day);
+    const geplant = !ausserhalb && nurPlanTage.includes(wi) && (nurLauf || !_istRestWoche(nurPlan, day));
+    const rennen = !ausserhalb && nurPlanRennen === _dayKeyOf(day.getTime());
     const cls = ['cal-day'];
     if (day.getMonth() % 2) cls.push('m-zwei');
     if (ausserhalb) cls.push('outside');
-    if (geplant) cls.push('planned');
+    if (geplant) cls.push(nurLauf ? 'run-planned' : 'planned');
+    if (rennen) cls.push('wettkampf');
     if (day.getTime() === heute.getTime()) cls.push('today');
-    const label = `${day.toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})}, ${geplant ? 'Gym geplant' : 'kein Gym geplant'}`;
+    const sport = nurLauf ? 'Lauf' : 'Gym';
+    const label = `${day.toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})}, ${geplant ? sport + ' geplant' : 'kein ' + sport + ' geplant'}${rennen ? ', Wettkampf' : ''}`;
     if (ausserhalb) return `<span class="${cls.join(' ')}" aria-label="${label}"></span>`;
     const key = _dayKeyOf(day.getTime());
     return `<span class="${cls.join(' ')}" data-key="${key}" onclick="showCalDay('${key}','${id}')"
@@ -7398,6 +7425,16 @@ function _calKopfSetzen(id, z) {
     statsEl.innerHTML = teil('gym', `${n} ${n === 1 ? 'Gym Session' : 'Gym Sessions'} geplant`);
     return;
   }
+  // v565: Im Laufplan-Detail (`lcal`) die Zahl der geplanten Laeufe.
+  if (id === 'lcal') {
+    const plan = z.aktPlaene.lauf;
+    let n = 0;
+    if (plan) for (const d = new Date(z.von); d <= z.bis; d.setDate(d.getDate() + 1)) {
+      if ((plan.runDays || []).includes((d.getDay() + 6) % 7)) n++;
+    }
+    statsEl.innerHTML = teil('lauf', `${n} ${n === 1 ? 'Lauf' : 'Läufe'} geplant`);
+    return;
+  }
   const serie = (id === 'cal' || !z.istLaufendesJahr || kombi) ? 0
     : (modus.kraft ? getWeekStreak() : getRunWeekStreak());
   statsEl.innerHTML = kennzahl
@@ -7428,8 +7465,9 @@ function _calPlanLaufzeitenZeichnen(id, card, z, masse) {
            title="${escapeHtml(st.p.name || '')}">${escapeHtml(st.p.name || 'Plan')}</span>`).join('') : '';
   // v561: Im Gymplan-Detail (`dcal`) stehen statt des Plannamens die WOCHENNUMMERN des Plans
   // ueber den Spalten — dieselben „W1 … Wn" wie in der Chip-Reihe „Rest Weeks".
-  if (id === 'dcal') {
-    const st = stuecke.find(x => x.typ === 'gym' && x.p.id === editingPlanId);
+  if (id === 'dcal' || id === 'lcal') {
+    const st = id === 'dcal' ? stuecke.find(x => x.typ === 'gym' && x.p.id === editingPlanId)
+                             : stuecke.find(x => x.typ === 'lauf' && x.p.id === editingRunPlanId);
     if (st) {
       const erstMo = _laufWochenMontag(_calLokalTag(st.p.startDate));
       const rest = new Set(st.p.restWeeks || []);
@@ -7437,7 +7475,7 @@ function _calPlanLaufzeitenZeichnen(id, card, z, masse) {
       for (let sp = st.von; sp <= st.bis; sp++) {
         const mo = new Date(z.start); mo.setDate(mo.getDate() + sp * 7);
         const nr = Math.round((mo - erstMo) / WOCHE_MS) + 1;
-        labels.push(`<span class="cal-planname cal-wnr${rest.has(nr) ? ' rest' : ''}" style="left:${sp * masse.spalte}px;width:${masse.spalte - masse.luecke}px;top:${st.spur * (NAME_H + NAME_GAP)}px">W${nr}</span>`);
+        labels.push(`<span class="cal-planname cal-wnr${klasse(st)}${rest.has(nr) ? ' rest' : ''}" style="left:${sp * masse.spalte}px;width:${masse.spalte - masse.luecke}px;top:${st.spur * (NAME_H + NAME_GAP)}px">W${nr}</span>`);
       }
       namenEl.innerHTML = labels.join('');
     }
@@ -7612,6 +7650,27 @@ function showCalDay(key, id) {
   }
   // v563: Im Gymplan-Detail nennt die Fusszeile nur den PLAN — Gymtag (Tipp → Vorschau),
   // Rest Week oder „Kein Gym geplant". Absolviertes zeigt dieser Kalender bewusst nicht.
+  // v565: Laufplan-Detail — Vorgabe des Laufs (Tipp → Blatt mit Notiz/Ueberspringen) oder
+  // „Kein Lauf geplant"; der Wettkampftag des Plans steht darueber.
+  if (id === 'lcal') {
+    const plan = DB.getRunPlans().find(p => p.id === editingRunPlanId);
+    const tag = new Date(y, m-1, d);
+    const wi = (tag.getDay() + 6) % 7;
+    let k = { zustand: 'leer', titel: 'Kein Lauf geplant', sub: '' };
+    if (plan && (plan.runDays || []).includes(wi)) {
+      const woche = Math.round((_laufWochenMontag(tag) - _laufWochenMontag(_calLokalTag(plan.startDate))) / WOCHE_MS) + 1;
+      const u = runEinheit(plan, woche, wi) || {};
+      const vorgabe = [u.km ? fmtKm(u.km) : '', u.minutes ? fmtMin(u.minutes) : ''].filter(Boolean).join(' · ');
+      const g = runGeplanteTage()[key];
+      k = { zustand: 'offen', titel: vorgabe || 'Ohne Vorgabe',
+            sub: ['geplant', u.skipped ? 'übersprungen' : '', u.note ? escapeHtml(u.note) : ''].filter(Boolean).join(' · '),
+            tipp: g && g.plan && g.plan.id === plan.id ? `openRunSkip('${key}')` : '' };
+    }
+    const rennen = plan && plan.raceDate && _dayKeyOf(_calLokalTag(plan.raceDate).getTime()) === key
+      ? `<div class="cal-detail-run wettkampf">🏁 Wettkampf · ${escapeHtml(plan.name || 'Laufplan')}</div>` : '';
+    _calFussSetzen(el, `<div class="cal-detail-datum"><strong>${dateStr}</strong></div>${rennen}<div class="cal-kacheln">${_calKachel('lauf', k)}</div>`);
+    return;
+  }
   if (id === 'dcal') {
     const plan = DB.getPlans().find(p => p.id === editingPlanId);
     const tag = new Date(y, m-1, d);
@@ -12510,6 +12569,7 @@ function initCalendarResize() {
         renderTrainingCalendar('pcal', 'plans-cal-card');
       }
       if (currentScreen === 'plan-detail' && document.getElementById('dcal-grid')) renderTrainingCalendar('dcal', 'pd-cal-card');
+      if (currentScreen === 'runplan-detail' && document.getElementById('lcal-grid')) renderTrainingCalendar('lcal', 'lp-cal-card');
     }, 180);
   });
 }

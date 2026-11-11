@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v564**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v565**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -401,3 +401,8 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   GEMESSEN Kartenkante → Monatsschrift 21.5 → 14.0px, „Rest" → Unterkante 19 → 14.0px, Monat →
   „W1" 9 → 6.0px, „Mo" weiter mittig zur ersten Zeile (0.4px), Karte mit Fußzeile unten 14.0px;
   keine Konsolenfehler.
+- **v565 (11.11.2026, Leonard-Wunsch):** Laufkalender im Laufplan-Detail analog zum Gymplan
+  (`lcal`, Karte `#lp-cal-card`, `.pd-kal-karte`), über „Geplante Wochenkilometer": nur der Plan
+  (Lauftage als Lauf-Umriss, Wettkampftag golden), Spalten „W1 … Wn", Kennzahl „N Läufe geplant",
+  Tipp → Fußzeile mit Vorgabe/Notiz/übersprungen, Kachel öffnet `openRunSkip`. GEMESSEN (375px):
+  24 Umrisse, 0 gelaufen trotz 9 Läufen, Polster 14/14px, Lauftag Sa dazu → 32; keine Konsolenfehler.
