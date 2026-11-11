@@ -6280,6 +6280,7 @@ function renderRunPlanDetail() {
           <textarea class="program-form-textarea" rows="2" placeholder="z. B. Ziel, Streckenprofil"
                     onchange="setRunPlan('${p.id}','notes',this.value)">${escapeHtml(p.notes || '')}</textarea></div>
         <div class="program-form-row"><label>Lauftage</label><div class="lp-tagwahl-reihe">${tageWahl}</div></div>
+        ${wochen && p.startDate && p.endDate ? `<div class="program-form-row" id="lp-restwochen">${_lpRestWochenHTML(p)}</div>` : ''}
       </div>
     </div>
 
@@ -6387,6 +6388,36 @@ function _lpWochenInfo(p, w) {
     .reduce((a, u) => a + (Number(u.km) || 0), 0);
   return _laufWochenSpanne(runEinheitDatum(p, w, 0)) + (km ? ` · ${fmtKm(km)}` : '');
 }
+// REST WEEKS IM LAUFPLAN (v568, Leonard-Wunsch): dieselbe Darstellung wie im Gymplan-Detail
+// (Chips „W1 … Wn" unter „Lauftage", „Wn" in der Tabfarbe und „Rest" im Laufkalender). ANDERS
+// als beim Gym ist eine Rest Week hier KEINE Woche ohne Lauf, sondern eine mit reduzierten
+// Kilometern: Die Laeufe bleiben geplant, die Markierung ist ein Hinweis fuer die Planung.
+// Gespeichert als `runPlan.restWeeks` (Planwochen, 1-basiert wie `runEinheitDatum`).
+function _lpRestWochenHTML(p) {
+  const rest = new Set(p.restWeeks || []);
+  const chips = [];
+  for (let nr = 1; nr <= runPlanWochen(p); nr++) {
+    const r = rest.has(nr);
+    const titel = `Woche ${nr} · ${_laufWochenSpanne(runEinheitDatum(p, nr, 0))}${r ? ' · Rest Week' : ''}`;
+    chips.push(`<button type="button" class="lp-tagwahl${r ? ' an' : ''}" aria-pressed="${r}"
+      title="${titel}" aria-label="${titel}" onclick="toggleRunRestWoche('${p.id}',${nr})">W${nr}</button>`);
+  }
+  return `<label>Rest Weeks</label><div class="rw-reihe">${chips.join('')}</div>`;
+}
+function toggleRunRestWoche(id, nr) {
+  _runPlanAendern(id, p => {
+    const r = new Set(p.restWeeks || []);
+    if (r.has(nr)) r.delete(nr); else r.add(nr);
+    if (r.size) p.restWeeks = [...r].sort((a, b) => a - b); else delete p.restWeeks;
+  });
+  const p = DB.getRunPlans().find(x => x.id === id);
+  const zeile = document.getElementById('lp-restwochen');
+  if (p && zeile) zeile.innerHTML = _lpRestWochenHTML(p);
+  // Kalender neu zeichnen („Wn" in der Tabfarbe, „Rest" unter dem Balken). Eine offene
+  // Fusszeile schliesst der Tipp auf den Chip ohnehin (Tipp neben den Kalender).
+  renderTrainingCalendar('lcal', 'lp-cal-card');
+}
+
 // Eine Lauf-Zeile (v469 „Variante B"): Wochentag-Scheibe, km und min direkt in der Zeile, Notiz
 // hinter dem Knopf rechts, darunter der Laengenbalken gegen den laengsten Lauf DIESES Plans
 // (`_lpMaxKm`; nur Zeit → kein Balken, der Platz bleibt). Seit v566 steht sie in der Fusszeile
@@ -6461,7 +6492,8 @@ function _lcalWocheZeigen(planId, mo) {
   const idx = Math.round((mo - erstMo) / WOCHE_MS);
   const wochen = runPlanWochen(plan);
   const wEl = document.getElementById('lcal-fuss-woche');
-  if (wEl) wEl.textContent = `Woche ${idx + 1}`;
+  const rest = (plan.restWeeks || []).includes(idx + 1);   // v568
+  if (wEl) { wEl.textContent = `Woche ${idx + 1}${rest ? ' · Rest' : ''}`; wEl.classList.toggle('rest', rest); }
   const info = document.getElementById('lcal-fuss-info');
   if (info) { info.dataset.woche = idx + 1; info.textContent = _lpWochenInfo(plan, idx + 1); }
   const zur = document.getElementById('lcal-pfeil-zurueck'), vor = document.getElementById('lcal-pfeil-vor');
@@ -7452,13 +7484,14 @@ function _calPlanLaufzeitenZeichnen(id, card, z, masse) {
 
   // REST WEEKS (v559, Leonard-Wunsch „Schriftzug Rest"): unter dem Gym-Balken steht in der
   // Spalte jeder Rest Week „Rest". Die Zeile kommt nur dazu, wenn eine im Bild ist.
+  // v568: ebenso unter dem Lauf-Balken fuer die Rest Weeks eines Laufplans.
   const restHTML = [];
-  if (modus.kraft) stuecke.filter(st => st.typ === 'gym').forEach(st => {
+  stuecke.filter(st => (st.typ === 'gym' && modus.kraft) || (st.typ === 'lauf' && modus.lauf)).forEach(st => {
     (st.p.restWeeks || []).forEach(nr => {
       const mo = _laufWochenMontag(_calLokalTag(st.p.startDate)); mo.setDate(mo.getDate() + (nr - 1) * 7);
       const sp = _calSpalte(mo.getTime(), z.start);
       if (sp < st.von || sp > st.bis) return;
-      restHTML.push(`<span class="cal-rest" style="left:${sp * masse.spalte}px;width:${masse.spalte - masse.luecke}px">Rest</span>`);
+      restHTML.push(`<span class="cal-rest${st.typ === 'lauf' ? ' lauf' : ''}" style="left:${sp * masse.spalte}px;width:${masse.spalte - masse.luecke}px">Rest</span>`);
     });
   });
   spurenEl.innerHTML = balken + restHTML.join('');

@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v567**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v568**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -126,7 +126,8 @@ grep -n "fittrack-v" sw.js
   im Kalender steht „Rest" unter dem Gym-Balken (`.cal-rest`). Einstellen im Gymplan-Detail über
   die Chip-Reihe „Rest Weeks" unter „Wochentage" (`_restWochenZeichnen`, `toggleRestWoche`,
   `.rw-reihe`, Chips `.lp-tagwahl` „W1 … Wn", sieben je Zeile). Wochenzählung und
-  Planende bleiben unverändert; Laufen ist nicht betroffen. Neue Stellen, die „geplant" für Gym
+  Planende bleiben unverändert. Laufpläne haben eigene Rest Weeks (v568, siehe Laufen) — dort
+  bedeuten sie etwas anderes. Neue Stellen, die „geplant" für Gym
   rechnen, MÜSSEN `_istRestWoche` beachten.
 - Gymtag hat Muskelgruppen (`day.muscles`, Reihenfolge `MUSCLE_ORDER`, nicht aus Übungen abgeleitet).
 - **Entwurf** in Gym-/Laufplan-Detail bestehender Pläne: Alles speichert sofort, der Stand beim
@@ -173,7 +174,13 @@ grep -n "fittrack-v" sw.js
   `_lpEinheitHTML` mit km/min/Notiz/Längenbalken), Pfeile `lcalWocheSchritt` oder Wischen
   (`_lcalWischEinrichten` → `_laufWochenWischEinrichten`), Woche im Kalender `.wk-hl`
   (`_lcalWocheZeigen`). Speichern ohne Neuaufbau (`setRunUnit` → `_lpEinheitenNachziehen`).
-  Der Abschnitt „Läufe" samt Auf-/Zuklappen ist entfallen. Reihenfolge Laufplan-Detail:
+  Der Abschnitt „Läufe" samt Auf-/Zuklappen ist entfallen.
+- **Rest Weeks im Laufplan** (v568): `runPlan.restWeeks`, Chips „W1 … Wn" unter „Lauftage"
+  (`_lpRestWochenHTML`, `toggleRunRestWoche`). Eine Rest Week ist beim Laufen eine Woche mit
+  REDUZIERTEN km, nicht ohne Lauf — die Markierung ändert an der Planung nichts (Läufe bleiben
+  geplant, zählen in Kennzahlen und Wochenkilometer). Sichtbar: „Wn" in der Tabfarbe, „Rest"
+  unter dem Lauf-Balken in allen Kalendern (`.cal-rest.lauf`), Kopf der Fußzeile
+  „Woche N · Rest" in der Tabfarbe. Reihenfolge Laufplan-Detail:
   Laufplandaten · Laufkalender · Geplante · Gelaufene Wochenkilometer · Aktionen. Geplante Tage nur innerhalb der Laufzeit (`runGeplanteTage`).
   Herzfrequenzzonen sind seit v470 überall entfallen.
 - Vorgezogene/nachgeholte Läufe: `runVerschiebungen(mo)` paart Läufe mit offenen Plantagen
@@ -429,3 +436,9 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Radius 4.16px, 3px-Ring, 12px/600; Farbe bleibt Tabfarbe). GEMESSEN (375px), beide Stellen
   gleich: Zeichen 23px vom Kartenrand, Zeichen → Feld bzw. Text 10px, Zeile endet 18px vor dem
   Rand; Zeichen mittig zu den Feldern (0.0px), auch in der getönten Zeile; keine Konsolenfehler.
+- **v568 (12.11.2026, Leonard-Wunsch):** Rest Weeks auch im Laufplan, Darstellung wie im
+  Gymplan-Detail; Bedeutung: Woche mit reduzierten km (reine Markierung, keine automatische
+  Kürzung). GEMESSEN (375px, 8 Wochen): Chips 8, W4 + W7 markiert → gespeichert, „W4"/„W7" in
+  der Tabfarbe, zweimal „Rest" unter dem Lauf-Balken, Plan-Tab-Kalender ebenso, Kennzahl
+  unverändert 24 Läufe, Fußzeile „Woche 4 · Rest" orange, Woche 5 normal; hervorgehobene
+  Rest-Woche „W4" weiß auf Orange (Glas: braun auf Weiß); keine Konsolenfehler.

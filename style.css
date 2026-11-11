@@ -3284,6 +3284,13 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .pd-kal-karte { --cal-months-gap: 2px; }
 .pd-kal-karte > .cal-body { margin-top: -7.5px; margin-bottom: -5px; }   /* v565: auch Laufplan-Detail */
 .cal-planname.cal-wnr.rest { color: var(--accent); }
+/* v568: „Rest" unter einem Lauf-Balken in Lauf-Gruen; Kopf der Laufkalender-Fusszeile. */
+.cal-rest.lauf { color: #4ADE80; }
+html.glas .screen:not(#screen-mehr) .cal-rest.lauf { color: #fff; }
+.lcal-fuss-titel b.rest { color: var(--accent); }
+/* Hervorgehobene Woche, die zugleich Rest Week ist: weiss auf der gefuellten Marke (sonst orange auf orange). */
+.cal-planname.cal-wnr.wk-hl.rest { color: #fff; }
+html.glas .screen:not(#screen-mehr) .cal-planname.cal-wnr.wk-hl.rest { color: #92400E; }
 html.glas .screen:not(#screen-mehr) .cal-planname.cal-wnr.rest { color: #FDE68A; }
 /* v559: „Rest" unter dem Gym-Balken in der Spalte einer Rest Week (Farbe = Gymplan, im
    Transparenz-Modus weiss ueber `--cal-plan-color`). */
