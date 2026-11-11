@@ -618,21 +618,6 @@ body.theme-plans .hist-action-dd {
    Laufplan-Detail). Der Abstand nach unten wandert vom Titel auf die Zeile. */
 .mehr-section-kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 2px 8px; }
 .mehr-section-kopf > .mehr-section-title { margin: 0; }
-/* „Alle aufklappen / Alle zuklappen" — steht auf dem farbigen Hintergrund der Detailseite, daher
-   weisse Schrift auf 18-%-Weiss wie die uebrigen Knoepfe auf farbigem Grund. Der Pfeil ist der
-   App-weite (`.aex-v2-chev`) und dreht sich, wenn ALLE Wochen offen sind. */
-.lp-alle-btn {
-  display: inline-flex; align-items: center; gap: 2px;
-  padding: 4px 4px 4px 10px; border: 0; border-radius: 999px;
-  background: rgba(255,255,255,.18); color: #fff;
-  font: inherit; font-size: var(--fs-neben); font-weight: 700;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-  user-select: none; -webkit-user-select: none;
-}
-.lp-alle-btn:active { opacity: .7; }
-.lp-alle-btn .aex-v2-chev { width: 18px; height: 18px; color: inherit; }
-.lp-alle-btn .aex-v2-chev svg { width: 14px; height: 14px; }
-.lp-alle-btn[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
 
 .plan-day-empty {
   padding: 20px 14px;
@@ -2714,24 +2699,6 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-ist.verpasst   { color: #FCA5A5; }
 html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,255,255,.7); }
 .lauf-leer { font-size: var(--fs-neben); color: var(--text3); text-align: center; padding: 10px 0; }
 /* Eingeklappte Plan-Karte: wie eine Listenzeile, aufgeklappt wird sie zum Formular. */
-/* Wochenbloecke: Der Kopf nutzt den transparenten Ausklapp-Knopf, der Inhalt bleibt IMMER
-   im DOM und wird nur ein-/ausgeblendet — ein Neuaufbau naehme den Kopffeldern darueber
-   die noch nicht gespeicherten Eingaben. */
-.lp-woche { margin-top: 8px; }
-/* Wochenkopf: NICHT `.weitere-btn` — der setzt weisse Schrift auf 12-%-Weiss voraus und
-   braucht einen farbigen Grund. Hier steht er auf einer weissen Karte, also dunkle Schrift
-   auf einer leichten Grauflaeche (dieselbe Regel wie im Projektwissen vermerkt). */
-.lp-woche-btn {
-  display: flex; align-items: center; justify-content: space-between; width: 100%;
-  padding: 9px 12px; margin-bottom: 6px; border: none; border-radius: 10px;
-  background: rgba(0,0,0,.06); color: var(--text);
-  font: inherit; font-size: var(--fs-text); font-weight: 700;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
-/* Kein eigenes Zeichen mehr — der Pfeil kommt als SVG aus dem JS, wie ueberall sonst. */
-.lp-woche-btn[aria-expanded="true"] .aex-v2-chev { transform: rotate(180deg); }
-.lp-woche-btn .aex-v2-chev { width: 18px; height: 18px; }
-.lp-woche-btn .aex-v2-chev svg { width: 16px; height: 16px; }
 /* EINHEITEN „VARIANTE B" (v469, 23.10.2026, Leonard-Wahl): je Lauftag eine Zeile wie in der
    Karte „Diese Woche" der Seite „Laufen" — links die Wochentag-Scheibe, rechts die Felder fuer km
    und min plus der Notiz-Knopf, darunter der Laengenbalken (gegen den laengsten Lauf des Plans,
@@ -2755,8 +2722,29 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
 /* Der Platz des Balkens ist auch ohne Balken da (Lauf nur mit Zeit) — sonst waeren die Zeilen
    verschieden hoch. */
 .lp-balken-platz { height: 10px; padding-top: 6px; box-sizing: border-box; }
-.lp-woche-btn > span:first-child { margin-right: auto; }
-.lp-woche-info { font-size: var(--fs-neben); font-weight: 400; color: var(--text3); margin-right: 8px; }
+.lp-woche-info { font-size: var(--fs-neben); font-weight: 400; color: var(--text3); }
+/* LAEUFE IM LAUFKALENDER PLANEN (v566, „Variante D mit Laengenbalken"): Kopf mit Pfeilen,
+   darunter eine wischbare Seite je Planwoche (`.lauf-wochen-scroll`, wie „Diese Woche" der Seite
+   „Laufen"). Der angetippte Tag ist getoent, die Woche im Kalender hervorgehoben (`.wk-hl`). */
+.lcal-fuss { margin-top: 10px; }
+.lcal-fuss-kopf { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.lcal-fuss-titel { flex: 1; min-width: 0; text-align: center; font-size: var(--fs-text); color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lcal-fuss-titel b { font-weight: 700; }
+.lcal-pfeil {
+  width: 32px; height: 32px; flex: none; padding: 0; border: none; border-radius: 50%;
+  background: var(--card2); color: var(--text2); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.lcal-pfeil svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.lcal-pfeil:active { opacity: .6; }
+.lcal-pfeil:disabled { opacity: .3; cursor: default; }
+.lcal-fuss .lp-einheit.gewaehlt { background: var(--accent-bg); border-radius: 10px; margin: 0 -6px; padding: 6px; }
+.cal-week.wk-hl { background: rgba(245,158,11,.22); border-radius: 8px; box-shadow: 0 0 0 3px rgba(245,158,11,.22); }
+.cal-planname.cal-wnr.wk-hl { background: var(--accent); color: #fff; border-radius: 5px; }
+/* Im Transparenz-Modus ist die Tabfarbe weiss — sonst stuende „W5" weiss auf weiss. */
+html.glas .screen:not(#screen-mehr) .cal-planname.cal-wnr.wk-hl { background: rgba(255,255,255,.92); color: #92400E; }
+html.glas .screen:not(#screen-mehr) .cal-week.wk-hl { background: rgba(255,255,255,.2); box-shadow: 0 0 0 3px rgba(255,255,255,.2); }
 .lp-feld, .lp-notiz { height: 38px; box-sizing: border-box; }
 .lp-feld {
   width: 52px; flex: none; text-align: center; padding: 0 2px; border-radius: 9px;
@@ -2837,13 +2825,6 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .lp-tagwahl.an { background: var(--accent); border-color: var(--accent); color: #fff; }
-/* Aufgeklappt traegt die KARTE kein eigenes Polster mehr — die Formularzeilen bringen es
-   selbst mit, genau wie in der Gymplan-Detailansicht (dort ist .mehr-card polsterlos).
-   Vorher lagen zwei Polster uebereinander: Die Eingabefelder waren 28px schmaler als die
-   Wochenbloecke, die bis an den Kartenrand liefen (Leonard-Meldung 04.09.2026). */
-/* Die Wochenbloecke stehen auf der Detailseite in einer eigenen Karte und tragen deren
-   Polster selbst — `.mehr-card` bringt keines mit. */
-.lp-wochen-karte { padding: 6px 14px 14px; }
 /* Datumszeile der Plan-Formulare. `.sp3` = Start | Ende | Wochen (Gymplan),
    `.sp4` = zusaetzlich Wettkampf (Laufplan). Beide Detailansichten sind seit dem
    04.09.2026 gleich aufgebaut (Leonard-Wunsch).

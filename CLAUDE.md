@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v565**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v566**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -168,7 +168,13 @@ grep -n "fittrack-v" sw.js
   ist auf Leonards Wunsch zurückgenommen — nicht ohne Frage wieder einbauen).
 - Laufplan `{ id, name, notes, startDate, endDate, runDays:[0..6], archived, raceDate,
   units:[{week, dayIdx, km, minutes, note, skipped}] }`; Datum einer Einheit wird gerechnet
-  (`runEinheitDatum`). Geplante Tage nur innerhalb der Laufzeit (`runGeplanteTage`).
+  (`runEinheitDatum`). Geplant werden die Läufe seit v566 in der Fußzeile des Laufkalenders im
+  Laufplan-Detail (`lcal`): Tipp auf einen Tag → Läufe seiner Woche (`_lcalFussHTML`, Zeilen
+  `_lpEinheitHTML` mit km/min/Notiz/Längenbalken), Pfeile `lcalWocheSchritt` oder Wischen
+  (`_lcalWischEinrichten` → `_laufWochenWischEinrichten`), Woche im Kalender `.wk-hl`
+  (`_lcalWocheZeigen`). Speichern ohne Neuaufbau (`setRunUnit` → `_lpEinheitenNachziehen`).
+  Der Abschnitt „Läufe" samt Auf-/Zuklappen ist entfallen. Reihenfolge Laufplan-Detail:
+  Laufplandaten · Laufkalender · Geplante · Gelaufene Wochenkilometer · Aktionen. Geplante Tage nur innerhalb der Laufzeit (`runGeplanteTage`).
   Herzfrequenzzonen sind seit v470 überall entfallen.
 - Vorgezogene/nachgeholte Läufe: `runVerschiebungen(mo)` paart Läufe mit offenen Plantagen
   (nur Plantage vor heute). Übersprungene Läufe (`unit.skipped`, `openRunSkip`) sehen aus wie
@@ -406,3 +412,15 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   (Lauftage als Lauf-Umriss, Wettkampftag golden), Spalten „W1 … Wn", Kennzahl „N Läufe geplant",
   Tipp → Fußzeile mit Vorgabe/Notiz/übersprungen, Kachel öffnet `openRunSkip`. GEMESSEN (375px):
   24 Umrisse, 0 gelaufen trotz 9 Läufen, Polster 14/14px, Lauftag Sa dazu → 32; keine Konsolenfehler.
+- **v566 (12.11.2026, Leonard-Wahl „Variante D mit Längenbalken"):** Läufe werden im Laufkalender
+  geplant (siehe Laufen): Fußzeile mit „‹ Woche N · Spanne · km ›", Zeilen wie früher „Läufe",
+  angetippter Tag getönt, Woche im Kalender hervorgehoben (Spalte getönt, „Wn" gefüllt), Wechsel
+  per Pfeil oder Wischen wie „Diese Woche" der Seite „Laufen". Abschnitt „Läufe" und
+  `toggleRunWoche`/`toggleAlleRunWochen`/`_lpWocheKlappen`/`_laufOffeneWochen` samt CSS entfernt.
+  Dabei behoben: `initCalendarResize` zeichnet nur noch bei BREITENänderung neu (vorher schloss
+  jede Größenänderung eine offene Fußzeile); `lcal` bleibt mit offener Fußzeile stehen.
+  GEMESSEN (375px, 8 Wochen Di/Do/So): 8 Seiten, Tipp W2 → Spalte/„W2" hervorgehoben, km ändern
+  speichert und zieht Balken und Wochensumme nach ohne Neuaufbau, Tipp ins Feld schließt nicht,
+  Pfeil → W3, Wischen schaltet an der 50-%-Schwelle, Tipp auf W7-Tag springt und tönt die Zeile,
+  Tipp daneben schließt ohne Reste; Glas-Modus „Wn" bernstein auf Weiß; keine Konsolenfehler.
+  NICHT gesehen: das Wischen mit dem Finger auf dem iPhone.

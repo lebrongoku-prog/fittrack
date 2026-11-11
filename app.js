@@ -3116,44 +3116,6 @@ function _archivKlappen(listeId, auf, zeichnen) {
   _boxFahren(inhalt, h, 0, () => { if (liste._archivNr === nr) zeichnen(); });
 }
 
-// ─── Die Wochen im Laufplan-Detail klappen ebenso (23.09.2026, Leonard-Wunsch) ───────
-// Gleiche 200ms, gleiche Kurve, gleiche Notbremse (`_klappBewegung`) wie Uebungskarten,
-// Muskelgruppen und Archive. Gefahren wird die Hoehe des Wochenkoerpers (`.lp-woche-body`).
-// KEIN Neuaufbau: Die Detailseite ist ein Formular — ein Re-Render naehme den Feldern darueber
-// ihre noch nicht gespeicherten Eingaben. Der Koerper steht deshalb dauerhaft im DOM und wird
-// am Ende wieder auf `display: none` gesetzt (nicht nur auf Hoehe 0) — sonst hielte er als
-// leerer Kasten im Fluss den 6px-Abstand des Knopfes fest.
-// FALLE ABSTAND, wie bei den Muskelgruppen: Waehrend der Bewegung steht der Koerper mit
-// `overflow: hidden` im Fluss und bildet damit einen eigenen Formatierungskontext — die 6px
-// `margin-bottom` des Knopfes verschmelzen dann NICHT mehr mit dem 8px-Abstand zur naechsten
-// Woche, und es spraenge zu Beginn des Aufklappens um genau diesen Betrag. Deshalb faehrt der
-// `margin-top` von −6px (hebt den Knopfabstand auf) bis 0 mit; der Wert wird am Knopf gelesen.
-// TOKEN (`_lpKlappNr`): Ein zweiter Tipp waehrend der Bewegung entwertet deren Abschluss und
-// beginnt an der AKTUELLEN Hoehe — sonst setzte der alte Abschluss `display` verkehrt herum.
-function _lpWocheKlappen(body, knopf, auf) {
-  if (!body) return;
-  const nr = body._lpKlappNr = (body._lpKlappNr || 0) + 1;
-  const fertig = () => {
-    if (body._lpKlappNr !== nr) return;
-    body.style.overflow = '';
-    body.style.marginTop = '';
-    body.style.display = auf ? '' : 'none';
-  };
-  if (_bewegungReduziert() || !body.animate) { fertig(); return; }
-  // Stand VOR dem Abbruch messen: Laeuft schon eine Bewegung, liefert das ihre aktuelle Hoehe.
-  const vonH = body.style.display === 'none' ? 0 : body.getBoundingClientRect().height;
-  body.getAnimations().forEach(a => a.cancel());
-  body.style.display = '';
-  body.style.marginTop = '';
-  const voll = body.getBoundingClientRect().height;
-  if (voll < 1) { fertig(); return; }
-  body.style.overflow = 'hidden';
-  const luecke = parseFloat(getComputedStyle(knopf).marginBottom) || 0;
-  const bild = (t) => ({ height: (voll * t) + 'px', marginTop: (-luecke * (1 - t)) + 'px' });
-  const von = Math.min(1, Math.max(0, vonH / voll));
-  _klappBewegung(body, [bild(von), bild(auf ? 1 : 0)], fertig);
-}
-
 function toggleAexCollapse(exId, ev) {
   if (ev) {
     // Klick auf die Erledigt-Box soll NICHT togglen. (Der frueher hier mitgeprüfte
@@ -4996,7 +4958,6 @@ function fmtMin(v) {
 // der eigene Tab „Laufen" ist entfallen):
 //   • Trainings-Tab, Seite „Laufen"  → Ueberblick ueber die gelaufenen Einheiten
 //   • Plaene-Tab, Seite „Laufplan"   → Laufplanverwaltung
-let _laufOffeneWochen = new Set();  // mehrere Wochen duerfen gleichzeitig offen sein
 
 // Ausgewaehlter Wochentag auf der Seite „Laufen". Vorbelegt mit HEUTE — dieselbe Bedienung
 // wie im Gymteil (`selectedWorkoutDayIdx`), nur fuer die Laufseite.
@@ -5384,7 +5345,7 @@ function _laufWochenAnzeige(sc, idx) {
 }
 // Nach einer Breitenaenderung Hoehen und Position nachziehen (Drehen, Querformat-Grid).
 function _laufWochenBreitePruefen() {
-  ['lauf-wochen-scroll', 'gym-wochen-scroll'].forEach(id => {
+  ['lauf-wochen-scroll', 'gym-wochen-scroll', 'lcal-wochen-scroll'].forEach(id => {
     const sc = document.getElementById(id);
     if (!sc || !sc._neuMessen) return;
     const w = sc.clientWidth;
@@ -6299,42 +6260,6 @@ function renderRunPlanDetail() {
   const tageWahl = WOCHENTAGE_KURZ.map((n, i) =>
     `<button type="button" class="lp-tagwahl${(p.runDays || []).includes(i) ? ' an' : ''}" onclick="toggleRunDay('${p.id}',${i})">${n}</button>`).join('');
 
-  // EINHEITEN „VARIANTE B" (v469, 23.10.2026, Leonard-Wahl aus drei gezeichneten Vorschlaegen —
-  // A Blatt zum Bearbeiten, C aufklappende Zeile): Jede Woche ist gebaut wie die Karte „Diese
-  // Woche" der Seite „Laufen" — Wochentag-Scheibe, darunter ein Laengenbalken —, die Felder fuer
-  // km und min stehen aber DIREKT in der Zeile. Ziel ist, was ausgefuellt ist: km, Zeit oder
-  // beides. Die Zone ist entfallen (Leonard-Wunsch), die Notiz liegt hinter dem Knopf rechts.
-  // Der Balken misst gegen den laengsten Lauf DIESES Plans (`_lpMaxKm`); ein Lauf nur mit Zeit
-  // bekommt keinen (Leonard-Entscheidung). Im Wochenkopf stehen Zeitraum und Wochenkilometer.
-  // Balken und Kopf zieht `_lpEinheitenNachziehen` beim Tippen nach — OHNE Neuaufbau.
-  const maxKm = _lpMaxKm(p);
-  const wochenBlocks = [];
-  for (let w = 1; w <= wochen; w++) {
-    const auf = _laufOffeneWochen.has(p.id + ':' + w);
-    const tage = (p.runDays || []).map(di => {
-      const u = runEinheit(p, w, di) || {};
-      return `<div class="lp-einheit" data-woche="${w}" data-tag="${di}">
-        <span class="lp-scheibe">${WOCHENTAGE_KURZ[di]}</span>
-        <div class="lp-einheit-rechts">
-          <div class="lp-einheit-oben">
-            <input class="lp-feld" type="text" inputmode="decimal" value="${u.km ?? ''}" placeholder="–" aria-label="Kilometer"
-                   onchange="setRunUnit('${p.id}',${w},${di},'km',this.value)"><span class="lp-eh">km</span>
-            <input class="lp-feld" type="text" inputmode="numeric" value="${u.minutes ?? ''}" placeholder="–" aria-label="Minuten"
-                   onchange="setRunUnit('${p.id}',${w},${di},'minutes',this.value)"><span class="lp-eh">min</span>
-            <button type="button" class="lp-notiz${u.note ? ' hat' : ''}" aria-label="Notiz" title="${escapeHtml(u.note || 'Notiz')}"
-                    data-woche="${w}" data-tag="${di}"
-                    onclick="openRunNote('${p.id}',${w},${di})">${NOTIZ_ICON}</button>
-          </div>
-          <div class="lp-balken-platz">${_lpBalken(u.km, maxKm)}</div>
-        </div>
-      </div>`;
-    }).join('');
-    wochenBlocks.push(`<div class="lp-woche">
-      <button type="button" class="lp-woche-btn" aria-expanded="${auf}" onclick="toggleRunWoche('${p.id}',${w})"><span>Woche ${w}</span><span class="lp-woche-info" data-woche="${w}">${_lpWochenInfo(p, w)}</span><span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>
-      <div class="lp-woche-body"${auf ? '' : ' style="display:none"'}>${tage || '<p class="lauf-leer">Keine Lauftage gewählt.</p>'}</div>
-    </div>`);
-  }
-
   document.getElementById('runplan-detail-body').innerHTML = `
     <div class="mehr-section">
       <div class="mehr-section-title">Laufplandaten</div>
@@ -6382,17 +6307,6 @@ function renderRunPlanDetail() {
     </div>` : ''}
 
     <div class="mehr-section">
-      <div class="mehr-section-kopf">
-        <div class="mehr-section-title">Läufe</div>
-        ${wochen ? `<button type="button" id="lp-alle-btn" class="lp-alle-btn"
-                aria-expanded="${_alleRunWochenOffen(p.id)}" onclick="toggleAlleRunWochen('${p.id}')">
-          <span class="lp-alle-txt">${_alleRunWochenOffen(p.id) ? 'Alle zuklappen' : 'Alle aufklappen'}</span>
-          <span class="aex-v2-chev">${AEX_CHEV_SVG}</span></button>` : ''}
-      </div>
-      <div class="mehr-card plan-form-card lp-wochen-karte">${wochenBlocks.join('')}</div>
-    </div>
-
-    <div class="mehr-section">
       <div class="mehr-section-title">Aktionen</div>
       <div class="mehr-card">
         <div class="mehr-row" onclick="setRunPlan('${p.id}','archived',${p.archived ? 'false' : 'true'})" style="cursor:pointer">
@@ -6416,53 +6330,6 @@ function renderRunPlanDetail() {
     </div>`;
   renderTrainingCalendar('lcal', 'lp-cal-card');   // v565: Laufkalender des Plans
   _zeichneLpKmDiagramm();
-}
-
-// Auf- und Zuklappen einer Woche laeuft OHNE Neuaufbau: Ein Re-Render naehme den Kopffeldern
-// (Name, Datum) die noch nicht gespeicherten Eingaben und den Fokus.
-function toggleRunWoche(id, w) {
-  const k = id + ':' + w;
-  _laufOffeneWochen.has(k) ? _laufOffeneWochen.delete(k) : _laufOffeneWochen.add(k);
-  const btn = document.querySelector(`.lp-woche-btn[onclick*="'${id}',${w})"]`);
-  if (!btn) return _laufNeuZeichnen();
-  const auf = _laufOffeneWochen.has(k);
-  btn.setAttribute('aria-expanded', auf ? 'true' : 'false');
-  _lpWocheKlappen(btn.nextElementSibling, btn, auf);
-  _syncAlleRunWochenBtn(id);
-}
-
-// „Alle aufklappen / Alle zuklappen" ueber dem Abschnitt „Einheiten" (13.09.2026,
-// Leonard-Wunsch). Sind ALLE Wochen offen, klappt der Knopf alle zu, sonst alle auf — dieselbe
-// Regel wie „Alle ein-/ausklappen" im Uebungskatalog.
-// WIE `toggleRunWoche` OHNE Neuaufbau: Die Detailseite ist ein Formular, ein Neuaufbau naehme
-// einem gerade bearbeiteten Feld seine noch nicht gespeicherte Eingabe.
-function _alleRunWochenOffen(id) {
-  const p = DB.getRunPlans().find(x => x.id === id);
-  const n = p ? runPlanWochen(p) : 0;
-  for (let w = 1; w <= n; w++) if (!_laufOffeneWochen.has(id + ':' + w)) return false;
-  return n > 0;
-}
-function toggleAlleRunWochen(id) {
-  const p = DB.getRunPlans().find(x => x.id === id);
-  if (!p) return;
-  const auf = !_alleRunWochenOffen(id);
-  for (let w = 1; w <= runPlanWochen(p); w++) {
-    const k = id + ':' + w;
-    auf ? _laufOffeneWochen.add(k) : _laufOffeneWochen.delete(k);
-  }
-  document.querySelectorAll('#runplan-detail-body .lp-woche-btn').forEach(btn => {
-    btn.setAttribute('aria-expanded', auf ? 'true' : 'false');
-    _lpWocheKlappen(btn.nextElementSibling, btn, auf);
-  });
-  _syncAlleRunWochenBtn(id);
-}
-function _syncAlleRunWochenBtn(id) {
-  const btn = document.getElementById('lp-alle-btn');
-  if (!btn) return;
-  const auf = _alleRunWochenOffen(id);
-  btn.setAttribute('aria-expanded', auf ? 'true' : 'false');
-  const txt = btn.querySelector('.lp-alle-txt');
-  if (txt) txt.textContent = auf ? 'Alle zuklappen' : 'Alle aufklappen';
 }
 
 // Nach einer Aenderung muss der SICHTBARE Bildschirm neu gezeichnet werden — seit dem
@@ -6520,6 +6387,105 @@ function _lpWochenInfo(p, w) {
     .reduce((a, u) => a + (Number(u.km) || 0), 0);
   return _laufWochenSpanne(runEinheitDatum(p, w, 0)) + (km ? ` · ${fmtKm(km)}` : '');
 }
+// Eine Lauf-Zeile (v469 „Variante B"): Wochentag-Scheibe, km und min direkt in der Zeile, Notiz
+// hinter dem Knopf rechts, darunter der Laengenbalken gegen den laengsten Lauf DIESES Plans
+// (`_lpMaxKm`; nur Zeit → kein Balken, der Platz bleibt). Seit v566 steht sie in der Fusszeile
+// des Laufkalenders; `gewaehlt` toent den im Kalender angetippten Tag.
+function _lpEinheitHTML(p, w, di, maxKm, gewaehlt) {
+  const u = runEinheit(p, w, di) || {};
+  return `<div class="lp-einheit${gewaehlt ? ' gewaehlt' : ''}" data-woche="${w}" data-tag="${di}">
+    <span class="lp-scheibe">${WOCHENTAGE_KURZ[di]}</span>
+    <div class="lp-einheit-rechts">
+      <div class="lp-einheit-oben">
+        <input class="lp-feld" type="text" inputmode="decimal" value="${u.km ?? ''}" placeholder="–" aria-label="Kilometer"
+               onchange="setRunUnit('${p.id}',${w},${di},'km',this.value)"><span class="lp-eh">km</span>
+        <input class="lp-feld" type="text" inputmode="numeric" value="${u.minutes ?? ''}" placeholder="–" aria-label="Minuten"
+               onchange="setRunUnit('${p.id}',${w},${di},'minutes',this.value)"><span class="lp-eh">min</span>
+        <button type="button" class="lp-notiz${u.note ? ' hat' : ''}" aria-label="Notiz" title="${escapeHtml(u.note || 'Notiz')}"
+                data-woche="${w}" data-tag="${di}"
+                onclick="openRunNote('${p.id}',${w},${di})">${NOTIZ_ICON}</button>
+      </div>
+      <div class="lp-balken-platz">${_lpBalken(u.km, maxKm)}</div>
+    </div>
+  </div>`;
+}
+
+// LAEUFE IM LAUFKALENDER PLANEN (v566, Leonard-Wahl „Variante D mit Laengenbalken"): Der
+// Abschnitt „Läufe" ist entfallen. Ein Tipp auf einen Tag im Laufkalender des Laufplan-Details
+// oeffnet die Fusszeile mit den Laeufen SEINER Woche; die Woche ist im Kalender hervorgehoben
+// (`.wk-hl` an Spalte und „Wn"). Pfeile im Kopf ODER Wischen springen von Woche zu Woche —
+// gebaut wie die Karte „Diese Woche" der Seite „Laufen" (`_laufWochenWischEinrichten`, eine
+// Seite je Planwoche, Scroll-Snap). Gespeichert wird wie vorher sofort und OHNE Neuaufbau
+// (`setRunUnit`), damit Felder und Wischposition stehen bleiben.
+const LCAL_PFEIL_L = '<svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>';
+const LCAL_PFEIL_R = '<svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>';
+function _lcalFussHTML(plan, woche, dayIdx) {
+  const wochen = runPlanWochen(plan);
+  const maxKm = _lpMaxKm(plan);
+  const seiten = [];
+  for (let w = 1; w <= wochen; w++) {
+    const zeilen = (plan.runDays || []).map(di => _lpEinheitHTML(plan, w, di, maxKm, w === woche && di === dayIdx)).join('');
+    seiten.push(`<div class="lauf-wochen-seite">${zeilen || '<p class="lauf-leer">Keine Lauftage gewählt.</p>'}</div>`);
+  }
+  return `<div class="lcal-fuss">
+    <div class="lcal-fuss-kopf">
+      <button type="button" class="lcal-pfeil" id="lcal-pfeil-zurueck" onclick="lcalWocheSchritt(-1)" aria-label="Vorige Woche">${LCAL_PFEIL_L}</button>
+      <span class="lcal-fuss-titel"><b id="lcal-fuss-woche">Woche ${woche}</b> · <span class="lp-woche-info" id="lcal-fuss-info" data-woche="${woche}">${_lpWochenInfo(plan, woche)}</span></span>
+      <button type="button" class="lcal-pfeil" id="lcal-pfeil-vor" onclick="lcalWocheSchritt(1)" aria-label="Nächste Woche">${LCAL_PFEIL_R}</button>
+    </div>
+    <div class="lauf-wochen-scroll" id="lcal-wochen-scroll">
+      <span class="cal-sticky-anchor" aria-hidden="true"></span>
+      ${seiten.join('')}
+    </div>
+  </div>`;
+}
+// Richtet das Wischen ein (nach dem Einsetzen der Fusszeile).
+function _lcalWischEinrichten(plan, woche) {
+  const sc = document.getElementById('lcal-wochen-scroll');
+  if (!sc) return;
+  const erstMo = _laufWochenMontag(_calLokalTag(plan.startDate));
+  const montage = [];
+  for (let i = 0; i < runPlanWochen(plan); i++) { const m = new Date(erstMo); m.setDate(m.getDate() + i * 7); montage.push(m); }
+  sc._planId = plan.id;
+  _laufWochenWischEinrichten(sc, montage, woche - 1, woche - 1, {
+    ids: { titel: 'lcal-x', datum: 'lcal-x', zurueck: 'lcal-x' },   // Kopf setzt `_lcalWocheZeigen`
+    hervor: (mo) => _lcalWocheZeigen(plan.id, mo),
+    nrSetzen: () => {},
+  });
+}
+// Die gezeigte Woche: Kopf der Fusszeile, Pfeile und Hervorhebung im Kalender.
+function _lcalWocheZeigen(planId, mo) {
+  const plan = DB.getRunPlans().find(p => p.id === planId);
+  if (!plan) return;
+  const erstMo = _laufWochenMontag(_calLokalTag(plan.startDate));
+  const idx = Math.round((mo - erstMo) / WOCHE_MS);
+  const wochen = runPlanWochen(plan);
+  const wEl = document.getElementById('lcal-fuss-woche');
+  if (wEl) wEl.textContent = `Woche ${idx + 1}`;
+  const info = document.getElementById('lcal-fuss-info');
+  if (info) { info.dataset.woche = idx + 1; info.textContent = _lpWochenInfo(plan, idx + 1); }
+  const zur = document.getElementById('lcal-pfeil-zurueck'), vor = document.getElementById('lcal-pfeil-vor');
+  if (zur) zur.disabled = idx <= 0;
+  if (vor) vor.disabled = idx >= wochen - 1;
+  // Kalender: Das Raster beginnt am Montag der Startwoche — Spalte = Wochenindex.
+  const spalten = document.querySelectorAll('#lcal-grid .cal-week');
+  spalten.forEach((c, i) => c.classList.toggle('wk-hl', i === idx));
+  document.querySelectorAll('#lcal-plannames .cal-wnr').forEach(c => c.classList.toggle('wk-hl', +c.dataset.sp === idx));
+  // Die Spalte bleibt im Bild: nur so weit schieben, dass sie gerade hineinpasst.
+  const scroller = document.getElementById('lcal-scroll'), col = spalten[idx];
+  if (scroller && col && scroller.clientWidth) {
+    const r = col.getBoundingClientRect(), b = scroller.getBoundingClientRect();
+    if (r.left < b.left) scroller.scrollLeft -= b.left - r.left + 4;
+    else if (r.right > b.right) scroller.scrollLeft += r.right - b.right + 4;
+  }
+}
+function lcalWocheSchritt(d) {
+  const sc = document.getElementById('lcal-wochen-scroll');
+  if (!sc || !sc._montage) return;
+  const i = Math.max(0, Math.min(sc._montage.length - 1, (sc._idx || 0) + d));
+  if (i !== sc._idx) _wocheAnfahren('lcal-wochen-scroll', sc._montage[i]);
+}
+
 function _lpEinheitenNachziehen(p) {
   const maxKm = _lpMaxKm(p);
   document.querySelectorAll('#runplan-detail-body .lp-einheit').forEach(z => {
@@ -7475,7 +7441,7 @@ function _calPlanLaufzeitenZeichnen(id, card, z, masse) {
       for (let sp = st.von; sp <= st.bis; sp++) {
         const mo = new Date(z.start); mo.setDate(mo.getDate() + sp * 7);
         const nr = Math.round((mo - erstMo) / WOCHE_MS) + 1;
-        labels.push(`<span class="cal-planname cal-wnr${klasse(st)}${rest.has(nr) ? ' rest' : ''}" style="left:${sp * masse.spalte}px;width:${masse.spalte - masse.luecke}px;top:${st.spur * (NAME_H + NAME_GAP)}px">W${nr}</span>`);
+        labels.push(`<span class="cal-planname cal-wnr${klasse(st)}${rest.has(nr) ? ' rest' : ''}" data-sp="${sp}" style="left:${sp * masse.spalte}px;width:${masse.spalte - masse.luecke}px;top:${st.spur * (NAME_H + NAME_GAP)}px">W${nr}</span>`);
       }
       namenEl.innerHTML = labels.join('');
     }
@@ -7615,6 +7581,9 @@ function _calFussSetzen(el, html) {
     if (leeren) el.innerHTML = '';
   };
   if (!html) {
+    // v566: die hervorgehobene Woche des Laufkalenders gehoert zur Fusszeile
+    const karte = el.closest('.chart-card-v2');
+    if (karte) karte.querySelectorAll('.wk-hl').forEach(x => x.classList.remove('wk-hl'));
     if (von < 1) { el.innerHTML = ''; return; }
     el.style.overflow = 'hidden';
     _boxFahren(el, von, 0, aufraeumen(true));
@@ -7650,25 +7619,24 @@ function showCalDay(key, id) {
   }
   // v563: Im Gymplan-Detail nennt die Fusszeile nur den PLAN — Gymtag (Tipp → Vorschau),
   // Rest Week oder „Kein Gym geplant". Absolviertes zeigt dieser Kalender bewusst nicht.
-  // v565: Laufplan-Detail — Vorgabe des Laufs (Tipp → Blatt mit Notiz/Ueberspringen) oder
-  // „Kein Lauf geplant"; der Wettkampftag des Plans steht darueber.
+  // v566: Laufplan-Detail — die Fusszeile plant die Laeufe der WOCHE des angetippten Tags
+  // (`_lcalFussHTML`). Ist sie schon offen, bleibt sie stehen: nur Markierung und Woche wechseln.
   if (id === 'lcal') {
     const plan = DB.getRunPlans().find(p => p.id === editingRunPlanId);
+    if (!plan || !plan.startDate) return;
     const tag = new Date(y, m-1, d);
     const wi = (tag.getDay() + 6) % 7;
-    let k = { zustand: 'leer', titel: 'Kein Lauf geplant', sub: '' };
-    if (plan && (plan.runDays || []).includes(wi)) {
-      const woche = Math.round((_laufWochenMontag(tag) - _laufWochenMontag(_calLokalTag(plan.startDate))) / WOCHE_MS) + 1;
-      const u = runEinheit(plan, woche, wi) || {};
-      const vorgabe = [u.km ? fmtKm(u.km) : '', u.minutes ? fmtMin(u.minutes) : ''].filter(Boolean).join(' · ');
-      const g = runGeplanteTage()[key];
-      k = { zustand: 'offen', titel: vorgabe || 'Ohne Vorgabe',
-            sub: ['geplant', u.skipped ? 'übersprungen' : '', u.note ? escapeHtml(u.note) : ''].filter(Boolean).join(' · '),
-            tipp: g && g.plan && g.plan.id === plan.id ? `openRunSkip('${key}')` : '' };
+    const woche = Math.round((_laufWochenMontag(tag) - _laufWochenMontag(_calLokalTag(plan.startDate))) / WOCHE_MS) + 1;
+    const sc = document.getElementById('lcal-wochen-scroll');
+    if (sc && sc._planId === plan.id && sc._montage && el.innerHTML) {
+      el.querySelectorAll('.lp-einheit.gewaehlt').forEach(z => z.classList.remove('gewaehlt'));
+      const zeile = el.querySelector(`.lp-einheit[data-woche="${woche}"][data-tag="${wi}"]`);
+      if (zeile) zeile.classList.add('gewaehlt');
+      if (woche - 1 !== sc._idx) _wocheAnfahren('lcal-wochen-scroll', sc._montage[woche - 1]);
+      return;
     }
-    const rennen = plan && plan.raceDate && _dayKeyOf(_calLokalTag(plan.raceDate).getTime()) === key
-      ? `<div class="cal-detail-run wettkampf">🏁 Wettkampf · ${escapeHtml(plan.name || 'Laufplan')}</div>` : '';
-    _calFussSetzen(el, `<div class="cal-detail-datum"><strong>${dateStr}</strong></div>${rennen}<div class="cal-kacheln">${_calKachel('lauf', k)}</div>`);
+    _calFussSetzen(el, _lcalFussHTML(plan, woche, wi));
+    _lcalWischEinrichten(plan, woche);
     return;
   }
   if (id === 'dcal') {
@@ -12559,7 +12527,12 @@ function initLaufWochenResize() {
 }
 
 function initCalendarResize() {
+  // v566: Nur eine BREITENaenderung zeichnet neu — die Hoehe (z. B. Tastatur, Adressleiste)
+  // aendert am Raster nichts, und jedes Neuzeichnen schloss eine offene Fusszeile.
+  let breite = window.innerWidth;
   window.addEventListener('resize', () => {
+    if (window.innerWidth === breite) return;
+    breite = window.innerWidth;
     if (_calResizeTimer) clearTimeout(_calResizeTimer);
     _calResizeTimer = setTimeout(() => {
       _calResizeTimer = null;
@@ -12569,7 +12542,10 @@ function initCalendarResize() {
         renderTrainingCalendar('pcal', 'plans-cal-card');
       }
       if (currentScreen === 'plan-detail' && document.getElementById('dcal-grid')) renderTrainingCalendar('dcal', 'pd-cal-card');
-      if (currentScreen === 'runplan-detail' && document.getElementById('lcal-grid')) renderTrainingCalendar('lcal', 'lp-cal-card');
+      // Mit offener Planungs-Fusszeile bleibt der Laufkalender stehen (feste Kaestchengroesse;
+      // die Wochenseiten messen sich ueber `_laufWochenBreitePruefen` selbst neu).
+      const lcalFuss = document.getElementById('lcal-detail');
+      if (currentScreen === 'runplan-detail' && document.getElementById('lcal-grid') && !(lcalFuss && lcalFuss.innerHTML)) renderTrainingCalendar('lcal', 'lp-cal-card');
     }, 180);
   });
 }
@@ -12611,6 +12587,7 @@ function initCalendarDeselect() {
   document.addEventListener('click', (e) => {
     if (e.target.closest && e.target.closest('.cal-scroll')) return;   // im Raster: Auswahl behalten
     if (_tippImFenster(e)) return;   // v539: Tipp im Fenster laesst die Fusszeile offen
+    if (e.target.closest && e.target.closest('.lcal-fuss')) return;   // v566: Planen in der Fusszeile
     // KEIN Vorab-Abbruch, wenn gerade keine Zelle markiert ist: Beim Neuzeichnen des
     // Rasters verliert die Zelle ihr .sel, die Beschreibung darunter bleibt aber stehen.
     // Ein Abbruch liess den Text dann fuer immer stehen.
