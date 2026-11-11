@@ -6748,33 +6748,9 @@ function toggleOvKalender() {
   _kalKarteKlappen('ov-cal-card', 'cal-filter-btn', _ovKalOffen, () => renderTrainingCalendar('cal', 'ov-cal-card'));
 }
 // GYMKALENDER IN DER GYMPLAN-DETAILANSICHT (v561, Leonard-Wunsch): zeigt den Zeitraum des
-// BEARBEITETEN Plans, damit man sieht, in welche Wochen eine Rest Week faellt. Titel klappt auf
-// und zu, Start eingeklappt, nicht gespeichert. Kalender-Id `dcal`, Karte `#pd-cal-card`.
-// SEIT v563 steht der Titel (und die Kennzahl) AUSSERHALB der Karte wie bei den uebrigen
-// Abschnitten der Detailansicht (`.mehr-section-kopf`); eingeklappt ist die Karte ganz weg.
-let _pdKalOffen = false;
-function toggleDetailKalender() {
-  _pdKalOffen = !_pdKalOffen;
-  const karte = document.getElementById('pd-cal-card');
-  const btn = document.getElementById('dcal-titel');
-  if (btn) btn.setAttribute('aria-expanded', String(_pdKalOffen));
-  if (!karte) return;
-  const nr = (karte._klappNr || 0) + 1;
-  karte._klappNr = nr;
-  const von = karte.style.display === 'none' ? 0 : karte.getBoundingClientRect().height;
-  karte.getAnimations().forEach(a => a.cancel());
-  karte.style.display = '';
-  if (_pdKalOffen) renderTrainingCalendar('dcal', 'pd-cal-card');
-  const bis = _pdKalOffen ? karte.getBoundingClientRect().height : 0;
-  const fertig = () => {
-    if (karte._klappNr !== nr) return;
-    karte.style.overflow = '';
-    if (!_pdKalOffen) karte.style.display = 'none';
-  };
-  if (_bewegungReduziert() || !karte.animate || !karte.clientWidth) { fertig(); return; }
-  karte.style.overflow = 'hidden';
-  _boxFahren(karte, von, bis, fertig);
-}
+// BEARBEITETEN Plans, damit man sieht, in welche Wochen eine Rest Week faellt. Kalender-Id
+// `dcal`, Karte `#pd-cal-card`. Seit v564 NICHT mehr einklappbar (Leonard-Wunsch), Titel und
+// Kennzahl im Abschnittskopf ueber der Karte (v563).
 // Gemeinsames Auf-/Zuklappen einer Kalenderkarte (Uebersicht und Gymplan-Detail).
 function _kalKarteKlappen(kartenId, knopfId, offen, zeichnen) {
   const karte = document.getElementById(kartenId);
@@ -6900,9 +6876,6 @@ function calendarInnerHTML(id) {
   const titel = id === 'cal'
     ? `<button class="chart-card-v2-title cal-filter-btn" id="cal-filter-btn" onclick="toggleOvKalender()"
                aria-expanded="${_ovKalOffen}">Trainingskalender</button>`
-    : id === 'dcal'
-    ? `<button class="chart-card-v2-title cal-filter-btn" id="dcal-titel" onclick="toggleDetailKalender()"
-               aria-expanded="${_pdKalOffen}">Gymkalender</button>`
     : `<span class="chart-card-v2-title" id="${id}-titel">Trainingskalender</span>`;
   // Der Zeitraum steht direkt hinter dem Titel und ist seit dem 14.09.2026 ein WECHSLER wie der
   // Titel selbst (Leonard-Wunsch; vorher ein Auswahlfeld mit unsichtbarem <select>): Jeder Tipp
@@ -8711,12 +8684,8 @@ function toggleRestWoche(nr) {
 }
 // Zeichnet den Gymkalender des Plan-Details. Auch eingeklappt — dann stehen Titel und Kennzahl.
 function _pdKalenderZeichnen() {
-  const karte = document.getElementById('pd-cal-card');
-  if (!karte) return;
-  karte.style.display = _pdKalOffen ? '' : 'none';
-  const btn = document.getElementById('dcal-titel');
-  if (btn) btn.setAttribute('aria-expanded', String(_pdKalOffen));
-  renderTrainingCalendar('dcal', 'pd-cal-card');   // auch eingeklappt: fuellt die Kennzahl
+  if (!document.getElementById('pd-cal-card')) return;
+  renderTrainingCalendar('dcal', 'pd-cal-card');
 }
 
 function _renderAfterPlanEdit() {

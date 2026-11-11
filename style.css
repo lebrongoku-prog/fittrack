@@ -3281,12 +3281,17 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 /* v561: Wochennummern im Gymkalender der Gymplan-Detailansicht, mittig ueber der Spalte;
    eine Rest Week in der Tabfarbe wie ihr Chip. */
 .cal-planname.cal-wnr { text-align: center; overflow: visible; text-overflow: clip; }
-/* v563: Gymkalender im Gymplan-Detail als Abschnitt wie die uebrigen — Titel (Knopf) und
+/* v563: Gymkalender im Gymplan-Detail als Abschnitt wie die uebrigen — Titel und
    Kennzahl im `.mehr-section-kopf`, die Karte in Breite und Eckenradius wie `.mehr-card`. */
-.pd-kal-titel { background: none; border: none; padding: 0; font-family: inherit; cursor: pointer;
-  -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
-.pd-kal-titel:active { opacity: .6; }
 .chart-card-v2.pd-kal-karte { margin: 0; border-radius: var(--radius); }
+/* v564 (Leonard-Wunsch „moeglichst keine Leerraeume, Standardpolster einhalten"): Ohne Kopf in
+   der Karte lagen ueber den Monatsnamen 21.5px statt der 14px Kartenpolster (5px Polster des
+   Scrollers + Zeilenhoehe der Monatszeile) und unter „Rest" 19px. Die Raster-Huelle rueckt
+   deshalb oben um 7.5px und unten um 5px heraus — sichtbar bleiben genau 14px. Monate → „W1"
+   wie Monate → Raster in den anderen Kalendern 6px (`--cal-months-gap` 5 → 2px; die
+   Wochentagsspalte rechnet die Variable mit, „Mo" bleibt buendig). */
+#pd-cal-card { --cal-months-gap: 2px; }
+#pd-cal-card > .cal-body { margin-top: -7.5px; margin-bottom: -5px; }
 .cal-planname.cal-wnr.rest { color: var(--accent); }
 html.glas .screen:not(#screen-mehr) .cal-planname.cal-wnr.rest { color: #FDE68A; }
 /* v559: „Rest" unter dem Gym-Balken in der Spalte einer Rest Week (Farbe = Gymplan, im

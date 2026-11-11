@@ -187,14 +187,14 @@
       </div>
     </div>
 
-    <!-- Gymkalender des Plans (v561), einklappbar ueber den Titel, gefuellt von
-         _pdKalenderZeichnen(). Seit v563 Titel und Kennzahl im Abschnittskopf wie die uebrigen. -->
+    <!-- Gymkalender des Plans (v561), gefuellt von _pdKalenderZeichnen(). Seit v563 Titel und
+         Kennzahl im Abschnittskopf wie die uebrigen, seit v564 nicht mehr einklappbar. -->
     <div class="mehr-section" id="pd-cal-section">
       <div class="mehr-section-kopf">
-        <button type="button" class="mehr-section-title pd-kal-titel" id="dcal-titel" onclick="toggleDetailKalender()" aria-expanded="false">Gymkalender</button>
+        <div class="mehr-section-title" id="dcal-titel">Gymkalender</div>
         <span class="mehr-section-title lp-km-schnitt" id="dcal-stats"></span>
       </div>
-      <div class="chart-card-v2 pd-kal-karte" id="pd-cal-card" style="display:none"></div>
+      <div class="chart-card-v2 pd-kal-karte" id="pd-cal-card"></div>
     </div>
 
     <div class="mehr-section">
