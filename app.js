@@ -7233,7 +7233,26 @@ function _calRasterHTML(id, z) {
     return true;
   };
 
+  // NUR DER PLAN im Gymplan-Detail (`dcal`, v562, Leonard-Wunsch): Jeder gewaehlte Wochentag
+  // (`plan.wochentage`) im Zeitraum des Plans ist „geplant" (Umriss) — ausser in Rest Weeks.
+  // Absolviertes, Verschobenes, Verpasstes und rote Wochen zeigt dieser Kalender bewusst NICHT;
+  // er dient nur dem Planen. Kein Tipp auf die Tage (keine Fusszeile).
+  const nurPlan = id === 'dcal' ? DB.getPlans().find(p => p.id === editingPlanId) : null;
+  const nurPlanTage = nurPlan ? _gymWochentage(nurPlan) : [];
+  const planZelle = (day) => {
+    const ausserhalb = !imBereich(day);
+    const wi = (day.getDay() + 6) % 7;
+    const geplant = !ausserhalb && nurPlanTage.includes(wi) && !_istRestWoche(nurPlan, day);
+    const cls = ['cal-day'];
+    if (day.getMonth() % 2) cls.push('m-zwei');
+    if (ausserhalb) cls.push('outside');
+    if (geplant) cls.push('planned');
+    if (day.getTime() === heute.getTime()) cls.push('today');
+    return `<span class="${cls.join(' ')}" aria-label="${day.toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})}, ${geplant ? 'Gym geplant' : 'kein Gym geplant'}"></span>`;
+  };
+
   const tagZelle = (day, leereWoche) => {
+    if (nurPlan) return planZelle(day);
     const key = _dayKeyOf(day.getTime());
     const entry = byDay[key];
     const future = day.getTime() > heute.getTime();
@@ -7289,7 +7308,7 @@ function _calRasterHTML(id, z) {
       : '<span class="cal-month"></span>';
     if (zeigeMonat) letzterMonat = monatsErster.getMonth();
 
-    const leereWoche = wocheOhneTraining(weekStart);
+    const leereWoche = nurPlan ? false : wocheOhneTraining(weekStart);
     zellen += '<div class="cal-week">';
     for (let d = 0; d < 7; d++) {
       const day = new Date(weekStart); day.setDate(weekStart.getDate() + d);
@@ -7366,6 +7385,19 @@ function _calKopfSetzen(id, z) {
   }
   // Die Serie gehoert zu GENAU EINER Sportart und beschreibt den STAND VON HEUTE: nur im
   // Einzelkalender des Plan-Tabs und nur im laufenden Jahr (Leonard-Wuensche 06. und 14.09.2026).
+  // v562: Im Gymplan-Detail (`dcal`) steht nur, wie viele Gym Sessions der Plan vorsieht.
+  if (id === 'dcal') {
+    const plan = z.aktPlaene.gym;
+    let n = 0;
+    if (plan) {
+      const tage = _gymWochentage(plan);
+      for (const d = new Date(z.von); d <= z.bis; d.setDate(d.getDate() + 1)) {
+        if (tage.includes((d.getDay() + 6) % 7) && !_istRestWoche(plan, d)) n++;
+      }
+    }
+    statsEl.innerHTML = teil('gym', `${n} ${n === 1 ? 'Gym Session' : 'Gym Sessions'} geplant`);
+    return;
+  }
   const serie = (id === 'cal' || !z.istLaufendesJahr || kombi) ? 0
     : (modus.kraft ? getWeekStreak() : getRunWeekStreak());
   statsEl.innerHTML = kennzahl

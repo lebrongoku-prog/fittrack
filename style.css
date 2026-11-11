@@ -3284,6 +3284,8 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 /* v561: Wochennummern im Gymkalender der Gymplan-Detailansicht, mittig ueber der Spalte;
    eine Rest Week in der Tabfarbe wie ihr Chip. */
 .cal-planname.cal-wnr { text-align: center; overflow: visible; text-overflow: clip; }
+/* v562: Die Tage im Detail-Kalender sind nicht antippbar (nur Plan, keine Fusszeile). */
+#dcal-grid .cal-day { cursor: default; }
 .cal-planname.cal-wnr.rest { color: var(--accent); }
 html.glas .screen:not(#screen-mehr) .cal-planname.cal-wnr.rest { color: #FDE68A; }
 /* v559: „Rest" unter dem Gym-Balken in der Spalte einer Rest Week (Farbe = Gymplan, im

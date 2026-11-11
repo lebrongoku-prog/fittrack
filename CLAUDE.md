@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v561**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v562**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -259,7 +259,9 @@ entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2`.
 ### Trainingskalender
 - `renderTrainingCalendar(id, cardId)`, drei Instanzen (`cal` Übersicht, `pcal` Plan-Tab,
   `dcal` Gymplan-Detail in `#pd-cal-card` — immer Gymkalender über den Zeitraum des BEARBEITETEN
-  Plans, ohne Zeitraum-Wechsler, Spalten mit „W1 … Wn" beschriftet, Titel klappt auf/zu über
+  Plans, ohne Zeitraum-Wechsler, Spalten mit „W1 … Wn" beschriftet, zeigt NUR den Plan
+  (gewählte Wochentage außer Rest Weeks als Umriss, nichts Absolviertes, keine roten Wochen,
+  Tage nicht antippbar, Kennzahl „N Gym Sessions geplant"), Titel klappt auf/zu über
   `toggleDetailKalender`, gemeinsamer Klapp-Kern `_kalKarteKlappen`),
   `_calModus(id)`: Übersicht folgt dem Titel-Filter (Trainings-/Gym-/Laufkalender), Plan-Tab der
   Seite. Startet immer bei „Aktuell" (laufender Plan), Zeitraum-Wechsler Aktuell → Jahre.
@@ -372,4 +374,11 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   „Rest"; ein Tipp auf einen Rest-Week-Chip zeichnet ihn sofort neu. GEMESSEN (375px): zu 70px,
   auf 403px, 12 Spalten für 12 Wochen, Wochennummern passend zu den Chips, „Mo" bündig zur
   ersten Zeile, anderer Plan → 8 Spalten; Übersichts- und Plan-Tab-Kalender unverändert; keine
+  Konsolenfehler.
+- **v562 (11.11.2026, Leonard-Wunsch):** Der Gymkalender im Gymplan-Detail zeigt nur noch den
+  Plan: jeder gewählte Wochentag (`plan.wochentage`) im Planzeitraum ist „geplant" (Umriss),
+  außer in Rest Weeks; Absolviertes, Verschobenes, Verpasstes und rote Wochen fallen dort weg,
+  die Tage sind nicht antippbar (`planZelle` in `_calRasterHTML`). Kennzahl „N Gym Sessions
+  geplant". GEMESSEN: Mo/Mi/Fr/So, 12 Wochen, Rest 3+6 → 40 Umrisse, 0 gefüllt trotz 12
+  Sessions; Di dazu → 50; Übersicht und Plan-Tab zeigen weiter 12 absolvierte Tage; keine
   Konsolenfehler.
