@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v566**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v567**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -424,3 +424,8 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Pfeil → W3, Wischen schaltet an der 50-%-Schwelle, Tipp auf W7-Tag springt und tönt die Zeile,
   Tipp daneben schließt ohne Reste; Glas-Modus „Wn" bernstein auf Weiß; keine Konsolenfehler.
   NICHT gesehen: das Wischen mit dem Finger auf dem iPhone.
+- **v567 (12.11.2026, Leonard-Wunsch):** In der Fußzeile des Laufkalenders haben die
+  Wochentag-Zeichen Form und Einzug wie in „Diese Woche" der Seite „Laufen" (Quadrat 24.93px,
+  Radius 4.16px, 3px-Ring, 12px/600; Farbe bleibt Tabfarbe). GEMESSEN (375px), beide Stellen
+  gleich: Zeichen 23px vom Kartenrand, Zeichen → Feld bzw. Text 10px, Zeile endet 18px vor dem
+  Rand; Zeichen mittig zu den Feldern (0.0px), auch in der getönten Zeile; keine Konsolenfehler.
