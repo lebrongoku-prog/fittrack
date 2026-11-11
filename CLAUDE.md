@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v559**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v560**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -122,7 +122,8 @@ grep -n "fittrack-v" sw.js
   (`rest: true`), `_calPlanStand`, Kombi-Karte, `buildPlanCard` (laufende Woche), rote Wochen,
   Ø-Wochenvolumen (`rest` in den Wochendaten). Knopf/Fußzeile/Wochenkarte sagen „Rest Week",
   im Kalender steht „Rest" unter dem Gym-Balken (`.cal-rest`). Einstellen im Gymplan-Detail über
-  die Wochenleiste (`_restWochenZeichnen`, `toggleRestWoche`, `.rw-q`). Wochenzählung und
+  die Chip-Reihe „Rest Weeks" unter „Wochentage" (`_restWochenZeichnen`, `toggleRestWoche`,
+  `.rw-reihe`, Chips `.lp-tagwahl` „W1 … Wn", sieben je Zeile). Wochenzählung und
   Planende bleiben unverändert; Laufen ist nicht betroffen. Neue Stellen, die „geplant" für Gym
   rechnen, MÜSSEN `_istRestWoche` beachten.
 - Gymtag hat Muskelgruppen (`day.muscles`, Reihenfolge `MUSCLE_ORDER`, nicht aus Übungen abgeleitet).
@@ -358,3 +359,7 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Gym-Wochenkarte „Rest Week", Serie 4 (Woche 3 übersprungen), Kennzahl 17/16, Ø-Volumen ohne
   Rest Weeks, keine roten Wochen, „Rest" unter beiden Spalten (Glas weiß), Umschalten per Tipp
   mit Entwurfsleiste und Verwerfen; keine Konsolenfehler.
+- **v560 (11.11.2026, Leonard-Wunsch):** Variante D (Wochenleiste mit Quadraten) zurückgenommen,
+  stattdessen Variante A: Chips „W1 … Wn" wie „Wochentage", gewählt in der Tabfarbe, Datum im
+  `title`. GEMESSEN (375px, 12 Wochen): Chips 42.7px = Wochentag-Chips, bündig, kein Überlauf,
+  Tipp schaltet W8 um; keine Konsolenfehler. Logik und Anzeigen aus v559 unverändert.

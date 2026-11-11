@@ -2828,22 +2828,9 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
 }
 .mg-wahl.an { color: #fff; }
 .lp-tagwahl-reihe { display: flex; gap: 4px; flex-wrap: nowrap; }
-/* REST WEEKS im Gymplan-Detail (v559, „Variante D"): Planwochen als Quadrate, sechs je Zeile.
-   Vergangen kraeftig im Gym-Gruen, laufende Woche mit Ring, kommende blass; Rest Week hell in
-   der Tabfarbe mit „Rest". Die Karte bleibt im Transparenz-Modus weiss (`.mehr-card`). */
-.rw-raster { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
-.rw-q {
-  aspect-ratio: 1; border-radius: 8px; border: none; padding: 0; font-family: inherit;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-  background: #0F766E; color: #fff; cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
-.rw-q b { font-size: var(--fs-neben); font-weight: 700; line-height: 1; }
-.rw-q span { font-size: var(--fs-etikett); font-weight: 600; line-height: 1; }
-.rw-q.kommt { background: #D5EAE7; color: #0F766E; }
-.rw-q.jetzt { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px #0F766E; }
-.rw-q.rest { background: #FEF3C7; color: #92400E; box-shadow: inset 0 0 0 1.5px #F59E0B; }
-.rw-q.rest.jetzt { box-shadow: inset 0 0 0 1.5px #F59E0B, 0 0 0 2px var(--card), 0 0 0 4px #0F766E; }
-.rw-q:active { transform: scale(.94); }
+/* REST WEEKS im Gymplan-Detail (v560, „Variante A"): Chips „W1 … Wn" wie „Wochentage",
+   sieben je Zeile — dieselbe Spaltenbreite wie die Wochentag-Chips darueber. */
+.rw-reihe { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .lp-tagwahl {
   flex: 1 1 0; min-width: 0; padding: 8px 0; border-radius: 9px; border: 1px solid var(--border);
   background: var(--card2); color: var(--text3); font-family: inherit; font-size: var(--fs-neben); font-weight: 700;

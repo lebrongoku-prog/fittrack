@@ -8344,7 +8344,7 @@ function renderPlanDetail() {
 
   // Archiv-Label aktualisieren
   document.getElementById('plan-archive-label').textContent = plan.archived ? 'Aus Archiv holen' : 'Plan archivieren';
-  _restWochenZeichnen(plan);   // v559: Wochenleiste „Rest Weeks"
+  _restWochenZeichnen(plan);   // v560: Chip-Reihe „Rest Weeks"
   renderPlanVolumen(plan);   // v476: Abschnitt „Wochenvolumen"
 }
 
@@ -8551,9 +8551,10 @@ function deleteCurrentPlan() {
 // damit Header / Status-Chip / Wochenplan-Strip / Trainingstage-Liste konsistent
 // zu den frisch gespeicherten Daten stehen. Wirkt nur, wenn der User aktuell auf
 // dem Plan-Detail-Screen ist — sonst no-op (nichts unnoetiges re-rendern).
-// REST WEEKS im Gymplan-Detail (v559, Leonard-Wahl „Variante D"): der Plan als Reihe
-// nummerierter Quadrate, sechs je Zeile. Vergangene Wochen kraeftig, die laufende mit Ring,
-// kommende blass; eine Rest Week hell in der Tabfarbe mit „Rest". Ein Tipp schaltet um.
+// REST WEEKS im Gymplan-Detail (v560, Leonard-Wahl „Variante A", ersetzt die Wochenleiste
+// „Variante D" aus v559): eine Chip-Reihe „W1 … Wn" in derselben Bauform wie „Wochentage"
+// darueber (`.lp-tagwahl`, gewaehlt = Tabfarbe), sieben je Zeile, damit die Chips genau so breit
+// sind wie die Wochentage. Das Datum der Woche steht im `title`. Ein Tipp schaltet um.
 // Neu gezeichnet wird nur diese Zeile (und das Wochenvolumen) — ein Neuaufbau der ganzen Seite
 // naehme dem Namensfeld darueber eine noch nicht gespeicherte Eingabe.
 function _restWochenZeichnen(plan) {
@@ -8562,19 +8563,16 @@ function _restWochenZeichnen(plan) {
   const anzahl = plan ? _weeksBetween(plan.startDate, plan.endDate) : 0;
   if (!anzahl) { el.innerHTML = ''; el.style.display = 'none'; return; }
   el.style.display = '';
-  const jetzt = _planWocheNr(plan, new Date());
   const rest = new Set(plan.restWeeks || []);
-  const quadrate = [];
+  const chips = [];
   for (let nr = 1; nr <= anzahl; nr++) {
-    const zustand = nr < jetzt ? 'vorbei' : nr === jetzt ? 'jetzt' : 'kommt';
     const r = rest.has(nr);
     const mo = _laufWochenMontag(_calLokalTag(plan.startDate)); mo.setDate(mo.getDate() + (nr - 1) * 7);
     const titel = `Woche ${nr} · ${_laufWochenSpanne(mo)}${r ? ' · Rest Week' : ''}`;
-    quadrate.push(`<button type="button" class="rw-q ${zustand}${r ? ' rest' : ''}" aria-pressed="${r}"
-      title="${titel}" aria-label="${titel}" onclick="toggleRestWoche(${nr})">
-      <b>${nr}</b>${r ? '<span>Rest</span>' : ''}</button>`);
+    chips.push(`<button type="button" class="lp-tagwahl${r ? ' an' : ''}" aria-pressed="${r}"
+      title="${titel}" aria-label="${titel}" onclick="toggleRestWoche(${nr})">W${nr}</button>`);
   }
-  el.innerHTML = `<label>Rest Weeks</label><div class="rw-raster">${quadrate.join('')}</div>`;
+  el.innerHTML = `<label>Rest Weeks</label><div class="rw-reihe">${chips.join('')}</div>`;
 }
 function toggleRestWoche(nr) {
   DB._bearbeitetenPlanAendern(p => {
