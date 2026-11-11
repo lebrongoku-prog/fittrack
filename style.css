@@ -834,7 +834,6 @@ body.theme-plans .hist-action-dd {
    NUR hier: In der LISTE des Plan-Tabs muessen archivierte und kommende Plaene weiter
    wachsen duerfen, die tragen eine Statuszeile mehr. */
 #ov-week-card > .plan-card-v2,
-#wo-week-card > .plan-card-v2,
 #wo-view-laufen > .plan-card-v2 { height: 157.3px; }
 /* ── Gleichmaessige Hoehenverteilung (13.09.2026, Leonard-Wunsch) ─────────────────────
    Bis dahin standen die Bloecke mit festen Abstaenden oben aneinander, und der ganze
@@ -1859,17 +1858,8 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
   background: var(--card);
   box-shadow: 0 1px 4px rgba(15,23,42,0.06);
 }
-/* Wochenplan-Kachel während der Einheit ausblenden (Platz für die Sätze). */
-html.wo-running #wo-week-card { display: none; }
 html.wo-running #wo-gym-woche,
 #wo-gym-woche:empty { display: none; }   /* v475: Wochenkarte der Seite „Gym" nicht waehrend einer Einheit */
-/* v448: Die Wochenplan-Karte im Trainings-Tab ist entfallen, die Huelle bleibt leer. */
-#wo-week-card:empty { display: none; }
-/* Uebergang normal ↔ aktiv (15.09.2026, `_woWocheFahren`): Waehrend die Wochenplan-Karte weg-
-   bzw. aufklappt, bleibt sie trotz `wo-running` sichtbar und schneidet ihren Inhalt ab. Eine
-   Klasse mehr als die Ausblende-Regel, damit sie gewinnt. */
-html.wo-running #wo-week-card.wo-woche-faehrt,
-#wo-week-card.wo-woche-faehrt { display: block; overflow: hidden; }
 /* Herocard im Uebergang (`_woHeroWelle`): Der neue Inhalt ist schon da, aber unsichtbar; darueber
    liegt die Kopie des alten Inhalts, darueber die Welle aus dem getippten Knopf. */
 .hero-v2.hero-ueb-verdeckt > :not(.hero-ueb-alt):not(.hero-ueb-welle) { visibility: hidden; }
@@ -3554,7 +3544,7 @@ html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit
 .ex-item-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* Übungen-Tab: Suchfeld */
-.ex-search-wrap { padding: 0 var(--screen-pad, 14px) 10px; }
+.ex-search-wrap { padding: 0 14px 10px; }
 .ex-search-bar {
   width: 100%; background: rgba(255,255,255,0.92); border: 1px solid rgba(255,255,255,0.5);
   border-radius: 10px; padding: 10px 12px; font-size: 16px; font-family: inherit; color: var(--text);
@@ -4191,36 +4181,14 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
     display: grid;
     grid-template-columns: 1fr 1fr;
     column-gap: 0;
-    /* KEIN `align-items: start` (anders als in der Uebersicht): Die Grid-Vorgabe `stretch`
-       macht Wochenplan-Karte und Herocard gleich hoch — an einem Ruhetag wie an einem
-       Trainingstag (Leonard-Wunsch 01.09.2026). Die Wrapper geben die Hoehe an die Karte
-       darin weiter (siehe unten). */
     align-content: start;
   }
-  #wo-view-gym > #wo-week-card,
   #wo-view-gym > #wo-session-card-wrap { display: flex; flex-direction: column; }
-  #wo-view-gym > #wo-week-card > *,
   #wo-view-gym > #wo-session-card-wrap > * { flex: 1; }
-  /* Gestreckt bekaeme die Wochenplan-Karte sonst ein Loch unten — ihr Inhalt sitzt
-     stattdessen senkrecht mittig. */
-  #wo-view-gym > #wo-week-card > .plan-card-v2 {
-    display: flex; flex-direction: column; justify-content: center;
-  }
   #wo-view-gym > #active-ex-list,
   #wo-view-gym > #wo-add-ex-wrap,
   #wo-view-gym > #wo-gym-woche { grid-column: 1 / -1; }
-  #wo-view-gym > #wo-week-card { grid-column: 1; }
-  #wo-view-gym > #wo-session-card-wrap { grid-column: 2; }
-  /* Waehrend einer laufenden Einheit ist die Wochenplan-Karte ausgeblendet — der Kopf der
-     Einheit nimmt dann die ganze Breite, sonst bliebe die linke Spalte leer. */
-  html.wo-running #wo-view-gym > #wo-session-card-wrap { grid-column: 1 / -1; }
-  /* Das Ausblenden MUSS hier wiederholt werden: Die globale Regel `html.wo-running
-     #wo-week-card { display:none }` hat nur EINE ID, die Grid-Regel darueber
-     (`#wo-view-gym > #wo-week-card`) hat ZWEI und gewinnt deshalb — die Karte
-     blieb im Querformat waehrend einer laufenden Einheit stehen (Leonard-Meldung 01.09.2026). */
-  html.wo-running #wo-view-gym > #wo-week-card { display: none; }
-  /* v448: ohne Wochenplan-Karte nimmt die Herocard die ganze Breite. */
-  #wo-view-gym > #wo-week-card:empty { display: none; }
+  /* Seit v448 ohne Wochenplan-Karte: die Herocard nimmt die ganze Breite. */
   #wo-view-gym > #wo-session-card-wrap { grid-column: 1 / -1; }
 
   /* LAUFEN — dieselbe Aufteilung wie auf der Seite „Gym": Wochenplan links, Herocard rechts

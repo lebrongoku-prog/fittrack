@@ -98,11 +98,6 @@
          (`#seitenleiste`, gebaut in `seitenleisteBauen()`) — Vorbild ist die Zeitleiste der
          App „Health Command Center". Hier oben steht deshalb nichts mehr. -->
     <div id="wo-view-gym">
-      <!-- Wochenplan: dieselbe Karte wie in Uebersicht und Plaene-Tab, gefuellt von
-           renderWorkoutWeekStrip() ueber buildPlanCard(). Waehrend einer laufenden Einheit
-           ausgeblendet (html.wo-running), damit die Eingabe der Saetze ohne Scrollen beginnt. -->
-      <div id="wo-week-card"></div>
-
       <!-- Session card (active or preview) -->
       <div id="wo-session-card-wrap"></div>
 
@@ -440,7 +435,7 @@
         <div class="mehr-card" id="drive-card">
           <!-- Disconnected state -->
           <div id="drive-disconnected">
-            <div class="drive-status drive-status-off">
+            <div class="drive-status">
               <div class="drive-status-dot"></div>
               <div class="drive-status-text">
                 <div class="drive-status-label">Nicht verbunden</div>
@@ -658,7 +653,7 @@
         <label class="form-label">Name</label>
         <input class="form-input" id="new-ex-name" type="text" placeholder="z. B. Arnold Press">
       </div>
-      <div class="form-field form-field-muscle">
+      <div class="form-field">
         <label class="form-label">Muskelgruppe</label>
         <select class="form-select" id="new-ex-muscle">
           <option value="chest">Brust</option>
@@ -888,7 +883,7 @@
         <label for="race-datum">Datum</label>
         <input type="date" id="race-datum">
       </div>
-      <p class="race-hinweis">Der Termin erscheint sofort im Laufkalender. Strecke, Zeit und Puls
+      <p>Der Termin erscheint sofort im Laufkalender. Strecke, Zeit und Puls
          holt FitTrack nach dem Lauf aus deiner Tabelle „Workout Data".</p>
       <div class="run-note-actions">
         <button class="btn btn-ghost" id="race-del-btn" onclick="deleteRaceFromDialog()">Löschen</button>

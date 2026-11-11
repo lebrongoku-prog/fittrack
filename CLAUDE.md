@@ -22,13 +22,13 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v557**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v558**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
 
-Lokale Altdateien, nicht im Repo (`.gitignore`): `app.js.bak-daymodel`, `Trainings JSONs/`,
-`prompt-farbuebergang-tabs.md`.
+Die früheren lokalen Altdateien (`app.js.bak-daymodel`, `Trainings JSONs/`,
+`prompt-farbuebergang-tabs.md`) liegen seit dem 11.11.2026 im macOS-Papierkorb.
 
 ## Deploy
 
@@ -95,6 +95,10 @@ grep -n "fittrack-v" sw.js
   `ft_koerpergewicht`, `ft_trash`. Reine Anzeige-Einstellungen (`ft_glas`, `ft_ex_chart_modes`,
   `ft_rueckblick_zu`) gehören NICHT in die Sicherung.
 - Zeitspannen nur über `TAG_MS` / `WOCHE_MS`.
+- `getEx(id)` ist gegen den Rohtext von `ft_exercises` zwischengespeichert (`_exNachId`) — das
+  gelieferte Übungsobjekt NICHT verändern, sondern Liste holen, ändern, `DB.saveExercises`.
+- Einmal-Migrationen (`migrate*`, Merker `ft_*_v1` usw.) und `DEFAULT_PLAN`/`DEFAULT_WEEKPLAN`
+  bleiben: `driveApplyCloudData` ruft die Migrationen erzwungen für alte Sicherungen auf.
 - Tabellen wie `OVERLAY_SCREENS`, `PLANS_SEITEN`, `ARCHIV_SEITEN`, `SEITEN_LEISTE` stehen weit oben;
   Einträge, die Zustand lesen, sind **Funktionen** (sonst temporale Todeszone von `let` weiter unten).
   Aus demselben Grund ist `_entwurf` ein `var`.
@@ -213,7 +217,8 @@ gewählten Tag, Titel klappt die Tageszeilen auf). Keine Herocard mehr.
 **Training → Gym**: Herocard „Heute" (`buildHeuteHero`, Knopf nennt den Gymtag, Titel klappt die
 Übungsvorschau auf) · „Diese Woche" (`renderGymWoche`, wischbar über die Planwochen, Diagramm
 „Wochenvolumen" per Tipp auf die Karte, offene Tage öffnen `showGymtagVorschau`). Keine
-Wochenplan-Karte, keine Tagesauswahl. Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2`.
+Wochenplan-Karte, keine Tagesauswahl (Hülle `#wo-week-card` und `_woWocheFahren` seit v558
+entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2`.
 **Training → Laufen**: Herocard · „Diese Woche" (`laufWochenListe`, wischbar,
 „Wochenkilometer").
 
@@ -328,3 +333,10 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Reste entfernt (alte Tagesauswahl im Trainings-Tab, `DB.getWeekPlan/saveWeekPlan/saveManualDays`,
   `#wo-sub`, `theme-exercises`, Zwei-Reihen-Regeln der Kombi-Karte). CLAUDE.md auf den aktuellen
   Stand gekürzt, Vorgeschichte nach `.claude/historie.md`.
+- **v558 (11.11.2026):** Restliste der Durchsicht. Reste der Wochenplan-Karte im Trainings-Tab
+  entfernt (`#wo-week-card`, `renderWorkoutWeekStrip`, `_woWocheFahren`, ihre CSS-Regeln; der
+  Start/Ende-Übergang läuft mit Welle und Kartenstaffel weiter). `getEx` zwischengespeichert
+  (gemessen mit 241 Sessions: Übersicht 45 → 24ms, Katalog 102 → 56ms, Plan 19 → 8ms; vorher bis
+  7364 Katalog-Lesungen je Bildschirm). Körpergewicht „entfernt" (`null`) wird beim Einspielen
+  übernommen. manifest: Beschreibung „Gym und Laufen", `theme_color` wie die Meta-Angabe.
+  `--screen-pad` und drei Klassen ohne Regel entfernt. Querformat Gym: Herocard volle Breite.

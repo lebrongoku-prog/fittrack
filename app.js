@@ -437,7 +437,20 @@ const DB = {
 // HELPERS
 // ═══════════════════════════════════════════════
 
-function getEx(id) { return DB.getExercises().find(e => e.id === id); }
+// Einzelne Uebung nach Id. Zwischengespeichert gegen den Rohtext von `ft_exercises` (v558):
+// Ein Bildschirm fragte vorher bis zu 7000-mal ab und las jedes Mal den ganzen Katalog neu ein.
+// Jede Aenderung am Katalog aendert den Rohtext und macht den Zwischenspeicher ungueltig.
+// Das gelieferte Objekt NICHT veraendern — es ist fuer alle Aufrufer dasselbe.
+let _exNachId = { roh: undefined, map: null };
+function getEx(id) {
+  const roh = localStorage.getItem('ft_exercises');
+  if (!_exNachId.map || roh !== _exNachId.roh) {
+    const map = new Map();
+    DB.getExercises().forEach(e => { if (!map.has(e.id)) map.set(e.id, e); });
+    _exNachId = { roh: localStorage.getItem('ft_exercises'), map };
+  }
+  return _exNachId.map.get(id);
+}
 // Anzeigename einer Uebung aus einer gespeicherten Einheit (27.09.2026, Leonard-Wunsch): der
 // AKTUELLE Name im Katalog — eine Einheit speichert beim Start den damaligen Namen mit, und nach
 // einem Umbenennen standen Bestleistungen sonst weiter unter dem alten. Der gespeicherte Name
@@ -2314,18 +2327,6 @@ function jumpToWorkoutDay(idx) {
   wischeZuTab('workouts');
 }
 
-// Wochenplan im Trainings-Tab: dieselbe Karte wie in Uebersicht und Plaene-Tab
-// (Leonard-Wunsch 20.08.2026). Einziger Unterschied: Der angetippte Tag bleibt markiert,
-// weil die Auswahl hier steuert, welcher Tag darunter angezeigt wird.
-function renderWorkoutWeekStrip() {
-  ensureSelectedDayIdx();
-  const root = document.getElementById('wo-week-card');
-  // ENTFALLEN (v448, 17.10.2026, Leonard-Wunsch): Auf den Seiten „Gym" und „Laufen" steht keine
-  // Wochenplan-Karte mehr. Die Huelle bleibt leer (`:empty` blendet sie aus); `_woWocheFahren`
-  // faehrt eine leere Huelle nicht. Damit gibt es dort keine Tagesauswahl mehr — die Seite zeigt
-  // heute bzw. den Tag der laufenden Einheit.
-  if (root) root.innerHTML = '';
-}
 
 // Trainings-Tab: „Gym" (Krafttraining) und „Laufen" (gelaufene Einheiten).
 let workoutsViewMode = 'gym';
@@ -2411,9 +2412,6 @@ function _renderGymSeite() {
   // verschiebt (oder frei trainiert), soll die laufende Einheit trotzdem hier sehen.
   const activeOnSelected = !!(active && woDayIdx(active) === selectedWorkoutDayIdx);
 
-  // Week strip
-  renderWorkoutWeekStrip();
-
   // Session card
   const wrap = document.getElementById('wo-session-card-wrap');
   if (activeOnSelected) {
@@ -2466,8 +2464,8 @@ function _renderGymSeite() {
 }
 
 // ── Uebergang normal ↔ aktiv auf der Seite „Gym" (15.09.2026, Leonard-Wunsch, Variante D) ──
-// Beim START einer Einheit und beim BEENDEN (auch „Verwerfen") laufen drei Bewegungen zugleich:
-//   1. Die Wochenplan-Karte klappt weg (Start) bzw. wieder auf (Ende) — `_woWocheFahren`.
+// Beim START einer Einheit und beim BEENDEN (auch „Verwerfen") laufen zwei Bewegungen zugleich
+// (das fruehere Wegklappen der Wochenplan-Karte ist mit der Karte entfallen, v448/v558):
 //   2. Aus dem Knopf, der den Wechsel ausloest, breitet sich eine Welle in seiner Farbe ueber
 //      die Herocard aus; darunter steht dann der neue Inhalt, und die Welle verblasst
 //      (`_woHeroWelle`). Start: aus „Einheit starten"/„Freies Training", Ende: aus „Beenden".
@@ -2536,7 +2534,7 @@ function _woUebergangVorher() {
 }
 
 function _woUebergangSpielen(v) {
-  Promise.all([_woWocheFahren(v), _woHeroWelle(v), _woUebungenStaffel(v)])
+  Promise.all([_woHeroWelle(v), _woUebungenStaffel(v)])
     .then(() => { if (v.nr === _woUebergangNr) _woUebergangAufraeumen = []; });
 }
 
@@ -2554,26 +2552,6 @@ function _animFahren(el, keyframes, opts) {
   });
 }
 
-// 1. Wochenplan-Karte. Beim Start blendet `wo-running` sie sofort aus — `.wo-woche-faehrt` haelt
-// sie fuer die Dauer der Bewegung sichtbar und schneidet den Inhalt ab (`overflow: hidden`).
-// Gefahren wird die HUELLE `#wo-week-card`: Mit `overflow: hidden` liegt der 12px-Aussenabstand
-// der Karte innerhalb der Huelle, die Hoehe umfasst also Karte UND Abstand darunter — es springt
-// weder am Anfang noch am Ende.
-function _woWocheFahren(v) {
-  const huelle = document.getElementById('wo-week-card');
-  if (!huelle || !huelle.firstElementChild) return Promise.resolve();
-  huelle.classList.add('wo-woche-faehrt');
-  const h = huelle.offsetHeight;
-  const aufraeumen = () => {
-    huelle.getAnimations().forEach(a => a.cancel());
-    huelle.classList.remove('wo-woche-faehrt');
-  };
-  _woUebergangAufraeumen.push(aufraeumen);
-  const offen = { height: h + 'px', opacity: 1 }, zu = { height: '0px', opacity: 0 };
-  return _animFahren(huelle, v.art === 'start' ? [offen, zu] : [zu, offen],
-                 { duration: 280, easing: WO_UEB_KURVE, fill: 'forwards' })
-    .then(() => { if (v.nr === _woUebergangNr) aufraeumen(); });
-}
 
 // 2. Herocard. Die NEUE Karte steht schon im DOM; ihr Inhalt wird unsichtbar geschaltet
 // (`.hero-ueb-verdeckt`), und darueber liegt eine Kopie des ALTEN Inhalts (`.hero-ueb-alt`,
@@ -11276,7 +11254,10 @@ function driveApplyCloudData(data) {
   if (Array.isArray(data.races)) localStorage.setItem('ft_races', JSON.stringify(data.races));
   if (Array.isArray(data.runPlans)) localStorage.setItem('ft_runplans', JSON.stringify(data.runPlans));
   if (Array.isArray(data.runFavs)) localStorage.setItem('ft_run_favs', JSON.stringify(data.runFavs));
+  // Koerpergewicht: `null` heisst „entfernt" (v558) — vorher blieb ein lokal gesetzter Wert stehen.
+  // Fehlt das Feld ganz (Sicherung vor v537), bleibt der lokale Wert unangetastet.
   if (data.koerpergewicht > 0) localStorage.setItem('ft_koerpergewicht', String(data.koerpergewicht));
+  else if (data.koerpergewicht === null) localStorage.removeItem('ft_koerpergewicht');
   // Legacy-Keys bei v1-Migration sauber halten (sonst würde migrateToMultiPlan beim nächsten App-Start nochmal greifen)
   if (Array.isArray(data.plan)) {
     localStorage.removeItem('ft_program');
