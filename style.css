@@ -1475,7 +1475,8 @@ html.glas .screen:not(#screen-mehr) .ex-add-btn svg { stroke: #fff; }
 /* Aktiver Filter: auf dem Schleier waere die dunkle Akzentfarbe ein Fremdkoerper —
    stattdessen eine deutlich hellere Flaeche, wie beim aktiven Seitenschalter. */
 html.glas .screen:not(#screen-mehr) #ex-plan-filter-btn.active,
-html.glas .screen:not(#screen-mehr) #plans-archive-btn.active { background: rgba(255,255,255,.45); }
+html.glas .screen:not(#screen-mehr) #plans-archive-btn.active,
+html.glas .screen:not(#screen-mehr) .plan-archiv-knopf.active { background: rgba(255,255,255,.45); }
 html.glas .screen:not(#screen-mehr) #ex-plan-filter-btn.active svg { stroke: #fff; fill: #fff; }
 html.glas .screen:not(#screen-mehr) .ex-search-bar {
   background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.24);
@@ -3385,9 +3386,14 @@ html.glas .screen:not(#screen-mehr) .cal-planname.cal-wnr.rest { color: #FDE68A;
    (26.09.2026): gefuellt heisst „Archiv ist aufgeklappt" — er hat keinen Pfeil mehr, der
    den Zustand zeigen koennte. `fill` bleibt dort aus, das Symbol ist eine Strichzeichnung. */
 #ex-plan-filter-btn.active,
-#plans-archive-btn.active { background: var(--accent-dark); }
+#plans-archive-btn.active, .plan-archiv-knopf.active { background: var(--accent-dark); }
 #ex-plan-filter-btn.active svg { stroke: #fff; fill: #fff; }
-#plans-archive-btn.active svg { stroke: #fff; }
+#plans-archive-btn.active svg, .plan-archiv-knopf.active svg { stroke: #fff; }
+/* v569: Loeschen im Kopf der Plan-Detailansichten — Symbol in Rot, sonst wie die uebrigen Knoepfe. */
+.ex-add-btn.plan-loesch-knopf svg { stroke: var(--red, #d33); }
+html.glas .screen:not(#screen-mehr) .ex-add-btn.plan-loesch-knopf svg { stroke: #FCA5A5; }
+#screen-plan-detail .plan-detail-ph > .ph-actions,
+#screen-runplan-detail .plan-detail-ph > .ph-actions { margin-top: 0; }
 
 /* Alle-ein/ausklappen-Button: Icon nach Zustand (collapsed → „ausklappen", expanded → „einklappen") */
 #ex-collapse-all-btn .ex-coll-ic-collapse { display: none; }

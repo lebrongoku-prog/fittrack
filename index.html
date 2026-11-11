@@ -164,6 +164,11 @@
       <div class="ph-left">
         <h1 id="plan-detail-title">Trainingsplan</h1>
       </div>
+      <!-- v569: Archivieren und Loeschen als Knoepfe im Kopf (vorher Abschnitt „Aktionen") -->
+      <div class="ph-actions">
+        <button type="button" class="ex-add-btn plan-archiv-knopf" id="plan-archiv-knopf" onclick="togglePlanArchive()" title="Plan archivieren" aria-label="Plan archivieren"><svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button>
+        <button type="button" class="ex-add-btn plan-loesch-knopf" onclick="deleteCurrentPlan()" title="Plan löschen" aria-label="Plan löschen"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+      </div>
     </div>
 
     <div class="mehr-section">
@@ -209,29 +214,6 @@
         <span class="mehr-section-title lp-km-schnitt" id="plan-vol-schnitt" onclick="toggleSchnittLinie(event)" role="button" title="Durchschnittslinie ein-/ausblenden"></span>
       </div>
       <div class="mehr-card lp-km-karte"><div class="ex-chart-wrap"><canvas id="plan-vol-chart"></canvas></div></div>
-    </div>
-
-    <div class="mehr-section">
-      <div class="mehr-section-title">Aktionen</div>
-      <div class="mehr-card">
-        <div class="mehr-row" id="plan-archive-row" onclick="togglePlanArchive()" style="cursor:pointer">
-          <div class="mehr-row-icon" style="background:var(--accent-bg)">📦</div>
-          <div class="mehr-row-info">
-            <div class="mehr-row-label" id="plan-archive-label">Plan archivieren</div>
-            <div class="mehr-row-sub">Versteckt den Plan aus der Hauptliste, bleibt aber zugänglich</div>
-          </div>
-          <div class="mehr-row-action">›</div>
-        </div>
-        <div class="divider"></div>
-        <div class="mehr-row" onclick="deleteCurrentPlan()" style="cursor:pointer">
-          <div class="mehr-row-icon" style="background:var(--red-bg)">🗑</div>
-          <div class="mehr-row-info">
-            <div class="mehr-row-label" style="color:var(--red,#d33)">Plan löschen</div>
-            <div class="mehr-row-sub">Trainingstage und Wochenplan dieses Plans gehen verloren</div>
-          </div>
-          <div class="mehr-row-action">›</div>
-        </div>
-      </div>
     </div>
   </div><!-- /plan-detail-overlay -->
 
@@ -291,6 +273,11 @@
       </button>
       <div class="ph-left">
         <h1 id="runplan-detail-title">Laufplan</h1>
+      </div>
+      <!-- v569: Archivieren und Loeschen als Knoepfe im Kopf (vorher Abschnitt „Aktionen") -->
+      <div class="ph-actions">
+        <button type="button" class="ex-add-btn plan-archiv-knopf" id="runplan-archiv-knopf" onclick="runPlanArchivUmschalten()" title="Plan archivieren" aria-label="Plan archivieren"><svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button>
+        <button type="button" class="ex-add-btn plan-loesch-knopf" onclick="deleteRunPlan(editingRunPlanId)" title="Plan löschen" aria-label="Plan löschen"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
       </div>
     </div>
     <div id="runplan-detail-body"></div>

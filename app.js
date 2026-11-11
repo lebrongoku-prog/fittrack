@@ -6306,30 +6306,9 @@ function renderRunPlanDetail() {
       </div>
       <div class="mehr-card lp-km-karte">${laufKmDiagrammHTML(p, 'lpIst')}</div>
     </div>` : ''}
-
-    <div class="mehr-section">
-      <div class="mehr-section-title">Aktionen</div>
-      <div class="mehr-card">
-        <div class="mehr-row" onclick="setRunPlan('${p.id}','archived',${p.archived ? 'false' : 'true'})" style="cursor:pointer">
-          <div class="mehr-row-icon" style="background:var(--accent-bg)">📦</div>
-          <div class="mehr-row-info">
-            <div class="mehr-row-label">${p.archived ? 'Aus dem Archiv holen' : 'Plan archivieren'}</div>
-            <div class="mehr-row-sub">Versteckt den Plan aus der Hauptliste, bleibt aber zugänglich</div>
-          </div>
-          <div class="mehr-row-action">›</div>
-        </div>
-        <div class="divider"></div>
-        <div class="mehr-row" onclick="deleteRunPlan('${p.id}')" style="cursor:pointer">
-          <div class="mehr-row-icon" style="background:var(--red-bg)">🗑</div>
-          <div class="mehr-row-info">
-            <div class="mehr-row-label" style="color:var(--red,#d33)">Plan löschen</div>
-            <div class="mehr-row-sub">Alle geplanten Läufe dieses Plans gehen verloren</div>
-          </div>
-          <div class="mehr-row-action">›</div>
-        </div>
-      </div>
     </div>`;
   renderTrainingCalendar('lcal', 'lp-cal-card');   // v565: Laufkalender des Plans
+  _archivKnopfSetzen('runplan-archiv-knopf', p.archived);   // v569
   _zeichneLpKmDiagramm();
 }
 
@@ -6551,6 +6530,21 @@ function setRunUnit(id, woche, dayIdx, feld, wert) {
 
 // Loeschen ist zweifach abgesichert wie bei den Trainingsplaenen: „Rueckgaengig" fuer 6
 // Sekunden UND 30 Tage Papierkorb. Ein Laufplan steckt schnell in mehreren Wochen Arbeit.
+// ARCHIVIEREN UND LOESCHEN IM KOPF der Gym- und Laufplan-Detailansicht (v569, Leonard-Wunsch):
+// zwei quadratische Knoepfe rechts auf der Titelzeile statt des Abschnitts „Aktionen" unten.
+// Archiviert = Knopf gefuellt (wie der Archiv-Knopf des Plan-Tabs), Tooltip nennt die Aktion.
+function _archivKnopfSetzen(id, archiviert) {
+  const k = document.getElementById(id);
+  if (!k) return;
+  k.classList.toggle('active', !!archiviert);
+  const t = archiviert ? 'Aus dem Archiv holen' : 'Plan archivieren';
+  k.title = t; k.setAttribute('aria-label', t);
+  k.setAttribute('aria-pressed', String(!!archiviert));
+}
+function runPlanArchivUmschalten() {
+  const p = DB.getRunPlans().find(x => x.id === editingRunPlanId);
+  if (p) setRunPlan(p.id, 'archived', !p.archived);
+}
 function deleteRunPlan(id) {
   const p = DB.getRunPlans().find(x => x.id === id);
   confirmAction('Laufplan löschen?', `„${(p && p.name) || 'Laufplan'}" wird entfernt.`, () => {
@@ -8498,8 +8492,8 @@ function renderPlanDetail() {
     ? `<div class="wpe-list">${zeilen}</div>`
     : `<div class="plan-day-empty">Wähle oben unter „Wochentage" die Trainingstage der Woche.</div>`;
 
-  // Archiv-Label aktualisieren
-  document.getElementById('plan-archive-label').textContent = plan.archived ? 'Aus Archiv holen' : 'Plan archivieren';
+  // v569: Archiv-Knopf im Kopf zeigt den Zustand (gefuellt = archiviert)
+  _archivKnopfSetzen('plan-archiv-knopf', plan.archived);
   _restWochenZeichnen(plan);   // v560: Chip-Reihe „Rest Weeks"
   _pdKalenderZeichnen();       // v561: Gymkalender des Plans
   renderPlanVolumen(plan);   // v476: Abschnitt „Wochenvolumen"

@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v568**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v569**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -111,7 +111,9 @@ grep -n "fittrack-v" sw.js
   → `_planKopienAufraeumen`); eine Kopie ohne Wochentag fliegt raus, außer eine Session zeigt auf
   sie. Eine aussortierte Kopie derselben Vorlage wird beim erneuten Wählen WIEDER eingesetzt.
 - Reihenfolge im Gymplan-Detail: Trainingsplandaten · Gymkalender · Wochenplan ·
-  Wochenvolumen · Aktionen.
+  Wochenvolumen. Archivieren und Löschen sind seit v569 quadratische Knöpfe rechts in der
+  Titelzeile (Gym- und Laufplan, `.plan-archiv-knopf` gefüllt = archiviert über
+  `_archivKnopfSetzen`, `.plan-loesch-knopf` rotes Symbol); der Abschnitt „Aktionen" ist weg.
 - Plan-Detail: Chips „Wochentage" (`plan.wochentage`, `toggleGymWochentag`), darunter „Wochenplan"
   mit einer Zeile je gewähltem Tag; Tipp öffnet `openGymtagWahl(i)` („In diesem Plan" / „Weitere
   Gymtage" / „Kein Gymtag"). Abschnitt „Wochenvolumen" (`renderPlanVolumen`).
@@ -181,7 +183,8 @@ grep -n "fittrack-v" sw.js
   geplant, zählen in Kennzahlen und Wochenkilometer). Sichtbar: „Wn" in der Tabfarbe, „Rest"
   unter dem Lauf-Balken in allen Kalendern (`.cal-rest.lauf`), Kopf der Fußzeile
   „Woche N · Rest" in der Tabfarbe. Reihenfolge Laufplan-Detail:
-  Laufplandaten · Laufkalender · Geplante · Gelaufene Wochenkilometer · Aktionen. Geplante Tage nur innerhalb der Laufzeit (`runGeplanteTage`).
+  Laufplandaten · Laufkalender · Geplante · Gelaufene Wochenkilometer (Archivieren/Löschen im
+  Kopf, `runPlanArchivUmschalten`, `deleteRunPlan(editingRunPlanId)`). Geplante Tage nur innerhalb der Laufzeit (`runGeplanteTage`).
   Herzfrequenzzonen sind seit v470 überall entfallen.
 - Vorgezogene/nachgeholte Läufe: `runVerschiebungen(mo)` paart Läufe mit offenen Plantagen
   (nur Plantage vor heute). Übersprungene Läufe (`unit.skipped`, `openRunSkip`) sehen aus wie
@@ -442,3 +445,9 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   der Tabfarbe, zweimal „Rest" unter dem Lauf-Balken, Plan-Tab-Kalender ebenso, Kennzahl
   unverändert 24 Läufe, Fußzeile „Woche 4 · Rest" orange, Woche 5 normal; hervorgehobene
   Rest-Woche „W4" weiß auf Orange (Glas: braun auf Weiß); keine Konsolenfehler.
+- **v569 (12.11.2026, Leonard-Wunsch):** „Plan archivieren" und „Plan löschen" in Gym- und
+  Laufplan-Detail als Knöpfe oben rechts auf der Titelzeile (Archiv-Symbol, gefüllt wenn
+  archiviert; Papierkorb in Rot), Abschnitt „Aktionen" entfernt. GEMESSEN (375px): Zurück-Knopf,
+  Titel und beide Knöpfe auf derselben Mitte (43px), Knöpfe 38x38, 14px vom Rand; Archivieren →
+  gefüllt, Tooltip „Aus dem Archiv holen", zurück → leer; Löschen fragt nach und führt zur
+  Liste; keine Konsolenfehler.
