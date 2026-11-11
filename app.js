@@ -6744,24 +6744,36 @@ const _CAL_FILTER_TITEL = { beide: 'Trainingskalender', kraft: 'Gymkalender', la
 // Breite, die Startposition (Planbeginn bzw. heute) laesst sich erst jetzt setzen.
 let _ovKalOffen = false;
 function toggleOvKalender() {
-  const karte = document.getElementById('ov-cal-card');
-  if (!karte) return;
   _ovKalOffen = !_ovKalOffen;
-  const btn = document.getElementById('cal-filter-btn');
-  if (btn) btn.setAttribute('aria-expanded', String(_ovKalOffen));
+  _kalKarteKlappen('ov-cal-card', 'cal-filter-btn', _ovKalOffen, () => renderTrainingCalendar('cal', 'ov-cal-card'));
+}
+// GYMKALENDER IN DER GYMPLAN-DETAILANSICHT (v561, Leonard-Wunsch): zeigt den Zeitraum des
+// BEARBEITETEN Plans, damit man sieht, in welche Wochen eine Rest Week faellt. Titel klappt auf
+// und zu, Start eingeklappt, nicht gespeichert. Kalender-Id `dcal`, Karte `#pd-cal-card`.
+let _pdKalOffen = false;
+function toggleDetailKalender() {
+  _pdKalOffen = !_pdKalOffen;
+  _kalKarteKlappen('pd-cal-card', 'dcal-titel', _pdKalOffen, () => renderTrainingCalendar('dcal', 'pd-cal-card'));
+}
+// Gemeinsames Auf-/Zuklappen einer Kalenderkarte (Uebersicht und Gymplan-Detail).
+function _kalKarteKlappen(kartenId, knopfId, offen, zeichnen) {
+  const karte = document.getElementById(kartenId);
+  if (!karte) return;
+  const btn = document.getElementById(knopfId);
+  if (btn) btn.setAttribute('aria-expanded', String(offen));
   const nr = (karte._klappNr || 0) + 1;
   karte._klappNr = nr;
   const von = karte.getBoundingClientRect().height;
   karte.getAnimations().forEach(a => a.cancel());
-  karte.classList.toggle('kal-zu', !_ovKalOffen);
-  karte.classList.toggle('kal-inhalt-zu', !_ovKalOffen);
-  if (_ovKalOffen) renderTrainingCalendar('cal', 'ov-cal-card');
+  karte.classList.toggle('kal-zu', !offen);
+  karte.classList.toggle('kal-inhalt-zu', !offen);
+  if (offen) zeichnen();
   const bis = karte.getBoundingClientRect().height;
-  if (!_ovKalOffen) karte.classList.remove('kal-inhalt-zu');   // Inhalt bis zum Ende stehen lassen
+  if (!offen) karte.classList.remove('kal-inhalt-zu');   // Inhalt bis zum Ende stehen lassen
   const fertig = () => {
     if (karte._klappNr !== nr) return;
     karte.style.overflow = '';
-    karte.classList.toggle('kal-inhalt-zu', !_ovKalOffen);
+    karte.classList.toggle('kal-inhalt-zu', !offen);
   };
   if (_bewegungReduziert() || !karte.animate || !karte.clientWidth || Math.abs(bis - von) < 1) { fertig(); return; }
   karte.style.overflow = 'hidden';
@@ -6775,6 +6787,7 @@ function toggleCalFilter() {
 // Welche Sportart zeigt WELCHER Kalender? Die Uebersicht folgt dem Filter im Titel, der
 // Plaene-Tab der gewaehlten Seite: Gymplan → Krafttraining, Laufplan → Laeufe.
 function _calModus(id) {
+  if (id === 'dcal') return { kraft: true, lauf: false, titel: 'Gymkalender' };   // v561
   if (id === 'pcal') {
     // Nur zwei der vier Seiten zeigen ueberhaupt einen Kalender (Gymtage und Wettkaempfe
     // nicht) — fuer die uebrigen ist der Wert gleichgueltig.
@@ -6867,12 +6880,16 @@ function calendarInnerHTML(id) {
   const titel = id === 'cal'
     ? `<button class="chart-card-v2-title cal-filter-btn" id="cal-filter-btn" onclick="toggleOvKalender()"
                aria-expanded="${_ovKalOffen}">Trainingskalender</button>`
+    : id === 'dcal'
+    ? `<button class="chart-card-v2-title cal-filter-btn" id="dcal-titel" onclick="toggleDetailKalender()"
+               aria-expanded="${_pdKalOffen}">Gymkalender</button>`
     : `<span class="chart-card-v2-title" id="${id}-titel">Trainingskalender</span>`;
   // Der Zeitraum steht direkt hinter dem Titel und ist seit dem 14.09.2026 ein WECHSLER wie der
   // Titel selbst (Leonard-Wunsch; vorher ein Auswahlfeld mit unsichtbarem <select>): Jeder Tipp
   // schaltet eine Stufe weiter — Aktuell → neuestes Jahr → … → aeltestes Jahr → Aktuell.
   // Ein echter <button>, damit `initScrollHideNav` ihn als Bedienelement erkennt.
-  const jahrFeld = `<button type="button" class="cal-jahr" id="${id}-jahr" onclick="wechselCalJahr('${id}')"
+  // Im Gymplan-Detail (`dcal`) gibt es keinen Wechsler — der Zeitraum ist immer der Plan.
+  const jahrFeld = id === 'dcal' ? '' : `<button type="button" class="cal-jahr" id="${id}-jahr" onclick="wechselCalJahr('${id}')"
                             aria-label="Zeitraum wechseln"></button>`;
   // Rechts neben der Kennzahl: im Plan-Tab die Lesehilfe (ⓘ), in der UEBERSICHT seit dem
   // 14.09.2026 stattdessen ein Knopf zurueck zur Erstansicht (Trainingskalender, „Aktuell",
@@ -7124,8 +7141,17 @@ function _calZeitraum(id) {
   // 01.09.2026 — der Kalender im Plaene-Tab zeigt je Seite eine Sportart).
   const modus = _calModus(id);
   const wahl = calJahr(id);
-  const aktPlaene = _calAktuellePlaene(modus);
-  const aktuell = wahl === 'aktuell' && !!aktPlaene.bereich;
+  let aktPlaene = _calAktuellePlaene(modus);
+  // v561: Der Kalender im Gymplan-Detail zeigt immer den BEARBEITETEN Plan.
+  if (id === 'dcal') {
+    const plan = DB.getPlans().find(p => p.id === editingPlanId);
+    if (plan && plan.startDate) {
+      const vonP = _calLokalTag(plan.startDate);
+      const bisP = plan.endDate ? _calLokalTag(plan.endDate) : new Date(vonP.getTime() + 12 * WOCHE_MS - TAG_MS);
+      aktPlaene = { gym: plan, lauf: null, bereich: { von: vonP, bis: bisP } };
+    }
+  }
+  const aktuell = (wahl === 'aktuell' || id === 'dcal') && !!aktPlaene.bereich;
   const jahr = (typeof wahl === 'number') ? wahl : heute.getFullYear();
   const von = aktuell ? aktPlaene.bereich.von : new Date(jahr, 0, 1);
   const bis = aktuell ? aktPlaene.bereich.bis : new Date(jahr, 11, 31);
@@ -7368,6 +7394,22 @@ function _calPlanLaufzeitenZeichnen(id, card, z, masse) {
   namenEl.innerHTML = zeigtNamen ? stuecke.map(st =>
     `<span class="cal-planname${klasse(st)}" style="${stil(st)};top:${st.spur * (NAME_H + NAME_GAP)}px"
            title="${escapeHtml(st.p.name || '')}">${escapeHtml(st.p.name || 'Plan')}</span>`).join('') : '';
+  // v561: Im Gymplan-Detail (`dcal`) stehen statt des Plannamens die WOCHENNUMMERN des Plans
+  // ueber den Spalten — dieselben „W1 … Wn" wie in der Chip-Reihe „Rest Weeks".
+  if (id === 'dcal') {
+    const st = stuecke.find(x => x.typ === 'gym' && x.p.id === editingPlanId);
+    if (st) {
+      const erstMo = _laufWochenMontag(_calLokalTag(st.p.startDate));
+      const rest = new Set(st.p.restWeeks || []);
+      const labels = [];
+      for (let sp = st.von; sp <= st.bis; sp++) {
+        const mo = new Date(z.start); mo.setDate(mo.getDate() + sp * 7);
+        const nr = Math.round((mo - erstMo) / WOCHE_MS) + 1;
+        labels.push(`<span class="cal-planname cal-wnr${rest.has(nr) ? ' rest' : ''}" style="left:${sp * masse.spalte}px;width:${masse.spalte - masse.luecke}px;top:${st.spur * (NAME_H + NAME_GAP)}px">W${nr}</span>`);
+      }
+      namenEl.innerHTML = labels.join('');
+    }
+  }
   const balken = stuecke.map(st =>
     `<span class="cal-planspur${klasse(st)}" style="${stil(st)};top:${st.spur * (SPUR_H + SPUR_GAP)}px"></span>`).join('');
   spurenObenEl.innerHTML = balken;
@@ -8345,6 +8387,7 @@ function renderPlanDetail() {
   // Archiv-Label aktualisieren
   document.getElementById('plan-archive-label').textContent = plan.archived ? 'Aus Archiv holen' : 'Plan archivieren';
   _restWochenZeichnen(plan);   // v560: Chip-Reihe „Rest Weeks"
+  _pdKalenderZeichnen();       // v561: Gymkalender des Plans
   renderPlanVolumen(plan);   // v476: Abschnitt „Wochenvolumen"
 }
 
@@ -8582,7 +8625,16 @@ function toggleRestWoche(nr) {
   });
   const plan = _resolveEditPlan();
   _restWochenZeichnen(plan);
+  _pdKalenderZeichnen();
   renderPlanVolumen(plan);
+}
+// Zeichnet den Gymkalender des Plan-Details. Auch eingeklappt — dann stehen Titel und Kennzahl.
+function _pdKalenderZeichnen() {
+  const karte = document.getElementById('pd-cal-card');
+  if (!karte) return;
+  karte.classList.toggle('kal-zu', !_pdKalOffen);
+  karte.classList.toggle('kal-inhalt-zu', !_pdKalOffen);
+  renderTrainingCalendar('dcal', 'pd-cal-card');
 }
 
 function _renderAfterPlanEdit() {
@@ -12406,6 +12458,7 @@ function initCalendarResize() {
       if (pc && pc.style.display !== 'none' && document.getElementById('pcal-grid')) {
         renderTrainingCalendar('pcal', 'plans-cal-card');
       }
+      if (currentScreen === 'plan-detail' && document.getElementById('dcal-grid')) renderTrainingCalendar('dcal', 'pd-cal-card');
     }, 180);
   });
 }

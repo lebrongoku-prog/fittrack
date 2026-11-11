@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v560**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v561**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -257,7 +257,10 @@ entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2`.
   `glasAktiv()` liest den Speicher, nicht die Klasse.
 
 ### Trainingskalender
-- `renderTrainingCalendar(id, cardId)`, zwei Instanzen (`cal` Übersicht, `pcal` Plan-Tab),
+- `renderTrainingCalendar(id, cardId)`, drei Instanzen (`cal` Übersicht, `pcal` Plan-Tab,
+  `dcal` Gymplan-Detail in `#pd-cal-card` — immer Gymkalender über den Zeitraum des BEARBEITETEN
+  Plans, ohne Zeitraum-Wechsler, Spalten mit „W1 … Wn" beschriftet, Titel klappt auf/zu über
+  `toggleDetailKalender`, gemeinsamer Klapp-Kern `_kalKarteKlappen`),
   `_calModus(id)`: Übersicht folgt dem Titel-Filter (Trainings-/Gym-/Laufkalender), Plan-Tab der
   Seite. Startet immer bei „Aktuell" (laufender Plan), Zeitraum-Wechsler Aktuell → Jahre.
 - `--cal-cell` / `--cal-gap` sind die einzige Quelle für Maße (JS liest sie). `.cal-scroll` muss
@@ -363,3 +366,10 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   stattdessen Variante A: Chips „W1 … Wn" wie „Wochentage", gewählt in der Tabfarbe, Datum im
   `title`. GEMESSEN (375px, 12 Wochen): Chips 42.7px = Wochentag-Chips, bündig, kein Überlauf,
   Tipp schaltet W8 um; keine Konsolenfehler. Logik und Anzeigen aus v559 unverändert.
+- **v561 (11.11.2026, Leonard-Wunsch):** Ein- und ausklappbarer Gymkalender im Gymplan-Detail
+  zwischen „Trainingsplandaten" und „Wochenvolumen" (`dcal`, startet eingeklappt, nicht
+  gespeichert). Über den Spalten die Planwochen „W1 … Wn" (Rest Weeks in der Tabfarbe), darunter
+  „Rest"; ein Tipp auf einen Rest-Week-Chip zeichnet ihn sofort neu. GEMESSEN (375px): zu 70px,
+  auf 403px, 12 Spalten für 12 Wochen, Wochennummern passend zu den Chips, „Mo" bündig zur
+  ersten Zeile, anderer Plan → 8 Spalten; Übersichts- und Plan-Tab-Kalender unverändert; keine
+  Konsolenfehler.
