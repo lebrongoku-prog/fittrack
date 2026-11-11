@@ -140,13 +140,6 @@ body.theme-plans {
   --accent-dark:        #78350F;
   --gradient-from:      #78350F;
 }
-body.theme-exercises {
-  --accent:             #1E40AF;       /* blue-800 (Marineblau) */
-  --accent-bg:          rgba(30, 64, 175, 0.12);
-  --accent-soft:        #DBEAFE;       /* blue-100 */
-  --accent-dark:        #1E3A8A;       /* blue-900 */
-  --gradient-from:      #172554;
-}
 /* body.theme-mehr keeps the default (blue) */
 /* Nur html bekommt den var(--bg)-Background — body bleibt transparent, damit die
    `.bg-fade-layer` mit z-index:-1 dahinter durchscheinen koennen. Wenn die Layer
@@ -359,20 +352,15 @@ html.workout-active body.theme-workouts #screen-workouts { padding-bottom: calc(
 /* Header texts adapt to the dark themed backgrounds */
 body.theme-overview .ph h1,
 body.theme-workouts .ph h1,
-body.theme-plans .ph h1,
-body.theme-exercises .ph h1  { color: #fff; }
+body.theme-plans .ph h1 { color: #fff; }
 body.theme-overview .ph-sub,
 body.theme-workouts .ph-sub,
-body.theme-plans .ph-sub,
-body.theme-exercises .ph-sub { color: rgba(255,255,255,0.78); }
+body.theme-plans .ph-sub { color: rgba(255,255,255,0.78); }
 body.theme-overview .ph-sub-accent,
 body.theme-workouts .ph-sub-accent,
-body.theme-plans .ph-sub-accent,
-body.theme-exercises .ph-sub-accent { color: #fff; font-weight: 700; }
+body.theme-plans .ph-sub-accent { color: #fff; font-weight: 700; }
 /* Sticky workout header background needs to be transparent so the gradient shows */
 body.theme-workouts #screen-workouts .ph { background: transparent; }
-body.theme-workouts #wo-sub-text { color: rgba(255,255,255,0.85); }
-body.theme-workouts #wo-sub-dot   { background: #fff !important; }
 /* History dropdown sits on the dark gradient – swap to glass look */
 body.theme-plans .hist-action-dd {
   background: rgba(255,255,255,0.95); border-color: transparent;
@@ -456,8 +444,7 @@ body.theme-plans .hist-action-dd {
    gemerkte Scrollposition der Nachbartabs. */
 #screen-workouts, #screen-plans { --sl-pad: calc(var(--sl-h) + 6px); }
 
-/* Active-Klasse hat keine Animation mehr — der Browser animiert per Snap-Scroll selbst. */
-.screen.active { /* nur als Marker fuer JS-Logik vorhanden */ }
+/* `.screen.active` traegt keine Regeln — die Klasse ist nur ein Marker fuer die JS-Logik. */
 
 /* Plan-Detail-Overlay: liegt UEBER dem Tab-Container, blockiert horizontales Swipen.
    Standardmaessig versteckt; .active blendet ein mit Slide-In von rechts. */
@@ -918,10 +905,7 @@ body.theme-plans .hist-action-dd {
    damit sie die Regel darueber schlaegt; die Wochentage behalten ihren Zeigefinger. */
 .karte-inert { cursor: default; }
 .karte-inert:active { transform: none; }
-.plan-card-v2.karte-inert .ppv-col[role="button"],
-/* Seit v428 (04.10.2026) sind die REIHEN der Kombi-Karte das Tipp-Ziel, nicht mehr die Kreise. */
-.plan-card-v2.karte-inert .ppv-k-reihe[role="button"] { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.plan-card-v2.karte-inert .ppv-k-reihe[role="button"]:active { opacity: .6; }
+.plan-card-v2.karte-inert .ppv-col[role="button"] { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 /* Ein Tipp INS Diagramm zeigt nur den Messwert an — die Karte soll dabei nicht zucken
    (Leonard-Wunsch 01.09.2026). Die Klasse setzt `_initKeineTippAnimationAufDiagramm`
    waehrend der Beruehrung; `:has(canvas:active)` waere kuerzer, verlaesst sich aber
@@ -1954,38 +1938,7 @@ html.wo-running #wo-week-card.wo-woche-faehrt,
   margin: 4.95px -6px 0; padding: 3.3px 6px; border-radius: 11px;
   -webkit-tap-highlight-color: transparent;
 }
-/* 19px statt 15px und MITTIG zwischen dem aeusseren Kartenrand und dem ersten
-   Wochentagskreis (Leonard-Wunsch 09.09.2026). Vorher sass das Symbol linksbuendig am
-   Anfang seiner 20px-Spalte.
-   NACHGEMESSEN auf 375px: Kartenrand aussen bei x=12, erster Kreis bei x=58.6 — die Mitte
-   liegt also bei 35.3. Mit `justify-self: center` in der 20px-Spalte landet das Symbol bei
-   36, also 0.7px daneben; das ist unter der Wahrnehmungsschwelle. Wer `--ppv-k-lead` oder
-   das Kartenpolster aendert, misst nach.
-   Am 12.09.2026 um 20 % auf 22.8px gewachsen (Leonard-Wunsch) — dafuer musste
-   `--ppv-k-lead` von 20 auf 24px mit, sonst passt das Symbol nicht in seine Spalte. Das
-   schiebt alle Kreise um 4px nach rechts; nachgemessen ist die Mitte danach wieder
-   stimmig. */
-.ppv-k-ic { width: 25.08px; height: 25.08px; display: inline-flex; justify-self: center; color: var(--text3); }
-/* In der Beschriftungszeile steht an derselben Stelle ein LEERER Platzhalter, damit die
-   Wochentage auf denselben Rasterspalten sitzen wie die Kreise. Er darf die Zeile aber nicht
-   hoeher machen: Mit dem Wachsen des Symbols auf 19px zog er die Zeile von 15 auf 19px und
-   die ganze Karte um 4px mit (gemessen 09.09.2026). Die Breite kommt ohnehin aus
-   `--ppv-k-lead`, die Hoehe braucht er nicht. */
-.ppv-k-labels .ppv-k-ic { height: 0; }
-.ppv-k-ic svg { width: 100%; height: 100%; }
-/* DAS SYMBOL FUELLT SEINEN RAHMEN (Fehler gefunden 13.09.2026). In der Reihe steckt das SVG
-   in einem `.ppv-name-ic` (dieselbe Konstante wie vor den Kartentiteln), und der ist
-   `width: 1em` — also fest die 16px der geerbten Schrift. Die Vergroesserungen vom 09.09.
-   (15 → 19px) und 12.09.2026 (→ 22.8px) wuchsen deshalb nur den UNSICHTBAREN Rahmen; sichtbar
-   blieb das Symbol 16px und sass oben links statt mittig darin. Leonard hat das nie so
-   gesehen, wie es eingestellt war. Mit dieser Zeile ist es so gross wie `.ppv-k-ic` und
-   senkrecht exakt auf Hoehe der Kreise (nachgemessen). */
-.ppv-k-reihe.gym  .ppv-k-ic { color: #0F766E; }
-.ppv-k-reihe.lauf .ppv-k-ic { color: #22A05B; }
-/* Der Kreis: leer = nichts geplant, gefuellt = geplant, Haken = erledigt. Kleiner als die
-   30px der Einzelkarten — hier stehen ZWEI Reihen uebereinander.
-   Die Kalender-Zeichen (Quadrat/Kreis, geplant nur umrandet) waren am 07.09.2026 kurz
-   eingebaut und wurden am selben Tag zurueckgenommen (Leonard-Wunsch). */
+/* Eine Spalte je Wochentag; der Kreis darin ist ohne Einheit hellgrau. */
 .ppv-k-col {
   display: flex; justify-content: center; min-width: 0;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
@@ -1995,55 +1948,11 @@ html.wo-running #wo-week-card.wo-woche-faehrt,
   width: 29.04px; height: 29.04px; box-sizing: border-box; border-radius: 50%;
   background: var(--card2);
 }
-.ppv-k-reihe.gym  .training .ppv-k-dot, .ppv-k-reihe.gym  .done .ppv-k-dot { background: #0F766E; }
-.ppv-k-reihe.lauf .training .ppv-k-dot, .ppv-k-reihe.lauf .done .ppv-k-dot { background: #4ADE80; }
-/* Heute: dasselbe transparente Feld wie in den Wochenplan-Karten (08.09.2026) — der Ring um
-   den Kreis ist dort wie hier entfallen. Die Spalte ist schmaler als die Marke hoch ist,
-   deshalb etwas Polster, damit das Feld nicht als Strich erscheint. */
-/* HEUTE ist EIN durchgehendes Feld ueber beide Reihen, nicht zwei getrennte
-   (Leonard-Wunsch 09.09.2026). Beide Reihen tragen weiterhin ihr eigenes Feld — sie sind
-   getrennte Rasterzeilen, ein einziges Element koennte sie nicht ueberspannen —, aber sie
-   stossen nahtlos aneinander: Die OBERE Reihe zieht ihr Feld um die 6.5px des
-   Zwischenraums nach unten (Polster plus negativer Aussenabstand, damit das Layout sich
-   nicht verschiebt) und rundet nur oben, die UNTERE rundet nur unten.
-   ACHTUNG: Das setzt die Reihenfolge Gym → Lauf voraus, so wie `buildWochenKombi` sie
-   immer baut, und den 6.5px-Abstand aus `.ppv-k-reihe`. Wer den Abstand aendert, zieht
-   die 7.5px hier mit (3px eigenes Polster + 4.5px Abstand). */
-/* Der GEWAEHLTE Tag (12.09.2026) nutzt DIESELBEN Regeln: Ein Tipp markiert denselben
-   Wochentag in beiden Reihen, das Feld sieht also genauso aus und spannt genauso ueber
-   beide. Die Karte kennt damit weiterhin nur EINE Art Hervorhebung (Leonard-Vorgabe
-   08.09.2026). Faellt die Auswahl auf heute, tragen beide Klassen dieselben Werte — es
-   gibt nichts zu entscheiden. */
+/* Heute und der gewaehlte Tag tragen dasselbe transparente Feld wie in den Wochenplan-Karten.
+   Die fruehere Zwei-Reihen-Fassung (`.ppv-k-reihe.gym/.lauf`, Sportsymbole `.ppv-k-ic`) ist seit
+   v502 nicht mehr im Markup; ihre Regeln sind am 11.11.2026 entfernt. Die Karte zeichnet nur
+   noch `.ppv-k-reihe.beide` (siehe „KOMBI-KARTE EINZEILIG" weiter unten). */
 .ppv-k-col.today, .ppv-k-col.selected { background: var(--accent-bg); padding: 3.3px 0; margin: -3.3px 0; }
-.ppv-k-reihe.gym  .ppv-k-col.today,
-.ppv-k-reihe.gym  .ppv-k-col.selected { border-radius: 9.9px 9.9px 0 0; padding-bottom: 8.25px; margin-bottom: -8.25px; }
-.ppv-k-reihe.lauf .ppv-k-col.today,
-.ppv-k-reihe.lauf .ppv-k-col.selected { border-radius: 0 0 9.9px 9.9px; }
-/* Ein geplanter, noch NICHT absolvierter Tag traegt den Ring der Sportart und dieselbe
-   hellgraue Fuellung wie ein Tag ohne Training (`--card2`, Leonard-Wunsch 08.09.2026 —
-   vorher `transparent`). Damit sind es drei klar unterscheidbare Zustaende in EINER
-   Formensprache:
-     hellgrau, kein Ring    = nichts geplant
-     hellgrau mit Ring      = geplant, nicht absolviert
-     voll in der Sportfarbe = ABSOLVIERT
-   `.offen` hiess bis zum 12.09.2026 `.zukunft` und haengte am DATUM (`i > todayIdx`). Ein
-   geplanter Lauf von HEUTE war dadurch voll eingefaerbt und sah aus wie gelaufen, obwohl er
-   noch anstand (Leonard-Meldung 12.09.2026 mit Screenshot). Jetzt entscheidet allein, ob die
-   Einheit absolviert ist — heute wie in Vergangenheit und Zukunft.
-   PREIS: Ein ausgefallener Tag der Vergangenheit sieht aus wie einer, der noch aussteht.
-   Das ist die kleinere Unwahrheit — „gefuellt" behauptete vorher ein Training, das es nie gab.
-   Die EINZELKARTEN folgen seit dem 13.09.2026 derselben Regel (`.ppv-col.offen`,
-   Leonard-Wunsch) — ausser im Plan-Tab, wo sie den Plan statt der Woche zeigen. */
-.ppv-k-reihe.gym  .training.offen:not(.done) .ppv-k-dot { background: var(--card2); box-shadow: inset 0 0 0 3.96px #0F766E; }
-.ppv-k-reihe.lauf .training.offen:not(.done) .ppv-k-dot { background: var(--card2); box-shadow: inset 0 0 0 3.96px #4ADE80; }
-/* VERSCHOBEN — dieselbe Aussage wie in den Einzelkarten: erledigt, aber nicht an diesem Tag.
-   Die Fuellung ist ohnehin schon das Hellgrau eines Tages ohne Training; hier faellt nur der
-   farbige Ring weg und ein grauer Haken kommt dazu. */
-.ppv-k-reihe.gym  .verschoben .ppv-k-dot,
-.ppv-k-reihe.lauf .verschoben .ppv-k-dot { background: var(--card2); box-shadow: none; }
-
-/* Auch hier KEIN Erledigt-Haken mehr (09.09.2026) — siehe die Begruendung bei
-   `.ppv-col.done .ppv-wd` weiter oben. */
 /* Der Filtertitel sieht aus wie jeder Kartentitel, ist aber ein Knopf. */
 .ppv-filter-btn {
   border: none; background: none; padding: 0; margin: 0; text-align: left;
@@ -2060,27 +1969,10 @@ html.wo-running #wo-week-card.wo-woche-faehrt,
 html.glas .screen:not(#screen-mehr) .ppv-k-col:not(.training):not(.done) .ppv-k-dot {
   background: rgba(255,255,255,.22);
 }
-/* KEINE SPORTFARBEN IM TRANSPARENZ-MODUS (18.09.2026, Leonard-Wunsch „um die Sichtbarkeit zu
-   erhoehen"): Dunkelgruen und Hellgruen gingen auf dem Farbverlauf unter. Absolviert ist jetzt
-   in BEIDEN Reihen weiss gefuellt, offen weiss umrandet — dieselben Werte wie die Kreise der
-   Einzelkarten (`.ppv-col.training .ppv-wd`). Welche Reihe welcher Sport ist, sagen die
-   Symbole davor; vorher stand hier, die Farbe sei das Einzige, was die Reihen unterscheide. */
-html.glas .screen:not(#screen-mehr) .ppv-k-reihe .training .ppv-k-dot,
-html.glas .screen:not(#screen-mehr) .ppv-k-reihe .done .ppv-k-dot { background: rgba(255,255,255,.92); }
-/* Kuenftige Marken bleiben auch im Transparenz-Modus nur umrandet — der Ring ist weiss. */
-html.glas .screen:not(#screen-mehr) .ppv-k-reihe.gym  .training.offen:not(.done) .ppv-k-dot,
-html.glas .screen:not(#screen-mehr) .ppv-k-reihe.lauf .training.offen:not(.done) .ppv-k-dot {
-  background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 3.96px rgba(255,255,255,.92);
-}
-/* Verschoben im Transparenz-Modus: dieselbe Flaeche wie ein Tag ohne Training, der Haken
-   bleibt gedaempft weiss — Grau auf dem Schleier waere kaum zu sehen. */
-html.glas .screen:not(#screen-mehr) .ppv-k-reihe.gym  .verschoben .ppv-k-dot,
-html.glas .screen:not(#screen-mehr) .ppv-k-reihe.lauf .verschoben .ppv-k-dot { background: rgba(255,255,255,.22); }
 html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.verschoben .ppv-wd {
   background: rgba(255,255,255,.22); color: rgba(255,255,255,.85);
 }
 html.glas .screen:not(#screen-mehr) .ppv-k-labels { color: rgba(255,255,255,.75); }
-html.glas .screen:not(#screen-mehr) .ppv-k-ic { color: rgba(255,255,255,.85); }
 /* KOMBI-KARTE EINZEILIG (v502, 04.11.2026, Leonard-Wunsch): eine Reihe Quadrate wie im
    Trainingskalender (Variante B) — eine Sportart allein fuellt das Quadrat, beide teilen es
    diagonal (oben links Gym `.kt.gym`, unten rechts Lauf `.kt.lauf`). Gefuellt = absolviert,
@@ -2740,9 +2632,6 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,2
 .plan-card-v2 .ppv-col.training .ppv-wd,
 .plan-card-v2 .ppv-col.done .ppv-wd,
 .plan-card-v2 .ppv-col.verschoben .ppv-wd { border-radius: 7px; }
-.ppv-k-reihe .training .ppv-k-dot,
-.ppv-k-reihe .done .ppv-k-dot,
-.ppv-k-reihe .verschoben .ppv-k-dot { border-radius: 5px; }
 /* STARTBLOCK HEUTE (v433): die Bausteine der frueheren Herocard (`.hero-heute`) als Kasten
    oben in der Karte, ohne eigene Karte (`.hero-v2`) — gedeckt im Akzent-Ton des Tabs. Die Knoepfe
    tragen hier die Textstufe statt 18px und weniger Polster, der Block soll kompakt bleiben. */
@@ -4344,14 +4233,8 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
     column-gap: 0;
     align-content: start;
   }
-  #wo-view-laufen > #wo-runplan-card,
   #wo-view-laufen > #wo-lauf-hero { display: flex; flex-direction: column; }
-  #wo-view-laufen > #wo-runplan-card > *,
   #wo-view-laufen > #wo-lauf-hero > * { flex: 1; }
-  #wo-view-laufen > #wo-runplan-card > .plan-card-v2 {
-    display: flex; flex-direction: column; justify-content: center;
-  }
-  #wo-view-laufen > #wo-runplan-card { grid-column: 1; }
   #wo-view-laufen > #wo-lauf-hero { grid-column: 1 / -1; }   /* v448: ohne Wochenplan-Karte */
   #wo-view-laufen > .chart-card-v2 { grid-column: 1 / -1; }
 
@@ -4453,16 +4336,6 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
    min-height bleibt die Zeile in beiden Zustaenden exakt gleich hoch. */
 .ex-chart-head .stats-mode-toggle { padding: 1px; }
 .ex-chart-head .stats-mode-pill { padding: 1px 8px; font-size: var(--fs-etikett); }
-/* Einklappbare Ueberschrift des Diagramms (Einheiten-Detailansicht). */
-.ex-chart-collapse {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: none; border: none; padding: 0; font: inherit; color: inherit;
-  text-transform: inherit; letter-spacing: inherit;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
-.ex-chart-collapse .aex-v2-chev { width: 18px; height: 18px; color: inherit; }
-.ex-chart-collapse .aex-v2-chev svg { width: 16px; height: 16px; }
-.ex-chart-block:not(.collapsed) .ex-chart-collapse .aex-v2-chev { transform: rotate(180deg); }
 .ex-chart-block.collapsed .ex-chart-body { display: none; }
 /* Zugeklappt bleibt nur die Ueberschrift stehen — der Gewicht/Wdh.-Umschalter gehoert zum
    Diagramm und haette ohne es keine sichtbare Wirkung. Er bleibt im Markup (nur versteckt),

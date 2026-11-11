@@ -320,7 +320,7 @@ const DB = {
   getPlans() { return _speicherLesen('ft_plans', []); },
   savePlans(plans) { _speicherSchreiben('ft_plans', plans); },
 
-  // Gemeinsamer Rahmen der Schreibmethoden `savePlan`/`saveProgram`/`saveWeekPlan`: sucht den
+  // Gemeinsamer Rahmen der Schreibmethoden `savePlan`/`saveProgram`: sucht den
   // bearbeiteten (sonst den aktiven) Plan, laesst `aendern` ihn anpassen und speichert die Liste.
   _bearbeitetenPlanAendern(aendern) {
     const targetId = editingPlanId || (getActivePlan()?.id);
@@ -332,7 +332,7 @@ const DB = {
     this.savePlans(plans);
   },
 
-  // Backwards-Compat: getPlan/savePlan/getProgram/saveProgram/getWeekPlan/saveWeekPlan
+  // Backwards-Compat: getPlan/savePlan/getProgram/saveProgram
   // operieren auf dem aktuell bearbeiteten Plan (editingPlanId) bzw. fallback aktiver Plan.
   // Damit funktionieren alle existierenden Mutator-Funktionen ohne Signatur-Änderung.
   getPlan() {
@@ -374,13 +374,6 @@ const DB = {
       p.endDate = prog.endDate;
     });
   },
-  getWeekPlan() {
-    const p = _resolveEditPlan();
-    return p ? p.weekPlan : JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
-  },
-  saveWeekPlan(wp) {
-    this._bearbeitetenPlanAendern(p => { p.weekPlan = wp; });
-  },
 
   // Trainingstage-Bibliothek: planunabhaengiger Speicher fuer eigenstaendige Trainingstage.
   // Ein Lib-Tag: { id, name, color?, exercises:[{exId,targetSets,targetReps}], notes, archived, createdAt }
@@ -391,7 +384,6 @@ const DB = {
   // keine Saetze, kein Volumen. Sie faerben das Kaestchen im Trainingskalender und zaehlen
   // in dessen Kennzahlen mit — mehr steht ueber sie nicht zur Verfuegung.
   getManualDays() { return _speicherLesen('ft_manual_days', []); },
-  saveManualDays(v) { _speicherSchreiben('ft_manual_days', v); },
 
   // EIGENSTAENDIGE Wettkaempfe: `{ date: 'YYYY-MM-DD', name }`, ohne zugehoerigen Laufplan.
   // Das Gegenstueck zu `plan.raceDate` — noetig fuer Wettkaempfe aus Jahren, in denen es noch
@@ -834,7 +826,6 @@ const THEME_GRADIENTS = {
   // Farbe faellt weg. Das Gruen ist ein Versprechen; ohne Training gibt es keins.
   'workouts-grau': 'linear-gradient(135deg, #334155, #94A3B8)',
   plans:     'linear-gradient(135deg, #78350F, #F59E0B)',
-  exercises: 'linear-gradient(135deg, #172554, #1E40AF)',
   mehr:      'linear-gradient(135deg, #DBEAFE, #DBEAFE)',   // solid hellblau, kein sichtbarer Verlauf
 };
 
@@ -2219,17 +2210,6 @@ function woDayIdx(wo) {
   return -1;
 }
 
-function selectWorkoutDay(idx) {
-  selectedWorkoutDayIdx = idx;
-  mitHeroFarbwechsel('#wo-session-card-wrap', renderWorkoutsScreen);
-  // Die Uebungskarten des neuen Tags kommen gestaffelt herein (16.09.2026, Leonard-Wunsch) —
-  // dieselbe Bewegung wie beim Seitenwechsel. Wochenplan-Karte und Herocard bleiben stehen: Die
-  // eine ist der Umschalter, den man gerade antippt, die andere hat mit der Farbblende ihres
-  // Knopfes (`mitHeroFarbwechsel`) schon ihre eigene Bewegung.
-  // ERST zeichnen, DANN staffeln: Die Markierung des Wochentags und die Herocard sollen sofort
-  // umspringen — ein Abgang der alten Karten haette den Tipp traege wirken lassen.
-  _kartenStaffelEin(document.getElementById('active-ex-list'));
-}
 
 // Aus der Plan-Karte (Übersicht) in den Trainings-Tab auf einen bestimmten Wochentag springen.
 // Tabwechsel MIT der Wischbewegung statt hartem Sprung (Leonard-Wunsch 01.09.2026).
@@ -2418,7 +2398,7 @@ function _renderGymSeite() {
   const uebergang = _woUebergangVorher();
   ensureSelectedDayIdx();
   // WICHTIG: Der Workouts-Tab zeigt IMMER den AKTIVEN Plan (per Datum) — niemals den Edit-Kontext
-  // (editingPlanId) und niemals den DEFAULT_PLAN/DEFAULT_WEEKPLAN-Fallback von DB.getPlan/getWeekPlan.
+  // (editingPlanId) und niemals den DEFAULT_PLAN-Fallback von DB.getPlan.
   // getCurrentWeekDays() ist getActivePlan-basiert (identische Quelle wie der Wochenplan-Strip), damit
   // Hero/Vorschau und Strip nie widersprechen. Ohne aktiven Plan ist jeder Tag ein Ruhetag.
   const weekDays = getCurrentWeekDays();
@@ -2430,20 +2410,6 @@ function _renderGymSeite() {
   // Bewusst NICHT zusätzlich gegen planDay geprüft: Wer sein Training auf einen Ruhetag
   // verschiebt (oder frei trainiert), soll die laufende Einheit trotzdem hier sehen.
   const activeOnSelected = !!(active && woDayIdx(active) === selectedWorkoutDayIdx);
-
-  // Header subtitle
-  const dotEl = document.getElementById('wo-sub-dot');
-  const subEl = document.getElementById('wo-sub-text');
-  if (activeOnSelected) {
-    dotEl.style.display = 'inline-block';
-    subEl.textContent = 'Laufende Gym Session';
-  } else if (planDay) {
-    dotEl.style.display = 'none';
-    subEl.textContent = 'Vorschau';
-  } else {
-    dotEl.style.display = 'none';
-    subEl.textContent = 'Wochenplan';
-  }
 
   // Week strip
   renderWorkoutWeekStrip();
@@ -2740,7 +2706,7 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
             ${zelle(si, 'reps', s.reps)}
             ${zelle(si, 'weight', s.weight)}
           </div>`).join('');
-    return `<div class="aex-v2 ${collapsedCls}" id="aex-${ei}" data-ex="${exIdKey}" style="--c:${col.c};--c-bg:${col.bg}"
+    return `<div class="aex-v2 ${collapsedCls}" id="aex-${ei}" data-ex="${exIdKey}" style="--c:${col.c}"
                  ${_aexZiehAttribute(ei, `'${mode}','${planDay.id}'`)}>
       ${_aexKopfOeffnen(exIdKey)}
         <div class="aex-v2-num">${ei+1}</div>
@@ -2892,7 +2858,7 @@ function renderActiveWorkout() {
     const exIdKey = ex.exId || ex.id;
     const collapsedCls = isAexExpanded(exIdKey) ? '' : 'collapsed';
     const aktuell = ei === aktuellIdx;
-    return `<div class="aex-v2 ${stateCls} ${collapsedCls}${aktuell ? ' aktuell' : ''}" id="aex-${ei}" data-ex="${exIdKey}" style="--c:${col.c};--c-bg:${col.bg}"
+    return `<div class="aex-v2 ${stateCls} ${collapsedCls}${aktuell ? ' aktuell' : ''}" id="aex-${ei}" data-ex="${exIdKey}" style="--c:${col.c}"
                  ${_aexZiehAttribute(ei, `'active'`)}>
       ${_aexKopfOeffnen(exIdKey)}
         <div class="aex-v2-num${stateCls ? '' : ' offen'}">${ei+1}</div>
@@ -5034,13 +5000,7 @@ let _laufOffeneWochen = new Set();  // mehrere Wochen duerfen gleichzeitig offen
 
 // Ausgewaehlter Wochentag auf der Seite „Laufen". Vorbelegt mit HEUTE — dieselbe Bedienung
 // wie im Gymteil (`selectedWorkoutDayIdx`), nur fuer die Laufseite.
-let selectedRunDayIdx = null;
-function selectRunDay(idx) {
-  selectedRunDayIdx = idx;
-  // Die Auswahl steuert nur noch die Herocard. Die Tageskarte darunter (samt ihrer Staffel)
-  // ist am 21.09.2026 entfallen — die Laeufe der ganzen Woche stehen in „Diese Woche".
-  mitHeroFarbwechsel('#wo-lauf-hero', renderLaufKalenderSeite);
-}
+let selectedRunDayIdx = null;   // seit v448 immer heute (keine Tagesauswahl mehr auf der Seite)
 
 // Die LAEUFE DIESER WOCHE als Liste unter den Summen der Karte „Diese Woche"
 // (21.09.2026, Leonard-Wunsch „Variante A"): auf einen Blick, was die Woche bringt —
@@ -7792,7 +7752,7 @@ function prHTML(pr, number) {
   const valColor = muscleColor(muscleKey);
   // Unter dem Namen steht nichts mehr: Die Steigerung „(+5 kg)" fiel am 04.10.2026, der
   // Verlauf „45 → 50 kg" am 23.10.2026 (v459, beides Leonard-Wunsch).
-  return `<div class="pr-v2-row no-icon" style="--mc:${valColor};--mc-bg:${muscleBg(muscleKey)}" onclick="showHistDetailForEx('${pr.exId}', ${pr.date || 0})">
+  return `<div class="pr-v2-row no-icon" style="--mc:${valColor}" onclick="showHistDetailForEx('${pr.exId}', ${pr.date || 0})">
     <div class="pr-v2-num">${num}</div>
     <div>
       <div class="pr-v2-name">${escapeHtml(pr.name)}</div>
@@ -10598,8 +10558,15 @@ function saveNewEx() {
 // DATA EXPORT / IMPORT
 // ═══════════════════════════════════════════════
 
+// MANUELLE SICHERUNG („Daten exportieren" / „Daten importieren").
+// Seit dem 11.11.2026 dasselbe Format wie die Drive-Sicherung (`collectLocalData`): ALLE Plaene,
+// Gymtage, Gym Sessions, Uebungen, nachgetragene Tage, Wettkaempfe, Laufplaene, Favoriten und das
+// Koerpergewicht. Vorher (Format „version 2") standen nur Gym Sessions, Uebungen und die Tage EINES
+// Plans in der Datei — Laufplaene, Wettkaempfe, weitere Plaene und die Vorlagen fehlten, und das
+// Einspielen stellte den Plan ohne laufenden Plan gar nicht wieder her.
+// Alte Dateien (mit `plan` statt `plans`) lassen sich weiter einlesen.
 function exportData() {
-  const data = { version:2, exportedAt:new Date().toISOString(), workouts:DB.getWorkouts(), plan:DB.getPlan(), exercises:DB.getExercises() };
+  const data = collectLocalData();
   const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -10615,16 +10582,27 @@ function importData(event) {
   reader.onload = e => {
     try {
       const data = JSON.parse(e.target.result);
-      if (!data.workouts || !data.plan || !data.exercises) { showToast('Ungültige Datei'); event.target.value=''; return; }
+      const neuesFormat = Array.isArray(data.plans);
+      if (!Array.isArray(data.workouts) || !Array.isArray(data.exercises) || !(neuesFormat || Array.isArray(data.plan))) {
+        showToast('Ungültige Datei'); event.target.value=''; return;
+      }
       const exportDate = data.exportedAt ? new Date(data.exportedAt).toLocaleDateString('de-DE') : 'unbekannt';
       confirmAction('Backup importieren?',
         `Backup vom ${exportDate} importieren? Alle aktuellen Daten werden überschrieben.`,
         () => {
-          DB.saveWorkouts(data.workouts);
-          DB.savePlan(data.plan);
-          DB.saveExercises(data.exercises);
+          if (neuesFormat) {
+            try { driveApplyCloudData(data); }
+            catch (err) { showToast('Backup konnte nicht eingespielt werden'); return; }
+            _entwurfVergessen();
+            markLocalChange();   // der eingespielte Stand ist der neue — er soll auch gesichert werden
+          } else {
+            // Altes Format (bis v556): Gym Sessions, Uebungen und die Tage des laufenden Plans.
+            DB.saveWorkouts(data.workouts);
+            DB.savePlan(data.plan);
+            DB.saveExercises(data.exercises);
+          }
           showToast(`${data.workouts.length} Gym Sessions importiert ✓`);
-          renderMehr();
+          prerenderAllTabs();
         },
         { danger: true, confirmLabel: 'Importieren' }
       );
@@ -10654,10 +10632,14 @@ function openModal(id) {
   // Ein Blatt, das gerade abfaehrt, sofort abschliessen — sonst liegen zwei Schleier
   // uebereinander und der Timer des alten wuerde spaeter das neue treffen.
   document.querySelectorAll('.overlay.schliesst').forEach(o => _modalZu(o));
-  document.getElementById(id).classList.remove('hidden');
-  document.getElementById(id).addEventListener('click', function h(e) {
-    if (e.target === this) { closeModal(id); this.removeEventListener('click',h); }
-  });
+  const ov = document.getElementById(id);
+  ov.classList.remove('hidden');
+  // Tipp auf die abgedunkelte Flaeche schliesst. Der Zuhoerer haengt nur EINMAL am Fenster —
+  // vorher kam bei jedem Oeffnen ein weiterer dazu.
+  if (!ov._hintergrundTipp) {
+    ov._hintergrundTipp = true;
+    ov.addEventListener('click', e => { if (e.target === ov) closeModal(id); });
+  }
 }
 // `ohneBewegung`: Das Blatt ist schon unten (Herunterwischen) — dann nur noch ausblenden.
 function closeModal(id, ohneBewegung) {
@@ -11933,16 +11915,6 @@ function _kartenStaffelFahren(karten, grundVerzug) {
                           { duration: SEITEN_SCHUB_MS, delay: verzug, easing: SEITEN_SCHUB_KURVE, fill: 'backwards' }));
   });
   return Promise.all(rein);
-}
-function _kartenStaffelEin(behaelter) {
-  if (!behaelter || _bewegungReduziert() || !behaelter.clientWidth) return Promise.resolve();
-  const karten = [...behaelter.children]
-    .filter(el => el.offsetHeight && el.getBoundingClientRect().top < window.innerHeight);
-  if (!karten.length) return Promise.resolve();
-  // Ein schneller zweiter Tipp trifft Karten, die noch laufen — erst abraeumen, dann neu fahren.
-  karten.forEach(el => el.getAnimations().forEach(a => a.cancel()));
-  return _kartenStaffelFahren(karten)
-    .then(() => karten.forEach(el => el.getAnimations().forEach(a => a.cancel())));
 }
 
 function _seitenWechsel(screenId, tabName, setzen) {

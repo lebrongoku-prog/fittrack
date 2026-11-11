@@ -12,10 +12,10 @@ Antworten an Leonard bitte auf Deutsch, knapp und direkt. Bei mehrdeutigen Anwei
 
 | Datei | Zweck |
 |---|---|
-| `index.html` (~1070 Z.) | Markup, alle Screens + Modals |
-| `style.css` (~4230 Z.) | gesamtes Styling + Theme-Variablen |
-| `app.js` (~11500 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v556**) |
+| `index.html` (~1025 Z.) | Markup, alle Screens + Modals |
+| `style.css` (~4380 Z.) | gesamtes Styling + Theme-Variablen |
+| `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
+| `sw.js` | Service Worker; Cache-Version `fittrack-vNN` (aktuell **v557**) |
 | `manifest.json` | PWA-Manifest |
 | `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App-Icon (Hantel-Logo, weiß auf blauem Verlauf, zentriert) |
 
@@ -827,6 +827,30 @@ Die Abschnitte darunter zum Referenz-Modell, zu „+ Trainingstag hinzufügen" u
   oeffneten schon `showHistDetail`; verpasste Tage bleiben ohne Tipp. GEMESSEN (Testplan, alle
   Tage Testtag): 7 Knoepfe mit Vorschau, Tipp → „Testtag — Mo., 9. Nov. 2026" mit 2 Karten;
   absolvierte Session → `showHistDetail`; keine Konsolenfehler.
+- **v557 (11.11.2026, Leonard-Auftrag „alles pruefen"):** Durchsicht der ganzen App.
+  1. BUG BEHOBEN — MANUELLE SICHERUNG: „Daten exportieren" schrieb noch das Format „version 2"
+     (nur Gym Sessions, Uebungen und die Tage EINES Plans); Laufplaene, Wettkaempfe, weitere
+     Plaene, Vorlagen, nachgetragene Tage, Favoriten und Koerpergewicht fehlten, und „Daten
+     importieren" stellte ohne laufenden Plan gar keinen Plan wieder her (`DB.savePlan` schreibt
+     nur in den bearbeiteten/aktiven). Jetzt exportiert `exportData` dasselbe wie die
+     Drive-Sicherung (`collectLocalData`), `importData` spielt es ueber `driveApplyCloudData` ein
+     (samt Migrationen), ruft `markLocalChange` und zeichnet alle Tabs neu. Alte Dateien (mit
+     `plan` statt `plans`) lassen sich weiter einlesen. GEMESSEN: Export → alle Stores geleert →
+     Import: neun Stores identisch; altes Format und ungueltige Datei wie erwartet.
+  2. `openModal` haengte bei JEDEM Oeffnen einen weiteren Klick-Zuhoerer an das Fenster; jetzt
+     genau einen je Fenster (`ov._hintergrundTipp`).
+  3. ENTFERNT (ohne Aufrufer bzw. ohne Markup): `selectWorkoutDay`, `selectRunDay`,
+     `_kartenStaffelEin` (Tagesauswahl im Trainings-Tab, seit v448 weg), `DB.getWeekPlan`,
+     `DB.saveWeekPlan`, `DB.saveManualDays`, `THEME_GRADIENTS.exercises`, `body.theme-exercises`,
+     der nie sichtbare Untertitel `#wo-sub` samt JS und CSS, die Inline-Variablen `--c-bg`/`--mc-bg`,
+     die Zwei-Reihen-Regeln der Kombi-Karte (`.ppv-k-reihe.gym/.lauf`, `.ppv-k-ic`,
+     `.ppv-k-reihe[role="button"]`), `#wo-runplan-card`-Regeln, `.ex-chart-collapse`, die leere
+     Regel `.screen.active`. `selectedRunDayIdx` bleibt (immer heute).
+  GEPRUEFT (375px, Testbestand): 88 Schritte durch alle Tabs, Vollbildseiten, Fenster, Glas-Modus
+  und eine komplette Gym Session ohne Konsolenfehler; Kombi-Karte unveraendert (Bild).
+  TESTHINWEIS: Nach einem Neuladen registriert sich der Service Worker neu und liefert beim
+  NAECHSTEN Laden wieder die alte app.js — vor JEDEM Neuladen SW und Caches loeschen. Und:
+  `exportData` laedt im Vorschau-Browser eine Datei in den PROJEKTORDNER — danach loeschen.
 
 ### Referenz-Tag-Modell v2 (Vorgeschichte, siehe oben)
 - **Trainingstage sind GETEILTE Entitäten** im globalen Store `ft_trainingdays` (analog Übungen). Ein Plan REFERENZIERT Tage über `plan.dayIds` (keine eingebetteten Kopien). Eine Tag-Änderung wirkt in ALLEN referenzierenden Plänen.
