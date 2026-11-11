@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v563**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v564**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -261,14 +261,14 @@ entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2`.
 ### Trainingskalender
 - `renderTrainingCalendar(id, cardId)`, drei Instanzen (`cal` Übersicht, `pcal` Plan-Tab,
   `dcal` Gymplan-Detail in `#pd-cal-card` — immer Gymkalender über den Zeitraum des BEARBEITETEN
-  Plans, ohne Zeitraum-Wechsler, Spalten mit „W1 … Wn" beschriftet, zeigt NUR den Plan
+  Plans, ohne Zeitraum-Wechsler, NICHT einklappbar, Spalten mit „W1 … Wn" beschriftet, zeigt NUR den Plan
   (gewählte Wochentage außer Rest Weeks als Umriss, nichts Absolviertes, keine roten Wochen,
   Kennzahl „N Gym Sessions geplant"; Tipp auf einen Tag nennt in der Fußzeile nur den Plan:
   Gymtag → Vorschau, „Rest Week", „Kein Gymtag gewählt" oder „Kein Gym geplant"). Titel
   (`#dcal-titel`) und Kennzahl (`#dcal-stats`) stehen im Abschnittskopf ÜBER der Karte wie bei
-  den anderen Abschnitten; eingeklappt ist die Karte ganz weg (`toggleDetailKalender`,
-  `_boxFahren`). Titel klappt auf/zu über
-  `toggleDetailKalender`, gemeinsamer Klapp-Kern `_kalKarteKlappen`),
+  den anderen Abschnitten. Ohne Kopf in der Karte rückt `.cal-body` oben 7.5px und unten 5px
+  heraus, damit sichtbar genau die 14px Kartenpolster bleiben; `--cal-months-gap` dort 2px.
+  Klapp-Kern der Übersichts-Karte: `_kalKarteKlappen`),
   `_calModus(id)`: Übersicht folgt dem Titel-Filter (Trainings-/Gym-/Laufkalender), Plan-Tab der
   Seite. Startet immer bei „Aktuell" (laufender Plan), Zeitraum-Wechsler Aktuell → Jahre.
 - `--cal-cell` / `--cal-gap` sind die einzige Quelle für Maße (JS liest sie). `.cal-scroll` muss
@@ -396,3 +396,8 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   weiß in Großbuchstaben wie „Wochenplan", vier Fußzeilen-Fälle richtig, Kachel → Vorschau
   „Push — Mo., 12. Okt. 2026", Klappen dreimal schnell endet sauber; Übersichts-Kalender
   unverändert; keine Konsolenfehler.
+- **v564 (11.11.2026, Leonard-Wunsch):** Gymkalender im Gymplan-Detail nicht mehr einklappbar
+  (Titel ist reiner Text, `toggleDetailKalender`/`_pdKalOffen` entfallen). Leerraum entfernt:
+  GEMESSEN Kartenkante → Monatsschrift 21.5 → 14.0px, „Rest" → Unterkante 19 → 14.0px, Monat →
+  „W1" 9 → 6.0px, „Mo" weiter mittig zur ersten Zeile (0.4px), Karte mit Fußzeile unten 14.0px;
+  keine Konsolenfehler.
