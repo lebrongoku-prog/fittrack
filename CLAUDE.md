@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v558**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v559**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -115,6 +115,16 @@ grep -n "fittrack-v" sw.js
   Gymtage" / „Kein Gymtag"). Abschnitt „Wochenvolumen" (`renderPlanVolumen`).
 - Gymtage werden NUR in ihrer Detailansicht bearbeitet (`renderLibDayDetail`). Einzige Ausnahme:
   `syncSetCountsToPlanDay` übernimmt beim Beenden die trainierte Satzanzahl.
+- **Rest Weeks** (v559): `plan.restWeeks = [Planwoche, …]` (1-basiert ab dem Montag der
+  Startwoche, wie „Woche N / M"). Geprüft über `_istRestWoche(plan, datum)` / `_planWocheNr`.
+  In einer Rest Week ist kein Gymtag geplant — eingebaut in `getCurrentWeekDays` (Feld
+  `restWeek`), `getWeekStatus`, `getWeekStreak` (überspringt, bricht nicht ab), `_calPlanInfo`
+  (`rest: true`), `_calPlanStand`, Kombi-Karte, `buildPlanCard` (laufende Woche), rote Wochen,
+  Ø-Wochenvolumen (`rest` in den Wochendaten). Knopf/Fußzeile/Wochenkarte sagen „Rest Week",
+  im Kalender steht „Rest" unter dem Gym-Balken (`.cal-rest`). Einstellen im Gymplan-Detail über
+  die Wochenleiste (`_restWochenZeichnen`, `toggleRestWoche`, `.rw-q`). Wochenzählung und
+  Planende bleiben unverändert; Laufen ist nicht betroffen. Neue Stellen, die „geplant" für Gym
+  rechnen, MÜSSEN `_istRestWoche` beachten.
 - Gymtag hat Muskelgruppen (`day.muscles`, Reihenfolge `MUSCLE_ORDER`, nicht aus Übungen abgeleitet).
 - **Entwurf** in Gym-/Laufplan-Detail bestehender Pläne: Alles speichert sofort, der Stand beim
   Öffnen wird gemerkt (`_entwurfBeginnen`); Leiste „Speichern / Änderungen verwerfen"
@@ -340,3 +350,11 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   7364 Katalog-Lesungen je Bildschirm). Körpergewicht „entfernt" (`null`) wird beim Einspielen
   übernommen. manifest: Beschreibung „Gym und Laufen", `theme_color` wie die Meta-Angabe.
   `--screen-pad` und drei Klassen ohne Regel entfernt. Querformat Gym: Herocard volle Breite.
+- **v559 (11.11.2026, Leonard-Wahl „Variante D"):** Rest Weeks im Gymplan (siehe Architektur).
+  Wochenleiste unter „Wochentage" (sechs Quadrate je Zeile, vergangen kräftig, laufende mit Ring,
+  kommende blass, Rest hell-amber mit „Rest"), Schriftzug „Rest" im Kalender (Leonard-Wunsch),
+  Wochen zählen normal weiter. GEMESSEN (375px, Plan 12 Wochen, Rest 3 und 6, heute in Woche 6):
+  diese Woche 0 geplant, Knopf „Rest Week" in Übersicht und Seite „Gym", Fußzeile „Rest Week",
+  Gym-Wochenkarte „Rest Week", Serie 4 (Woche 3 übersprungen), Kennzahl 17/16, Ø-Volumen ohne
+  Rest Weeks, keine roten Wochen, „Rest" unter beiden Spalten (Glas weiß), Umschalten per Tipp
+  mit Entwurfsleiste und Verwerfen; keine Konsolenfehler.

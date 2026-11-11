@@ -518,6 +518,23 @@ function _planProgramWeek(p) {
   return { num: Math.min(Math.max(week,1), total), total };
 }
 
+// ── REST WEEK (v559, 11.11.2026, Leonard-Wahl „Variante D") ────────────────────────────────
+// Ein Gymplan kann einzelne PLANWOCHEN als Rest Week markieren (`plan.restWeeks = [4, 8]`,
+// 1-basiert ab dem Montag der Startwoche — dieselbe Zaehlung wie „Woche N / M"). In einer Rest
+// Week ist KEIN Gymtag geplant: kein offener Umriss, nichts verpasst, keine rote Woche, sie zaehlt
+// weder in die Quote noch in das Ø-Wochenvolumen und unterbricht die Wochenserie nicht. Der
+// Wochenplan selbst bleibt unveraendert und gilt danach wieder. Die Wochenzaehlung laeuft normal
+// weiter, das Planende verschiebt sich nicht (Leonard-Entscheidung). Nur Gym, nicht Laufen.
+function _planWocheNr(plan, date) {
+  const mo = _laufWochenMontag(_calLokalTag(plan.startDate));
+  const d = new Date(date); d.setHours(0, 0, 0, 0);
+  return Math.floor(Math.round((d - mo) / TAG_MS) / 7) + 1;
+}
+function _istRestWoche(plan, date) {
+  return !!(plan && plan.startDate && Array.isArray(plan.restWeeks) && plan.restWeeks.length
+    && plan.restWeeks.includes(_planWocheNr(plan, date)));
+}
+
 // Build the 7-day list starting Monday for the current week — uses ACTIVE plan, not edit context
 function getCurrentWeekDays() {
   const today = new Date(); today.setHours(0,0,0,0);
@@ -527,11 +544,13 @@ function getCurrentWeekDays() {
   const wp = active ? active.weekPlan : JSON.parse(JSON.stringify(DEFAULT_WEEKPLAN));
   const plan = active ? active.trainingDays : [];
   const ws = DB.getWorkouts();
+  const restWeek = _istRestWoche(active, mon);   // v559: in einer Rest Week ist nichts geplant
   const out = [];
   for (let i=0; i<7; i++) {
     const d = new Date(mon); d.setDate(mon.getDate() + i);
     const dEnd = new Date(d); dEnd.setHours(23,59,59,999);
-    const wpEntry = wp[i] || { planDayId:null, label:'?', dayKey:'' };
+    const roh = wp[i] || { planDayId:null, label:'?', dayKey:'' };
+    const wpEntry = restWeek ? { ...roh, planDayId: null } : roh;
     const planDay = wpEntry.planDayId ? plan.find(p => p.id === wpEntry.planDayId) : null;
     // Did we already do this planDay today/this week (any workout that day)?
     const dayDone = ws.some(w => w.startTs >= d.getTime() && w.startTs <= dEnd.getTime());
@@ -549,6 +568,7 @@ function getCurrentWeekDays() {
       // Ruhetag wenn: kein planDayId zugewiesen ODER die zugewiesene ID existiert nicht
       // mehr (verwaiste Referenz nach Plan-Import mit "Ersetzen")
       isRest: !planDay,
+      restWeek,
     });
   }
   _verschobeneZuordnen(out, ws, mon);
@@ -599,7 +619,7 @@ function getWeekStatus() {
   const done = ws.filter(w => w.startTs >= mon.getTime() && w.startTs <= sun.getTime()).length;
   const active = getActivePlan();
   const wp = active ? active.weekPlan : [];
-  const planned = wp.filter(d => d.planDayId).length;
+  const planned = _istRestWoche(active, mon) ? 0 : wp.filter(d => d.planDayId).length;
   return { done, planned };
 }
 
@@ -657,10 +677,11 @@ function getWeekStreak() {
 
   let streak = 0;
   // Laufende Woche nur zählen, wenn das Pensum bereits erreicht ist
-  if (countIn(mon) >= planned) streak++;
+  if (!_istRestWoche(active, mon) && countIn(mon) >= planned) streak++;
   for (let i = 1; i <= 52; i++) {
     const start = new Date(mon); start.setDate(mon.getDate() - 7 * i);
     if (start < _calLokalTag(active.startDate || 0)) break;   // Kalendertage, siehe `_planHatBegonnen`
+    if (_istRestWoche(active, start)) continue;   // v559: Rest Week zaehlt nicht und unterbricht nicht
     if (countIn(start) >= planned) streak++;
     else break;
   }
@@ -1343,8 +1364,9 @@ function buildWochenKombi() {
     const byId = {}; resolvePlanDays(gp).forEach(d => { byId[d.id] = d; });
     const wp = (gp.weekPlan && gp.weekPlan.length) ? gp.weekPlan : DEFAULT_WEEKPLAN;
     const weekDone = getCurrentWeekDays();
+    const rest = _istRestWoche(gp, new Date());   // v559
     wp.forEach((w, i) => {
-      const d = w.planDayId ? byId[w.planDayId] : null;
+      const d = (!rest && w.planDayId) ? byId[w.planDayId] : null;
       // „Erledigt" haengt am TAG, nicht am Plan — siehe `buildPlanCard`. `verschoben` heisst:
       // Die hier geplante Einheit lief an einem anderen Tag dieser Woche.
       gymTage[i] = { geplant: !!d,
@@ -2056,7 +2078,7 @@ function buildHeuteHero(planDay, selDay, opts) {
       // drei Zeilen um und wurde von der Karte abgeschnitten. Gilt in allen Tabs.
       // Seit v471 (Leonard-Wunsch) heisst er „Kein Gym" und fragt vor dem Start nach
       // (`freiesTrainingFragen`) — der Knopf benennt den Tag, nicht die Aktion.
-      knopf = `<button class="hero-v2-btn hero-v2-btn-grau" data-sport="gym" onclick="freiesTrainingFragen()">Kein Gym</button>`;
+      knopf = `<button class="hero-v2-btn hero-v2-btn-grau" data-sport="gym" onclick="freiesTrainingFragen()">${selDay && selDay.restWeek ? 'Rest Week' : 'Kein Gym'}</button>`;
     }
     // Zweite Zeile unter dem Namen: Umfang des Tages (Leonard-Wunsch 07.09.2026). Sie steht
     // NUR auf der Seite „Gym" im Trainings-Tab (`opts.sport === 'gym'`) — in der Uebersicht
@@ -2066,7 +2088,7 @@ function buildHeuteHero(planDay, selDay, opts) {
     if (kopfWeg) ohneKopf = true;
     spalten.push(`<div class="hero-heute-spalte">
       ${kopfWeg ? '' : `<div class="hero-heute-kopf">
-        <div class="hero-heute-einheit">${planDay ? escapeHtml(planDay.name) : 'Kein Gym'}</div>
+        <div class="hero-heute-einheit">${planDay ? escapeHtml(planDay.name) : (selDay && selDay.restWeek ? 'Rest Week' : 'Kein Gym')}</div>
         ${meta ? `<div class="hero-heute-meta">${meta}</div>` : ''}
       </div>`}
       ${knopf}
@@ -5895,7 +5917,7 @@ function renderGymWoche(aktivLaeuft) {
     const zeilen = w.zeilen.map(z => _gymWochenZeileHTML(z, ist ? todayIdx : -1));
     return `<div class="lauf-wochen-seite">${zeilen.length
       ? `<div class="lauf-wochenliste">${zeilen.join('')}</div>`
-      : '<div class="lauf-wochenliste"><div class="lauf-wz-leer gym-woche-leer">Kein Gym geplant</div></div>'}</div>`;
+      : `<div class="lauf-wochenliste"><div class="lauf-wz-leer gym-woche-leer">${_calPlanInfo(w.mo, planIndex).rest ? 'Rest Week' : 'Kein Gym geplant'}</div></div>`}</div>`;
   }).join('');
   // Diagramm: Volumen je Woche; der Durchschnitt nur ueber ABGESCHLOSSENE Wochen.
   // v492 (Leonard-Wunsch, wie v491 beim Lauf): Die LAUFENDE Woche zaehlt schon als abgeschlossen,
@@ -5904,9 +5926,9 @@ function renderGymWoche(aktivLaeuft) {
     const von = w.mo.getTime(), bis = von + WOCHE_MS - 1;
     const vol = ws.filter(x => x.startTs >= von && x.startTs <= bis).reduce((a, x) => a + calcVolume(x), 0);
     const fertig = von === heuteMo.getTime() && w.zeilen.length > 0 && !w.zeilen.some(z => z.zustand === 'offen');
-    return { mo: w.mo, vol, vorbei: von < heuteMo.getTime() || fertig };
+    return { mo: w.mo, vol, vorbei: von < heuteMo.getTime() || fertig, rest: _istRestWoche(plan, w.mo) };
   });
-  const vorbei = _gymWochenDaten.filter(d => d.vorbei);
+  const vorbei = _gymWochenDaten.filter(d => d.vorbei && !d.rest);   // v559: Rest Weeks nicht im Ø
   const schnitt = vorbei.length ? vorbei.reduce((a, d) => a + d.vol, 0) / vorbei.length : null;
   const mitDiagramm = montage.length > 1 && _gymWochenDaten.some(d => d.vol > 0);
   const anzeige = montage.length < 2 ? ''
@@ -6002,7 +6024,7 @@ function toggleGymVolDiagramm() {
   _wochenDiagrammKlappen(block, _laufKmOffen, () => {
     const sc = document.getElementById('gym-wochen-scroll');
     const d = _gymWochenDaten || [];
-    const vorbei = d.filter(x => x.vorbei);
+    const vorbei = d.filter(x => x.vorbei && !x.rest);
     _zeichneGymVolDiagramm(sc && sc._montage ? sc._montage[Math.max(0, sc._idx)] : null,
       vorbei.length ? vorbei.reduce((a, x) => a + x.vol, 0) / vorbei.length : null);
   });
@@ -6091,7 +6113,7 @@ function _gymVolDaten(plan) {
       const zeilen = _gymWochenZeilenDaten(new Date(m), true, _calPlanIndex(), ws, tageById);
       vorbei = zeilen.length > 0 && !zeilen.some(z => z.zustand === 'offen');
     }
-    out.push({ mo: new Date(m), vol, vorbei });
+    out.push({ mo: new Date(m), vol, vorbei, rest: _istRestWoche(plan, m) });
   }
   return out;
 }
@@ -6102,7 +6124,7 @@ function renderPlanVolumen(plan) {
   const daten = _gymVolDaten(plan);
   sek.hidden = !daten.some(d => d.vol > 0);
   if (sek.hidden) return;
-  const vorbei = daten.filter(d => d.vorbei);
+  const vorbei = daten.filter(d => d.vorbei && !d.rest);
   const schnitt = vorbei.length ? vorbei.reduce((a, d) => a + d.vol, 0) / vorbei.length : null;
   document.getElementById('plan-vol-schnitt').textContent = schnitt != null ? 'Ø ' + fmtVol(schnitt) : '';
   const farbe = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#F59E0B';
@@ -6651,6 +6673,7 @@ function _calPlanInfo(date, index) {
   const ts = date.getTime();
   const p = index.find(x => ts >= x.start && ts <= x.end);
   if (!p) return { known: false, planned: false, name: null, plan: null };
+  if (_istRestWoche(p.plan, date)) return { known: true, planned: false, rest: true, name: null, plan: p.plan };
   const entry = p.wp[(date.getDay() + 6) % 7];
   if (!entry || !entry.planDayId) return { known: true, planned: false, name: null, plan: p.plan };
   const d = p.days.find(x => x && x.id === entry.planDayId);
@@ -6984,7 +7007,7 @@ function _calPlanStand(sport, plan, bereichVon, today) {
     const wi = (d.getDay() + 6) % 7;
     if (sport === 'gym') {
       const wp = (plan.weekPlan && plan.weekPlan.length) ? plan.weekPlan : DEFAULT_WEEKPLAN;
-      if (wp[wi] && wp[wi].planDayId) geplant++;
+      if (wp[wi] && wp[wi].planDayId && !_istRestWoche(plan, d)) geplant++;
     } else if ((plan.runDays || []).includes(wi)) {
       geplant++;
     }
@@ -7171,6 +7194,7 @@ function _calRasterHTML(id, z) {
   // 09.09.2026) — dort uebertoente das Rot die Marken beider Sportarten.
   const wocheOhneTraining = (weekStart) => {
     if (modus.kraft && modus.lauf) return false;
+    if (modus.kraft && _calPlanInfo(weekStart, planIndex).rest) return false;   // v559: Rest Week
     const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
     if (weekEnd.getTime() >= heute.getTime()) return false;
     for (let d = 0; d < 7; d++) {
@@ -7347,7 +7371,19 @@ function _calPlanLaufzeitenZeichnen(id, card, z, masse) {
   const balken = stuecke.map(st =>
     `<span class="cal-planspur${klasse(st)}" style="${stil(st)};top:${st.spur * (SPUR_H + SPUR_GAP)}px"></span>`).join('');
   spurenObenEl.innerHTML = balken;
-  spurenEl.innerHTML = balken;
+
+  // REST WEEKS (v559, Leonard-Wunsch „Schriftzug Rest"): unter dem Gym-Balken steht in der
+  // Spalte jeder Rest Week „Rest". Die Zeile kommt nur dazu, wenn eine im Bild ist.
+  const restHTML = [];
+  if (modus.kraft) stuecke.filter(st => st.typ === 'gym').forEach(st => {
+    (st.p.restWeeks || []).forEach(nr => {
+      const mo = _laufWochenMontag(_calLokalTag(st.p.startDate)); mo.setDate(mo.getDate() + (nr - 1) * 7);
+      const sp = _calSpalte(mo.getTime(), z.start);
+      if (sp < st.von || sp > st.bis) return;
+      restHTML.push(`<span class="cal-rest" style="left:${sp * masse.spalte}px;width:${masse.spalte - masse.luecke}px">Rest</span>`);
+    });
+  });
+  spurenEl.innerHTML = balken + restHTML.join('');
 
   // Alle drei Zeilen sind absolut gefuellt und haetten sonst die Hoehe null. Die Wochentagsspalte
   // liegt ABSOLUT ueber dem Kalender und muss alles ueber dem Raster mitrechnen, sonst steht „Mo"
@@ -7358,7 +7394,8 @@ function _calPlanLaufzeitenZeichnen(id, card, z, masse) {
   namenEl.style.marginBottom = hNamen ? '3px' : '0';
   spurenObenEl.style.height = hBalken + 'px';
   spurenObenEl.style.marginBottom = anzahl ? '6px' : '0';
-  spurenEl.style.height = hBalken + 'px';
+  // Die Beschriftung steht 3px unter den Balken (`.cal-rest { bottom: 0 }`, 13px hoch).
+  spurenEl.style.height = (hBalken + (restHTML.length ? 16 : 0)) + 'px';
   spurenEl.style.marginTop = anzahl ? '7px' : '0';
   if (card) card.style.setProperty('--cal-names-h',
     (anzahl ? (hNamen ? hNamen + 3 : 0) + hBalken + 6 : 0) + 'px');
@@ -7547,7 +7584,7 @@ function showCalDay(key, id) {
               sub: kommt ? 'geplant' : 'nicht trainiert' };
     } else if (plan.known) {
       // Nur INNERHALB eines Plans — ohne abdeckenden Plan bleibt die Kachel weg.
-      gym = { zustand: 'leer', titel: 'Kein Gym geplant', sub: '' };
+      gym = { zustand: 'leer', titel: plan.rest ? 'Rest Week' : 'Kein Gym geplant', sub: '' };
     }
   }
 
@@ -8117,8 +8154,9 @@ function buildPlanCard(p, onTap, hideToday, hideStatus, hideMeta, opts) {
   // Nur Wochentage, keine Trainingstag-Namen (Leonard-Wunsch): geplante Tage stehen in einem
   // eingefärbten Kreis (Akzentfarbe = geplant, grün = diese Woche erledigt, Ring = heute).
   // Die konkreten Tagnamen zeigt die Plan-Detailansicht.
+  const restJetzt = zeigtWoche && _istRestWoche(p, new Date());   // v559: diese Woche ist Rest Week
   const strip = wp.map((w, i) => {
-    const d = w.planDayId ? byId[w.planDayId] : null;
+    const d = (!restJetzt && w.planDayId) ? byId[w.planDayId] : null;
     const today = isCurrent && i === todayIdx && !hideToday;
     // „Erledigt" haengt am TAG, nicht am Plan (Leonard-Wunsch 08.09.2026): Eine Einheit an
     // einem ungeplanten Tag bekommt ihren Haken genauso. Vorher stand hier `d && …` — ein
@@ -8306,6 +8344,7 @@ function renderPlanDetail() {
 
   // Archiv-Label aktualisieren
   document.getElementById('plan-archive-label').textContent = plan.archived ? 'Aus Archiv holen' : 'Plan archivieren';
+  _restWochenZeichnen(plan);   // v559: Wochenleiste „Rest Weeks"
   renderPlanVolumen(plan);   // v476: Abschnitt „Wochenvolumen"
 }
 
@@ -8512,6 +8551,42 @@ function deleteCurrentPlan() {
 // damit Header / Status-Chip / Wochenplan-Strip / Trainingstage-Liste konsistent
 // zu den frisch gespeicherten Daten stehen. Wirkt nur, wenn der User aktuell auf
 // dem Plan-Detail-Screen ist — sonst no-op (nichts unnoetiges re-rendern).
+// REST WEEKS im Gymplan-Detail (v559, Leonard-Wahl „Variante D"): der Plan als Reihe
+// nummerierter Quadrate, sechs je Zeile. Vergangene Wochen kraeftig, die laufende mit Ring,
+// kommende blass; eine Rest Week hell in der Tabfarbe mit „Rest". Ein Tipp schaltet um.
+// Neu gezeichnet wird nur diese Zeile (und das Wochenvolumen) — ein Neuaufbau der ganzen Seite
+// naehme dem Namensfeld darueber eine noch nicht gespeicherte Eingabe.
+function _restWochenZeichnen(plan) {
+  const el = document.getElementById('prog-restwochen');
+  if (!el) return;
+  const anzahl = plan ? _weeksBetween(plan.startDate, plan.endDate) : 0;
+  if (!anzahl) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  el.style.display = '';
+  const jetzt = _planWocheNr(plan, new Date());
+  const rest = new Set(plan.restWeeks || []);
+  const quadrate = [];
+  for (let nr = 1; nr <= anzahl; nr++) {
+    const zustand = nr < jetzt ? 'vorbei' : nr === jetzt ? 'jetzt' : 'kommt';
+    const r = rest.has(nr);
+    const mo = _laufWochenMontag(_calLokalTag(plan.startDate)); mo.setDate(mo.getDate() + (nr - 1) * 7);
+    const titel = `Woche ${nr} · ${_laufWochenSpanne(mo)}${r ? ' · Rest Week' : ''}`;
+    quadrate.push(`<button type="button" class="rw-q ${zustand}${r ? ' rest' : ''}" aria-pressed="${r}"
+      title="${titel}" aria-label="${titel}" onclick="toggleRestWoche(${nr})">
+      <b>${nr}</b>${r ? '<span>Rest</span>' : ''}</button>`);
+  }
+  el.innerHTML = `<label>Rest Weeks</label><div class="rw-raster">${quadrate.join('')}</div>`;
+}
+function toggleRestWoche(nr) {
+  DB._bearbeitetenPlanAendern(p => {
+    const r = new Set(p.restWeeks || []);
+    if (r.has(nr)) r.delete(nr); else r.add(nr);
+    if (r.size) p.restWeeks = [...r].sort((a, b) => a - b); else delete p.restWeeks;
+  });
+  const plan = _resolveEditPlan();
+  _restWochenZeichnen(plan);
+  renderPlanVolumen(plan);
+}
+
 function _renderAfterPlanEdit() {
   if (currentScreen === 'plan-detail') renderPlanDetail();
 }
