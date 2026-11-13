@@ -556,6 +556,12 @@ body.theme-plans .hist-action-dd {
 .ph-with-back { justify-content: flex-start; gap: 10px; align-items: center; }
 .ph-with-back .ph-left { flex: 1; min-width: 0; }
 .ph-left h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+/* TAB-SYMBOL STATT TABTITEL (v572, Leonard-Wunsch): Uebersicht, Training und Plan zeigen im Kopf
+   das Symbol ihres Tabs aus der Tableiste (gleiche Zeichnung, weiss auf dem Tab-Hintergrund).
+   Der Name bleibt fuer Screenreader im `.sr-only`-Text erhalten. Vollbildseiten behalten Titel. */
+.ph-tab-titel { display: flex; align-items: center; line-height: 1; margin-bottom: 3px; }   /* mittig zu den 38px-Knoepfen rechts */
+.ph-tab-ic { width: 32px; height: 32px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .ph-left .ph-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
 
 /* Zahnrad in der Übersicht: Zugang zu den Einstellungen, seit „Mehr" kein Tab mehr ist.

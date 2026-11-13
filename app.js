@@ -2409,7 +2409,8 @@ function renderWorkoutsScreen() {
   if (vL) vL.style.display = workoutsViewMode === 'laufen' ? '' : 'none';
   // v547 (Leonard-Wunsch): Der Tabtitel nennt die gezeigte Seite — „Gym" bzw. „Laufen", wie im
   // Plan-Tab „Gymplan"/„Laufplan". Das Nav-Label unten bleibt „Training".
-  const woH1 = document.getElementById('wo-h1');
+  // Seit v572 zeigt der Kopf das Tab-Symbol; der Seitenname steht nur noch fuer Screenreader.
+  const woH1 = document.getElementById('wo-h1-text');
   if (woH1) woH1.textContent = workoutsViewMode === 'laufen' ? 'Laufen' : 'Gym';
   if (workoutsViewMode === 'laufen') { renderLaufKalenderSeite(); return; }
   _renderGymSeite();
@@ -9080,7 +9081,7 @@ function renderPlansScreen() {
   zeige(document.getElementById('plans-races-btn'), plansViewMode === 'runplans');
   zeige(document.getElementById('plans-favs-btn'), plansViewMode === 'runplans');   // v535
   const seite = PLANS_SEITEN[plansViewMode] || PLANS_SEITEN.plans;
-  const h1 = document.getElementById('plans-h1');
+  const h1 = document.getElementById('plans-h1-text');   // v572: Symbol im Kopf, Name fuer Screenreader
   if (h1) h1.textContent = seite.titel;
   // Der Kalender gehoert zu den beiden PLAN-Seiten: Gymplan zeigt ihn mit den
   // Trainingseinheiten, Laufplan mit den Laufeinheiten. Gymtage und Wettkaempfe haben keinen —

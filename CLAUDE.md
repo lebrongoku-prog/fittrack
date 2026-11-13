@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v571**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v572**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -76,8 +76,10 @@ grep -n "fittrack-v" sw.js
   (absolvierte Krafteinheit, seit v519 überall, auch Einzahl). Laufplan-Detail: „Läufe".
   Im Code heißt es weiter „Einheit"/`workout`. „Workout" und „Ruhetag" kommen in der UI NICHT vor:
   „Kein Gym"/„Kein Lauf" (kurz), „Kein Gym geplant"/„Kein Lauf geplant" (lang).
-- Tableiste: **Übersicht · Training · Plan**. Training-Seiten **Gym · Laufen** (Tabtitel `#wo-h1`
-  nennt die Seite). Plan-Seiten **Gymplan · Laufplan**.
+- Tableiste: **Übersicht · Training · Plan**. Training-Seiten **Gym · Laufen**, Plan-Seiten
+  **Gymplan · Laufplan**. Seit v572 zeigen die drei Tabs im Kopf statt eines Titels das Symbol
+  ihres Tabs aus der Tableiste (`.ph-tab-titel`/`.ph-tab-ic`, 32px weiß); der Name steht nur noch
+  für Screenreader (`.sr-only`, `#wo-h1-text`, `#plans-h1-text`). Vollbildseiten behalten Titel.
 - Dezimaltrenner ist der **Punkt** (kein `toLocaleString('de-DE')` für Zahlen). `fmtVol` liefert
   ab 1000 kg Tonnen inkl. Einheit. Pace-Format `5'54'' /km` (`fmtPace`, erst auf ganze Sekunden
   runden).
@@ -476,3 +478,7 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   (vorher zuoberst); im Querformat entfällt sein `order: -1`. GEMESSEN: Reihenfolge Kopf ·
   Trainingswoche · Heute · Kalender in 375px und 1100px, Auf-/Zuklappen funktioniert; keine
   Konsolenfehler.
+- **v572 (13.11.2026, Leonard-Wunsch):** Tab-Symbol statt Tabtitel in Übersicht, Training und Plan.
+  GEMESSEN (375px): Symbol 32x32 weiß, 14px vom Rand, Mitte auf Höhe der Kopfknöpfe (45px),
+  Kopfhöhe unverändert 64px; Seitenwechsel setzt den Screenreader-Namen (Gym/Laufen,
+  Gymplan/Laufplan); keine Konsolenfehler.
