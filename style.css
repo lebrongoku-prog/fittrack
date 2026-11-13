@@ -559,8 +559,8 @@ body.theme-plans .hist-action-dd {
 /* TAB-SYMBOL STATT TABTITEL (v572, Leonard-Wunsch): Uebersicht, Training und Plan zeigen im Kopf
    das Symbol ihres Tabs aus der Tableiste (gleiche Zeichnung, weiss auf dem Tab-Hintergrund).
    Der Name bleibt fuer Screenreader im `.sr-only`-Text erhalten. Vollbildseiten behalten Titel. */
-.ph-tab-titel { display: flex; align-items: center; line-height: 1; margin-bottom: 3px; }   /* mittig zu den 38px-Knoepfen rechts */
-.ph-tab-ic { width: 32px; height: 32px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }
+.ph-tab-titel { display: flex; align-items: center; line-height: 1; }   /* v573: 38.4px, damit mittig zu den 38px-Knoepfen rechts */
+.ph-tab-ic { width: 38.4px; height: 38.4px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .ph-left .ph-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
 
@@ -888,6 +888,14 @@ body .abschnitt-kopf .rb-zu { color: #fff; }
    Flex-Spalte wuchs es damit SENKRECHT: Der Text rutschte in die Mitte, die Hinweiszeile an
    den unteren Rand. Als direktes Kind der Karte waechst der Name deshalb nicht. */
 .plan-card-v2 > .ppv-name { flex: none; }
+/* v573 (Leonard-Wunsch): Die Wochenkarte der UEBERSICHT steht seit v570 ohne Kopf in ihrem
+   Abschnitt. Mindesthoehe 157.3px und verteilte `auto`-Abstaende (fuer den frueheren Kopf und
+   die Hoehe der Herocard daneben) liessen oben 36–38px und unten 21–23px Luft. Jetzt das
+   gewohnte Kartenpolster: 14px rundum, Bloecke 10px auseinander. */
+#ov-week-card .plan-card-v2.abschnitt-karte { min-height: 0; height: auto; padding: 14px; }
+#ov-week-card .plan-card-v2.abschnitt-karte::after { display: none; }
+#ov-week-card .plan-card-v2.abschnitt-karte > * { margin-top: 0; padding-top: 0; }
+#ov-week-card .plan-card-v2.abschnitt-karte > * + * { margin-top: 10px; }
 /* Tipp-Rueckmeldung fuer ALLE Karten (Leonard-Wunsch 28.08.2026) — dieselbe dezente
    Stauchung wie bei der Wochenplan-Karte. `transition` NUR auf transform, damit die
    Farbwechsel der Karten (z. B. erledigte Uebung) unveraendert bleiben. */

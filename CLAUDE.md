@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v572**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v573**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -78,7 +78,7 @@ grep -n "fittrack-v" sw.js
   „Kein Gym"/„Kein Lauf" (kurz), „Kein Gym geplant"/„Kein Lauf geplant" (lang).
 - Tableiste: **Übersicht · Training · Plan**. Training-Seiten **Gym · Laufen**, Plan-Seiten
   **Gymplan · Laufplan**. Seit v572 zeigen die drei Tabs im Kopf statt eines Titels das Symbol
-  ihres Tabs aus der Tableiste (`.ph-tab-titel`/`.ph-tab-ic`, 32px weiß); der Name steht nur noch
+  ihres Tabs aus der Tableiste (`.ph-tab-titel`/`.ph-tab-ic`, seit v573 38.4px weiß); der Name steht nur noch
   für Screenreader (`.sr-only`, `#wo-h1-text`, `#plans-h1-text`). Vollbildseiten behalten Titel.
 - Dezimaltrenner ist der **Punkt** (kein `toLocaleString('de-DE')` für Zahlen). `fmtVol` liefert
   ab 1000 kg Tonnen inkl. Einheit. Pace-Format `5'54'' /km` (`fmtPace`, erst auf ganze Sekunden
@@ -324,7 +324,8 @@ entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2`.
   durchscheinend. Ausgenommen: Plan- und Wettkampfkarten in Listen (Name = Eintrag).
 - **Kartenpolster 14px**; im Querformat (ab 1024px) steht der seitliche Rand in EINER Selektorliste
   — neue Karten dort eintragen. Senkrechter Abstand kommt immer von der Karte darüber.
-- Wochenplan-Karten und Herocards 157.3px; Knöpfe 63.6px.
+- Wochenplan-Karten (Plan-Tab-Liste) mindestens 157.3px; Knöpfe 63.6px. Die Wochenkarte der
+  Übersicht hat seit v573 keine Mindesthöhe mehr, sondern 14px Polster rundum.
 - Tab-Kopfzeilen gleich hoch (`--ph-h`), Knöpfe oben rechts 38px (`--ph-btn`).
 - **Ein Ausklapp-Pfeil** für die App (`.aex-v2-chev` + `AEX_CHEV_SVG`), rechts, zugeklappt nach
   unten, aufgeklappt 180°. Viele Stellen klappen inzwischen ohne Pfeil über den Titel.
@@ -482,3 +483,8 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   GEMESSEN (375px): Symbol 32x32 weiß, 14px vom Rand, Mitte auf Höhe der Kopfknöpfe (45px),
   Kopfhöhe unverändert 64px; Seitenwechsel setzt den Screenreader-Namen (Gym/Laufen,
   Gymplan/Laufplan); keine Konsolenfehler.
+- **v573 (13.11.2026, Leonard-Wunsch):** Tab-Symbole im Kopf 20 % größer (32 → 38.4px, mittig
+  zu den Kopfknöpfen ohne Zusatzabstand). Wochenkarte der Übersicht mit normalem Kartenpolster
+  statt Mindesthöhe und verteilten Abständen. GEMESSEN (375px): Symbol 38.4px, Mitte 44.8 gegen
+  Knopfmitte 45.0, Kopf 64px; Karte „Trainingswoche" oben/unten 14.0px in allen drei
+  Filterzuständen (vorher 36–38 bzw. 21–23px), Höhe 157 → 115/112px; keine Konsolenfehler.
