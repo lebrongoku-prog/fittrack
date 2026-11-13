@@ -5937,10 +5937,10 @@ function renderGymWoche(aktivLaeuft) {
        onclick="wochenKarteTipp(event, 'gym')">
     <div class="chart-card-v2-head">
       ${titelHTML}
+      <span class="lauf-wochen-datum" id="gym-wochen-datum"></span>
       <button type="button" class="info-btn cal-reset-btn lauf-wochen-zurueck" id="gym-wochen-zurueck"
               onclick="laufWocheZurueck('gym-wochen-scroll')" hidden
               aria-label="Zur aktuellen Woche" title="Zur aktuellen Woche">${CAL_RESET_SVG}</button>
-      <span class="lauf-wochen-datum" id="gym-wochen-datum"></span>
     </div>
     <div class="lauf-wochen-scroll" id="gym-wochen-scroll">
       <span class="cal-sticky-anchor" aria-hidden="true"></span>
@@ -6176,10 +6176,10 @@ function renderLaufKalenderSeite() {
        onclick="wochenKarteTipp(event, 'lauf')">
     <div class="chart-card-v2-head">
       ${titelHTML}
+      <span class="lauf-wochen-datum" id="lauf-wochen-datum"></span>
       <button type="button" class="info-btn cal-reset-btn lauf-wochen-zurueck" id="lauf-wochen-zurueck"
               onclick="laufWocheZurueck()" hidden
               aria-label="Zur aktuellen Woche" title="Zur aktuellen Woche">${CAL_RESET_SVG}</button>
-      <span class="lauf-wochen-datum" id="lauf-wochen-datum"></span>
     </div>
     <div class="lauf-wochen-scroll" id="lauf-wochen-scroll">
       <span class="cal-sticky-anchor" aria-hidden="true"></span>

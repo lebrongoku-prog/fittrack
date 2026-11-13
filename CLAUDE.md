@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v575**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v576**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -506,3 +506,7 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   GEMESSEN (375px): Kopfzeile in allen drei Fällen mit und ohne Knopf 15px, Karte bleibt auf
   223.59px; Tipp 10px neben dem Zeichen trifft; Rücksprung zur aktuellen Woche funktioniert;
   keine Konsolenfehler. Muskelkarte bleibt gestreckt (Leonard-Entscheidung).
+- **v576 (13.11.2026, Leonard-Wunsch):** In „Diese Woche" (Gym/Laufen) steht der Kreispfeil wie im
+  Trainingskalender ganz rechts, 8px hinter dem Datum (vorher links davor). GEMESSEN (375px):
+  Knopf bündig am rechten Rand des Kopfes in Kalender, Gym und Laufen; Datum → Knopf 8px; ohne
+  Knopf steht das Datum rechtsbündig; Kopf 15px; keine Konsolenfehler.

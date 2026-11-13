@@ -2508,7 +2508,11 @@ html.glas .screen:not(#screen-mehr) .aex-v2.aktuell { box-shadow: 0 0 0 2px rgba
 /* Zurueck-Knopf im Kopf: erscheint erst beim Wischen, steht LINKS NEBEN DEM DATUM
    (22.09.2026, Leonard-Wunsch). `.info-btn` bringt `margin-right: auto` mit — das schoebe ihn
    an den linken Rand; hier sitzt er direkt am Datum. */
-.lauf-wochen-zurueck { margin-right: 0; margin-left: auto; }
+/* v576 (Leonard-Wunsch): Kreispfeil RECHTS neben dem Datum wie im Kopf des Trainingskalenders
+   (dort rechts neben der Kennzahl). Das Datum schiebt sich dafuer an den rechten Rand, der
+   Knopf haengt mit 8px Abstand (Luecke des Kopfes) dahinter. */
+.lauf-wochen-datum { margin-left: auto; }
+.lauf-wochen-zurueck { margin-right: 0; margin-left: 0; }
 /* `hidden` allein genuegt NICHT: `.info-btn` setzt `display: flex`, und eine Autoren-Regel
    schlaegt das `display: none` des Browsers fuer `[hidden]`. */
 .lauf-wochen-zurueck[hidden] { display: none; }
