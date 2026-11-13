@@ -627,6 +627,19 @@ body.theme-plans .hist-action-dd {
    die Karten durchscheinend (Leonard-Entscheidung). */
 .mehr-section > .abschnitt-karte { margin: 0; border-radius: var(--radius); }
 .abschnitt-kopf { min-height: 15px; flex-wrap: wrap; row-gap: 4px; }   /* lange Kennzahl rutscht in eine zweite Zeile */
+/* POLSTER DER ABSCHNITTSKARTEN (v574, Leonard-Wunsch): ueberall sichtbar 14px vom Kartenrand.
+   Herocards hatten 15.4px (+10 % vom 13.09.2026), „Diese Woche" oben 22px (Polster fuer den
+   frueheren Kopf), „PRs" und „Letzte Gym Sessions" 26–34px (Zeilenpolster + Listenpolster). */
+.mehr-section > .hero-v2.abschnitt-karte, .mehr-section > .hero-heute.abschnitt-karte { padding: 14px; }
+.lauf-wochen-karte.abschnitt-karte { padding-top: 10px; }
+.lauf-wochen-karte.abschnitt-karte .lauf-wochenliste { padding-top: 4px; }   /* Platz fuer das Heute-Feld (ragt 4px ueber die Zeile) */
+.abschnitt-karte > .pr-list-v2 { padding: 0; margin: -12px 0; }
+.abschnitt-karte > #ov-recent-sessions-list { margin: -12px 0; }
+/* Laufende Gym Session: Der Fortschrittsbalken ist seit v570 das erste Element der Karte. */
+.abschnitt-karte.hero-aktiv .hero-v2-progress-bar-thin { margin-top: 0; }
+/* Planlisten: Dort gibt es kein Heute-Feld (`hideToday`) — die 8.25px, die die Wochentagsspalte
+   fuer dieses Feld unten freihaelt, zaehlen deshalb ins Polster (14 = 5.75 + 8.25). */
+#plans-list .plan-card-v2, #runplans-list .plan-card-v2 { padding-bottom: 5.75px; }
 body .abschnitt-kopf :is(.chart-card-v2-title, .cal-filter-btn, .ppv-name, .ppv-filter-btn, .hero-heute-titel, .lauf-wochen-titel, .hero-aktiv-name) {
   font-family: inherit; font-size: var(--fs-etikett); font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.8px; line-height: 1.3; color: #fff; padding: 0; margin: 0; background: none; border: none;
@@ -847,8 +860,7 @@ body .abschnitt-kopf .rb-zu { color: #fff; }
    strukturell nicht mehr passieren — egal, was der Kopf an Inhalt bekommt.
    NUR hier: In der LISTE des Plan-Tabs muessen archivierte und kommende Plaene weiter
    wachsen duerfen, die tragen eine Statuszeile mehr. */
-#ov-week-card > .plan-card-v2,
-#wo-view-laufen > .plan-card-v2 { height: 157.3px; }
+/* (v574: Die feste Hoehe 157.3px der Wochenkarten ist entfallen — Kartenpolster 14px, siehe unten.) */
 /* ── Gleichmaessige Hoehenverteilung (13.09.2026, Leonard-Wunsch) ─────────────────────
    Bis dahin standen die Bloecke mit festen Abstaenden oben aneinander, und der ganze
    Freiraum der festen Kartenhoehe lag UNTER der letzten Kreisreihe — in der Kombi-Karte
@@ -877,11 +889,8 @@ body .abschnitt-kopf .rb-zu { color: #fff; }
       in das das Heute-Feld ueber den Kreis hinausragt. `padding-top: 8px` allein haette
       dieses Polster ersetzt statt ergaenzt. */
 .plan-card-v2 { display: flex; flex-direction: column; }
-.plan-card-v2::after { content: ''; flex: none; height: 8px; margin-top: auto; }
-.plan-card-v2 > .ppv-progress,
-.plan-card-v2 > .ppv-strip,
-.plan-card-v2 > .ppv-k-labels { margin-top: auto; padding-top: 8px; }
-.plan-card-v2 > .ppv-k-labels + .ppv-k-reihe { margin-top: auto; padding-top: calc(3.3px + 8px); }
+/* (v574: Die verteilten `auto`-Abstaende sind entfallen — feste 10px zwischen den Bloecken und
+   14px Kartenpolster, siehe „dasselbe Polster fuer ALLE Wochenplan-Karten".) */
 /* FALLE, die dabei zuschlug: `.ppv-name` traegt `flex: 1` — gedacht fuer die waagerechte
    Kopfzeile, in der der Name den Platz neben Chip und Kennzahl fuellt. In der LEEREN Karte
    („Kein aktiver Trainingsplan") steht `.ppv-name` aber direkt in der Karte, und in der
@@ -892,10 +901,21 @@ body .abschnitt-kopf .rb-zu { color: #fff; }
    Abschnitt. Mindesthoehe 157.3px und verteilte `auto`-Abstaende (fuer den frueheren Kopf und
    die Hoehe der Herocard daneben) liessen oben 36–38px und unten 21–23px Luft. Jetzt das
    gewohnte Kartenpolster: 14px rundum, Bloecke 10px auseinander. */
-#ov-week-card .plan-card-v2.abschnitt-karte { min-height: 0; height: auto; padding: 14px; }
-#ov-week-card .plan-card-v2.abschnitt-karte::after { display: none; }
-#ov-week-card .plan-card-v2.abschnitt-karte > * { margin-top: 0; padding-top: 0; }
-#ov-week-card .plan-card-v2.abschnitt-karte > * + * { margin-top: 10px; }
+/* v574 (Leonard-Wunsch): dasselbe Polster fuer ALLE Wochenplan-Karten, auch in den Planlisten
+   des Plan-Tabs (vorher unten 24.7px). Die Laufzeitzeile `.ppv-meta` gehoert zum Titel. */
+.plan-card-v2 { min-height: 0; padding: 14px; }
+.plan-card-v2::after { display: none; }
+/* `body` davor: Die Bloecke tragen eigene Abstaende in spaeteren Einzelklassen-Regeln
+   (`.ppv-k-labels`, `.ppv-k-reihe` …), die sonst gewaennen. */
+body .plan-card-v2 > * { margin-top: 0; padding-top: 0; }
+body .plan-card-v2 > * + * { margin-top: 10px; }
+body .plan-card-v2 > .ppv-head + .ppv-meta { margin-top: 4.4px; }
+body .plan-card-v2 > .ppv-k-reihe { padding-bottom: 0; }
+/* Die Wochenkarte der Uebersicht springt beim Filterwechsel (Trainings-/Gym-/Laufwoche) nicht:
+   feste Hoehe = die hoehere der beiden Bauformen (gemessen, v574). */
+/* GEMESSEN: Kombi-, Gym- und Laufwoche je 111.59px. Fest gesetzt, damit auch die leeren Karten
+   („Kein aktiver Trainingsplan") beim Umschalten nicht springen. */
+#ov-week-card .plan-card-v2.abschnitt-karte { height: 111.6px; }
 /* Tipp-Rueckmeldung fuer ALLE Karten (Leonard-Wunsch 28.08.2026) — dieselbe dezente
    Stauchung wie bei der Wochenplan-Karte. `transition` NUR auf transform, damit die
    Farbwechsel der Karten (z. B. erledigte Uebung) unveraendert bleiben. */

@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v573**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v574**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -324,8 +324,12 @@ entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2`.
   durchscheinend. Ausgenommen: Plan- und Wettkampfkarten in Listen (Name = Eintrag).
 - **Kartenpolster 14px**; im Querformat (ab 1024px) steht der seitliche Rand in EINER Selektorliste
   — neue Karten dort eintragen. Senkrechter Abstand kommt immer von der Karte darüber.
-- Wochenplan-Karten (Plan-Tab-Liste) mindestens 157.3px; Knöpfe 63.6px. Die Wochenkarte der
-  Übersicht hat seit v573 keine Mindesthöhe mehr, sondern 14px Polster rundum.
+- **Sichtbares Kartenpolster überall 14px** (v574 nachgemessen: Inhalt bis Kartenrand oben und
+  unten). Wochenplan-Karten (`.plan-card-v2`) haben keine Mindesthöhe mehr, sondern 14px Polster
+  und 10px zwischen den Blöcken; die der Übersicht ist fest 111.6px (alle drei Filter gleich,
+  kein Springen). Planlisten unten 5.75px (die Wochentagsspalte hält 8.25px für das Heute-Feld
+  frei). Herocard-Knöpfe 63.6px. Ausnahme: „Volumen pro Muskelgruppe" ist auf die Höhe der
+  Volumenkarte gestreckt und deshalb oben/unten 25px.
 - Tab-Kopfzeilen gleich hoch (`--ph-h`), Knöpfe oben rechts 38px (`--ph-btn`).
 - **Ein Ausklapp-Pfeil** für die App (`.aex-v2-chev` + `AEX_CHEV_SVG`), rechts, zugeklappt nach
   unten, aufgeklappt 180°. Viele Stellen klappen inzwischen ohne Pfeil über den Titel.
@@ -488,3 +492,10 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   statt Mindesthöhe und verteilten Abständen. GEMESSEN (375px): Symbol 38.4px, Mitte 44.8 gegen
   Knopfmitte 45.0, Kopf 64px; Karte „Trainingswoche" oben/unten 14.0px in allen drei
   Filterzuständen (vorher 36–38 bzw. 21–23px), Höhe 157 → 115/112px; keine Konsolenfehler.
+- **v574 (13.11.2026, Leonard-Wunsch):** Trainingswoche springt beim Filterwechsel nicht mehr
+  (fest 111.6px). Polster aller Karten auf sichtbar 14px angeglichen: Herocards Gym/Laufen und
+  laufende Session (15.4 bzw. 20.6 → 14), „Diese Woche" oben (22 → 14), Planlisten-Karten unten
+  (24.7 → 14), Stats „PRs" (30/34 → 14) und „Letzte Gym Sessions" (28/26 → 16/14). Die verteilten
+  `auto`-Abstände der Wochenplan-Karten sind entfallen. GEMESSEN (375px): alle Abschnittskarten
+  von Übersicht, Gym, Laufen, Plan-Tab, Stats 14/14 (Ausnahme Muskelkarte, siehe oben); drei
+  Filterzustände je 111.59px; keine Konsolenfehler.
