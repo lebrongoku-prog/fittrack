@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v570**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v571**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -237,11 +237,12 @@ iOS ab) und das unsichtbare sticky Kind `.cal-sticky-anchor`.
 
 ## Was wo steht (aktueller Aufbau)
 
-**Übersicht** (`renderOverview`): Trainingskalender zuoberst (`#ov-cal-card` in
-`#ov-cal-abschnitt`, einklappbar über den Titel — eingeklappt ist die Karte ganz weg, startet zu) · Rückblick „Letzte Woche" (`renderRueckblick`, ab Montag) · Wochenkarte
+**Übersicht** (`renderOverview`): Rückblick „Letzte Woche" (`renderRueckblick`, ab Montag) · Wochenkarte
 (`#ov-week-card`, Titel = Filter Trainingswoche/Gymwoche/Laufwoche, Tipp auf Wochentag wählt Tag)
 · „Heute" (`#ov-diese-woche`, `renderUebersichtWoche`: Startblock mit Gym- und Laufknopf für den
-gewählten Tag, Titel klappt die Tageszeilen auf). Keine Herocard mehr.
+gewählten Tag, Titel klappt die Tageszeilen auf) · Trainingskalender als LETZTER Abschnitt (v571;
+`#ov-cal-card` in `#ov-cal-abschnitt`, einklappbar über den Titel — eingeklappt ist die Karte
+ganz weg, startet zu). Keine Herocard mehr.
 
 **Training → Gym**: Herocard „Heute" (`buildHeuteHero`, Knopf nennt den Gymtag, Titel klappt die
 Übungsvorschau auf) · „Diese Woche" (`renderGymWoche`, wischbar über die Planwochen, Diagramm
@@ -471,3 +472,7 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   zur Monatsschrift, Filter/Klappen/Fußzeile/Rückblick ✕ funktionieren; Gym, Laufen (Diagramm per
   Titel, Wischen + Kreispfeil), laufende Session, Plan-Tab Gym/Lauf, Stats (Volumen- und
   Muskelkarte 228/228px); Querformat 1100px ohne Überlauf; Glas-Modus; keine Konsolenfehler.
+- **v571 (13.11.2026, Leonard-Wunsch):** Trainingskalender in der Übersicht als letzter Abschnitt
+  (vorher zuoberst); im Querformat entfällt sein `order: -1`. GEMESSEN: Reihenfolge Kopf ·
+  Trainingswoche · Heute · Kalender in 375px und 1100px, Auf-/Zuklappen funktioniert; keine
+  Konsolenfehler.
