@@ -654,6 +654,17 @@ body .abschnitt-kopf .hero-v2-timer { background: none; padding: 0; line-height:
 /* Zeitraum: 6px sichtbarer Abstand zum Titel (der Wechsler holt sich sonst 8px per negativem Rand zurueck). */
 body .abschnitt-kopf .cal-jahr { margin: -10px -8px -10px -10px; }
 body .abschnitt-kopf .info-btn { background: rgba(255,255,255,.22); color: #fff; box-shadow: none; border: none; }
+/* KREISPFEIL „zurueck zur aktuellen Ansicht" IM KOPF (v575, Leonard-Wahl „Variante C"): so klein
+   wie die 11px-Angaben daneben — nur das weisse Zeichen, ohne Kreis. Vorher war er 19px hoch, die
+   Zeile ohne ihn rund 14px: Erschien er (Kalender aufgeklappt, andere Woche gewischt), wurde die
+   Zeile hoeher und der Abschnitt rutschte nach unten. Der Tippbereich bleibt ueber `::before`
+   unsichtbar 36px gross. */
+body .abschnitt-kopf .cal-reset-btn {
+  position: relative; width: 13px; height: 13px; background: none; border: none; border-radius: 0;
+  color: rgba(255,255,255,.9);
+}
+body .abschnitt-kopf .cal-reset-btn svg { width: 13px; height: 13px; }
+body .abschnitt-kopf .cal-reset-btn::before { content: ''; position: absolute; inset: -12px; }
 body .abschnitt-kopf .rb-zu { color: #fff; }
 .mehr-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
 /* Abschnittstitel mit einem Knopf rechts daneben (13.09.2026, zuerst „Einheiten" im

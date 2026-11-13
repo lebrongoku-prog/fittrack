@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v574**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v575**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -499,3 +499,10 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   `auto`-Abstände der Wochenplan-Karten sind entfallen. GEMESSEN (375px): alle Abschnittskarten
   von Übersicht, Gym, Laufen, Plan-Tab, Stats 14/14 (Ausnahme Muskelkarte, siehe oben); drei
   Filterzustände je 111.59px; keine Konsolenfehler.
+- **v575 (13.11.2026, Leonard-Wahl „Variante C"):** Kreispfeil „zurück zur aktuellen Ansicht" im
+  Abschnittskopf so klein wie die 11px-Angaben (13px, nur das weiße Zeichen, unsichtbarer 37px-
+  Tippbereich über `::before`). Vorher 19px hoch — die Kopfzeile wuchs beim Erscheinen um ~5px
+  und der Abschnitt sprang (Kalender aufgeklappt, „Diese Woche" Gym/Laufen andere Woche).
+  GEMESSEN (375px): Kopfzeile in allen drei Fällen mit und ohne Knopf 15px, Karte bleibt auf
+  223.59px; Tipp 10px neben dem Zeichen trifft; Rücksprung zur aktuellen Woche funktioniert;
+  keine Konsolenfehler. Muskelkarte bleibt gestreckt (Leonard-Entscheidung).
