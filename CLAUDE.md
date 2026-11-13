@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v569**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v570**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -237,8 +237,8 @@ iOS ab) und das unsichtbare sticky Kind `.cal-sticky-anchor`.
 
 ## Was wo steht (aktueller Aufbau)
 
-**Übersicht** (`renderOverview`): Trainingskalender zuoberst (`#ov-cal-card`, einklappbar,
-startet zu) · Rückblick „Letzte Woche" (`renderRueckblick`, ab Montag) · Wochenkarte
+**Übersicht** (`renderOverview`): Trainingskalender zuoberst (`#ov-cal-card` in
+`#ov-cal-abschnitt`, einklappbar über den Titel — eingeklappt ist die Karte ganz weg, startet zu) · Rückblick „Letzte Woche" (`renderRueckblick`, ab Montag) · Wochenkarte
 (`#ov-week-card`, Titel = Filter Trainingswoche/Gymwoche/Laufwoche, Tipp auf Wochentag wählt Tag)
 · „Heute" (`#ov-diese-woche`, `renderUebersichtWoche`: Startblock mit Gym- und Laufknopf für den
 gewählten Tag, Titel klappt die Tageszeilen auf). Keine Herocard mehr.
@@ -284,7 +284,7 @@ entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2`.
   (`#dcal-titel`) und Kennzahl (`#dcal-stats`) stehen im Abschnittskopf ÜBER der Karte wie bei
   den anderen Abschnitten. Ohne Kopf in der Karte rückt `.cal-body` oben 7.5px und unten 5px
   heraus, damit sichtbar genau die 14px Kartenpolster bleiben; `--cal-months-gap` dort 2px.
-  Klapp-Kern der Übersichts-Karte: `_kalKarteKlappen`),
+  Übersichts-Kalender klappt über `toggleOvKalender` (Karte fährt ganz weg)),
   `_calModus(id)`: Übersicht folgt dem Titel-Filter (Trainings-/Gym-/Laufkalender), Plan-Tab der
   Seite. Startet immer bei „Aktuell" (laufender Plan), Zeitraum-Wechsler Aktuell → Jahre.
 - `--cal-cell` / `--cal-gap` sind die einzige Quelle für Maße (JS liest sie). `.cal-scroll` muss
@@ -309,6 +309,16 @@ entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2`.
   Ausnahmen nur große Einzelanzeigen (und 12px im Quadrat-Wochentag, ausdrücklicher Wunsch).
 - Eingabefelder mindestens **16px** (sonst zoomt iOS). Zahleneingabe über den eigenen Zahlenblock
   (`#modal-numpad`, Felder sind `div role="button"`). Schalt-Texte `user-select: none`.
+- **Abschnitte statt Kartenköpfe (v570, ganze App):** Jede Karte mit Titel steht in einem
+  `.mehr-section`; Titel (11px, fett, Großbuchstaben, weiß auf dem Tab-Hintergrund, in den
+  Einstellungen grau) und rechte Angaben (Kennzahl, Datum, Knöpfe) im `.mehr-section-kopf
+  .abschnitt-kopf` darüber, Karte `.abschnitt-karte` ohne Außenabstand, Radius `--radius`.
+  Statisch im Markup: Kalender `#ov-cal-abschnitt`/`#plans-cal-abschnitt` (Kopf `#cal-kopf`/
+  `#pcal-kopf`, gefüllt von `calendarInnerHTML`), Stats. Dynamisch: `_alsAbschnitt(karte, kopf)`
+  verschiebt den Kopf nach dem Zeichnen (Rückblick, Wochenkarte, „Heute" der Übersicht,
+  Herocards Gym/Laufen inkl. laufender Session, „Diese Woche"). Titel, die Schalter waren,
+  bleiben Schalter. Neue Karten mit Titel genauso bauen. Im Glas-Modus bleiben die Karten
+  durchscheinend. Ausgenommen: Plan- und Wettkampfkarten in Listen (Name = Eintrag).
 - **Kartenpolster 14px**; im Querformat (ab 1024px) steht der seitliche Rand in EINER Selektorliste
   — neue Karten dort eintragen. Senkrechter Abstand kommt immer von der Karte darüber.
 - Wochenplan-Karten und Herocards 157.3px; Knöpfe 63.6px.
@@ -451,3 +461,13 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Titel und beide Knöpfe auf derselben Mitte (43px), Knöpfe 38x38, 14px vom Rand; Archivieren →
   gefüllt, Tooltip „Aus dem Archiv holen", zurück → leer; Löschen fragt nach und führt zur
   Liste; keine Konsolenfehler.
+- **v570 (13.11.2026, Leonard-Wunsch/-Entscheidungen):** Darstellung der Plan-Detailansichten
+  für die ganze App: Kartentitel als Abschnittstitel über der Karte (siehe Gestaltungsregeln).
+  Umfang „alle Karten mit Titel", Glas-Modus bleibt durchscheinend, Titel bleiben Schalter.
+  Übersichts-Kalender: eingeklappt nur noch Kopf, Karte weg. `_kalKarteKlappen` entfernt.
+  Behoben beim Testen: Titel „Diese Woche" fand seine Karte nicht mehr (`wochenTitelTipp` sucht
+  im Abschnitt), Uhr der laufenden Session weiß auf weiß, lange Kennzahl überlappte den Titel
+  (Kopf bricht um). GEMESSEN (375px): Übersicht 4 Abschnitte, Kalender auf 327px mit 14px bis
+  zur Monatsschrift, Filter/Klappen/Fußzeile/Rückblick ✕ funktionieren; Gym, Laufen (Diagramm per
+  Titel, Wischen + Kreispfeil), laufende Session, Plan-Tab Gym/Lauf, Stats (Volumen- und
+  Muskelkarte 228/228px); Querformat 1100px ohne Überlauf; Glas-Modus; keine Konsolenfehler.

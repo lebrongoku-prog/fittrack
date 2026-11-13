@@ -609,10 +609,33 @@ body.theme-plans .hist-action-dd {
 ══════════════════════════════════════ */
 .mehr-section { margin: 0 12px 14px; }
 .mehr-section-title { font-size: var(--fs-etikett); font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin: 0 2px 8px; }
-/* Im Plan-Detail stehen die Titel auf dem farbigen Tab-Hintergrund, nicht auf einer Karte —
-   grau ginge dort unter. Bewusst nur hier, die Einstellungen behalten ihr Grau. */
-#screen-plan-detail .mehr-section-title,
-#screen-runplan-detail .mehr-section-title { color: #fff; }
+/* Auf dem farbigen Tab-Hintergrund stehen die Titel weiss — grau ginge dort unter. Seit v570
+   gilt das fuer ALLE Bildschirme ausser den Einstellungen (dort bleibt das Grau). */
+.screen:not(#screen-mehr) .mehr-section-title { color: #fff; }
+/* ABSCHNITTE IN DER GANZEN APP (v570, Leonard-Wunsch): Jede Karte mit Titel steht wie in den
+   Gym-/Laufplan-Detailansichten in einem `.mehr-section` — der Titel (11px, fett, Grossbuchstaben,
+   weiss) steht DARUEBER im `.mehr-section-kopf`, rechts daneben Kennzahl, Datum oder Knoepfe.
+   Titel, die vorher Schalter waren (Filter, Auf-/Zuklappen, zurueck zur Woche), bleiben Schalter
+   und tragen dieselbe Schrift. Die Karte selbst (`.abschnitt-karte`) hat keinen Aussenabstand
+   mehr (den bringt der Abschnitt) und den Eckenradius der Detailkarten. Im Glas-Modus bleiben
+   die Karten durchscheinend (Leonard-Entscheidung). */
+.mehr-section > .abschnitt-karte { margin: 0; border-radius: var(--radius); }
+.abschnitt-kopf { min-height: 15px; flex-wrap: wrap; row-gap: 4px; }   /* lange Kennzahl rutscht in eine zweite Zeile */
+body .abschnitt-kopf :is(.chart-card-v2-title, .cal-filter-btn, .ppv-name, .ppv-filter-btn, .hero-heute-titel, .lauf-wochen-titel, .hero-aktiv-name) {
+  font-family: inherit; font-size: var(--fs-etikett); font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; line-height: 1.3; color: #fff; padding: 0; margin: 0; background: none; border: none;
+}
+body .abschnitt-kopf :is(.cal-jahr, .rb-datum, .lauf-wochen-datum) {
+  font-size: var(--fs-etikett); font-weight: 700; color: rgba(255,255,255,.75); text-transform: none; letter-spacing: 0;
+}
+body .abschnitt-kopf :is(.cal-stats, .hero-v2-timer) { font-size: var(--fs-etikett); font-weight: 700; color: #fff; letter-spacing: 0; }
+/* Uhr der laufenden Session: im Kopf ohne eigene weisse Flaeche (sonst weiss auf weiss). */
+body .abschnitt-kopf .hero-v2-timer { background: none; padding: 0; line-height: 1.3; }
+.abschnitt-kopf > .hero-aktiv-titel { flex: 1; min-width: 0; align-items: center; }   /* Uhr rechts wie eine Kennzahl */
+/* Zeitraum: 6px sichtbarer Abstand zum Titel (der Wechsler holt sich sonst 8px per negativem Rand zurueck). */
+body .abschnitt-kopf .cal-jahr { margin: -10px -8px -10px -10px; }
+body .abschnitt-kopf .info-btn { background: rgba(255,255,255,.22); color: #fff; box-shadow: none; border: none; }
+body .abschnitt-kopf .rb-zu { color: #fff; }
 .mehr-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
 /* Abschnittstitel mit einem Knopf rechts daneben (13.09.2026, zuerst „Einheiten" im
    Laufplan-Detail). Der Abstand nach unten wandert vom Titel auf die Zeile. */
@@ -1588,7 +1611,7 @@ html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webki
     { max-width: 520px; margin-left: auto; margin-right: auto; }
   /* Ausnahme Trainingskalender: je breiter, desto mehr Wochen ohne Scrollen sichtbar.
      Im Querformat (844–932px) blieb er sonst auf 520px stehen. */
-  #ov-cal-card, #plans-cal-card { max-width: none; margin-left: 14px; margin-right: 14px; }
+  #ov-cal-abschnitt, #plans-cal-abschnitt { max-width: none; margin-left: 14px; margin-right: 14px; }
   .ph-left h1 { font-size: 28px; }
 }
 
@@ -2303,8 +2326,6 @@ html.glas .screen:not(#screen-mehr) .aex-v2.aktuell { box-shadow: 0 0 0 2px rgba
    sichtbare Abstand wie Monate → Raster und Wochentage → Raster (6px). Zusammen mit den 5px
    Polster oben im Scroller (`--cal-pad-y`) ergeben 0.5px hier genau 6px bis zur Monatsschrift
    (vorher 10px = 15.5px). */
-#ov-cal-card > .chart-card-v2-head,
-#plans-cal-card > .chart-card-v2-head { margin-bottom: 0.5px; }
 /* Kleines „i" hinter einem Kartentitel, öffnet die Lesehilfe. margin-right:auto hält es
    direkt am Titel — der Kopf verteilt seine Kinder sonst auf beide Ränder. */
 .info-btn {
@@ -3224,17 +3245,11 @@ html.glas .screen:not(#screen-mehr) .rb-pr strong { color: #fff; }
    Zahl in der Farbe seiner Sportart. Die Teile setzt `renderTrainingCalendar` als Spans.
    Im Transparenz-Modus bleibt die Kennzahl, wie sie war (keine Sportfarben, siehe dort) — die
    Glas-Regel setzt die Farbe zurueck. Der Kalender im Plan-Tab ist nicht betroffen. */
-#ov-cal-card .cal-stat-gym  { color: #0F766E; }
-#ov-cal-card .cal-stat-lauf { color: #4ADE80; }
-html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-gym,
-html.glas .screen:not(#screen-mehr) #ov-cal-card .cal-stat-lauf { color: inherit; }
 .cal-filter-btn:active { opacity: .6; }
 /* v479: Trainingskalender der Uebersicht ein- und ausklappbar. Eingeklappt nur Titel + Kennzahl;
    die Kennzahl ist dort der Filter-Knopf. */
-#ov-cal-card.kal-zu .cal-jahr,
-#ov-cal-card.kal-zu .cal-reset-btn { display: none; }
-#ov-cal-card.kal-inhalt-zu > :not(.chart-card-v2-head) { display: none; }
-#ov-cal-card.kal-inhalt-zu .chart-card-v2-head { margin-bottom: 0; }
+#ov-cal-abschnitt.kal-zu .cal-jahr,
+#ov-cal-abschnitt.kal-zu .cal-reset-btn { display: none; }
 .cal-stats-btn {
   border: none; background: none; padding: 0; margin: 0; font-family: inherit; text-align: right;
   cursor: pointer; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
@@ -4188,8 +4203,7 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
      ohne eigene Reihenfolge (Rueckblick, Wochenkarte, „Diese Woche"). Der Kopf `.ph` traegt
      dafuer `order: -2`, sonst rutschte der Kalender ueber ihn. */
   #screen-overview.active > .ph { order: -2; }
-  #screen-overview.active > #ov-cal-card { order: -1; }
-  #screen-overview.active > .chart-card-v2:not(#ov-cal-card) { order: 2; }
+  #screen-overview.active > #ov-cal-abschnitt { order: -1; }
   #screen-overview.active > .plan-section-card { grid-column: 2; }
   /* Stats-Karten in Übersicht (vom alten Verlauf-Tab) */
   #screen-overview.active > .lg-span-2 { grid-column: 1 / -1; }
@@ -4233,7 +4247,7 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
   #wo-view-laufen > #wo-lauf-hero { display: flex; flex-direction: column; }
   #wo-view-laufen > #wo-lauf-hero > * { flex: 1; }
   #wo-view-laufen > #wo-lauf-hero { grid-column: 1 / -1; }   /* v448: ohne Wochenplan-Karte */
-  #wo-view-laufen > .chart-card-v2 { grid-column: 1 / -1; }
+  #wo-view-laufen > .chart-card-v2, #wo-view-laufen > .mehr-section { grid-column: 1 / -1; }
 
   /* STATS — Volumenentwicklung und Volumen pro Muskelgruppe teilen sich die erste Zeile
      (Leonard-Wunsch 01.09.2026). Ohne `align-items` bleibt die Grid-Vorgabe `stretch`, und
@@ -4248,6 +4262,9 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
   #ex-view-stats > *:nth-child(1) { grid-column: 1; }
   #ex-view-stats > *:nth-child(2) { grid-column: 2; }
   #ex-view-stats > *:nth-child(n+3) { grid-column: 1 / -1; }
+  /* v570: Die Abschnitte strecken sich im Grid, die Karte darin fuellt den Rest. */
+  #ex-view-stats > .mehr-section { display: flex; flex-direction: column; }
+  #ex-view-stats > .mehr-section > .abschnitt-karte { flex: 1; }
 
   /* WORKOUTS — Übungs-Liste 2-spaltig, SPALTENWEISE gefuellt (1-2-3-4 links, 5-6-7-8
      rechts) statt zeilenweise (1-3-5-7 links). Dafuer braucht das Grid die Zeilenzahl:

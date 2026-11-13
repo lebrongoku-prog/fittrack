@@ -1145,8 +1145,8 @@ function toggleWochenFilter() {
   _ovTag = null;
   const huelle = document.getElementById('ov-week-card');
   _neuZeichnenEinblenden('woche', huelle, () => {
-    const karte = huelle && huelle.querySelector(':scope > .plan-card-v2');
-    return karte ? [...karte.children].filter(el => !el.classList.contains('ppv-head')) : [];
+    const karte = huelle && huelle.querySelector('.plan-card-v2');   // v570: steht im Abschnitt
+    return karte ? [...karte.children] : [];
   }, renderWochenKarte);
   // Die Liste „Diese Woche" folgt demselben Filter und blendet ebenso ein.
   const liste = document.getElementById('ov-diese-woche');
@@ -1258,6 +1258,29 @@ function wochenRueckblick(mo) {
   };
 }
 
+// ABSCHNITT STATT KARTENKOPF (v570, Leonard-Wunsch, ganze App): Der Kopf einer gerade
+// gezeichneten Karte wandert als Abschnittskopf UEBER die Karte — dieselbe Bauform wie in den
+// Gym-/Laufplan-Detailansichten (`.mehr-section` > `.mehr-section-kopf` + Karte). Die Knoten
+// werden VERSCHOBEN, nicht neu gebaut: Ids und Klick-Handler (Filter, Aufklappen, zurueck zur
+// Woche) bleiben erhalten. Ist `kopf` ein Kopf-Behaelter (`.chart-card-v2-head`, `.ppv-head`),
+// wandern seine Kinder, sonst das Element selbst. Wird die Karte neu gezeichnet, entsteht der
+// Abschnitt neu — die Aufrufer zeichnen immer den ganzen Behaelter.
+function _alsAbschnitt(karte, kopf) {
+  if (!karte || !karte.parentNode || karte.parentNode.classList.contains('mehr-section')) return;
+  const sek = document.createElement('div');
+  sek.className = 'mehr-section';
+  const k = document.createElement('div');
+  k.className = 'mehr-section-kopf abschnitt-kopf';
+  if (kopf) {
+    if (kopf.matches('.chart-card-v2-head, .ppv-head')) { while (kopf.firstChild) k.appendChild(kopf.firstChild); kopf.remove(); }
+    else k.appendChild(kopf);
+  }
+  karte.parentNode.insertBefore(sek, karte);
+  sek.appendChild(k);
+  sek.appendChild(karte);
+  karte.classList.add('abschnitt-karte');
+}
+
 function renderRueckblick() {
   const el = document.getElementById('ov-rueckblick');
   if (!el) return;
@@ -1298,11 +1321,13 @@ function renderRueckblick() {
       <div class="hd-stats rb-kacheln">${kacheln.join('')}</div>
       ${prs}
     </div>`;
+  const rb = el.querySelector('.rb-karte');
+  _alsAbschnitt(rb, rb.querySelector(':scope > .chart-card-v2-head'));   // v570
 }
 
 function rueckblickAusblenden() {
   try { localStorage.setItem(RUECKBLICK_KEY, _dayKeyOf(_rueckblickMontag().getTime())); } catch {}
-  _zeileWegKlappen(document.querySelector('#ov-rueckblick .rb-karte')).then(renderRueckblick);
+  _zeileWegKlappen(document.querySelector('#ov-rueckblick .mehr-section')).then(renderRueckblick);
 }
 
 function renderWochenKarte() {
@@ -1331,6 +1356,8 @@ function renderWochenKarte() {
   } else {
     el.innerHTML = buildWochenKombi();
   }
+  const karte = el.querySelector('.plan-card-v2');
+  if (karte) _alsAbschnitt(karte, karte.querySelector(':scope > .ppv-head'));   // v570
 }
 
 // Leere Karte im Gym-Zustand — der Filtertitel muss auch dann erreichbar bleiben, sonst
@@ -2450,6 +2477,9 @@ function _renderGymSeite() {
     // Hoehe und Hantel wie in der Uebersicht ausrichten — die Karte soll dort und hier
     // identisch aussehen.
     }
+  // v570: Titel (bzw. Name + Uhr der laufenden Session) als Abschnittskopf ueber der Karte.
+  { const hero = wrap.querySelector('.hero-v2');
+    if (hero) _alsAbschnitt(hero, hero.querySelector('.hero-aktiv-titel') || hero.querySelector('.hero-heute-titel')); }
   _knopfSchriftAnpassen(wrap);
 
   // Tabs + cards
@@ -4347,7 +4377,7 @@ function renderStatsPage() {
 // zweizeilig ist (Zeitraum-Auswahl + Kg/Saetze) und damit die Hoehe schwankt.
 // Im Querformat macht das Grid die Angleichung selbst — dort wird nichts gesetzt.
 function _gleicheHoeheStatsKarten() {
-  const karten = document.querySelectorAll('#ex-view-stats > .chart-card-v2');
+  const karten = document.querySelectorAll('#ex-view-stats .chart-card-v2');   // v570: Karten stehen in Abschnitten
   const vol = karten[0], mus = karten[1];
   if (!vol || !mus) return;
   const querformat = window.matchMedia && window.matchMedia('(min-width: 1024px)').matches;
@@ -5251,6 +5281,8 @@ function renderUebersichtWoche() {
     ${heuteBlock}
     ${tageHTML ? `<div class="wz-flach-liste${_ovWocheOffen ? '' : ' zu'}">${tageHTML}</div>` : ''}
   </div>`;
+  const liste = el.querySelector('.ov-woche-liste');
+  _alsAbschnitt(liste, liste.querySelector('.hero-heute-titel'));   // v570
   _knopfSchriftAnpassen(el);
 }
 // v495 (Leonard-Entscheidung): Die Knoepfe des Startblocks bleiben 63.6px hoch (seit v496 auch die
@@ -5921,6 +5953,8 @@ function renderGymWoche(aktivLaeuft) {
       <div class="ex-chart-body"><div class="ex-chart-wrap"><canvas id="gym-vol-chart"></canvas></div></div>
     </div>` : ''}
   </div>`;
+  { const wk = el.querySelector('.lauf-wochen-karte');   // v570: Abschnitt
+    if (wk) _alsAbschnitt(wk, wk.querySelector(':scope > .chart-card-v2-head')); }
   const sc = document.getElementById('gym-wochen-scroll');
   _laufWochenWischEinrichten(sc, montage, aktIdx, startIdx, {
     ids: { titel: 'gym-wochen-titel', datum: 'gym-wochen-datum', zurueck: 'gym-wochen-zurueck' },
@@ -5972,7 +6006,9 @@ function wochenKarteTipp(e, sport) {
 // fuehrt er wie bisher zur laufenden Woche zurueck (dafuer gibt es sonst den Kreispfeil-Knopf).
 function wochenTitelTipp(e, sport) {
   e.stopPropagation();
-  const karte = e.currentTarget.closest('.lauf-wochen-karte');
+  // v570: Der Titel steht im Abschnittskopf UEBER der Karte — die Karte ist seine Nachbarin.
+  const sek = e.currentTarget.closest('.mehr-section');
+  const karte = e.currentTarget.closest('.lauf-wochen-karte') || (sek && sek.querySelector('.lauf-wochen-karte'));
   if (karte && karte.classList.contains('klappt')) {
     if (sport === 'gym') toggleGymVolDiagramm(); else toggleKmDiagramm('lauf');
   } else laufWocheZurueck(sport === 'gym' ? 'gym-wochen-scroll' : 'lauf-wochen-scroll');
@@ -6155,6 +6191,11 @@ function renderLaufKalenderSeite() {
   // Die Tageskarte des gewaehlten Tags ist am 21.09.2026 entfallen (Leonard-Wunsch) — die
   // Laeufe der ganzen Woche stehen jetzt in „Diese Woche" (`laufWochenListe`).
   el.innerHTML = hero + woche;
+  // v570: beide Karten als Abschnitte (Titel ueber der Karte)
+  { const h = el.querySelector('#wo-lauf-hero .hero-v2');
+    if (h) _alsAbschnitt(h, h.querySelector('.hero-heute-titel'));
+    const wk = el.querySelector(':scope > .lauf-wochen-karte');
+    if (wk) _alsAbschnitt(wk, wk.querySelector(':scope > .chart-card-v2-head')); }
   _knopfSchriftAnpassen(document.getElementById('wo-lauf-hero'));
   _laufWochenWischEinrichten(document.getElementById('lauf-wochen-scroll'), montage, aktIdx, startIdx);
   _zeichneLaufKmDiagramm(montage[startIdx]);
@@ -6744,38 +6785,37 @@ const _CAL_FILTER_TITEL = { beide: 'Trainingskalender', kraft: 'Gymkalender', la
 // (`kal-inhalt-zu`). Beim Aufklappen wird neu gezeichnet: Eingeklappt hat das Raster keine
 // Breite, die Startposition (Planbeginn bzw. heute) laesst sich erst jetzt setzen.
 let _ovKalOffen = false;
+// SEIT v570 steht der Kopf AUSSERHALB der Karte: Eingeklappt ist die Karte ganz weg, ueber ihr
+// bleibt der Abschnittskopf mit Titel und Kennzahl stehen. Zeitraum und Kreispfeil blendet
+// `.kal-zu` am Abschnitt (`#ov-cal-abschnitt`) aus.
 function toggleOvKalender() {
   _ovKalOffen = !_ovKalOffen;
-  _kalKarteKlappen('ov-cal-card', 'cal-filter-btn', _ovKalOffen, () => renderTrainingCalendar('cal', 'ov-cal-card'));
+  const abschnitt = document.getElementById('ov-cal-abschnitt');
+  if (abschnitt) abschnitt.classList.toggle('kal-zu', !_ovKalOffen);
+  const btn = document.getElementById('cal-filter-btn');
+  if (btn) btn.setAttribute('aria-expanded', String(_ovKalOffen));
+  const karte = document.getElementById('ov-cal-card');
+  if (!karte) return;
+  const nr = (karte._klappNr || 0) + 1;
+  karte._klappNr = nr;
+  const von = karte.style.display === 'none' ? 0 : karte.getBoundingClientRect().height;
+  karte.getAnimations().forEach(a => a.cancel());
+  karte.style.display = '';
+  if (_ovKalOffen) renderTrainingCalendar('cal', 'ov-cal-card');
+  const bis = _ovKalOffen ? karte.getBoundingClientRect().height : 0;
+  const fertig = () => {
+    if (karte._klappNr !== nr) return;
+    karte.style.overflow = '';
+    if (!_ovKalOffen) karte.style.display = 'none';
+  };
+  if (_bewegungReduziert() || !karte.animate || !karte.clientWidth) { fertig(); return; }
+  karte.style.overflow = 'hidden';
+  _boxFahren(karte, von, bis, fertig);
 }
 // GYMKALENDER IN DER GYMPLAN-DETAILANSICHT (v561, Leonard-Wunsch): zeigt den Zeitraum des
 // BEARBEITETEN Plans, damit man sieht, in welche Wochen eine Rest Week faellt. Kalender-Id
 // `dcal`, Karte `#pd-cal-card`. Seit v564 NICHT mehr einklappbar (Leonard-Wunsch), Titel und
 // Kennzahl im Abschnittskopf ueber der Karte (v563).
-// Gemeinsames Auf-/Zuklappen einer Kalenderkarte (Uebersicht und Gymplan-Detail).
-function _kalKarteKlappen(kartenId, knopfId, offen, zeichnen) {
-  const karte = document.getElementById(kartenId);
-  if (!karte) return;
-  const btn = document.getElementById(knopfId);
-  if (btn) btn.setAttribute('aria-expanded', String(offen));
-  const nr = (karte._klappNr || 0) + 1;
-  karte._klappNr = nr;
-  const von = karte.getBoundingClientRect().height;
-  karte.getAnimations().forEach(a => a.cancel());
-  karte.classList.toggle('kal-zu', !offen);
-  karte.classList.toggle('kal-inhalt-zu', !offen);
-  if (offen) zeichnen();
-  const bis = karte.getBoundingClientRect().height;
-  if (!offen) karte.classList.remove('kal-inhalt-zu');   // Inhalt bis zum Ende stehen lassen
-  const fertig = () => {
-    if (karte._klappNr !== nr) return;
-    karte.style.overflow = '';
-    karte.classList.toggle('kal-inhalt-zu', !offen);
-  };
-  if (_bewegungReduziert() || !karte.animate || !karte.clientWidth || Math.abs(bis - von) < 1) { fertig(); return; }
-  karte.style.overflow = 'hidden';
-  _klappBewegung(karte, [{ height: von + 'px' }, { height: bis + 'px' }], fertig);
-}
 function toggleCalFilter() {
   _calFilter = _CAL_FILTER_FOLGE[_calFilter] || 'beide';
   _calAnsichtSpeichern();
@@ -6894,9 +6934,10 @@ function calendarInnerHTML(id) {
     ? `<button class="info-btn cal-reset-btn" onclick="calZurAktuellenAnsicht()"
                aria-label="Zur aktuellen Ansicht" title="Zur aktuellen Ansicht">${CAL_RESET_SVG}</button>`
     : '';   // v521 (Leonard-Wunsch): im Plan-Tab keine Lesehilfe mehr (samt `#modal-cal-info`)
-  // v563: Im Gymplan-Detail stehen Titel und Kennzahl im Abschnittskopf ueber der Karte.
-  const kopf = (id === 'dcal' || id === 'lcal') ? '' : `<div class="chart-card-v2-head">
-      <span class="cal-head-left">${titel}${jahrFeld}</span>
+  // v570 (Leonard-Wunsch, ganze App): Titel und Kennzahl stehen in ALLEN Kalendern im
+  // Abschnittskopf UEBER der Karte (`#cal-kopf`, `#pcal-kopf`; im Gym-/Laufplan-Detail schon seit
+  // v563 fest im Markup). Die Karte selbst enthaelt nur noch Raster und Fusszeile.
+  const kopfInhalt = `<span class="cal-head-left">${titel}${jahrFeld}</span>
       <span class="cal-head-right">
         ${id === 'cal'
           // v479: In der Uebersicht ist die KENNZAHL der Filter (Gym+Lauf → Gym → Lauf), der
@@ -6905,9 +6946,10 @@ function calendarInnerHTML(id) {
                      aria-label="Zwischen Training, Läufen und beidem umschalten"></button>`
           : `<span class="cal-stats" id="${id}-stats"></span>`}
         ${rechtsKnopf}
-      </span>
-    </div>`;
-  return `${kopf}
+      </span>`;
+  const kopfEl = document.getElementById(id + '-kopf');
+  if (kopfEl && !kopfEl.innerHTML.trim()) kopfEl.innerHTML = kopfInhalt;
+  return `
     <div class="cal-body">
       <div class="cal-daylabels"><span>Mo</span><span></span><span>Mi</span><span></span><span>Fr</span><span></span><span>So</span></div>
       <div class="cal-scroll" id="${id}-scroll">
@@ -9045,7 +9087,7 @@ function renderPlansScreen() {
   // dort ist die Liste selbst der Inhalt.
   const calCard = document.getElementById('plans-cal-card');
   const mitKalender = plansViewMode === 'plans' || plansViewMode === 'runplans';
-  zeige(calCard, mitKalender);
+  zeige(document.getElementById('plans-cal-abschnitt') || calCard, mitKalender);   // v570: samt Kopf
   if (mitKalender && calCard) renderTrainingCalendar('pcal', 'plans-cal-card');
   if (plansViewMode === 'runplans') renderLaufVerwaltung();
   else renderPlans();

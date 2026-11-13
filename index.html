@@ -75,7 +75,12 @@
          Sie steht seit dem 08.09.2026 UEBER der Herocard (Leonard-Wunsch). -->
     <!-- Trainingskalender: ein Kästchen pro Tag. Fläche = laut Plan vorgesehen,
          Kern = tatsächlich trainiert. Inhalt kommt aus calendarInnerHTML(). Seit v482 zuoberst (Leonard-Wunsch). -->
-    <div class="chart-card-v2 lg-span-2 kal-zu kal-inhalt-zu" id="ov-cal-card"></div>
+    <!-- v570: Kopf (Titel = Klappschalter, Zeitraum, Kennzahl = Filter, Kreispfeil) als Abschnittskopf
+         ueber der Karte; gefuellt von calendarInnerHTML('cal'). Eingeklappt ist die Karte ganz weg. -->
+    <div class="mehr-section lg-span-2 kal-zu" id="ov-cal-abschnitt">
+      <div class="mehr-section-kopf abschnitt-kopf" id="cal-kopf"></div>
+      <div class="chart-card-v2 abschnitt-karte pd-kal-karte" id="ov-cal-card" style="display:none"></div>
+    </div>
     <!-- Rueckblick auf die Vorwoche, ab Montag bis zum Ausblenden (renderRueckblick). -->
     <div id="ov-rueckblick"></div>
     <div id="ov-week-card"></div>
@@ -147,7 +152,10 @@
       </div>
     </div>
     <!-- Derselbe Trainingskalender wie in der Übersicht (zweite Instanz, Präfix "pcal") -->
-    <div class="chart-card-v2" id="plans-cal-card"></div>
+    <div class="mehr-section" id="plans-cal-abschnitt">
+      <div class="mehr-section-kopf abschnitt-kopf" id="pcal-kopf"></div>
+      <div class="chart-card-v2 abschnitt-karte pd-kal-karte" id="plans-cal-card"></div>
+    </div>
     <div id="plans-list"></div>
     <div id="runplans-list" style="display:none"></div>
   </div>
@@ -362,9 +370,9 @@
       <div class="ph-left"><h1>Stats</h1></div>
     </div>
     <div id="ex-view-stats">
-      <div class="chart-card-v2 lg-span-2">
-        <div class="chart-card-v2-head">
-          <span class="chart-card-v2-title" id="vol-card-title">Volumenentwicklung</span>
+      <div class="mehr-section">
+        <div class="mehr-section-kopf abschnitt-kopf">
+          <span class="mehr-section-title" id="vol-card-title">Volumenentwicklung</span>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
             <div class="hist-action-dd" onclick="openHistRangeDropdown()" id="hist-range-btn">
               <svg viewBox="0 0 24 24" style="stroke:var(--accent);fill:none;stroke-width:1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -377,36 +385,40 @@
             </div>
           </div>
         </div>
-        <div class="chart-wrap">
-          <canvas id="volume-chart"></canvas>
+        <div class="chart-card-v2 abschnitt-karte">
+          <div class="chart-wrap">
+            <canvas id="volume-chart"></canvas>
+          </div>
         </div>
       </div>
 
-      <div class="chart-card-v2 lg-col1 muscle-card">
-        <div class="chart-card-v2-head">
-          <span class="chart-card-v2-title" id="muscle-card-title">Volumen pro Muskelgruppe</span>
+      <div class="mehr-section">
+        <div class="mehr-section-kopf abschnitt-kopf">
+          <span class="mehr-section-title" id="muscle-card-title">Volumen pro Muskelgruppe</span>
           <button class="info-btn" onclick="openModal('modal-muscle-info')" aria-label="Wie ist diese Auswertung zu lesen?">i</button>
         </div>
-        <div class="muscle-bars-v2" id="muscle-bars">
-          <p style="font-size:var(--fs-neben);color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>
+        <div class="chart-card-v2 abschnitt-karte muscle-card">
+          <div class="muscle-bars-v2" id="muscle-bars">
+            <p style="font-size:var(--fs-neben);color:var(--text3);text-align:center;padding:8px 0">Noch keine Daten</p>
+          </div>
         </div>
       </div>
 
-      <div class="chart-card-v2 lg-col2">
-        <div class="chart-card-v2-head">
-          <span class="chart-card-v2-title" id="pr-card-title">PRs & Bestleistungen</span>
-        </div>
-        <div class="pr-list-v2" id="hist-pr-list">
-          <p style="font-size:var(--fs-neben);color:var(--text3);text-align:center;padding:8px 0">Noch keine PRs</p>
+      <div class="mehr-section">
+        <div class="mehr-section-title">PRs &amp; Bestleistungen</div>
+        <div class="chart-card-v2 abschnitt-karte">
+          <div class="pr-list-v2" id="hist-pr-list">
+            <p style="font-size:var(--fs-neben);color:var(--text3);text-align:center;padding:8px 0">Noch keine PRs</p>
+          </div>
         </div>
       </div>
 
       <!-- Letzte Einheiten (kompakter Rueckblick) — aus der Uebersicht hierher verschoben -->
-      <div class="plan-section-card lg-col1" id="ov-recent-sessions-card">
-        <div class="plan-section-head">
-          <h3>Letzte Gym Sessions</h3>
+      <div class="mehr-section">
+        <div class="mehr-section-title">Letzte Gym Sessions</div>
+        <div class="plan-section-card abschnitt-karte" id="ov-recent-sessions-card">
+          <div id="ov-recent-sessions-list"></div>
         </div>
-        <div id="ov-recent-sessions-list"></div>
       </div>
     </div>
   </div>
