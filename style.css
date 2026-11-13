@@ -1382,15 +1382,17 @@ html.glas-blende::view-transition-new(root) { animation-duration: 300ms; animati
    erben nur deren Inhalte die hellen Farben. Global gesetzt wuerden auch die Bottom-
    Sheets (`.sheet`) durchsichtig, die auf einem abgedunkelten Grund liegen und dann
    unlesbar waeren. Modals bleiben deshalb bewusst unveraendert. */
-html.glas .screen:not(#screen-mehr) .card,
-html.glas .screen:not(#screen-mehr) .plan-section-card,
-html.glas .screen:not(#screen-mehr) .chart-card-v2,
-html.glas .screen:not(#screen-mehr) .hero-v2,
-html.glas .screen:not(#screen-mehr) .aex-v2,
-html.glas .screen:not(#screen-mehr) .ex-list {
-  background: rgba(255,255,255,.12);
-  box-shadow: 0 1px 6px rgba(0,0,0,.18);
-  border-color: rgba(255,255,255,.22);
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .card,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-section-card,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .chart-card-v2,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .hero-v2,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .aex-v2,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ex-list {
+  /* v577 (Leonard-Wunsch): keine Kartenflaeche mehr — die Inhalte stehen direkt auf dem
+     Tab-Hintergrund. */
+  background: transparent;
+  box-shadow: none;
+  border-color: transparent;
   --text:   #fff;
   --text2:  rgba(255,255,255,.85);
   --text3:  rgba(255,255,255,.65);
@@ -1406,32 +1408,32 @@ html.glas .screen:not(#screen-mehr) .ex-list {
   --accent-soft: rgba(255,255,255,.28);
 }
 /* Ueberschriften und Zahlen, die fest auf dunkle Werte gesetzt sind. */
-html.glas .screen:not(#screen-mehr) .chart-card-v2-title,
-html.glas .screen:not(#screen-mehr) .plan-section-head h3,
-html.glas .screen:not(#screen-mehr) .aex-v2-name,
-html.glas .screen:not(#screen-mehr) .ex-item-name,
-html.glas .screen:not(#screen-mehr) .hd-stat b { color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .chart-card-v2-title,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-section-head h3,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .aex-v2-name,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ex-item-name,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .hd-stat b { color: #fff; }
 /* Akzentfarbene Schrift liegt zu nah am Tab-Hintergrund. */
-html.glas .screen:not(#screen-mehr) .ex-chart-toggle .stats-mode-pill.active,
-html.glas .screen:not(#screen-mehr) .vol-unit-toggle .stats-mode-pill.active { color: #fff; }
-html.glas .screen:not(#screen-mehr) .ex-chart-toggle .stats-mode-pill.active,
-html.glas .screen:not(#screen-mehr) .vol-unit-toggle .stats-mode-pill.active { background: rgba(255,255,255,.28); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ex-chart-toggle .stats-mode-pill.active,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .vol-unit-toggle .stats-mode-pill.active { color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ex-chart-toggle .stats-mode-pill.active,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .vol-unit-toggle .stats-mode-pill.active { background: rgba(255,255,255,.28); }
 /* Abgeschlossene Uebung: `.aex-v2.done .aex-v2-notes` traegt sonst ein helles Gruen, auf
    dem die im Glas-Modus weisse Notizschrift nicht mehr lesbar ist. */
-html.glas .screen:not(#screen-mehr) .aex-v2.done .aex-v2-notes {
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .aex-v2.done .aex-v2-notes {
   background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.24);
 }
-html.glas .screen:not(#screen-mehr) .aex-v2.done .aex-v2-notes-area::placeholder {
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .aex-v2.done .aex-v2-notes-area::placeholder {
   color: rgba(255,255,255,.55);
 }
 /* Kalender-Kaestchen: Die hellen Grautoene verschwinden auf dem Schleier. */
-html.glas .screen:not(#screen-mehr) .cal-day { background: rgba(255,255,255,.16); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-day { background: rgba(255,255,255,.16); }
 /* Die hellrote Woche muss auch auf dem Schleier zu sehen sein (Leonard-Meldung 05.09.2026) —
    die Regel darueber faerbt sonst JEDES Kaestchen weiss. Kraeftiger als im hellen Modus,
    sonst geht das Rot im Farbverlauf dahinter unter. */
-html.glas .screen:not(#screen-mehr) .cal-day.leer-woche { background: rgba(248,113,113,.55); }
-html.glas .screen:not(#screen-mehr) .monate-an .cal-day.m-zwei { background: rgba(255,255,255,.48); }
-html.glas .screen:not(#screen-mehr) .monate-an .cal-day.m-zwei.leer-woche { background: rgba(220,38,38,.75); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-day.leer-woche { background: rgba(248,113,113,.55); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .monate-an .cal-day.m-zwei { background: rgba(255,255,255,.48); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .monate-an .cal-day.m-zwei.leer-woche { background: rgba(220,38,38,.75); }
 /* Und ebenso der Wettkampftag (Leonard-Meldung 06.09.2026): Er hatte als einziger Zustand
    KEINE Glas-Regel, die allgemeine `.cal-day`-Regel darueber faerbte ihn deshalb weiss wie
    jedes andere Kaestchen — im Transparenz-Modus war er unsichtbar. Steht NACH der roten
@@ -1448,35 +1450,35 @@ html.glas .screen:not(#screen-mehr) .monate-an .cal-day.m-zwei.leer-woche { back
    voll weiss, und ein Tag mit Gym UND Lauf saehe aus wie ein reiner Gymtag. Dieselbe
    Abstufung wie im hellen Modus, wo der Kreis heller ist als das Quadrat. Der Umriss des
    geplanten Gymtags bekommt denselben Wert wie die Fuellung. */
-html.glas .screen:not(#screen-mehr) .cal-day.planned::before { box-shadow: inset 0 0 0 3.02px rgba(255,255,255,.6); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-day.planned::before { box-shadow: inset 0 0 0 3.02px rgba(255,255,255,.6); }
 /* Ein absolvierter Tag ist meist AUCH geplant — beide Regeln treffen dasselbe `::before`. Im
    hellen Modus faellt der Ring in derselben Farbe nicht auf, hier laege er als hellerer Rand
    auf der halbweissen Flaeche. */
-html.glas .screen:not(#screen-mehr) .cal-day.done::before    { background: rgba(255,255,255,.6); box-shadow: none; }
-html.glas .screen:not(#screen-mehr) .cal-day.run::after      { background: #fff; }
-html.glas .screen:not(#screen-mehr) .cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 3.02px #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-day.done::before    { background: rgba(255,255,255,.6); box-shadow: none; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-day.run::after      { background: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-day.run-planned::after { background: transparent; box-shadow: inset 0 0 0 3.02px #fff; }
 /* Geteilter Kern (Variante B, v501): Die Ringe der geplanten Haelften fuellen ueber `background`. */
-html.glas .screen:not(#screen-mehr) .cal-day.planned:not(.done):is(.run, .run-planned, .wettkampf)::before { background: transparent; box-shadow: inset 3.02px 0 0 0 rgba(255,255,255,.6), inset 0 3.02px 0 0 rgba(255,255,255,.6); }
-html.glas .screen:not(#screen-mehr) .cal-day.run-planned:not(.wettkampf):is(.planned, .done)::after { background: transparent; box-shadow: inset -3.02px 0 0 0 #fff, inset 0 -3.02px 0 0 #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-day.planned:not(.done):is(.run, .run-planned, .wettkampf)::before { background: transparent; box-shadow: inset 3.02px 0 0 0 rgba(255,255,255,.6), inset 0 3.02px 0 0 rgba(255,255,255,.6); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-day.run-planned:not(.wettkampf):is(.planned, .done)::after { background: transparent; box-shadow: inset -3.02px 0 0 0 #fff, inset 0 -3.02px 0 0 #fff; }
 /* Wettkampf bleibt golden (v502) — eine eigene Aussage, wie vorher die gruene Flaeche. */
-html.glas .screen:not(#screen-mehr) .cal-day.wettkampf::after { background: #EAB308; box-shadow: none; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-day.wettkampf::after { background: #EAB308; box-shadow: none; }
 /* Planname und Planbalken ueber und unter dem Raster ebenso weiss (Leonard-Entscheidung
    18.09.2026). Im gemeinsamen Trainingskalender unterscheidet die beiden Balken dann nur ihre
    Lage — die Gym-Spur steht immer ueber der Lauf-Spur. Archivierte bleiben halb durchsichtig. */
-html.glas .screen:not(#screen-mehr) .cal-scroll { --cal-plan-color: #fff; }
-html.glas .screen:not(#screen-mehr) .cal-planname.lauf,
-html.glas .screen:not(#screen-mehr) .cal-planspur.lauf { color: #fff; }
-html.glas .screen:not(#screen-mehr) .cal-planspur.lauf { background: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-scroll { --cal-plan-color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-planname.lauf,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-planspur.lauf { color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-planspur.lauf { background: #fff; }
 /* Kacheln der Fusszeile (v523): auf dem Schleier 14-%-Weiss, Schrift und Zeichen weiss. */
-html.glas .screen:not(#screen-mehr) .cal-kachel { background: rgba(255,255,255,.14); }
-html.glas .screen:not(#screen-mehr) .cal-kachel-kopf,
-html.glas .screen:not(#screen-mehr) .cal-kachel-titel { color: #fff; }
-html.glas .screen:not(#screen-mehr) .cal-kachel-sub { color: rgba(255,255,255,.8); }
-html.glas .screen:not(#screen-mehr) .cal-kachel .cal-detail-chev { color: #fff; background: rgba(255,255,255,.18); }
-html.glas .screen:not(#screen-mehr) .cal-kachel-ic.erledigt { background: #fff; }
-html.glas .screen:not(#screen-mehr) .cal-kachel-ic.offen { box-shadow: inset 0 0 0 2px #fff; }
-html.glas .screen:not(#screen-mehr) .cal-kachel-ic.verpasst { box-shadow: inset 0 0 0 2px #FCA5A5; }
-html.glas .screen:not(#screen-mehr) .cal-kachel.verpasst .cal-kachel-sub { color: #FCA5A5; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-kachel { background: rgba(255,255,255,.14); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-kachel-kopf,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-kachel-titel { color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-kachel-sub { color: rgba(255,255,255,.8); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-kachel .cal-detail-chev { color: #fff; background: rgba(255,255,255,.18); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-kachel-ic.erledigt { background: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-kachel-ic.offen { box-shadow: inset 0 0 0 2px #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-kachel-ic.verpasst { box-shadow: inset 0 0 0 2px #FCA5A5; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-kachel.verpasst .cal-kachel-sub { color: #FCA5A5; }
 /* Plan-Umrandungen im Transparenz-Modus: Das Gruen verschwindet auf dem Schleier, also
    Weiss. Damit trotzdem erkennbar bleibt, welcher Plan gerade laeuft, wird abgestuft —
    der laufende Plan bekommt eine kraeftige, durchgezogene Linie, die uebrigen (archiviert
@@ -1486,86 +1488,86 @@ html.glas .screen:not(#screen-mehr) .cal-kachel.verpasst .cal-kachel-sub { color
    01.09.2026): Welcher Plan zu einem Tag gehoert, sagt die Beschreibung unter dem Raster. */
 /* Knoepfe, die frei auf dem Tab-Hintergrund liegen (nicht in einer Karte) — sonst
    bleiben sie als helle Bloecke stehen. */
-html.glas .screen:not(#screen-mehr) #wo-add-ex-wrap .btn {
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) #wo-add-ex-wrap .btn {
   background: rgba(255,255,255,.12); color: #fff;
   box-shadow: 0 1px 6px rgba(0,0,0,.18);
 }
 /* Wochenplan-Karte: im Normalmodus weiss, hier durchsichtig. Alle Inhalte muessen hell
    werden — die Karte liegt dann direkt auf dem farbigen Tab-Hintergrund. */
-html.glas .screen:not(#screen-mehr) .plan-card-v2 {
-  background: rgba(255,255,255,.12);
-  box-shadow: 0 1px 6px rgba(0,0,0,.18);
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 {
+  background: transparent;
+  box-shadow: none;
 }
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-name  { color: #fff; }
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-meta  { color: rgba(255,255,255,.7); }
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-wk    { color: rgba(255,255,255,.85); }
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-bar      { background: rgba(255,255,255,.25); }
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-bar-fill { background: #fff; }
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-wd       { color: rgba(255,255,255,.75); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-name  { color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-meta  { color: rgba(255,255,255,.7); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-wk    { color: rgba(255,255,255,.85); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-bar      { background: rgba(255,255,255,.25); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-bar-fill { background: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-wd       { color: rgba(255,255,255,.75); }
 /* Geplante Tage weiss gefuellt: Die Akzentfarbe liegt zu nah am Tab-Hintergrund.
    `.done` gehoert seit dem 21.09.2026 dazu (Leonard-Wunsch): Ein Lauf oder freies Training an
    einem UNGEPLANTEN Tag traegt nur `.done`, nicht `.training`, und blieb im Transparenz-Modus als
    einziger Kreis in der Sportfarbe (Hell- bzw. Dunkelgruen) stehen. */
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.training .ppv-wd,
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.done .ppv-wd { background: rgba(255,255,255,.92); color: var(--accent-dark); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-col.training .ppv-wd,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-col.done .ppv-wd { background: rgba(255,255,255,.92); color: var(--accent-dark); }
 /* Heute traegt seit dem 08.09.2026 ein Feld statt eines Rings — im Transparenz-Modus
    dieselbe Weissflaeche wie ein ausgewaehlter Tag (`.selected`, weiter unten). */
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today { background: rgba(255,255,255,.18); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-col.today { background: rgba(255,255,255,.18); }
 /* Geplant und noch nicht absolviert bleibt auch hier UMRANDET. Ohne diese Regel gewinnt die
    Zeile darueber (`.ppv-col.training .ppv-wd`) und fuellt den Kreis weiss — geplant und
    absolviert saehen dann gleich aus. Die Flaeche ist dieselbe 22-%-Weiss wie beim offenen
    Kreis der Kombi-Karte. Der Ring gewinnt auch gegen `.selected .ppv-wd { box-shadow: none }`
    weiter unten: eine Klasse mehr. */
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.training.offen .ppv-wd {
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-col.training.offen .ppv-wd {
   background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 4px rgba(255,255,255,.92); color: #fff;
 }
 /* `:not(.done)` (21.09.2026): Ein heute absolvierter, ungeplanter Tag ist weiss GEFUELLT — die
    weisse Schrift dieser Regel stuende sonst weiss auf weiss. Dasselbe `:not(.done)` steht in der
    hellen Fassung weiter oben (dort Akzentgruen auf der gruenen Scheibe). */
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.today:not(.training):not(.done) .ppv-wd { color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-col.today:not(.training):not(.done) .ppv-wd { color: #fff; }
 /* Ausgewaehlter Tag im Trainings-Tab: KEIN weisser Ring um den Kreis mehr, und die Flaeche
    dahinter in transparentem Weiss statt in der Tab-Farbe (Leonard-Wunsch 01.09.2026).
    `.ppv-col.selected` greift sonst auf `--accent-bg` zu, und das ist auf der Plan-Karte
    die Themefarbe des Tabs — im Glas-Modus ein farbiger Klecks auf dem Schleier. */
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.selected .ppv-wd { box-shadow: none; }
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.selected { background: rgba(255,255,255,.18); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-col.selected .ppv-wd { box-shadow: none; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-col.selected { background: rgba(255,255,255,.18); }
 /* Suchfeld des Katalogs — sonst bleibt es als weisser Balken auf dem Schleier stehen. */
 /* Kopf-Knoepfe in Uebungen und Plaene bekommen im Transparenz-Modus dasselbe Aussehen wie
    die der Uebersicht (`.ph-gear`): 18-%-Weiss, weisse Symbole, kein Schatten, 12px-Radius.
    Sonst stehen dort weisse Kacheln auf dem Schleier. */
-html.glas .screen:not(#screen-mehr) .ex-sort-btn,
-html.glas .screen:not(#screen-mehr) .ex-add-btn {
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ex-sort-btn,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ex-add-btn {
   background: rgba(255,255,255,0.18); border-color: transparent;
   border-radius: 12px; box-shadow: none;
 }
-html.glas .screen:not(#screen-mehr) .ex-sort-btn svg,
-html.glas .screen:not(#screen-mehr) .ex-add-btn svg { stroke: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ex-sort-btn svg,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ex-add-btn svg { stroke: #fff; color: #fff; }
 /* Aktiver Filter: auf dem Schleier waere die dunkle Akzentfarbe ein Fremdkoerper —
    stattdessen eine deutlich hellere Flaeche, wie beim aktiven Seitenschalter. */
-html.glas .screen:not(#screen-mehr) #ex-plan-filter-btn.active,
-html.glas .screen:not(#screen-mehr) #plans-archive-btn.active,
-html.glas .screen:not(#screen-mehr) .plan-archiv-knopf.active { background: rgba(255,255,255,.45); }
-html.glas .screen:not(#screen-mehr) #ex-plan-filter-btn.active svg { stroke: #fff; fill: #fff; }
-html.glas .screen:not(#screen-mehr) .ex-search-bar {
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) #ex-plan-filter-btn.active,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) #plans-archive-btn.active,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-archiv-knopf.active { background: rgba(255,255,255,.45); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) #ex-plan-filter-btn.active svg { stroke: #fff; fill: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ex-search-bar {
   background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.24);
   color: #fff; box-shadow: 0 1px 6px rgba(0,0,0,.18);
 }
-html.glas .screen:not(#screen-mehr) .ex-search-bar::placeholder { color: rgba(255,255,255,.7); }
-html.glas .screen:not(#screen-mehr) .ex-search-bar:focus {
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ex-search-bar::placeholder { color: rgba(255,255,255,.7); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ex-search-bar:focus {
   background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.45);
 }
-html.glas .screen:not(#screen-mehr) .plan-card-v2.plan-status-past .ppv-name,
-html.glas .screen:not(#screen-mehr) .plan-card-v2.plan-status-archived .ppv-name { color: rgba(255,255,255,.82); }
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .plan-status-chip { background: rgba(255,255,255,.2); color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2.plan-status-past .ppv-name,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2.plan-status-archived .ppv-name { color: rgba(255,255,255,.82); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .plan-status-chip { background: rgba(255,255,255,.2); color: #fff; }
 
 /* Trainingstag-Karten in der Bibliothek. */
-html.glas .screen:not(#screen-mehr) .plan-list-row {
-  background: rgba(255,255,255,.12);
-  box-shadow: 0 1px 6px rgba(0,0,0,.18);
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-list-row {
+  background: transparent;
+  box-shadow: none;
   --text: #fff; --text2: rgba(255,255,255,.85); --text3: rgba(255,255,255,.65);
   --border: rgba(255,255,255,.24);
 }
-html.glas .screen:not(#screen-mehr) .plan-list-row .plan-list-name { color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-list-row .plan-list-name { color: #fff; }
 /* Die Archiv-Ueberschrift braucht hier KEINE eigene Regel: Sie ist schon weiss und steht in
    beiden Farbmodi auf demselben farbigen Tab-Hintergrund. Die frueheren zwei Regeln fuer den
    Archiv-KNOPF (durchscheinende Karte und Anzahl-Pille) sind mit ihm entfallen. */
@@ -1590,12 +1592,12 @@ html.glas .nav-btn.active span { color: #fff; }
 /* Freistehende Knoepfe in den Detailansichten (nicht in einer Karte) — sonst bleiben sie
    als helle Bloecke auf dem Schleier stehen. Die Modal-Varianten derselben Klassen sind
    ueber die ID bzw. den Container ausgenommen, dort ist der Grund weiterhin weiss. */
-html.glas .screen:not(#screen-mehr) #day-add-ex-wrap .btn {
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) #day-add-ex-wrap .btn {
   background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.35);
   box-shadow: 0 1px 6px rgba(0,0,0,.18);
 }
 /* Das native Kalender-Symbol in Datumsfeldern ist schwarz gezeichnet. */
-html.glas .screen:not(#screen-mehr) .program-form-row input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .program-form-row input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
 /* Das Laufplan-Detail braucht KEINE Glas-Ausnahme: Es steht seit dem 04.09.2026 auf einer
    eigenen Seite und dort auf `.mehr-card` — und die fehlt in der Glas-Liste oben bewusst,
    genau wie beim Gymplan-Detail. Aus demselben Grund braucht auch `.lp-tagwahl.an` keine
@@ -2010,13 +2012,13 @@ html.wo-running #wo-gym-woche,
 /* Der LEERE Kreis: 22-%-Weiss. Die Regel ist auf `:not(.training):not(.done)` eingeengt —
    ungefiltert traf sie auch die geplanten (id-Selektor im `:not()`), und geplant und leer
    sahen gleich aus. */
-html.glas .screen:not(#screen-mehr) .ppv-k-col:not(.training):not(.done) .ppv-k-dot {
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ppv-k-col:not(.training):not(.done) .ppv-k-dot {
   background: rgba(255,255,255,.22);
 }
-html.glas .screen:not(#screen-mehr) .plan-card-v2 .ppv-col.verschoben .ppv-wd {
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-col.verschoben .ppv-wd {
   background: rgba(255,255,255,.22); color: rgba(255,255,255,.85);
 }
-html.glas .screen:not(#screen-mehr) .ppv-k-labels { color: rgba(255,255,255,.75); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ppv-k-labels { color: rgba(255,255,255,.75); }
 /* KOMBI-KARTE EINZEILIG (v502, 04.11.2026, Leonard-Wunsch): eine Reihe Quadrate wie im
    Trainingskalender (Variante B) — eine Sportart allein fuellt das Quadrat, beide teilen es
    diagonal (oben links Gym `.kt.gym`, unten rechts Lauf `.kt.lauf`). Gefuellt = absolviert,
@@ -2049,14 +2051,14 @@ html.glas .screen:not(#screen-mehr) .ppv-k-labels { color: rgba(255,255,255,.75)
    einseitige inset-Schatten). Die Diagonale faellt damit weg; der Dreiecks-`clip-path` der Haelfte
    bleibt und teilt die Ecken oben rechts/unten links sauber an der Schraege. */
 /* Glas: wie im Kalender Gym 60-%-, Lauf 92-%-Weiss — sonst waeren die Haelften gleich. */
-html.glas .screen:not(#screen-mehr) .ppv-k-reihe.beide .ppv-k-dot { background: rgba(255,255,255,.22); }
-html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.gym.erledigt  { background: rgba(255,255,255,.6); }
-html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.lauf.erledigt { background: rgba(255,255,255,.92); }
-html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.gym.offen  { box-shadow: inset 0 0 0 5px rgba(255,255,255,.6); }
-html.glas .screen:not(#screen-mehr) .ppv-k-dot .kt.lauf.offen { box-shadow: inset 0 0 0 5px rgba(255,255,255,.92); }
-html.glas .screen:not(#screen-mehr) .ppv-k-dot.geteilt .kt.gym.offen  { box-shadow: inset 5px 0 0 0 rgba(255,255,255,.6), inset 0 5px 0 0 rgba(255,255,255,.6); }
-html.glas .screen:not(#screen-mehr) .ppv-k-dot.geteilt .kt.lauf.offen { box-shadow: inset -5px 0 0 0 rgba(255,255,255,.92), inset 0 -5px 0 0 rgba(255,255,255,.92); }
-html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ppv-k-reihe.beide .ppv-k-dot { background: rgba(255,255,255,.22); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ppv-k-dot .kt.gym.erledigt  { background: rgba(255,255,255,.6); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ppv-k-dot .kt.lauf.erledigt { background: rgba(255,255,255,.92); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ppv-k-dot .kt.gym.offen  { box-shadow: inset 0 0 0 5px rgba(255,255,255,.6); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ppv-k-dot .kt.lauf.offen { box-shadow: inset 0 0 0 5px rgba(255,255,255,.92); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ppv-k-dot.geteilt .kt.gym.offen  { box-shadow: inset 5px 0 0 0 rgba(255,255,255,.6), inset 0 5px 0 0 rgba(255,255,255,.6); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ppv-k-dot.geteilt .kt.lauf.offen { box-shadow: inset -5px 0 0 0 rgba(255,255,255,.92), inset 0 -5px 0 0 rgba(255,255,255,.92); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ppv-filter-btn { color: #fff; }
 /* ═══════════════════════════════════
    WORKOUT (Active session) – Mockup v2
 ═══════════════════════════════════ */
@@ -2101,7 +2103,7 @@ html.glas .screen:not(#screen-mehr) .ppv-filter-btn { color: #fff; }
    Karte nicht um 2px verschiebt; `overflow: hidden` beschneidet nur Kinder, nicht den eigenen
    Schatten. Im Transparenz-Modus weiss (keine Sportfarben). */
 .aex-v2.aktuell { box-shadow: 0 0 0 2px #0F766E, var(--shadow); }
-html.glas .screen:not(#screen-mehr) .aex-v2.aktuell { box-shadow: 0 0 0 2px rgba(255,255,255,.92), var(--shadow); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .aex-v2.aktuell { box-shadow: 0 0 0 2px rgba(255,255,255,.92), var(--shadow); }
 /* v499 (Leonard-Wunsch): In der laufenden Einheit zeigt die Nummernscheibe den Stand — noch
    offene Uebungen nur als Ring in der Muskelgruppenfarbe, erledigte gefuellt (wie bisher). */
 .aex-v2-num.offen { background: transparent; color: var(--c, var(--accent)); box-shadow: inset 0 0 0 2px var(--c, var(--accent)); }
@@ -2529,10 +2531,10 @@ html.glas .screen:not(#screen-mehr) .aex-v2.aktuell { box-shadow: 0 0 0 2px rgba
 .lauf-wochen-leiste { position: relative; height: 3px; border-radius: 99px; background: var(--card2); margin: 12px 20% 2px; }
 .lauf-wochen-leiste > i { position: absolute; top: -1px; width: 18px; height: 5px; border-radius: 99px; background: #4ADE80; transform: translateX(-50%); transition: left .2s; }
 /* Transparenz-Modus: keine Sportfarbe, wie bei den uebrigen Marken der Laufseite. */
-html.glas .screen:not(#screen-mehr) .lauf-wochen-punkte > i { background: rgba(255,255,255,.28); }
-html.glas .screen:not(#screen-mehr) .lauf-wochen-punkte > i.an,
-html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste > i { background: rgba(255,255,255,.92); }
-html.glas .screen:not(#screen-mehr) .lauf-wochen-leiste { background: rgba(255,255,255,.28); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .lauf-wochen-punkte > i { background: rgba(255,255,255,.28); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .lauf-wochen-punkte > i.an,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .lauf-wochen-leiste > i { background: rgba(255,255,255,.92); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .lauf-wochen-leiste { background: rgba(255,255,255,.28); }
 /* LAEUFE DIESER WOCHE (`laufWochenListe`, 21.09.2026, Leonard-Wunsch). Eine Zeile je Tag:
    Scheibe mit dem Wochentag, Vorgabe mit Zone, rechts das Ist. Die Scheibe traegt dieselben
    Zustaende wie der Wochentagskreis der Laufwochenplan-Karte: gefuellt = gelaufen, Ring = offen,
@@ -2625,9 +2627,9 @@ button.lauf-wz:active { opacity: .6; }
 .lauf-wz-balken.gym > .ist  { background: #0F766E; }
 .lauf-wochen-punkte.gym > i.an, .lauf-wochen-leiste.gym > i { background: #0F766E; }
 .gym-woche-leer { font-size: var(--fs-neben); padding: 4px 0; }
-html.glas .screen:not(#screen-mehr) .lauf-wz-balken { background: rgba(255,255,255,.20); }
-html.glas .screen:not(#screen-mehr) .lauf-wz-balken > .soll { background: rgba(255,255,255,.6); }
-html.glas .screen:not(#screen-mehr) .lauf-wz-balken > .ist  { background: rgba(255,255,255,.92); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .lauf-wz-balken { background: rgba(255,255,255,.20); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .lauf-wz-balken > .soll { background: rgba(255,255,255,.6); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .lauf-wz-balken > .ist  { background: rgba(255,255,255,.92); }
 /* HEUTE: dasselbe gruene Feld hinter der Scheibe wie in der Wochenplan-Karte
    (`.ppv-col.today`, 22.09.2026, Leonard-Wunsch — vorher stand rechts das Wort „heute").
    Das Polster waechst ueber die Scheibe hinaus und wird per negativem Aussenabstand wieder
@@ -2641,7 +2643,7 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-balken > .ist  { background: rgba(2
   padding: 4px 5px; margin: -4px 0; border-radius: 9.9px;
 }
 .lauf-wz-feld.heute { background: var(--accent-bg); }
-html.glas .screen:not(#screen-mehr) .lauf-wz-feld.heute { background: rgba(255,255,255,.18); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .lauf-wz-feld.heute { background: rgba(255,255,255,.18); }
 .lauf-wz-tag {
   width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; box-sizing: border-box;
   display: flex; align-items: center; justify-content: center;
@@ -2725,14 +2727,14 @@ button.wz-einheit:active { opacity: .6; }
 .wz-zeichen.lauf.offen    { box-shadow: inset 0 0 0 3px #4ADE80; }
 .wz-zeichen.verpasst      { box-shadow: inset 0 0 0 3px var(--red); }
 .wz-zeichen.verschoben    { background: var(--card2); box-shadow: inset 0 0 0 3px var(--text3); }
-html.glas .screen:not(#screen-mehr) .wz-zeichen.gelaufen { background: rgba(255,255,255,.92); }
-html.glas .screen:not(#screen-mehr) .wz-zeichen.offen    { box-shadow: inset 0 0 0 3px rgba(255,255,255,.92); }
-html.glas .screen:not(#screen-mehr) .wz-zeichen.verpasst { box-shadow: inset 0 0 0 3px #FCA5A5; }
-html.glas .screen:not(#screen-mehr) .wz-zeichen.verschoben { background: rgba(255,255,255,.22); box-shadow: none; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wz-zeichen.gelaufen { background: rgba(255,255,255,.92); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wz-zeichen.offen    { box-shadow: inset 0 0 0 3px rgba(255,255,255,.92); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wz-zeichen.verpasst { box-shadow: inset 0 0 0 3px #FCA5A5; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wz-zeichen.verschoben { background: rgba(255,255,255,.22); box-shadow: none; }
 .wz-flach.gewaehlt { background: var(--accent-bg); border-radius: 10px; }
 .wz-flach.gewaehlt .wz-flach-tag { color: var(--accent-dark); font-weight: 800; }
-html.glas .screen:not(#screen-mehr) .wz-flach.gewaehlt { background: rgba(255,255,255,.18); }
-html.glas .screen:not(#screen-mehr) .wz-flach.gewaehlt .wz-flach-tag { color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wz-flach.gewaehlt { background: rgba(255,255,255,.18); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wz-flach.gewaehlt .wz-flach-tag { color: #fff; }
 /* v528 (Leonard-Wunsch, „nur groesser"): In der aufgeklappten Karte „Heute" der Uebersicht sind
    die Zeichen so gross wie die Quadrate der Seiten „Gym"/„Laufen" (50.88px), Wochentag und Namen
    18px. Aufbau unveraendert (Wochentag als Text, Einheiten nebeneinander). */
@@ -2741,7 +2743,7 @@ html.glas .screen:not(#screen-mehr) .wz-flach.gewaehlt .wz-flach-tag { color: #f
    halbfett, grau — auch in der gewaehlten Zeile (das Feld dahinter bleibt die Markierung). */
 .wz-flach-liste .wz-flach-tag,
 .wz-flach-liste .wz-flach.gewaehlt .wz-flach-tag { width: 28px; font-size: var(--fs-text); font-weight: 600; color: var(--text3); }
-html.glas .screen:not(#screen-mehr) .wz-flach-liste .wz-flach-tag { color: rgba(255,255,255,.75); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wz-flach-liste .wz-flach-tag { color: rgba(255,255,255,.75); }
 .wz-flach-liste .wz-einheit { font-size: var(--fs-titel); gap: 10px; }   /* v532: 16px */
 .lauf-wz-tag.verschoben { background: var(--card2); color: var(--text2); }
 /* VERPASST (26.09.2026, Leonard-Wunsch): ein geplanter Lauftag, der vorbei ist und nicht
@@ -2760,14 +2762,14 @@ html.glas .screen:not(#screen-mehr) .wz-flach-liste .wz-flach-tag { color: rgba(
    Einzelkarten (gelaufen weiss gefuellt, offen weiss umrandet). Der Wochentag im weissen
    Kreis bleibt farbig — `--accent-dark` ist auf der Glas-Karte selbst weiss, deshalb fest
    das Gruen des Trainings-Tabs. */
-html.glas .screen:not(#screen-mehr) .lauf-wz-tag.gelaufen   { background: rgba(255,255,255,.92); color: #059669; }
-html.glas .screen:not(#screen-mehr) .lauf-wz-tag.offen      { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 3px rgba(255,255,255,.92); color: #fff; }
-html.glas .screen:not(#screen-mehr) .lauf-wz-tag.verschoben { background: rgba(255,255,255,.22); color: rgba(255,255,255,.85); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .lauf-wz-tag.gelaufen   { background: rgba(255,255,255,.92); color: #059669; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .lauf-wz-tag.offen      { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 3px rgba(255,255,255,.92); color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .lauf-wz-tag.verschoben { background: rgba(255,255,255,.22); color: rgba(255,255,255,.85); }
 /* Rot BLEIBT rot im Transparenz-Modus — wie die trainingsfreie Woche im Kalender; es ist eine
    Warnung, keine Sportfarbe. Nur heller, sonst geht es im Farbverlauf unter. */
-html.glas .screen:not(#screen-mehr) .lauf-wz-tag.verpasst   { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 3px #FCA5A5; color: #FCA5A5; }
-html.glas .screen:not(#screen-mehr) .lauf-wz-ist.verpasst   { color: #FCA5A5; }
-html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,255,255,.7); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .lauf-wz-tag.verpasst   { background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 3px #FCA5A5; color: #FCA5A5; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .lauf-wz-ist.verpasst   { color: #FCA5A5; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .lauf-wz-von            { color: rgba(255,255,255,.7); }
 .lauf-leer { font-size: var(--fs-neben); color: var(--text3); text-align: center; padding: 10px 0; }
 /* Eingeklappte Plan-Karte: wie eine Listenzeile, aufgeklappt wird sie zum Formular. */
 /* EINHEITEN „VARIANTE B" (v469, 23.10.2026, Leonard-Wahl): je Lauftag eine Zeile wie in der
@@ -2824,8 +2826,8 @@ html.glas .screen:not(#screen-mehr) .lauf-wz-von            { color: rgba(255,25
 .cal-week.wk-hl { background: rgba(245,158,11,.22); border-radius: 8px; box-shadow: 0 0 0 3px rgba(245,158,11,.22); }
 .cal-planname.cal-wnr.wk-hl { background: var(--accent); color: #fff; border-radius: 5px; }
 /* Im Transparenz-Modus ist die Tabfarbe weiss — sonst stuende „W5" weiss auf weiss. */
-html.glas .screen:not(#screen-mehr) .cal-planname.cal-wnr.wk-hl { background: rgba(255,255,255,.92); color: #92400E; }
-html.glas .screen:not(#screen-mehr) .cal-week.wk-hl { background: rgba(255,255,255,.2); box-shadow: 0 0 0 3px rgba(255,255,255,.2); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-planname.cal-wnr.wk-hl { background: rgba(255,255,255,.92); color: #92400E; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-week.wk-hl { background: rgba(255,255,255,.2); box-shadow: 0 0 0 3px rgba(255,255,255,.2); }
 .lp-feld, .lp-notiz { height: 38px; box-sizing: border-box; }
 .lp-feld {
   width: 52px; flex: none; text-align: center; padding: 0 2px; border-radius: 9px;
@@ -3202,9 +3204,9 @@ button.cal-kachel:active { opacity: .7; }
 .rd-w-pace { color: #0D9488; }
 .rd-w-puls { color: #E11D48; }
 .rd-w-hoehe { color: #16A34A; }
-html.glas .screen:not(#screen-mehr) .rd-werte { background: rgba(255,255,255,.14); }
-html.glas .screen:not(#screen-mehr) .rd-w span { color: rgba(255,255,255,.75); }
-html.glas .screen:not(#screen-mehr) .rd-w b { color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .rd-werte { background: rgba(255,255,255,.14); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .rd-w span { color: rgba(255,255,255,.75); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .rd-w b { color: #fff; }
 /* v535 (Leonard-Wahl „1B"): Stern oben rechts im gruenen Kopf der Laufdetailansicht. Leer = weisser
    Umriss auf 25-%-Weiss, gemerkt = gelb gefuellt. Der Kopf haelt rechts Platz frei. */
 .rd-kopf.mit-stern { position: relative; padding-right: 56px; }
@@ -3238,13 +3240,13 @@ html.glas .screen:not(#screen-mehr) .rd-w b { color: #fff; }
 .rb-zusatz { display: block; font-style: normal; font-size: var(--fs-etikett); color: var(--text2); margin-top: 3px; }
 .rb-pr { margin-top: 12px; font-size: var(--fs-neben); line-height: 1.5; color: var(--text2); }
 .rb-pr strong { color: var(--text); font-weight: 700; }
-html.glas .screen:not(#screen-mehr) .rb-datum,
-html.glas .screen:not(#screen-mehr) .rb-zu { color: rgba(255,255,255,.75); }
-html.glas .screen:not(#screen-mehr) .rb-karte .hd-stat { background: rgba(255,255,255,.14); }
-html.glas .screen:not(#screen-mehr) .rb-karte .hd-stat span,
-html.glas .screen:not(#screen-mehr) .rb-zusatz,
-html.glas .screen:not(#screen-mehr) .rb-pr { color: rgba(255,255,255,.8); }
-html.glas .screen:not(#screen-mehr) .rb-pr strong { color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .rb-datum,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .rb-zu { color: rgba(255,255,255,.75); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .rb-karte .hd-stat { background: rgba(255,255,255,.14); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .rb-karte .hd-stat span,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .rb-zusatz,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .rb-pr { color: rgba(255,255,255,.8); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .rb-pr strong { color: #fff; }
 .cal-detail-run.geplant { color: var(--text3); }
 .cal-kachel .cal-detail-chev,
 .lauf-wz .cal-detail-chev {
@@ -3351,12 +3353,12 @@ html.glas .screen:not(#screen-mehr) .rb-pr strong { color: #fff; }
 .cal-planname.cal-wnr.rest { color: var(--accent); }
 /* v568: „Rest" unter einem Lauf-Balken in Lauf-Gruen; Kopf der Laufkalender-Fusszeile. */
 .cal-rest.lauf { color: #4ADE80; }
-html.glas .screen:not(#screen-mehr) .cal-rest.lauf { color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-rest.lauf { color: #fff; }
 .lcal-fuss-titel b.rest { color: var(--accent); }
 /* Hervorgehobene Woche, die zugleich Rest Week ist: weiss auf der gefuellten Marke (sonst orange auf orange). */
 .cal-planname.cal-wnr.wk-hl.rest { color: #fff; }
-html.glas .screen:not(#screen-mehr) .cal-planname.cal-wnr.wk-hl.rest { color: #92400E; }
-html.glas .screen:not(#screen-mehr) .cal-planname.cal-wnr.rest { color: #FDE68A; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-planname.cal-wnr.wk-hl.rest { color: #92400E; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .cal-planname.cal-wnr.rest { color: #FDE68A; }
 /* v559: „Rest" unter dem Gym-Balken in der Spalte einer Rest Week (Farbe = Gymplan, im
    Transparenz-Modus weiss ueber `--cal-plan-color`). */
 .cal-rest {
@@ -3455,7 +3457,7 @@ html.glas .screen:not(#screen-mehr) .cal-planname.cal-wnr.rest { color: #FDE68A;
 #plans-archive-btn.active svg, .plan-archiv-knopf.active svg { stroke: #fff; }
 /* v569: Loeschen im Kopf der Plan-Detailansichten — Symbol in Rot, sonst wie die uebrigen Knoepfe. */
 .ex-add-btn.plan-loesch-knopf svg { stroke: var(--red, #d33); }
-html.glas .screen:not(#screen-mehr) .ex-add-btn.plan-loesch-knopf svg { stroke: #FCA5A5; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ex-add-btn.plan-loesch-knopf svg { stroke: #FCA5A5; }
 #screen-plan-detail .plan-detail-ph > .ph-actions,
 #screen-runplan-detail .plan-detail-ph > .ph-actions { margin-top: 0; }
 
@@ -3983,7 +3985,7 @@ html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
 .seg-vier .seg-btn { font-size: 12px; padding-left: 2px; padding-right: 2px; }
 /* KEINE Glas-Sonderregel mehr fuer die aktive Pille. Frueher war sie noetig, weil die
    weisse Pille im Transparenz-Modus auf dem durchscheinenden Schalter ein Fremdkoerper
-   war (`html.glas .screen:not(#screen-mehr) .seg-btn.active` → 28-%-Weiss). Seit der
+   war (`html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .seg-btn.active` → 28-%-Weiss). Seit der
    Schalter unten steht und eine DECKENDE dunkle Flaeche traegt, sieht er in beiden Modi
    gleich aus — eine 28-%-Pille waere dort nur schlechter zu erkennen. */
 
@@ -4024,28 +4026,28 @@ html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
 .wk-fehlt .wk-hol-btn { background: #fff; color: var(--red); }
 /* Im Transparenz-Modus liegt die Karte auf dem Farbverlauf: Das zarte Rot verschwaende, und
    die Schrift darauf waere zu dunkel. Kraeftiger und mit weisser Schrift. */
-html.glas .screen:not(#screen-mehr) .wk-fehlt { background: rgba(220,38,38,.42); }
-html.glas .screen:not(#screen-mehr) .wk-fehlt-txt { color: rgba(255,255,255,.9); }
-html.glas .screen:not(#screen-mehr) .wk-fehlt-txt strong { color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wk-fehlt { background: rgba(220,38,38,.42); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wk-fehlt-txt { color: rgba(255,255,255,.9); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wk-fehlt-txt strong { color: #fff; }
 /* Nur der Knopf IM roten Block wird rot — der neutrale Knopf der Kulanzphase soll nicht
    nach Alarm aussehen (sonst faerbte die Regel beide gleich ein). */
-html.glas .screen:not(#screen-mehr) .wk-fehlt .wk-hol-btn { background: rgba(255,255,255,.9); color: var(--red); }
-html.glas .screen:not(#screen-mehr) .wk-wartet .wk-hol-btn { background: rgba(255,255,255,.18); color: #fff; }
-html.glas .screen:not(#screen-mehr) .wk-wartet .wk-leer { color: rgba(255,255,255,.8); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wk-fehlt .wk-hol-btn { background: rgba(255,255,255,.9); color: var(--red); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wk-wartet .wk-hol-btn { background: rgba(255,255,255,.18); color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wk-wartet .wk-leer { color: rgba(255,255,255,.8); }
 /* Im Transparenz-Modus liegt die Karte auf dem Farbverlauf: Das Datum wuerde in Grau
    verschwinden, die Kachelflaechen ebenfalls. `.hd-stat b` ist bereits von der bestehenden
    Glas-Regel erfasst, die Beschriftung darunter nicht. */
-html.glas .screen:not(#screen-mehr) .wk-datum,
-html.glas .screen:not(#screen-mehr) .wk-leer { color: rgba(255,255,255,.8); }
-html.glas .screen:not(#screen-mehr) .wk-card .hd-stat { background: rgba(255,255,255,.14); }
-html.glas .screen:not(#screen-mehr) .wk-card .hd-stat span { color: rgba(255,255,255,.75); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wk-datum,
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wk-leer { color: rgba(255,255,255,.8); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wk-card .hd-stat { background: rgba(255,255,255,.14); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wk-card .hd-stat span { color: rgba(255,255,255,.75); }
 /* Laufinhalt auf der durchscheinenden Wettkampfkarte: der Kopf bleibt farbig
    (wie die Knoepfe der Herocard), nur die grauen Teile werden weiss. */
-html.glas .screen:not(#screen-mehr) .wk-card .run-detail-notiz span { color: rgba(255,255,255,.75); }
-html.glas .screen:not(#screen-mehr) .wk-card .run-detail-notiz { border-top-color: rgba(255,255,255,.2); }
-html.glas .screen:not(#screen-mehr) .wk-card .run-detail-notiz p { color: #fff; }
-html.glas .screen:not(#screen-mehr) .wk-anstehend { background: rgba(255,255,255,.14); color: rgba(255,255,255,.85); }
-html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,255,.85); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wk-card .run-detail-notiz span { color: rgba(255,255,255,.75); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wk-card .run-detail-notiz { border-top-color: rgba(255,255,255,.2); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wk-card .run-detail-notiz p { color: #fff; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wk-anstehend { background: rgba(255,255,255,.14); color: rgba(255,255,255,.85); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .wk-kuenftig .wk-name { color: rgba(255,255,255,.85); }
 
 /* Das Plan-Day-Edit-Modal ist am 13.09.2026 entfallen (Gymtage nur noch in ihrer
    Detailansicht) — mit ihm die Regeln `.plan-ex-item`, `.plan-ex-handle` und
@@ -4412,13 +4414,11 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
 .ex-chart-block.collapsed .km-schnitt { display: none; }
 /* v490: Der Ø-Wert ist der Schalter der Durchschnittslinie. */
 .km-schnitt, .lp-km-schnitt[role="button"] { cursor: pointer; user-select: none; -webkit-user-select: none; }
-html.glas .screen:not(#screen-mehr) .km-schnitt { color: rgba(255,255,255,.85); }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .km-schnitt { color: rgba(255,255,255,.85); }
 /* Notiz-Marke hinter einem Lauf (v440). */
 .notiz-ic { display: inline-flex; width: 13px; height: 13px; margin-left: 6px; color: var(--text3); vertical-align: -1px; flex-shrink: 0; }
 .notiz-ic svg { width: 100%; height: 100%; }
-html.glas .screen:not(#screen-mehr) .notiz-ic { color: rgba(255,255,255,.75); }
-/* Der Notiz-Knopf im Laufplan-Detail steht auf der weissen Karte — dort bleibt das Symbol dunkel. */
-html.glas #screen-runplan-detail .lp-notiz .notiz-ic { color: inherit; }
+html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .notiz-ic { color: rgba(255,255,255,.75); }
 /* In der Einheiten-Detailansicht ist der Platz schmaler als im Katalog. */
 #hist-detail-body .ex-chart-wrap { height: 120px; margin: 2px 0 0; }
 #hist-detail-body .ex-chart-empty { margin-bottom: 0; }

@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v576**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v577**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -273,7 +273,10 @@ entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2`.
   Hälfte = Randstück. Kombi-Karte zeichnet nur `.ppv-k-reihe.beide`.
 - Wettkampf im Kalender: goldenes Quadrat `#EAB308`.
 - **Transparenz-Modus** (`html.glas`, `toggleGlasModus`, Überblendung per View Transitions):
-  Karten durchscheinend, Sportfarben in Wochen- und Kalenderkarten werden weiß (Gym 60 %, Lauf
+  Karten ohne Fläche, Schatten und Rand (seit v577 — Inhalte stehen direkt auf dem
+  Tab-Hintergrund). Gilt nicht in `#screen-mehr`, `#screen-plan-detail`, `#screen-runplan-detail`
+  (Präfix `html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)`,
+  ebenso die Diagramm-Abfragen in app.js), Sportfarben in Wochen- und Kalenderkarten werden weiß (Gym 60 %, Lauf
   ~92 %). Farbig bleiben Warnrot, Wettkampf, Muskelgruppenfarben. `.mehr-card` bleibt weiß.
   `glasAktiv()` liest den Speicher, nicht die Klasse.
 
@@ -510,3 +513,10 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Trainingskalender ganz rechts, 8px hinter dem Datum (vorher links davor). GEMESSEN (375px):
   Knopf bündig am rechten Rand des Kopfes in Kalender, Gym und Laufen; Datum → Knopf 8px; ohne
   Knopf steht das Datum rechtsbündig; Kopf 15px; keine Konsolenfehler.
+- **v577 (13.11.2026, Leonard-Wunsch):** Transparenz-Modus: Karten ohne Fläche/Schatten/Rand,
+  Inhalte direkt auf dem Tab-Hintergrund (auch Planlisten- und Gymtag-Karten). Gym- und
+  Laufplan-Detail übernehmen den Modus gar nicht mehr (Kalender weiß wie die übrigen
+  Abschnitte). Punkte im Übungskatalog-Symbol weiß (`color` fehlte, Punkte sind `currentColor`).
+  GEMESSEN (375px, Glas an): Übersicht/Plan-Tab ohne Kartenflächen, Symbolpunkte rgb(255,255,255),
+  `#lp-cal-card`/`#pd-cal-card` weiß, Kästchen grau, Abschnittstitel weiß; Querformat 1100px;
+  keine Konsolenfehler (außer Offline-CDN).

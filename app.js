@@ -4411,7 +4411,7 @@ function renderVolumeChart(ws) {
   const achseInTonnen = isKg && punkte.some(p => p.val >= 1000);
   // Weiss NUR auf dem Schleier (der Glas-Modus gilt bloss innerhalb der Tabs) — sonst laege
   // die Linie in der Farbe des Untergrunds. Sonst die Akzentfarbe des aktiven Tabs.
-  const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)');
+  const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)');
   const accent = aufGlas ? '#ffffff'
     : (getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#0066ff');
   const accentRGB = _hexZuRgb(accent);
@@ -5730,7 +5730,7 @@ function _zeichneKmDiagramm(welches, plan, mo, alt) {
   // Weiss NUR dort, wo die Karte im Transparenz-Modus wirklich durchscheint. Die Detailansicht
   // des Laufplans steht auf `.mehr-card` und bleibt IMMER weiss — dort waeren weisse Saeulen
   // unsichtbar (siehe „Die Detailseite nimmt den Transparenz-Modus NICHT an").
-  const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)')
+  const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)')
                   && !!canvas.closest('.chart-card-v2, .card, .aex-v2, .ex-list, .plan-section-card, .hero-v2');
   // In der Laufplan-Detailansicht tragen die Saeulen die TABFARBE des Plan-Tabs (Amber,
   // 22.09.2026, Leonard-Wunsch) — dort geht es um den Plan, nicht um die Sportart. Gelesen wird
@@ -6045,7 +6045,7 @@ function _zeichneGymVolDiagramm(mo, schnitt) {
   const canvas = document.getElementById('gym-vol-chart');
   const daten = _gymWochenDaten;
   if (!canvas || !daten || !_laufKmOffen) return;
-  const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)');
+  const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)');
   const hervorIdx = mo ? daten.findIndex(d => d.mo.getTime() === mo.getTime()) : -1;
   _gymVolChart = _gymVolChartBauen(canvas, daten, _gymVolFarben(daten, hervorIdx, aufGlas),
     aufGlas ? 'rgba(255,255,255,0.92)' : '#0F766E', schnitt, aufGlas, _saeuleWischt('gym-wochen-scroll'));
@@ -10320,7 +10320,7 @@ function _zeichneExDiagramm(canvas, exId) {
   // (Detailansicht einer Einheit, gemeldet 01.09.2026). Massgeblich ist also, WO das
   // Diagramm haengt. Die Farben werden hier ausdruecklich gesetzt, weil Chart.defaults
   // global auf den Glas-Modus eingestellt ist.
-  const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr)');
+  const aufGlas = glasAktiv() && !!canvas.closest('.screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)');
   const accent = aufGlas ? '#ffffff'
     : (getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#1E40AF');
   const schrift = aufGlas ? 'rgba(255,255,255,0.8)' : '#64748B';
