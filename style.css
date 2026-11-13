@@ -4203,7 +4203,7 @@ html.glas .screen:not(#screen-mehr) .wk-kuenftig .wk-name { color: rgba(255,255,
      ohne eigene Reihenfolge (Rueckblick, Wochenkarte, „Diese Woche"). Der Kopf `.ph` traegt
      dafuer `order: -2`, sonst rutschte der Kalender ueber ihn. */
   #screen-overview.active > .ph { order: -2; }
-  #screen-overview.active > #ov-cal-abschnitt { order: -1; }
+  /* v571: Kalender als letzter Abschnitt — die DOM-Reihenfolge genuegt, kein `order` mehr. */
   #screen-overview.active > .plan-section-card { grid-column: 2; }
   /* Stats-Karten in Übersicht (vom alten Verlauf-Tab) */
   #screen-overview.active > .lg-span-2 { grid-column: 1 / -1; }
