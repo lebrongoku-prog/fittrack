@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v577**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v578**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -253,6 +253,9 @@ Wochenplan-Karte, keine Tagesauswahl (Hülle `#wo-week-card` und `_woWocheFahren
 entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2`.
 **Training → Laufen**: Herocard · „Diese Woche" (`laufWochenListe`, wischbar,
 „Wochenkilometer").
+In „Diese Woche" (Gym und Laufen) stehen die Wochenpunkte bzw. die Leiste nur in der
+AUFGEKLAPPTEN Karte (Hülle `.wochen-anzeige`, fährt in `_wochenDiagrammKlappen` mit); Karten
+ohne Diagramm zeigen sie nie (v578).
 
 **Plan-Tab**: Trainingskalender des Plans + Planliste (`buildPlanCard` / `buildRunPlanCard` mit
 `nurPlan`), Archiv.
@@ -520,3 +523,8 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   GEMESSEN (375px, Glas an): Übersicht/Plan-Tab ohne Kartenflächen, Symbolpunkte rgb(255,255,255),
   `#lp-cal-card`/`#pd-cal-card` weiß, Kästchen grau, Abschnittstitel weiß; Querformat 1100px;
   keine Konsolenfehler (außer Offline-CDN).
+- **v578 (16.11.2026, Leonard-Wunsch):** „Diese Woche" (Gym/Laufen): Wochenpunkte bzw. -leiste
+  nur noch in der aufgeklappten Karte, klappen mit dem Diagramm (`_wochenAnzeigeHuelle`,
+  `_wochenAnzeigeKlappen`). GEMESSEN (375px, Test-Laufplan 10 Wochen): zu → Hülle `display:none`,
+  Liste → Kartenrand 14px; auf → 10 Punkte, 6. aktiv, 19px hoch; dreimal schnell umgeschaltet
+  endet sauber; keine Konsolenfehler. Gym nutzt denselben Weg, mangels Testdaten nicht live gesehen.

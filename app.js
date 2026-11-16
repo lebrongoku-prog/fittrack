@@ -5946,7 +5946,7 @@ function renderGymWoche(aktivLaeuft) {
       <span class="cal-sticky-anchor" aria-hidden="true"></span>
       ${seitenHTML}
     </div>
-    ${anzeige}
+    ${_wochenAnzeigeHuelle(anzeige, mitDiagramm)}
     ${mitDiagramm ? `<div class="ex-chart-block${_laufKmOffen ? '' : ' collapsed'}" id="gym-vol-block">
       ${schnitt != null ? `<div class="ex-item-body-label ex-chart-head">
         <span class="km-schnitt" onclick="toggleSchnittLinie(event)" role="button" title="Durchschnittslinie ein-/ausblenden">Ø ${fmtVol(schnitt)}</span>
@@ -5974,7 +5974,32 @@ function renderGymWoche(aktivLaeuft) {
 // `_klappNr`. Beim Aufklappen wird ZUERST gezeichnet (`zeichnen`, ein verstecktes Canvas hat
 // keine Breite), dann gefahren; beim Zuklappen faellt `.collapsed` erst am Ende. Der Ø-Wert
 // blendet mit — er liegt ausserhalb des gefahrenen Koerpers.
+// v578 (Leonard-Wunsch): Die Wochenpunkte bzw. die Leiste darunter stehen nur in der
+// AUFGEKLAPPTEN Karte. Sie sitzen in einer eigenen Huelle (`.wochen-anzeige`, direkt vor dem
+// Diagrammblock), die mit derselben Bewegung faehrt. Karten ohne Diagramm zeigen sie nie.
+function _wochenAnzeigeHuelle(anzeige, mitDiagramm) {
+  if (!anzeige || !mitDiagramm) return '';
+  return `<div class="wochen-anzeige${_laufKmOffen ? '' : ' zu'}">${anzeige}</div>`;
+}
+function _wochenAnzeigeKlappen(huelle, offen) {
+  const nr = (huelle._klappNr || 0) + 1;
+  huelle._klappNr = nr;
+  const von = huelle.classList.contains('zu') ? 0 : huelle.getBoundingClientRect().height;
+  huelle.getAnimations().forEach(a => a.cancel());
+  huelle.classList.remove('zu');
+  const voll = huelle.getBoundingClientRect().height;
+  const fertig = () => {
+    if (huelle._klappNr !== nr) return;
+    huelle.style.overflow = '';
+    huelle.classList.toggle('zu', !offen);
+  };
+  if (_bewegungReduziert() || !huelle.animate) { fertig(); return; }
+  huelle.style.overflow = 'hidden';
+  _boxFahren(huelle, von, offen ? voll : 0, fertig);
+}
 function _wochenDiagrammKlappen(block, offen, zeichnen) {
+  const huelle = block.previousElementSibling;
+  if (huelle && huelle.classList.contains('wochen-anzeige')) _wochenAnzeigeKlappen(huelle, offen);
   const body = block.querySelector('.ex-chart-body');
   const schnitt = block.querySelector('.km-schnitt');
   const nr = (block._klappNr || 0) + 1;
@@ -6185,7 +6210,7 @@ function renderLaufKalenderSeite() {
       <span class="cal-sticky-anchor" aria-hidden="true"></span>
       ${seitenHTML}
     </div>
-    ${anzeige}
+    ${_wochenAnzeigeHuelle(anzeige, !!laufKmDiagrammHTML(plan))}
     ${laufKmDiagrammHTML(plan)}
   </div>`;
 

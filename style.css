@@ -2525,6 +2525,11 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 }
 @media (prefers-reduced-motion: reduce) { .lauf-wochen-zurueck.kommt { animation: none; } }
 /* Seitenanzeige: Punkte bis 14 Wochen, darueber ein schmaler Strich mit Marke. */
+/* v578: Huelle der Wochenpunkte/-leiste — nur in der aufgeklappten Karte sichtbar
+   (`_wochenAnzeigeKlappen`). `flow-root`, damit die Raender der Leiste in der gemessenen Hoehe
+   stecken und die Klappbewegung nicht am Ende springt. */
+.wochen-anzeige { display: flow-root; }
+.wochen-anzeige.zu { display: none; }
 .lauf-wochen-punkte { display: flex; gap: 5px; justify-content: center; padding-top: 14px; }
 .lauf-wochen-punkte > i { width: 5px; height: 5px; border-radius: 50%; background: var(--card2); display: block; transition: width .2s, background .2s; }
 .lauf-wochen-punkte > i.an { width: 14px; border-radius: 99px; background: #4ADE80; }
