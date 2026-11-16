@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v578**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v579**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -257,8 +257,9 @@ In „Diese Woche" (Gym und Laufen) stehen die Wochenpunkte bzw. die Leiste nur 
 AUFGEKLAPPTEN Karte (Hülle `.wochen-anzeige`, fährt in `_wochenDiagrammKlappen` mit); Karten
 ohne Diagramm zeigen sie nie (v578).
 
-**Plan-Tab**: Trainingskalender des Plans + Planliste (`buildPlanCard` / `buildRunPlanCard` mit
-`nurPlan`), Archiv.
+**Plan-Tab**: Trainingskalender des Plans · Abschnitt „Aktueller Gymplan"/„Aktueller Laufplan"
+(laufender Plan, `_aktuellerPlanAbschnitt`, Karte als `.abschnitt-karte`) · künftige Pläne ohne
+Titel darunter (`buildPlanCard` / `buildRunPlanCard` mit `nurPlan`) · Archiv.
 
 ### Herocard / Knöpfe
 - Knöpfe nennen den Inhalt: geplant „Push" / „8 km", erledigt grau („Push" mit Haken, „8.2 km"),
@@ -528,3 +529,9 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   `_wochenAnzeigeKlappen`). GEMESSEN (375px, Test-Laufplan 10 Wochen): zu → Hülle `display:none`,
   Liste → Kartenrand 14px; auf → 10 Punkte, 6. aktiv, 19px hoch; dreimal schnell umgeschaltet
   endet sauber; keine Konsolenfehler. Gym nutzt denselben Weg, mangels Testdaten nicht live gesehen.
+- **v579 (16.11.2026, Leonard-Wunsch):** Auf „Gymplan" und „Laufplan" steht der laufende Plan als
+  eigener Abschnitt „Aktueller Gymplan" bzw. „Aktueller Laufplan" unter dem Kalender; künftige
+  Pläne folgen wie bisher ohne Titel. GEMESSEN (375px, je ein laufender und ein künftiger
+  Testplan): Kopf 15px, Kopf → Karte 8px wie alle Abschnitte, Karte 12–363px und Radius 14px wie
+  der Kalender, nächste Karte 14px darunter; Querformat 1100px und Glas-Modus sauber; keine
+  Konsolenfehler.

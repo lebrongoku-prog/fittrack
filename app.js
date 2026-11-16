@@ -6275,7 +6275,7 @@ function renderLaufVerwaltung() {
   // Ohne Heute-Feld, genau wie die Gymplan-Liste nebenan (Leonard-Wunsch 12.09.2026).
   const zeile = (p) => buildRunPlanCard(`openRunPlanDetail('${p.id}')`, p, { hideToday: true, nurPlan: true });
 
-  let html = offen.map(zeile).join('');
+  let html = _aktuellerPlanAbschnitt('Aktueller Laufplan', offen, zeile);
   if (archiv.length) {
     if (runplansArchiveExpanded) html += `<div class="archiv-inhalt">${
       _archivTitel('Archivierte Laufpläne')}${archiv.map(zeile).join('')}</div>`;
@@ -8485,7 +8485,7 @@ function renderPlans() {
   if (!active.length && !archived.length) {
     html = `<div class="plan-day-empty" style="margin:24px 14px">Noch keine Trainingspläne — tippe auf das + oben rechts, um deinen ersten Plan anzulegen.</div>`;
   } else {
-    html += active.map(renderRow).join('');
+    html += _aktuellerPlanAbschnitt('Aktueller Gymplan', active, renderRow);
     if (archived.length) {
       // Der Knopf steht seit dem 26.09.2026 oben rechts im Kopf (siehe `syncPlansArchivBtn`);
       // in der Liste bleibt nur die Ueberschrift, und die nur im aufgeklappten Zustand.
@@ -9090,6 +9090,19 @@ function togglePlansArchivBtn() {
 // GYMTAGE nicht von den aktiven zu unterscheiden — ihre Kacheln tragen kein Merkmal, und mit
 // dem Knopf ist auch die Trennlinie zwischen beiden Gruppen verschwunden. Sie steht IN der
 // Huelle, damit sie mit auf- und zuklappt.
+// v579 (Leonard-Wunsch): Der laufende Plan steht auf „Gymplan"/„Laufplan" als eigener
+// Abschnitt mit Titel ueber der Karte — wie der Kalender darueber. Kuenftige Plaene folgen
+// darunter ohne Titel wie bisher.
+function _aktuellerPlanAbschnitt(titel, plaene, karte) {
+  const aktuell = plaene.filter(p => planStatus(p) === 'active');
+  const rest = plaene.filter(p => planStatus(p) !== 'active');
+  const abschnitt = aktuell.length ? `<div class="mehr-section aktueller-plan">
+      <div class="mehr-section-kopf abschnitt-kopf"><span class="mehr-section-title">${escapeHtml(titel)}</span></div>
+      ${aktuell.map(p => karte(p).replace('class="plan-card-v2', 'class="plan-card-v2 abschnitt-karte')).join('')}
+    </div>` : '';
+  return abschnitt + rest.map(karte).join('');
+}
+
 function _archivTitel(text) {
   return `<div class="archiv-titel">${escapeHtml(text)}</div>`;
 }
