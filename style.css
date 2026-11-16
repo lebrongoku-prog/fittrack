@@ -3294,6 +3294,9 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
   white-space: nowrap;
 }
 .cal-jahr:active { opacity: .6; }
+/* v580: Titel des Detailkalenders als Schalter fuer die absolvierten Einheiten. */
+.kal-ist-schalter { cursor: pointer; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+.kal-ist-schalter:active { opacity: .6; }
 .cal-titel-gym  { color: #0F766E; }
 .cal-titel-lauf { color: #4ADE80; }
 /* Die KENNZAHL oben rechts in der Uebersicht traegt dieselben Farben, je Teil (19.09.2026,

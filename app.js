@@ -6312,7 +6312,7 @@ function lpDatumFeld(ts, onChange, id) {
 // genau wie das Gymplan-Detail.
 let editingRunPlanId = null;
 
-function openRunPlanDetail(id) { editingRunPlanId = id; _entwurfBeginnen('lauf', id); showScreen('runplan-detail'); }
+function openRunPlanDetail(id) { editingRunPlanId = id; _kalIst.lcal = false; _entwurfBeginnen('lauf', id); showScreen('runplan-detail'); }
 function closeRunPlanDetail() {
   _entwurfVerlassen(() => { editingRunPlanId = null; showScreen('plans'); });
 }
@@ -7313,7 +7313,10 @@ function _calRasterHTML(id, z) {
   // er dient nur dem Planen. Ein Tipp nennt in der Fusszeile, was der PLAN vorsieht (v563).
   // v565: Dasselbe fuer den Laufkalender im Laufplan-Detail (`lcal`): Lauftage (`runDays`) als
   // offener Lauf-Umriss, der Wettkampftag des Plans golden.
-  const nurPlan = id === 'dcal' ? DB.getPlans().find(p => p.id === editingPlanId)
+  // v580: Mit eingeblendeten absolvierten Einheiten (`_kalIstAn`) zeichnet der Detailkalender
+  // seine Tage wie die uebrigen Kalender.
+  const nurPlan = _kalIstAn(id) ? null
+                : id === 'dcal' ? DB.getPlans().find(p => p.id === editingPlanId)
                 : id === 'lcal' ? DB.getRunPlans().find(p => p.id === editingRunPlanId) : null;
   const nurLauf = id === 'lcal';
   const nurPlanTage = !nurPlan ? [] : nurLauf ? (nurPlan.runDays || []) : _gymWochentage(nurPlan);
@@ -7436,6 +7439,18 @@ function _calKopfSetzen(id, z) {
     // Abschnittstitel und behaelt dessen Farbe.
     titelEl.classList.toggle('cal-titel-gym', id !== 'dcal' && modus.kraft && !modus.lauf);
     titelEl.classList.toggle('cal-titel-lauf', id !== 'dcal' && modus.lauf && !modus.kraft);
+    // v580: In Gym-/Laufplan-Detail schaltet der Titel die absolvierten Einheiten ein und aus —
+    // nur bei Plaenen, die schon begonnen haben (laufend oder abgeschlossen).
+    if (id === 'dcal' || id === 'lcal') {
+      const geht = _kalIstMoeglich(id);
+      titelEl.classList.toggle('kal-ist-schalter', geht);
+      titelEl.onclick = geht ? () => toggleKalIst(id) : null;
+      if (geht) { titelEl.setAttribute('role', 'button'); titelEl.tabIndex = 0;
+        titelEl.setAttribute('aria-pressed', _kalIstAn(id) ? 'true' : 'false');
+        titelEl.title = _kalIstAn(id) ? 'Absolvierte Einheiten ausblenden' : 'Absolvierte Einheiten einblenden'; }
+      else { titelEl.removeAttribute('role'); titelEl.removeAttribute('tabindex');
+        titelEl.removeAttribute('aria-pressed'); titelEl.removeAttribute('title'); }
+    }
   }
   // Der Wechsler zeigt nur den Zeitraum als Text — die Reihenfolge der Stufen steht in
   // `wechselCalJahr`.
@@ -7473,6 +7488,13 @@ function _calKopfSetzen(id, z) {
   // Die Serie gehoert zu GENAU EINER Sportart und beschreibt den STAND VON HEUTE: nur im
   // Einzelkalender des Plan-Tabs und nur im laufenden Jahr (Leonard-Wuensche 06. und 14.09.2026).
   // v562: Im Gymplan-Detail (`dcal`) steht nur, wie viele Gym Sessions der Plan vorsieht.
+  // v580: Absolvierte Einheiten eingeblendet → Verhaeltnis absolviert/geplant wie in „Aktuell".
+  if ((id === 'dcal' || id === 'lcal') && _kalIstAn(id)) {
+    const sport = id === 'dcal' ? 'gym' : 'lauf';
+    statsEl.innerHTML = teil(sport, _calPlanStandText(sport,
+      _calPlanStand(sport, sport === 'gym' ? z.aktPlaene.gym : z.aktPlaene.lauf, z.von, z.heute), false));
+    return;
+  }
   if (id === 'dcal') {
     const plan = z.aktPlaene.gym;
     let n = 0;
@@ -7691,6 +7713,30 @@ function _calFussSetzen(el, html) {
   _boxFahren(el, von, bis, aufraeumen(false));
 }
 
+// ── Absolvierte Einheiten im Detailkalender (v580, Leonard-Wunsch) ───────────────
+// Gym- und Laufkalender in der Plan-Detailansicht zeigen sonst nur den PLAN. Bei Plaenen, die
+// schon begonnen haben (laufend oder abgeschlossen), blendet ein Tipp auf den Abschnittstitel die
+// tatsaechlich absolvierten Einheiten ein — Darstellung wie in den uebrigen Kalendern (gefuellt,
+// verpasst rot, verschoben grau, rote Wochen), Kennzahl „absolviert/geplant", Fusszeile mit der
+// Session bzw. dem Lauf. Startet beim Oeffnen des Plans ausgeblendet; nicht gespeichert.
+const _kalIst = { dcal: false, lcal: false };
+function _kalIstPlan(id) {
+  return id === 'dcal' ? DB.getPlans().find(p => p.id === editingPlanId)
+       : id === 'lcal' ? DB.getRunPlans().find(p => p.id === editingRunPlanId) : null;
+}
+function _kalIstMoeglich(id) {
+  const p = _kalIstPlan(id);
+  return !!(p && p.startDate && _planHatBegonnen(p, _calLokalTag(Date.now())));
+}
+function _kalIstAn(id) { return !!_kalIst[id] && _kalIstMoeglich(id); }
+function toggleKalIst(id) {
+  if (!_kalIstMoeglich(id)) return;
+  _kalIst[id] = !_kalIst[id];
+  const fuss = document.getElementById(id + '-detail');
+  if (fuss) _calFussSetzen(fuss, '');
+  renderTrainingCalendar(id, id === 'dcal' ? 'pd-cal-card' : 'lp-cal-card');
+}
+
 function showCalDay(key, id) {
   id = id || 'cal';
   const el = document.getElementById(id + '-detail');
@@ -7716,7 +7762,7 @@ function showCalDay(key, id) {
   // Rest Week oder „Kein Gym geplant". Absolviertes zeigt dieser Kalender bewusst nicht.
   // v566: Laufplan-Detail — die Fusszeile plant die Laeufe der WOCHE des angetippten Tags
   // (`_lcalFussHTML`). Ist sie schon offen, bleibt sie stehen: nur Markierung und Woche wechseln.
-  if (id === 'lcal') {
+  if (id === 'lcal' && !_kalIstAn(id)) {
     const plan = DB.getRunPlans().find(p => p.id === editingRunPlanId);
     if (!plan || !plan.startDate) return;
     const tag = new Date(y, m-1, d);
@@ -7734,7 +7780,7 @@ function showCalDay(key, id) {
     _lcalWischEinrichten(plan, woche);
     return;
   }
-  if (id === 'dcal') {
+  if (id === 'dcal' && !_kalIstAn(id)) {
     const plan = DB.getPlans().find(p => p.id === editingPlanId);
     const tag = new Date(y, m-1, d);
     const wi = (tag.getDay() + 6) % 7;
@@ -8593,6 +8639,7 @@ function createNewPlan() {
 
 function openPlanDetail(planId) {
   editingPlanId = planId;
+  _kalIst.dcal = false;   // v580: startet ausgeblendet
   resetDelEdit();
   _entwurfBeginnen('gym', planId);
   showScreen('plan-detail');

@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v579**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v580**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -294,6 +294,10 @@ Titel darunter (`buildPlanCard` / `buildRunPlanCard` mit `nurPlan`) · Archiv.
   (`#dcal-titel`) und Kennzahl (`#dcal-stats`) stehen im Abschnittskopf ÜBER der Karte wie bei
   den anderen Abschnitten. Ohne Kopf in der Karte rückt `.cal-body` oben 7.5px und unten 5px
   heraus, damit sichtbar genau die 14px Kartenpolster bleiben; `--cal-months-gap` dort 2px.
+  Bei Plänen, die schon begonnen haben (laufend oder abgeschlossen), blendet ein Tipp auf den
+  Titel (`dcal`/`lcal`) die ABSOLVIERTEN Einheiten ein (`toggleKalIst`, `_kalIstAn`, v580):
+  Zellen, rote Wochen, Fußzeile wie in den übrigen Kalendern, Kennzahl „x/y"; startet
+  ausgeblendet, nicht gespeichert; künftige Pläne ohne Schalter.
   Übersichts-Kalender klappt über `toggleOvKalender` (Karte fährt ganz weg)),
   `_calModus(id)`: Übersicht folgt dem Titel-Filter (Trainings-/Gym-/Laufkalender), Plan-Tab der
   Seite. Startet immer bei „Aktuell" (laufender Plan), Zeitraum-Wechsler Aktuell → Jahre.
@@ -535,3 +539,11 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Testplan): Kopf 15px, Kopf → Karte 8px wie alle Abschnitte, Karte 12–363px und Radius 14px wie
   der Kalender, nächste Karte 14px darunter; Querformat 1100px und Glas-Modus sauber; keine
   Konsolenfehler.
+- **v580 (16.11.2026, Leonard-Wunsch/-Entscheidungen):** Gym- und Laufkalender im Plan-Detail:
+  Tipp auf den Abschnittstitel blendet die absolvierten Einheiten ein/aus — bei laufenden und
+  abgeschlossenen Plänen, Darstellung wie die übrigen Kalender, startet ausgeblendet.
+  GEMESSEN (375px): Gymplan Mo/Sa 8 Wochen → aus „16 Gym Sessions geplant", an 7 gefüllt,
+  „7/16 Gym Sessions (44 %)", 3 rote Wochen, Fußzeile zeigt die Session, wieder aus = Plan;
+  Laufplan Di/Do/So → an 15 gelaufen, „15/24 Läufe (63 %)", Fußzeile zeigt den Lauf statt der
+  Planung; künftiger Plan ohne Schalter; keine Konsolenfehler. Hinweis: Im eingeblendeten Zustand
+  zählt ein Wochentag ohne gewählten Gymtag nicht als geplant (wie in allen übrigen Kalendern).
