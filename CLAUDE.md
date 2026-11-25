@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v584**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v585**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -51,7 +51,7 @@ löschen, versehentlich mitcommittete Zugangsdaten).
    - Laufzeit nur im Browser: `preview_start` „fittrack", vor JEDEM Neuladen Service Worker
      deregistrieren und Caches löschen (sonst läuft alte `app.js`). Konsole prüfen. Hochformat mit
      375×812 messen (seit v581 `resize_window` Preset „mobile“ —
-     nur so gilt die Viewport-Vergrößerung, die App rechnet dann mit 312px), Querformat mit 1100px, Glas-Modus mitprüfen.
+     nur so gilt die Viewport-Vergrößerung, die App rechnet dann mit 326px), Querformat mit 1100px, Glas-Modus mitprüfen.
    - CSS-Klammerbalance prüfen. Beim Löschen von CSS NIE eine ganze Selektorliste entfernen, nur
      weil EIN Selektor tot ist — nur den toten Teil.
    - Bei Umbauten ohne Verhaltensänderung: alte Fassung (`git show HEAD:…`) in einen Unterordner
@@ -319,21 +319,24 @@ Titel darunter (`buildPlanCard` / `buildRunPlanCard` mit `nurPlan`) · Archiv.
 
 ## Gestaltungsregeln
 
-- **Anzeige 120 % (v581: 110 %, seit v582 120 %):** Viewport-Angabe `initial-scale=1.2` OHNE
-  `width=device-width` (nur so wird die Seitenbreite Gerätebreite/1.2 = ~312px statt seitlich zu
-  schieben); `--skala` in style.css MUSS denselben Wert haben;
-  ALLE Breitenschwellen sind durch 1.2 geteilt (v583: Querformat-Raster ab 853.33px statt 1024,
-  auch in den beiden `matchMedia`-Abfragen in app.js; 560→466.67, 480→400, 460→383.33), damit
+- **Anzeige 115 % (v581 110 %, v582 120 %, seit v585 115 %):** Viewport-Angabe
+  `initial-scale=1.15` OHNE `width=device-width` (nur so wird die Seitenbreite Gerätebreite/1.15
+  = ~326px statt seitlich zu schieben); `--skala` in style.css und der `zoom` der Einstellungen
+  MÜSSEN dazu passen. **Einstellungen (`#screen-mehr`) stehen auf 100 %**: ihre Kinder tragen
+  `zoom: 1/1.15`, die Schriftstufen dort die alten Werte, `--safe-*` × 1.15 (sonst rutscht der
+  Kopf unter die Statusleiste); der Screen selbst bleibt ungezoomt (Zurückwischen);
+  ALLE Breitenschwellen sind durch die Skala geteilt (Querformat-Raster ab 890.43px statt 1024,
+  auch in den beiden `matchMedia`-Abfragen in app.js; 560→486.96, 480→417.39, 460→400), damit
   sie auf denselben Geräten greifen wie vor der Vergrößerung. Im Browser-Test entspricht ein
-  Fenster von 917px einem Gerät mit 1100 Punkten; Sicherung
+  Fenster von 957px einem Gerät mit 1100 Punkten; Sicherung
   `anzeigeGroesseSichern` am Anfang von app.js fällt auf 100 % zurück, falls ein Browser nur
   vergrößert. Alle Maße bleiben in CSS-Pixeln wie bisher. Was auf ~341px nicht passt, wird im
   Block `@media (max-width: 380px)` am Ende von style.css gezielt angepasst (bisher: Übungskarten
   `.aex-v2` breiter, Namen zweizeilig mit Silbentrennung, Knopfzeile enger; Titel der
   Vollbildseiten 28 statt 32). Neue Engstellen dort eintragen, keine Schrift verkleinern.
-- **Schriftskala, fünf Stufen** (seit v582 als Bildschirmgröße bei 120 %, im CSS
-  `calc(Npx / var(--skala))`): `--fs-etikett` 14 · `--fs-neben` 16 · `--fs-text` 18 ·
-  `--fs-titel` 20 (Kartentitel) · `--fs-betont` 22. Jede Schriftgröße ergibt auf dem Bildschirm
+- **Schriftskala, fünf Stufen** (seit v585 als Bildschirmgröße bei 115 %, im CSS
+  `calc(Npx / var(--skala))`): `--fs-etikett` 13 · `--fs-neben` 15 · `--fs-text` 18 ·
+  `--fs-titel` 19 (Kartentitel) · `--fs-betont` 21 (Original 11/13/15/16/18 × 1.15, aufgerundet). Jede Schriftgröße ergibt auf dem Bildschirm
   eine GANZE Zahl (Leonard-Wunsch, immer aufgerundet); neue feste Größen genauso schreiben. Keine neuen Größen; lieber eine Stufe höher.
   Ausnahmen nur große Einzelanzeigen (und 12px im Quadrat-Wochentag, ausdrücklicher Wunsch).
 - Eingabefelder mindestens **16px** (sonst zoomt iOS). Zahleneingabe über den eigenen Zahlenblock
@@ -591,3 +594,11 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   „Serie 7W“ statt „Serie 7 Wochen“ (auch bei 1: „Serie 1W“). GEMESSEN (Preset mobile, Serie
   vorgegeben): „24 Gym Sessions · Serie 7W“, „0 Läufe · Serie 1W“; keine Konsolenfehler. Der Kopf
   bricht auf 312px weiterhin zweizeilig um (Titel + Jahr 138px, Kennzahl 164px, Platz 284px).
+- **v585 (25.11.2026, Leonard-Wunsch):** Anzeige 115 % statt 120 % (Viewport, `--skala`,
+  Schriften neu aus den Originalwerten × 1.15 aufgerundet: 13/15/18/19/21, feste Größen ebenso;
+  Breitenschwellen / 1.15). Seite „Einstellungen“ wieder auf 100 % (siehe Gestaltungsregeln).
+  Die Schmal-Anpassungen aus v582 (Übungskarten, Titel 28) bleiben. GEMESSEN (Preset mobile,
+  326px, Maßstab 1.15): Übersicht Abschnittstitel 13; Einstellungen Titel 26.0, Abschnitt 11,
+  Zeile 15, Untertitel 13, Karte 351 Punkte breit, kein seitlicher Überlauf; Fenster 957px:
+  Querformat greift, Karten volle Breite, Einstellungen zweispaltig; keine Konsolenfehler. NICHT
+  gesehen: echtes iPhone, Zurückwischen der Einstellungen mit dem Finger.
