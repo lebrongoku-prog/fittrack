@@ -2580,7 +2580,7 @@ function _woUebergangVormerken(art) { _woUebergang = { art, zeit: Date.now() }; 
 // Einheit steht gerade auf dem Bildschirm (`wo-running`).
 function _woUebergangMoeglich() {
   if (_bewegungReduziert()) return false;
-  if (window.matchMedia && window.matchMedia('(min-width: 1024px)').matches) return false;
+  if (window.matchMedia && window.matchMedia('(min-width: 853.33px)').matches) return false;
   return currentScreen === 'workouts' && workoutsViewMode === 'gym';
 }
 
@@ -4404,7 +4404,7 @@ function _gleicheHoeheStatsKarten() {
   const karten = document.querySelectorAll('#ex-view-stats .chart-card-v2');   // v570: Karten stehen in Abschnitten
   const vol = karten[0], mus = karten[1];
   if (!vol || !mus) return;
-  const querformat = window.matchMedia && window.matchMedia('(min-width: 1024px)').matches;
+  const querformat = window.matchMedia && window.matchMedia('(min-width: 853.33px)').matches;
   if (querformat) { mus.style.minHeight = ''; return; }
   mus.style.minHeight = '';
   const h = vol.getBoundingClientRect().height;

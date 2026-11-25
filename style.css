@@ -1658,7 +1658,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 .ph-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
 /* ─── Responsive ─── */
-@media (min-width: 560px) {
+@media (min-width: 466.67px) {   /* v583: 560 / 1.2 (Anzeige 120 %) */
   .card, .mehr-section,
   .hero-v2, .plan-section-card, .chart-card-v2, .aex-v2,
   .ex-group
@@ -2245,7 +2245,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 }
 /* iPhone-Breite: Notizfeld unter die Sätze statt daneben. Nebeneinander bleiben für die
    Zahlen keine 30 Pixel übrig — dreistellige Gewichte wurden abgeschnitten. */
-@media (max-width: 460px) {
+@media (max-width: 383.33px) {   /* v583: 460 / 1.2 */
   .aex-v2-body { flex-direction: column; gap: 10px; }
   .aex-v2-notes-col { width: auto; }
   .aex-v2-notes-area { min-height: 42px; }
@@ -4214,7 +4214,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
    LANDSCAPE / WIDE-SCREEN LAYOUT (ab 1024px)
    iPhone landscape (≤932px) bleibt im Mobile-Layout.
    ═══════════════════════════════════════════════ */
-@media (min-width: 1024px) {
+@media (min-width: 853.33px) {   /* v583: 1024 / 1.2 — Querformat-Raster greift auf denselben Geraeten wie vor der Vergroesserung */
   /* WICHTIG: Override der älteren Tablet-Regel ab 560px, die Karten auf max-width:520px
      centriert hatte. Ab 1024px sollen Karten die volle (Grid-)Zellenbreite nutzen. */
   /* ALLE Karten mit demselben Abstand zum Bildschirmrand: 14px. `.plan-card-v2` fehlte hier
@@ -4387,7 +4387,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 }
 .drive-conflict-head { font-size: var(--fs-neben); font-weight: 700; color: var(--text); margin-bottom: 8px; }
 .drive-conflict-meta { font-size: var(--fs-neben); color: var(--text2); line-height: 1.5; }
-@media (max-width: 480px) {
+@media (max-width: 400px) {   /* v583: 480 / 1.2 */
   .drive-conflict-compare { grid-template-columns: 1fr; }
 }
 

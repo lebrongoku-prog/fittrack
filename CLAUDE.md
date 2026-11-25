@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v582**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v583**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -321,7 +321,11 @@ Titel darunter (`buildPlanCard` / `buildRunPlanCard` mit `nurPlan`) · Archiv.
 
 - **Anzeige 120 % (v581: 110 %, seit v582 120 %):** Viewport-Angabe `initial-scale=1.2` OHNE
   `width=device-width` (nur so wird die Seitenbreite Gerätebreite/1.2 = ~312px statt seitlich zu
-  schieben); `--skala` in style.css MUSS denselben Wert haben; Sicherung
+  schieben); `--skala` in style.css MUSS denselben Wert haben;
+  ALLE Breitenschwellen sind durch 1.2 geteilt (v583: Querformat-Raster ab 853.33px statt 1024,
+  auch in den beiden `matchMedia`-Abfragen in app.js; 560→466.67, 480→400, 460→383.33), damit
+  sie auf denselben Geräten greifen wie vor der Vergrößerung. Im Browser-Test entspricht ein
+  Fenster von 917px einem Gerät mit 1100 Punkten; Sicherung
   `anzeigeGroesseSichern` am Anfang von app.js fällt auf 100 % zurück, falls ein Browser nur
   vergrößert. Alle Maße bleiben in CSS-Pixeln wie bisher. Was auf ~341px nicht passt, wird im
   Block `@media (max-width: 380px)` am Ende von style.css gezielt angepasst (bisher: Übungskarten
@@ -577,3 +581,9 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Wettkämpfe, Einstellungen; Session („Überspringen“ 99/99, Namen 1–2 Zeilen), Zahlenblock passt
   (Fertig 12px über dem Rand); keine Konsolenfehler. Bewusst gelassen: „Aktuelles Körpergewicht“
   bricht in den Einstellungen zweizeilig um. NICHT gesehen: echtes iPhone.
+- **v583 (25.11.2026, Leonard-Meldung):** Im Querformat nutzten die Karten nach v582 nicht mehr
+  die volle Breite — das Gerät lag mit 120 % unter der 1024px-Schwelle und fiel ins mittige
+  520px-Raster. Alle Breitenschwellen durch 1.2 geteilt (CSS und `matchMedia` in app.js).
+  GEMESSEN (Fenster 917px = 1100 Punkte bei 120 %): Querformat-Abfrage greift, Karten in
+  Übersicht, Training und Plan 14–903px (volle Breite); keine Konsolenfehler. NICHT gesehen:
+  das Gerät selbst.
