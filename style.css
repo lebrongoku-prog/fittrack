@@ -85,11 +85,18 @@
      3 = Dialoge und Einstellungen (v374). FESTE px-WERTE stehen seither nur noch bei den
      Ausnahmen oben, bei Symbolzeichen (✕, ›, +, ✓ — keine Schrift), bei Eingabefeldern
      (16px Pflicht, sonst zoomt iOS) und beim vierseitigen Seitenschalter (12px, siehe dort). */
-  --fs-etikett: 11px;   /* Chips, Pillen, Grossbuchstaben-Beschriftungen, Tableiste, Achsen */
-  --fs-neben:   13px;   /* Metazeilen, Hinweise, Notizen, kleine Knoepfe, Seitenschalter */
-  --fs-text:    15px;   /* Listen, Werte, Knoepfe, Wochentage, Kalender */
-  --fs-titel:   16px;   /* Kartentitel (Leonard-Entscheidung 01.09.2026) */
-  --fs-betont:  18px;   /* Kennzahlen, Herocard-Knoepfe, Uhr der Satzpause */
+  /* v582 (Leonard-Wunsch): Die App wird ueber die Viewport-Angabe auf 120 % vergroessert
+     (`--skala`, MUSS zu `initial-scale` in index.html passen). Jede Schriftgroesse ist so
+     gewaehlt, dass sie auf dem Bildschirm eine GANZE Zahl ergibt, immer aufgerundet: Ziel =
+     aufrunden(alt × 1.2), im CSS steht Ziel / --skala. Etikett 11→14, Neben 13→16, Text 15→18,
+     Titel 16→20, Betont 18→22. Feste Groessen ebenso (`calc(Npx / var(--skala))`). Greift die
+     Rueckfall-Sicherung (100 %), liegen die Schriften damit wieder bei etwa den alten Werten. */
+  --skala: 1.2;
+  --fs-etikett: calc(14px / var(--skala));   /* Chips, Pillen, Grossbuchstaben-Beschriftungen, Tableiste, Achsen */
+  --fs-neben: calc(16px / var(--skala));   /* Metazeilen, Hinweise, Notizen, kleine Knoepfe, Seitenschalter */
+  --fs-text: calc(18px / var(--skala));   /* Listen, Werte, Knoepfe, Wochentage, Kalender */
+  --fs-titel: calc(20px / var(--skala));   /* Kartentitel (Leonard-Entscheidung 01.09.2026) */
+  --fs-betont: calc(22px / var(--skala));   /* Kennzahlen, Herocard-Knoepfe, Uhr der Satzpause */
   --safe-t:    env(safe-area-inset-top, 0px);
   /* Zusaetzlicher Abstand OBEN gegen den Schleier von iOS 27 — siehe die Media-Query direkt
      unter diesem Block. Ausserhalb der installierten App im Hochformat 0. */
@@ -343,7 +350,7 @@ html.workout-active #rest-bar.show ~ #workout-active-bar { --rest-off: var(--nav
   white-space: nowrap;
 }
 .rest-bar-btn:active { transform: scale(.94); }
-.rest-bar-close { background: transparent; font-size: 16px; min-width: 34px; padding: 9px 6px; }
+.rest-bar-close { background: transparent; font-size: calc(20px / var(--skala)); min-width: 34px; padding: 9px 6px; }
 
 /* Inhalt nicht hinter der Mini-Leiste verbergen (auf Workouts ist sie aus → normal). */
 html.workout-active .screen { padding-bottom: calc(var(--nav-h) + var(--safe-b) + 54px + var(--sl-pad, 0px)); }
@@ -555,7 +562,7 @@ body.theme-plans .hist-action-dd {
 /* Kopfzeile mit Zurück-Pfeil: Titel schließt links an den Pfeil an, statt nach rechts zu rutschen. */
 .ph-with-back { justify-content: flex-start; gap: 10px; align-items: center; }
 .ph-with-back .ph-left { flex: 1; min-width: 0; }
-.ph-left h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+.ph-left h1 { font-size: calc(32px / var(--skala)); font-weight: 700; letter-spacing: -0.5px; }
 /* TAB-SYMBOL STATT TABTITEL (v572, Leonard-Wunsch): Uebersicht, Training und Plan zeigen im Kopf
    das Symbol ihres Tabs aus der Tableiste (gleiche Zeichnung, weiss auf dem Tab-Hintergrund).
    Der Name bleibt fuer Screenreader im `.sr-only`-Text erhalten. Vollbildseiten behalten Titel. */
@@ -1199,11 +1206,11 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .del-edit-hint { text-align: center; font-size: var(--fs-neben); color: var(--text3); padding: 12px 8px 4px; }
 .mehr-row { display: flex; align-items: center; padding: 14px; gap: 12px; }
 .mehr-row + .mehr-row { border-top: 1px solid var(--border); }
-.mehr-row-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.mehr-row-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: calc(20px / var(--skala)); flex-shrink: 0; }
 .mehr-row-info { flex: 1; }
 .mehr-row-label { font-size: var(--fs-text); font-weight: 500; }
 .mehr-row-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
-.mehr-row-action { color: var(--text3); font-size: 16px; }
+.mehr-row-action { color: var(--text3); font-size: calc(20px / var(--skala)); }
 
 /* ══════════════════════════════════════
    MODALS
@@ -1268,11 +1275,11 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
   padding-left: 12px; padding-right: 4px;
   border-radius: 2px;
 }
-.sheet-search { width: 100%; background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 14px; font-size: 16px; color: var(--text); margin-bottom: 10px; }
+.sheet-search { width: 100%; background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 14px; font-size: calc(20px / var(--skala)); color: var(--text); margin-bottom: 10px; }
 .sheet-search:focus { outline: none; border-color: var(--accent); }
 .form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
 .form-label { font-size: var(--fs-neben); font-weight: 600; color: var(--text2); }
-.form-input { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 16px; color: var(--text); width: 100%; }
+.form-input { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: calc(20px / var(--skala)); color: var(--text); width: 100%; }
 .form-input:focus { outline: none; border-color: var(--accent); }
 /* v537: Schalter „Mit Unterstützung" im Übungsdialog, Körpergewicht in den Einstellungen. */
 .form-check { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 16px; cursor: pointer; }
@@ -1280,7 +1287,7 @@ body.theme-plans .plan-detail-ph .sheet-back-btn svg { stroke: var(--accent-dark
 .form-check b { display: block; font-size: var(--fs-text); font-weight: 600; color: var(--text); }
 .form-check small { display: block; margin-top: 2px; font-size: var(--fs-neben); color: var(--text2); line-height: 1.4; }
 .kg-zeile .kg-feld { width: 76px; flex-shrink: 0; padding: 8px 10px; text-align: right; }
-.form-select { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 16px; color: var(--text); width: 100%; -webkit-appearance: none; }
+.form-select { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: calc(20px / var(--skala)); color: var(--text); width: 100%; -webkit-appearance: none; }
 
 /* ─── Detailansicht einer vergangenen Einheit (Zeitstrahl) ─── */
 /* Kennzahlen der Einheit als drei Kacheln über der Übungsliste. */
@@ -1659,7 +1666,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
   /* Ausnahme Trainingskalender: je breiter, desto mehr Wochen ohne Scrollen sichtbar.
      Im Querformat (844–932px) blieb er sonst auf 520px stehen. */
   #ov-cal-abschnitt, #plans-cal-abschnitt { max-width: none; margin-left: 14px; margin-right: 14px; }
-  .ph-left h1 { font-size: 28px; }
+  .ph-left h1 { font-size: calc(34px / var(--skala)); }
 }
 
 /* ─── Trainingstag-Name (durchgängige Hervorhebung) ─── */
@@ -1905,7 +1912,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 
 .hero-v2-timer {
   flex-shrink: 0; white-space: nowrap;
-  font-size: 24px; font-weight: 800; line-height: 1.15;
+  font-size: calc(29px / var(--skala)); font-weight: 800; line-height: 1.15;
   letter-spacing: 0.44px;
   color: var(--accent-dark);
   font-variant-numeric: tabular-nums;
@@ -2303,7 +2310,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
   background: var(--card2); border-radius: 12px; padding: 12px 14px;
   display: flex; flex-direction: column; gap: 2px;
 }
-.sum-stat-val { font-size: 20px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.sum-stat-val { font-size: calc(24px / var(--skala)); font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
 .sum-stat-lbl { font-size: var(--fs-neben); color: var(--text3); }
 .sum-delta { margin-top: 12px; font-size: var(--fs-text); font-weight: 600; }
 .sum-delta.up   { color: var(--green); }
@@ -2324,7 +2331,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
   background: #0F172A; text-align: center;
 }
 .pr-card-lbl { font-size: var(--fs-etikett); font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #5DBBA8; }
-.pr-card-val { font-size: 38px; font-weight: 800; color: #fff; line-height: 1.1; margin-top: 10px; letter-spacing: -1px; }
+.pr-card-val { font-size: calc(46px / var(--skala)); font-weight: 800; color: #fff; line-height: 1.1; margin-top: 10px; letter-spacing: -1px; }
 .pr-card-name { font-size: var(--fs-text); color: #CBD5E1; margin-top: 6px; line-height: 1.35; }
 .pr-card-foot { font-size: var(--fs-neben); color: #94A3B8; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.12); }
 .pr-card-btn {
@@ -2419,10 +2426,10 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
    die Box beim Wechsel auf die Ziffer, zeichnete iOS den Bereich unvollstaendig neu und
    der Strich blieb quer durch die Zahl stehen. */
 #np-value {
-  font-size: 40px; font-weight: 800; color: var(--text);
+  font-size: calc(48px / var(--skala)); font-weight: 800; color: var(--text);
   display: inline-block; min-width: 42px; text-align: center;
 }
-.np-unit { font-size: 16px; font-weight: 700; color: var(--text3); }
+.np-unit { font-size: calc(20px / var(--skala)); font-weight: 700; color: var(--text3); }
 .np-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; padding: 0 14px 12px; }
 .np-quick-btn {
   padding: 11px 4px; border-radius: 11px; border: none;
@@ -2435,11 +2442,11 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 .np-key {
   padding: 15px 0; border-radius: 13px; border: none;
   background: var(--card2); color: var(--text);
-  font-size: 22px; font-weight: 600; font-family: inherit;
+  font-size: calc(27px / var(--skala)); font-weight: 600; font-family: inherit;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .np-key:active { background: var(--border); transform: scale(.97); }
-.np-key-alt { font-size: 18px; color: var(--text2); }
+.np-key-alt { font-size: calc(22px / var(--skala)); color: var(--text2); }
 .np-actions { padding: 12px 14px 0; }
 
 /* ─── Muskel-Landkarte ─── */
@@ -2680,7 +2687,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
    Wochentag und Name in der Knopfschrift (18px). SEIT v529 (Leonard-Wunsch) 30 % kleiner:
    35.62px, Radius 5.94px — auch in der Liste der Uebersicht. SEIT v530 noch einmal 30 % kleiner
    (24.93px, Radius 4.16px), der Wochentag IM Quadrat in Standardschrift (15px). */
-.lauf-wochen-karte .lauf-wz-tag { width: 24.93px; height: 24.93px; border-radius: 4.16px; font-size: 12px; font-weight: 600; }   /* v538: 12px (Leonard-Wunsch, ausserhalb der Skala) */
+.lauf-wochen-karte .lauf-wz-tag { width: 24.93px; height: 24.93px; border-radius: 4.16px; font-size: calc(15px / var(--skala)); font-weight: 600; }   /* v538: 12px (Leonard-Wunsch, ausserhalb der Skala) */
 .lauf-wochen-karte .lauf-wz-soll { font-size: var(--fs-titel); }   /* v532: 16px */
 .plan-card-v2 .ppv-col.training .ppv-wd,
 .plan-card-v2 .ppv-col.done .ppv-wd,
@@ -2824,7 +2831,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 .lcal-fuss .lp-einheit { padding: 6px 3px 6px 8px; }
 .lcal-fuss .lp-scheibe {
   width: 24.93px; height: 24.93px; border-radius: 4.16px;
-  font-size: 12px; font-weight: 600; box-shadow: inset 0 0 0 3px var(--accent);
+  font-size: calc(15px / var(--skala)); font-weight: 600; box-shadow: inset 0 0 0 3px var(--accent);
 }
 .lcal-fuss .lp-einheit > .lp-scheibe { margin-top: 6.535px; }   /* mittig zu den 38px-Feldern */
 .lcal-fuss .lp-einheit.gewaehlt { background: var(--accent-bg); border-radius: 10px; margin: 0 -6px; padding: 6px 9px 6px 14px; }
@@ -2951,7 +2958,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 /* 16px verhindert den iOS-Zoom beim Fokussieren, auch wenn das Feld unsichtbar ist. */
 .lp-datum .lp-datum-inp {
   position: absolute; inset: 0; width: 100%; height: 100%; box-sizing: border-box;
-  opacity: 0; padding: 0; font-size: 16px;
+  opacity: 0; padding: 0; font-size: calc(20px / var(--skala));
   -webkit-appearance: none; appearance: none; border: none; background: transparent; cursor: pointer;
 }
 
@@ -3194,7 +3201,7 @@ button.cal-kachel:active { opacity: .7; }
   background: linear-gradient(135deg, #15803D, #4ADE80);
 }
 .rd-kopf-etikett { font-size: var(--fs-etikett); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; opacity: .85; }
-.rd-kopf-wert { font-size: 28px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.rd-kopf-wert { font-size: calc(34px / var(--skala)); font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .rd-kopf-reihe { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 12px; row-gap: 2px; }
 .rd-kopf-zeile { font-size: var(--fs-text); font-weight: 600; opacity: .92; font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* v545 (Leonard-Wahl „Variante A", angelehnt an Apple): Wertekarte unter dem gruenen Kopf —
@@ -3203,7 +3210,7 @@ button.cal-kachel:active { opacity: .7; }
 .rd-werte { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 6px;
   margin-bottom: 14px; padding: 14px 12px; border-radius: 16px; background: var(--card2); }
 .rd-w span { display: block; font-size: var(--fs-neben); color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rd-w b { display: block; font-size: 24px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.rd-w b { display: block; font-size: calc(29px / var(--skala)); font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
 .rd-w small { font-size: var(--fs-neben); font-weight: 700; margin-left: 3px; }
 .rd-w-zeit { color: #CA8A04; }
 .rd-w-pace { color: #0D9488; }
@@ -3602,12 +3609,12 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 .day-pick-name { font-size: var(--fs-text); font-weight: 600; color: var(--text); }
 .day-pick-sub { font-size: var(--fs-neben); color: var(--text3); margin-top: 2px; }
 .day-pick-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.day-pick-icon { color: var(--accent); font-size: 22px; font-weight: 700; line-height: 1; }
+.day-pick-icon { color: var(--accent); font-size: calc(27px / var(--skala)); font-weight: 700; line-height: 1; }
 .day-pick-icon.done { color: var(--green); }
 .day-pick-remove {
   width: 32px; height: 32px; border-radius: 8px;
   background: var(--red-bg); color: var(--red); border: none;
-  font-size: 22px; font-weight: 700; line-height: 1;
+  font-size: calc(27px / var(--skala)); font-weight: 700; line-height: 1;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
@@ -3621,7 +3628,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 .ex-item-body-label { font-size: var(--fs-etikett); font-weight: 700; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
 .ex-notes-area {
   width: 100%; background: var(--card2); border: 1px solid transparent; border-radius: 8px;
-  padding: 10px 12px; font-size: 16px; min-height: 70px; font-family: inherit; line-height: 1.4;
+  padding: 10px 12px; font-size: calc(20px / var(--skala)); min-height: 70px; font-family: inherit; line-height: 1.4;
   color: var(--text); resize: vertical;
 }
 .ex-notes-area:focus { outline: none; border-color: var(--accent); background: #fff; }
@@ -3650,7 +3657,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 .ex-search-wrap { padding: 0 14px 10px; }
 .ex-search-bar {
   width: 100%; background: rgba(255,255,255,0.92); border: 1px solid rgba(255,255,255,0.5);
-  border-radius: 10px; padding: 10px 12px; font-size: 16px; font-family: inherit; color: var(--text);
+  border-radius: 10px; padding: 10px 12px; font-size: calc(20px / var(--skala)); font-family: inherit; color: var(--text);
   -webkit-appearance: none; box-shadow: 0 1px 4px rgba(15,23,42,0.06);
 }
 .ex-search-bar:focus { outline: none; border-color: var(--accent); background: #fff; }
@@ -3691,7 +3698,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 .wpe-edit {
   position: relative; z-index: 1; flex: 0 0 auto;
   width: 30px; height: 30px; border: none; border-radius: 8px;
-  background: var(--bg); color: var(--text3); font-size: 14px;
+  background: var(--bg); color: var(--text3); font-size: calc(17px / var(--skala));
   display: flex; align-items: center; justify-content: center; cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -3704,7 +3711,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 .program-form-row label { font-size: var(--fs-neben); color: var(--text3); font-weight: 600; }
 /* color MUSS gesetzt sein: <input> erbt die Textfarbe nicht, sonst bleibt sie beim
    Browser-Schwarz — im Glas-Modus auf dem Schleier unlesbar. */
-.program-form-row input { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 16px; color: var(--text); }
+.program-form-row input { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: calc(20px / var(--skala)); color: var(--text); }
 /* Datumsfelder erben die Schrift NICHT von selbst — der Browser setzt sie auf Monospace.
    Das ist nicht nur ein Bruch gegenueber den uebrigen Feldern, es kostet auch Breite:
    „03.09.2026" misst in Monospace 97px, in der App-Schrift 85px. Erst damit passen Start
@@ -3713,7 +3720,7 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 .program-form-row input:focus { outline: none; border-color: var(--accent); }
 .program-form-row textarea, .program-form-textarea {
   background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-  padding: 10px 12px; font-size: 16px; font-family: inherit; color: var(--text);
+  padding: 10px 12px; font-size: calc(20px / var(--skala)); font-family: inherit; color: var(--text);
   resize: vertical; min-height: 60px; line-height: 1.4; width: 100%;
 }
 .program-form-row textarea:focus, .program-form-textarea:focus { outline: none; border-color: var(--accent); }
@@ -3990,7 +3997,7 @@ html.sl-an { --sl-off: calc(var(--sl-h) + 6px); }
 /* AUSNAHME VON DER SCHRIFTSKALA (21.09.2026): 12px statt der 13px des zweiseitigen Schalters.
    „Wettkämpfe" misst bei 13px 77px, der Knopf hat auf 375px 79px — es passte nur mit 2px
    Luft je Seite und zusammengerueckten Knoepfen, im hervorgehobenen Knopf sah das gedraengt aus. */
-.seg-vier .seg-btn { font-size: 12px; padding-left: 2px; padding-right: 2px; }
+.seg-vier .seg-btn { font-size: calc(15px / var(--skala)); padding-left: 2px; padding-right: 2px; }
 /* KEINE Glas-Sonderregel mehr fuer die aktive Pille. Frueher war sie noetig, weil die
    weisse Pille im Transparenz-Modus auf dem durchscheinenden Schalter ein Fremdkoerper
    war (`html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .seg-btn.active` → 28-%-Weiss). Seit der
@@ -4447,19 +4454,31 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
    unterlaufen. Die Satz-Felder (.aex-v2-inp) sind davon nicht betroffen: Sie sind
    <div>-Schaltflächen und öffnen den eigenen Zahlenblock.
    Ergänzt die viewport-Angabe in index.html, die nur in der installierten PWA greift. */
-input, select, textarea { font-size: 16px !important; }
+input, select, textarea { font-size: calc(20px / var(--skala)) !important; }
 /* Ausnahme Notizfeld in den Übungskarten: 16px wirkten dort zu wuchtig (Leonard-Wunsch).
    Vertretbar, weil die viewport-Sperre oben den Fokus-Zoom in der installierten PWA
    abfängt — im Safari-Tab würde dieses eine Feld beim Antippen zoomen. */
 .aex-v2-notes-area { font-size: var(--fs-neben) !important; }
 
 /* ─── Anzeige 110 % (v581, Leonard-Wahl „Variante A") ────────────────────────────
-   Die App wird ueber die Viewport-Angabe in index.html um 10 % vergroessert; auf einem
-   375-Punkt-iPhone rechnet sie dadurch mit ~341 CSS-Pixeln Breite. Was dort nicht mehr passt,
+   Die App wird ueber die Viewport-Angabe in index.html vergroessert (v581 110 %, seit v582
+   120 %); auf einem 375-Punkt-iPhone rechnet sie dadurch mit ~312 CSS-Pixeln Breite. Was dort nicht mehr passt,
    wird HIER gezielt verkleinert (Leonard-Entscheidung „gezielt etwas verkleinern") — nur
    unterhalb von 380px, groessere iPhones bleiben unberuehrt. */
 @media (max-width: 380px) {
-  /* Uebungskarten der laufenden Session so breit wie vorher auf 375px (sonst `calc(90% - 46.8px)`), sonst wurde
-     der Uebungsname gekuerzt („Bankdrüc…") und „Überspringen" passte nicht in die Knopfzeile. */
-  .aex-v2:not(.lauf-tag-karte) { width: calc(90% - 15px); }
+  /* Uebungskarten der laufenden Session breiter (sonst `calc(90% - 46.8px)`): 18px Einzug je Seite
+     statt ~32px, sonst wurde der Uebungsname gekuerzt („Bankdrüc…") und „Überspringen" passte
+     nicht in die Knopfzeile (v581: `calc(90% - 15px)` fuer 110 %, v582 fuer 120 %). */
+  .aex-v2:not(.lauf-tag-karte) { width: calc(100% - 36px); }
+  /* Lange Uebungsnamen brechen in eine zweite Zeile um, statt mit „…" gekuerzt zu werden
+     (bei 120 % passte „Schulterdrücken" nicht mehr in eine Zeile). */
+  .aex-v2-name { white-space: normal; text-overflow: clip; display: -webkit-box;
+    -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.2;
+    -webkit-hyphens: auto; hyphens: auto; }   /* „Schulter-drücken": ein Wort braucht Trennung */
+  /* Knopfzeile „+ Satz · − Satz · Überspringen · Details": etwas weniger Innenabstand. */
+  .aex-v2-actions { gap: 4px; }
+  .aex-v2-actions .btn-sm { padding-left: 4px; padding-right: 4px; }
+  /* Titel der Vollbildseiten 32 → 28 (auf dem Bildschirm, weiter groesser als die alten 26):
+     „Wettkämpfe" stiess sonst an die Kopfknoepfe, lange Plannamen brachen dreizeilig um. */
+  .ph-left h1 { font-size: calc(28px / var(--skala)); }
 }

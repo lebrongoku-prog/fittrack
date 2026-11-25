@@ -4056,7 +4056,7 @@ function renderAddExList(q) {
       const col = muscleColor(e.muscle);
       return `<div class="sheet-item muscle-coded" style="--c:${col}" onclick="addExToWorkout('${e.id}')">
         <div><div class="sheet-item-name">${e.name}</div><div class="sheet-item-sub">${muscleName(e.muscle)}</div></div>
-        <span style="color:var(--accent);font-size:20px">+</span>
+        <span style="color:var(--accent);font-size:calc(24px / var(--skala))">+</span>
       </div>`;
     }).join('');
     return `<div class="sheet-ex-group${isCollapsed ? ' collapsed' : ''}" style="--mc:${meta.color}">
