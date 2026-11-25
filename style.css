@@ -4452,3 +4452,14 @@ input, select, textarea { font-size: 16px !important; }
    Vertretbar, weil die viewport-Sperre oben den Fokus-Zoom in der installierten PWA
    abfängt — im Safari-Tab würde dieses eine Feld beim Antippen zoomen. */
 .aex-v2-notes-area { font-size: var(--fs-neben) !important; }
+
+/* ─── Anzeige 110 % (v581, Leonard-Wahl „Variante A") ────────────────────────────
+   Die App wird ueber die Viewport-Angabe in index.html um 10 % vergroessert; auf einem
+   375-Punkt-iPhone rechnet sie dadurch mit ~341 CSS-Pixeln Breite. Was dort nicht mehr passt,
+   wird HIER gezielt verkleinert (Leonard-Entscheidung „gezielt etwas verkleinern") — nur
+   unterhalb von 380px, groessere iPhones bleiben unberuehrt. */
+@media (max-width: 380px) {
+  /* Uebungskarten der laufenden Session so breit wie vorher auf 375px (sonst `calc(90% - 46.8px)`), sonst wurde
+     der Uebungsname gekuerzt („Bankdrüc…") und „Überspringen" passte nicht in die Knopfzeile. */
+  .aex-v2:not(.lauf-tag-karte) { width: calc(90% - 15px); }
+}

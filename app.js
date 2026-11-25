@@ -1,4 +1,27 @@
 // ═══════════════════════════════════════════════
+// ANZEIGE 110 % (v581, Leonard-Wahl „Variante A")
+// ═══════════════════════════════════════════════
+// Die ganze App wird ueber die Viewport-Angabe in index.html um 10 % vergroessert
+// (`initial-scale=1.1`, BEWUSST ohne `width=device-width`: nur so rechnet der Browser die
+// Seitenbreite als Geraetebreite / 1.1, auf dem iPhone 375 → ~341 CSS-Pixel, und alles passt
+// ohne seitliches Schieben). SICHERUNG: Uebernimmt ein Browser die Vergroesserung, aber NICHT
+// die schmalere Breite, waere der sichtbare Ausschnitt schmaler als die Seite und man muesste
+// seitlich schieben. Dann zurueck auf 100 % — lieber normal gross als abgeschnitten.
+(function anzeigeGroesseSichern() {
+  const pruefen = () => {
+    const vv = window.visualViewport;
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (!vv || !meta || meta.dataset.zurueck) return;
+    if (vv.width < document.documentElement.clientWidth - 2) {
+      meta.dataset.zurueck = '1';
+      meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+    }
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pruefen);
+  else pruefen();
+})();
+
+// ═══════════════════════════════════════════════
 // ZEITKONSTANTEN
 // ═══════════════════════════════════════════════
 

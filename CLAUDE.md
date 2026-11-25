@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v580**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v581**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -50,7 +50,8 @@ löschen, versehentlich mitcommittete Zugangsdaten).
    - Syntax: `jsc` (siehe unten). **`node` ist NICHT installiert.**
    - Laufzeit nur im Browser: `preview_start` „fittrack", vor JEDEM Neuladen Service Worker
      deregistrieren und Caches löschen (sonst läuft alte `app.js`). Konsole prüfen. Hochformat mit
-     375×812 messen, Querformat mit 1100px, Glas-Modus mitprüfen.
+     375×812 messen (seit v581 `resize_window` Preset „mobile“ —
+     nur so gilt die 110-%-Viewport-Angabe, die App rechnet dann mit 340px), Querformat mit 1100px, Glas-Modus mitprüfen.
    - CSS-Klammerbalance prüfen. Beim Löschen von CSS NIE eine ganze Selektorliste entfernen, nur
      weil EIN Selektor tot ist — nur den toten Teil.
    - Bei Umbauten ohne Verhaltensänderung: alte Fassung (`git show HEAD:…`) in einen Unterordner
@@ -318,6 +319,12 @@ Titel darunter (`buildPlanCard` / `buildRunPlanCard` mit `nurPlan`) · Archiv.
 
 ## Gestaltungsregeln
 
+- **Anzeige 110 % (v581):** Viewport-Angabe `initial-scale=1.1` OHNE `width=device-width`
+  (nur so wird die Seitenbreite Gerätebreite/1.1 = ~341px statt seitlich zu schieben); Sicherung
+  `anzeigeGroesseSichern` am Anfang von app.js fällt auf 100 % zurück, falls ein Browser nur
+  vergrößert. Alle Maße bleiben in CSS-Pixeln wie bisher. Was auf ~341px nicht passt, wird im
+  Block `@media (max-width: 380px)` am Ende von style.css gezielt angepasst (bisher: Breite der
+  Übungskarten `.aex-v2`). Neue Engstellen dort eintragen, keine Schrift verkleinern.
 - **Schriftskala, fünf Stufen:** `--fs-etikett` 11 · `--fs-neben` 13 · `--fs-text` 15 ·
   `--fs-titel` 16 (Kartentitel) · `--fs-betont` 18. Keine neuen Größen; lieber eine Stufe höher.
   Ausnahmen nur große Einzelanzeigen (und 12px im Quadrat-Wochentag, ausdrücklicher Wunsch).
@@ -547,3 +554,12 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Laufplan Di/Do/So → an 15 gelaufen, „15/24 Läufe (63 %)", Fußzeile zeigt den Lauf statt der
   Planung; künftiger Plan ohne Schalter; keine Konsolenfehler. Hinweis: Im eingeblendeten Zustand
   zählt ein Wochentag ohne gewählten Gymtag nicht als geplant (wie in allen übrigen Kalendern).
+- **v581 (25.11.2026, Leonard-Wahl „Variante A“, „gezielt verkleinern“, „überall“):** Ganze App
+  10 % größer über die Viewport-Angabe (siehe Gestaltungsregeln). Einzige Engstelle: Übungskarten
+  der laufenden Session (Name „Bankdrüc…“, „Überspringen“ zu breit) → unter 380px wieder so
+  breit wie vorher auf 375px. GEMESSEN (Preset mobile, 340px, Maßstab 1.10): Übersicht, Gym mit
+  Session, Laufen, Gymplan, Laufplan, beide Plan-Details samt Lauf-Fußzeile, Stats, Übungen,
+  Gymtage, Einstellungen, Zahlenblock — automatischer Vergleich alt/neu ohne neue Überläufe oder
+  Kürzungen; keine Konsolenfehler. NICHT gesehen: das echte iPhone (ob iOS die Angabe in der
+  installierten App übernimmt; sonst greift die Rückfall-Sicherung). iPad im Querformat unter
+  ~1130 Punkten zeigt das Querformat-Raster nicht mehr (1024px-Schwelle).
