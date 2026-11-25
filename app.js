@@ -7543,7 +7543,8 @@ function _calKopfSetzen(id, z) {
   const serie = (id === 'cal' || !z.istLaufendesJahr || kombi) ? 0
     : (modus.kraft ? getWeekStreak() : getRunWeekStreak());
   statsEl.innerHTML = kennzahl
-    + (serie > 0 ? ` · Serie ${serie} ${serie === 1 ? 'Woche' : 'Wochen'}` : '');
+    // v584 (Leonard-Wunsch): kurz „Serie 7W" statt „Serie 7 Wochen".
+    + (serie > 0 ? ` · Serie ${serie}W` : '');
 }
 
 // ── Plan-Laufzeiten (Variante A + D, Leonard-Entscheidung 04.09.2026) ────────────

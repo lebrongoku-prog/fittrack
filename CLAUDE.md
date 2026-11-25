@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v583**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v584**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -587,3 +587,7 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   GEMESSEN (Fenster 917px = 1100 Punkte bei 120 %): Querformat-Abfrage greift, Karten in
   Übersicht, Training und Plan 14–903px (volle Breite); keine Konsolenfehler. NICHT gesehen:
   das Gerät selbst.
+- **v584 (25.11.2026, Leonard-Wunsch):** Kennzahl im Kopf des Kalenders auf „Gymplan“/„Laufplan“:
+  „Serie 7W“ statt „Serie 7 Wochen“ (auch bei 1: „Serie 1W“). GEMESSEN (Preset mobile, Serie
+  vorgegeben): „24 Gym Sessions · Serie 7W“, „0 Läufe · Serie 1W“; keine Konsolenfehler. Der Kopf
+  bricht auf 312px weiterhin zweizeilig um (Titel + Jahr 138px, Kennzahl 164px, Platz 284px).
