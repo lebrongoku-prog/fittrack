@@ -4497,6 +4497,11 @@ input, select, textarea { font-size: calc(19px / var(--skala)) !important; }
   /* Titel der Vollbildseiten 32 → 28 (auf dem Bildschirm, weiter groesser als die alten 26):
      „Wettkämpfe" stiess sonst an die Kopfknoepfe, lange Plannamen brachen dreizeilig um. */
   .ph-left h1 { font-size: calc(28px / var(--skala)); }
+  /* Muskelgruppen-Chips im Gymtag-Detail (v592, Leonard-Wahl „eine Zeile, Schrift 11"): alle sieben
+     wieder in EINER Zeile — nur hier Originalschrift 11 auf dem Bildschirm und 1px Innenabstand
+     seitlich statt 2px; sonst wurden „Rücken", „Schultern" usw. mit „…" gekuerzt. */
+  .mg-wahl { font-size: calc(11px / var(--skala)); padding-left: 1px; padding-right: 1px; }
+  .mg-wahl-reihe { gap: 2px; }
 }
 
 /* ─── Einstellungen in Originalgroesse (v585, Leonard-Wunsch) ──────────────────────────

@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v591**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v592**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -340,7 +340,8 @@ Titel darunter (`buildPlanCard` / `buildRunPlanCard` mit `nurPlan`) · Archiv.
   vergrößert. Alle Maße bleiben in CSS-Pixeln wie bisher. Was auf ~341px nicht passt, wird im
   Block `@media (max-width: 380px)` am Ende von style.css gezielt angepasst (bisher: Übungskarten
   `.aex-v2` breiter, Namen zweizeilig mit Silbentrennung, Knopfzeile enger; Titel der
-  Vollbildseiten 28 statt 32). Neue Engstellen dort eintragen, keine Schrift verkleinern.
+  Vollbildseiten 28 statt 32; Muskelgruppen-Chips im Gymtag-Detail Schrift 11 — Leonard-Wahl).
+  Neue Engstellen dort eintragen; Schrift nur nach Rückfrage verkleinern.
 - **Schriftskala, fünf Stufen** (seit v585 als Bildschirmgröße bei 115 %, im CSS
   `calc(Npx / var(--skala))`): `--fs-etikett` 13 · `--fs-neben` 15 · `--fs-text` 18 ·
   `--fs-titel` 19 (Kartentitel) · `--fs-betont` 21 (Original 11/13/15/16/18 × 1.15, aufgerundet). Jede Schriftgröße ergibt auf dem Bildschirm
@@ -647,3 +648,8 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Kreis 35.2, Pfeil 20.9, Notiz 66, Knopf 32.6 hoch, Polster 14, Zeilenabstand 8, Schrift
   19/15/13, Karte 333.6, kein Überlauf; keine Konsolenfehler. Aufgefallen, nicht geändert: die
   Muskelgruppen-Chips im Gymtag-Detail sind auf 326px gekürzt („Rüc…“, „Schul…“).
+- **v592 (26.11.2026, Leonard-Wahl „eine Zeile, Schrift 11“):** Muskelgruppen-Chips im
+  Gymtag-Detail wieder alle sieben ungekürzt in einer Zeile: unter 380px Schrift 11 auf dem
+  Bildschirm (Original), seitlich 1px statt 2px Innenabstand, Lücke 2px. GEMESSEN (Preset
+  mobile): 7 Chips in 1 Zeile, keiner gekürzt („Schultern“ 49/49), bündig mit dem Namensfeld
+  (0/0), Chip 33.4 hoch; keine Konsolenfehler.
