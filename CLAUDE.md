@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v585**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v586**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -268,6 +268,8 @@ Titel darunter (`buildPlanCard` / `buildRunPlanCard` mit `nurPlan`) · Archiv.
   führt der Gymknopf „Zur laufenden Gym Session". Gym-Verlauf `#0B4F49→#14B8A6`, Lauf
   `#15803D→#4ADE80`, neutral `#475569`, Beenden rot.
 - Zu lange Beschriftungen: `_knopfSchriftAnpassen` verkleinert 18 → 15 → 13px.
+- „Pausieren“/„Beenden“ der laufenden Session (v586) so groß und in derselben Schrift wie die
+  Gym-/Lauf-Knöpfe der Übersicht (63.6px, Stufe „Betont“); die Karte hat dann keine feste Höhe.
 - Farbwechsel der Knöpfe beim Tagwechsel blendet (`mitHeroFarbwechsel`).
 - Start/Ende einer Session auf der Seite „Gym" laufen mit Übergang (`_woUebergang*`).
 
@@ -302,7 +304,9 @@ Titel darunter (`buildPlanCard` / `buildRunPlanCard` mit `nurPlan`) · Archiv.
   Übersichts-Kalender klappt über `toggleOvKalender` (Karte fährt ganz weg)),
   `_calModus(id)`: Übersicht folgt dem Titel-Filter (Trainings-/Gym-/Laufkalender), Plan-Tab der
   Seite. Startet immer bei „Aktuell" (laufender Plan), Zeitraum-Wechsler Aktuell → Jahre.
-- `--cal-cell` / `--cal-gap` sind die einzige Quelle für Maße (JS liest sie). `.cal-scroll` muss
+- `--cal-cell` / `--cal-gap` sind die einzige Quelle für Maße (JS liest sie, deshalb reine Zahlen).
+  Seit v586 steht das Raster samt Marken und Monatsschrift (17) auf 110 % des Ausgangswerts
+  (× 1.10 / `--skala`), nicht auf den 115 % der übrigen App. `.cal-scroll` muss
   ein gewöhnlicher Block bleiben.
 - Fußzeile mit Kachel je Sportart (`_calKachel`), zweiter Tipp schließt.
 - Rote Wochen (kein Training) nur in Einzelkalendern, nur abgelaufene Wochen.
@@ -602,3 +606,10 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Zeile 15, Untertitel 13, Karte 351 Punkte breit, kein seitlicher Überlauf; Fenster 957px:
   Querformat greift, Karten volle Breite, Einstellungen zweispaltig; keine Konsolenfehler. NICHT
   gesehen: echtes iPhone, Zurückwischen der Einstellungen mit dem Finger.
+- **v586 (26.11.2026, Leonard-Wunsch):** Trainingskalender: Raster und Monatsangaben auf 110 % des
+  Ausgangswerts statt 115 % (Kästchen 30.24 → 28.925px, Abstand 4.32 → 4.132px, Marken/Ringe
+  mit, Monatsschrift 18 → 17 auf dem Bildschirm). Laufende Gym Session: „Pausieren“/„Beenden“
+  so groß wie die Knöpfe der Übersicht. GEMESSEN (Preset mobile, Maßstab 1.15): Kästchen 33.27
+  Punkte (= 30.24 × 1.1), Spalte 38.01, Monat 17, Planbalken bündig mit der ersten Spalte;
+  Session-Knöpfe 149.5 × 73.2, Schrift 21 = Übersicht-Knöpfe 149.5 × 73.2, Schrift 21; Karte
+  138.3 statt 180.9 Punkte hoch, unten 14px Polster; keine Konsolenfehler.
