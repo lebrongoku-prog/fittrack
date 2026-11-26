@@ -643,8 +643,11 @@ body.theme-plans .hist-action-dd {
 .lauf-wochen-karte.abschnitt-karte .lauf-wochenliste { padding-top: 4px; }   /* Platz fuer das Heute-Feld (ragt 4px ueber die Zeile) */
 .abschnitt-karte > .pr-list-v2 { padding: 0; margin: -12px 0; }
 .abschnitt-karte > #ov-recent-sessions-list { margin: -12px 0; }
-/* Laufende Gym Session: Der Fortschrittsbalken ist seit v570 das erste Element der Karte. */
-.abschnitt-karte.hero-aktiv .hero-v2-progress-bar-thin { margin-top: 0; }
+/* Laufende Gym Session: Name des Gymtags und Uhr stehen seit v587 wieder IN der Karte (siehe
+   `renderWorkoutsScreen`), der Fortschrittsbalken darunter mit seinem normalen Abstand. */
+/* Ohne Abschnittskopf saesse die Karte direkt unter der Kopfzeile des Tabs — 8px Luft wie
+   zwischen Abschnittskopf und Karte. */
+.mehr-section:has(> .hero-aktiv.abschnitt-karte:first-child) { margin-top: 8px; }
 /* Planlisten: Dort gibt es kein Heute-Feld (`hideToday`) — die 8.25px, die die Wochentagsspalte
    fuer dieses Feld unten freihaelt, zaehlen deshalb ins Polster (14 = 5.75 + 8.25). */
 #plans-list .plan-card-v2, #runplans-list .plan-card-v2 { padding-bottom: 5.75px; }

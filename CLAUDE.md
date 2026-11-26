@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v586**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v587**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -352,7 +352,8 @@ Titel darunter (`buildPlanCard` / `buildRunPlanCard` mit `nurPlan`) · Archiv.
   Statisch im Markup: Kalender `#ov-cal-abschnitt`/`#plans-cal-abschnitt` (Kopf `#cal-kopf`/
   `#pcal-kopf`, gefüllt von `calendarInnerHTML`), Stats. Dynamisch: `_alsAbschnitt(karte, kopf)`
   verschiebt den Kopf nach dem Zeichnen (Rückblick, Wochenkarte, „Heute" der Übersicht,
-  Herocards Gym/Laufen inkl. laufender Session, „Diese Woche"). Titel, die Schalter waren,
+  Herocards Gym/Laufen — AUSNAHME laufende Gym Session: Name des Gymtags und Uhr bleiben seit
+  v587 als Kartentitel IN der Karte, Abschnitt ohne Kopf, 8px Abstand oben, „Diese Woche"). Titel, die Schalter waren,
   bleiben Schalter. Neue Karten mit Titel genauso bauen. Im Glas-Modus bleiben die Karten
   durchscheinend. Ausgenommen: Plan- und Wettkampfkarten in Listen (Name = Eintrag).
 - **Kartenpolster 14px**; im Querformat (ab 1024px) steht der seitliche Rand in EINER Selektorliste
@@ -613,3 +614,9 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Punkte (= 30.24 × 1.1), Spalte 38.01, Monat 17, Planbalken bündig mit der ersten Spalte;
   Session-Knöpfe 149.5 × 73.2, Schrift 21 = Übersicht-Knöpfe 149.5 × 73.2, Schrift 21; Karte
   138.3 statt 180.9 Punkte hoch, unten 14px Polster; keine Konsolenfehler.
+- **v587 (26.11.2026, Leonard-Entscheidungen „Uhr mit in die Karte“, „a: wie ein Kartentitel“):**
+  Laufende Gym Session: Name des Gymtags und Uhr stehen wieder in der Karte (Name 19, fett,
+  dunkel, normale Schreibweise; Uhr rechts als Zahl in der Tabfarbe wie vor v570). Die Karte
+  bleibt in einem Abschnitt ohne Kopf, 8px unter der Tab-Kopfzeile. GEMESSEN (Preset mobile):
+  Name in der Karte, 19 Punkte, rgb(15,23,42), keine Großbuchstaben; Uhr 28; Abstand zur
+  Kopfzeile 9.2 Punkte; ohne Session weiter „HEUTE“ über der Karte; keine Konsolenfehler.

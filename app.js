@@ -2501,9 +2501,15 @@ function _renderGymSeite() {
     // Hoehe und Hantel wie in der Uebersicht ausrichten — die Karte soll dort und hier
     // identisch aussehen.
     }
-  // v570: Titel (bzw. Name + Uhr der laufenden Session) als Abschnittskopf ueber der Karte.
+  // v570: Titel als Abschnittskopf ueber der Karte. v587 (Leonard-Wunsch): AUSNAHME laufende
+  // Gym Session — Name des Gymtags und Uhr bleiben IN der Karte (Kartentitel wie vor v570);
+  // die Karte steht trotzdem in einem Abschnitt (gleiche Abstaende), nur ohne Kopf.
   { const hero = wrap.querySelector('.hero-v2');
-    if (hero) _alsAbschnitt(hero, hero.querySelector('.hero-aktiv-titel') || hero.querySelector('.hero-heute-titel')); }
+    if (hero && hero.classList.contains('hero-aktiv')) {
+      _alsAbschnitt(hero, null);
+      const leer = hero.parentNode && hero.parentNode.querySelector(':scope > .mehr-section-kopf');
+      if (leer && !leer.children.length) leer.remove();
+    } else if (hero) _alsAbschnitt(hero, hero.querySelector('.hero-heute-titel')); }
   _knopfSchriftAnpassen(wrap);
 
   // Tabs + cards
