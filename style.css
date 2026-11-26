@@ -4520,7 +4520,8 @@ input, select, textarea { font-size: calc(19px / var(--skala)) !important; }
    frueher 26 — spezifischer als `.ph-left h1` im 380px-Block. */
 @media (max-width: 380px) { #screen-mehr .ph-left h1 { font-size: 26px; } }
 
-/* ─── Uebungskarten der laufenden Session (v588–v590, Leonard-Wuensche) ─────────────────
+/* ─── Uebungskarten der laufenden Session und des Gymtag-Details (v588–v591, Leonard-Wuensche) ──
+   v591: 1:1 auch fuer die Uebungskarten in der Detailansicht eines Gymtags (`#day-ex-list`).
    Die App steht auf 115 % (`--skala`). Die Uebungskarten der laufenden Gym Session stehen
    GRUNDSAETZLICH auf den urspruenglichen 100 %: Schrift (v589), Abstaende und das Haekchen-Feld
    je Satz (v590). Die Kinder der Karte tragen dafuer `zoom: 1 / 1.15` (wie die Einstellungen),
@@ -4529,16 +4530,16 @@ input, select, textarea { font-size: calc(19px / var(--skala)) !important; }
    Nummernkreis (32 → 35.2), Haken „Uebung erledigt" (40 → 44, Zeichen 17 → 18.7), Ausklapp-Pfeil
    (19 → 20.9), Mindesthoehe des Notizfelds (60 → 66), senkrechtes Polster der Knoepfe (8 → 8.8).
    Der Uebungsname bleibt bei 19 (Stufe „Titel" der App). Bei anderer `--skala` den zoom anpassen. */
-#active-ex-list .aex-v2 {
+:is(#active-ex-list, #day-ex-list) .aex-v2 {
   --fs-etikett: 11px; --fs-neben: 13px; --fs-text: 15px; --fs-titel: 19px; --fs-betont: 18px;
 }
-#active-ex-list .aex-v2 > * { zoom: 0.869565; }
-#active-ex-list .aex-v2 .aex-v2-inp { height: 41.8px; line-height: 41.8px; border-radius: 11px; }
-#active-ex-list .aex-v2 .aex-v2-num { width: 35.2px; height: 35.2px; }
-#active-ex-list .aex-v2.collapsed .aex-v2-info { min-height: 35.2px; }
-#active-ex-list .aex-v2 .aex-v2-done-box { width: 44px; height: 44px; border-radius: 11px; }
-#active-ex-list .aex-v2 .aex-v2-done-box svg { width: 18.7px; height: 18.7px; }
-#active-ex-list .aex-v2 .aex-v2-chev { width: 35.2px; height: 35.2px; }
-#active-ex-list .aex-v2 .aex-v2-chev svg { width: 20.9px; height: 20.9px; }
-#active-ex-list .aex-v2 .aex-v2-notes-area { min-height: 66px; }
-#active-ex-list .aex-v2 .aex-v2-actions .btn-sm { padding-top: 8.8px; padding-bottom: 8.8px; }
+:is(#active-ex-list, #day-ex-list) .aex-v2 > * { zoom: 0.869565; }
+:is(#active-ex-list, #day-ex-list) .aex-v2 .aex-v2-inp { height: 41.8px; line-height: 41.8px; border-radius: 11px; }
+:is(#active-ex-list, #day-ex-list) .aex-v2 .aex-v2-num { width: 35.2px; height: 35.2px; }
+:is(#active-ex-list, #day-ex-list) .aex-v2.collapsed .aex-v2-info { min-height: 35.2px; }
+:is(#active-ex-list, #day-ex-list) .aex-v2 .aex-v2-done-box { width: 44px; height: 44px; border-radius: 11px; }
+:is(#active-ex-list, #day-ex-list) .aex-v2 .aex-v2-done-box svg { width: 18.7px; height: 18.7px; }
+:is(#active-ex-list, #day-ex-list) .aex-v2 .aex-v2-chev { width: 35.2px; height: 35.2px; }
+:is(#active-ex-list, #day-ex-list) .aex-v2 .aex-v2-chev svg { width: 20.9px; height: 20.9px; }
+:is(#active-ex-list, #day-ex-list) .aex-v2 .aex-v2-notes-area { min-height: 66px; }
+:is(#active-ex-list, #day-ex-list) .aex-v2 .aex-v2-actions .btn-sm { padding-top: 8.8px; padding-bottom: 8.8px; }

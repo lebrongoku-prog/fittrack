@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v590**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v591**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -252,7 +252,7 @@ ganz weg, startet zu). Keine Herocard mehr.
 „Wochenvolumen" per Tipp auf die Karte, offene Tage öffnen `showGymtagVorschau`). Keine
 Wochenplan-Karte, keine Tagesauswahl (Hülle `#wo-week-card` und `_woWocheFahren` seit v558
 entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2` (seit v590 Inhalt auf 100 % per
-`zoom: 1/1.15` der Kinder in `#active-ex-list`: Schrift 11/13/15/18, Abstände, Satz-Häkchen;
+`zoom: 1/1.15` der Kinder in `#active-ex-list` und seit v591 `#day-ex-list` (Gymtag-Detail): Schrift 11/13/15/18, Abstände, Satz-Häkchen;
 auf 110 % nur Satzfelder, Nummernkreis, Haken „Übung erledigt“, Pfeil, Notizhöhe, Knopfpolster;
 Titel 19).
 **Training → Laufen**: Herocard · „Diese Woche" (`laufWochenListe`, wischbar,
@@ -641,3 +641,9 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Polster links/oben 14, Zeilenabstand 8 (alle Original); Satzfeld 41.8 hoch, Kreis 35.2,
   Übungs-Haken 44, Pfeil 20.9, Notiz 66 (alle 110 %); Schrift Name 19 / Feld 15 / Kopf 13;
   kein Überlauf; Abhaken eines Satzes und Zuklappen funktionieren; keine Konsolenfehler.
+- **v591 (26.11.2026, Leonard-Wunsch):** Die Maße der Übungskarten aus v588–v590 gelten 1:1 auch
+  für die Übungskarten im Gymtag-Detail (`#day-ex-list`, Selektoren `:is(#active-ex-list,
+  #day-ex-list) .aex-v2`). GEMESSEN (Preset mobile): Werte identisch zur Session — Feld 41.8,
+  Kreis 35.2, Pfeil 20.9, Notiz 66, Knopf 32.6 hoch, Polster 14, Zeilenabstand 8, Schrift
+  19/15/13, Karte 333.6, kein Überlauf; keine Konsolenfehler. Aufgefallen, nicht geändert: die
+  Muskelgruppen-Chips im Gymtag-Detail sind auf 326px gekürzt („Rüc…“, „Schul…“).
