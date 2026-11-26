@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v587**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v588**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -251,7 +251,8 @@ ganz weg, startet zu). Keine Herocard mehr.
 Übungsvorschau auf) · „Diese Woche" (`renderGymWoche`, wischbar über die Planwochen, Diagramm
 „Wochenvolumen" per Tipp auf die Karte, offene Tage öffnen `showGymtagVorschau`). Keine
 Wochenplan-Karte, keine Tagesauswahl (Hülle `#wo-week-card` und `_woWocheFahren` seit v558
-entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2`.
+entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2` (Inhalt seit v588 auf 110 % per
+`zoom` der Kinder in `#active-ex-list`, eigene Schriftstufen 13/15/17/20, Titel bleibt 19).
 **Training → Laufen**: Herocard · „Diese Woche" (`laufWochenListe`, wischbar,
 „Wochenkilometer").
 In „Diese Woche" (Gym und Laufen) stehen die Wochenpunkte bzw. die Leiste nur in der
@@ -620,3 +621,10 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   bleibt in einem Abschnitt ohne Kopf, 8px unter der Tab-Kopfzeile. GEMESSEN (Preset mobile):
   Name in der Karte, 19 Punkte, rgb(15,23,42), keine Großbuchstaben; Uhr 28; Abstand zur
   Kopfzeile 9.2 Punkte; ohne Session weiter „HEUTE“ über der Karte; keine Konsolenfehler.
+- **v588 (26.11.2026, Leonard-Wunsch):** Übungskarten der laufenden Gym Session samt Inhalt auf
+  110 % des Ausgangswerts, außer den Kartentiteln (Übungsnamen bleiben 19). Umsetzung: `zoom`
+  1.10/1.15 auf die Kinder der Karte, Schriftstufen dort neu aufgerundet aus Original × 1.10.
+  GEMESSEN (Preset mobile): Name 19, Nummernkreis 35.2 (= 32 × 1.1), Satzfeld 41.8 hoch
+  (= 38 × 1.1), Feldschrift 17, Kopf/Satznummer/Knöpfe/Notiz 15; Karte bleibt 333.6 breit;
+  „Schulterdrücken“ wieder einzeilig; Auf-/Zuklappen (65 ↔ 371 px) und Zahlenblock per Tipp ins
+  Feld funktionieren; keine Konsolenfehler.

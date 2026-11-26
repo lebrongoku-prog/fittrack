@@ -4519,3 +4519,18 @@ input, select, textarea { font-size: calc(19px / var(--skala)) !important; }
 /* Der Seitentitel stuende sonst unter der Schmal-Anpassung oben (28 auf dem Bildschirm). Hier wie
    frueher 26 — spezifischer als `.ph-left h1` im 380px-Block. */
 @media (max-width: 380px) { #screen-mehr .ph-left h1 { font-size: 26px; } }
+
+/* ─── Uebungskarten der laufenden Session auf 110 % (v588, Leonard-Wunsch) ──────────────
+   Die App steht auf 115 % (`--skala`); die Uebungskarten der laufenden Gym Session samt Inhalt
+   auf 110 % des Ausgangswerts — AUSSER den Kartentiteln (Uebungsnamen), die bei 19 bleiben.
+   Verkleinert werden die KINDER der Karte per `zoom` (1.10 / 1.15), nicht die Karte selbst:
+   ihre Breite und ihr Platz in der Liste bleiben, nur der Inhalt wird kleiner.
+   Schriften ergeben wie ueberall ganze Zahlen (aufgerundet aus Original × 1.10): Etikett 11→13,
+   Neben 13→15, Text 15→17, Betont 18→20. Im gezoomten Kind gilt Bildschirm = CSS × 1.10, daher
+   `/ 1.1`. Der Titel steht als `--fs-titel` auf 19 (= unveraendert). Bei anderer `--skala` neu
+   rechnen. */
+#active-ex-list .aex-v2 {
+  --fs-etikett: calc(13px / 1.1); --fs-neben: calc(15px / 1.1); --fs-text: calc(17px / 1.1);
+  --fs-titel: calc(19px / 1.1); --fs-betont: calc(20px / 1.1);
+}
+#active-ex-list .aex-v2 > * { zoom: 0.956522; }
