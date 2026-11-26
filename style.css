@@ -4529,8 +4529,11 @@ input, select, textarea { font-size: calc(19px / var(--skala)) !important; }
    Neben 13→15, Text 15→17, Betont 18→20. Im gezoomten Kind gilt Bildschirm = CSS × 1.10, daher
    `/ 1.1`. Der Titel steht als `--fs-titel` auf 19 (= unveraendert). Bei anderer `--skala` neu
    rechnen. */
+/* v589 (Leonard-Wahl „Original"): Die Schrift IN den Karten steht wieder auf den urspruenglichen
+   Werten (11/13/15/18 auf dem Bildschirm); Felder, Kreise und Abstaende bleiben auf 110 %, der
+   Titel bei 19. */
 #active-ex-list .aex-v2 {
-  --fs-etikett: calc(13px / 1.1); --fs-neben: calc(15px / 1.1); --fs-text: calc(17px / 1.1);
-  --fs-titel: calc(19px / 1.1); --fs-betont: calc(20px / 1.1);
+  --fs-etikett: calc(11px / 1.1); --fs-neben: calc(13px / 1.1); --fs-text: calc(15px / 1.1);
+  --fs-titel: calc(19px / 1.1); --fs-betont: calc(18px / 1.1);
 }
 #active-ex-list .aex-v2 > * { zoom: 0.956522; }

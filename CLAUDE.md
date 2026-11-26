@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v588**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v589**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -252,7 +252,8 @@ ganz weg, startet zu). Keine Herocard mehr.
 „Wochenvolumen" per Tipp auf die Karte, offene Tage öffnen `showGymtagVorschau`). Keine
 Wochenplan-Karte, keine Tagesauswahl (Hülle `#wo-week-card` und `_woWocheFahren` seit v558
 entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2` (Inhalt seit v588 auf 110 % per
-`zoom` der Kinder in `#active-ex-list`, eigene Schriftstufen 13/15/17/20, Titel bleibt 19).
+`zoom` der Kinder in `#active-ex-list`; Schrift darin seit v589 wieder Original 11/13/15/18,
+Titel bleibt 19).
 **Training → Laufen**: Herocard · „Diese Woche" (`laufWochenListe`, wischbar,
 „Wochenkilometer").
 In „Diese Woche" (Gym und Laufen) stehen die Wochenpunkte bzw. die Leiste nur in der
@@ -628,3 +629,7 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   (= 38 × 1.1), Feldschrift 17, Kopf/Satznummer/Knöpfe/Notiz 15; Karte bleibt 333.6 breit;
   „Schulterdrücken“ wieder einzeilig; Auf-/Zuklappen (65 ↔ 371 px) und Zahlenblock per Tipp ins
   Feld funktionieren; keine Konsolenfehler.
+- **v589 (26.11.2026, Leonard-Wahl „Original (100 %)“):** Schrift in den Übungskarten der
+  laufenden Session wieder auf den ursprünglichen Werten; Felder, Kreise, Abstände bleiben auf
+  110 %, Übungsname 19. GEMESSEN (Preset mobile): Satzfeld 15 (Feld 41.8 hoch), Nummer 15
+  (Kreis 35.2), Spaltenköpfe/Satznummern/Knöpfe/Notiz 13, Name 19; keine Konsolenfehler.
