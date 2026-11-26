@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v589**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v590**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -251,9 +251,10 @@ ganz weg, startet zu). Keine Herocard mehr.
 Übungsvorschau auf) · „Diese Woche" (`renderGymWoche`, wischbar über die Planwochen, Diagramm
 „Wochenvolumen" per Tipp auf die Karte, offene Tage öffnen `showGymtagVorschau`). Keine
 Wochenplan-Karte, keine Tagesauswahl (Hülle `#wo-week-card` und `_woWocheFahren` seit v558
-entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2` (Inhalt seit v588 auf 110 % per
-`zoom` der Kinder in `#active-ex-list`; Schrift darin seit v589 wieder Original 11/13/15/18,
-Titel bleibt 19).
+entfernt). Laufende Session: `buildSessionCard`, Übungskarten `.aex-v2` (seit v590 Inhalt auf 100 % per
+`zoom: 1/1.15` der Kinder in `#active-ex-list`: Schrift 11/13/15/18, Abstände, Satz-Häkchen;
+auf 110 % nur Satzfelder, Nummernkreis, Haken „Übung erledigt“, Pfeil, Notizhöhe, Knopfpolster;
+Titel 19).
 **Training → Laufen**: Herocard · „Diese Woche" (`laufWochenListe`, wischbar,
 „Wochenkilometer").
 In „Diese Woche" (Gym und Laufen) stehen die Wochenpunkte bzw. die Leiste nur in der
@@ -633,3 +634,10 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   laufenden Session wieder auf den ursprünglichen Werten; Felder, Kreise, Abstände bleiben auf
   110 %, Übungsname 19. GEMESSEN (Preset mobile): Satzfeld 15 (Feld 41.8 hoch), Nummer 15
   (Kreis 35.2), Spaltenköpfe/Satznummern/Knöpfe/Notiz 13, Name 19; keine Konsolenfehler.
+- **v590 (26.11.2026, Leonard-Wunsch):** Übungskarten der laufenden Session: Abstände und das
+  Häkchen-Feld je Satz wieder in Originalgröße. Umbau: Kinder der Karte auf `zoom: 1/1.15`
+  (100 %), nur Satzfelder, Nummernkreis, Haken „Übung erledigt“, Ausklapp-Pfeil, Notizhöhe und
+  senkrechtes Knopfpolster gezielt × 1.10. GEMESSEN (Preset mobile): Satz-Häkchen 40 × 40,
+  Polster links/oben 14, Zeilenabstand 8 (alle Original); Satzfeld 41.8 hoch, Kreis 35.2,
+  Übungs-Haken 44, Pfeil 20.9, Notiz 66 (alle 110 %); Schrift Name 19 / Feld 15 / Kopf 13;
+  kein Überlauf; Abhaken eines Satzes und Zuklappen funktionieren; keine Konsolenfehler.
