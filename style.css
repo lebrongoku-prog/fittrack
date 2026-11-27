@@ -4202,9 +4202,9 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 
 /* Log */
 .drive-log-head {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: flex-end;   /* v595: nur noch „Leeren" */
   font-size: var(--fs-neben); font-weight: 700; color: var(--text2);
-  margin-bottom: 8px;
+  margin: 10px 0 8px;
 }
 .drive-log {
   background: var(--bg); border-radius: 10px;

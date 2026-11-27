@@ -7497,8 +7497,15 @@ function _calKopfSetzen(id, z) {
     // eigenen laufenden Plan (`_calPlanStand`, Leonard-Wunsch 14.09.2026).
     const stand = (sport, plan) => teil(sport,
       _calPlanStandText(sport, _calPlanStand(sport, plan, z.von, z.heute), kombi));
-    kennzahl = [modus.kraft ? stand('gym', z.aktPlaene.gym) : null,
-                modus.lauf ? stand('lauf', z.aktPlaene.lauf) : null].filter(Boolean).join(' · ');
+    // v595 (Leonard-Wunsch): In der UEBERSICHT nur die Quote der Sportart(en), fuer die
+    // tatsaechlich ein Plan laeuft — ohne Plan keine nackte Anzahl.
+    const nurMitPlan = id === 'cal';
+    kennzahl = [modus.kraft && (!nurMitPlan || z.aktPlaene.gym) ? stand('gym', z.aktPlaene.gym) : null,
+                modus.lauf && (!nurMitPlan || z.aktPlaene.lauf) ? stand('lauf', z.aktPlaene.lauf) : null].filter(Boolean).join(' · ');
+  } else if (id === 'cal') {
+    // v595 (Leonard-Wunsch): Ohne laufenden Plan (bzw. in einer Jahresansicht) steht in der
+    // Uebersicht oben rechts NICHTS.
+    kennzahl = '';
   } else {
     // Im Jahr die Anzahl: Der Laufkalender zaehlt Laeufe, der Gymkalender Krafteinheiten samt
     // nachgetragener Tage; zeigt der Kalender BEIDE Sportarten, stehen beide Zahlen da.
@@ -11849,6 +11856,17 @@ function toggleDriveDebug() {
   const zeile = document.getElementById('drive-debug-state').closest('.drive-row');
   if (zeile) zeile.setAttribute('aria-expanded', open ? 'false' : 'true');
   if (!open) renderDriveDebug();
+}
+
+// v595 (Leonard-Wunsch): Sync-Log ein-/ausklappen wie die Debug-Info; startet eingeklappt
+// (nicht gespeichert). Der Inhalt wird weiter laufend in `#drive-log` geschrieben.
+function toggleDriveLog() {
+  const el = document.getElementById('drive-log-wrap');
+  if (!el) return;
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  const zeile = document.getElementById('drive-log-state').closest('.drive-row');
+  if (zeile) zeile.setAttribute('aria-expanded', open ? 'false' : 'true');
 }
 
 // ─── UI Rendering ────────────────────────────────────

@@ -488,11 +488,17 @@
               <div class="drive-debug-grid" id="drive-debug-grid"></div>
             </div>
             <div class="divider" style="margin:14px 0"></div>
-            <div class="drive-log-head">
-              <span>Sync-Log</span>
-              <a onclick="clearDriveLog()" style="font-size:var(--fs-neben);color:var(--text3);cursor:pointer">Leeren</a>
+            <!-- v595 (Leonard-Wunsch): Sync-Log einklappbar wie die Debug-Info, startet zu. -->
+            <div class="drive-row" onclick="toggleDriveLog()" style="cursor:pointer" aria-expanded="false">
+              <div class="drive-row-label">Sync-Log anzeigen</div>
+              <div class="drive-row-toggle"><span id="drive-log-state" class="aex-v2-chev"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></div>
             </div>
-            <div class="drive-log" id="drive-log"></div>
+            <div id="drive-log-wrap" style="display:none">
+              <div class="drive-log-head">
+                <a onclick="clearDriveLog()" style="font-size:var(--fs-neben);color:var(--text3);cursor:pointer">Leeren</a>
+              </div>
+              <div class="drive-log" id="drive-log"></div>
+            </div>
             <div class="divider" style="margin:14px 0"></div>
             <button class="btn btn-ghost btn-full" onclick="driveDisconnect()" style="color:var(--red,#d33)">
               Verbindung trennen

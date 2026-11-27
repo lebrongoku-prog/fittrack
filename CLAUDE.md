@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v594**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v595**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -235,7 +235,7 @@ Ohne Gegenprüfung auf dem iPhone nichts an Tab-Wisch, Scroll-Snap oder dem Scro
 nicht ein drittes Mal versuchen. `#tab-container` trägt `-webkit-overflow-scrolling: auto`.
 Wischen ist auf diesem Rechner nicht prüfbar. Einzige Änderung seit dem 08.09.2026: v594 — der Scroll-Handler tut
 nichts, solange eine Vollbildseite sichtbar ist (`_vollbildOffen()`, eine Zeile, auf Leonards
-Auftrag; iPhone-Gegenprüfung durch Leonard ausstehend/siehe Protokoll). Scrollbereiche in Karten (Kalender, Wochenkarten)
+Auftrag; iPhone-Gegenprüfung durch Leonard am 27.11.2026 bestanden). Scrollbereiche in Karten (Kalender, Wochenkarten)
 brauchen `overscroll-behavior-x: contain`, keinen `transform` am Vorfahren (bricht die Geste auf
 iOS ab) und das unsichtbare sticky Kind `.cal-sticky-anchor`.
 
@@ -248,7 +248,8 @@ iOS ab) und das unsichtbare sticky Kind `.cal-sticky-anchor`.
 · „Heute" (`#ov-diese-woche`, `renderUebersichtWoche`: Startblock mit Gym- und Laufknopf für den
 gewählten Tag, Titel klappt die Tageszeilen auf) · Trainingskalender als LETZTER Abschnitt (v571;
 `#ov-cal-card` in `#ov-cal-abschnitt`, einklappbar über den Titel — eingeklappt ist die Karte
-ganz weg, startet zu). Keine Herocard mehr.
+ganz weg, startet zu; Kennzahl oben rechts seit v595 NUR bei laufendem Plan: die Quote der
+Sportart(en) mit Plan, sonst und in Jahresansichten leer). Keine Herocard mehr.
 
 **Training → Gym**: Herocard „Heute" (`buildHeuteHero`, Knopf nennt den Gymtag, Titel klappt die
 Übungsvorschau auf) · „Diese Woche" (`renderGymWoche`, wischbar über die Planwochen, Diagramm
@@ -677,3 +678,11 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   und Schalter korrekt; Gymtag-Detail über Gymtage schließt zurück auf Gymtage; echtes Drehen
   957 → 500 → 957px: bleibt „plan-detail“; normales Wischen ohne Vollbildseite wechselt weiter
   Tab, Theme und Schalter; keine Konsolenfehler. NICHT gesehen: Wischen und Drehen auf dem iPhone.
+- **v595 (27.11.2026, Leonard-Wünsche):** Einstellungen: Sync-Log einklappbar wie die Debug-Info
+  („Sync-Log anzeigen“, `toggleDriveLog`, startet zu, „Leeren“ im aufgeklappten Teil).
+  Übersicht, Trainingskalender: oben rechts ohne laufenden Plan nichts (vorher „24 Gym Sessions ·
+  0 Läufe“); mit Plan nur die Quote der Sportart(en), für die ein Plan läuft. GEMESSEN: ohne Plan
+  „“; nur Gymplan → Trainingskalender „Gym 0 %“, Gymkalender „0/16 Gym Sessions (0 %)“,
+  Laufkalender „“; beide Pläne → „Gym 0 % · Lauf 0 %“, „0/16 …“, „0/4 Läufe (0 %)“; nur
+  Laufplan spiegelbildlich; Sync-Log zu → auf (Pfeil 180°) → zu; keine Konsolenfehler. Der iPhone-
+  Test zu v594 (Drehen/Wischen) ist laut Leonard bestanden.
