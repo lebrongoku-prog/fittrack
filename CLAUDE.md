@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v595**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v596**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -286,9 +286,12 @@ Titel darunter (`buildPlanCard` / `buildRunPlanCard` mit `nurPlan`) · Archiv.
   Beide Sportarten an einem Tag: diagonal geteilt (oben links Gym, unten rechts Lauf); geplante
   Hälfte = Randstück. Kombi-Karte zeichnet nur `.ppv-k-reihe.beide`.
 - Wettkampf im Kalender: goldenes Quadrat `#EAB308`.
-- **Transparenz-Modus** (`html.glas`, `toggleGlasModus`, Überblendung per View Transitions):
-  Karten ohne Fläche, Schatten und Rand (seit v577 — Inhalte stehen direkt auf dem
-  Tab-Hintergrund). Gilt nicht in `#screen-mehr`, `#screen-plan-detail`, `#screen-runplan-detail`
+- **Transparenz-Modus** (`html.glas`, `toggleGlasModus`, Überblendung per View Transitions),
+  seit v596 DREI Stufen wie im Health Command Center (`glasStufe()` 0/1/2 in `ft_glas`, ein Tipp
+  schaltet weiter, Knopf `aria-pressed` false/mixed/true mit heller werdender Fläche):
+  deckend · halb transparent (12-%-Weiß mit Schatten, Klasse `glas`) · ganz transparent ohne
+  Fläche, Schatten und Rand (zusätzlich `glas-voll`, Inhalte direkt auf dem Tab-Hintergrund).
+  `glasAktiv()` = Stufe 1 oder 2. Alter Wert '1' wurde einmalig zu '2' (`ft_glas_v3`). Gilt nicht in `#screen-mehr`, `#screen-plan-detail`, `#screen-runplan-detail`
   (Präfix `html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)`,
   ebenso die Diagramm-Abfragen in app.js), Sportfarben in Wochen- und Kalenderkarten werden weiß (Gym 60 %, Lauf
   ~92 %). Farbig bleiben Warnrot, Wettkampf, Muskelgruppenfarben. `.mehr-card` bleibt weiß.
@@ -686,3 +689,10 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Laufkalender „“; beide Pläne → „Gym 0 % · Lauf 0 %“, „0/16 …“, „0/4 Läufe (0 %)“; nur
   Laufplan spiegelbildlich; Sync-Log zu → auf (Pfeil 180°) → zu; keine Konsolenfehler. Der iPhone-
   Test zu v594 (Drehen/Wischen) ist laut Leonard bestanden.
+- **v596 (27.11.2026, Leonard-Wunsch, 1:1 aus dem Health Command Center):** Transparenz-Knopf mit
+  drei Stufen: deckend → halb transparent (wie bis v576) → ganz transparent (wie seit v577) →
+  deckend. GEMESSEN (Preset mobile): gespeichertes '1' nach dem Update → Stufe 2 „ganz
+  transparent“ (keine Umstellung sichtbar); Tipp 1 → deckend, Karte weiß, Knopf „false“ 18 %;
+  Tipp 2 → halb, Karte rgba(255,255,255,.12) mit Schatten, Knopf „mixed“ 28 %; Tipp 3 → ganz,
+  Karte transparent ohne Schatten, Knopf „true“ 48 %; Titel je Stufe; Plan-Tab (Kalender- und
+  Plankarte) halb transparent im Bild geprüft; Gymplan-Detail bleibt weiß; keine Konsolenfehler.

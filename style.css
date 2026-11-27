@@ -1399,11 +1399,11 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .hero-v2,
 html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .aex-v2,
 html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .ex-list {
-  /* v577 (Leonard-Wunsch): keine Kartenflaeche mehr — die Inhalte stehen direkt auf dem
-     Tab-Hintergrund. */
-  background: transparent;
-  box-shadow: none;
-  border-color: transparent;
+  /* v596: Stufe „halb transparent" = 12-%-Weiss mit Schatten (wie bis v576). Stufe „ganz
+     transparent" (`html.glas-voll`, v577) nimmt Flaeche, Schatten und Kante weg — Regel unten. */
+  background: rgba(255,255,255,.12);
+  box-shadow: 0 1px 6px rgba(0,0,0,.18);
+  border-color: rgba(255,255,255,.22);
   --text:   #fff;
   --text2:  rgba(255,255,255,.85);
   --text3:  rgba(255,255,255,.65);
@@ -1506,8 +1506,8 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 /* Wochenplan-Karte: im Normalmodus weiss, hier durchsichtig. Alle Inhalte muessen hell
    werden — die Karte liegt dann direkt auf dem farbigen Tab-Hintergrund. */
 html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 {
-  background: transparent;
-  box-shadow: none;
+  background: rgba(255,255,255,.12);
+  box-shadow: 0 1px 6px rgba(0,0,0,.18);
 }
 html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-name  { color: #fff; }
 html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-card-v2 .ppv-meta  { color: rgba(255,255,255,.7); }
@@ -1573,8 +1573,8 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
 
 /* Trainingstag-Karten in der Bibliothek. */
 html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) .plan-list-row {
-  background: transparent;
-  box-shadow: none;
+  background: rgba(255,255,255,.12);
+  box-shadow: 0 1px 6px rgba(0,0,0,.18);
   --text: #fff; --text2: rgba(255,255,255,.85); --text3: rgba(255,255,255,.65);
   --border: rgba(255,255,255,.24);
 }
@@ -1614,7 +1614,17 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
    genau wie beim Gymplan-Detail. Aus demselben Grund braucht auch `.lp-tagwahl.an` keine
    Glas-Fassung mehr (dort war sie weiss auf weiss). */
 /* Der Knopf selbst zeigt seinen Zustand. */
-#glas-btn[aria-pressed="true"] { background: rgba(255,255,255,.42); }
+/* v596: drei Stufen wie im Health Command Center — die Flaeche hinter dem Symbol wird je Stufe
+   heller (halb transparent = „mixed", ganz transparent = „true"). */
+#glas-btn[aria-pressed="mixed"] { background: rgba(255,255,255,.28); }
+#glas-btn[aria-pressed="true"]  { background: rgba(255,255,255,.48); }
+
+/* ─── Stufe „ganz transparent" (v596, `html.glas.glas-voll`; der Modus von v577) ───────────────
+   Keine Kartenflaeche, kein Schatten, keine Kante — die Inhalte stehen direkt auf dem
+   Tab-Hintergrund. Farben und Schrift kommen aus den Glas-Regeln oben (gleich in beiden Stufen). */
+html.glas.glas-voll .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail) :is(.card, .plan-section-card, .chart-card-v2, .hero-v2, .aex-v2, .ex-list, .plan-card-v2, .plan-list-row) {
+  background: transparent; box-shadow: none; border-color: transparent;
+}
 
 /* ─── Toast ─── */
 #toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 14px + var(--sl-off)); left: 50%; transform: translateX(-50%) translateY(16px); background: #111; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: var(--fs-text); font-weight: 500; opacity: 0; transition: all .28s; z-index: 500; white-space: nowrap; pointer-events: none; }

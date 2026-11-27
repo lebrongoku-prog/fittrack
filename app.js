@@ -3552,14 +3552,37 @@ function _audioContext() {
 // Schaltet ALLE Karten der App auf den durchsichtigen Stil der `.weitere-btn`-Knoepfe um.
 // Der Zustand liegt in einem EIGENEN localStorage-Key, nicht in den Trainingsdaten: Eine
 // reine Anzeige-Einstellung hat in der Drive-Sicherung nichts verloren (wie ft_ex_chart_modes).
+// v596 (Leonard-Wunsch, 1:1 aus dem Health Command Center): DREI Stufen, ein Tipp schaltet
+// weiter: 0 = Karten deckend, 1 = halb transparent (12-%-Weiss mit Schatten, Klasse `glas`,
+// so sah der Modus bis v576 aus), 2 = ganz transparent ohne Kartenflaeche (zusaetzlich
+// `glas-voll`, der Modus seit v577). `glasAktiv()` heisst „Stufe 1 oder 2" — weisse Schrift,
+// helle Sportfarben und Diagrammfarben gelten in beiden.
+// UEBERGANG: Bis v595 bedeutete der gespeicherte Wert '1' den heutigen „ganz transparent".
+// Einmalig (Merker `ft_glas_v3`) wird er deshalb zu '2', damit nach dem Update nichts umspringt.
 const GLAS_KEY = 'ft_glas';
-function glasAktiv() { try { return localStorage.getItem(GLAS_KEY) === '1'; } catch { return false; } }
+const GLAS_TITEL = ['Karten: deckend', 'Karten: halb transparent', 'Karten: ganz transparent'];
+(function glasStufenUebernehmen() {
+  try {
+    if (localStorage.getItem('ft_glas_v3')) return;
+    if (localStorage.getItem(GLAS_KEY) === '1') localStorage.setItem(GLAS_KEY, '2');
+    localStorage.setItem('ft_glas_v3', '1');
+  } catch {}
+})();
+function glasStufe() {
+  try { const v = +localStorage.getItem(GLAS_KEY); return v === 1 || v === 2 ? v : 0; } catch { return 0; }
+}
+function glasAktiv() { return glasStufe() > 0; }
 
 function applyGlasModus() {
-  const an = glasAktiv();
-  document.documentElement.classList.toggle('glas', an);
+  const stufe = glasStufe();
+  document.documentElement.classList.toggle('glas', stufe > 0);
+  document.documentElement.classList.toggle('glas-voll', stufe === 2);
   const btn = document.getElementById('glas-btn');
-  if (btn) btn.setAttribute('aria-pressed', an ? 'true' : 'false');
+  if (btn) {
+    btn.setAttribute('aria-pressed', stufe === 2 ? 'true' : stufe === 1 ? 'mixed' : 'false');
+    btn.title = GLAS_TITEL[stufe];
+    btn.setAttribute('aria-label', GLAS_TITEL[stufe] + ' – Tippen schaltet weiter');
+  }
 }
 
 // DER WECHSEL BLENDET UEBER (21.09.2026, Leonard-Wunsch): Der ganze Bildschirm blendet in 0.3s
@@ -3576,7 +3599,7 @@ function applyGlasModus() {
 const GLAS_BLENDE_MS = 300;   // muss zur `animation-duration` in style.css passen
 function toggleGlasModus() {
   const umschalten = () => {
-    try { localStorage.setItem(GLAS_KEY, glasAktiv() ? '0' : '1'); } catch {}
+    try { localStorage.setItem(GLAS_KEY, String((glasStufe() + 1) % 3)); } catch {}   // v596: drei Stufen
     applyGlasModus();
     // Diagramme neu zeichnen: Achsen- und Rasterfarben kommen aus JS, nicht aus dem CSS.
     _zeichneAlleDiagrammeNeu();
