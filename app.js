@@ -10562,8 +10562,11 @@ const FIG_BEWEGUNG = {
     },
     p: () => [{ typ: 'bank', a: [0, -4, -56], b: [0, -66, 16] }, { typ: 'polster', p: [-10, -70, 16] }, { typ: 'polster', p: [10, -70, 16] },
               { typ: 'polster', p: [-9, -12, -40] }, { typ: 'polster', p: [9, -12, -40] }] },
-  reverse_flies: { einarm: true, t: 'Reverse Flies vorgebeugt', gr: 'Schultern',   /* v607: Gruppe Schultern (Leonard-Wunsch) */ g: 'kurzhanteln', blick: 25, m: { schulter: 'shoulders', torso: 'back' },
-    f: () => {
+  // v608: Ausfuehrung „stehend" (aufrecht, Arme in Schulterhoehe von vorne zur Seite; Leonard-Wunsch)
+  reverse_flies: { einarm: true, t: 'Reverse Flies', gr: 'Schultern',   /* v607: Gruppe Schultern (Leonard-Wunsch) */ g: 'kurzhanteln', blick: 25, m: { schulter: 'shoulders', torso: 'back' },
+    varianten: { vorgebeugt: 'Vorgebeugt', stehend: 'Stehend' },
+    f: o => {
+      if (o.variante === 'stehend') return [_fig({ ell: [16, -142, 25], han: [8, -140, 50] }), _fig({ ell: [45, -146, -2], han: [71, -145, -4] })];
       const s = { becken: [0, -88, -20], hals: [0, -108, 30], kn: [12, -48, 6] };
       return [_fig({ ...s, ell: [24, -84, 34], han: [22, -60, 36] }), _fig({ ...s, ell: [44, -106, 32], han: [68, -110, 34] })];
     } },
@@ -10643,11 +10646,72 @@ function _figGelenke(bew, opt, k) {
   const seite = (f, key, s) => f[key + (s < 0 ? 'L' : 'R')] || [s * f[key][0], f[key][1], f[key][2]];
   const P = { hals: mix(a.hals, b.hals), becken: mix(a.becken, b.becken) };
   const schY = a.schY + (b.schY - a.schY) * u;
+  const sub = (x, y) => [x[0] - y[0], x[1] - y[1], x[2] - y[2]];
+  const len = x => Math.hypot(x[0], x[1], x[2]);
+  // v608 (Leonard-Wunsch „Gelenke natuerlicher"): Arme und Beine werden nicht mehr Punkt fuer Punkt
+  // auf geraden Linien zwischen den Stellungen geschoben (dabei schrumpften Ober-/Unterarm und das
+  // Ellbogen-/Kniegelenk knickte unnatuerlich). Stattdessen: Hand/Fuss schwenkt im BOGEN um
+  // Schulter/Huefte (Richtung gedreht, Abstand gemischt), steht er still, bleibt er stehen; die
+  // Gliedlaengen bleiben erhalten und Ellbogen/Knie ergeben sich daraus (zweigliedrige Kette),
+  // in die Richtung, in die sie in den Stellungen zeigen.
+  const punkt = (x, y) => x[0] * y[0] + x[1] * y[1] + x[2] * y[2];
+  const einheit = x => { const l = len(x); return l > 1e-6 ? x.map(v => v / l) : null; };
+  // Drehung von Richtung nA nach nB (Bogen), Anteil u
+  const bogen = (nA, nB) => {
+    const w = Math.acos(Math.max(-1, Math.min(1, punkt(nA, nB))));
+    if (w < 1e-3) return nA;
+    const sw = Math.sin(w), fa = Math.sin((1 - u) * w) / sw, fb = Math.sin(u * w) / sw;
+    return nA.map((v, j) => v * fa + nB[j] * fb);
+  };
+  // Beugerichtung einer Stellung: Lage des Gelenks quer zur Linie Wurzel → Ende
+  const quer = (w0, m0, e0) => { const dir = einheit(sub(e0, w0)); const m = sub(m0, w0); if (!dir) return null;
+    const pd = punkt(m, dir); return m.map((v, j) => v - dir[j] * pd); };   // Laenge = Staerke der Beugung
+  const glied = (wurzelA, wurzelB, wurzel, mA, mB, eA, eB, L1, L2, natur) => {
+    // Gelenk steht still (Polster am Ellbogen, Knie am Beinstrecker): nur das Endglied schwenkt darum
+    if (len(sub(mA, mB)) < 1.5 && len(sub(wurzelA, wurzelB)) < 1.5) {
+      const mitte = mix(mA, mB), nA = einheit(sub(eA, mA)), nB = einheit(sub(eB, mB));
+      return [mitte, (nA && nB) ? mitte.map((v, j) => v + bogen(nA, nB)[j] * L2) : mix(eA, eB)];
+    }
+    const fest = len(sub(eA, eB)) < 1.5;
+    const ende = fest ? mix(eA, eB) : (() => {
+      const vA = sub(eA, wurzelA), vB = sub(eB, wurzelB), lA = len(vA) || 1, lB = len(vB) || 1;
+      const n = bogen(vA.map(v => v / lA), vB.map(v => v / lB));
+      // reicht das Glied nicht bis dorthin, endet die Hand/der Fuss am gestreckten Glied
+      return wurzel.map((v, j) => v + n[j] * Math.min(L1 + L2 - 0.02, lA + (lB - lA) * u));
+    })();
+    const dv = sub(ende, wurzel), d0 = len(dv) || 1e-6;
+    const dir = dv.map(v => v / d0);
+    const d = Math.max(Math.abs(L1 - L2) + 0.01, Math.min(L1 + L2 - 0.01, d0));
+    const ax = (L1 * L1 - L2 * L2 + d * d) / (2 * d), hh = Math.sqrt(Math.max(0, L1 * L1 - ax * ax));
+    // Beugerichtung aus beiden Stellungen gemischt (stabil auch bei fast gestrecktem Glied)
+    const qA = quer(wurzelA, mA, eA), qB = quer(wurzelB, mB, eB);
+    // Ungewichtet gemischt: eine fast gestreckte Stellung bestimmt die Richtung kaum. Zeigen beide
+    // Stellungen in entgegengesetzte Richtungen, gilt die staerker gebeugte (kein Umklappen).
+    // Sind beide fast gestreckt, beugt sich das Gelenk in seine natuerliche Richtung (`natur`).
+    let pA = qA || [0, 0, 0], pB = qB || [0, 0, 0];
+    if (punkt(pA, pB) < 0) { if (len(pA) >= len(pB)) pB = pA; else pA = pB; }
+    let pol = pA.map((v, j) => v + (pB[j] - v) * u);
+    if (len(pol) < 1.5) pol = natur;
+    const pd = punkt(pol, dir); pol = einheit(pol.map((v, j) => v - dir[j] * pd)) || einheit(natur.map((v, j) => v + 0.3 * j)) || [0, 0, 1];
+    const mitte = wurzel.map((v, j) => v + dir[j] * ax + pol[j] * hh);
+    return [mitte, ende];
+  };
+  // Gliedlaengen: ueber alle Stellungen des Musters gemittelt und waehrend der Bewegung FEST
+  const laenge = (s, w, wurzelVon, m, e) => {
+    let l1 = 0, l2 = 0;
+    fr.forEach(f => { const w0 = wurzelVon(f), m0 = seite(f, m, s), e0 = seite(f, e, s); l1 += len(sub(m0, w0)); l2 += len(sub(e0, m0)); });
+    return [l1 / fr.length, l2 / fr.length];
+  };
   [-1, 1].forEach(s => {
     const n = s < 0 ? 'L' : 'R';
-    ['ell', 'han', 'kn', 'fu'].forEach(key => { P[key + n] = mix(seite(a, key, s), seite(b, key, s)); });
+    const schA = _v(a.hals, [s * 20, 3 + a.schY, 0]), schB = _v(b.hals, [s * 20, 3 + b.schY, 0]);
+    const hufA = _v(a.becken, [s * 11, 0, 0]), hufB = _v(b.becken, [s * 11, 0, 0]);
     P['sch' + n] = _v(P.hals, [s * 20, 3 + schY, 0]);
     P['huf' + n] = _v(P.becken, [s * 11, 0, 0]);
+    const arm = laenge(s, 'sch', f => _v(f.hals, [s * 20, 3 + f.schY, 0]), 'ell', 'han');
+    const bein = laenge(s, 'huf', f => _v(f.becken, [s * 11, 0, 0]), 'kn', 'fu');
+    [P['ell' + n], P['han' + n]] = glied(schA, schB, P['sch' + n], seite(a, 'ell', s), seite(b, 'ell', s), seite(a, 'han', s), seite(b, 'han', s), arm[0], arm[1], [s * 0.4, 0, -1]);
+    [P['kn' + n], P['fu' + n]] = glied(hufA, hufB, P['huf' + n], seite(a, 'kn', s), seite(b, 'kn', s), seite(a, 'fu', s), seite(b, 'fu', s), bein[0], bein[1], [0, 0, 1]);
   });
   // v598: einarmig — der linke Arm haengt locker neben dem Koerper
   if (opt.einarmig && bew.einarm) { P.ellL = _v(P.schL, [-1, 25, 2]); P.hanL = _v(P.schL, [-2, 51, 4]); }
@@ -10717,11 +10781,11 @@ function figSVG(e, t, blick, neigung, fein) {
   // v606 (Leonard-Vorlage): Kontur wie eine Figur aus einem Guss. Zusammenhaengende Glieder bilden
   // eine KETTE (Rumpf mit Schultern/Huefte, je Arm, je Bein); jede Kette wird erst ganz schwarz
   // umrandet und dann gefuellt — so liegt die Kontur nur aussen um Arm, Bein oder Rumpf, ohne Ringe
-  // an Ellbogen und Knie, und trennt sichtbar, was voreinander liegt. Dazu plastisch schattiert:
-  // Licht von links oben (helle Kante), rechts unten dunkler.
+  // an Ellbogen und Knie. v608: ohne plastische Schattierung (Leonard-Wunsch).
   const UMRISS = fein ? 3 : 7;
   const HANTEL = fein ? '#a7afb8' : '#555';   // v606: auf dem dunklen Grund der Vollansicht heller
   const ketten = {};
+  const STUECK = fein ? 9 : 18;
   _FIG_SEG.forEach(([a, b, seg]) => {
     // Einarmig: Nur der rechte Arm arbeitet, der linke bleibt grau.
     const m = (einarm && (a === 'schL' || a === 'ellL') && seg !== 'schulter') ? null : farbe[seg];
@@ -10729,11 +10793,57 @@ function figSVG(e, t, blick, neigung, fein) {
     const kette = (seg === 'torso' || seg === 'schulter' || seg === 'huefte') ? 'rumpf'
       : (seg === 'oberarm' || seg === 'unterarm') ? 'arm' + a.slice(-1) : 'bein' + a.slice(-1);
     const K = ketten[kette] = ketten[kette] || [];
-    const n = fein ? Math.max(1, Math.ceil(Math.hypot(P[b][0] - P[a][0], P[b][1] - P[a][1], P[b][2] - P[a][2]) / 9)) : 1;
+    // Stuecke am Ansatz (Schulter/Huefte) zaehlen nicht fuer die Reihenfolge — dort beruehren sich
+    // Rumpf und Glied immer, ohne voreinander zu liegen.
+    const ansatz = (seg === 'oberarm' || seg === 'oberschenkel') ? P[a] : null;
+    const n = Math.max(1, Math.ceil(Math.hypot(P[b][0] - P[a][0], P[b][1] - P[a][1], P[b][2] - P[a][2]) / STUECK));
     let A = pr(P[a]);
-    for (let i = 1; i <= n; i++) { const B = pr(P[a].map((v, j) => v + (P[b][j] - v) * i / n)); K.push({ A, B, w, col }); A = B; }
+    for (let i = 1; i <= n; i++) {
+      const Q = P[a].map((v, j) => v + (P[b][j] - v) * i / n), B = pr(Q);
+      K.push({ A, B, w, col, ansatz: ansatz ? (i - 0.5) / n * Math.hypot(P[b][0] - P[a][0], P[b][1] - P[a][1], P[b][2] - P[a][2]) < 16 : false,
+               gelenk: seg === 'schulter' || seg === 'huefte' ? 'rand' : null });
+      A = B;
+    }
   });
-  Object.values(ketten).forEach(K => teile.push({ d: K.reduce((x, q) => x + q.A[2] + q.B[2], 0) / (2 * K.length), kette: K }));
+  // Schulter- und Hueftstueck: nur das aeussere Ende (am Arm/Bein) ist Ansatz
+  ketten.rumpf.forEach(q => {
+    if (q.gelenk !== 'rand') return;
+    q.ansatz = ['schL', 'schR', 'hufL', 'hufR'].some(g => { const G = pr(P[g]); return Math.hypot((q.A[0] + q.B[0]) / 2 - G[0], (q.A[1] + q.B[1]) / 2 - G[1]) < 12; });
+  });
+  // v608 (Leonard-Meldung, Butterfly von oben): Die Reihenfolge der Ketten richtet sich nicht mehr
+  // nach ihrer MITTLEREN Tiefe (dabei sprang die Schulter beim Drehen mal vor, mal hinter den Arm),
+  // sondern danach, welche Kette an den Stellen, an denen sie sich im Bild wirklich ueberdecken,
+  // vorne liegt. Ueberdecken sich zwei nirgends (ausser am Ansatz), liegt das Glied ueber dem Rumpf.
+  const namen = Object.keys(ketten);
+  const tiefe = {}; namen.forEach(nm => { const K = ketten[nm]; tiefe[nm] = K.reduce((x, q) => x + q.A[2] + q.B[2], 0) / (2 * K.length); });
+  const abst = (p, A, B) => { const dx = B[0] - A[0], dy = B[1] - A[1], l2 = dx * dx + dy * dy || 1e-6;
+    const t = Math.max(0, Math.min(1, ((p[0] - A[0]) * dx + (p[1] - A[1]) * dy) / l2));
+    return Math.hypot(p[0] - A[0] - dx * t, p[1] - A[1] - dy * t); };
+  const vorher = {};   // vorher[x][y] = true: x wird vor y gezeichnet (liegt dahinter)
+  namen.forEach(x => { vorher[x] = {}; });
+  for (let i = 0; i < namen.length; i++) for (let j = i + 1; j < namen.length; j++) {
+    const x = namen[i], y = namen[j];
+    let stimme = 0, treffer = 0;
+    ketten[x].forEach(q => { if (q.ansatz) return; const mq = [(q.A[0] + q.B[0]) / 2, (q.A[1] + q.B[1]) / 2], dq = (q.A[2] + q.B[2]) / 2;
+      ketten[y].forEach(r => { if (r.ansatz) return;
+        const mr = [(r.A[0] + r.B[0]) / 2, (r.A[1] + r.B[1]) / 2];
+        const grenze = (q.w + r.w) / 2;
+        if (Math.min(abst(mq, r.A, r.B), abst(mr, q.A, q.B)) >= grenze) return;
+        const dr = (r.A[2] + r.B[2]) / 2; treffer++; stimme += dq > dr ? 1 : (dq < dr ? -1 : 0); }); });
+    if (treffer && stimme > 0) vorher[x][y] = true;          // x weiter weg → zuerst
+    else if (treffer && stimme < 0) vorher[y][x] = true;
+    else if (x === 'rumpf') vorher[x][y] = true;               // Glied ueber dem Rumpf
+    else if (y === 'rumpf') vorher[y][x] = true;
+  }
+  const reihe = [], rest = namen.slice();
+  while (rest.length) {
+    rest.sort((x, y) => tiefe[y] - tiefe[x]);
+    const frei = rest.find(x => !rest.some(y => y !== x && vorher[y][x])) || rest[0];
+    reihe.push(frei); rest.splice(rest.indexOf(frei), 1);
+  }
+  // Ketten stehen zwischen Kopf und Geraeten an ihrer Tiefe, untereinander in dieser Reihenfolge
+  const kettenTeile = reihe.map(nm => ({ d: tiefe[nm], kette: ketten[nm], kettenRang: reihe.indexOf(nm) }));
+  kettenTeile.forEach(t => teile.push(t));
   kreis(P.kopf, 16, FIG_GRAU, 0, true);
   // Umgebung (Bank, Stange, Hebel …)
   (bew.p ? bew.p(P, k, e) : []).forEach(u => {
@@ -10788,6 +10898,34 @@ function figSVG(e, t, blick, neigung, fein) {
     turm(bew.maschTurm || [-62, 0, -20], null);
     if (!bew.beinMaschine) haende.forEach(h => linie(_v(h, [-7, 0, 0]), _v(h, [7, 0, 0]), 4, HANTEL, -0.4));
   }
+  {
+    // Ketten bekommen ihre Tiefen in der ermittelten Reihenfolge (weitester Wert zuerst) …
+    const kt = teile.filter(p => p.kette);
+    const werte = kt.map(p => p.d).sort((x, y) => y - x);
+    kt.sort((x, y) => x.kettenRang - y.kettenRang).forEach((p, i) => { p.d = werte[i]; });
+    // … und alles Uebrige (Kopf, Bank, Hantel …), das eine Kette im Bild ueberdeckt, liegt davor
+    // oder dahinter je nachdem, wie tief die Kette GENAU AN DIESER STELLE liegt (v608: vorher schob
+    // sich die Bank beim Drehen ueber den Rumpf, weil nur dessen mittlere Tiefe zaehlte).
+    const EPS = 0.01;
+    teile.forEach(p => {
+      if (p.kette) return;
+      const mp = p.kreis ? p.kreis : p.scheibe ? p.scheibe : [(p.A[0] + p.B[0]) / 2, (p.A[1] + p.B[1]) / 2];
+      const rp = p.kreis ? p.r : p.scheibe ? p.ry : p.w / 2;
+      kt.forEach(K => {
+        let best = null, bestAbst = Infinity;
+        K.kette.forEach(q => {
+          const a = p.A ? Math.min(abst(mp, q.A, q.B), abst([(q.A[0] + q.B[0]) / 2, (q.A[1] + q.B[1]) / 2], p.A, p.B)) : abst(mp, q.A, q.B);
+          if (a < (p.A ? 0 : rp) + q.w / 2 + (p.A ? p.w / 2 : 0) && a < bestAbst) { bestAbst = a; best = q; }
+        });
+        if (!best) return;
+        const dq = (best.A[2] + best.B[2]) / 2;
+        const roh = p.kreis ? p.kreis[2] : p.scheibe ? p.scheibe[2] : (p.A[2] + p.B[2]) / 2;
+        const zusatz = p.d - roh;   // eingestellter Versatz (Bank liegt etwas tiefer usw.)
+        if (roh + zusatz > dq) { if (p.d <= K.d) p.d = K.d + EPS; }   // dahinter
+        else if (p.d >= K.d) p.d = K.d - EPS;                           // davor
+      });
+    });
+  }
   teile.sort((x, y) => y.d - x.d);
   // Boden: Kreis um die Figur, je nach Neigung flacher oder runder
   const B0 = pr([0, 0, 0]);
@@ -10814,29 +10952,17 @@ function figSVG(e, t, blick, neigung, fein) {
     }
   }
   h += `<ellipse cx="${z(B0[0])}" cy="${z(B0[1])}" rx="78" ry="${z(bodenRy)}" fill="rgba(0,0,0,${fein ? '.35' : '.1'})"/>`;
-  // Farbe aufhellen (t > 0) oder abdunkeln (t < 0)
-  const ton = (hex, t) => {
-    const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
-    const f = v => Math.round(t > 0 ? v + (255 - v) * t : v * (1 + t));
-    return `rgb(${f(r)},${f(g)},${f(b)})`;
-  };
-  const strich = (A, B, w, col, dx, dy) => `<line x1="${z(A[0] + dx)}" y1="${z(A[1] + dy)}" x2="${z(B[0] + dx)}" y2="${z(B[1] + dy)}" stroke="${col}" stroke-width="${z(w)}" stroke-linecap="round"/>`;
+  const strich = (A, B, w, col) => `<line x1="${z(A[0])}" y1="${z(A[1])}" x2="${z(B[0])}" y2="${z(B[1])}" stroke="${col}" stroke-width="${z(w)}" stroke-linecap="round"/>`;
   for (const p of teile) {
     if (p.kette) {
-      // Kontur, Fuellung, Schatten (rechts unten), Licht (links oben) — je fuer die ganze Kette
-      const seite = q => { const dx = q.B[0] - q.A[0], dy = q.B[1] - q.A[1], l = Math.hypot(dx, dy) || 1;
-        let nx = -dy / l, ny = dx / l; if (nx * -0.7 + ny * -0.7 < 0) { nx = -nx; ny = -ny; } return [nx, ny]; };
-      p.kette.forEach(q => { h += strich(q.A, q.B, q.w + UMRISS, '#141414', 0, 0); });
-      p.kette.forEach(q => { h += strich(q.A, q.B, q.w, q.col, 0, 0); });
-      p.kette.forEach(q => { const [nx, ny] = seite(q); h += strich(q.A, q.B, q.w * 0.34, ton(q.col, -0.28), -nx * q.w * 0.27, -ny * q.w * 0.27); });
-      p.kette.forEach(q => { const [nx, ny] = seite(q); h += strich(q.A, q.B, q.w * 0.3, ton(q.col, 0.4), nx * q.w * 0.22, ny * q.w * 0.22); });
+      // Kontur, dann Fuellung — je fuer die ganze Kette
+      p.kette.forEach(q => { h += strich(q.A, q.B, q.w + UMRISS, '#141414'); });
+      p.kette.forEach(q => { h += strich(q.A, q.B, q.w, q.col); });
       continue;
     }
     if (p.kreis && p.umriss) {
       h += `<circle cx="${z(p.kreis[0])}" cy="${z(p.kreis[1])}" r="${z(p.r + UMRISS / 2)}" fill="#141414"/>`
-        + `<circle cx="${z(p.kreis[0])}" cy="${z(p.kreis[1])}" r="${p.r}" fill="${ton(p.col, -0.12)}"/>`
-        + `<circle cx="${z(p.kreis[0] - p.r * 0.18)}" cy="${z(p.kreis[1] - p.r * 0.18)}" r="${z(p.r * 0.78)}" fill="${p.col}"/>`
-        + `<circle cx="${z(p.kreis[0] - p.r * 0.34)}" cy="${z(p.kreis[1] - p.r * 0.34)}" r="${z(p.r * 0.34)}" fill="${ton(p.col, 0.45)}"/>`;
+        + `<circle cx="${z(p.kreis[0])}" cy="${z(p.kreis[1])}" r="${p.r}" fill="${p.col}"/>`;
       continue;
     }
     if (p.kreis) h += `<circle cx="${z(p.kreis[0])}" cy="${z(p.kreis[1])}" r="${p.r}" fill="${p.col}"/>`;
@@ -10913,7 +11039,8 @@ function figBewegungVorschlag(name) {
   else if (hat('langhantel', 'barbell', ' lh ')) g = 'langhantel';
   else if (hat('kabel', 'cable', 'seilzug')) g = 'kabel';
   else if (hat('maschine', 'machine', 'gerät')) g = 'maschine';
-  const variante = b === 'latzug' ? (hat('hinter', 'nacken', 'behind') ? 'hinter' : 'vor') : null;
+  const variante = b === 'latzug' ? (hat('hinter', 'nacken', 'behind') ? 'hinter' : 'vor')
+    : b === 'reverse_flies' ? (hat('stehend', 'standing', 'aufrecht') ? 'stehend' : 'vorgebeugt') : null;
   return { bewegung: b, geraet: g || (b ? FIG_BEWEGUNG[b].g : null), bank, variante };
 }
 

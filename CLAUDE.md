@@ -233,6 +233,14 @@ grep -n "fittrack-v" sw.js
   weiter in feinen Stücken. Kopf mit Kontur und Glanzpunkt. Vollansicht: dunkle Bühne
   (`.figur-buehne`, Verlauf mit Lichtkegel), Bodenraster 160×160 auf dem Boden (dreht/neigt mit),
   dunklerer Schatten, hellere Hanteln (`HANTEL`).
+- Seit v608: KEINE plastische Schattierung mehr (nur Kontur + Füllung, Kopf ebenso).
+  Gelenke (`_figGelenke`): Gliedlängen fest (Mittel über alle Stellungen), Hand/Fuß schwenkt im
+  Bogen um Schulter/Hüfte (steht er still, bleibt er stehen; steht Ellbogen/Knie still, schwenkt
+  nur das Endglied), Ellbogen/Knie per zweigliedriger Kette, Beugerichtung aus beiden Stellungen
+  (kein Umklappen). Reihenfolge der Ketten: nach der Tiefe an den Stellen, wo sie sich im Bild
+  WIRKLICH überdecken (Ansatz an Schulter/Hüfte zählt nicht; ohne Überdeckung liegt das Glied
+  über dem Rumpf); Kopf, Bank, Geräte ebenso gegen die überdeckte Kette. Reverse Flies mit
+  Ausführung „Vorgebeugt“/„Stehend“ (Vorschlag bei „stehend“/„standing“).
 
 ### Sicherung
 - Drive (`driveSync`, `collectLocalData`/`driveApplyCloudData`, Format version 4). Token-Anfragen
@@ -802,3 +810,14 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
 - **v607 (27.11.2026, Leonard-Wunsch):** „Reverse Flies vorgebeugt“ gehört zur Gruppe Schultern
   (vorher Rücken). GEMESSEN: Muskelgruppe Schultern → 6 Bewegungen inkl. Reverse Flies; Rücken → 7
   ohne; Name „Reverse Flies“ bei Muskelgruppe Rücken → unter „Gewählt“; keine Konsolenfehler.
+- **v608 (27.11.2026, Leonard-Wünsche mit Bildschirmfotos):** Strichmännchen: plastische
+  Schattierung entfernt; Gelenke natürlicher (feste Gliedlängen, Bögen statt Geraden); Überlappung
+  nach echter Überdeckung statt mittlerer Tiefe (Schultern/Arme bei Butterfly von oben sprangen);
+  Reverse Flies „stehend“ als Ausführung. GEMESSEN: alle 41 Muster in 80 Schritten — größter
+  Gelenkschritt 2.8 (vorher Sprünge bis 18 bei Beinstrecker/Preacher Curl/Rudern), Gliedlängen
+  fest (Abweichung nur bei festgehaltener Hand/Fuß, max. 2.5); Fliegende liegend von oben bei
+  0–300°: Arme immer über den Schultern, Bank immer unter dem Rumpf; Gegenproben Bankdrücken,
+  Curl, Kniebeuge, Latzug, Beinstrecker, Preacher Curl, Kreuzheben, Kabel-Fly, Klimmzug, Dips,
+  Ausfallschritt, Unterarmstütz, Bicycle Crunch, Skull Crusher, Rudern; Dialog „Reverse Flies
+  stehend“ → Ausführung Stehend; Katalog 29 Figuren, Blatt; keine Konsolenfehler. NICHT gesehen:
+  iPhone.
