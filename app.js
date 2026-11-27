@@ -10714,26 +10714,26 @@ function figSVG(e, t, blick, neigung, fein) {
     }
   };
   const kreis = (p, r, col, extra, umriss) => { const Q = pr(p); teile.push({ d: Q[2] + (extra || 0), kreis: Q, r, col, umriss }); };
-  // v605 (Leonard-Wunsch): Koerperteile mit schwarzer Kontur. Ein Glied besteht aus Stuecken mit
-  // GERADEN Enden (sonst saehe man an jeder Stueckgrenze eine Naht) und zwei runden Endkappen als
-  // Kreise — die Gelenke erscheinen dadurch wie bei einer Gliederpuppe umrandet.
-  const UMRISS = fein ? 2 : 5;
-  const glied = (a, b, w, col) => {
-    const n = fein ? Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / 9)) : 1;
-    let A = pr(a);
-    for (let i = 1; i <= n; i++) {
-      const B = pr(a.map((v, j) => v + (b[j] - v) * i / n));
-      teile.push({ d: (A[2] + B[2]) / 2, A, B, w, col, umriss: true, innenA: i > 1, innenB: i < n });
-      A = B;
-    }
-    kreis(a, w / 2 + UMRISS / 4, col, 0.01, true);
-    kreis(b, w / 2 + UMRISS / 4, col, 0.01, true);
-  };
+  // v606 (Leonard-Vorlage): Kontur wie eine Figur aus einem Guss. Zusammenhaengende Glieder bilden
+  // eine KETTE (Rumpf mit Schultern/Huefte, je Arm, je Bein); jede Kette wird erst ganz schwarz
+  // umrandet und dann gefuellt — so liegt die Kontur nur aussen um Arm, Bein oder Rumpf, ohne Ringe
+  // an Ellbogen und Knie, und trennt sichtbar, was voreinander liegt. Dazu plastisch schattiert:
+  // Licht von links oben (helle Kante), rechts unten dunkler.
+  const UMRISS = fein ? 3 : 7;
+  const HANTEL = fein ? '#a7afb8' : '#555';   // v606: auf dem dunklen Grund der Vollansicht heller
+  const ketten = {};
   _FIG_SEG.forEach(([a, b, seg]) => {
     // Einarmig: Nur der rechte Arm arbeitet, der linke bleibt grau.
     const m = (einarm && (a === 'schL' || a === 'ellL') && seg !== 'schulter') ? null : farbe[seg];
-    glied(P[a], P[b], seg === 'torso' ? 22 : (m ? 15 : 13), m ? MUSCLE_META[m].color : FIG_GRAU);
+    const w = seg === 'torso' ? 22 : (m ? 15 : 13), col = m ? MUSCLE_META[m].color : FIG_GRAU;
+    const kette = (seg === 'torso' || seg === 'schulter' || seg === 'huefte') ? 'rumpf'
+      : (seg === 'oberarm' || seg === 'unterarm') ? 'arm' + a.slice(-1) : 'bein' + a.slice(-1);
+    const K = ketten[kette] = ketten[kette] || [];
+    const n = fein ? Math.max(1, Math.ceil(Math.hypot(P[b][0] - P[a][0], P[b][1] - P[a][1], P[b][2] - P[a][2]) / 9)) : 1;
+    let A = pr(P[a]);
+    for (let i = 1; i <= n; i++) { const B = pr(P[a].map((v, j) => v + (P[b][j] - v) * i / n)); K.push({ A, B, w, col }); A = B; }
   });
+  Object.values(ketten).forEach(K => teile.push({ d: K.reduce((x, q) => x + q.A[2] + q.B[2], 0) / (2 * K.length), kette: K }));
   kreis(P.kopf, 16, FIG_GRAU, 0, true);
   // Umgebung (Bank, Stange, Hebel …)
   (bew.p ? bew.p(P, k, e) : []).forEach(u => {
@@ -10744,7 +10744,7 @@ function figSVG(e, t, blick, neigung, fein) {
       return;
     }
     if (u.typ === 'hebel') { linie(u.a, u.b, 6, '#6f6f69', 2); kreis(u.a, 5, '#4a4a46', 1.5); return; }
-    linie(u.a, u.b, u.typ === 'platte' ? 9 : 4, u.typ === 'platte' ? '#6b6b66' : '#555', 3);
+    linie(u.a, u.b, u.typ === 'platte' ? 9 : 4, u.typ === 'platte' ? '#6b6b66' : HANTEL, 3);
   });
   // Gewichtsturm (Kabelzug und Maschinen, v598): Rahmen, Rolle oben, Gewichtsblock hebt sich mit k.
   const turm = (T, rolle) => {
@@ -10766,27 +10766,27 @@ function figSVG(e, t, blick, neigung, fein) {
   const hL = P.hanL, hR = P.hanR, mitte = hL.map((v, j) => (v + hR[j]) / 2);
   const haende = (einarm || bew.nurRechts) ? [hR] : [hL, hR];
   if (e.geraet === 'langhantel') {
-    linie(_v(mitte, [-66, 0, 0]), _v(mitte, [66, 0, 0]), 4, '#555', -0.4);
+    linie(_v(mitte, [-66, 0, 0]), _v(mitte, [66, 0, 0]), 4, HANTEL, -0.4);
     [-1, 1].forEach(sg => { scheibe(_v(mitte, [sg * 52, 0, 0]), 15); scheibe(_v(mitte, [sg * 58, 0, 0]), 12); });
   } else if (e.geraet === 'kurzhanteln') {
-    haende.forEach(h => { linie(_v(h, [-9, 0, 0]), _v(h, [9, 0, 0]), 3.5, '#555', -0.4); [-1, 1].forEach(sg => scheibe(_v(h, [sg * 9, 0, 0]), 7)); });
+    haende.forEach(h => { linie(_v(h, [-9, 0, 0]), _v(h, [9, 0, 0]), 3.5, HANTEL, -0.4); [-1, 1].forEach(sg => scheibe(_v(h, [sg * 9, 0, 0]), 7)); });
   } else if (e.geraet === 'kabel') {
     const anker = _figAnker(bew, e);
     const versatz = bew.turm || [0, 0, 14];
     anker.forEach(a => turm([a[0] + Math.sign(a[0]) * Math.abs(versatz[0]), 0, a[2] + versatz[2]], a));
     if (bew.kabelStange && !einarm) {
-      linie(_v(mitte, [-48, 0, 0]), _v(mitte, [48, 0, 0]), 4, '#555', -0.4);
+      linie(_v(mitte, [-48, 0, 0]), _v(mitte, [48, 0, 0]), 4, HANTEL, -0.4);
       linie(mitte, anker[0], 2, '#7a7a74', 1);
     } else {
       haende.forEach(h => {
         const a = anker.length > 1 ? anker[h === hL ? 0 : 1] : anker[0];
-        linie(h, a, 2, '#7a7a74', 1); linie(_v(h, [-6, 0, 0]), _v(h, [6, 0, 0]), 3.5, '#555', -0.4);
+        linie(h, a, 2, '#7a7a74', 1); linie(_v(h, [-6, 0, 0]), _v(h, [6, 0, 0]), 3.5, HANTEL, -0.4);
       });
     }
   } else if (e.geraet === 'maschine') {
     // Maschine: Gewichtsturm seitlich, bei Oberkoerper-Mustern Griffe an den Haenden.
     turm(bew.maschTurm || [-62, 0, -20], null);
-    if (!bew.beinMaschine) haende.forEach(h => linie(_v(h, [-7, 0, 0]), _v(h, [7, 0, 0]), 4, '#555', -0.4));
+    if (!bew.beinMaschine) haende.forEach(h => linie(_v(h, [-7, 0, 0]), _v(h, [7, 0, 0]), 4, HANTEL, -0.4));
   }
   teile.sort((x, y) => y.d - x.d);
   // Boden: Kreis um die Figur, je nach Neigung flacher oder runder
@@ -10796,6 +10796,7 @@ function figSVG(e, t, blick, neigung, fein) {
   const box = [Infinity, Infinity, -Infinity, -Infinity];
   const rein = (x, y, r) => { box[0] = Math.min(box[0], x - r); box[1] = Math.min(box[1], y - r); box[2] = Math.max(box[2], x + r); box[3] = Math.max(box[3], y + r); };
   teile.forEach(p => {
+    if (p.kette) { p.kette.forEach(q => { rein(q.A[0], q.A[1], q.w / 2 + 3); rein(q.B[0], q.B[1], q.w / 2 + 3); }); return; }
     if (p.kreis) rein(p.kreis[0], p.kreis[1], p.r);
     else if (p.scheibe) rein(p.scheibe[0], p.scheibe[1], p.ry);
     else { rein(p.A[0], p.A[1], p.w / 2); rein(p.B[0], p.B[1], p.w / 2); }
@@ -10803,20 +10804,43 @@ function figSVG(e, t, blick, neigung, fein) {
   rein(B0[0], B0[1], 0);
   _figBox = box;
   const z = v => Math.round(v * 10) / 10;
-  let h = `<ellipse cx="${z(B0[0])}" cy="${z(B0[1])}" rx="78" ry="${z(bodenRy)}" fill="rgba(0,0,0,.1)"/>`;
-  for (const p of teile) {
-    if (p.kreis) h += p.umriss
-      ? `<circle cx="${z(p.kreis[0])}" cy="${z(p.kreis[1])}" r="${z(p.r)}" fill="${p.col}" stroke="#1a1a1a" stroke-width="${UMRISS / 2}"/>`
-      : `<circle cx="${z(p.kreis[0])}" cy="${z(p.kreis[1])}" r="${p.r}" fill="${p.col}"/>`;
-    else if (p.umriss) {
-      // Fuellung an INNEREN Stueckgrenzen 1.5 Einheiten verlaengert: sie deckt die gerade Kante der
-      // Kontur des Nachbarstuecks ab — sonst bliebe dort ein feiner Querstrich (Kantenglaettung).
-      const dx = p.B[0] - p.A[0], dy = p.B[1] - p.A[1], l = Math.hypot(dx, dy) || 1, ux = dx / l * 1.5, uy = dy / l * 1.5;
-      const a0 = p.innenA ? [p.A[0] - ux, p.A[1] - uy] : p.A, b0 = p.innenB ? [p.B[0] + ux, p.B[1] + uy] : p.B;
-      h += `<line x1="${z(p.A[0])}" y1="${z(p.A[1])}" x2="${z(p.B[0])}" y2="${z(p.B[1])}" stroke="#1a1a1a" stroke-width="${p.w + UMRISS}"/>`
-        + `<line x1="${z(a0[0])}" y1="${z(a0[1])}" x2="${z(b0[0])}" y2="${z(b0[1])}" stroke="${p.col}" stroke-width="${p.w}"/>`;
+  let h = '';
+  if (fein) {
+    // v606: Bodenraster (dreht und neigt sich mit) und dunklerer Schatten auf dem dunklen Grund
+    for (let i = -2; i <= 2; i++) {
+      const a1 = pr([i * 40, 0, -80]), b1 = pr([i * 40, 0, 80]), a2 = pr([-80, 0, i * 40]), b2 = pr([80, 0, i * 40]);
+      h += `<line x1="${z(a1[0])}" y1="${z(a1[1])}" x2="${z(b1[0])}" y2="${z(b1[1])}" stroke="rgba(255,255,255,.13)" stroke-width="1.2"/>`
+        + `<line x1="${z(a2[0])}" y1="${z(a2[1])}" x2="${z(b2[0])}" y2="${z(b2[1])}" stroke="rgba(255,255,255,.13)" stroke-width="1.2"/>`;
     }
-    else if (p.scheibe) h += `<ellipse cx="${z(p.scheibe[0])}" cy="${z(p.scheibe[1])}" rx="${z(p.rx)}" ry="${p.ry}" fill="#3a3a3a" stroke="#777" stroke-width="1.5"/>`;
+  }
+  h += `<ellipse cx="${z(B0[0])}" cy="${z(B0[1])}" rx="78" ry="${z(bodenRy)}" fill="rgba(0,0,0,${fein ? '.35' : '.1'})"/>`;
+  // Farbe aufhellen (t > 0) oder abdunkeln (t < 0)
+  const ton = (hex, t) => {
+    const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    const f = v => Math.round(t > 0 ? v + (255 - v) * t : v * (1 + t));
+    return `rgb(${f(r)},${f(g)},${f(b)})`;
+  };
+  const strich = (A, B, w, col, dx, dy) => `<line x1="${z(A[0] + dx)}" y1="${z(A[1] + dy)}" x2="${z(B[0] + dx)}" y2="${z(B[1] + dy)}" stroke="${col}" stroke-width="${z(w)}" stroke-linecap="round"/>`;
+  for (const p of teile) {
+    if (p.kette) {
+      // Kontur, Fuellung, Schatten (rechts unten), Licht (links oben) — je fuer die ganze Kette
+      const seite = q => { const dx = q.B[0] - q.A[0], dy = q.B[1] - q.A[1], l = Math.hypot(dx, dy) || 1;
+        let nx = -dy / l, ny = dx / l; if (nx * -0.7 + ny * -0.7 < 0) { nx = -nx; ny = -ny; } return [nx, ny]; };
+      p.kette.forEach(q => { h += strich(q.A, q.B, q.w + UMRISS, '#141414', 0, 0); });
+      p.kette.forEach(q => { h += strich(q.A, q.B, q.w, q.col, 0, 0); });
+      p.kette.forEach(q => { const [nx, ny] = seite(q); h += strich(q.A, q.B, q.w * 0.34, ton(q.col, -0.28), -nx * q.w * 0.27, -ny * q.w * 0.27); });
+      p.kette.forEach(q => { const [nx, ny] = seite(q); h += strich(q.A, q.B, q.w * 0.3, ton(q.col, 0.4), nx * q.w * 0.22, ny * q.w * 0.22); });
+      continue;
+    }
+    if (p.kreis && p.umriss) {
+      h += `<circle cx="${z(p.kreis[0])}" cy="${z(p.kreis[1])}" r="${z(p.r + UMRISS / 2)}" fill="#141414"/>`
+        + `<circle cx="${z(p.kreis[0])}" cy="${z(p.kreis[1])}" r="${p.r}" fill="${ton(p.col, -0.12)}"/>`
+        + `<circle cx="${z(p.kreis[0] - p.r * 0.18)}" cy="${z(p.kreis[1] - p.r * 0.18)}" r="${z(p.r * 0.78)}" fill="${p.col}"/>`
+        + `<circle cx="${z(p.kreis[0] - p.r * 0.34)}" cy="${z(p.kreis[1] - p.r * 0.34)}" r="${z(p.r * 0.34)}" fill="${ton(p.col, 0.45)}"/>`;
+      continue;
+    }
+    if (p.kreis) h += `<circle cx="${z(p.kreis[0])}" cy="${z(p.kreis[1])}" r="${p.r}" fill="${p.col}"/>`;
+    else if (p.scheibe) h += `<ellipse cx="${z(p.scheibe[0])}" cy="${z(p.scheibe[1])}" rx="${z(p.rx)}" ry="${p.ry}" fill="${fein ? '#4b5563' : '#3a3a3a'}" stroke="${fein ? '#b6bdc6' : '#777'}" stroke-width="1.5"/>`;
     else h += `<line x1="${z(p.A[0])}" y1="${z(p.A[1])}" x2="${z(p.B[0])}" y2="${z(p.B[1])}" stroke="${p.col}" stroke-width="${p.w}" stroke-linecap="round"/>`;
   }
   return h;
