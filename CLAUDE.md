@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v598**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v599**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -201,7 +201,7 @@ grep -n "fittrack-v" sw.js
   `#modal-figur` (groß, Ziehen dreht um die senkrechte Achse, Knöpfe Vorne/Seite/Hinten).
   Stil „Gliederpuppe“ (graue runde Glieder), trainierte Abschnitte in den `MUSCLE_META`-Farben,
   Hantel/Gerät und Umgebung (Bank, Stange, Barren, Polster, Fußplatte) mitgezeichnet.
-- KEINE Bilddateien: `FIG_BEWEGUNG` = 27 Bewegungsmuster mit 2–3 Stellungen in 3D (`f(opt)`),
+- KEINE Bilddateien: `FIG_BEWEGUNG` = 38 Bewegungsmuster (seit v599) mit 2–3 Stellungen in 3D (`f(opt)`),
   gezeichnet live in `figSVG` (Projektion, Tiefensortierung); `_figAusschnitt` schneidet das Bild
   zu (klein: um alle Stellungen; Blatt: um alle Drehungen). Standardübungen über `FIG_STANDARD`,
   eigene über `ex.bewegung`/`ex.geraet`/`ex.bank` (Dialog „Übung bearbeiten“, Vorschlag aus dem
@@ -215,6 +215,9 @@ grep -n "fittrack-v" sw.js
   bei der Beinpresse. Kabelrolle wählbar (`ex.kabel` oben/mitte/unten, nur gespeichert, wenn sie
   von der natürlichen Höhe abweicht, `_figKabelStandard`), einarmig bei Mustern mit `einarm`
   (`ex.einarmig`; linker Arm hängt, nur rechte Hand trägt Gerät).
+- Seit v599: Ausführungsvarianten je Muster (`varianten`, `ex.variante`, Dialogfeld „Ausführung“;
+  bisher Latzug vor die Brust / hinter den Kopf), Seitlage über `rolle` (Seitstütz: Stellung
+  bauchab bauen, dann um die Längsachse gerollt), `nurRechts` (Seitbeugen: Gerät nur rechts).
 
 ### Sicherung
 - Drive (`driveSync`, `collectLocalData`/`driveApplyCloudData`, Format version 4). Token-Anfragen
@@ -735,3 +738,12 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Ansichtsknöpfe passen in eine Zeile; Dialog „Einarmiger Kabel Curl“ → Curl · Kabelzug, Felder
   Kabel/Einarmig sichtbar, Bank verborgen, gespeichert mit `einarmig`; keine Konsolenfehler.
   NICHT gesehen: iPhone.
+- **v599 (27.11.2026, Leonard-Wunsch):** Neue Bewegungen: Rückenstrecker, Reverse Flies,
+  Preacher Curl, Skull Crusher, Beinheben hängend, Decline Crunch, Klappmesser, Seitbeugen
+  (Kurzhantel/Kabel/…), Bicycle Crunch, Seitstütz, Bulgarian Split Squat; Latzug mit Ausführung
+  „Vor die Brust“/„Hinter den Kopf“, Turm jetzt VOR der Figur. Namensvorschläge für alle
+  (23 Testnamen richtig, u. a. „Latzug hinter dem Nacken“ → hinter, „French Press“ → Skull
+  Crusher, „Seitbeugen Kabelzug“ → Kabel). GEMESSEN: Start/Ende aller 14 neuen Fälle im Raster,
+  Seitstütz aus 4 Richtungen (Start 300°); Dialog Latzug → Feld „Ausführung“ mit 2 Optionen,
+  „hinter“ gespeichert, Blatt „Latzug sitzend · Kabelzug · Hinter den Kopf“; keine
+  Konsolenfehler. NICHT gesehen: iPhone.
