@@ -10562,7 +10562,7 @@ const FIG_BEWEGUNG = {
     },
     p: () => [{ typ: 'bank', a: [0, -4, -56], b: [0, -66, 16] }, { typ: 'polster', p: [-10, -70, 16] }, { typ: 'polster', p: [10, -70, 16] },
               { typ: 'polster', p: [-9, -12, -40] }, { typ: 'polster', p: [9, -12, -40] }] },
-  reverse_flies: { einarm: true, t: 'Reverse Flies vorgebeugt', gr: 'Rücken', g: 'kurzhanteln', blick: 25, m: { schulter: 'shoulders', torso: 'back' },
+  reverse_flies: { einarm: true, t: 'Reverse Flies vorgebeugt', gr: 'Schultern',   /* v607: Gruppe Schultern (Leonard-Wunsch) */ g: 'kurzhanteln', blick: 25, m: { schulter: 'shoulders', torso: 'back' },
     f: () => {
       const s = { becken: [0, -88, -20], hals: [0, -108, 30], kn: [12, -48, 6] };
       return [_fig({ ...s, ell: [24, -84, 34], han: [22, -60, 36] }), _fig({ ...s, ell: [44, -106, 32], han: [68, -110, 34] })];

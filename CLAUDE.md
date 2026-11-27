@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v606**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v607**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -799,3 +799,6 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Architektur). Die Einzelglied-Kontur aus v605 (Ringe an jedem Gelenk) ist ersetzt. GEMESSEN:
   Kreuzheben von vorne, Bankdrücken 250°, Curl 25° in der Vollansicht; kleine Vorschauen mit
   Kontur; Blatt auf dem simulierten iPhone; keine Konsolenfehler. NICHT gesehen: iPhone.
+- **v607 (27.11.2026, Leonard-Wunsch):** „Reverse Flies vorgebeugt“ gehört zur Gruppe Schultern
+  (vorher Rücken). GEMESSEN: Muskelgruppe Schultern → 6 Bewegungen inkl. Reverse Flies; Rücken → 7
+  ohne; Name „Reverse Flies“ bei Muskelgruppe Rücken → unter „Gewählt“; keine Konsolenfehler.
