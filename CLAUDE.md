@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v599**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v600**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -218,6 +218,10 @@ grep -n "fittrack-v" sw.js
 - Seit v599: Ausführungsvarianten je Muster (`varianten`, `ex.variante`, Dialogfeld „Ausführung“;
   bisher Latzug vor die Brust / hinter den Kopf), Seitlage über `rolle` (Seitstütz: Stellung
   bauchab bauen, dann um die Längsachse gerollt), `nurRechts` (Seitbeugen: Gerät nur rechts).
+- Seit v600: Bewegungsliste im Dialog nach Muskelgruppe gefiltert (`_figBewegungsListe`: Muster der
+  Gruppe oder Muster, die den Muskel einfärben; bei Bizeps/Trizeps nur Letzteres; eine gewählte
+  Bewegung außerhalb steht unter „Gewählt“). Waagerechtes Ziehen dreht gespiegelt (nach rechts
+  ziehen = Blickwinkel steigt). Bewegungsnamen ohne Klammerzusätze.
 
 ### Sicherung
 - Drive (`driveSync`, `collectLocalData`/`driveApplyCloudData`, Format version 4). Token-Anfragen
@@ -747,3 +751,9 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Seitstütz aus 4 Richtungen (Start 300°); Dialog Latzug → Feld „Ausführung“ mit 2 Optionen,
   „hinter“ gespeichert, Blatt „Latzug sitzend · Kabelzug · Hinter den Kopf“; keine
   Konsolenfehler. NICHT gesehen: iPhone.
+- **v600 (27.11.2026, Leonard-Wunsch):** Bewegungsnamen ohne Klammern (Rückenstrecker, Preacher
+  Curl, Klappmesser, Seitstütz); Liste der Bewegungen im Dialog nach Muskelgruppe gefiltert;
+  waagerechtes Drehen gespiegelt. GEMESSEN: Bizeps → Curl, Preacher Curl + Klimmzug, Latzug,
+  2× Rudern; Trizeps → Drücken liegend, Drücken über Kopf, Pushdown, Trizeps über Kopf, Dips,
+  Skull Crusher; Bauch → 8 Bauchbewegungen; „Hammer Curl“ bei Muskelgruppe Brust → Curl unter
+  „Gewählt“; 0 Namen mit Klammern; Ziehen 50px nach rechts → 65° → 110°; keine Konsolenfehler.

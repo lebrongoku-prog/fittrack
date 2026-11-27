@@ -10540,7 +10540,7 @@ const FIG_BEWEGUNG = {
       return [_fig({ ...s, becken: [0, -24, 10] }), _fig({ ...s, becken: [0, -30, 10] })];
     } },
   // ── v599 (Leonard-Wunsch) ──────────────────────────────────────────────────────────
-  rueckenstrecker: { t: 'Rückenstrecker (Back Extension)', gr: 'Rücken', g: 'koerper', blick: 80, m: { torso: 'back', oberschenkel: 'legs' },
+  rueckenstrecker: { t: 'Rückenstrecker', gr: 'Rücken', g: 'koerper', blick: 80, m: { torso: 'back', oberschenkel: 'legs' },
     f: () => {
       const s = { becken: [0, -75, 8], kn: [12, -40, -18], fu: [13, -8, -45] };
       const arme = h => ({ hals: h, ell: _v(h, [24, 6, 6]), han: _v(h, [10, -8, 4]) });
@@ -10553,7 +10553,7 @@ const FIG_BEWEGUNG = {
       const s = { becken: [0, -88, -20], hals: [0, -108, 30], kn: [12, -48, 6] };
       return [_fig({ ...s, ell: [24, -84, 34], han: [22, -60, 36] }), _fig({ ...s, ell: [44, -106, 32], han: [68, -110, 34] })];
     } },
-  preacher_curl: { einarm: true, t: 'Preacher Curl (Scottbank)', gr: 'Arme', g: 'langhantel', blick: 70, m: { oberarm: 'biceps' },
+  preacher_curl: { einarm: true, t: 'Preacher Curl', gr: 'Arme', g: 'langhantel', blick: 70, m: { oberarm: 'biceps' },
     f: () => {
       const s = { becken: [0, -55, 0], hals: [0, -108, 10], kn: [12, -55, 42], fu: [13, 0, 46], ell: [20, -100, 40] };
       return [_fig({ ...s, han: [20, -82, 62] }), _fig({ ...s, han: [20, -112, 64] }), _fig({ ...s, han: [20, -125, 48] })];
@@ -10574,7 +10574,7 @@ const FIG_BEWEGUNG = {
       return [_fig({ ...s, ...arme([0, -34, -48]) }), _fig({ ...s, ...arme([0, -110, -10]) })];
     },
     p: () => [{ typ: 'bank', a: [0, -75, 55], b: [0, -28, -62] }, { typ: 'polster', p: [-9, -80, 66] }, { typ: 'polster', p: [9, -80, 66] }] },
-  klappmesser: { t: 'Klappmesser (Jackknife)', gr: 'Bauch', g: 'koerper', blick: 80, m: { torso: 'core', oberschenkel: 'core' },
+  klappmesser: { t: 'Klappmesser', gr: 'Bauch', g: 'koerper', blick: 80, m: { torso: 'core', oberschenkel: 'core' },
     f: () => [_fig({ becken: [0, -10, 0], hals: [0, -10, -55], ell: [22, -12, -80], han: [20, -14, -105], kn: [12, -10, 45], fu: [13, -10, 95] }),
               _fig({ becken: [0, -10, 0], hals: [0, -48, -40], ell: [22, -72, -22], han: [20, -88, 2], kn: [12, -42, 30], fu: [13, -75, 62] })] },
   seitbeugen: { t: 'Seitbeugen', gr: 'Bauch', g: 'kurzhanteln', blick: 10, nurRechts: true, m: { torso: 'core' },
@@ -10593,7 +10593,7 @@ const FIG_BEWEGUNG = {
       return [_fig({ ...s, ...arme([8, -32, -46]), ...beinR }), _fig({ ...s, ...arme([0, -28, -48]), knL: [-12, -30, 38], fuL: [-13, -28, 80], knR: [12, -30, 38], fuR: [13, -28, 80] }),
               _fig({ ...s, ...arme([-8, -32, -46]), ...beinL })];
     } },
-  seitstuetz: { t: 'Seitstütz (Side Plank)', gr: 'Bauch', g: 'koerper', blick: 300, rolle: -46, m: { torso: 'core' },
+  seitstuetz: { t: 'Seitstütz', gr: 'Bauch', g: 'koerper', blick: 300, rolle: -46, m: { torso: 'core' },
     f: () => {
       const s = { hals: [0, -46, -45], knL: [14, -46, 50], fuL: [26, -46, 95], knR: [34, -46, 50], fuR: [46, -46, 95],
                   ellR: [46, -46, -45], hanR: [46, -22, -45], ellL: [-14, -40, -22], hanL: [6, -46, 5] };
@@ -10942,7 +10942,7 @@ function _figDrehenEinrichten(svg) {
   });
   svg.addEventListener('pointermove', e => {
     if (!start) return;
-    svg._figBlick = ((start.b - (e.clientX - start.x) * 0.9) % 360 + 360) % 360;
+    svg._figBlick = ((start.b + (e.clientX - start.x) * 0.9) % 360 + 360) % 360;   // v600: gespiegelt (Leonard-Wunsch)
     svg._figNeigung = Math.max(-89, Math.min(89, start.n + (e.clientY - start.y) * 0.6));
     _figZeichnen(svg);
   });
@@ -10954,23 +10954,39 @@ function _figDrehenEinrichten(svg) {
 // ── Dialog „Neue Übung" / „Übung bearbeiten": Bewegung, Gerät, Bank ───────────────────────
 let _figWahlManuell = false;
 function figDialogFuellen(ex) {
-  const sel = document.getElementById('new-ex-bewegung');
-  if (sel && !sel.options.length) {
-    const gruppen = {};
-    Object.entries(FIG_BEWEGUNG).forEach(([id, b]) => { if (b.gr) (gruppen[b.gr] = gruppen[b.gr] || []).push([id, b.t]); });
-    sel.innerHTML = '<option value="">Noch nicht gewählt</option>' + Object.entries(gruppen).map(([g, l]) =>
-      `<optgroup label="${g}">${l.map(([id, t]) => `<option value="${id}">${t}</option>`).join('')}</optgroup>`).join('');
-    const gs = document.getElementById('new-ex-geraet');
-    gs.innerHTML = Object.entries(FIG_GERAETE).map(([id, t]) => `<option value="${id}">${t}</option>`).join('');
-  }
+  const gs = document.getElementById('new-ex-geraet');
+  if (gs && !gs.options.length) gs.innerHTML = Object.entries(FIG_GERAETE).map(([id, t]) => `<option value="${id}">${t}</option>`).join('');
   const e = ex ? figEinstellung(ex) : { bewegung: null, geraet: 'koerper', bank: 'flach' };
   _figWahlManuell = !!(ex && e.bewegung);
+  _figBewegungsListe(e.bewegung);
   document.getElementById('new-ex-bewegung').value = e.bewegung || '';
   document.getElementById('new-ex-geraet').value = e.geraet || 'koerper';
   document.getElementById('new-ex-bank').value = e.bank || 'flach';
   document.getElementById('new-ex-einarm').value = e.einarmig ? '1' : '';
   _figVariantenFuellen(e.bewegung, e.variante);
   document.getElementById('new-ex-kabel').value = e.kabel || _figKabelStandard(e.bewegung);
+  figDialogVorschau();
+}
+// v600 (Leonard-Wunsch): Die Liste der Bewegungen zeigt nur, was zur gewaehlten Muskelgruppe passt —
+// Muster derselben Gruppe ODER Muster, die diese Muskelgruppe einfaerben (Bizeps → Curl, Klimmzug …).
+// Eine schon gewaehlte Bewegung ausserhalb des Filters bleibt oben unter „Gewählt" stehen.
+const FIG_MUSKEL_GRUPPE = { chest: 'Brust', back: 'Rücken', shoulders: 'Schultern', biceps: 'Arme', triceps: 'Arme', legs: 'Beine', core: 'Bauch' };
+function _figBewegungsListe(aktuell) {
+  const sel = document.getElementById('new-ex-bewegung');
+  const m = document.getElementById('new-ex-muscle').value;
+  // Bizeps und Trizeps teilen sich die Gruppe „Arme" — dort zaehlt nur, welcher Muskel eingefaerbt ist.
+  const nurMuskel = m === 'biceps' || m === 'triceps';
+  const passt = b => b.gr && (Object.values(b.m).includes(m) || (!nurMuskel && b.gr === FIG_MUSKEL_GRUPPE[m]));
+  const gruppen = {};
+  Object.entries(FIG_BEWEGUNG).forEach(([id, b]) => { if (passt(b)) (gruppen[b.gr] = gruppen[b.gr] || []).push([id, b.t]); });
+  const extra = aktuell && FIG_BEWEGUNG[aktuell] && !passt(FIG_BEWEGUNG[aktuell])
+    ? `<optgroup label="Gewählt"><option value="${aktuell}">${FIG_BEWEGUNG[aktuell].t}</option></optgroup>` : '';
+  sel.innerHTML = '<option value="">Noch nicht gewählt</option>' + extra + Object.entries(gruppen).map(([g, l]) =>
+    `<optgroup label="${g}">${l.map(([id, t]) => `<option value="${id}">${t}</option>`).join('')}</optgroup>`).join('');
+  sel.value = aktuell || '';
+}
+function figDialogMuskel() {
+  _figBewegungsListe(document.getElementById('new-ex-bewegung').value || null);
   figDialogVorschau();
 }
 // v599: Ausfuehrungsvarianten eines Musters (z. B. Latzug vor die Brust / hinter den Kopf)
@@ -10988,7 +11004,7 @@ function _figKabelStandard(b) {
 function figDialogName() {
   if (_figWahlManuell) return;
   const v = figBewegungVorschlag(document.getElementById('new-ex-name').value);
-  document.getElementById('new-ex-bewegung').value = v.bewegung || '';
+  _figBewegungsListe(v.bewegung);
   if (v.geraet) document.getElementById('new-ex-geraet').value = v.geraet;
   if (v.bank) document.getElementById('new-ex-bank').value = v.bank;
   _figVariantenFuellen(v.bewegung, v.variante);
