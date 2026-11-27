@@ -4572,7 +4572,7 @@ input, select, textarea { font-size: calc(19px / var(--skala)) !important; }
 .figur-legende span { display: inline-flex; align-items: center; gap: 6px; }
 .figur-legende i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 .figur-ansichten { display: flex; gap: 8px; margin-bottom: 12px; }
-.figur-ansichten .btn { flex: 1; }
+.figur-ansichten .btn { flex: 1; min-width: 0; padding-left: 4px; padding-right: 4px; }   /* v598: vier Knöpfe passen in eine Zeile */
 .fig-wahl { display: flex; gap: 10px; align-items: stretch; }
 .fig-vorschau { width: 92px; flex: none; min-height: 110px; background: var(--card2); border-radius: 12px; }
 .fig-wahl-felder { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }

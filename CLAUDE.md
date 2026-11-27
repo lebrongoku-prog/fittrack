@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v597**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v598**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -208,6 +208,13 @@ grep -n "fittrack-v" sw.js
   Namen `figBewegungVorschlag`, `figDialog*`). Ohne Muster: neutrale Figur + „Bewegung wählen“.
 - EINE Animationsschleife (`_figSchleife`, ~30 fps), läuft nur solange Katalog, Blatt oder Dialog
   offen sind, zeichnet nur sichtbare Figuren (IntersectionObserver).
+- Seit v598: Drehen in alle Richtungen (waagerecht = Drehung, senkrecht = Neigung ±89°,
+  `figSVG(e, t, blick, neigung)`), Knöpfe Vorne/Seite/Hinten/Oben; im Blatt dreht sich die Figur
+  von selbst im Uhrzeigersinn (12°/s, steht beim Festhalten). Gewichtsturm mit sich hebendem
+  Block bei Kabelzug und Maschinen, Hebel mit Polster bei Beinstrecker/-beuger, Schlitten-Schienen
+  bei der Beinpresse. Kabelrolle wählbar (`ex.kabel` oben/mitte/unten, nur gespeichert, wenn sie
+  von der natürlichen Höhe abweicht, `_figKabelStandard`), einarmig bei Mustern mit `einarm`
+  (`ex.einarmig`; linker Arm hängt, nur rechte Hand trägt Gerät).
 
 ### Sicherung
 - Drive (`driveSync`, `collectLocalData`/`driveApplyCloudData`, Format version 4). Token-Anfragen
@@ -718,3 +725,13 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   keine Bewegung, Blatt zeigt neutrale Figur (Bauch violett) und „Bewegung wählen“; Schleife
   stoppt nach dem Verlassen des Katalogs; keine Konsolenfehler. NICHT gesehen: iPhone (Ziehen mit
   dem Finger, Flüssigkeit der Animation).
+- **v598 (27.11.2026, Leonard-Wünsche):** Strichmännchen: Drehen in alle Richtungen, Selbstdrehung
+  im Uhrzeigersinn im Blatt, Maschinen bewegen sich mit, Kabelzug oben/Mitte/unten wählbar,
+  einarmig bei Armübungen (siehe Architektur). GEMESSEN: 16 Fälle im Raster (Pushdown, Latzug,
+  Kabelrudern, Kabel-Fly oben/unten/Mitte, Kabel-Curl unten, Curl einarmig, Seitheben einarmig am
+  Kabel, Beinpresse, Beinstrecker, Beinbeuger, Schulterpresse Maschine, Blick von oben/unten,
+  Face Pull) — Turm, Block hebt sich am Ende, Hebel schwenken; Blatt: Selbstdrehung 30.8° → 23.0°
+  in 1.5 s (verdeckte Ansicht), steht beim Festhalten, Ziehen nach unten → Neigung 67°, vier
+  Ansichtsknöpfe passen in eine Zeile; Dialog „Einarmiger Kabel Curl“ → Curl · Kabelzug, Felder
+  Kabel/Einarmig sichtbar, Bank verborgen, gespeichert mit `einarmig`; keine Konsolenfehler.
+  NICHT gesehen: iPhone.

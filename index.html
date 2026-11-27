@@ -696,6 +696,15 @@
               <option value="schraeg">Bank schräg</option>
               <option value="negativ">Bank negativ</option>
             </select>
+            <select class="form-select" id="new-ex-kabel" onchange="figDialogVorschau()">
+              <option value="oben">Kabelzug oben</option>
+              <option value="mitte">Kabelzug Mitte</option>
+              <option value="unten">Kabelzug unten</option>
+            </select>
+            <select class="form-select" id="new-ex-einarm" onchange="figDialogVorschau()">
+              <option value="">Beidarmig</option>
+              <option value="1">Einarmig</option>
+            </select>
           </div>
         </div>
       </div>
@@ -723,6 +732,7 @@
         <button class="btn btn-ghost" onclick="figurAnsicht(0)">Vorne</button>
         <button class="btn btn-ghost" onclick="figurAnsicht(90)">Seite</button>
         <button class="btn btn-ghost" onclick="figurAnsicht(180)">Hinten</button>
+        <button class="btn btn-ghost" onclick="figurAnsicht(0, 80)">Oben</button>
       </div>
       <button class="btn btn-primary btn-full" id="figur-waehlen" onclick="figurBewegungWaehlen()">Bewegung wählen</button>
     </div>
