@@ -11353,6 +11353,7 @@ function editExerciseFromCatalog(id) {
   document.getElementById('new-ex-assisted').checked = !!ex.assisted;   // v537
   figDialogFuellen(ex);   // v597: Bewegung, Geraet, Bank
   document.querySelector('#modal-new-ex .sheet-title').textContent = 'Übung bearbeiten';
+  document.getElementById('new-ex-speichern').textContent = 'Speichern';   // v603
   openModal('modal-new-ex');
 }
 
@@ -11606,6 +11607,7 @@ function openNewExModal(context) {
   figDialogFuellen(null);   // v597
   const titleEl = document.querySelector('#modal-new-ex .sheet-title');
   if (titleEl) titleEl.textContent = 'Neue Übung erstellen';
+  document.getElementById('new-ex-speichern').textContent = 'Übung erstellen';   // v603
   openModal('modal-new-ex');
 }
 

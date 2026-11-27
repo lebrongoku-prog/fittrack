@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v602**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v603**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -774,3 +774,7 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   fremde Gruppen auf, die den Muskel nur mit einfärben. Jetzt nur noch die eigene Gruppe.
   GEMESSEN: alle 7 Muskelgruppen → je genau eine Gruppe in der Liste (Rücken 8, Brust 3,
   Schultern 5, Bizeps 2, Trizeps 4, Beine 9, Bauch 8); keine Konsolenfehler.
+- **v603 (27.11.2026, Leonard-Wunsch):** Dialog „Übung bearbeiten“: Knopf heißt „Speichern“ statt
+  „Übung erstellen“ (`#new-ex-speichern`, gesetzt in `editExerciseFromCatalog` / `openNewExModal`).
+  GEMESSEN: Bearbeiten → „Übung bearbeiten / Speichern“, Neu → „Neue Übung erstellen / Übung
+  erstellen“, erneut Bearbeiten → „Speichern“; keine Konsolenfehler.
