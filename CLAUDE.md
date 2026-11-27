@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v592**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v593**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -218,7 +218,8 @@ grep -n "fittrack-v" sw.js
 - Knöpfe oben rechts im Plan-Tab: Gymplan → Hantel (Gymtage), Liste (Übungen), Säulen (Stats),
   Archiv, „+"; Laufplan → Stern (Favoriten), Pokal (Wettkämpfe), Archiv, „+". Archiv-Knopf nur, wenn
   es Archiviertes gibt (`ARCHIV_SEITEN`, `syncPlansArchivBtn`).
-- **Seitenschalter unten** (`#seitenleiste`, `SEITEN_LEISTE`): aktiv/passiv (70 %, 50 % Deckkraft),
+- **Seitenschalter unten** (`#seitenleiste`, `SEITEN_LEISTE`): nie über einer offenen Vollbildseite (v593,
+  `seitenleisteAktualisieren` prüft die sichtbare Seite); aktiv/passiv (70 %, 50 % Deckkraft),
   passiv beim Scrollen, Tabwechsel oder Tipp daneben; schaltet an der 50-%-Schwelle des Wischs um.
 - **Bottom-Nav**: startet eingeklappt, jeder Tabwechsel blendet sie aus, Scrollen nur aus; zurück
   nur per Tipp auf den blanken Tab-Hintergrund.
@@ -653,3 +654,15 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Bildschirm (Original), seitlich 1px statt 2px Innenabstand, Lücke 2px. GEMESSEN (Preset
   mobile): 7 Chips in 1 Zeile, keiner gekürzt („Schultern“ 49/49), bündig mit dem Namensfeld
   (0/0), Chip 33.4 hoch; keine Konsolenfehler.
+- **v593 (27.11.2026, Leonard-Meldung):** Im Querformat erschien der Seitenschalter über Gym-/
+  Laufplan-Detail. Ursache: Beim Drehen ändert sich die Breite von `#tab-container`, sein
+  Scroll-Ereignis meldet den Tab darunter (bzw. durch die neue Breite einen anderen) und
+  `seitenleisteAktualisieren` blendete den Schalter ein. Jetzt blendet sie ihn aus, solange
+  eine Vollbildseite aus `OVERLAY_SCREENS` sichtbar ist (am Scroll-Handler selbst NICHTS
+  geändert). GEMESSEN: echtes Drehen 957 → 500 → 957px mit offenem Gymplan-Detail → Schalter aus;
+  nachgestelltes Dreh-Ereignis für alle 9 Vollbildseiten (Plan-, Laufplan-, Gymtag-Detail,
+  Gymtage, Übungen, Stats, Wettkämpfe, Favoriten, Einstellungen) → überall aus; nach dem
+  Schließen auf dem Plan-Tab wieder sichtbar; keine Konsolenfehler. OFFEN: Dasselbe Ereignis
+  setzt weiterhin `currentScreen` und das Tab-Theme auf den Tab darunter (Einstellungen könnten
+  nach dem Drehen die Hintergrundfarbe wechseln) — Behebung läge im Scroll-Handler, nur mit
+  iPhone-Gegenprüfung.

@@ -12352,7 +12352,14 @@ function seitenleisteAktualisieren(ziel) {
   const el = document.getElementById('seitenleiste');
   if (!el) return;
   const tabName = ziel || currentScreen;
-  const tab = SEITEN_LEISTE[tabName];
+  // v593 (Leonard-Meldung): Solange eine Vollbildseite offen ist, gibt es KEINEN Seitenschalter.
+  // Beim Drehen des Geraets aendert sich die Breite von `#tab-container`; dessen Scroll-Ereignis
+  // meldet dann den Tab DARUNTER (z. B. „plans") und rief hierher — der Schalter erschien
+  // ueber der Plan-Detailansicht. Geprueft wird die SICHTBARE Seite, nicht `currentScreen`.
+  const vollbildOffen = Object.values(OVERLAY_SCREENS).some(id => {
+    const o = document.getElementById(id); return !!(o && o.classList.contains('active'));
+  });
+  const tab = vollbildOffen ? null : SEITEN_LEISTE[tabName];
 
   // AUF- UND ABTAUCHEN am unteren Bildschirmrand (Leonard-Wunsch 08.09.2026). Nur beim
   // UEBERGANG zwischen „Tab ohne Leiste" und „Tab mit Leiste" — zwischen zwei Tabs MIT
