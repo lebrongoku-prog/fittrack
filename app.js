@@ -12348,6 +12348,13 @@ function seitenleisteBauen() {
 // `ziel` (21.09.2026): Beim WISCH laeuft sie schon an der 50-%-Schwelle, wenn `currentScreen`
 // noch der alte Tab ist (gesetzt wird er erst beim Einrasten) — der Scroll-Handler nennt den
 // kommenden Tab deshalb ausdruecklich. Ohne Angabe gilt `currentScreen`.
+// Ist gerade eine Vollbildseite (`OVERLAY_SCREENS`) sichtbar? Geprueft wird die SICHTBARE Seite,
+// nicht `currentScreen` (v593/v594).
+function _vollbildOffen() {
+  return Object.values(OVERLAY_SCREENS).some(id => {
+    const o = document.getElementById(id); return !!(o && o.classList.contains('active'));
+  });
+}
 function seitenleisteAktualisieren(ziel) {
   const el = document.getElementById('seitenleiste');
   if (!el) return;
@@ -12356,10 +12363,7 @@ function seitenleisteAktualisieren(ziel) {
   // Beim Drehen des Geraets aendert sich die Breite von `#tab-container`; dessen Scroll-Ereignis
   // meldet dann den Tab DARUNTER (z. B. „plans") und rief hierher — der Schalter erschien
   // ueber der Plan-Detailansicht. Geprueft wird die SICHTBARE Seite, nicht `currentScreen`.
-  const vollbildOffen = Object.values(OVERLAY_SCREENS).some(id => {
-    const o = document.getElementById(id); return !!(o && o.classList.contains('active'));
-  });
-  const tab = vollbildOffen ? null : SEITEN_LEISTE[tabName];
+  const tab = _vollbildOffen() ? null : SEITEN_LEISTE[tabName];
 
   // AUF- UND ABTAUCHEN am unteren Bildschirmrand (Leonard-Wunsch 08.09.2026). Nur beim
   // UEBERGANG zwischen „Tab ohne Leiste" und „Tab mit Leiste" — zwischen zwei Tabs MIT
@@ -12634,6 +12638,14 @@ function initTabScrollSync() {
     requestAnimationFrame(() => {
       ticking = false;
       if (_suppressScrollSync) return; // Race-Schutz: Commit kam zwischen Event und Frame
+      // v594 (Leonard-Auftrag, mit iPhone-Gegenpruefung): Liegt eine Vollbildseite darueber, kann
+      // niemand die Tabs wischen. Ein Scroll-Ereignis entsteht dann nur durch das DREHEN des
+      // Geraets (neue Breite von `#tab-container`) und meldete den Tab darunter — oder durch die
+      // neue Breite sogar einen anderen. Es setzte `currentScreen`, Theme (Hintergrundfarbe der
+      // Einstellungen!) und Seitenschalter falsch. Deshalb hier NICHTS tun; beim Schliessen
+      // stellt `showScreen` den Tab-Container ohnehin neu ein.
+      // ZURUECKNEHMEN: diese eine Zeile entfernen.
+      if (_vollbildOffen()) return;
       const w = container.clientWidth;
       if (w <= 0) return;
       // a) Hintergrund-Crossfade fingergebunden pro Frame mitfuehren.

@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v593**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v594**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -233,7 +233,9 @@ grep -n "fittrack-v" sw.js
 Ohne Gegenprüfung auf dem iPhone nichts an Tab-Wisch, Scroll-Snap oder dem Scroll-Handler von
 `initTabScrollSync` ändern. Das Loslassen selbst zu führen ist ZWEIMAL gescheitert (08.09.2026) —
 nicht ein drittes Mal versuchen. `#tab-container` trägt `-webkit-overflow-scrolling: auto`.
-Wischen ist auf diesem Rechner nicht prüfbar. Scrollbereiche in Karten (Kalender, Wochenkarten)
+Wischen ist auf diesem Rechner nicht prüfbar. Einzige Änderung seit dem 08.09.2026: v594 — der Scroll-Handler tut
+nichts, solange eine Vollbildseite sichtbar ist (`_vollbildOffen()`, eine Zeile, auf Leonards
+Auftrag; iPhone-Gegenprüfung durch Leonard ausstehend/siehe Protokoll). Scrollbereiche in Karten (Kalender, Wochenkarten)
 brauchen `overscroll-behavior-x: contain`, keinen `transform` am Vorfahren (bricht die Geste auf
 iOS ab) und das unsichtbare sticky Kind `.cal-sticky-anchor`.
 
@@ -666,3 +668,12 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   setzt weiterhin `currentScreen` und das Tab-Theme auf den Tab darunter (Einstellungen könnten
   nach dem Drehen die Hintergrundfarbe wechseln) — Behebung läge im Scroll-Handler, nur mit
   iPhone-Gegenprüfung.
+- **v594 (27.11.2026, Leonard-Auftrag „mit iPhone-Test“):** Ursache aus v593 behoben: Der
+  Scroll-Handler von `initTabScrollSync` kehrt sofort zurück, solange eine Vollbildseite sichtbar
+  ist (`_vollbildOffen()`, auch von `seitenleisteAktualisieren` genutzt). Beim Drehen bleiben
+  `currentScreen`, Theme und Seitenschalter jetzt unverändert. GEMESSEN: nachgestelltes Drehen
+  (Scroll auf Tab 0/1/2) bei allen 9 Vollbildseiten → `currentScreen` = Vollbildseite, Theme
+  unverändert, Schalter aus; nach dem Schließen Tab, Theme, Scrollposition (1914 = 2 × 957)
+  und Schalter korrekt; Gymtag-Detail über Gymtage schließt zurück auf Gymtage; echtes Drehen
+  957 → 500 → 957px: bleibt „plan-detail“; normales Wischen ohne Vollbildseite wechselt weiter
+  Tab, Theme und Schalter; keine Konsolenfehler. NICHT gesehen: Wischen und Drehen auf dem iPhone.
