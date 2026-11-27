@@ -10538,6 +10538,13 @@ const FIG_BEWEGUNG = {
       const s = { hals: [0, -30, -45], ell: [16, -3, -44], han: [10, -3, -70], kn: [12, -14, 52], fu: [13, -3, 95] };
       return [_fig({ ...s, becken: [0, -24, 10] }), _fig({ ...s, becken: [0, -30, 10] })];
     } },
+  // v604 (Leonard-Wunsch): Curl auf der Schrägbank — Rumpf 45° zurückgelehnt, Arme hängen senkrecht
+  schraeg_curl: { einarm: true, t: 'Curl auf der Schrägbank', gr: 'Arme', g: 'kurzhanteln', blick: 75, m: { oberarm: 'biceps' },
+    f: () => {
+      const s = { becken: [0, -55, 0], hals: [0, -94, -39], ell: [22, -66, -37], kn: [13, -55, 42], fu: [14, 0, 46] };
+      return [_fig({ ...s, han: [22, -40, -35] }), _fig({ ...s, han: [22, -66, -11] }), _fig({ ...s, han: [22, -90, -26] })];
+    },
+    p: () => [{ typ: 'bank', a: [0, -47, -6], b: [0, -47, 22] }, { typ: 'bank', a: [0, -50, -8], b: [0, -98, -52] }] },
   // v601 (Leonard-Wunsch): Kurzhantel-Rudern einarmig, linkes Knie und linke Hand auf der Bank
   kh_rudern: { t: 'Kurzhantel-Rudern einarmig', gr: 'Rücken', g: 'kurzhanteln', blick: 290, nurRechts: true, m: { torso: 'back', oberarm: 'biceps' },
     f: () => {
@@ -10814,6 +10821,7 @@ function figBewegungVorschlag(name) {
   if (hat('reverse fl', 'reverse butterfly', 'rear delt', 'reverse-fl', 'umgekehrte')) b = 'reverse_flies';
   else if (hat('back extension', 'rückenstreck', 'hyperext', 'rumpfheb')) b = 'rueckenstrecker';
   else if (hat('preacher', 'scott')) b = 'preacher_curl';
+  else if (hat('curl') && hat('incline', 'schräg')) b = 'schraeg_curl';
   else if (hat('skull', 'french', 'stirndrück')) b = 'skull_crusher';
   else if (hat('leg raise', 'beinheb', 'knee raise', 'knieheb')) b = 'beinheben_haengend';
   else if (hat('decline') && hat('crunch', 'sit')) b = 'decline_crunch';

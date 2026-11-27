@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v603**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v604**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -201,7 +201,7 @@ grep -n "fittrack-v" sw.js
   `#modal-figur` (groß, Ziehen dreht; seit v601 ohne Ansichtsknöpfe).
   Stil „Gliederpuppe“ (graue runde Glieder), trainierte Abschnitte in den `MUSCLE_META`-Farben,
   Hantel/Gerät und Umgebung (Bank, Stange, Barren, Polster, Fußplatte) mitgezeichnet.
-- KEINE Bilddateien: `FIG_BEWEGUNG` = 39 Bewegungsmuster (Stand v601) mit 2–3 Stellungen in 3D (`f(opt)`),
+- KEINE Bilddateien: `FIG_BEWEGUNG` = 40 Bewegungsmuster (Stand v604) mit 2–3 Stellungen in 3D (`f(opt)`),
   gezeichnet live in `figSVG` (Projektion, Tiefensortierung); `_figAusschnitt` schneidet das Bild
   zu (klein: um alle Stellungen; Blatt: um alle Drehungen). Standardübungen über `FIG_STANDARD`,
   eigene über `ex.bewegung`/`ex.geraet`/`ex.bank` (Dialog „Übung bearbeiten“, Vorschlag aus dem
@@ -778,3 +778,8 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   „Übung erstellen“ (`#new-ex-speichern`, gesetzt in `editExerciseFromCatalog` / `openNewExModal`).
   GEMESSEN: Bearbeiten → „Übung bearbeiten / Speichern“, Neu → „Neue Übung erstellen / Übung
   erstellen“, erneut Bearbeiten → „Speichern“; keine Konsolenfehler.
+- **v604 (27.11.2026, Leonard-Wunsch):** Neue Bewegung „Curl auf der Schrägbank“ (Incline
+  Dumbbell Curl, `schraeg_curl`): Rumpf 45° zurückgelehnt, Arme hängen senkrecht hinter dem Rumpf,
+  Curl mit Kurzhanteln, einarmig wählbar, Gruppe Arme/Bizeps. Vorschlag bei „Curl“ + „incline“/
+  „schräg“ („Schrägbankdrücken“ bleibt Drücken liegend). GEMESSEN: Start/Mitte/Ende aus 75° und
+  Ende aus 20° plausibel; 4 Testnamen richtig; keine Konsolenfehler.
