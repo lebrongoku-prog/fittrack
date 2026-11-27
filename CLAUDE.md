@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v600**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v601**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -198,10 +198,10 @@ grep -n "fittrack-v" sw.js
 
 ### Strichmännchen im Übungskatalog (v597)
 - Jede Katalogzeile zeigt links eine kleine, laufende Figur (`svg.ex-fig`); Tipp öffnet
-  `#modal-figur` (groß, Ziehen dreht um die senkrechte Achse, Knöpfe Vorne/Seite/Hinten).
+  `#modal-figur` (groß, Ziehen dreht; seit v601 ohne Ansichtsknöpfe).
   Stil „Gliederpuppe“ (graue runde Glieder), trainierte Abschnitte in den `MUSCLE_META`-Farben,
   Hantel/Gerät und Umgebung (Bank, Stange, Barren, Polster, Fußplatte) mitgezeichnet.
-- KEINE Bilddateien: `FIG_BEWEGUNG` = 38 Bewegungsmuster (seit v599) mit 2–3 Stellungen in 3D (`f(opt)`),
+- KEINE Bilddateien: `FIG_BEWEGUNG` = 39 Bewegungsmuster (Stand v601) mit 2–3 Stellungen in 3D (`f(opt)`),
   gezeichnet live in `figSVG` (Projektion, Tiefensortierung); `_figAusschnitt` schneidet das Bild
   zu (klein: um alle Stellungen; Blatt: um alle Drehungen). Standardübungen über `FIG_STANDARD`,
   eigene über `ex.bewegung`/`ex.geraet`/`ex.bank` (Dialog „Übung bearbeiten“, Vorschlag aus dem
@@ -209,7 +209,7 @@ grep -n "fittrack-v" sw.js
 - EINE Animationsschleife (`_figSchleife`, ~30 fps), läuft nur solange Katalog, Blatt oder Dialog
   offen sind, zeichnet nur sichtbare Figuren (IntersectionObserver).
 - Seit v598: Drehen in alle Richtungen (waagerecht = Drehung, senkrecht = Neigung ±89°,
-  `figSVG(e, t, blick, neigung)`), Knöpfe Vorne/Seite/Hinten/Oben; im Blatt dreht sich die Figur
+  `figSVG(e, t, blick, neigung, fein)`); im Blatt dreht sich die Figur
   von selbst im Uhrzeigersinn (12°/s, steht beim Festhalten). Gewichtsturm mit sich hebendem
   Block bei Kabelzug und Maschinen, Hebel mit Polster bei Beinstrecker/-beuger, Schlitten-Schienen
   bei der Beinpresse. Kabelrolle wählbar (`ex.kabel` oben/mitte/unten, nur gespeichert, wenn sie
@@ -222,6 +222,10 @@ grep -n "fittrack-v" sw.js
   Gruppe oder Muster, die den Muskel einfärben; bei Bizeps/Trizeps nur Letzteres; eine gewählte
   Bewegung außerhalb steht unter „Gewählt“). Waagerechtes Ziehen dreht gespiegelt (nach rechts
   ziehen = Blickwinkel steigt). Bewegungsnamen ohne Klammerzusätze.
+- Seit v601: Im Blatt zeichnet `figSVG` mit `fein` — jede Linie in ~9er-Stücke zerlegt und
+  einzeln nach Tiefe sortiert, damit sich Glieder, Bank und Hantel beim Drehen nicht plötzlich
+  falsch überlappen. Kleine Figuren bleiben grob (Leistung). Katalogzeilen und Übungsauswahl
+  ohne den farbigen Streifen links (`.ex-item-stripe` entfernt).
 
 ### Sicherung
 - Drive (`driveSync`, `collectLocalData`/`driveApplyCloudData`, Format version 4). Token-Anfragen
@@ -757,3 +761,11 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   2× Rudern; Trizeps → Drücken liegend, Drücken über Kopf, Pushdown, Trizeps über Kopf, Dips,
   Skull Crusher; Bauch → 8 Bauchbewegungen; „Hammer Curl“ bei Muskelgruppe Brust → Curl unter
   „Gewählt“; 0 Namen mit Klammern; Ziehen 50px nach rechts → 65° → 110°; keine Konsolenfehler.
+- **v601 (27.11.2026, Leonard-Wunsch):** Neue Bewegung „Kurzhantel-Rudern einarmig“ (Knie und
+  Hand auf der Bank, `kh_rudern`, Vorschlag bei „Dumbbell Row“/„Kurzhantelrudern“); farbige
+  Streifen in den Übungszeilen (Katalog und Auswahl „Zum Gymtag hinzufügen“) entfernt;
+  Ansichtsknöpfe Vorne/Seite/Hinten/Oben entfernt; feine Tiefensortierung gegen falsches
+  Überlappen beim Drehen. GEMESSEN: Rudern Start/Ende aus 6 Richtungen plausibel; Bankdrücken bei
+  160°/250° grob gegen fein verglichen (Rumpf, Arm, Hantel jetzt in richtiger Reihenfolge); Blatt
+  66 Linienstücke, nur noch Knopf „Bewegung wählen“ (verborgen); 0 Streifen im Katalog; keine
+  Konsolenfehler. NICHT gesehen: iPhone.

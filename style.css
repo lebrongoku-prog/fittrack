@@ -3548,7 +3548,6 @@ html.glas .screen:not(#screen-mehr, #screen-plan-detail, #screen-runplan-detail)
   min-height: var(--ex-row-h);
   padding: 13px 14px; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.ex-item-stripe { width: 4px; align-self: stretch; border-radius: 2px; background: var(--mc, var(--accent)); flex-shrink: 0; }
 .ex-item-name { flex: 1; min-width: 0; font-size: var(--fs-text); font-weight: 500; color: var(--text); }
 /* Der Pfeil steht ganz rechts; 20px statt 32px, damit die Zeile ihre 44px behaelt. */
 .ex-item-head > .aex-v2-chev { margin-left: auto; width: 20px; height: 20px; }
@@ -4571,8 +4570,6 @@ input, select, textarea { font-size: calc(19px / var(--skala)) !important; }
 .figur-legende { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 10px 2px; font-size: var(--fs-neben); color: var(--text2); }
 .figur-legende span { display: inline-flex; align-items: center; gap: 6px; }
 .figur-legende i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-.figur-ansichten { display: flex; gap: 8px; margin-bottom: 12px; }
-.figur-ansichten .btn { flex: 1; min-width: 0; padding-left: 4px; padding-right: 4px; }   /* v598: vier Knöpfe passen in eine Zeile */
 .fig-wahl { display: flex; gap: 10px; align-items: stretch; }
 .fig-vorschau { width: 92px; flex: none; min-height: 110px; background: var(--card2); border-radius: 12px; }
 .fig-wahl-felder { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }

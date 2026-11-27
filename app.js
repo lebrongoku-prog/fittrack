@@ -10318,7 +10318,6 @@ function buildExItemHTML(ex, context) {
 
   return `<div class="ex-item ${isOpen?'open':''}" id="ex-item-${uniqueKey}" style="--mc:${meta.color}">
     <div class="ex-item-head" onclick="toggleExItem('${uniqueKey}')">
-      <div class="ex-item-stripe"></div>
       <svg class="ex-fig" data-ex="${ex.id}" viewBox="${FIG_VIEWBOX}" role="button" aria-label="Bewegung ansehen"
            onclick="event.stopPropagation();oeffneFigur('${ex.id}')"></svg>
       <div class="ex-item-name">${ex.name}</div>
@@ -10539,6 +10538,14 @@ const FIG_BEWEGUNG = {
       const s = { hals: [0, -30, -45], ell: [16, -3, -44], han: [10, -3, -70], kn: [12, -14, 52], fu: [13, -3, 95] };
       return [_fig({ ...s, becken: [0, -24, 10] }), _fig({ ...s, becken: [0, -30, 10] })];
     } },
+  // v601 (Leonard-Wunsch): Kurzhantel-Rudern einarmig, linkes Knie und linke Hand auf der Bank
+  kh_rudern: { t: 'Kurzhantel-Rudern einarmig', gr: 'Rücken', g: 'kurzhanteln', blick: 290, nurRechts: true, m: { torso: 'back', oberarm: 'biceps' },
+    f: () => {
+      const s = { becken: [0, -80, -25], hals: [0, -85, 30], ellL: [-22, -66, 32], hanL: [-22, -50, 34],
+                  knL: [-12, -50, -15], fuL: [-13, -50, -58], knR: [14, -42, -20], fuR: [16, 0, -30] };
+      return [_fig({ ...s, ellR: [22, -58, 30], hanR: [22, -34, 32] }), _fig({ ...s, ellR: [24, -98, 8], hanR: [22, -78, 18] })];
+    },
+    p: () => [{ typ: 'bank', a: [-16, -44, -66], b: [-16, -44, 44] }] },
   // ── v599 (Leonard-Wunsch) ──────────────────────────────────────────────────────────
   rueckenstrecker: { t: 'Rückenstrecker', gr: 'Rücken', g: 'koerper', blick: 80, m: { torso: 'back', oberschenkel: 'legs' },
     f: () => {
@@ -10665,7 +10672,11 @@ function _figAnker(bew, e) {
 
 // Liefert den SVG-Inhalt fuer eine Uebung (Einstellung `e`), Zeit `t`, Drehung `blick` (Grad, um
 // die senkrechte Achse) und Neigung `neigung` (Grad, Blick von oben > 0 / von unten < 0; v598).
-function figSVG(e, t, blick, neigung) {
+// `fein` (v601, grosse Figur im Blatt): Jede Linie wird in kurze Stuecke von ~9 Einheiten zerlegt und
+// jedes Stueck einzeln nach Tiefe sortiert. Mit ganzen Linien entschied die MITTLERE Tiefe eines
+// langen Glieds, ob es vor oder hinter einem anderen liegt — beim Drehen sprangen Arm, Rumpf,
+// Bank und Hantel deshalb ploetzlich vor- oder hintereinander.
+function figSVG(e, t, blick, neigung, fein) {
   const bew = FIG_BEWEGUNG[e.bewegung] || FIG_BEWEGUNG.neutral;
   const k = (1 - Math.cos(t)) / 2;
   const P = _figGelenke(bew, e, k);
@@ -10686,7 +10697,15 @@ function figSVG(e, t, blick, neigung) {
   }
   if (!e.bewegung && e.muskel) (_FIG_MUSKEL_STANDARD[e.muskel] || []).forEach(seg => { farbe[seg] = e.muskel; });
   const teile = [];
-  const linie = (a, b, w, col, extra) => { const A = pr(a), B = pr(b); teile.push({ d: (A[2] + B[2]) / 2 + (extra || 0), A, B, w, col }); };
+  const linie = (a, b, w, col, extra) => {
+    const n = fein ? Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / 9)) : 1;
+    let A = pr(a);
+    for (let i = 1; i <= n; i++) {
+      const B = pr(a.map((v, j) => v + (b[j] - v) * i / n));
+      teile.push({ d: (A[2] + B[2]) / 2 + (extra || 0), A, B, w, col });
+      A = B;
+    }
+  };
   const kreis = (p, r, col, extra) => { const Q = pr(p); teile.push({ d: Q[2] + (extra || 0), kreis: Q, r, col }); };
   _FIG_SEG.forEach(([a, b, seg]) => {
     // Einarmig: Nur der rechte Arm arbeitet, der linke bleibt grau.
@@ -10818,6 +10837,7 @@ function figBewegungVorschlag(name) {
   else if (hat('schulterdr', 'military', 'overhead press', 'arnold', ' ohp', 'shoulder press', 'schulterpresse')) b = 'ueberkopf';
   else if (hat('klimmz', 'pull-up', 'pullup', 'pull up', 'chin')) b = 'klimmzug';
   else if (hat('latzug', 'pulldown', 'lat pull')) b = 'latzug';
+  else if (hat('dumbbell row', 'kurzhantelrudern', 'kurzhantel-rudern', 'kurzhantel rudern', 'einarmiges rudern', 'kh rudern', 'one arm row', 'single arm row')) b = 'kh_rudern';
   else if (hat('rudern', 'row')) b = hat('kabel', 'cable', 'sitz', 'seated') ? 'rudern_kabel' : 'rudern_vorgebeugt';
   else if (hat('rumän', 'romanian', 'rdl', 'stiff', 'gestreckt')) b = 'rumaenisch';
   else if (hat('kreuzheb', 'deadlift')) b = 'kreuzheben';
@@ -10856,7 +10876,7 @@ function _figBeobachten(el) {
 }
 function _figZeichnen(el) {
   const ex = el._figEx; if (!ex) return;
-  el.innerHTML = figSVG(ex, _bewegungReduziert() ? Math.PI : _figT, el._figBlick, el._figNeigung);
+  el.innerHTML = figSVG(ex, _bewegungReduziert() ? Math.PI : _figT, el._figBlick, el._figNeigung, el._figFein);
 }
 function _figSchleife(ts) {
   _figRaf = null;
@@ -10911,17 +10931,13 @@ function oeffneFigur(exId) {
     `<span><i style="background:${MUSCLE_META[m].color}"></i>${MUSCLE_META[m].name}</span>`).join('');
   document.getElementById('figur-waehlen').style.display = e.bewegung ? 'none' : '';
   const svg = document.getElementById('figur-buehne');
-  svg._figEx = e; svg._figBlick = bew.blick; svg._figNeigung = 7;
+  svg._figEx = e; svg._figBlick = bew.blick; svg._figNeigung = 7; svg._figFein = true;
   svg.setAttribute('viewBox', _figAusschnitt(e, 'alle'));
   _figSichtbar.add(svg);
   _figZeichnen(svg);
   _figDrehenEinrichten(svg);
   openModal('modal-figur');
   figStart();
-}
-function figurAnsicht(grad, neigung) {
-  const svg = document.getElementById('figur-buehne');
-  svg._figBlick = grad; svg._figNeigung = neigung == null ? 7 : neigung; _figZeichnen(svg);
 }
 function figurBewegungWaehlen() {
   const id = _figBlattEx;
@@ -11557,7 +11573,6 @@ function renderPlanAddList(q) {
       const onclickAttr = inCurrent ? '' : `onclick="togglePlanAddSelection('${ex.id}')"`;
       return `<div class="${cls}" style="--mc:${meta.color}" ${onclickAttr}>
         <div class="ex-item-head">
-          <div class="ex-item-stripe"></div>
           <div class="ex-item-name">${ex.name}</div>
           ${planTag}
           <span class="plan-add-check ${checkCls}">✓</span>
