@@ -669,11 +669,11 @@
     <div class="sheet-body">
       <div class="form-field">
         <label class="form-label">Name</label>
-        <input class="form-input" id="new-ex-name" type="text" placeholder="z. B. Arnold Press">
+        <input class="form-input" id="new-ex-name" type="text" placeholder="z. B. Arnold Press" oninput="figDialogName()">
       </div>
       <div class="form-field">
         <label class="form-label">Muskelgruppe</label>
-        <select class="form-select" id="new-ex-muscle">
+        <select class="form-select" id="new-ex-muscle" onchange="figDialogVorschau()">
           <option value="chest">Brust</option>
           <option value="back">Rücken</option>
           <option value="biceps">Bizeps</option>
@@ -683,6 +683,22 @@
           <option value="core">Bauch</option>
         </select>
       </div>
+      <!-- v597: Bewegung fuer das Strichmaennchen (Vorschlag aus dem Namen), Geraet, Bankwinkel -->
+      <div class="form-field">
+        <label class="form-label">Bewegung</label>
+        <div class="fig-wahl">
+          <svg class="fig-vorschau" id="new-ex-fig" viewBox="-120 -232 240 250" aria-hidden="true"></svg>
+          <div class="fig-wahl-felder">
+            <select class="form-select" id="new-ex-bewegung" onchange="figDialogBewegung()"></select>
+            <select class="form-select" id="new-ex-geraet" onchange="_figWahlManuell=true;figDialogVorschau()"></select>
+            <select class="form-select" id="new-ex-bank" onchange="figDialogVorschau()" data-feld="1">
+              <option value="flach">Bank flach</option>
+              <option value="schraeg">Bank schräg</option>
+              <option value="negativ">Bank negativ</option>
+            </select>
+          </div>
+        </div>
+      </div>
       <!-- v537: Übung mit Unterstützung (z. B. Klimmzüge an der Maschine) -->
       <label class="form-check">
         <input type="checkbox" id="new-ex-assisted">
@@ -690,6 +706,25 @@
           <small>Eingetragen wird die Unterstützung der Maschine. Gerechnet wird mit Körpergewicht minus Unterstützung — weniger Unterstützung zählt als Fortschritt.</small></span>
       </label>
       <button class="btn btn-primary btn-full" onclick="saveNewEx()">Übung erstellen</button>
+    </div>
+  </div>
+</div>
+
+<!-- v597: Strichmaennchen einer Uebung, gross und drehbar -->
+<div id="modal-figur" class="overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="figur-titel">Übung</div>
+    <div class="sheet-body">
+      <div class="figur-sub" id="figur-sub"></div>
+      <svg class="figur-buehne" id="figur-buehne" viewBox="-120 -232 240 250" role="img" aria-label="Bewegung, zum Drehen ziehen"></svg>
+      <div class="figur-legende" id="figur-legende"></div>
+      <div class="figur-ansichten">
+        <button class="btn btn-ghost" onclick="figurAnsicht(0)">Vorne</button>
+        <button class="btn btn-ghost" onclick="figurAnsicht(90)">Seite</button>
+        <button class="btn btn-ghost" onclick="figurAnsicht(180)">Hinten</button>
+      </div>
+      <button class="btn btn-primary btn-full" id="figur-waehlen" onclick="figurBewegungWaehlen()">Bewegung wählen</button>
     </div>
   </div>
 </div>

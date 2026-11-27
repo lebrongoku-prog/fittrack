@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v596**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v597**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -195,6 +195,19 @@ grep -n "fittrack-v" sw.js
 - Wettkämpfe: `ft_races` = `{date, name}` (Getter sortiert aufsteigend) plus `plan.raceDate`.
   Werte kommen aus dem Lauf des Tages. Vollbildseite mit Liste/Zeitstrahl.
 - Favoriten `ft_run_favs` (Stern in `showRunDetail`, Seite „lauf-favoriten").
+
+### Strichmännchen im Übungskatalog (v597)
+- Jede Katalogzeile zeigt links eine kleine, laufende Figur (`svg.ex-fig`); Tipp öffnet
+  `#modal-figur` (groß, Ziehen dreht um die senkrechte Achse, Knöpfe Vorne/Seite/Hinten).
+  Stil „Gliederpuppe“ (graue runde Glieder), trainierte Abschnitte in den `MUSCLE_META`-Farben,
+  Hantel/Gerät und Umgebung (Bank, Stange, Barren, Polster, Fußplatte) mitgezeichnet.
+- KEINE Bilddateien: `FIG_BEWEGUNG` = 27 Bewegungsmuster mit 2–3 Stellungen in 3D (`f(opt)`),
+  gezeichnet live in `figSVG` (Projektion, Tiefensortierung); `_figAusschnitt` schneidet das Bild
+  zu (klein: um alle Stellungen; Blatt: um alle Drehungen). Standardübungen über `FIG_STANDARD`,
+  eigene über `ex.bewegung`/`ex.geraet`/`ex.bank` (Dialog „Übung bearbeiten“, Vorschlag aus dem
+  Namen `figBewegungVorschlag`, `figDialog*`). Ohne Muster: neutrale Figur + „Bewegung wählen“.
+- EINE Animationsschleife (`_figSchleife`, ~30 fps), läuft nur solange Katalog, Blatt oder Dialog
+  offen sind, zeichnet nur sichtbare Figuren (IntersectionObserver).
 
 ### Sicherung
 - Drive (`driveSync`, `collectLocalData`/`driveApplyCloudData`, Format version 4). Token-Anfragen
@@ -696,3 +709,12 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Tipp 2 → halb, Karte rgba(255,255,255,.12) mit Schatten, Knopf „mixed“ 28 %; Tipp 3 → ganz,
   Karte transparent ohne Schatten, Knopf „true“ 48 %; Titel je Stufe; Plan-Tab (Kalender- und
   Plankarte) halb transparent im Bild geprüft; Gymplan-Detail bleibt weiß; keine Konsolenfehler.
+- **v597 (27.11.2026, Leonard-Wahl „Stil B, Variante A“, Bewegung wählbar mit Vorschlag):**
+  Strichmännchen im Übungskatalog (siehe Architektur). 27 Bewegungsmuster inkl. Crunch und
+  Unterarmstütz, alle 29 Standardübungen zugeordnet. GEMESSEN (Preset mobile): 29 Figuren im
+  Katalog gezeichnet, Start- und Endstellung aller 29 im Raster geprüft; Tipp auf die Figur
+  öffnet das Blatt, Zeile bleibt zu; Ziehen dreht (65° → 155°), Animation läuft; Dialog: „Kurzhantel
+  Schrägbankdrücken“ → Drücken liegend · Kurzhanteln · Bank schräg, gespeichert; „Superübung“ →
+  keine Bewegung, Blatt zeigt neutrale Figur (Bauch violett) und „Bewegung wählen“; Schleife
+  stoppt nach dem Verlassen des Katalogs; keine Konsolenfehler. NICHT gesehen: iPhone (Ziehen mit
+  dem Finger, Flüssigkeit der Animation).

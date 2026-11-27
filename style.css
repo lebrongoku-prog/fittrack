@@ -4558,3 +4558,21 @@ input, select, textarea { font-size: calc(19px / var(--skala)) !important; }
 :is(#active-ex-list, #day-ex-list) .aex-v2 .aex-v2-chev svg { width: 20.9px; height: 20.9px; }
 :is(#active-ex-list, #day-ex-list) .aex-v2 .aex-v2-notes-area { min-height: 66px; }
 :is(#active-ex-list, #day-ex-list) .aex-v2 .aex-v2-actions .btn-sm { padding-top: 8.8px; padding-bottom: 8.8px; }
+
+/* ─── Strichmaennchen im Uebungskatalog (v597, Leonard-Wahl „Stil B, Variante A") ───────────────
+   Kleine laufende Figur links in jeder Katalogzeile; Tipp oeffnet `#modal-figur` (gross, drehbar).
+   Gezeichnet wird in `figSVG` (app.js). */
+.ex-fig { width: 44px; height: 44px; flex: none; border-radius: 10px; background: var(--card2); cursor: pointer;
+  -webkit-tap-highlight-color: transparent; }
+.ex-fig:active { opacity: .7; }
+.figur-sub { font-size: var(--fs-neben); color: var(--text3); margin: -4px 0 10px; }
+.figur-buehne { display: block; width: 100%; height: 300px; background: var(--card2); border-radius: 14px;
+  touch-action: none; cursor: grab; -webkit-user-select: none; user-select: none; }
+.figur-legende { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 10px 2px; font-size: var(--fs-neben); color: var(--text2); }
+.figur-legende span { display: inline-flex; align-items: center; gap: 6px; }
+.figur-legende i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.figur-ansichten { display: flex; gap: 8px; margin-bottom: 12px; }
+.figur-ansichten .btn { flex: 1; }
+.fig-wahl { display: flex; gap: 10px; align-items: stretch; }
+.fig-vorschau { width: 92px; flex: none; min-height: 110px; background: var(--card2); border-radius: 12px; }
+.fig-wahl-felder { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
