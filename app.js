@@ -10713,13 +10713,28 @@ function figSVG(e, t, blick, neigung, fein) {
       A = B;
     }
   };
-  const kreis = (p, r, col, extra) => { const Q = pr(p); teile.push({ d: Q[2] + (extra || 0), kreis: Q, r, col }); };
+  const kreis = (p, r, col, extra, umriss) => { const Q = pr(p); teile.push({ d: Q[2] + (extra || 0), kreis: Q, r, col, umriss }); };
+  // v605 (Leonard-Wunsch): Koerperteile mit schwarzer Kontur. Ein Glied besteht aus Stuecken mit
+  // GERADEN Enden (sonst saehe man an jeder Stueckgrenze eine Naht) und zwei runden Endkappen als
+  // Kreise — die Gelenke erscheinen dadurch wie bei einer Gliederpuppe umrandet.
+  const UMRISS = fein ? 2 : 5;
+  const glied = (a, b, w, col) => {
+    const n = fein ? Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / 9)) : 1;
+    let A = pr(a);
+    for (let i = 1; i <= n; i++) {
+      const B = pr(a.map((v, j) => v + (b[j] - v) * i / n));
+      teile.push({ d: (A[2] + B[2]) / 2, A, B, w, col, umriss: true, innenA: i > 1, innenB: i < n });
+      A = B;
+    }
+    kreis(a, w / 2 + UMRISS / 4, col, 0.01, true);
+    kreis(b, w / 2 + UMRISS / 4, col, 0.01, true);
+  };
   _FIG_SEG.forEach(([a, b, seg]) => {
     // Einarmig: Nur der rechte Arm arbeitet, der linke bleibt grau.
     const m = (einarm && (a === 'schL' || a === 'ellL') && seg !== 'schulter') ? null : farbe[seg];
-    linie(P[a], P[b], seg === 'torso' ? 22 : (m ? 15 : 13), m ? MUSCLE_META[m].color : FIG_GRAU);
+    glied(P[a], P[b], seg === 'torso' ? 22 : (m ? 15 : 13), m ? MUSCLE_META[m].color : FIG_GRAU);
   });
-  kreis(P.kopf, 16, FIG_GRAU);
+  kreis(P.kopf, 16, FIG_GRAU, 0, true);
   // Umgebung (Bank, Stange, Hebel …)
   (bew.p ? bew.p(P, k, e) : []).forEach(u => {
     if (u.typ === 'polster') { kreis(u.p, 8, '#6b6b66', 2); return; }
@@ -10790,7 +10805,17 @@ function figSVG(e, t, blick, neigung, fein) {
   const z = v => Math.round(v * 10) / 10;
   let h = `<ellipse cx="${z(B0[0])}" cy="${z(B0[1])}" rx="78" ry="${z(bodenRy)}" fill="rgba(0,0,0,.1)"/>`;
   for (const p of teile) {
-    if (p.kreis) h += `<circle cx="${z(p.kreis[0])}" cy="${z(p.kreis[1])}" r="${p.r}" fill="${p.col}"/>`;
+    if (p.kreis) h += p.umriss
+      ? `<circle cx="${z(p.kreis[0])}" cy="${z(p.kreis[1])}" r="${z(p.r)}" fill="${p.col}" stroke="#1a1a1a" stroke-width="${UMRISS / 2}"/>`
+      : `<circle cx="${z(p.kreis[0])}" cy="${z(p.kreis[1])}" r="${p.r}" fill="${p.col}"/>`;
+    else if (p.umriss) {
+      // Fuellung an INNEREN Stueckgrenzen 1.5 Einheiten verlaengert: sie deckt die gerade Kante der
+      // Kontur des Nachbarstuecks ab — sonst bliebe dort ein feiner Querstrich (Kantenglaettung).
+      const dx = p.B[0] - p.A[0], dy = p.B[1] - p.A[1], l = Math.hypot(dx, dy) || 1, ux = dx / l * 1.5, uy = dy / l * 1.5;
+      const a0 = p.innenA ? [p.A[0] - ux, p.A[1] - uy] : p.A, b0 = p.innenB ? [p.B[0] + ux, p.B[1] + uy] : p.B;
+      h += `<line x1="${z(p.A[0])}" y1="${z(p.A[1])}" x2="${z(p.B[0])}" y2="${z(p.B[1])}" stroke="#1a1a1a" stroke-width="${p.w + UMRISS}"/>`
+        + `<line x1="${z(a0[0])}" y1="${z(a0[1])}" x2="${z(b0[0])}" y2="${z(b0[1])}" stroke="${p.col}" stroke-width="${p.w}"/>`;
+    }
     else if (p.scheibe) h += `<ellipse cx="${z(p.scheibe[0])}" cy="${z(p.scheibe[1])}" rx="${z(p.rx)}" ry="${p.ry}" fill="#3a3a3a" stroke="#777" stroke-width="1.5"/>`;
     else h += `<line x1="${z(p.A[0])}" y1="${z(p.A[1])}" x2="${z(p.B[0])}" y2="${z(p.B[1])}" stroke="${p.col}" stroke-width="${p.w}" stroke-linecap="round"/>`;
   }

@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v604**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v605**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -226,6 +226,10 @@ grep -n "fittrack-v" sw.js
   einzeln nach Tiefe sortiert, damit sich Glieder, Bank und Hantel beim Drehen nicht plötzlich
   falsch überlappen. Kleine Figuren bleiben grob (Leistung). Katalogzeilen und Übungsauswahl
   ohne den farbigen Streifen links (`.ex-item-stripe` entfernt).
+- Seit v605: Körperteile und Kopf mit schwarzer Kontur (`glied` in `figSVG`: Stücke mit geraden
+  Enden + runde Endkappen als umrandete Kreise; Füllung an inneren Stückgrenzen 1.5 verlängert,
+  sonst Nähte). Konturbreite `UMRISS` = 2 im Blatt, 5 in kleinen Figuren (gleich dick auf dem
+  Bildschirm). Geräte und Umgebung ohne Kontur.
 
 ### Sicherung
 - Drive (`driveSync`, `collectLocalData`/`driveApplyCloudData`, Format version 4). Token-Anfragen
@@ -783,3 +787,7 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Curl mit Kurzhanteln, einarmig wählbar, Gruppe Arme/Bizeps. Vorschlag bei „Curl“ + „incline“/
   „schräg“ („Schrägbankdrücken“ bleibt Drücken liegend). GEMESSEN: Start/Mitte/Ende aus 75° und
   Ende aus 20° plausibel; 4 Testnamen richtig; keine Konsolenfehler.
+- **v605 (27.11.2026, Leonard-Wunsch):** Schwarze Kontur um die Figur (Glieder und Kopf).
+  GEMESSEN: Bankdrücken 250°, Kniebeuge 40°, Curl 20° im großen Bild — durchgehende Kontur, nach
+  der Füllungs-Verlängerung keine Querstriche an Stückgrenzen mehr; Katalog-Vorschauen mit
+  sichtbarer Kontur; keine Konsolenfehler.
