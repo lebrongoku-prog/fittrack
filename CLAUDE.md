@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v601**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v602**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -218,9 +218,9 @@ grep -n "fittrack-v" sw.js
 - Seit v599: Ausführungsvarianten je Muster (`varianten`, `ex.variante`, Dialogfeld „Ausführung“;
   bisher Latzug vor die Brust / hinter den Kopf), Seitlage über `rolle` (Seitstütz: Stellung
   bauchab bauen, dann um die Längsachse gerollt), `nurRechts` (Seitbeugen: Gerät nur rechts).
-- Seit v600: Bewegungsliste im Dialog nach Muskelgruppe gefiltert (`_figBewegungsListe`: Muster der
-  Gruppe oder Muster, die den Muskel einfärben; bei Bizeps/Trizeps nur Letzteres; eine gewählte
-  Bewegung außerhalb steht unter „Gewählt“). Waagerechtes Ziehen dreht gespiegelt (nach rechts
+- Seit v600/v602: Bewegungsliste im Dialog nach Muskelgruppe gefiltert (`_figBewegungsListe`:
+  AUSSCHLIESSLICH Muster der Gruppe; bei Bizeps/Trizeps innerhalb „Arme“ nur, was diesen Muskel
+  einfärbt; eine gewählte Bewegung außerhalb steht unter „Gewählt“). Waagerechtes Ziehen dreht gespiegelt (nach rechts
   ziehen = Blickwinkel steigt). Bewegungsnamen ohne Klammerzusätze.
 - Seit v601: Im Blatt zeichnet `figSVG` mit `fein` — jede Linie in ~9er-Stücke zerlegt und
   einzeln nach Tiefe sortiert, damit sich Glieder, Bank und Hantel beim Drehen nicht plötzlich
@@ -769,3 +769,8 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   160°/250° grob gegen fein verglichen (Rumpf, Arm, Hantel jetzt in richtiger Reihenfolge); Blatt
   66 Linienstücke, nur noch Knopf „Bewegung wählen“ (verborgen); 0 Streifen im Katalog; keine
   Konsolenfehler. NICHT gesehen: iPhone.
+- **v602 (27.11.2026, Leonard-Meldung mit Bildschirmfoto):** Bei Muskelgruppe Rücken standen auch
+  Schultern (Face Pull) und Beine (Rum. Kreuzheben) in der Bewegungsliste — der Filter nahm auch
+  fremde Gruppen auf, die den Muskel nur mit einfärben. Jetzt nur noch die eigene Gruppe.
+  GEMESSEN: alle 7 Muskelgruppen → je genau eine Gruppe in der Liste (Rücken 8, Brust 3,
+  Schultern 5, Bizeps 2, Trizeps 4, Beine 9, Bauch 8); keine Konsolenfehler.

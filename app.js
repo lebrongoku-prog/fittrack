@@ -10983,16 +10983,17 @@ function figDialogFuellen(ex) {
   document.getElementById('new-ex-kabel').value = e.kabel || _figKabelStandard(e.bewegung);
   figDialogVorschau();
 }
-// v600 (Leonard-Wunsch): Die Liste der Bewegungen zeigt nur, was zur gewaehlten Muskelgruppe passt —
-// Muster derselben Gruppe ODER Muster, die diese Muskelgruppe einfaerben (Bizeps → Curl, Klimmzug …).
+// v600/v602 (Leonard-Wunsch): Die Liste der Bewegungen zeigt nur die Muster der gewaehlten Muskelgruppe.
 // Eine schon gewaehlte Bewegung ausserhalb des Filters bleibt oben unter „Gewählt" stehen.
 const FIG_MUSKEL_GRUPPE = { chest: 'Brust', back: 'Rücken', shoulders: 'Schultern', biceps: 'Arme', triceps: 'Arme', legs: 'Beine', core: 'Bauch' };
 function _figBewegungsListe(aktuell) {
   const sel = document.getElementById('new-ex-bewegung');
   const m = document.getElementById('new-ex-muscle').value;
-  // Bizeps und Trizeps teilen sich die Gruppe „Arme" — dort zaehlt nur, welcher Muskel eingefaerbt ist.
+  // v602 (Leonard-Meldung): AUSSCHLIESSLICH Bewegungen der gewaehlten Gruppe — vorher kamen auch
+  // fremde Gruppen dazu, die den Muskel nur mit einfaerben (Rücken zeigte Face Pull, Rum. Kreuzheben).
+  // Bizeps und Trizeps teilen sich „Arme": dort zusaetzlich nur, was diesen Muskel einfaerbt.
   const nurMuskel = m === 'biceps' || m === 'triceps';
-  const passt = b => b.gr && (Object.values(b.m).includes(m) || (!nurMuskel && b.gr === FIG_MUSKEL_GRUPPE[m]));
+  const passt = b => b.gr === FIG_MUSKEL_GRUPPE[m] && (!nurMuskel || Object.values(b.m).includes(m));
   const gruppen = {};
   Object.entries(FIG_BEWEGUNG).forEach(([id, b]) => { if (passt(b)) (gruppen[b.gr] = gruppen[b.gr] || []).push([id, b.t]); });
   const extra = aktuell && FIG_BEWEGUNG[aktuell] && !passt(FIG_BEWEGUNG[aktuell])
