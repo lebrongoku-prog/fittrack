@@ -2769,7 +2769,7 @@ function renderPreviewWorkout(planDay, mode = 'preview', containerId = 'active-e
     return `<div class="aex-v2 ${collapsedCls}" id="aex-${ei}" data-ex="${exIdKey}" style="--c:${col.c}"
                  ${_aexZiehAttribute(ei, `'${mode}','${planDay.id}'`)}>
       ${_aexKopfOeffnen(exIdKey)}
-        <div class="aex-v2-num">${ei+1}</div>
+        <div class="aex-fig-huelle">${figKleinHTML(ex.id, 'aex-fig')}<div class="aex-v2-num">${ei+1}</div></div>
         <div class="aex-v2-info">
           <div class="aex-v2-name">${ex.name}</div>
           ${lastStr ? `<div class="aex-v2-last">${lastStr}</div>` : ''}
@@ -2921,7 +2921,7 @@ function renderActiveWorkout() {
     return `<div class="aex-v2 ${stateCls} ${collapsedCls}${aktuell ? ' aktuell' : ''}" id="aex-${ei}" data-ex="${exIdKey}" style="--c:${col.c}"
                  ${_aexZiehAttribute(ei, `'active'`)}>
       ${_aexKopfOeffnen(exIdKey)}
-        <div class="aex-v2-num${stateCls ? '' : ' offen'}">${ei+1}</div>
+        <div class="aex-fig-huelle">${figKleinHTML(ex.exId || ex.id, 'aex-fig')}<div class="aex-v2-num${stateCls ? '' : ' offen'}">${ei+1}</div></div>
         <div class="aex-v2-info">
           <div class="aex-v2-name">${ex.name}</div>
           ${lastRoh ? `<div class="aex-v2-last">${lastRoh}${diffStr ? ` ${diffStr}` : ''}</div>` : ''}
@@ -4083,8 +4083,9 @@ function renderAddExList(q) {
     const isCollapsed = !query && collapsedAddExGroups.has(m);
     const itemsHTML = items.map(e => {
       const col = muscleColor(e.muscle);
-      return `<div class="sheet-item muscle-coded" style="--c:${col}" onclick="addExToWorkout('${e.id}')">
-        <div><div class="sheet-item-name">${e.name}</div><div class="sheet-item-sub">${muscleName(e.muscle)}</div></div>
+      return `<div class="sheet-item mit-fig" style="--c:${col}" onclick="addExToWorkout('${e.id}')">
+        ${figKleinHTML(e.id, 'liste-fig')}
+        <div style="flex:1;min-width:0"><div class="sheet-item-name">${e.name}</div><div class="sheet-item-sub">${muscleName(e.muscle)}</div></div>
         <span style="color:var(--accent);font-size:calc(23px / var(--skala))">+</span>
       </div>`;
     }).join('');
@@ -4245,7 +4246,7 @@ function renderWorkoutSummary(wo, prevWorkouts, setChanges) {
        ${restPRs.length ? `<div class="sum-pr-head">${restPRs.length === 1 ? 'Außerdem' : 'Außerdem'}</div>` : ''}
        <div class="sum-pr-list">${restPRs.map(p => {
          const prev = p.prev > 0 ? ` <span class="sum-pr-prev">statt ${p.prev} kg</span>` : '';
-         return `<div class="sum-pr-row"><span class="sum-pr-name">${escapeHtml(p.name)}</span>
+         return `<div class="sum-pr-row">${figKleinHTML(p.exId, 'liste-fig')}<span class="sum-pr-name">${escapeHtml(p.name)}</span>
                  <span class="sum-pr-val">${fmtKg(p.weight)}${kgZusatz(p.exId)}${prev}</span></div>`;
        }).join('')}</div>`
     : '';
@@ -8091,8 +8092,9 @@ function prHTML(pr, number) {
   const valColor = muscleColor(muscleKey);
   // Unter dem Namen steht nichts mehr: Die Steigerung „(+5 kg)" fiel am 04.10.2026, der
   // Verlauf „45 → 50 kg" am 23.10.2026 (v459, beides Leonard-Wunsch).
-  return `<div class="pr-v2-row no-icon" style="--mc:${valColor}" onclick="showHistDetailForEx('${pr.exId}', ${pr.date || 0})">
+  return `<div class="pr-v2-row mit-fig" style="--mc:${valColor}" onclick="showHistDetailForEx('${pr.exId}', ${pr.date || 0})">
     <div class="pr-v2-num">${num}</div>
+    ${figKleinHTML(pr.exId, 'liste-fig')}
     <div>
       <div class="pr-v2-name">${escapeHtml(pr.name)}</div>
     </div>
@@ -8183,6 +8185,7 @@ function showHistDetail(i, highlightExId) {
     const offen = highlightExId && id === highlightExId;
     return `<div class="hd-zeile${offen ? ' offen hd-zeile-hl' : ''}" style="background:${tint}">
       <button type="button" class="hd-zeile-kopf" onclick="toggleHdZeile(this)" aria-expanded="${offen ? 'true' : 'false'}">
+        ${figKleinHTML(id, 'liste-fig')}
         <span class="hd-zeile-text">
           <span class="hd-zeile-name">${escapeHtml((exData && exData.name) || ex.name || '')}${prByExId[id] ? '<span class="hd-pr">PR</span>' : ''}</span>
           ${_hdSatzChips(sets)}
@@ -8240,6 +8243,7 @@ function showGymtagVorschau(dayId, ts) {
     const sets = displaySetsForPe(pe, getLastExData(id));
     return `<div class="hd-zeile" style="background:${tint}">
       <button type="button" class="hd-zeile-kopf" onclick="toggleHdZeile(this)" aria-expanded="false">
+        ${figKleinHTML(id, 'liste-fig')}
         <span class="hd-zeile-text">
           <span class="hd-zeile-name">${escapeHtml((exData && exData.name) || pe.name || '')}</span>
           ${_hdSatzChips(sets)}
@@ -10318,8 +10322,7 @@ function buildExItemHTML(ex, context) {
 
   return `<div class="ex-item ${isOpen?'open':''}" id="ex-item-${uniqueKey}" style="--mc:${meta.color}">
     <div class="ex-item-head" onclick="toggleExItem('${uniqueKey}')">
-      <svg class="ex-fig" data-ex="${ex.id}" viewBox="${FIG_VIEWBOX}" role="button" aria-label="Bewegung ansehen"
-           onclick="event.stopPropagation();oeffneFigur('${ex.id}')"></svg>
+      ${figKleinHTML(ex.id)}
       <div class="ex-item-name">${ex.name}</div>
       ${noteIndicator}
       ${stillstandTag}
@@ -11138,6 +11141,7 @@ function _figBeobachten(el) {
   if (!('IntersectionObserver' in window)) { _figSichtbar.add(el); return; }
   if (!_figBeobachter) _figBeobachter = new IntersectionObserver(eintraege => {
     eintraege.forEach(en => { if (en.isIntersecting) _figSichtbar.add(en.target); else _figSichtbar.delete(en.target); });
+    if (_figSichtbar.size) figStart();
   });
   _figBeobachter.observe(el);
 }
@@ -11147,10 +11151,12 @@ function _figZeichnen(el) {
 }
 function _figSchleife(ts) {
   _figRaf = null;
-  const katalog = currentScreen === 'exercises';
+  // v611: Figuren gibt es ueberall, wo Uebungen stehen — die Schleife laeuft, solange eine davon
+  // sichtbar ist (im Bild laut IntersectionObserver und nicht in einem verborgenen Fenster).
   const blatt = !document.getElementById('modal-figur')?.classList.contains('hidden');
-  const dialog = !document.getElementById('modal-new-ex')?.classList.contains('hidden');
-  if (!katalog && !blatt && !dialog) return;
+  const zeigen = [];
+  _figSichtbar.forEach(el => { if (!el.isConnected) { _figSichtbar.delete(el); return; } if (el.getClientRects().length) zeigen.push(el); });
+  if (!zeigen.length) return;
   if (ts - _figZuletzt >= 33) {
     const dt = Math.min(ts - _figZuletzt, 100);
     _figT += dt * 0.0024;
@@ -11159,24 +11165,54 @@ function _figSchleife(ts) {
     // 12 Grad je Sekunde — nicht, solange der Finger sie haelt.
     const buehne = document.getElementById('figur-buehne');
     if (blatt && buehne && !buehne._ziehen && !_bewegungReduziert()) buehne._figBlick = ((buehne._figBlick || 0) - dt * 0.012 + 360) % 360;
-    _figSichtbar.forEach(el => { if (!el.isConnected) { _figSichtbar.delete(el); return; } _figZeichnen(el); });
+    zeigen.forEach(_figZeichnen);
   }
   _figRaf = requestAnimationFrame(_figSchleife);
 }
 function figStart() { if (!_figRaf) { _figZuletzt = performance.now(); _figRaf = requestAnimationFrame(_figSchleife); } }
 
-// Kleine Figuren im Katalog nach dem Zeichnen der Liste einrichten.
+// v611 (Leonard-Wahl „A, Abzeichen oben links"): Kleine Figur fuer JEDE Stelle mit einer Uebung.
+// `figKleinHTML` liefert nur die leere Huelle; eingerichtet wird sie von selbst (`_figAutoEinrichten`
+// beobachtet das Dokument), damit kein Renderer sich darum kuemmern muss. Tipp → grosses Blatt.
+function figKleinHTML(exId, cls) {
+  return `<svg class="ex-fig${cls ? ' ' + cls : ''}" data-ex="${exId}" viewBox="${FIG_VIEWBOX}" role="button" aria-label="Bewegung ansehen"
+    onclick="event.stopPropagation();oeffneFigur('${exId}')" onpointerdown="event.stopPropagation()"></svg>`;
+}
+const _figAusschnittSpeicher = new Map();
+function _figEinrichten(svg, neu) {
+  if (svg._figEx && !neu) return;
+  const ex = getEx(svg.dataset.ex);
+  svg._figEx = figEinstellung(ex);
+  svg._figBlick = null;
+  const key = JSON.stringify(svg._figEx);
+  if (!_figAusschnittSpeicher.has(key)) _figAusschnittSpeicher.set(key, _figAusschnitt(svg._figEx, null));
+  svg.setAttribute('viewBox', _figAusschnittSpeicher.get(key));
+  _figZeichnen(svg);
+  // Gleich mitlaufen lassen, wenn sie im Bild steht (der Beobachter meldet sich erst spaeter)
+  const b = svg.getBoundingClientRect();
+  if (b.width && b.bottom > 0 && b.top < innerHeight) _figSichtbar.add(svg);
+  _figBeobachten(svg);
+}
+// Kleine Figuren im Katalog nach dem Zeichnen der Liste einrichten (neu, falls die Uebung geaendert wurde).
 function figKatalogEinrichten() {
-  const exs = DB.getExercises();
-  document.querySelectorAll('svg.ex-fig[data-ex]').forEach(svg => {
-    const ex = exs.find(x => x.id === svg.dataset.ex);
-    svg._figEx = figEinstellung(ex);
-    svg._figBlick = null;
-    svg.setAttribute('viewBox', _figAusschnitt(svg._figEx, null));
-    _figZeichnen(svg);
-    _figBeobachten(svg);
-  });
+  _figAusschnittSpeicher.clear();
+  document.querySelectorAll('svg.ex-fig[data-ex]').forEach(svg => _figEinrichten(svg, true));
   figStart();
+}
+let _figAutoGeplant = false;
+function _figAutoEinrichten() {
+  if (typeof MutationObserver === 'undefined') return;
+  new MutationObserver(liste => {
+    if (_figAutoGeplant) return;
+    // Die Figuren zeichnen sich selbst neu (innerHTML im <svg>) — das loest hier nichts aus.
+    if (!liste.some(m => m.addedNodes.length && !(m.target.closest && m.target.closest('svg')))) return;
+    _figAutoGeplant = true;
+    setTimeout(() => {
+      _figAutoGeplant = false;
+      document.querySelectorAll('svg.ex-fig[data-ex]').forEach(svg => _figEinrichten(svg, false));
+      if (_figSichtbar.size) figStart();
+    }, 0);
+  }).observe(document.body, { childList: true, subtree: true });
 }
 
 // ── Blatt von unten: grosse, drehbare Figur ─────────────────────────────────────────────
@@ -13922,6 +13958,7 @@ function prerenderAllTabs() {
 
 document.addEventListener('DOMContentLoaded', () => {
   // Daten-Migration: altes ft_program/ft_plan2/ft_weekplan in neue ft_plans-Struktur
+  _figAutoEinrichten();   // v611: Strichmaennchen ueberall, wo Uebungen stehen
   applyGlasModus();
   _setzeChartFarben();
   initAudioUnlock();

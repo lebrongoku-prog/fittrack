@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v610**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v611**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -256,6 +256,16 @@ grep -n "fittrack-v" sw.js
   Bankwinkel nur bei liegend sichtbar. Bereits sitzend gebaut: Latzug, Rudern am Kabel,
   Beinpresse, Beinstrecker. Bewusst ohne: freie Übungen ohne Maschinenform (Kniebeuge,
   Kreuzheben, Klimmzug …).
+- Seit v611: Figuren ÜBERALL, wo Übungen stehen. `figKleinHTML(exId, cls)` liefert nur die leere
+  Hülle (`svg.ex-fig[data-ex]`, Tipp → `oeffneFigur`, `stopPropagation`); eingerichtet wird von
+  selbst über einen MutationObserver (`_figAutoEinrichten`, `_figEinrichten`, Ausschnitt-Speicher
+  `_figAusschnittSpeicher`) — Renderer müssen nichts aufrufen. Die Schleife läuft, solange eine
+  Figur im Bild ist (IntersectionObserver + `getClientRects`), egal auf welcher Seite.
+  Übungskarten (`.aex-v2`, Session und Gymtag-Detail): Figur 50px statt Nummernkreis, Nummer als
+  Abzeichen oben links (`.aex-fig-huelle`, Zustände offen/erledigt wie vorher). Listen mit
+  `.liste-fig` (40px) links vor dem Namen: Rückblick/Gymtag-Vorschau (`.hd-zeile`), „Übung
+  hinzufügen“ (`.sheet-item.mit-fig`, ohne Farbstreifen), PR-Liste (`.pr-v2-row.mit-fig`),
+  Zusammenfassung (`.sum-pr-row`). Die große Bestleistungs-Karte bleibt ohne Figur.
 
 ### Sicherung
 - Drive (`driveSync`, `collectLocalData`/`driveApplyCloudData`, Format version 4). Token-Anfragen
@@ -856,3 +866,12 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Rudermaschine, Brustpresse, Dip Maschine, Leg Curl sitzend → jeweils Sitzend/Maschine, Bankdrücken
   und Langhantelrudern unverändert; Dialog „Bankdrücken“ → Gerät Maschine → Sitzend, Bankwinkel
   ausgeblendet; keine Konsolenfehler. NICHT gesehen: iPhone.
+- **v611 (28.11.2026, Leonard-Wahl „A, aber Abzeichen oben links“, „Listen passen so“):**
+  Strichmännchen in allen Ansichten mit Übungen (siehe Architektur). GEMESSEN (Preset mobile):
+  Gymtag-Detail 4 Karten mit Figur 50px und Abzeichen oben links; Tipp auf die Figur → Blatt
+  „Bankdrücken“, Karte bleibt zu; laufende Session 3 Karten, Abzeichen gefüllt/offen (Ring in der
+  Muskelfarbe auf Weiß), erledigt grün; „Übung hinzufügen“ 29 Figuren; Zusammenfassung 2,
+  Rückblick 3 (Tipp auf Figur klappt die Zeile nicht auf), PR-Liste 3 (Spalten 22/40/Name);
+  Katalog weiter 29; Schleife läuft nur bei sichtbaren Figuren (aufgeklappte Gruppe läuft,
+  zugeklappt/anderer Tab → stoppt); keine Konsolenfehler. NICHT gesehen: iPhone (Leistung bei
+  vielen Figuren).

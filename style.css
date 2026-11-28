@@ -4564,6 +4564,24 @@ input, select, textarea { font-size: calc(19px / var(--skala)) !important; }
 .ex-fig { width: 44px; height: 44px; flex: none; border-radius: 10px; background: var(--card2); cursor: pointer;
   -webkit-tap-highlight-color: transparent; }
 .ex-fig:active { opacity: .7; }
+/* v611 (Leonard-Wahl „A, Abzeichen oben links"): In den Uebungskarten (laufende Session,
+   Gymtag-Detail) ersetzt die Figur den Nummernkreis; die Nummer sitzt als kleines Abzeichen oben
+   links an der Figur und zeigt weiter den Stand (Ring = offen, gefuellt, gruen = erledigt). */
+.aex-fig-huelle { position: relative; flex: none; align-self: center; }
+.aex-fig-huelle .aex-fig { width: 50px; height: 50px; display: block; }
+.aex-fig-huelle .aex-v2-num,
+:is(#active-ex-list, #day-ex-list) .aex-v2 .aex-fig-huelle .aex-v2-num {
+  position: absolute; top: -5px; left: -5px; width: 20px; height: 20px;
+  font-size: 11px; box-shadow: 0 0 0 2px var(--card, #fff);
+}
+.aex-fig-huelle .aex-v2-num.offen,
+:is(#active-ex-list, #day-ex-list) .aex-v2 .aex-fig-huelle .aex-v2-num.offen { background: var(--card, #fff); box-shadow: inset 0 0 0 2px var(--c, var(--accent)), 0 0 0 2px var(--card, #fff); }
+:is(#active-ex-list, #day-ex-list) .aex-v2.collapsed .aex-v2-info { min-height: 50px; display: flex; flex-direction: column; justify-content: center; }
+/* Listen (Vorschau, Rueckblick, Uebung hinzufuegen, PRs, Zusammenfassung): Figur links vor dem Namen */
+.liste-fig { width: 40px; height: 40px; border-radius: 9px; }
+.sheet-item.mit-fig { justify-content: flex-start; gap: 12px; }
+.pr-v2-row.mit-fig { grid-template-columns: 22px 40px 1fr auto auto; }
+.sum-pr-row { align-items: center; }
 .figur-sub { font-size: var(--fs-neben); color: var(--text3); margin: -4px 0 10px; }
 .figur-buehne { display: block; width: 100%; height: 300px; border-radius: 14px;
   /* v606 (Leonard-Vorlage): dunkle Buehne mit Lichtkegel, darauf Bodenraster und Schatten (figSVG) */
