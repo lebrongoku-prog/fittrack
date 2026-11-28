@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v607**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v609**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -240,7 +240,14 @@ grep -n "fittrack-v" sw.js
   (kein Umklappen). Reihenfolge der Ketten: nach der Tiefe an den Stellen, wo sie sich im Bild
   WIRKLICH überdecken (Ansatz an Schulter/Hüfte zählt nicht; ohne Überdeckung liegt das Glied
   über dem Rumpf); Kopf, Bank, Geräte ebenso gegen die überdeckte Kette. Reverse Flies mit
-  Ausführung „Vorgebeugt“/„Stehend“ (Vorschlag bei „stehend“/„standing“).
+  Ausführung „Vorgebeugt“/„Stehend“/„Sitzend“ (Vorschlag bei „stehend“/„standing“, „sitzend“/
+  „seated“, Gerät Maschine → sitzend).
+- Seit v609: Variante „sitzend“ über `_FIG_SV` + `_figSitzend` (Oberkörper/Arme 40 tiefer, Beine
+  rechtwinklig) und `_figSitz(lehne)` bei Drücken über Kopf, Seitheben, Frontheben, Curl,
+  Trizeps über Kopf, Wadenheben (eigene Stellungen); Standard bleibt „Stehend“. Neue Bewegung
+  `brust_rudern` (Rudern auf der Schrägbank, Vorschlag „chest supported“, „Rudern“ + „schräg“/
+  „incline“ — steht im Vorschlag GANZ VORNE, sonst greift „bank“ → Drücken liegend).
+  Trizeps über Kopf am Kabel: Turm HINTER der Figur (`anker` z −80, `turm` z −14).
 
 ### Sicherung
 - Drive (`driveSync`, `collectLocalData`/`driveApplyCloudData`, Format version 4). Token-Anfragen
@@ -821,3 +828,13 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Ausfallschritt, Unterarmstütz, Bicycle Crunch, Skull Crusher, Rudern; Dialog „Reverse Flies
   stehend“ → Ausführung Stehend; Katalog 29 Figuren, Blatt; keine Konsolenfehler. NICHT gesehen:
   iPhone.
+- **v609 (28.11.2026, Leonard-Wünsche):** Neue Bewegung „Rudern auf der Schrägbank“ (Chest-
+  supported Row, bauchab auf der Schrägbank, Füße hinten am Boden); Ausführung „Sitzend“ bei
+  Reverse Flies (aufrecht mit Brustpolster, z. B. Maschine), Drücken über Kopf, Seitheben,
+  Frontheben, Curl, Trizeps über Kopf, Wadenheben; Trizeps über Kopf am Kabel mit dem Turm hinter
+  der Figur (Seil von hinten über die Schulter; vorher vorne, Kabel lief durch den Kopf). GEMESSEN:
+  alle Muster und Varianten in 80 Schritten ohne Sprung (max. 3.5), 12 Fälle im Raster plausibel;
+  Vorschläge „Chest Supported Row“, „Rudern Schrägbank Kurzhantel“ → Schrägbank-Rudern, „Reverse
+  Flies Maschine“ → Sitzend/Maschine, „Seated Dumbbell Curl“/„Schulterdrücken sitzend“/
+  „Wadenheben sitzend“ → Sitzend, „Trizeps Overhead Seil“ → Kabel, „Kurzhantel Rudern einarmig“
+  unverändert; Dialog zeigt Ausführung Stehend/Sitzend; keine Konsolenfehler. NICHT gesehen: iPhone.

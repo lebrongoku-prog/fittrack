@@ -10408,6 +10408,20 @@ const _figLiegend = (w, arme) => {
   return arme.map(([e, h]) => _fig({ becken, hals, ell: _v(hals, e), han: _v(hals, h), kn: [14, -55, 62], fu: [16, 0, 70] }));
 };
 const _figBank = (P) => [{ typ: 'bank', a: [0, -47, 30], b: _v(P.hals, [0, 9, -10]) }];
+// v609: Ausfuehrung „sitzend" — dieselben Stellungen wie stehend, Oberkoerper und Arme 40 tiefer,
+// Beine im rechten Winkel auf der Bank. `_FIG_SV` = Varianten stehend/sitzend.
+const _FIG_SV = { stehend: 'Stehend', sitzend: 'Sitzend' };
+const _figSitzend = (o, stellungen) => o.variante !== 'sitzend' ? stellungen : stellungen.map(f => {
+  const g = {};
+  Object.keys(f).forEach(key => {
+    if (/^(kn|fu)/.test(key)) return;
+    g[key] = Array.isArray(f[key]) && /^(hals|becken|ell|han)/.test(key) ? _v(f[key], [0, 40, 0]) : f[key];
+  });
+  return Object.assign(g, { kn: [12, -55, 44], fu: [13, 0, 48] });
+});
+// Sitz (und Lehne, wenn `lehne`); bei „stehend" nichts
+const _figSitz = (lehne) => (P, k, e) => e.variante !== 'sitzend' ? []
+  : [{ typ: 'bank', a: [0, -47, -18], b: [0, -47, 18] }, ...(lehne ? [{ typ: 'bank', a: [0, -50, -20], b: [0, -118, -24] }] : [])];
 
 // Bewegungsmuster: `t` Titel, `gr` Gruppe in der Auswahl, `g` Standardgeraet, `m` Abschnitt →
 // Muskelgruppe, `f(opt)` Stellungen, `p(P)` Geraete der Umgebung (Bank, Stange …), `anker`
@@ -10426,24 +10440,28 @@ const FIG_BEWEGUNG = {
       : o.kabel === 'mitte'
       ? [_fig({ hals: [0, -148, 8], ell: [40, -138, 2], han: [62, -132, 6] }), _fig({ hals: [0, -148, 8], ell: [26, -134, 24], han: [8, -132, 46] })]
       : [_fig({ hals: [0, -148, 8], ell: [38, -142, 4], han: [58, -152, 10] }), _fig({ hals: [0, -148, 8], ell: [26, -128, 22], han: [8, -118, 42] })] },
-  ueberkopf: { einarm: true, t: 'Drücken über Kopf', gr: 'Schultern', g: 'kurzhanteln', blick: 25, m: { schulter: 'shoulders', oberarm: 'triceps' },
-    f: () => [_fig({ ell: [40, -130, 2], han: [36, -155, 4] }), _fig({ ell: [27, -172, 0], han: [20, -198, 0] })] },
-  seitheben: { einarm: true, t: 'Seitheben', gr: 'Schultern', g: 'kurzhanteln', blick: 20, m: { schulter: 'shoulders', oberarm: 'shoulders' },
-    f: () => [_fig({ ell: [25, -122, 2], han: [27, -97, 4] }), _fig({ ell: [44, -145, 2], han: [69, -143, 4] })] },
-  frontheben: { einarm: true, t: 'Frontheben', gr: 'Schultern', g: 'kurzhanteln', blick: 55, m: { schulter: 'shoulders', oberarm: 'shoulders' },
-    f: () => [_fig({ ell: [20, -122, 6], han: [20, -97, 10] }), _fig({ ell: [20, -147, 25], han: [20, -147, 51] })] },
+  ueberkopf: { einarm: true, t: 'Drücken über Kopf', gr: 'Schultern', g: 'kurzhanteln', blick: 25, m: { schulter: 'shoulders', oberarm: 'triceps' }, varianten: _FIG_SV,
+    f: o => _figSitzend(o, [_fig({ ell: [40, -130, 2], han: [36, -155, 4] }), _fig({ ell: [27, -172, 0], han: [20, -198, 0] })]), p: _figSitz(true) },
+  seitheben: { einarm: true, t: 'Seitheben', gr: 'Schultern', g: 'kurzhanteln', blick: 20, m: { schulter: 'shoulders', oberarm: 'shoulders' }, varianten: _FIG_SV,
+    f: o => _figSitzend(o, [_fig({ ell: [25, -122, 2], han: [27, -97, 4] }), _fig({ ell: [44, -145, 2], han: [69, -143, 4] })]), p: _figSitz(false) },
+  frontheben: { einarm: true, t: 'Frontheben', gr: 'Schultern', g: 'kurzhanteln', blick: 55, m: { schulter: 'shoulders', oberarm: 'shoulders' }, varianten: _FIG_SV,
+    f: o => _figSitzend(o, [_fig({ ell: [20, -122, 6], han: [20, -97, 10] }), _fig({ ell: [20, -147, 25], han: [20, -147, 51] })]), p: _figSitz(false) },
   schulterziehen: { t: 'Schulterziehen', gr: 'Schultern', g: 'kurzhanteln', blick: 25, m: { schulter: 'shoulders' },
     f: () => [_fig({}), _fig({ schY: -10, ell: [21, -132, 2], han: [22, -106, 4] })] },
   face_pull: { t: 'Face Pull', gr: 'Schultern', g: 'kabel', blick: 55, m: { schulter: 'shoulders', torso: 'back' },
     anker: [[0, -160, 95]],
     f: () => [_fig({ ell: [20, -145, 24], han: [12, -140, 48] }), _fig({ ell: [44, -150, -6], han: [24, -160, 10] })] },
-  curl: { einarm: true, t: 'Curl', gr: 'Arme', g: 'kurzhanteln', blick: 55, m: { oberarm: 'biceps' },
-    f: () => [_fig({ ell: [21, -122, 3], han: [21, -96, 6] }), _fig({ ell: [21, -122, 4], han: [21, -122, 30] }), _fig({ ell: [21, -123, 5], han: [21, -146, 14] })] },
+  curl: { einarm: true, t: 'Curl', gr: 'Arme', g: 'kurzhanteln', blick: 55, m: { oberarm: 'biceps' }, varianten: _FIG_SV,
+    f: o => _figSitzend(o, [_fig({ ell: [21, -122, 3], han: [21, -96, 6] }), _fig({ ell: [21, -122, 4], han: [21, -122, 30] }), _fig({ ell: [21, -123, 5], han: [21, -146, 14] })]),
+    p: _figSitz(false) },
   trizeps_druecken: { einarm: true, t: 'Trizeps drücken am Kabel', gr: 'Arme', g: 'kabel', blick: 55, m: { oberarm: 'triceps' },
     anker: [[0, -215, 32]],
     f: () => [_fig({ ell: [19, -124, 6], han: [11, -138, 26] }), _fig({ ell: [19, -124, 6], han: [13, -99, 14] })] },
-  trizeps_ueberkopf: { einarm: true, t: 'Trizeps über Kopf', gr: 'Arme', g: 'kurzhanteln', blick: 35, m: { oberarm: 'triceps' },
-    f: () => [_fig({ ell: [16, -172, -4], han: [8, -152, -20] }), _fig({ ell: [16, -172, -4], han: [8, -197, -4] })] },
+  // v609 (Leonard-Meldung): am Kabel steht der Turm HINTER der Figur — das Seil kommt von hinten
+  // ueber die Schulter (vorher stand er vorne und das Kabel lief durch den Kopf).
+  trizeps_ueberkopf: { einarm: true, t: 'Trizeps über Kopf', gr: 'Arme', g: 'kurzhanteln', blick: 35, m: { oberarm: 'triceps' }, varianten: _FIG_SV,
+    anker: [[0, -120, -80]], turm: [0, 0, -14],
+    f: o => _figSitzend(o, [_fig({ ell: [16, -172, -4], han: [8, -152, -20] }), _fig({ ell: [16, -172, -4], han: [8, -197, -4] })]), p: _figSitz(true) },
   dips: { t: 'Dips am Barren', gr: 'Arme', g: 'koerper', blick: 45, m: { oberarm: 'triceps', torso: 'chest' },
     f: () => [_fig({ becken: [0, -95, -2], ell: [22, -122, -2], han: [24, -97, 2], kn: [10, -55, -18], fu: [10, -25, -30] }),
               _fig({ hals: [0, -125, 6], becken: [0, -72, 0], ell: [24, -108, -16], han: [24, -97, 2], kn: [10, -32, -12], fu: [10, -2, -22] })],
@@ -10525,8 +10543,13 @@ const FIG_BEWEGUNG = {
     p: P => [{ typ: 'bank', a: [0, -49, -22], b: [0, -49, 26] }, { typ: 'bank', a: [0, -54, -24], b: [0, -110, -28] },
              { typ: 'polster', p: _v(P.fuL, [-4, -4, 6]) }, { typ: 'polster', p: _v(P.fuR, [4, -4, 6]) },
              ...[-1, 1].map(sg => ({ typ: 'hebel', a: [sg * 24, P.knL[1], P.knL[2]], b: [sg * 24, P.fuL[1] - 4, P.fuL[2] + 6] }))] },
-  wadenheben: { t: 'Wadenheben', gr: 'Beine', g: 'kurzhanteln', blick: 70, m: { unterschenkel: 'legs' },
-    f: () => [_fig({}), _fig({ hals: [0, -159, 0], becken: [0, -104, 0], ell: [21, -131, 2], han: [22, -105, 4], kn: [12, -59, 2], fu: [13, -9, 0] })] },
+  // v609: sitzend — Gewicht auf den Knien, die Fersen heben die Knie an
+  wadenheben: { t: 'Wadenheben', gr: 'Beine', g: 'kurzhanteln', blick: 70, m: { unterschenkel: 'legs' }, varianten: _FIG_SV,
+    f: o => o.variante === 'sitzend'
+      ? [_fig({ becken: [0, -55, 0], hals: [0, -110, 2], ell: [22, -86, 18], han: [16, -64, 40], kn: [12, -55, 44], fu: [13, 0, 48] }),
+         _fig({ becken: [0, -55, 0], hals: [0, -110, 2], ell: [22, -90, 18], han: [16, -72, 40], kn: [12, -64, 44], fu: [13, -9, 50] })]
+      : [_fig({}), _fig({ hals: [0, -159, 0], becken: [0, -104, 0], ell: [21, -131, 2], han: [22, -105, 4], kn: [12, -59, 2], fu: [13, -9, 0] })],
+    p: _figSitz(false) },
   crunch: { t: 'Crunch', gr: 'Bauch', g: 'koerper', blick: 80, m: { torso: 'core' },
     f: () => {
       const s = { becken: [0, -10, 10], kn: [12, -45, 40], fu: [13, 0, 75] };
@@ -10553,6 +10576,13 @@ const FIG_BEWEGUNG = {
       return [_fig({ ...s, ellR: [22, -58, 30], hanR: [22, -34, 32] }), _fig({ ...s, ellR: [24, -98, 8], hanR: [22, -78, 18] })];
     },
     p: () => [{ typ: 'bank', a: [-16, -44, -66], b: [-16, -44, 44] }] },
+  // v609 (Leonard-Wunsch): Rudern brustgestützt — bauchab auf der Schrägbank, Füße hinten am Boden
+  brust_rudern: { einarm: true, t: 'Rudern auf der Schrägbank', gr: 'Rücken', g: 'kurzhanteln', blick: 70, m: { torso: 'back', oberarm: 'biceps' },
+    f: () => {
+      const s = { becken: [0, -62, -28], hals: [0, -104, 12], kn: [13, -32, -50], fu: [14, 0, -88] };
+      return [_fig({ ...s, ell: [22, -76, 16], han: [22, -50, 18] }), _fig({ ...s, ell: [28, -100, -12], han: [24, -80, 0] })];
+    },
+    p: () => [{ typ: 'bank', a: [0, -50, -16], b: [0, -92, 24] }, { typ: 'bank', a: [0, -42, -24], b: [0, -42, 4] }] },
   // ── v599 (Leonard-Wunsch) ──────────────────────────────────────────────────────────
   rueckenstrecker: { t: 'Rückenstrecker', gr: 'Rücken', g: 'koerper', blick: 80, m: { torso: 'back', oberschenkel: 'legs' },
     f: () => {
@@ -10564,9 +10594,12 @@ const FIG_BEWEGUNG = {
               { typ: 'polster', p: [-9, -12, -40] }, { typ: 'polster', p: [9, -12, -40] }] },
   // v608: Ausfuehrung „stehend" (aufrecht, Arme in Schulterhoehe von vorne zur Seite; Leonard-Wunsch)
   reverse_flies: { einarm: true, t: 'Reverse Flies', gr: 'Schultern',   /* v607: Gruppe Schultern (Leonard-Wunsch) */ g: 'kurzhanteln', blick: 25, m: { schulter: 'shoulders', torso: 'back' },
-    varianten: { vorgebeugt: 'Vorgebeugt', stehend: 'Stehend' },
+    varianten: { vorgebeugt: 'Vorgebeugt', stehend: 'Stehend', sitzend: 'Sitzend' },
+    // v609 sitzend (z. B. an der Maschine): aufrecht, Brust am Polster, Arme in Schulterhoehe
+    p: (P, k, e) => e.variante !== 'sitzend' ? [] : [{ typ: 'bank', a: [0, -47, -18], b: [0, -47, 18] }, { typ: 'bank', a: [0, -62, 26], b: [0, -112, 26] }],
     f: o => {
-      if (o.variante === 'stehend') return [_fig({ ell: [16, -142, 25], han: [8, -140, 50] }), _fig({ ell: [45, -146, -2], han: [71, -145, -4] })];
+      if (o.variante === 'stehend' || o.variante === 'sitzend')
+        return _figSitzend(o, [_fig({ ell: [16, -142, 25], han: [8, -140, 50] }), _fig({ ell: [45, -146, -2], han: [71, -145, -4] })]);
       const s = { becken: [0, -88, -20], hals: [0, -108, 30], kn: [12, -48, 6] };
       return [_fig({ ...s, ell: [24, -84, 34], han: [22, -60, 36] }), _fig({ ...s, ell: [44, -106, 32], han: [68, -110, 34] })];
     } },
@@ -10993,7 +11026,9 @@ function figBewegungVorschlag(name) {
   const hat = (...w) => w.some(x => n.includes(x));
   let b = null, bank = null;
   // v599 zuerst die spezielleren Namen
-  if (hat('reverse fl', 'reverse butterfly', 'rear delt', 'reverse-fl', 'umgekehrte')) b = 'reverse_flies';
+  if (hat('chest supported', 'chest-supported', 'brustgestützt', 'brust gestützt', 'incline row', 'seal row', 'bauchlage') ||
+      (hat('rudern', 'row') && hat('schräg', 'incline'))) b = 'brust_rudern';
+  else if (hat('reverse fl', 'reverse butterfly', 'rear delt', 'reverse-fl', 'umgekehrte')) b = 'reverse_flies';
   else if (hat('back extension', 'rückenstreck', 'hyperext', 'rumpfheb')) b = 'rueckenstrecker';
   else if (hat('preacher', 'scott')) b = 'preacher_curl';
   else if (hat('curl') && hat('incline', 'schräg')) b = 'schraeg_curl';
@@ -11037,10 +11072,12 @@ function figBewegungVorschlag(name) {
   let g = null;
   if (hat('kurzhantel', 'dumbbell', ' kh ', 'goblet')) g = 'kurzhanteln';
   else if (hat('langhantel', 'barbell', ' lh ')) g = 'langhantel';
-  else if (hat('kabel', 'cable', 'seilzug')) g = 'kabel';
+  else if (hat('kabel', 'cable', 'seilzug', ' seil', 'rope')) g = 'kabel';
   else if (hat('maschine', 'machine', 'gerät')) g = 'maschine';
+  const sitz = hat('sitzend', 'seated', 'sitting', 'im sitzen');
   const variante = b === 'latzug' ? (hat('hinter', 'nacken', 'behind') ? 'hinter' : 'vor')
-    : b === 'reverse_flies' ? (hat('stehend', 'standing', 'aufrecht') ? 'stehend' : 'vorgebeugt') : null;
+    : b === 'reverse_flies' ? (sitz || g === 'maschine' ? 'sitzend' : hat('stehend', 'standing', 'aufrecht') ? 'stehend' : 'vorgebeugt')
+    : (b && FIG_BEWEGUNG[b].varianten === _FIG_SV) ? (sitz ? 'sitzend' : 'stehend') : null;
   return { bewegung: b, geraet: g || (b ? FIG_BEWEGUNG[b].g : null), bank, variante };
 }
 
