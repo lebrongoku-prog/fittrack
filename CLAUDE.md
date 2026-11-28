@@ -22,7 +22,7 @@ per `grep -n "<Bezeichner>" .claude/historie.md`.
 | `index.html` (~1025 Z.) | Markup, alle Screens + Fenster (Modals) |
 | `style.css` (~4380 Z.) | gesamtes Styling, Theme-Variablen |
 | `app.js` (~12650 Z.) | komplette Logik — **eine Datei, keine Module** |
-| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v609**) |
+| `sw.js` | Service Worker, Cache-Version `fittrack-vNN` (aktuell **v610**) |
 | `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` | PWA |
 | `.claude/devserver.py` | Testserver ohne Caching, Port 8123 (`.claude/launch.json`: „fittrack") |
 | `.claude/historie.md` | Vorgeschichte (früher CLAUDE.md, Stand v557) |
@@ -248,6 +248,14 @@ grep -n "fittrack-v" sw.js
   `brust_rudern` (Rudern auf der Schrägbank, Vorschlag „chest supported“, „Rudern“ + „schräg“/
   „incline“ — steht im Vorschlag GANZ VORNE, sonst greift „bank“ → Drücken liegend).
   Trizeps über Kopf am Kabel: Turm HINTER der Figur (`anker` z −80, `turm` z −14).
+- Seit v610: JEDE Bewegung, die es an einer Maschine gibt, hat „Sitzend“ (`_FIG_SITZ`,
+  `_figSitzMitLehne`): zusätzlich Brustdrücken, Fliegende, Schulterziehen, Trizeps drücken, Dips,
+  Rudern, Beinbeuger, Crunch, Rückenstrecker. Titel ohne Lage („Brustdrücken“, „Fliegende“,
+  „Beinbeuger“, „Dips“, „Rudern“, „Trizeps drücken“) — die Lage steht in der Ausführung.
+  Gerät „Maschine“ (Namensvorschlag oder Wahl im Dialog, `figDialogGeraet`) → „Sitzend“;
+  Bankwinkel nur bei liegend sichtbar. Bereits sitzend gebaut: Latzug, Rudern am Kabel,
+  Beinpresse, Beinstrecker. Bewusst ohne: freie Übungen ohne Maschinenform (Kniebeuge,
+  Kreuzheben, Klimmzug …).
 
 ### Sicherung
 - Drive (`driveSync`, `collectLocalData`/`driveApplyCloudData`, Format version 4). Token-Anfragen
@@ -838,3 +846,13 @@ Sicherungs-Chip im Kopf · Plan-/Übungs-JSON-Import · Cardio-Übungen.
   Flies Maschine“ → Sitzend/Maschine, „Seated Dumbbell Curl“/„Schulterdrücken sitzend“/
   „Wadenheben sitzend“ → Sitzend, „Trizeps Overhead Seil“ → Kabel, „Kurzhantel Rudern einarmig“
   unverändert; Dialog zeigt Ausführung Stehend/Sitzend; keine Konsolenfehler. NICHT gesehen: iPhone.
+- **v610 (28.11.2026, Leonard-Wunsch „überall, wo Maschinen möglich sind, sitzend“):** Ausführung
+  „Sitzend“ zusätzlich bei Brustdrücken (Brustpresse), Fliegende (Butterfly), Schulterziehen,
+  Trizeps drücken, Dips (Dip-Maschine), Rudern (Rudermaschine mit Brustpolster), Beinbeuger,
+  Crunch (Bauchmaschine), Rückenstrecker; Maschine → Sitzend vorgeschlagen. Nebenbei behoben:
+  „chin“ traf jedes Wort auf „-maschine“ (Bauchmaschine, Rudermaschine → Klimmzug); Ellbogen/Knie
+  neigen sanft zur natürlichen Richtung statt umzuspringen. GEMESSEN: alle Muster und Varianten in
+  80 Schritten ohne Sprung (max. 3.5), 16 Sitz-Fälle im Raster; Vorschläge Pec Deck, Bauchmaschine,
+  Rudermaschine, Brustpresse, Dip Maschine, Leg Curl sitzend → jeweils Sitzend/Maschine, Bankdrücken
+  und Langhantelrudern unverändert; Dialog „Bankdrücken“ → Gerät Maschine → Sitzend, Bankwinkel
+  ausgeblendet; keine Konsolenfehler. NICHT gesehen: iPhone.
